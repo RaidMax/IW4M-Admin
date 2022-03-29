@@ -94,7 +94,8 @@ namespace IW4MAdmin.Application.Misc
                     PeriodBlock = (int) (DateTimeOffset.UtcNow - DateTimeOffset.UnixEpoch).TotalMinutes,
                     ServerId = await server.GetIdForServer(),
                     MapId = await GetOrCreateMap(server.CurrentMap.Name, (Reference.Game) server.GameName, token),
-                    ClientCount = server.ClientNum
+                    ClientCount = server.ClientNum,
+                    ConnectionInterrupted = server.Throttled,
                 }));
 
             return data;

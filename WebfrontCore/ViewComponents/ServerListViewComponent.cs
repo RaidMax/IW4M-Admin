@@ -19,16 +19,27 @@ namespace WebfrontCore.ViewComponents
     {
         private readonly IServerDataViewer _serverDataViewer;
         private readonly ApplicationConfiguration _appConfig;
+        private readonly DefaultSettings _defaultSettings;
 
         public ServerListViewComponent(IServerDataViewer serverDataViewer,
-            ApplicationConfiguration applicationConfiguration)
+            ApplicationConfiguration applicationConfiguration, DefaultSettings defaultSettings)
         {
             _serverDataViewer = serverDataViewer;
             _appConfig = applicationConfiguration;
+            _defaultSettings = defaultSettings;
         }
 
         public IViewComponentResult Invoke(Game? game)
         {
+            if (game.HasValue)
+            {
+                ViewBag.Maps = _defaultSettings.Maps.FirstOrDefault(map => map.Game == game);
+            }
+            else
+            {
+                ViewBag.Maps = _defaultSettings.Maps.SelectMany(maps => maps.Maps).ToList();
+            }
+
             var servers = Program.Manager.GetServers().Where(server => !game.HasValue || server.GameName == game);
 
             var serverInfo = new List<ServerInfo>();
@@ -47,14 +58,14 @@ namespace WebfrontCore.ViewComponents
 
                 var counts = clientHistory.ClientCounts?.AsEnumerable() ?? Enumerable.Empty<ClientCountSnapshot>();
 
-                if (server.ClientHistory.Count > 0)
+                if (server.ClientHistory.ClientCounts.Any())
                 {
-                    counts = counts.Union(server.ClientHistory
-                        .Select(history => history.ToClientCountSnapshot()).Where(history =>
-                            history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)));
+                    counts = counts.Union(server.ClientHistory.ClientCounts.Where(history =>
+                            history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
+                        .Where(history => history.Time >= DateTime.UtcNow - _appConfig.MaxClientHistoryTime);
                 }
 
-                serverInfo.Add(new ServerInfo()
+                serverInfo.Add(new ServerInfo
                 {
                     Name = server.Hostname,
                     ID = server.EndPoint,
@@ -63,7 +74,11 @@ namespace WebfrontCore.ViewComponents
                     ClientCount = server.Clients.Count(client => client != null),
                     MaxClients = server.MaxClients,
                     GameType = server.GametypeName,
-                    PlayerHistory = server.ClientHistory.ToArray(),
+                    ClientHistory = new ClientHistoryInfo
+                    {
+                        ServerId = server.EndPoint,
+                        ClientCounts = counts.ToList()
+                    },
                     Players = server.GetClientsAsList()
                         .Select(p => new PlayerInfo()
                         {
@@ -77,9 +92,6 @@ namespace WebfrontCore.ViewComponents
                                 .CLIENT_STATS_KEY)?.ZScore
                         }).ToList(),
                     ChatHistory = server.ChatHistory.ToList(),
-                    ClientCountHistory =
-                        counts.Where(history => history.Time >= DateTime.UtcNow - _appConfig.MaxClientHistoryTime)
-                            .ToList(),
                     Online = !server.Throttled,
                     IPAddress =
                         $"{(server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP)}:{server.Port}",

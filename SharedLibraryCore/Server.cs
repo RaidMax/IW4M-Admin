@@ -71,7 +71,7 @@ namespace SharedLibraryCore
             EventProcessing = new SemaphoreSlim(1, 1);
             Clients = new List<EFClient>(new EFClient[64]);
             Reports = new List<Report>();
-            ClientHistory = new Queue<PlayerHistory>();
+            ClientHistory = new ClientHistoryInfo();
             ChatHistory = new List<ChatInfo>();
             NextMessage = 0;
             CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
@@ -97,7 +97,7 @@ namespace SharedLibraryCore
         public List<Map> Maps { get; protected set; } = new List<Map>();
         public List<Report> Reports { get; set; }
         public List<ChatInfo> ChatHistory { get; protected set; }
-        public Queue<PlayerHistory> ClientHistory { get; }
+        public ClientHistoryInfo ClientHistory { get; }
         public Game GameName { get; set; }
 
         public string Hostname

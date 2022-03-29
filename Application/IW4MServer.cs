@@ -1028,12 +1028,19 @@ namespace IW4MAdmin
                 {
                     var maxItems = Math.Ceiling(appConfig.MaxClientHistoryTime.TotalMinutes /
                                                 appConfig.ServerDataCollectionInterval.TotalMinutes);
-                    while ( ClientHistory.Count > maxItems) 
+                    
+                    while (ClientHistory.ClientCounts.Count > maxItems) 
                     {
-                        ClientHistory.Dequeue();
+                        ClientHistory.ClientCounts.RemoveAt(0);
                     }
 
-                    ClientHistory.Enqueue(new PlayerHistory(ClientNum));
+                    ClientHistory.ClientCounts.Add(new ClientCountSnapshot
+                    {
+                        ClientCount = ClientNum,
+                        ConnectionInterrupted = Throttled,
+                        Time = DateTime.UtcNow,
+                        Map = CurrentMap.Name
+                    });
                     playerCountStart = DateTime.Now;
                 }
 

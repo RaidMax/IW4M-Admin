@@ -15,8 +15,7 @@ namespace SharedLibraryCore.Dtos
         public int MaxClients { get; set; }
         public List<ChatInfo> ChatHistory { get; set; }
         public List<PlayerInfo> Players { get; set; }
-        public PlayerHistory[] PlayerHistory { get; set; }
-        public List<ClientCountSnapshot> ClientCountHistory { get; set; }
+        public ClientHistoryInfo ClientHistory { get; set; }
         public long ID { get; set; }
         public bool Online { get; set; }
         public string ConnectProtocolUrl { get; set; }

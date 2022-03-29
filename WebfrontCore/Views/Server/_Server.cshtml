@@ -1,6 +1,21 @@
 ﻿@model SharedLibraryCore.Dtos.ServerInfo
 @{
     Layout = null;
+
+    string GetMapName(string mapCode)
+    {
+        if (ViewBag.Maps?.Count == 0)
+        {
+            return mapCode;
+        }
+
+        return (ViewBag.Maps as List<Map>)?.FirstOrDefault(map => map.Name == mapCode)?.Alias ?? mapCode;
+    }
+
+    foreach (var snapshot in Model.ClientHistory.ClientCounts)
+    {
+        snapshot.MapAlias = GetMapName(snapshot.Map);
+    }
 }
 
 <div class="row server-header pt-1 pb-1 bg-primary " id="server_header_@Model.ID">
@@ -58,8 +73,10 @@
 </div>
 
 <div class="row server-history mb-4">
-    <div class="server-history-row" id="server_history_@Model.ID" data-serverid="@Model.ID" 
-         data-clienthistory='@Html.Raw(Json.Serialize(Model.PlayerHistory))'
-         data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientCountHistory))'
-         data-online="@Model.Online"></div>
+    <div class="server-history-row" style="position:relative; width: 80vw" id="server_history_@Model.ID" data-serverid="@Model.ID"
+         data-clienthistory='@Html.Raw(Json.Serialize(Model.ClientHistory))'
+         data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientHistory.ClientCounts))'
+         data-online="@Model.Online">
+        <canvas id="server_history_canvas_@Model.ID" height="100"></canvas>
+    </div>
 </div>

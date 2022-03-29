@@ -32,5 +32,7 @@ namespace Data.Models.Server
         public EFMap Map { get; set; }
         
         public int ClientCount { get; set; }
+        
+        public bool? ConnectionInterrupted {get;set;}
     }
 }

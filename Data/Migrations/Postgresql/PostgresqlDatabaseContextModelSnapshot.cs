@@ -1134,6 +1134,9 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("ClientCount")
                         .HasColumnType("integer");
 
+                    b.Property<bool?>("ConnectionInterrupted")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("MapId")
                         .HasColumnType("integer");
 

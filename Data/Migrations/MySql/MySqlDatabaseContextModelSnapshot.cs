@@ -1081,6 +1081,9 @@ namespace Data.Migrations.MySql
                     b.Property<int>("ClientCount")
                         .HasColumnType("int");
 
+                    b.Property<bool?>("ConnectionInterrupted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<int>("MapId")
                         .HasColumnType("int");
 

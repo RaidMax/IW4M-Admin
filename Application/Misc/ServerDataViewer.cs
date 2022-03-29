@@ -135,7 +135,9 @@ namespace IW4MAdmin.Application.Misc
                         {
                             snapshot.ServerId,
                             snapshot.CapturedAt,
-                            snapshot.ClientCount
+                            snapshot.ClientCount,
+                            snapshot.ConnectionInterrupted,
+                            MapName = snapshot.Map.Name,
                         })
                     .OrderBy(snapshot => snapshot.CapturedAt)
                     .ToListAsync(cancellationToken);
@@ -143,8 +145,8 @@ namespace IW4MAdmin.Application.Misc
                 return history.GroupBy(snapshot => snapshot.ServerId).Select(byServer => new ClientHistoryInfo
                 {
                     ServerId = byServer.Key,
-                    ClientCounts = byServer.Select(snapshot => new ClientCountSnapshot()
-                        {Time = snapshot.CapturedAt, ClientCount = snapshot.ClientCount}).ToList()
+                    ClientCounts = byServer.Select(snapshot => new ClientCountSnapshot
+                        { Time = snapshot.CapturedAt, ClientCount = snapshot.ClientCount, ConnectionInterrupted = snapshot.ConnectionInterrupted ?? false, Map = snapshot.MapName}).ToList()
                 }).ToList();
             }, nameof(_clientHistoryCache), TimeSpan.MaxValue);
 

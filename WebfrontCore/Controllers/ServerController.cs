@@ -48,7 +48,7 @@ namespace WebfrontCore.Controllers
                             .CLIENT_STATS_KEY)?.ZScore
                     }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
-                PlayerHistory = s.ClientHistory.ToArray(),
+                ClientHistory = s.ClientHistory,
                 IsPasswordProtected = !string.IsNullOrEmpty(s.GamePassword)
             };
             return PartialView("_ClientActivity", serverInfo);

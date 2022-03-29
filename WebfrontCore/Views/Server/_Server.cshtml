@@ -73,7 +73,7 @@
 </div>
 
 <div class="row server-history mb-4">
-    <div class="server-history-row" style="position:relative; width: 80vw" id="server_history_@Model.ID" data-serverid="@Model.ID"
+    <div class="server-history-row m-auto" style="position:relative; width: 100%" id="server_history_@Model.ID" data-serverid="@Model.ID"
          data-clienthistory='@Html.Raw(Json.Serialize(Model.ClientHistory))'
          data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientHistory.ClientCounts))'
          data-online="@Model.Online">

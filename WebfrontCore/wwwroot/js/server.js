@@ -105,16 +105,13 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            onResize: function(chart, size) {
-                console.log(size);
-            },
             legend: false,
             defaultFontFamily: '-apple-system, BlinkMacSystemFont, "Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
             tooltips: {
                 callbacks: {
                     // todo: localization at some point
+                    title: context => moment(context[0].label).local().calendar(),
                     label: context => context.datasetIndex !== 1 ? `${context.value} players on ${playerHistory[context.index].mapAlias}` : context.value === '0' ? '' : 'Server Unreachable!',
-                    title: context => context[0].datasetIndex !== 1 ? moment(context[0].label).local().calendar() : ''
                 },
                 mode: 'nearest',
                 intersect: false,

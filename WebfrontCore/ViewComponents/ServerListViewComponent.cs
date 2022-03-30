@@ -33,7 +33,8 @@ namespace WebfrontCore.ViewComponents
         {
             if (game.HasValue)
             {
-                ViewBag.Maps = _defaultSettings.Maps.FirstOrDefault(map => map.Game == game);
+                ViewBag.Maps = _defaultSettings.Maps.FirstOrDefault(map => map.Game == game)?.Maps.ToList() ??
+                               new List<Map>();
             }
             else
             {

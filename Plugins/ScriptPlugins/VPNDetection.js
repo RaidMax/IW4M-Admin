@@ -5,7 +5,7 @@ const commands = [{
     permission: "SeniorAdmin",
     targetRequired: true,
     arguments: [{
-        name: "players",
+        name: "player",
         required: true
     }],
     execute: (gameEvent) => {

@@ -120,6 +120,9 @@ namespace Data.Context
                 ent.Property(_alias => _alias.SearchableName).HasMaxLength(24);
                 ent.HasIndex(_alias => _alias.SearchableName);
                 ent.HasIndex(_alias => new {_alias.Name, _alias.IPAddress});
+                ent.Property(alias => alias.SearchableIPAddress)
+                    .HasComputedColumnSql(@"((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", stored: true);
+                ent.HasIndex(alias => alias.SearchableIPAddress);
             });
 
             modelBuilder.Entity<EFMeta>(ent =>

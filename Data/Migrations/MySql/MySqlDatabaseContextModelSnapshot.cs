@@ -804,6 +804,11 @@ namespace Data.Migrations.MySql
                         .HasMaxLength(24)
                         .HasColumnType("varchar(24)");
 
+                    b.Property<string>("SearchableIPAddress")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("varchar(255)")
+                        .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
+
                     b.Property<string>("SearchableName")
                         .HasMaxLength(24)
                         .HasColumnType("varchar(24)");
@@ -815,6 +820,8 @@ namespace Data.Migrations.MySql
                     b.HasIndex("LinkId");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("SearchableIPAddress");
 
                     b.HasIndex("SearchableName");
 

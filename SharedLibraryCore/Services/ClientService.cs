@@ -791,7 +791,7 @@ namespace SharedLibraryCore.Services
         public async Task<IList<PlayerInfo>> FindClientsByIdentifier(string identifier)
         {
             var trimmedIdentifier = identifier?.Trim();
-            if (trimmedIdentifier?.Length < _appConfig.MinimumNameLength)
+            if (trimmedIdentifier == null || trimmedIdentifier.Length < _appConfig.MinimumNameLength)
             {
                 return new List<PlayerInfo>();
             }
@@ -812,7 +812,7 @@ namespace SharedLibraryCore.Services
             var iqLinkIds = context.Aliases.Where(_alias => _alias.Active);
 
             // we want to query for the IP Address
-            if (ipAddress != null)
+            if (ipAddress != null && trimmedIdentifier.Split('.').Length == 3)
             {
                 iqLinkIds = iqLinkIds.Where(_alias => _alias.IPAddress == ipAddress);
             }
@@ -821,7 +821,7 @@ namespace SharedLibraryCore.Services
             else
             {
                 iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.SearchableName ?? _alias.Name.ToLower(),
-                    $"%{trimmedIdentifier.ToLower()}%"));
+                    $"%{trimmedIdentifier.ToLower()}%") || EF.Functions.Like(_alias.SearchableIPAddress, $"{trimmedIdentifier}%"));
             }
 
             var linkIds = await iqLinkIds
@@ -858,7 +858,7 @@ namespace SharedLibraryCore.Services
                     LastConnection = _client.LastConnection,
                     ClientId = _client.ClientId,
                     IPAddress = _client.CurrentAlias.IPAddress.HasValue
-                        ? _client.CurrentAlias.IPAddress.Value.ToString()
+                        ? _client.CurrentAlias.SearchableIPAddress
                         : ""
                 });
 

@@ -19,6 +19,7 @@ namespace Data.Models
         public string SearchableName { get; set; }
         [Required]
         public int? IPAddress { get; set; }
+        public string SearchableIPAddress { get; set; }
         [Required]
         public DateTime DateAdded { get; set; }
 

@@ -843,6 +843,11 @@ namespace Data.Migrations.Postgresql
                         .HasMaxLength(24)
                         .HasColumnType("character varying(24)");
 
+                    b.Property<string>("SearchableIPAddress")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("text")
+                        .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
+
                     b.Property<string>("SearchableName")
                         .HasMaxLength(24)
                         .HasColumnType("character varying(24)");
@@ -854,6 +859,8 @@ namespace Data.Migrations.Postgresql
                     b.HasIndex("LinkId");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("SearchableIPAddress");
 
                     b.HasIndex("SearchableName");
 

@@ -59,7 +59,7 @@ isInSubnet = (ip, subnet) => {
 };
 
 isSubnetBanned = (ip, list) => {
-    const matchingSubnets = list.filter(subnet => isInSubnet(ip, subnet, logger));
+    const matchingSubnets = list.filter(subnet => isInSubnet(ip, subnet));
     return matchingSubnets.length !== 0;
 }
 

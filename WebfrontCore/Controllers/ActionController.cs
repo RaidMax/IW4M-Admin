@@ -10,6 +10,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Permissions;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
@@ -314,6 +315,14 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> RecentClientsForm()
         {
             var clients = await Manager.GetClientService().GetRecentClients();
+            foreach (var client in clients)
+            {
+                client.IPAddress =
+                    _appConfig.HasPermission(Client.Level, WebfrontEntity.IPAddress, WebfrontPermission.Read)
+                        ? client.IPAddress
+                        : null;
+            }
+
             return View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
         }
 

@@ -9,16 +9,21 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
+using WebfrontCore.Permissions;
 
 namespace WebfrontCore.ViewComponents
 {
     public class ProfileMetaListViewComponent : ViewComponent
     {
         private readonly IMetaServiceV2 _metaService;
+        private readonly ApplicationConfiguration _appConfig;
 
-        public ProfileMetaListViewComponent(IMetaServiceV2 metaService)
+        public ProfileMetaListViewComponent(IMetaServiceV2 metaService, ApplicationConfiguration appConfig)
         {
             _metaService = metaService;
+            _appConfig = appConfig;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(int clientId, int count, int offset, DateTime? startAt, MetaType? metaType, CancellationToken token)
@@ -39,11 +44,16 @@ namespace WebfrontCore.ViewComponents
             return View("_List", meta);
         }
 
-        public static async Task<IEnumerable<IClientMeta>> GetClientMeta(IMetaServiceV2 metaService, MetaType? metaType,
+        private async Task<IEnumerable<IClientMeta>> GetClientMeta(IMetaServiceV2 metaService, MetaType? metaType,
             EFClient.Permission level, ClientPaginationRequest request, CancellationToken token)
         {
             IEnumerable<IClientMeta> meta = null;
 
+            if (!_appConfig.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
+            {
+                permissionSet = new List<string>();
+            }
+            
             if (metaType is null or MetaType.All)
             {
                 meta = await metaService.GetRuntimeMeta(request, token);
@@ -51,30 +61,24 @@ namespace WebfrontCore.ViewComponents
 
             else
             {
-                switch (metaType)
+                meta = metaType switch
                 {
-                    case MetaType.Information:
-                        meta = await metaService.GetRuntimeMeta<InformationResponse>(request, metaType.Value, token);
-                        break;
-                    case MetaType.AliasUpdate:
-                        meta = await metaService.GetRuntimeMeta<UpdatedAliasResponse>(request, metaType.Value, token);
-                        break;
-                    case MetaType.ChatMessage:
-                        meta = await metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value, token);
-                        break;
-                    case MetaType.Penalized:
-                        meta = await metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request, metaType.Value, token);
-                        break;
-                    case MetaType.ReceivedPenalty:
-                        meta = await metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request, metaType.Value, token);
-                        break;
-                    case MetaType.ConnectionHistory:
-                        meta = await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request, metaType.Value, token);
-                        break;
-                    case MetaType.PermissionLevel:
-                        meta = await metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(request, metaType.Value, token);
-                        break;
-                }
+                    MetaType.Information => await metaService.GetRuntimeMeta<InformationResponse>(request,
+                        metaType.Value, token),
+                    MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate, WebfrontPermission.Read) ? await metaService.GetRuntimeMeta<UpdatedAliasResponse>(request,
+                        metaType.Value, token) : new List<IClientMeta>(),
+                    MetaType.ChatMessage => await metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value,
+                        token),
+                    MetaType.Penalized => await metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request,
+                        metaType.Value, token),
+                    MetaType.ReceivedPenalty => await metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request,
+                        metaType.Value, token),
+                    MetaType.ConnectionHistory => await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request,
+                        metaType.Value, token),
+                    MetaType.PermissionLevel => await metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(
+                        request, metaType.Value, token),
+                    _ => meta
+                };
             }
 
             if (level < EFClient.Permission.Trusted)

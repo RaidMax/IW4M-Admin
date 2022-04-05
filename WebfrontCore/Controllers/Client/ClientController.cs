@@ -7,11 +7,13 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using Stats.Config;
+using WebfrontCore.Permissions;
 using WebfrontCore.ViewComponents;
 
 namespace WebfrontCore.Controllers
@@ -79,7 +81,7 @@ namespace WebfrontCore.Controllers
                 Level = displayLevel,
                 LevelInt = displayLevelInt,
                 ClientId = client.ClientId,
-                IPAddress = client.IPAddressString,
+                IPAddress = PermissionsSet.HasPermission(WebfrontEntity.IPAddress, WebfrontPermission.Read) ? client.IPAddressString : null,
                 NetworkId = client.NetworkId,
                 Meta = new List<InformationResponse>(),
                 Aliases = client.AliasLink.Children
@@ -90,13 +92,13 @@ namespace WebfrontCore.Controllers
                     .Distinct()
                     .OrderBy(a => a)
                     .ToList(),
-                IPs = client.AliasLink.Children
+                IPs = PermissionsSet.HasPermission(WebfrontEntity.IPAddress, WebfrontPermission.Read) ? client.AliasLink.Children
                     .Where(i => i.IPAddress != null)
                     .OrderByDescending(i => i.DateAdded)
                     .Select(i => i.IPAddress.ConvertIPtoString())
                     .Prepend(client.CurrentAlias.IPAddress.ConvertIPtoString())
                     .Distinct()
-                    .ToList(),
+                    .ToList() : new List<string>(),
                 HasActivePenalty = activePenalties.Any(_penalty => _penalty.Type != EFPenalty.PenaltyType.Flag),
                 Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
                 TimeOnline = (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture(),
@@ -191,7 +193,7 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
-        public async Task<IActionResult> Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType, CancellationToken token)
+        public IActionResult Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType, CancellationToken token)
         {
             var request = new ClientPaginationRequest
             {
@@ -201,14 +203,15 @@ namespace WebfrontCore.Controllers
                 Before = DateTime.FromFileTimeUtc(startAt ?? DateTime.UtcNow.ToFileTimeUtc())
             };
 
-            var meta = await ProfileMetaListViewComponent.GetClientMeta(_metaService, metaFilterType, Client.Level, request, token);
-
-            if (!meta.Any())
+            return ViewComponent(typeof(ProfileMetaListViewComponent), new
             {
-                return Ok();
-            }
-
-            return View("Components/ProfileMetaList/_List", meta);
+                clientId = request.ClientId,
+                count = request.Count,
+                offset = request.Offset,
+                startAt = request.Before,
+                metaType = metaFilterType,
+                token
+            });
         }
     }
 }

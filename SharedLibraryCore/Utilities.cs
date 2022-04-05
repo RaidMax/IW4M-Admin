@@ -525,6 +525,45 @@ namespace SharedLibraryCore
             return new TimeSpan(1, 0, 0);
         }
 
+        public static bool HasPermission<TEntity, TPermission>(this IEnumerable<string> permissionsSet, TEntity entity,
+            TPermission permission) where TEntity : Enum where TPermission : Enum
+        {
+            return permissionsSet?.Any(raw =>
+            {
+                if (raw == "*")
+                {
+                    return true;
+                }
+                
+                var split = raw.Split(".");
+
+                if (split.Length != 2)
+                {
+                    return false;
+                }
+
+                if (!Enum.TryParse(typeof(TEntity), split[0], out var e))
+                {
+                    return false;
+                }
+
+                if (!Enum.TryParse(typeof(TPermission), split[1], out var p))
+                {
+                    return false;
+                }
+
+                return (e?.Equals(entity) ?? false) && (p?.Equals(permission) ?? false);
+            }) ?? false;
+        }
+
+        public static bool HasPermission<TEntity, TPermission>(this ApplicationConfiguration appConfig,
+            Permission permissionLevel, TEntity entity,
+            TPermission permission) where TEntity : Enum where TPermission : Enum
+        {
+            return appConfig.PermissionSets.ContainsKey(permissionLevel.ToString()) &&
+                   HasPermission(appConfig.PermissionSets[permissionLevel.ToString()], entity, permission);
+        }
+
         /// <summary>
         ///     returns a list of penalty types that should be shown across all profiles
         /// </summary>

@@ -30,6 +30,7 @@ namespace SharedLibraryCore
         private static string SocialTitle;
         protected readonly DatabaseContext Context;
         protected List<Page> Pages;
+        protected List<string> PermissionsSet;
 
         public BaseController(IManager manager)
         {
@@ -42,7 +43,6 @@ namespace SharedLibraryCore
                 SocialLink = AppConfig.SocialLinkAddress;
                 SocialTitle = AppConfig.SocialLinkTitle;
             }
-
 
             Pages = Manager.GetPageList().Pages
                 .Select(page => new Page
@@ -134,6 +134,11 @@ namespace SharedLibraryCore
                 };
                 var claimsIdentity = new ClaimsIdentity(claims, "login");
                 SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
+            }
+            
+            if (AppConfig.PermissionSets.ContainsKey(Client.Level.ToString()))
+            {
+                PermissionsSet = AppConfig.PermissionSets[Client.Level.ToString()];
             }
 
             var communityName = AppConfig.CommunityInformation?.Name;

@@ -115,7 +115,7 @@ namespace SharedLibraryCore.Configuration
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
         public bool EnableColorCodes { get; set; }
-
+        
         [ConfigurationIgnore] public string IngameAccentColorKey { get; set; } = "Cyan";
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
@@ -142,6 +142,16 @@ namespace SharedLibraryCore.Configuration
             TimeSpan.FromDays(2),
             TimeSpan.FromDays(7),
             TimeSpan.FromDays(30)
+        };
+
+        public Dictionary<string, List<string>> PermissionSets { get; set; } = new()
+        {
+            { Permission.Trusted.ToString(), new List<string> { "*" } },
+            { Permission.Moderator.ToString(), new List<string> { "*" } },
+            { Permission.Administrator.ToString(), new List<string> { "*" } },
+            { Permission.SeniorAdmin.ToString(), new List<string> { "*" } },
+            { Permission.Owner.ToString(), new List<string> { "*" } },
+            { Permission.Console.ToString(), new List<string> { "*" } }
         };
 
         [ConfigurationIgnore]

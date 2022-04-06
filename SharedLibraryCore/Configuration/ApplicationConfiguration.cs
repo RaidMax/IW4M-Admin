@@ -85,7 +85,7 @@ namespace SharedLibraryCore.Configuration
         public bool EnableWebfrontConnectionWhitelist { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_WHITELIST_LIST")]
-        public string[] WebfrontConnectionWhitelist { get; set; } = new string[0];
+        public string[] WebfrontConnectionWhitelist { get; set; } = Array.Empty<string>();
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         [ConfigurationLinked("CustomLocale")]
@@ -122,13 +122,13 @@ namespace SharedLibraryCore.Configuration
         public int AutoMessagePeriod { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGES")]
-        public string[] AutoMessages { get; set; } = new string[0];
+        public string[] AutoMessages { get; set; } = Array.Empty<string>();
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_GLOBAL_RULES")]
-        public string[] GlobalRules { get; set; } = new string[0];
+        public string[] GlobalRules { get; set; } = Array.Empty<string>();
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_DISALLOWED_NAMES")]
-        public string[] DisallowedClientNames { get; set; } = new string[0];
+        public string[] DisallowedClientNames { get; set; } = Array.Empty<string>();
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAP_CHANGE_DELAY")]
         public int MapChangeDelaySeconds { get; set; } = 5;
@@ -156,7 +156,7 @@ namespace SharedLibraryCore.Configuration
 
         [ConfigurationIgnore]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]
-        public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new Dictionary<string, string>
+        public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new()
             { { "afk", "Away from keyboard" }, { "ci", "Connection interrupted. Reconnect" } };
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY")]
@@ -198,7 +198,7 @@ namespace SharedLibraryCore.Configuration
             : ManualWebfrontUrl;
 
         [ConfigurationIgnore] public bool IgnoreServerConnectionLost { get; set; }
-        [ConfigurationIgnore] public Uri MasterUrl { get; set; } = new Uri("http://api.raidmax.org:5000");
+        [ConfigurationIgnore] public Uri MasterUrl { get; set; } = new("http://api.raidmax.org:5000");
 
         public IBaseConfiguration Generate()
         {
@@ -207,22 +207,7 @@ namespace SharedLibraryCore.Configuration
 
             EnableWebFront = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
             EnableMultipleOwners = loc["SETUP_ENABLE_MULTIOWN"].PromptBool();
-            EnableSteppedHierarchy = loc["SETUP_ENABLE_STEPPEDPRIV"].PromptBool();
-            EnableCustomSayName = loc["SETUP_ENABLE_CUSTOMSAY"].PromptBool();
-
-            var useCustomParserEncoding = loc["SETUP_USE_CUSTOMENCODING"].PromptBool();
-            if (useCustomParserEncoding)
-            {
-                CustomParserEncoding = loc["SETUP_ENCODING_STRING"].PromptString();
-            }
-
             WebfrontBindUrl = "http://0.0.0.0:1624";
-
-            if (EnableCustomSayName)
-            {
-                CustomSayName = loc["SETUP_SAY_NAME"].PromptString();
-            }
-
             EnableSocialLink = loc["SETUP_DISPLAY_SOCIAL"].PromptBool();
 
             if (EnableSocialLink)

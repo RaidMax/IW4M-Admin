@@ -9,7 +9,6 @@ namespace IW4MAdmin.Plugins.Login
 
         public IBaseConfiguration Generate()
         {
-            RequirePrivilegedClientLogin = Utilities.PromptBool("Require privileged client login");
             return this;
         }
 

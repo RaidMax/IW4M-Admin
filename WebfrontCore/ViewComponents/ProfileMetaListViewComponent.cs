@@ -26,9 +26,12 @@ namespace WebfrontCore.ViewComponents
             _appConfig = appConfig;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(int clientId, int count, int offset, DateTime? startAt, MetaType? metaType, CancellationToken token)
+        public async Task<IViewComponentResult> InvokeAsync(int clientId, int count, int offset, DateTime? startAt,
+            MetaType? metaType, CancellationToken token)
         {
-            var level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission), UserClaimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "User");
+            var level = (EFClient.Permission)Enum.Parse(typeof(EFClient.Permission),
+                UserClaimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ??
+                EFClient.Permission.User.ToString());
 
             var request = new ClientPaginationRequest
             {
@@ -39,8 +42,13 @@ namespace WebfrontCore.ViewComponents
             };
 
             var meta = await GetClientMeta(_metaService, metaType, level, request, token);
-            ViewBag.Localization = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+            ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
 
+            if (!meta.Any())
+            {
+                return Content(string.Empty);
+            }
+            
             return View("_List", meta);
         }
 
@@ -53,7 +61,7 @@ namespace WebfrontCore.ViewComponents
             {
                 permissionSet = new List<string>();
             }
-            
+
             if (metaType is null or MetaType.All)
             {
                 meta = await metaService.GetRuntimeMeta(request, token);
@@ -65,8 +73,11 @@ namespace WebfrontCore.ViewComponents
                 {
                     MetaType.Information => await metaService.GetRuntimeMeta<InformationResponse>(request,
                         metaType.Value, token),
-                    MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate, WebfrontPermission.Read) ? await metaService.GetRuntimeMeta<UpdatedAliasResponse>(request,
-                        metaType.Value, token) : new List<IClientMeta>(),
+                    MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate,
+                        WebfrontPermission.Read)
+                        ? await metaService.GetRuntimeMeta<UpdatedAliasResponse>(request,
+                            metaType.Value, token)
+                        : new List<IClientMeta>(),
                     MetaType.ChatMessage => await metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value,
                         token),
                     MetaType.Penalized => await metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request,
@@ -83,7 +94,7 @@ namespace WebfrontCore.ViewComponents
 
             if (level < EFClient.Permission.Trusted)
             {
-                meta = meta.Where(_meta => !_meta.IsSensitive);
+                meta = meta?.Where(_meta => !_meta.IsSensitive);
             }
 
             return meta;

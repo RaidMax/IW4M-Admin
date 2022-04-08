@@ -907,9 +907,8 @@ namespace IW4MAdmin
             }
         }
 
-        DateTime start = DateTime.Now;
-        DateTime playerCountStart = DateTime.Now;
-        DateTime lastCount = DateTime.Now;
+        private DateTime _lastMessageSent = DateTime.Now;
+        private DateTime _lastPlayerCount = DateTime.Now;
 
         public override async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
         {
@@ -923,14 +922,16 @@ namespace IW4MAdmin
 
                 try
                 {
-                    if (Manager.GetApplicationSettings().Configuration().RConPollRate == int.MaxValue && Utilities.IsDevelopment)
+                    if (Manager.GetApplicationSettings().Configuration().RConPollRate == int.MaxValue &&
+                        Utilities.IsDevelopment)
                     {
                         return true;
                     }
 
                     var polledClients = await PollPlayersAsync();
 
-                    foreach (var disconnectingClient in polledClients[1].Where(_client => !_client.IsZombieClient /* ignores "fake" zombie clients */))
+                    foreach (var disconnectingClient in polledClients[1]
+                                 .Where(client => !client.IsZombieClient /* ignores "fake" zombie clients */))
                     {
                         disconnectingClient.CurrentServer = this;
                         var e = new GameEvent()
@@ -946,16 +947,11 @@ namespace IW4MAdmin
                     }
 
                     // this are our new connecting clients
-                    foreach (var client in polledClients[0])
+                    foreach (var client in polledClients[0].Where(client =>
+                                 !string.IsNullOrEmpty(client.Name) && (client.Ping != 999 || client.IsBot)))
                     {
-                        // note: this prevents players in ZMBI state from being registered with no name
-                        if (string.IsNullOrEmpty(client.Name) || (client.Ping == 999 && !client.IsBot))
-                        {
-                            continue;
-                        }
-
                         client.CurrentServer = this;
-                        var e = new GameEvent()
+                        var e = new GameEvent
                         {
                             Type = GameEvent.EventType.PreConnect,
                             Origin = client,
@@ -973,19 +969,19 @@ namespace IW4MAdmin
                     foreach (var client in polledClients[2])
                     {
                         client.CurrentServer = this;
-                        var e = new GameEvent()
+                        var gameEvent = new GameEvent
                         {
                             Type = GameEvent.EventType.Update,
                             Origin = client,
                             Owner = this
                         };
 
-                        Manager.AddEvent(e);
+                        Manager.AddEvent(gameEvent);
                     }
 
                     if (Throttled)
                     {
-                        var _event = new GameEvent()
+                        var gameEvent = new GameEvent
                         {
                             Type = GameEvent.EventType.ConnectionRestored,
                             Owner = this,
@@ -993,54 +989,52 @@ namespace IW4MAdmin
                             Target = Utilities.IW4MAdminClient(this)
                         };
 
-                        Manager.AddEvent(_event);
+                        Manager.AddEvent(gameEvent);
                     }
 
                     LastPoll = DateTime.Now;
                 }
 
-                catch (NetworkException e)
+                catch (NetworkException ex)
                 {
-                    if (!Throttled)
+                    if (Throttled)
                     {
-                        var gameEvent = new GameEvent
-                        {
-                            Type = GameEvent.EventType.ConnectionLost,
-                            Owner = this,
-                            Origin = Utilities.IW4MAdminClient(this),
-                            Target = Utilities.IW4MAdminClient(this),
-                            Extra = e,
-                            Data = ConnectionErrors.ToString()
-                        };
-
-                        Manager.AddEvent(gameEvent);
+                        return true;
                     }
 
-                    RunServerCollection();
+                    var gameEvent = new GameEvent
+                    {
+                        Type = GameEvent.EventType.ConnectionLost,
+                        Owner = this,
+                        Origin = Utilities.IW4MAdminClient(this),
+                        Target = Utilities.IW4MAdminClient(this),
+                        Extra = ex,
+                        Data = ConnectionErrors.ToString()
+                    };
 
+                    Manager.AddEvent(gameEvent);
+                    return true;
+                }
+                finally
+                {
+                    RunServerCollection();
+                }
+
+                if (DateTime.Now - _lastMessageSent <=
+                    TimeSpan.FromSeconds(Manager.GetApplicationSettings().Configuration().AutoMessagePeriod) ||
+                    BroadcastMessages.Count <= 0 || ClientNum <= 0)
+                {
                     return true;
                 }
 
-                LastMessage = DateTime.Now - start;
-                lastCount = DateTime.Now;
-
-                RunServerCollection();
-
                 // send out broadcast messages
-                if (LastMessage.TotalSeconds > Manager.GetApplicationSettings().Configuration().AutoMessagePeriod
-                    && BroadcastMessages.Count > 0
-                    && ClientNum > 0)
-                {
-                    string[] messages = (await this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage])).Split(Environment.NewLine);
+                var messages =
+                    (await this.ProcessMessageToken(Manager.GetMessageTokens(), BroadcastMessages[NextMessage])).Split(
+                        Environment.NewLine);
+                await BroadcastAsync(messages, token: Manager.CancellationToken);
 
-                    foreach (string message in messages)
-                    {
-                        Broadcast(message);
-                    }
-
-                    NextMessage = NextMessage == (BroadcastMessages.Count - 1) ? 0 : NextMessage + 1;
-                    start = DateTime.Now;
-                }
+                NextMessage = NextMessage == BroadcastMessages.Count - 1 ? 0 : NextMessage + 1;
+                _lastMessageSent = DateTime.Now;
 
                 return true;
             }
@@ -1052,21 +1046,23 @@ namespace IW4MAdmin
             }
 
             // this one is ok
-            catch (Exception e) when(e is ServerException || e is RConException)
+            catch (Exception e) when (e is ServerException || e is RConException)
             {
-                using(LogContext.PushProperty("Server", ToString()))
+                using (LogContext.PushProperty("Server", ToString()))
                 {
                     ServerLogger.LogWarning(e, "Undesirable exception occured during processing updates");
                 }
+
                 return false;
             }
 
             catch (Exception e)
             {
-                using(LogContext.PushProperty("Server", ToString()))
+                using (LogContext.PushProperty("Server", ToString()))
                 {
                     ServerLogger.LogError(e, "Unexpected exception occured during processing updates");
                 }
+
                 Console.WriteLine(loc["SERVER_ERROR_EXCEPTION"].FormatExt($"[{IP}:{Port}]"));
                 return false;
             }
@@ -1076,7 +1072,7 @@ namespace IW4MAdmin
         {
             var appConfig = _serviceProvider.GetService<ApplicationConfiguration>();
            
-            if (lastCount - playerCountStart < appConfig?.ServerDataCollectionInterval)
+            if (DateTime.Now - _lastPlayerCount < appConfig?.ServerDataCollectionInterval)
             {
                 return;
             }
@@ -1097,7 +1093,7 @@ namespace IW4MAdmin
                 Map = CurrentMap.Name
             });
             
-            playerCountStart = DateTime.Now;
+            _lastPlayerCount = DateTime.Now;
         }
 
         public async Task Initialize()

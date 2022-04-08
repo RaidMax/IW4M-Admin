@@ -154,6 +154,7 @@ namespace SharedLibraryCore
             }
 
             str = Regex.Replace(str, @"(\^+((?![a-z]|[A-Z]).){0,1})+", "");
+            str = Regex.Replace(str, @"\(Color::(.{1,16})\)", "");
             return str;
         }
 

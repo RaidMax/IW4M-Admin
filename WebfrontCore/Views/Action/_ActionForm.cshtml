@@ -21,7 +21,7 @@
                     <select name="@input.Name" class="form-control" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
                         @foreach (var item in input.Values)
                         {
-                            <option value="@item.Key">@item.Value</option>
+                            <option value="@item.Key"><color-code value="@item.Value"></color-code></option>
                         }
                     </select>
                 }

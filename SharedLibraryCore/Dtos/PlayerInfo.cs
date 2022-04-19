@@ -15,8 +15,8 @@ namespace SharedLibraryCore.Dtos
         public int LevelInt { get; set; }
         public string IPAddress { get; set; }
         public long NetworkId { get; set; }
-        public List<string> Aliases { get; set; }
-        public List<string> IPs { get; set; }
+        public List<(string, DateTime)> Aliases { get; set; }
+        public List<(string, DateTime)> IPs { get; set; }
         public bool HasActivePenalty { get; set; }
         public string ActivePenaltyType { get; set; }
         public bool Authenticated { get; set; }
@@ -29,5 +29,8 @@ namespace SharedLibraryCore.Dtos
         public IDictionary<int, long> LinkedAccounts { get; set; }
         public MetaType? MetaFilterType { get; set; }
         public double? ZScore { get; set; }
+        public string ConnectProtocolUrl { get;set; }
+        public string CurrentServerName { get; set; }
+        public IGeoLocationResult GeoLocationInfo { get; set; }
     }
 }

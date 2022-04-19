@@ -1,10 +1,8 @@
-﻿// Configure bundling and minification for the project.
-// More info at https://go.microsoft.com/fwlink/?LinkId=808241
-[
+﻿[
   {
     "outputFileName": "wwwroot/css/global.min.css",
-    // An array of relative input file paths. Globbing patterns supported
     "inputFiles": [
+      "wwwroot/lib/halfmoon/css/halfmoon-variables.min.css",
       "wwwroot/css/global.css",
       "wwwroot/lib/chart.js/dist/Chart.min.css"
     ]
@@ -13,12 +11,10 @@
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
       "wwwroot/lib/jquery/dist/jquery.js",
-      "wwwroot/lib/popper.js/dist/umd/popper.js",
       "wwwroot/lib/moment.js/moment.min.js",
       "wwwroot/lib/moment-timezone/moment-timezone.min.js",
-      "wwwroot/lib/bootstrap/dist/js/bootstrap.bundle.min.js",
-      "wwwroot/lib/canvas.js/canvasjs.js",
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
+      "wwwroot/lib/halfmoon/js/halfmoon.min.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",
@@ -32,12 +28,10 @@
       "wwwroot/js/advanced_stats.js",
       "wwwroot/js/liveradar.js"
     ],
-    // Optionally specify minification options
     "minify": {
       "enabled": true,
       "renameLocals": true
     },
-    // Optinally generate .map file
     "sourceMap": false
   }
 ]

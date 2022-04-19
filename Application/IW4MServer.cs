@@ -508,7 +508,8 @@ namespace IW4MAdmin
                     {
                         Origin = E.Origin,
                         Target = E.Target,
-                        Reason = E.Data
+                        Reason = E.Data,
+                        ReportedOn = DateTime.UtcNow
                     });
 
                     var newReport = new EFPenalty()
@@ -645,7 +646,7 @@ namespace IW4MAdmin
                             }
                         }
 
-                        ChatHistory.Add(new ChatInfo()
+                        ChatHistory.Add(new ChatInfo
                         {
                             Name = E.Origin.Name,
                             Message = message,

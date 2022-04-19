@@ -42,15 +42,20 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         }
 
         [HttpGet]
-        public IActionResult TopPlayersAsync()
+        public IActionResult TopPlayers(string serverId = null)
         {
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_STATS_INDEX_TITLE"];
             ViewBag.Description = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_STATS_INDEX_DESC"];
-            ViewBag.Servers = _manager.GetServers()
-                .Select(_server => new ServerInfo() {Name = _server.Hostname, ID = _server.EndPoint});
             ViewBag.Localization = _translationLookup;
+            ViewBag.SelectedServerId = serverId;
 
-            return View("~/Views/Client/Statistics/Index.cshtml");
+            return View("~/Views/Client/Statistics/Index.cshtml", _manager.GetServers()
+                .Select(server => new ServerInfo
+                {
+                    Name = server.Hostname,
+                    IPAddress = server.IP,
+                    Port = server.Port
+                }));
         }
 
         [HttpGet]
@@ -169,7 +174,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 
             var penalty = await context.Penalties
                 .Select(_penalty => new
-                    {_penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense})
+                    { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
                 .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
 
             if (penalty == null)

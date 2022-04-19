@@ -1,16 +1,54 @@
 ﻿@model IEnumerable<SharedLibraryCore.Dtos.ServerInfo>
 
-<div class="row justify-content-center">
-    <div id="console" class="col-md-8">
-        @Html.DropDownList("Server", Model.Select(s => new SelectListItem() { Text = SharedLibraryCore.Utilities.StripColors(s.Name), Value = s.ID.ToString() }).ToList(), new { @class = "form-control bg-dark text-light", id = "console_server_select" })
-        <div id="console_command_response" class="bg-dark p-3">
+<div class="content mt-0">
+    <h2 class="content-title mt-20">Web Console</h2>
+
+    <div id="console" class="card m-0 mb-20">
+        <div id="console_command_response" class="bg-dark-dm bg-light-lm p-10 code rounded">
+            <pre style="font-size: 8px;">                                /(((((((*                           
+                      ./((((((((((((((((,                            
+            .*/(((((((((((((((((((((((((.                            
+    *((((((((((((((((((((((((((((((((((                              
+ ./(((((((((((((((((((((((((((((((((((/ ,**,                         
+    ./(((((((((((((((((((((((((((((((/  ,******,                     
+       ,(((((((((((((((((((((((((((((* ********//**.                 
+         */(((((((((((((((((((((((((* ***************                
+      ,***  ,(((((((((((((((((((((((,  ,***************.             
+     ,****/**,*/(((((((((((((((((((.       *************,            
+    ************,,((((((((((((((((*.         ,************           
+  .***********,     *(((((((((((((            .*//*********          
+ .,**********,        ,(((((((((/               ***********          
+ ,**********,           *(((((((/               ,**********          
+ ,/*********,             .*(((*                 **********,         
+ ,/*********,                .*.                 ***********.        
+ ,**********,                                   ***********          
+  .***********                                  ***********          
+  .************                               .***********           
+    ************.                           .************,           
+     ,*************                      .**************,            
+      .*****************              *****************.             
+         *******************************************,                
+           .*//***********************************.                  
+              ********************************,.                     
+                 .************************,                          
+                            ,.**,           
+            </pre>
         </div>
-        <div class="form-row">
-            <div class="col-12  col-sm-9 pr-1 pr-sm-0">
-                <input id="console_command_value" class="form-control m-0 bg-dark text-light" type="text" />
+    </div>
+
+    <div class="card m-0 rounded">
+        <div class="input-group mb-10">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Server</span>
             </div>
-            <div class="col pl-1 pl-sm-0">
-                <button id="console_command_button" class="btn btn-primary btn-block m-0">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONSOLE_EXECUTE"]</button>
+            @Html.DropDownList("Server", Model.Select(s => new SelectListItem { Text = s.Name.StripColors(), Value = s.ID.ToString() }).ToList(), new { @class = "form-control", id = "console_server_select" })
+        </div>
+        <div class="input-group">
+            <input id="console_command_value" class="form-control" placeholder="Enter command..." type="text" required="required"/>
+            <div class="input-group-append">
+                <button id="console_command_button" class="btn btn-primary">
+                    @Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONSOLE_EXECUTE"]
+                </button>
             </div>
         </div>
     </div>

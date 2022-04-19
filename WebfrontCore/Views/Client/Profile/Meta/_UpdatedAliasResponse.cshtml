@@ -1,6 +1,11 @@
 ﻿@using SharedLibraryCore.Dtos.Meta.Responses
 @model UpdatedAliasResponse
 
+@if (TempData["ShowMetaHeader"] as bool? ?? false)
+{
+    <partial name="./_MetaHeader.cshtml" for="@Model.When"/>
+}
+
 @foreach (var token in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_META_CONNECT_ALIAS"))
 {
     if (token.IsInterpolation)
@@ -8,12 +13,14 @@
         switch (token.MatchValue)
         {
             case "action":
-                <span class="text-warning">@token.TranslationValue</span>
+                <span class="text-secondary">@token.TranslationValue</span>
                 break;
             case "alias":
-                <span class="text-white">
+                <span class="text-light-dm text-dark-lm">
                     <color-code value="@Model.Name"></color-code>
-                    [@Model.IPAddress]
+                    <has-permission entity="ClientIPAddress" required-permission="Read">
+                        [@Model.IPAddress]
+                    </has-permission>
                 </span>
                 break;
         }

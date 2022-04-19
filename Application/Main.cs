@@ -447,6 +447,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
                 .AddSingleton<IEventPublisher, EventPublisher>()
+                .AddSingleton<IGeoLocationService>(new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);

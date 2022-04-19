@@ -24,20 +24,22 @@ namespace LiveRadar.Web.Controllers
 
         [HttpGet]
         [Route("Radar/{serverId}")]
-        public IActionResult Index(long? serverId = null)
+        public IActionResult Index(string serverId = null)
         {
-            ViewBag.IsFluid = true;
-            ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
-            ViewBag.ActiveServerId = serverId ?? _manager.GetServers().FirstOrDefault()?.EndPoint;
-            ViewBag.Servers = _manager.GetServers()
-                .Where(_server => _server.GameName == Server.Game.IW4)
-                .Select(_server => new ServerInfo()
+            var servers =  _manager.GetServers()
+                .Where(server => server.GameName == Server.Game.IW4)
+                .Select(server => new ServerInfo
                 {
-                    Name = _server.Hostname,
-                    ID = _server.EndPoint
+                    Name = server.Hostname,
+                    IPAddress = server.IP,
+                    Port = server.Port
                 });
+            
+            ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
+            ViewBag.SelectedServerId = string.IsNullOrEmpty(serverId) ? servers.FirstOrDefault()?.Endpoint : serverId;
 
-            return View();
+            // ReSharper disable once Mvc.ViewNotResolved
+            return View("~/Views/Plugins/LiveRadar/Radar/Index.cshtml", servers);
         }
 
         [HttpGet]

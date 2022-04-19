@@ -1,24 +1,31 @@
 ﻿@model Dictionary<SharedLibraryCore.Database.Models.EFClient.Permission, IList<SharedLibraryCore.Dtos.ClientInfo>>
+<div class="content mt-0">
+    <h4 class="content-title mt-20">@ViewBag.Title</h4>
 
-<h4 class="pb-3 text-center ">@ViewBag.Title</h4>
-
-<div class="row border-bottom">
-    @{
-        foreach (var key in Model.Keys)
-        {
-            <div class="col-12 bg-primary pt-2 pb-2">
-                @Utilities.ToLocalizedLevelName(key)
-            </div>
-
-            <div class="col-12 bg-dark pt-2 pb-2">
-                @foreach (var client in Model[key])
-                {
-                    <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
-                        <color-code value="@client.Name"></color-code>
-                    </a>
-                    <br />
-                }
-            </div>
-        }
+    @foreach (var key in Model.Keys)
+    {
+        <table class="table mb-20">
+            <thead>
+            <tr class="level-bgcolor-@((int)key)">
+                <th class="text-light">@key.ToLocalizedLevelName()</th>
+                <th class="text-right font-weight-bold">Last Connected</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var client in Model[key].OrderByDescending(client => client.LastConnection))
+            {
+                <tr class="bg-dark-dm bg-light-lm">
+                    <td>
+                        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId">
+                            <color-code value="@client.Name"></color-code>
+                        </a>
+                    </td>
+                    <td class="text-right">
+                        @client.LastConnection.HumanizeForCurrentCulture()
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
     }
 </div>

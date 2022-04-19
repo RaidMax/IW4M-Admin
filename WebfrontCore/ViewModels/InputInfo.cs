@@ -14,5 +14,6 @@ namespace WebfrontCore.ViewModels
         public string Value { get; set; }
         public Dictionary<string, string> Values { get; set; } 
         public bool Checked { get; set; }
+        public bool Required { get; set; }
     }
 }

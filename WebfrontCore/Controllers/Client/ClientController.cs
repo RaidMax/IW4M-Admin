@@ -22,14 +22,22 @@ namespace WebfrontCore.Controllers
     {
         private readonly IMetaServiceV2 _metaService;
         private readonly StatsConfiguration _config;
+        private readonly IGeoLocationService _geoLocationService;
 
-        public ClientController(IManager manager, IMetaServiceV2 metaService, StatsConfiguration config) : base(manager)
+        public ClientController(IManager manager, IMetaServiceV2 metaService, StatsConfiguration config,
+            IGeoLocationService geoLocationService) : base(manager)
         {
             _metaService = metaService;
             _config = config;
+            _geoLocationService = geoLocationService;
         }
 
-        public async Task<IActionResult> ProfileAsync(int id, MetaType? metaFilterType, CancellationToken token = default)
+        [Obsolete]
+        public IActionResult ProfileAsync(int id, MetaType? metaFilterType,
+            CancellationToken token = default) => RedirectToAction("Profile", "Client", new
+            { id, metaFilterType, token });
+
+        public async Task<IActionResult> Profile(int id, MetaType? metaFilterType, CancellationToken token = default)
         {
             var client = await Manager.GetClientService().Get(id);
 
@@ -43,7 +51,8 @@ namespace WebfrontCore.Controllers
 
             var persistentMetaTask = new[]
             {
-                _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, client.ClientId, token),
+                _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, client.ClientId,
+                    token),
                 _metaService.GetPersistentMeta("GravatarEmail", client.ClientId, token)
             };
 
@@ -74,6 +83,7 @@ namespace WebfrontCore.Controllers
             }
 
             displayLevel = string.IsNullOrEmpty(client.Tag) ? displayLevel : $"{displayLevel} ({client.Tag})";
+            var ingameClient = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId);
 
             var clientDto = new PlayerInfo
             {
@@ -81,29 +91,38 @@ namespace WebfrontCore.Controllers
                 Level = displayLevel,
                 LevelInt = displayLevelInt,
                 ClientId = client.ClientId,
-                IPAddress = PermissionsSet.HasPermission(WebfrontEntity.IPAddress, WebfrontPermission.Read) ? client.IPAddressString : null,
+                IPAddress = PermissionsSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read)
+                    ? client.IPAddressString
+                    : null,
                 NetworkId = client.NetworkId,
                 Meta = new List<InformationResponse>(),
                 Aliases = client.AliasLink.Children
-                    .Select(_alias => _alias.Name)
-                    .GroupBy(_alias => _alias.StripColors())
+                    .Select(alias => (alias.Name, alias.DateAdded))
+                    .GroupBy(alias => alias.Name.StripColors())
                     // we want the longest "duplicate" name
-                    .Select(_grp => _grp.OrderByDescending(_name => _name.Length).First())
+                    .Select(grp => grp.OrderByDescending(item => item.Name.Length).First())
                     .Distinct()
-                    .OrderBy(a => a)
                     .ToList(),
-                IPs = PermissionsSet.HasPermission(WebfrontEntity.IPAddress, WebfrontPermission.Read) ? client.AliasLink.Children
-                    .Where(i => i.IPAddress != null)
-                    .OrderByDescending(i => i.DateAdded)
-                    .Select(i => i.IPAddress.ConvertIPtoString())
-                    .Prepend(client.CurrentAlias.IPAddress.ConvertIPtoString())
-                    .Distinct()
-                    .ToList() : new List<string>(),
-                HasActivePenalty = activePenalties.Any(_penalty => _penalty.Type != EFPenalty.PenaltyType.Flag),
-                Online = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId) != null,
+                IPs = PermissionsSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read)
+                    ? client.AliasLink.Children
+                        .Select(alias => (alias.IPAddress.ConvertIPtoString(), alias.DateAdded))
+                        .GroupBy(alias => alias.Item1)
+                        .Select(grp => grp.OrderByDescending(item => item.DateAdded).First())
+                        .Distinct()
+                        .ToList()
+                    : new List<(string, DateTime)>(),
+                HasActivePenalty = activePenalties.Any(penalty => penalty.Type != EFPenalty.PenaltyType.Flag),
+                Online = ingameClient != null,
                 TimeOnline = (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture(),
                 LinkedAccounts = client.LinkedAccounts,
-                MetaFilterType = metaFilterType
+                MetaFilterType = metaFilterType,
+                ConnectProtocolUrl = ingameClient?.CurrentServer.EventParser.URLProtocolFormat.FormatExt(
+                    ingameClient.CurrentServer.ResolvedIpEndPoint.Address.IsInternal()
+                        ? Program.Manager.ExternalIPAddress
+                        : ingameClient.CurrentServer.IP,
+                    ingameClient.CurrentServer.Port),
+                CurrentServerName = ingameClient?.CurrentServer?.Hostname,
+                GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString)
             };
 
             var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest
@@ -126,9 +145,9 @@ namespace WebfrontCore.Controllers
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.IsSensitive));
 
             var strippedName = clientDto.Name.StripColors();
-            ViewBag.Title = strippedName.Substring(strippedName.Length - 1).ToLower()[0] == 's' ?
-                strippedName + "'" :
-                strippedName + "'s";
+            ViewBag.Title = strippedName.Substring(strippedName.Length - 1).ToLower()[0] == 's'
+                ? strippedName + "'"
+                : strippedName + "'s";
             ViewBag.Title += " " + Localization["WEBFRONT_CLIENT_PROFILE_TITLE"];
             ViewBag.Description = $"Client information for {strippedName}";
             ViewBag.Keywords = $"IW4MAdmin, client, profile, {strippedName}";
@@ -137,13 +156,13 @@ namespace WebfrontCore.Controllers
             return View("Profile/Index", clientDto);
         }
 
-        public async Task<IActionResult> PrivilegedAsync()
+        public async Task<IActionResult> Privileged()
         {
             if (Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy && !Authorized)
             {
                 return RedirectToAction("Index", "Home");
             }
-            
+
             var admins = (await Manager.GetClientService().GetPrivilegedClients())
                 .OrderByDescending(_client => _client.Level)
                 .ThenBy(_client => _client.Name);
@@ -160,7 +179,8 @@ namespace WebfrontCore.Controllers
                 adminsDict[admin.Level].Add(new ClientInfo()
                 {
                     Name = admin.Name,
-                    ClientId = admin.ClientId
+                    ClientId = admin.ClientId,
+                    LastConnection = admin.LastConnection
                 });
             }
 
@@ -171,7 +191,7 @@ namespace WebfrontCore.Controllers
             return View("Privileged/Index", adminsDict);
         }
 
-        public async Task<IActionResult> FindAsync(string clientName)
+        public async Task<IActionResult> Find(string clientName)
         {
             if (string.IsNullOrWhiteSpace(clientName))
             {
@@ -189,11 +209,13 @@ namespace WebfrontCore.Controllers
                 }
             }
 
-            ViewBag.Title = $"{clientsDto.Count} {Localization["WEBFRONT_CLIENT_SEARCH_MATCHING"]} \"{clientName}\"";
+            ViewBag.SearchTerm = clientName;
+            ViewBag.ResultCount = clientsDto.Count;
             return View("Find/Index", clientsDto);
         }
 
-        public IActionResult Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType, CancellationToken token)
+        public IActionResult Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType,
+            CancellationToken token)
         {
             var request = new ClientPaginationRequest
             {

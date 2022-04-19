@@ -39,7 +39,7 @@ namespace WebfrontCore.Controllers
                 return Unauthorized();
             }
 
-            return View("Index", Manager.GetApplicationSettings().Configuration());
+            return RedirectToAction("Files");
         }
 
         public async Task<IActionResult> Files()

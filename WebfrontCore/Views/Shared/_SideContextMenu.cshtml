@@ -1,0 +1,44 @@
+﻿@model WebfrontCore.ViewModels.SideContextMenuItems
+@{ Layout = null; }
+
+<div class="d-none d-lg-flex col-3 col-xl-2">
+    <div class="content mt-0">
+        <div class="on-this-page-nav pt-0">
+            <div class="title">@Model.MenuTitle</div>
+
+            @foreach (var item in Model.Items)
+            {
+                <a href="@(item.IsLink ? item.Reference : "#actionModal")" class="@(item.IsLink ? "" : "profile-action")" data-action="@(item.IsLink ? "" : item.Reference)">
+                    <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                        <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
+                        <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
+                    </div>
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="contextMenuModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-content">
+                <div class="content-title">@Model.MenuTitle</div>
+                <hr/>
+                @foreach (var item in Model.Items)
+                {
+                    <div class="mt-15 mb-15">
+                        <a href="@(item.IsLink ? item.Reference : "#actionModal")" class="@(item.IsLink ? "" : "profile-action") no-decoration" data-action="@(item.IsLink ? "" : item.Reference)">
+                            <div class="btn btn-block btn-lg @(item.IsActive ? "btn-primary" : "") text-truncate" data-title="@item.Tooltip" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
+                                <span>@item.Title</span>
+                            </div>
+                        </a>
+                    </div>
+                }
+                <hr/>
+                <a href="#" class="btn btn-lg btn-danger btn-block mt-15" role="button">Close</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,84 +1,70 @@
 ﻿@{
     Layout = null;
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+    var loc = Utilities.CurrentLocalization.LocalizationIndex;
+
+    var canSeeLevel = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) && Model.PunisherLevel != 0;
+    var punisherLevelClass =  canSeeLevel ? $"level-color-{(int)Model.PunisherLevel}" : "text-light-dm text-dark-lm";
 }
 
+@using WebfrontCore.Permissions
 @model SharedLibraryCore.Dtos.PenaltyInfo
 
-<tr class="d-table-row d-lg-none bg-dark">
-    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
-    <td>
-        <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.OffenderId" class="link-inverse">
-            <color-code value="@Model.OffenderName"></color-code>
-        </a>
-    </td>
-</tr>
-
-<tr class="d-table-row d-lg-none bg-dark">
-    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
-    <td class="penalties-color-@Model.PenaltyTypeText.ToLower()">
-        @Model.PenaltyType
-    </td>
-</tr>
-
-<tr class="d-table-row d-lg-none bg-dark">
-    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
-    <td class="text-light">
-        <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>
-    </td>
-</tr>
-
-<tr class="d-table-row d-lg-none bg-dark">
-    <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
-    <td>
-        @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", 
-            "Client", 
-            new { id = Model.PunisherId }, 
-            new { @class = !ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy 
-                ? "level-color-0" 
-                : "level-color-" + (int)Model.PunisherLevel })
-    </td>
-</tr>
-
-<tr class="d-table-row d-lg-none bg-dark">
-    <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</th>
-    <td class="text-light mb-2 border-bottom">
-        @{
-            if (Model.Expired)
-            {
-                <span>@Model.TimePunishedString</span>
-            }
-            else
-            {
-                <span>@Model.TimeRemaining</span>
-            }
-        }
-    </td>
-</tr>
-
+<!-- desktop -->
 <tr class="d-none d-lg-table-row">
-    <td>
-        <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.OffenderId" class="link-inverse">
+    <td colspan="20%">
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.OffenderId" class="link-inverse">
             <color-code value="@Model.OffenderName"></color-code>
         </a>
     </td>
-    <td class="penalties-color-@Model.PenaltyTypeText.ToLower()">
+    <td colspan="10%" class="penalties-color-@Model.PenaltyTypeText.ToLower()">
         @Model.PenaltyType
     </td>
-    <td class="text-light w-50">
+    <td colspan="35%">
         <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>
     </td>
-    <td>
-        @Html.ActionLink(SharedLibraryCore.Utilities.StripColors(Model.PunisherName), "ProfileAsync", 
-            "Client", 
-            new { id = Model.PunisherId }, 
-            new { @class = !ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy 
-                ? "level-color-0" 
-                : "level-color-" + (int)Model.PunisherLevel })
+    <td colspan="20%">
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.PunisherId" class="@punisherLevelClass">
+            <color-code value="@Model.PunisherName"></color-code>
+        </a>
     </td>
-    <td class="text-right text-light">
-        @{
-            if (Model.Expired)
+    <td colspan="15%" class="text-right">
+        @if (Model.Expired)
+        {
+            <span>@Model.TimePunishedString</span>
+        }
+        else
+        {
+            <span>@Model.TimeRemaining</span>
+        }
+    </td>
+</tr>
+
+<!-- mobile -->
+<tr class="d-table-row d-lg-none d-flex border-bottom">
+    <td class="bg-primary text-light text-right">
+        <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
+        <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</div>
+        <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</div>
+        <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</div>
+        <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</div>
+    </td>
+    <td class="flex-fill">
+        <div class="mt-5 mb-5">
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.OffenderId" >
+                <color-code value="@Model.OffenderName"></color-code>
+            </a>
+        </div>
+        <div class="mt-5 mb-5 penalties-color-@Model.PenaltyTypeText.ToLower()">
+            @Model.PenaltyType
+        </div>
+        <div class="mt-5 mb-5">
+            <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>
+        </div>
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.PunisherId" class="mt-5 mb-5 @((!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy) || Model.PunisherLevel == 0 ? "text-dark-lm text-light-dm" : "level-color-" + (int)Model.PunisherLevel)">
+            <color-code value="@Model.PunisherName"></color-code>
+        </a>
+        <div class="mt-5 mb-5">
+            @if (Model.Expired)
             {
                 <span>@Model.TimePunishedString</span>
             }
@@ -86,6 +72,6 @@
             {
                 <span>@Model.TimeRemaining</span>
             }
-        }
+        </div>
     </td>
 </tr>

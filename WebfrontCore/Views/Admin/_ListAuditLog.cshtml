@@ -1,99 +1,71 @@
 ﻿@using SharedLibraryCore.Dtos
 @model IEnumerable<AuditInfo>
 @{
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+    var loc = Utilities.CurrentLocalization.LocalizationIndex;
 }
 
 @foreach (var info in Model)
 {
-    <!-- mobile -->
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
-        <td class="text-light">
-            @info.Action
-        </td>
-    </tr>
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
-        <td>
-            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.OriginId" class="link-inverse">
-                <color-code value="@info.OriginName"></color-code>
-            </a>
-        </td>
-    </tr>
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
-        <td>
-            @if (info.TargetId != null)
-            {
-                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.TargetId" class="link-inverse">
-                    <color-code value="@info.TargetName"></color-code>
-                </a>
-            }
-            else
-            {
-                <span>--</span>
-            }
-        </td>
-    </tr>
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@loc["WEBFRONT_ADMIN_AUDIT_LOG_INFO"]</th>
-        <td class="text-light">
-            @info.Data
-        </td>
-    </tr>
-    @*<tr class="d-table-row d-lg-none bg-dark">
-            <th scope="row" class="bg-primary">@loc["WEBFRONT_ADMIN_AUDIT_LOG_PREVIOUS"]</th>
-            <td class="text-light">
-                @info.OldValue
-            </td>
-        </tr>*@
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@loc["WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"]</th>
-        <td class="text-light">
-            @info.NewValue
-        </td>
-    </tr>
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="w-25 bg-primary" style="border-bottom: 1px solid #222">@loc["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</th>
-        <td class="text-light mb-2 border-bottom">
-            @info.When.ToString()
-        </td>
-    </tr>
-
     <!-- desktop -->
-    <tr class="d-none d-lg-table-row">
-        <td class="text-light font-weight-bold">
+    <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
+        <td class="font-weight-bold">
             @info.Action
         </td>
         <td>
-            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.OriginId" class="link-inverse">
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.OriginId">
                 <color-code value="@info.OriginName"></color-code>
             </a>
         </td>
         <td>
             @if (info.TargetId != null)
             {
-                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@info.TargetId" class="link-inverse">
+                <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.TargetId">
                     <color-code value="@info.TargetName"></color-code>
                 </a>
             }
             else
             {
-                <span>--</span>
+                <span>&ndash;</span>
             }
         </td>
-        <td class="text-light">
-            @info.Data
-
-            @*<td class="text-light">
-                    @info.OldValue
-                </td>*@
-        <td class="text-light">
+        <td>
+        @info.Data
+        <td >
             @info.NewValue
         </td>
-        <td class="text-light text-right">
+        <td class="text-right">
             @info.When.ToString()
+        </td>
+    </tr>
+
+    <!-- mobile -->
+    <tr class="d-table-row d-lg-none d-flex bg-dark-dm bg-light-lm">
+        <td class="bg-primary text-light text-right flex-grow-0">
+            <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</div>
+            <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</div>
+            <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
+            <div class="mt-5 mb-5">@loc["WEBFRONT_ADMIN_AUDIT_LOG_INFO"]</div>
+            <div class="mt-5 mb-5">@loc["WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"]</div>
+            <div class="mt-5 mb-5">@loc["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</div>
+        </td>
+        <td>
+            <div class="mt-5 mb-5">@info.Action</div>
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.OriginId" class="link-inverse">
+                <color-code value="@info.OriginName"></color-code>
+            </a>
+            @if (info.TargetId != null)
+            {
+                <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.TargetId" class="mt-5 mb-5">
+                    <color-code value="@info.TargetName"></color-code>
+                </a>
+            }
+            else
+            {
+                <div class="mt-5 mb-5">&ndash;</div>
+            }
+            <div class="mt-5 mb-5"> @info.Data</div>
+            <div class="mt-5 mb-5">@info.NewValue</div>
+            <div class="mt-5 mb-5">@info.When.ToString()</div>
         </td>
     </tr>
 }

@@ -1,43 +1,7 @@
 ﻿$(document).ready(function () {
-    /*
-    Expand alias tab if they have any
-    */
-    $('#profile_aliases_btn').click(function (e) {
-        const aliases = $('#profile_aliases').text().trim();
-        if (aliases && aliases.length !== 0) {
-            $('#profile_aliases').slideToggle(150);
-            $(this).toggleClass('oi-caret-top');
-        }
-    });
-
-    const ipAddresses = $('.ip-lookup-profile');
-    $.each(ipAddresses, function (index, address) {
-        let ip = $(address).data('ip');
-        if (ip.length === 0) {
-            return;
-        }
-        $.get('https://ip2c.org/' + ip, function (result) {
-            const countryCode = result.split(';')[1].toLowerCase();
-            const country = result.split(';')[3];
-
-            if (country === 'Unknown') {
-                return;
-            }
-            
-            $('#ip_lookup_country').text(country);
-            if (countryCode !== 'zz' && countryCode !== '') {
-                $(address).css('background-image', `url('https://flagcdn.com/w80/${countryCode}.png')`);
-            }
-        });
-    });
 
     /* set the end time for initial event query */
     startAt = $('.loader-data-time').last().data('time');
-
-    $('#filter_meta_container_button').click(function () {
-        $('#filter_meta_container').removeClass('d-none').addClass('flex-md-column');
-        $('#additional_meta_filter').removeClass('d-md-none');
-    });
 
     /*
      * load context of chat 

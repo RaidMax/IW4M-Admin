@@ -28,7 +28,7 @@ namespace WebfrontCore.Controllers
                 return NotFound();
             }
 
-            var serverInfo = new ServerInfo()
+            var serverInfo = new ServerInfo
             {
                 Name = s.Hostname,
                 ID = s.EndPoint,
@@ -44,7 +44,7 @@ namespace WebfrontCore.Controllers
                         ClientId = p.ClientId,
                         Level = p.Level.ToLocalizedLevelName(),
                         LevelInt = (int) p.Level,
-                        ZScore = p.GetAdditionalProperty<EFClientStatistics>(IW4MAdmin.Plugins.Stats.Helpers.StatManager
+                        ZScore = p.GetAdditionalProperty<EFClientStatistics>(StatManager
                             .CLIENT_STATS_KEY)?.ZScore
                     }).ToList(),
                 ChatHistory = s.ChatHistory.ToList(),
@@ -55,37 +55,40 @@ namespace WebfrontCore.Controllers
         }
 
         [HttpGet]
-        public ActionResult Scoreboard()
+        public ActionResult Scoreboard(string serverId)
         {
             ViewBag.Title = Localization["WEBFRONT_TITLE_SCOREBOARD"];
+            ViewBag.SelectedServerId = string.IsNullOrEmpty(serverId) ? Manager.GetServers().FirstOrDefault()?.ToString() : serverId;
             
-            return View(ProjectScoreboard(Manager.GetServers(), null, true));
+            return View(ProjectScoreboard(Manager.GetServers(), null, true, false));
         }
 
         [HttpGet("[controller]/{id}/scoreboard")]
-        public ActionResult Scoreboard(long id, [FromQuery]string order = null, [FromQuery] bool down = true)
+        public ActionResult Scoreboard(string id, [FromQuery]string order = null, [FromQuery] bool down = true)
         {
-            var server = Manager.GetServers().FirstOrDefault(srv => srv.EndPoint == id);
+            
+            var server = Manager.GetServers().FirstOrDefault(srv => srv.ToString() == id);
 
             if (server == null)
             {
                 return NotFound();
             }
 
+            ViewBag.SelectedServerId = id;
             return View("_Scoreboard", ProjectScoreboard(new[] {server}, order, down).First());
         }
 
         private static IEnumerable<ScoreboardInfo> ProjectScoreboard(IEnumerable<Server> servers, string order,
-            bool down)
+            bool down, bool includeDetails = true)
         {
-            return servers.Select(server => new ScoreboardInfo
+            return servers.Select((server, index) => new ScoreboardInfo
             {
                 OrderByKey = order,
                 ShouldOrderDescending = down,
                 MapName = server.CurrentMap.ToString(),
                 ServerName = server.Hostname,
-                ServerId = server.EndPoint,
-                ClientInfo = server.GetClientsAsList().Select(client =>
+                ServerId = server.ToString(),
+                ClientInfo = index == 0 && !includeDetails || includeDetails ? server.GetClientsAsList().Select(client =>
                         new
                         {
                             stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY),
@@ -104,7 +107,7 @@ namespace WebfrontCore.Controllers
                         ZScore = clientData.stats?.ZScore == null || clientData.stats.ZScore == 0 ? null : clientData.stats.ZScore,
                         Team = clientData.client.Team
                     })
-                    .ToList()
+                    .ToList() : new List<ClientScoreboardInfo>()
             }).ToList();
         }
     }

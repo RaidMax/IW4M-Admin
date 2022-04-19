@@ -3,7 +3,7 @@
     Layout = null;
 }
 
-<div class="penalty-info-context bg-dark p-2 mt-2 mb-2 border-top border-bottom">
+<div class="penalty-info-context bg-dark-dm bg-light-lm p-20 mt-5 mb-5 rounded-top rounded-bottom border-top border-bottom">
     @foreach (var snapshot in Model)
     {
         <!-- this is not ideal, but I didn't want to manually write out all the properties-->
@@ -15,9 +15,9 @@
                 continue;
             }
 
-            <span class="text-white">@prop.Name </span>
+            <span class="text-light-dm text-dark-lm">@prop.Name </span>
             <span>&mdash; @prop.GetValue(snapshot)?.ToString()?.StripColors()</span><br/>
         }
-        <div class="w-100 mt-1 mb-1 border-bottom"></div>
+        <hr class="mt-10 mb-10"/>
     }
 </div>

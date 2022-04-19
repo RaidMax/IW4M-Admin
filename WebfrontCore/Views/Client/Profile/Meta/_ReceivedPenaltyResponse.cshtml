@@ -2,72 +2,79 @@
 @model ReceivedPenaltyResponse
 
 @{
-    string localizationKey = $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{Model.PenaltyType.ToString().ToUpper()}_V2";
+    var localizationKey = $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{Model.PenaltyType.ToString().ToUpper()}_V2";
 }
 
-<div class="d-inline">
-    @foreach (var match in Utilities.SplitTranslationTokens(localizationKey))
+<has-permission entity="ClientLevel" required-permission="Read">
+    @if (TempData["ShowMetaHeader"] as bool? ?? false)
     {
-        if (match.IsInterpolation)
-        {
-            if (match.MatchValue == "action")
-            {
-                <span class="penalties-color-@Model.PenaltyType.ToString().ToLower()">@match.TranslationValue</span>
-            }
-
-            else if (match.MatchValue == "punisher")
-            {
-                <span class="text-highlight">
-                    <a class="link-inverse" href="@Model.PunisherClientId">
-                        <color-code value="@Model.PunisherName"></color-code>
-                    </a>
-                </span>
-            }
-
-            else if (match.MatchValue == "reason")
-            {
-                <span class="text-white">
-                    @if (ViewBag.Authorized && !string.IsNullOrEmpty(Model.AutomatedOffense) && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Warning && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Kick)
-                    {
-                        <span>@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.AutomatedOffense)</span>
-                        <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed" data-penalty-id="@Model.PenaltyId" style="margin-top: 0.125rem;" title="@ViewBag.Localization["WEBFRONT_CLIENT_META_AC_METRIC"]"></span>
-                    }
-                    else
-                    {
-                        <color-code value="@Model.Offense"></color-code>
-                    }
-
-                </span>
-            }
-
-            else if (match.MatchValue == "time")
-            {
-                <span class="text-white">@Model.LengthText</span>
-            }
-        }
-
-        else
-        {
-            <span>@match.MatchValue</span>
-        }
+        <partial name="./_MetaHeader.cshtml" for="@Model.When"/>
     }
 
-    @if (Model.ClientId != Model.OffenderClientId)
-    {
-        <span>&mdash;</span>
-        @foreach (var helperResult in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_LINKED_ACCOUNT"))
+    <div class="d-inline">
+        @foreach (var match in Utilities.SplitTranslationTokens(localizationKey))
         {
-            if (!helperResult.IsInterpolation)
+            if (match.IsInterpolation)
             {
-                <span>@helperResult.MatchValue</span>
+                if (match.MatchValue == "action")
+                {
+                    <span class="penalties-color-@Model.PenaltyType.ToString().ToLower()">@match.TranslationValue</span>
+                }
+
+                else if (match.MatchValue == "punisher")
+                {
+                    <span class="text-highlight">
+                        <a class="link-inverse" href="@Model.PunisherClientId">
+                            <color-code value="@Model.PunisherName"></color-code>
+                        </a>
+                    </span>
+                }
+
+                else if (match.MatchValue == "reason")
+                {
+                    <span class="text-light-dm text-dark-lm">
+                        @if (ViewBag.Authorized && !string.IsNullOrEmpty(Model.AutomatedOffense) && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Warning && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Kick)
+                        {
+                            <span>@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.AutomatedOffense)</span>
+                            <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed" data-penalty-id="@Model.PenaltyId" style="margin-top: 0.125rem;" title="@ViewBag.Localization["WEBFRONT_CLIENT_META_AC_METRIC"]"></span>
+                        }
+                        else
+                        {
+                            <color-code value="@Model.Offense"></color-code>
+                        }
+
+                    </span>
+                }
+
+                else if (match.MatchValue == "time")
+                {
+                    <span class="text-light-dm text-dark-lm">@Model.LengthText</span>
+                }
             }
 
             else
             {
-                <a class="link-inverse" href="@Model.OffenderClientId">
-                    <color-code value="@Model.OffenderName"></color-code>
-                </a>
+                <span>@match.MatchValue</span>
             }
         }
-    }
-</div>
+
+        @if (Model.ClientId != Model.OffenderClientId)
+        {
+            <span>&mdash;</span>
+            @foreach (var helperResult in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_LINKED_ACCOUNT"))
+            {
+                if (!helperResult.IsInterpolation)
+                {
+                    <span>@helperResult.MatchValue</span>
+                }
+
+                else
+                {
+                    <a class="link-inverse" href="@Model.OffenderClientId">
+                        <color-code value="@Model.OffenderName"></color-code>
+                    </a>
+                }
+            }
+        }
+    </div>
+</has-permission>

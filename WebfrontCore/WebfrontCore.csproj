@@ -34,7 +34,10 @@
   <ItemGroup>
     <None Include="bundleconfig.json" />
     <None Include="compilerconfig.json" />
-    <None Include="wwwroot\css\src\global.css" />
+    <None Remove="dotnet-bundle.exe" />
+    <None Remove="dotnet-bundle.dll" />
+    <None Remove="Newtonsoft.Json.dll" />
+    <None Remove="NUglify.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,6 +48,9 @@
     <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
     <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
+    <Content Remove="wwwroot\css\src\main.css.map" />
+    <Content Remove="dotnet-bundle.runtimeconfig.json" />
+    <Content Remove="dotnet-bundle.deps.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,6 +65,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ref" />
     <Folder Include="wwwroot\lib\canvas.js\" />
   </ItemGroup>
 
@@ -71,10 +78,6 @@
     <Content Update="libman.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Remove="Views\Plugins\**" />
   </ItemGroup>
 
   <ProjectExtensions>

@@ -1,0 +1,69 @@
+﻿@model WebfrontCore.ViewModels.TableInfo
+@{
+    Layout = null;
+}
+
+<h4 class="content-title mb-15 mt-15">
+    <color-code value="@Model.Header"></color-code>
+</h4>
+
+<table class="table">
+    <thead>
+    <tr class="bg-primary text-light d-none d-lg-table-row">
+        @foreach (var column in Model.Columns)
+        {
+            <th>@column.Title</th>
+        }
+    </tr>
+    </thead>
+    <tbody>
+    @{ var start = 0;}
+    @if (!Model.Rows.Any())
+    {
+        <!-- desktop -->
+        <tr class="bg-dark-dm bg-light-lm d-none d-lg-table-row">
+            <td colspan="@Model.Columns.Count">No data...</td>
+        </tr>
+        <!-- mobile -->
+        <tr class="d-flex d-table-row d-lg-none">
+            <td class="bg-primary text-light text-right w-125">
+                &mdash;
+            </td>
+            <td class="bg-dark-dm bg-light-lm flex-fill w-200">No data...</td>
+        </tr>
+    }
+    @foreach (var row in Model.Rows)
+    {
+        <!-- desktop -->
+        <tr class="bg-dark-dm bg-light-lm @(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row-lg": "d-none d-lg-table-row")">
+            @for (var i = 0; i < Model.Columns.Count; i++)
+            {
+                <td>@row.Datum[i]</td>
+            }
+        </tr>
+
+        <!-- mobile -->
+        <tr class="@(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row": "d-flex d-table-row d-lg-none")">
+            <td class="bg-primary text-light text-right w-125">
+                @foreach (var column in Model.Columns)
+                {
+                    <div class="mt-5 mb-5 text-truncate">@column.Title</div>
+                }
+            </td>
+            <td class="bg-dark-dm bg-light-lm flex-fill w-200">
+                @for (var i = 0; i < Model.Columns.Count; i++)
+                {
+                    <div class="mt-5 mb-5 text-truncate" style="min-width:0">@row.Datum[i]</div>
+                }
+            </td>
+        </tr>
+        start++;
+    }
+    </tbody>
+</table>
+@if (Model.InitialRowCount > 0 && Model.Rows.Count > 0)
+{
+    <button class="btn btn-block table-slide" data-toggle="tooltip" data-title="Show @(Model.Rows.Count - Model.InitialRowCount) more rows">
+        <span class="oi oi-chevron-bottom"></span>
+    </button>
+}

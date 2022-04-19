@@ -2,12 +2,20 @@
 @{
     ViewData["Title"] = "Error";
 }
-
-<h4 class="text-danger">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_TITLE"]</h4>
-<h4 class="text-danger">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_DESC"]</h4>
-<strong class="text-warning">
-    @if (Model.HasValue && Model.Value == 404)
-    {
-        @SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_NOTFOUND"]
-    }
-</strong>
+<div class="content">
+    <div class="card m-0">
+        <div class="d-flex">
+            <div class="align-self-center w-100 h-100 mr-20 ui-error-icon"></div>
+            <div>
+                <h2 class="content-title text-primary mb-0">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_TITLE"]</h2>
+                <h2 class="content-title">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_DESC"]</h2>
+                <div class="text-muted">
+                    @if (Model is 404)
+                    {
+                        @Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_NOTFOUND"]
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

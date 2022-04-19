@@ -1,10 +1,7 @@
-﻿@{
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
-}
-<!DOCTYPE html>
+﻿<!DOCTYPE html >
 <html xmlns="http://www.w3.org/1999/html" lang="@ViewBag.Language">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>@ViewBag.Title | IW4MAdmin</title>
     <meta property="og:title" content="@ViewBag.Title | IW4MAdmin">
@@ -16,111 +13,109 @@
     <meta name="keywords" content="@ViewBag.Keywords">
     <link rel="icon" type="image/png" href="~/images/icon.png">
 
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <environment include="Development">
-        <link rel="stylesheet" href="~/dynamic/css/global.css?version=@ViewBag.Version" />
+        <link rel="stylesheet" href="~/lib/halfmoon/css/halfmoon-variables.css"/>
+        <link rel="stylesheet" href="/css/src/main.css"/>
+        @if (ViewBag.Configuration.WebfrontPrimaryColor is not null)
+        {
+            <style>
+                :root {
+                    --blue-color: @ViewBag.Configuration.WebfrontPrimaryColor;
+                }
+            </style>
+        }
+        @if (ViewBag.Configuration.WebfrontSecondaryColor is not null)
+        {
+            <style>
+                :root {
+                    --yellow-color: @ViewBag.Configuration.WebfrontSecondaryColor;
+                }
+            </style>
+        }
     </environment>
     <environment include="Production">
-        <link rel="stylesheet" href="~/dynamic/css/global.min.css?version=@ViewBag.Version" />
+        <link rel="stylesheet" href="~/dynamic/css/global.min.css?version=@ViewBag.Version"/>
     </environment>
     @await RenderSectionAsync("styles", false)
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            @Html.ActionLink((string)ViewBag.CustomBranding, "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "Home", new {area = ""}, new {@class = "nav-link nav-icon oi oi-hard-drive", title=@loc["WEBFRONT_NAV_SERVERS"]})</li>
-                    <li class="nav-item text-center d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_SERVERS"], "Index", "Home", new {area = ""}, new {@class = "nav-link"})</li>
-                    
-                    @if (ViewBag.Configuration.CommunityInformation.IsEnabled)
-                    {
-                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Index", "About", new {area = ""}, new {@class = "nav-link nav-icon oi oi-list-rich", title = loc["WEBFRONT_NAV_ABOUT"]})</li>
-                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_ABOUT"], "Index", "About", new {area = ""}, new {@class = "nav-link"})</li>
-                    }
-                    
-                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "List", "Penalty", new {area = ""}, new {@class = "nav-link nav-icon oi oi-lock-locked", title=loc["WEBFRONT_NAV_PENALTIES"]})</li>
-                    <li class="nav-item text-center d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PENALTIES"], "List", "Penalty", new {area = ""}, new {@class = "nav-link"})</li>
-                    
-                    @if (ViewBag.Authorized)
-                    {
-                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link nav-icon oi oi-people", title=loc["WEBFRONT_NAV_PRIVILEGED"]})</li>
-                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link"})</li>
-                    }
-                    else if (!ViewBag.Authorized && !ViewBag.EnablePrivilegedUserPrivacy)
-                    {
-                        <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link nav-icon oi oi-people", title=loc["WEBFRONT_NAV_PRIVILEGED"]})</li>
-                        <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_PRIVILEGED"], "PrivilegedAsync", "Client", new {area = ""}, new {@class = "nav-link"})</li>
-                    }
-                    
-                    <li class="nav-item d-none d-lg-inline-block d-xl-none">@Html.ActionLink("", "Help", "Home", new {area = ""}, new {@class = "nav-link nav-icon oi oi-question-mark", title=loc["WEBFRONT_NAV_HELP"]})</li>
-                    <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">@Html.ActionLink(loc["WEBFRONT_NAV_HELP"], "Help", "Home", new {area = ""}, new {@class = "nav-link"})</li>
-                    
-                    @foreach (var _page in ViewBag.Pages)
-                    {
-                        if (_page.Location == "/Stats/TopPlayersAsync")
-                        {
-                            <li class="nav-item d-none d-lg-inline-block d-xl-none">
-                                <a class="nav-link nav-icon oi oi-bar-chart" href="@_page.Location" title="@_page.Name"></a>
-                            </li>
-                            <li class="nav-item text-center text-lg-left d-lg-none d-xl-inline-block">
-                                <a class="nav-link" href="@_page.Location">@_page.Name</a>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item text-center text-lg-left">
-                                <a class="nav-link" href="@_page.Location">@_page.Name</a>
-                            </li>
-                        }
-                    }
-                    <li class="nav-item text-center text-lg-left"></li>
-                    @if (!string.IsNullOrEmpty(ViewBag.SocialLink))
-                    {
-                        <li class="nav-item text-center text-lg-left"><a href="@ViewBag.SocialLink" class="nav-link" target="_blank">@ViewBag.SocialTitle</a></li>
-                    }
-                    @if (ViewBag.Authorized)
-                    {
-                        <li class="nav-link dropdown text-center text-lg-left p-0">
-                            <a href="#" class="nav-link oi oi-person dropdown-toggle oi-fix-navbar w-100" id="account_dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
+<body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars" data-set-preferred-mode-onload="true">
 
-                            <div class="dropdown-menu p-0" aria-labelledby="account_dropdown">
-                                <a asp-controller="Console" asp-action="Index" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_CONSOLE"]</a>
-                                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@ViewBag.User.ClientId" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_PROFILE"]</a>
-                                @if (ViewBag.User.Level >= SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
-                                {
-                                    <a asp-controller="Configuration" asp-action="Edit" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_EDIT_CONFIGURATION"]</a>
-                                }
-                                <a asp-controller="Admin" asp-action="AuditLog" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_AUDIT_LOG"]</a>
-                                <a class="dropdown-item bg-dark text-muted text-center text-lg-left profile-action" href="#" data-action="RecentClients" title="@loc["WEBFRONT_ACTION_RECENT_CLIENTS"]">@loc["WEBFRONT_ACTION_RECENT_CLIENTS"]</a>
-                                <a class="dropdown-item bg-dark text-muted text-center text-lg-left profile-action" href="#" data-action="GenerateLoginToken" title="@loc["WEBFRONT_ACTION_TOKEN"]">@loc["WEBFRONT_ACTION_TOKEN"]</a>
-                                <a asp-controller="Account" asp-action="LogoutAsync" class="dropdown-item bg-dark text-muted text-center text-lg-left">@loc["WEBFRONT_NAV_LOGOUT"]</a>
-                            </div>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="nav-item text-center text-md-left">
-                            <a href="#" id="profile_action_login_btn" class="nav-link profile-action oi oi-key oi-fix-navbar w-100" title="Login" data-action="login" aria-hidden="true"></a>
-                        </li>
-                    }
-                </ul>
-                <form class="form-inline text-primary pt-3 pb-3" method="get" action="/Client/FindAsync">
-                    <input id="client_search" name="clientName" class="form-control mr-lg-2 w-100" type="text" placeholder="@loc["WEBFRONT_NAV_SEARCH"]" />
-                </form>
+<!-- Action Modal -->
+<div class="modal" id="actionModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div id="modalLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display:none">
+            <div class="progress-bar-value"></div>
+        </div>
+        <div class="modal-content">
+            <div class="modal-content">
+                <a href="#" class="btn close" role="button" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </a>
+                <div id="actionModalContent">
+                    <h4 class="mt-20">No content available yet...</h4>
+                </div>
             </div>
-        </nav>
-    </header>
+        </div>
+    </div>
+</div>
 
-    <!-- loading icon -->
-    <div class="oi oi-loop-circular layout-loading-icon"></div>
+<div class="page-wrapper with-navbar with-sidebar" data-sidebar-type="overlayed-sm-and-down">
+    <!-- toast notifications -->
+    <div class="sticky-alerts"></div>
+    <!-- top menu bar -->
+    <nav class="navbar">
+        <button id="toggle-sidebar-btn" class="btn btn-action" type="button" onclick="halfmoon.toggleSidebar()">
+            <i class="oi oi-menu" aria-hidden="true"></i>
+        </button>
+
+        <!-- branding -->
+        <a asp-controller="Home" asp-action="Index" class="navbar-brand mr-20 mr-md-0">
+            <div>@ViewBag.CustomBranding</div>
+        </a>
+
+        <!-- client badges -->
+        <div class="d-none d-md-block">
+            <div class="badge-group ml-20" role="group" aria-label="...">
+                <span class="badge badge-primary">@(ViewBag.ClientCount ?? "-")</span>
+                <span class="badge bg-dark-dm bg-light-lm">Clients</span>
+            </div>
+
+            <has-permission entity="PrivilegedClientsPage" required-permission="Read">
+                <div class="badge-group ml-10" role="group" aria-label="...">
+                    <span class="badge badge-success">@(ViewBag.AdminCount ?? "-")</span>
+                    <span class="badge bg-dark-dm bg-light-lm">Admins</span>
+                </div>
+            </has-permission>
+
+            <has-permission entity="AdminMenu" required-permission="Read">
+                <div class="badge-group ml-10" role="group">
+                    <span class="badge badge-danger">@(ViewBag.ReportCount ?? "-")</span>
+                    <span class="badge bg-dark-dm bg-light-lm">Reports</span>
+                </div>
+            </has-permission>
+        </div>
+
+        <div class="d-flex d-lg-none ml-auto">
+            <a href="#contextMenuModal">
+                <button class="btn" type="button">
+                    <i class="oi oi-ellipses"></i>
+                </button>
+            </a>
+        </div>
+
+        @*<div class="d-none d-md-flex ml-auto">
+            <div class="btn oi btn-square btn-action mr-10" data-glyph="moon" onclick="halfmoon.toggleDarkMode()" title="Toggle display mode"></div>
+        </div>*@
+
+        <div class="d-none d-lg-block ml-auto">
+            <partial name="_SearchResourceForm"/>
+        </div>
+    </nav>
+
+    <partial name="_LeftNavBar"/>
 
     <!-- Main Modal -->
-    <div class="modal fade" id="mainModal" tabindex="-1" role="dialog" aria-labelledby="mainModalLabel" aria-hidden="true">
+    <!--<div class="modal fade" id="mainModal" tabindex="-1" role="dialog" aria-labelledby="mainModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content bg-dark">
                 <div class="modal-header">
@@ -133,75 +128,46 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div>-->
     <!-- End Main Modal -->
-    <!-- Action Modal -->
-    <div class="modal fade" id="actionModal" tabindex="-1" role="dialog" aria-labelledby="actionModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="actionModalLabel">IW4MAdmin</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true" class="text-danger">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="modal-message text-danger mb-3"></div>
-                    <div class="modal-body-content"></div>
-                </div>
-                <!--<div class="modal-footer">
-                    <button type="button" class="btn btn-primary">Action</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                </div>-->
-            </div>
+    <div id="target_id">
+        @await RenderSectionAsync("targetid", required: false)
+    </div>
+
+    <!-- End Action Modal -->
+    <div class="container-fluid content-wrapper">
+        <div id="mainLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display: none">
+            <div class="progress-bar-value"></div>
+        </div>
+
+        @RenderBody()
+
+        <div class="content">
+            <div class="badge text-muted">threadsafe.pw</div>
         </div>
     </div>
-    <div id="target_id">
-        @RenderSection("targetid", required: false)
-    </div>
-    <!-- End Action Modal -->
 
-    <div class="@(ViewBag.IsFluid ?? false ? "container-fluid" : "container") pt-4 pb-4 pl-3 pr-3 pr-lg-4 pl-lg-4">
-        @RenderBody()
-        <footer id="footer_text">
-            <div class="d-lg-none d-block text-center pt-4 pb-4">
-                <a href="https://github.com/RaidMax/IW4M-Admin/releases" target="_blank">
-                    @Program.Manager.Version
-                </a>
-                <br />
-                <span class="text-muted">Developed by RaidMax</span>
-            </div>
-            <div class="footer-mobile d-lg-block d-none text-center">
-                <a href="https://github.com/RaidMax/IW4M-Admin/releases" target="_blank">
-                    @Program.Manager.Version
-                </a>
-                <br />
-                <span class="text-muted">Developed by RaidMax</span>
-            </div>
-        </footer>
-    </div>
-    <environment include="Development">
-        <script type="text/javascript" src="~/lib/jquery/dist/jquery.js"></script>
-        <script type="text/javascript" src="~/lib/popper.js/dist/umd/popper.js"></script>
-        <script type="text/javascript" src="~/lib/moment.js/moment.js"></script>
-        <script type="text/javascript" src="~/lib/moment-timezone/moment-timezone.js"></script>
-        <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
-        <script type="text/javascript" src="~/lib/canvas.js/canvasjs.js"></script>
-        <script type="text/javascript" src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
-        <script type="text/javascript" src="~/js/action.js"></script>
-        <script type="text/javascript" src="~/js/search.js"></script>
-    </environment>
-    <environment include="Production">
-        <script type="text/javascript" src="~/js/global.min.js?version=@ViewBag.Version"></script>
-    </environment>
-    <script>
+</div>
+<environment include="Development">
+    <script type="text/javascript" src="~/lib/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="~/lib/moment.js/moment.js"></script>
+    <script type="text/javascript" src="~/lib/moment-timezone/moment-timezone.js"></script>
+    <script type="text/javascript" src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script type="text/javascript" src="~/lib/halfmoon/js/halfmoon.js"></script>
+    <script type="text/javascript" src="~/js/action.js"></script>
+    <script type="text/javascript" src="~/js/search.js"></script>
+</environment>
+<environment include="Production">
+    <script type="text/javascript" src="~/js/global.min.js?version=@ViewBag.Version"></script>
+</environment>
+<script>
         let _localizationTmp = @Html.Raw(Json.Serialize(ViewBag.Localization));
         const _localization = [];
         $.each(_localizationTmp.set, function (key, value) {
             _localization[key] = value;
             });
     </script>
-    @await RenderSectionAsync("scripts", required: false)
-    @Html.Raw(ViewBag.ScriptInjection)
+@await RenderSectionAsync("scripts", required: false)
+@Html.Raw(ViewBag.ScriptInjection)
 </body>
 </html>

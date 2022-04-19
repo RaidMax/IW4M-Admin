@@ -19,7 +19,7 @@
         {
             <tr>
                 <td class="w-25">
-                    <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="link-inverse">@client.Name</a>
+                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="link-inverse">@client.Name</a>
                 </td>
                 <td class="w-25">
                     @client.IPAddress
@@ -39,7 +39,7 @@
 {
     <div class="p-2 mb-3 border-bottom" style="background-color: #222;">
         <div class="d-flex flex-row">
-            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="h4 mr-auto">
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="h4 mr-auto">
                 <color-code value="@client.Name"></color-code>
             </a>
             <div class="client-location-flag align-self-center" data-ip="@client.IPAddress"></div>

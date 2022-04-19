@@ -1,93 +1,89 @@
-﻿@import 'bootstrap-custom.scss';
-
-.level-bgcolor-console {
+﻿.level-bgcolor-console {
     background-color: grey;
 }
 
 .level-color-user, .level-color-guest, .level-color-0 {
-    color: #6c757d;
-    color: rgba(255, 255, 255, 0.68);
 }
 
 .level-bgcolor-user, .level-bgcolor-guest, .level-bgcolor-0 {
-    background-color: #6c757d;
-    background-color: rgba(255, 255, 255, 0.68);
+    background-color: #6c757d !important;
+    background-color: rgba(255, 255, 255, 0.68) !important;
 }
 
 .level-color-trusted, .level-color-2 {
-    color: #749363;
-    color: rgba(116,147,99,1);
+    color: #749363 !important;
+    color: rgba(116,147,99,1) !important;
 }
 
 .level-bgcolor-trusted, .level-bgcolor-2 {
-    background-color: #749363;
-    background-color: rgba(116,147,99,1);
+    background-color: #749363 !important;
+    background-color: rgba(116,147,99,1) !important;
 }
 
 .level-color-flagged, .level-color-1 {
-    color: #fd9c38;
-    color: rgba(253, 139, 22, 0.85);
+    color: #fd9c38 !important;
+    color: rgba(253, 139, 22, 0.85) !important;
 }
 
 .level-bgcolor-flagged, .level-bgcolor-1 {
-    background-color: #fd9c38;
-    background-color: rgba(253, 139, 22, 0.85);
+    background-color: #fd9c38 !important;
+    background-color: rgba(253, 139, 22, 0.85) !important;
 }
 
 .level-color-banned, .level-color-console, .level-color--1 {
-    color: #ff6060;
+    color: #ff6060 !important;
     color: rgba(255, 69, 69, 0.85);
 }
 
 .level-bgcolor-banned, .level-bgcolor--1 {
-    background-color: #ff6060;
-    background-color: rgba(255, 69, 69, 0.85);
+    background-color: #ff6060 !important ;
+    background-color: rgba(255, 69, 69, 0.85) !important;
 }
 
 .level-color-moderator, .level-color-3 {
-    color: #f0de8b;
-    color: rgba(235, 211, 101, 0.75);
+    color: #f0de8b !important;
+    color: rgba(235, 211, 101, 0.75) !important;
 }
 
 .level-bgcolor-moderator, .level-bgcolor-3 {
-    background-color: #f0de8b;
-    background-color: rgba(235, 211, 101, 0.75);
+    background-color: #f0de8b !important;
+    background-color: rgba(235, 211, 101, 0.75) !important;
 }
 
 .level-color-administrator, .level-color-4 {
-    color: #f1a8e8;
-    color: rgba(236, 130, 222, 0.69);
+    color: #f1a8e8 !important;
+    color: rgba(236, 130, 222, 0.69) !important;
 }
 
 .level-bgcolor-administrator, .level-bgcolor-4 {
-    background-color: #f1a8e8;
-    background-color: rgba(236, 130, 222, 0.69);
+    background-color: #f1a8e8 !important;
+    background-color: rgba(236, 130, 222, 0.69) !important;
 }
 
 .level-color-senioradmin, .level-color-5 {
-    color: #50bcc3;
-    color: rgba(50, 177, 185, 0.85);
+    color: #50bcc3 !important;
+    color: rgba(50, 177, 185, 0.85) !important;
 }
 
 .level-bgcolor-senioradmin, .level-bgcolor-5 {
-    background-color: #50bcc3;
-    background-color: rgba(50, 177, 185, 0.85);
+    background-color: #50bcc3 !important;
+    background-color: rgba(50, 177, 185, 0.85) !important;
 }
 
 .level-color-owner, .level-color-6 {
-    color: rgb(0, 122, 204);
+    color: rgb(0, 122, 204) !important;
 }
 
 .level-bgcolor-owner, .level-bgcolor-6 {
-    background-color: $primary;
+    background-color: var(--primary-color) !important;
 }
 
 .level-color-8 {
-    color: #de4423;
+    color: #de4423 !important;
 }
 
 .level-bgcolor-8 {
-    background-color: #de4423;
+    background-color: #de4423 !important;
 }
 
 .profile-meta-title {
@@ -137,17 +133,12 @@
 }
 
 #profile_aliases_btn {
-    color: $blue;
     cursor: pointer;
 }
 
     #profile_aliases_btn:hover {
         cursor: pointer;
     }
-
-.oi:hover {
-    color: darken($primary, 10%) !important;
-}
 
 #profile_aliases {
     position: relative;
@@ -197,15 +188,28 @@
     word-break: break-all;
 }
 
-#filter_meta_container .nav-link:hover {
-    background-color: $dark;
-    color: $white !important;
-}
-
 .ip-lookup-profile {
-    height: 2.5rem; 
-    min-width: 3.0rem; 
     background-size: contain; 
     background-repeat: no-repeat; 
     background-position: center;
+}
+
+.status-indicator {
+    height: 1rem;
+    width: 1rem;
+}
+
+.with-ripple {
+    animation: ripple 1.5s ease-out infinite;
+}
+
+@keyframes ripple {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(2);
+    }
 }

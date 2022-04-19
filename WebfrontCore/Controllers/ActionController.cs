@@ -69,25 +69,25 @@ namespace WebfrontCore.Controllers
 
         public IActionResult BanForm()
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_BAN_NAME"],
                 Name = "Ban",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "Reason",
                         Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "PresetReason",
                         Type = "select",
                         Label = Localization["WEBFRONT_ACTION_LABEL_PRESET_REASON"],
                         Values = GetPresetPenaltyReasons()
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "Duration",
                         Label = Localization["WEBFRONT_ACTION_LABEL_DURATION"],
@@ -134,7 +134,7 @@ namespace WebfrontCore.Controllers
 
             var server = Manager.GetServers().First();
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = server.EndPoint,
                 command
@@ -143,13 +143,13 @@ namespace WebfrontCore.Controllers
 
         public IActionResult UnbanForm()
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_UNBAN_NAME"],
                 Name = "Unban",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "Reason",
                         Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
@@ -162,57 +162,59 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
-        public async Task<IActionResult> UnbanAsync(int targetId, string Reason)
+        public async Task<IActionResult> UnbanAsync(int targetId, string reason)
         {
             var server = Manager.GetServers().First();
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = server.EndPoint,
-                command = $"{_appConfig.CommandPrefix}{_unbanCommandName} @{targetId} {Reason}"
+                command = $"{_appConfig.CommandPrefix}{_unbanCommandName} @{targetId} {reason}"
             }));
         }
 
         public IActionResult LoginForm()
         {
-            var login = new ActionInfo()
+            var login = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LOGIN_NAME"],
                 Name = "Login",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "clientId",
-                        Label = Localization["WEBFRONT_ACTION_LABEL_ID"]
+                        Label = Localization["WEBFRONT_ACTION_LABEL_ID"],
+                        Required = true
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "Password",
                         Label = Localization["WEBFRONT_ACTION_LABEL_PASSWORD"],
                         Type = "password",
+                        Required = true
                     }
                 },
-                Action = "LoginAsync"
+                Action = "Login"
             };
 
             return View("_ActionForm", login);
         }
 
-        public async Task<IActionResult> LoginAsync(int clientId, string password)
+        public async Task<IActionResult> Login(int clientId, string password)
         {
-            return await Task.FromResult(RedirectToAction("LoginAsync", "Account", new {clientId, password}));
+            return await Task.FromResult(RedirectToAction("Login", "Account", new {clientId, password}));
         }
 
         public IActionResult EditForm()
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_EDIT"],
                 Name = "Edit",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "level",
                         Label = Localization["WEBFRONT_PROFILE_LEVEL"],
@@ -235,7 +237,7 @@ namespace WebfrontCore.Controllers
         {
             var server = Manager.GetServers().First();
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = server.EndPoint,
                 command = $"{_appConfig.CommandPrefix}{_setLevelCommandName} @{targetId} {level}"
@@ -244,7 +246,7 @@ namespace WebfrontCore.Controllers
 
         public IActionResult GenerateLoginTokenForm()
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_GENERATE_TOKEN"],
                 Name = "GenerateLoginToken",
@@ -267,19 +269,19 @@ namespace WebfrontCore.Controllers
 
         public IActionResult ChatForm(long id)
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_SUBMIT_MESSAGE"],
                 Name = "Chat",
                 Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "message",
                         Type = "text",
                         Label = Localization["WEBFRONT_ACTION_LABEL_MESSAGE"]
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "id",
                         Value = id.ToString(),
@@ -294,7 +296,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> ChatAsync(long id, string message)
         {
-            var server = Manager.GetServers().First(_server => _server.EndPoint == id);
+            var server = Manager.GetServers().First(server => server.EndPoint == id);
 
             server.ChatHistory.Add(new SharedLibraryCore.Dtos.ChatInfo()
             {
@@ -305,7 +307,7 @@ namespace WebfrontCore.Controllers
                 Time = DateTime.Now
             });
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = server.EndPoint,
                 command = $"{_appConfig.CommandPrefix}{_sayCommandName} {message}"
@@ -318,7 +320,7 @@ namespace WebfrontCore.Controllers
             foreach (var client in clients)
             {
                 client.IPAddress =
-                    _appConfig.HasPermission(Client.Level, WebfrontEntity.IPAddress, WebfrontPermission.Read)
+                    _appConfig.HasPermission(Client.Level, WebfrontEntity.ClientIPAddress, WebfrontPermission.Read)
                         ? client.IPAddress
                         : null;
             }
@@ -328,18 +330,18 @@ namespace WebfrontCore.Controllers
 
         public IActionResult FlagForm()
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_FLAG_NAME"],
                 Name = "Flag",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "reason",
                         Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "PresetReason",
                         Type = "select",
@@ -358,7 +360,7 @@ namespace WebfrontCore.Controllers
         {
             var server = Manager.GetServers().First();
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = server.EndPoint,
                 command = $"{_appConfig.CommandPrefix}{_flagCommandName} @{targetId} {presetReason ?? reason}"
@@ -367,13 +369,13 @@ namespace WebfrontCore.Controllers
 
         public IActionResult UnflagForm()
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_UNFLAG_NAME"],
                 Name = "Unflag",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "reason",
                         Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
@@ -390,7 +392,7 @@ namespace WebfrontCore.Controllers
         {
             var server = Manager.GetServers().First();
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = server.EndPoint,
                 command = $"{_appConfig.CommandPrefix}{_unflagCommandName} @{targetId} {reason}"
@@ -399,25 +401,25 @@ namespace WebfrontCore.Controllers
 
         public IActionResult KickForm(int id)
         {
-            var info = new ActionInfo()
+            var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_KICK_NAME"],
                 Name = "Kick",
-                Inputs = new List<InputInfo>()
+                Inputs = new List<InputInfo>
                 {
-                    new InputInfo()
+                    new()
                     {
                         Name = "reason",
                         Label = Localization["WEBFRONT_ACTION_LABEL_REASON"],
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "PresetReason",
                         Type = "select",
                         Label = Localization["WEBFRONT_ACTION_LABEL_PRESET_REASON"],
                         Values = GetPresetPenaltyReasons()
                     },
-                    new InputInfo()
+                    new()
                     {
                         Name = "targetId",
                         Type = "hidden",
@@ -433,14 +435,14 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> KickAsync(int targetId, string reason, string presetReason = null)
         {
-            var client = Manager.GetActiveClients().FirstOrDefault(_client => _client.ClientId == targetId);
+            var client = Manager.GetActiveClients().FirstOrDefault(client => client.ClientId == targetId);
 
             if (client == null)
             {
                 return BadRequest(Localization["WEBFRONT_ACTION_KICK_DISCONNECT"]);
             }
 
-            return await Task.FromResult(RedirectToAction("ExecuteAsync", "Console", new
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {
                 serverId = client.CurrentServer.EndPoint,
                 command = $"{_appConfig.CommandPrefix}{_kickCommandName} {client.ClientNumber} {presetReason ?? reason}"
@@ -449,9 +451,9 @@ namespace WebfrontCore.Controllers
 
         private Dictionary<string, string> GetPresetPenaltyReasons() => _appConfig.PresetPenaltyReasons.Values
             .Concat(_appConfig.GlobalRules)
-            .Concat(_appConfig.Servers.SelectMany(server => server.Rules ?? new string[0]))
+            .Concat(_appConfig.Servers.SelectMany(server => server.Rules ?? Array.Empty<string>()))
             .Distinct()
-            .Select((value, index) => new
+            .Select((value, _) => new
             {
                 Value = value
             })

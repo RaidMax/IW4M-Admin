@@ -80,7 +80,7 @@ namespace WebfrontCore.Controllers.API
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> LoginAsync([FromRoute] int clientId,
+        public async Task<IActionResult> Login([FromRoute] int clientId,
             [FromBody, Required] PasswordRequest request)
         {
             if (clientId == 0)
@@ -145,7 +145,7 @@ namespace WebfrontCore.Controllers.API
         [HttpPost("{clientId:int}/logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> LogoutAsync()
+        public async Task<IActionResult> Logout()
         {
             if (Authorized)
             {

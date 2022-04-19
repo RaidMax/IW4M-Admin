@@ -1,29 +1,35 @@
 ﻿@model SharedLibraryCore.Dtos.Meta.Responses.PermissionLevelChangedResponse
 
-@foreach (var token in Utilities.SplitTranslationTokens("WEBFRONT_CLIENT_META_PERMISSION_CHANGED"))
-{
-    if (token.IsInterpolation)
+<has-permission entity="ClientLevel" required-permission="Read">
+    @if (TempData["ShowMetaHeader"] as bool? ?? false)
     {
-        switch (token.MatchValue)
+        <partial name="./_MetaHeader.cshtml" for="@Model.When"/>
+    }
+    @foreach (var token in Utilities.SplitTranslationTokens("WEBFRONT_CLIENT_META_PERMISSION_CHANGED"))
+    {
+        if (token.IsInterpolation)
         {
-            case "permission":
-                <span class="level-color-@((int)Model.CurrentPermissionLevel)">@Model.CurrentPermissionLevel.ToLocalizedLevelName()</span>
-                break;
-            case "originClient":
-                <span class="text-highlight">
-                    <a class="link-inverse" href="@Model.ChangedById">
-                        <color-code value="@Model.ChangedByName"></color-code>
-                    </a>
-                </span>
-                break;
-            case "type":
-                <span class="text-white-50">@token.TranslationValue</span>
-                break;
+            switch (token.MatchValue)
+            {
+                case "permission":
+                    <span class="level-color-@((int)Model.CurrentPermissionLevel)">@Model.CurrentPermissionLevel.ToLocalizedLevelName()</span>
+                    break;
+                case "originClient":
+                    <span class="text-highlight">
+                        <a asp-controller="Client" asp-action="Profile"  asp-route-id="@Model.ChangedById">
+                            <color-code value="@Model.ChangedByName"></color-code>
+                        </a>
+                    </span>
+                    break;
+                case "type":
+                    <span class="text-white-50">@token.TranslationValue</span>
+                    break;
+            }
+        }
+
+        else
+        {
+            <span class="text-muted">@token.MatchValue</span>
         }
     }
-    
-    else
-    {
-        <span class="text-muted">@token.MatchValue</span>
-    }
-}
+</has-permission>

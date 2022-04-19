@@ -1,6 +1,7 @@
 ﻿const textOffset = 15;
 let previousRadarData = undefined;
 let newRadarData = undefined;
+let stateInfo;
 
 /************************
  *          IW4         *
@@ -219,41 +220,46 @@ function updatePlayerData() {
         }
 
         let column = player.team === 'allies' ? $('.player-data-left') : $('.player-data-right');
-        column.append(`<div class="progress" style="height: 1.5rem; background-color: transparent;">
-                                 <div style="position: absolute; font-size: 1rem; left: 1.5rem;">${player.name}</div>
-                                 <div class="progress-bar bg-success" role="progressbar" style="min-width: 0px; width: ${player.health}%" aria-valuenow="${player.health}" aria-valuemin="0" aria-valuemax="100"></div>
-                                <div class="progress-bar bg-danger" role="progressbar" style="min-width: 0px; border-right: 0px; width: ${100 - player.health}%" aria-valuenow="${100 - player.health}" aria-valuemin="0" aria-valuemax="100"></div>
-                               </div>
-                               <div class="d-flex flex-row flex-wrap p-2 mb-4 bg-dark border-bottom">
-                                 <div style="width: 3rem; height: 1.5rem; background-image:url(${weaponImageForWeapon(player.weapon)}); background-size: 3rem 1.5rem;" class="mr-auto text-left">
-                               </div>
-                                <div class="player-stat-icon" style="background-image:url('/images/radar/kills.png')"></div>
-                                <div class="pr-2">${player.kills}</div>
-                                <div class="player-stat-icon" style="background-image:url('/images/radar/death.png')"></div>
-                                <div class="pr-3">${player.deaths}</div>
-                                <span class="align-self-center oi oi-target pr-1"></span>
-                                <div class="pr-3 ">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
-                                <span class="align-self-center oi oi-graph pr-1"></span>
-                                <div>${ player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
-                              </div>`);
+        
+        let greenProgressClass = 'rounded-top';
+        let redProgressClass = 'rounded-right';
+        
+        if (player.health < 100) {
+            greenProgressClass = 'rounded-left';
+        }
+        if (player.health <= 0) {
+            redProgressClass = 'rounded-top';
+        }
+        
+        column.append(`
+<div class="card m-0 p-0 mb-15">
+        <div class="progress h-25">
+                       <div class="position-absolute ml-10 text-dark" style="top: 1.2rem;">${player.name}</div>
+                                 <div class="progress-bar bg-success ${greenProgressClass} h-25" role="progressbar" style="min-width: 0px; width: ${player.health}%" aria-valuenow="${player.health}" aria-valuemin="0" aria-valuemax="100"></div>
+                                <div class="progress-bar bg-danger ${redProgressClass} h-25" role="progressbar" style="min-width: 0px; border-right: 0px; width: ${100 - player.health}%" aria-valuenow="${100 - player.health}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            <div class="ml-10 mr-10 pt-5 pb-5">
+                               <div class="d-flex flex-row bg-dark-dm bg-light-lm rounded-bottom">
+                                 <div style="width: 3rem; height: 1.5rem; background-image:url(${weaponImageForWeapon(player.weapon)}); background-size: 3rem 1.5rem;" class="mr-auto text-left align-self-center" data-toggle="tooltip" data-title="${player.weapon}">
+                                 </div>
+                                 <div class="d-flex">
+                                    <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/kills.png')"></div>
+                                    <div class="pr-5 align-self-center">${player.kills}</div>
+                                    <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/death.png')"></div>
+                                    <div class="pr-10 align-self-center">${player.deaths}</div>
+                                    <span class="align-self-center oi oi-target pr-5"></span>
+                                    <div class="pr-10 align-self-center">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
+                                    <span class="align-self-center oi oi-graph pr-5"></span>
+                                    <div>${ player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
+                                </div>
+                              </div>
+                          </div>
+</div>`);
     });
 
     $('.player-data-left').delay(1000).animate({opacity: 1}, 500);
     $('.player-data-right').delay(1000).animate({opacity: 1}, 500);
 }
-
-const stateInfo = {
-    canvas: $('#map_canvas'),
-    ctx: $('#map_canvas')[0].getContext('2d'),
-    updateFrequency: 750,
-    updateFrameTimeDeviation: 0,
-    forwardDistance: undefined,
-    fovWidth: undefined,
-    mapInfo: undefined,
-    mapScaler: undefined,
-    deathIcons: {},
-    deathIconTime: 4000
-};
 
 function updateRadarData() {
     $.getJSON(radarDataUrl, function (_radarItem) {
@@ -414,6 +420,20 @@ $(document).ready(function () {
     if ($('#map_canvas').length === 0) {
         return;
     }
+    
+    stateInfo = {
+        canvas: $('#map_canvas'),
+        ctx: $('#map_canvas')[0].getContext('2d'),
+        updateFrequency: 750,
+        updateFrameTimeDeviation: 0,
+        forwardDistance: undefined,
+        fovWidth: undefined,
+        mapInfo: undefined,
+        mapScaler: undefined,
+        deathIcons: {},
+        deathIconTime: 4000
+    };
+    
     $.getJSON(radarDataUrl, function (_map) {
         stateInfo.mapInfo = _map;
         updateRadarData();

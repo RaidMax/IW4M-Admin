@@ -11,6 +11,8 @@ namespace WebfrontCore.ViewModels
         /// number of items offset from the start of the list
         /// </summary>
         public int Offset { get; set; }
+        
+        public int Count { get; set; }
 
         /// <summary>
         /// show only a certain type of penalty

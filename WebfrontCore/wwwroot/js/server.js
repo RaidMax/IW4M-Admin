@@ -16,7 +16,7 @@
 }
 
 function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
-    const primaryColor = $('title').css('background-color');
+    const primaryColor = $('.text-primary').css('color');
     const rgb = primaryColor.match(/\d+/g);
     const fillColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.66)`;
     const offlineFillColor = 'rgba(255, 96, 96, 0.55)';
@@ -54,29 +54,6 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
 
     let animationProgress = 0;
     let initialAnimationComplete = false;
-    /*const originalLineDraw = Chart.controllers.line.prototype.draw;
-    Chart.helpers.extend(Chart.controllers.line.prototype, {
-        draw: function () {
-            originalLineDraw.apply(this, arguments);
-
-            const chart = this.chart;
-            const ctx = chart.chart.ctx;
-
-            chart.config.data.lineAtIndexes.forEach((elem, index) => {
-                const xScale = chart.scales['x-axis-0'];
-                const yScale = chart.scales['y-axis-0'];
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(xScale.getPixelForValue(undefined, elem), yScale.getPixelForValue(playerHistory[elem].clientCount) / (initialAnimationComplete ? 1 : animationProgress));
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.lineTo(xScale.getPixelForValue(undefined, elem), yScale.bottom);
-                ctx.stroke();
-                ctx.restore();
-            });
-        }
-    });*/
-
     const canvas = document.getElementById(`server_history_canvas_${i}`);
     canvas.setAttribute('width', width);
 
@@ -156,23 +133,19 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
     });
 }
 
-function refreshClientActivity() {
-    $('.server-history-row').each(function (index) {
-        let serverId = $(this).data("serverid");
-
-        $.get({
-            url: "/server/clientactivity/" + serverId,
-            cache: false
+function refreshClientActivity(serverId) {
+    $.get({
+        url: `/server/clientactivity/${serverId}`,
+        cache: false
+    })
+        .done(function (response) {
+            const clientCount = $(response).find('a.no-decoration').length;
+            $('#server_header_' + serverId + ' .server-clientcount').text(clientCount);
+            $('#server_clientactivity_' + serverId).html(response);
         })
-            .done(function (response) {
-                const clientCount = $(response).find('a').length;
-                $('#server_header_' + serverId + ' .server-clientcount').text(clientCount);
-                $('#server_clientactivity_' + serverId).html(response);
-            })
-            .fail(function (jqxhr, textStatus, error) {
-                $('#server_clientactivity_' + serverId).html('');
-            });
-    });
+        .fail(function (jqxhr, textStatus, error) {
+            $('#server_clientactivity_' + serverId).html('');
+        });
 }
 
 $(document).ready(function () {
@@ -182,7 +155,8 @@ $(document).ready(function () {
 
     $('.server-history-row').each(function (index, element) {
         let clientHistory = $(this).data('clienthistory-ex');
-        let serverId = $(this).data('serverid');
+        const serverId = $(this).data('serverid');
+        setInterval(() => refreshClientActivity(serverId), 2000 + (index * 100));
         let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
         let width = $('.server-header').first().width();
         getPlayerHistoryChart(clientHistory, serverId, width, maxClients);
@@ -197,5 +171,3 @@ $(document).ready(function () {
         }
     });
 });
-
-setInterval(refreshClientActivity, 2000);

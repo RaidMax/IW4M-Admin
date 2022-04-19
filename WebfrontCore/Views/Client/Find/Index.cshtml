@@ -3,60 +3,71 @@
     var loc = Utilities.CurrentLocalization.LocalizationIndex;
 }
 
-<div class="row d-none d-lg-block ">
-    <h4 class="pb-2 text-center col-12">@ViewBag.Title</h4>
-    <div class="mr-auto ml-auto col-12 col-lg-8 border-bottom">
-        <div class="row pt-2 pb-2 bg-primary">
-            <div class="col-5 ">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
-            <div class="col-4">@loc["WEBFRONT_PROFILE_LEVEL"]</div>
-            <div class="col-3 text-right">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</div>
-        </div>
+<!-- desktop -->
+<div class="content mt-0">
+    <h2 class="content-title mt-20">@ViewBag.ResultCount result(s) for <span class="badge badge-primary font-size-18">@ViewBag.SearchTerm</span></h2>
 
+    <table class="table d-none d-md-table">
+        <thead>
+        <tr class="bg-primary text-light">
+            <td>@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</td>
+            <td>@loc["WEBFRONT_PROFILE_LEVEL"]</td>
+            <td class="text-right">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</td>
+        </tr>
+        </thead>
+        <tbody>
         @foreach (var client in Model)
         {
-            <div class="row pt-2 pb-2 bg-dark">
-                <div class="col-5">
-                    <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId">
+            <tr class="bg-dark-dm bg-light-lm">
+                <td class="col-5">
+                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId">
                         <color-code value="@client.Name"></color-code>
                     </a>
-                </div>
+                </td>
                 @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
                 {
-                    <div class="col-4 level-color-0">@loc["GLOBAL_PERMISSION_USER"]</div>
+                    <td class="col-3 level-color-0">@loc["GLOBAL_PERMISSION_USER"]</td>
                 }
                 else
                 {
-                    <div class="col-4 level-color-@client.LevelInt">@client.Level</div>
+                    <td class="col-3 level-color-@client.LevelInt">@client.Level</td>
                 }
-                <div class="col-3 text-right">@client.LastConnectionText</div>
-            </div>
+                <td class="col-4 text-right">@client.LastConnection.HumanizeForCurrentCulture()</td>
+            </tr>
         }
-    </div>
-</div>
-<div class="row d-lg-none">
-    <div class="w-100 bg-primary text-center h3 mb-0 p-3" style="border-bottom: 1px solid #222">@ViewBag.Title</div>
-    @foreach (var client in Model)
-    {
-        <div class="col-5 bg-primary font-weight-bold" style="border-bottom: 1px solid #222">
-            <div class="p-2">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
-            <div class="p-2">@loc["WEBFRONT_PROFILE_LEVEL"]</div>
-            <div class="p-2">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</div>
-        </div>
-        <div class="col-7 bg-dark border-bottom">
-            <div class="p-2">
-                <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@client.ClientId" class="link-inverse">
-                    <color-code value="@client.Name"></color-code>
-                </a>
-            </div>
-             @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
-             {
-                 <div class="p-2 level-color-0">@loc["GLOBAL_PERMISSION_USER"]</div>
-             }
-             else
-             {
-                 <div class="p-2 level-color-@client.LevelInt">@client.Level</div>
-             }
-            <div class="p-2 text-white-50">@client.LastConnectionText</div>
-        </div>
-    }
+        </tbody>
+    </table>
+
+
+    <!--- mobile -->
+    <table class="table bg-dark-dm bg-light-lm d-md-none">
+        <tbody>
+        @foreach (var client in Model)
+        {
+            <tr class="d-flex">
+                <td class="bg-primary text-light">
+                    <div>@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
+                    <div>@loc["WEBFRONT_PROFILE_LEVEL"]</div>
+                    <div>@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</div>
+                </td>
+                <td class="flex-grow">
+                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="link-inverse">
+                        <color-code value="@client.Name"></color-code>
+                    </a>
+                    @if (!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy)
+                    {
+                        <div class="p-2 level-color-0">@loc["GLOBAL_PERMISSION_USER"]</div>
+                    }
+                    else
+                    {
+                        <div class="p-2 level-color-@client.LevelInt">@client.Level</div>
+                    }
+                    <div>@client.LastConnection.HumanizeForCurrentCulture()</div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+
 </div>

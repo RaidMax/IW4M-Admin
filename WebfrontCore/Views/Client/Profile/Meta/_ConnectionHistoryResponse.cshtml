@@ -4,6 +4,11 @@
     var localizationKey = $"WEBFRONT_CLIENT_META_CONNECTION_{Model.ConnectionType.ToString().ToUpper()}";
 }
 
+@if (TempData["ShowMetaHeader"] as bool? ?? false)
+{
+    <partial name="./_MetaHeader.cshtml" for="@Model.When"/>
+}
+
 @foreach (var token in Utilities.SplitTranslationTokens(localizationKey))
 {
     if (token.IsInterpolation)
@@ -11,10 +16,10 @@
         switch (token.MatchValue)
         {
             case "action":
-                <span class="@(Model.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-warning")">@token.TranslationValue</span>
+                <span class="@(Model.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-secondary")">@token.TranslationValue</span>
                 break;
             case "server":
-                <span class="text-white">
+                <span class="text-light-dm text-dark-lm">
                     <color-code value="@Model.ServerName"></color-code>
                 </span>
                 break;

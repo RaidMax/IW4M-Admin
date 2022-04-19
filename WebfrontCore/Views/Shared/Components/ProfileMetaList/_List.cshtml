@@ -6,9 +6,9 @@
 
     var lastHeaderEventDate = DateTime.UtcNow;
 
-    TimeSpan timeSpanForEvent(DateTime When)
+    TimeSpan TimeSpanForEvent(DateTime occuredAt)
     {
-        var timePassed = (DateTime.UtcNow - When);
+        var timePassed = DateTime.UtcNow - occuredAt;
         var daysPassed = timePassed.TotalDays;
         var minutesPassed = timePassed.TotalMinutes;
 
@@ -22,45 +22,43 @@
             return TimeSpan.FromHours(1);
         }
 
-        if (daysPassed > 1 && daysPassed <= 7)
+        if (daysPassed is > 1 and <= 7)
         {
             return TimeSpan.FromDays(1);
         }
 
-        if (daysPassed > 7 && daysPassed <= 31)
+        if (daysPassed is > 7 and <= 31)
         {
             return TimeSpan.FromDays(31);
         }
 
-        if (daysPassed > 31 && daysPassed <= 365)
+        if (daysPassed is > 31 and <= 365)
         {
             return TimeSpan.FromDays(31);
         }
 
-        else
-        {
-            return TimeSpan.FromDays(365);
-        }
+        return TimeSpan.FromDays(365);
     }
 }
 
-@if (Model.Count() == 0)
+@{ var start = 0; }
+@foreach (var meta in Model.OrderByDescending(meta => meta.When))
 {
-    <div class="p2 text-muted profile-event-timestep">@ViewBag.Localization["WEBFRONT_CLIENT_META_NONE"]</div>
-}
-
-@foreach (var meta in Model.OrderByDescending(_meta => _meta.When))
-{
-    @if ((lastHeaderEventDate - meta.When) > timeSpanForEvent(lastHeaderEventDate))
+    if (lastHeaderEventDate - meta.When > TimeSpanForEvent(lastHeaderEventDate) && (start > 0 || (DateTime.UtcNow - meta.When).TotalDays > 3))
     {
-        <div class="p2 text-white profile-event-timestep">
-            <span class="text-primary">&mdash;</span>
-            <span>@meta.When.HumanizeForCurrentCulture()</span>
-        </div>
+        TempData["ShowMetaHeader"] = true;
         lastHeaderEventDate = meta.When;
     }
+    else
+    {
+        TempData["ShowMetaHeader"] = false;
+    }
+    start++;
 
-    <div class="profile-meta-entry loader-data-time" data-time="@meta.When.ToFileTimeUtc()" title="@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_META_DATE_OCCURRED"], meta.When.ToString())">
-        <partial name="~/Views/Client/Profile/Meta/_@(meta.GetType().Name).cshtml" model="meta" />
+    <div class="profile-meta-entry loader-data-time" data-time="@meta.When.ToFileTimeUtc()" onclick="$('#metaContextDateToggle@(start)').show()">
+        <partial name="~/Views/Client/Profile/Meta/_@(meta.GetType().Name).cshtml" model="meta"/>
+        <div style="display:none" id="metaContextDateToggle@(start)">
+            Event occured at <span class="text-light">@meta.When.ToString()</span>
+        </div>
     </div>
 }

@@ -5,64 +5,56 @@
 {
     <!-- desktop -->
     <tr class="d-none d-lg-table-row">
-        <td>
-            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@message.ClientId" class="link-inverse">
+        <td colspan="20%" class="text-break">
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@message.ClientId" class="link-inverse">
                 <color-code value="@message.ClientName"></color-code>
             </a>
         </td>
-        <td class="text-light w-50 text-break">
+        <td colspan="45%" class="text-break">
             @if (message.IsHidden && !ViewBag.Authorized)
             {
-                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)"></color-code>
+                <color-code value="@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)"></color-code>
             }
             else
             {
                 <color-code value="@message.Message"></color-code>
             }
         </td>
-        <td class="text-light">
+        <td colspan="20%" class="text-break">
             <color-code value="@(message.ServerName ?? "--")"></color-code>
         </td>
-        <td class="text-right text-light">
+        <td colspan="15%" class="text-right text-break">
             @message.When
         </td>
     </tr>
 
     <!-- mobile -->
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@ViewBag.Localization["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
-        <td class="text-light">
-            <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@message.ClientId" class="link-inverse">
+    <tr class="d-flex d-lg-none">
+        <td class="bg-primary text-light">
+            <div>@ViewBag.Localization["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</div>
+            <div>@ViewBag.Localization["WEBFRONT_ACTION_LABEL_MESSAGE"]</div>
+            <div>@ViewBag.Localization["WEBFRONT_STATS_MESSAGE_SERVER_NAME"]</div>
+            <div>@ViewBag.Localization["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</div>
+        </td>
+        <td class="flex-fill">
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@message.ClientId">
                 <color-code value="@message.ClientName"></color-code>
             </a>
-        </td>
-    </tr>
+            <div>
+                @if (message.IsHidden && !ViewBag.Authorized)
+                {
+                    <color-code value="@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)"></color-code>
+                }
+                else
+                {
+                    <color-code value="@message.Message"></color-code>
+                }
+            </div>
+            <div>
+                <color-code value="@(message.ServerName ?? "--")"></color-code>
+            </div>
+            <div> @message.When</div>
 
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@ViewBag.Localization["WEBFRONT_ACTION_LABEL_MESSAGE"]</th>
-        <td class="text-light">
-            @if (message.IsHidden && !ViewBag.Authorized)
-            {
-                <color-code value="@SharedLibraryCore.Utilities.FormatExt(ViewBag.Localization["WEBFRONT_CLIENT_META_CHAT_HIDDEN"], message.HiddenMessage)"></color-code>
-            }
-            else
-            {
-                <color-code value="@message.Message"></color-code>
-            }
-        </td>
-    </tr>
-
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary">@ViewBag.Localization["WEBFRONT_STATS_MESSAGE_SERVER_NAME"]</th>
-        <td class="text-light">
-            <color-code value="@(message.ServerName ?? "--")"></color-code>
-        </td>
-    </tr>
-
-    <tr class="d-table-row d-lg-none bg-dark">
-        <th scope="row" class="bg-primary" style="border-bottom: 1px solid #222">@ViewBag.Localization["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</th>
-        <td class="text-light mb-2 border-bottom">
-            @message.When
         </td>
     </tr>
 }

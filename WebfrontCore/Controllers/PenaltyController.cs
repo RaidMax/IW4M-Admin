@@ -30,49 +30,15 @@ namespace WebfrontCore.Controllers
             return View(showOnly);
         }
 
-        public async Task<IActionResult> ListAsync(int offset = 0, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool hideAutomatedPenalties = true)
+        public async Task<IActionResult> ListAsync(int offset = 0, int count = 30, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool hideAutomatedPenalties = true)
         {
-            return await Task.FromResult(View("_List", new ViewModels.PenaltyFilterInfo()
+            return await Task.FromResult(View("_List", new ViewModels.PenaltyFilterInfo
             {
                 Offset = offset,
+                Count = count,
                 ShowOnly = showOnly,
                 IgnoreAutomated = hideAutomatedPenalties
             }));
-        }
-
-        /// <summary>
-        /// retrieves all permanent bans ordered by ban date
-        /// if request is authorized, it will include the client's ip address.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<IActionResult> PublicAsync()
-        {
-            IList<PenaltyInfo> penalties;
-
-            await using var ctx = _contextFactory.CreateContext(false);
-            var iqPenalties = ctx.Penalties
-                .AsNoTracking()
-                .Where(p => p.Type == EFPenalty.PenaltyType.Ban && p.Active)
-                .OrderByDescending(_penalty => _penalty.When)
-                .Select(p => new PenaltyInfo()
-                {
-                    Id = p.PenaltyId,
-                    OffenderId = p.OffenderId,
-                    OffenderName = p.Offender.CurrentAlias.Name,
-                    OffenderNetworkId = (ulong)p.Offender.NetworkId,
-                    OffenderIPAddress = Authorized ? p.Offender.CurrentAlias.IPAddress.ConvertIPtoString() : null,
-                    Offense = p.Offense,
-                    PunisherId = p.PunisherId,
-                    PunisherNetworkId = (ulong)p.Punisher.NetworkId,
-                    PunisherName = p.Punisher.CurrentAlias.Name,
-                    PunisherIPAddress = Authorized ? p.Punisher.CurrentAlias.IPAddress.ConvertIPtoString() : null,
-                    TimePunished = p.When,
-                    AutomatedOffense = Authorized ? p.AutomatedOffense : null,
-                });
-
-            penalties = await iqPenalties.ToListAsync();
-
-            return Json(penalties);
         }
     }
 }

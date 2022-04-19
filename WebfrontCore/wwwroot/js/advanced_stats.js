@@ -4,7 +4,15 @@
 
 $(document).ready(function () {
     $('.table-slide').click(function () {
-        $(this).siblings().children().children('.hidden-row').slideToggle(0);
+        if ($(window).width() < 993) {
+            $(this).prev().find('.hidden-row').toggleClass('d-none d-flex');
+        } else {
+            $(this).prev().find('.hidden-row-lg').toggleClass('d-none');
+        }
+        
+        $(this).attr('data-title', '');
+        $(this).attr('data-toggle', '');
+ 
         $(this).children('span').toggleClass('oi-chevron-top oi-chevron-bottom');
     });
     setupPerformanceGraph();
@@ -364,7 +372,7 @@ function renderPerformanceChart() {
         elements: {
             line: {
                 fill: false,
-                borderColor: 'rgba(255, 255, 255, 0.75)',
+                borderColor: halfmoon.getPreferredMode() === "light-mode" ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.75)',
                 borderWidth: 2
             },
             point: {

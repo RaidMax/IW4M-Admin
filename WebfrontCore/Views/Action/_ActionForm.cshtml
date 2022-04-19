@@ -1,16 +1,22 @@
-﻿@model WebfrontCore.ViewModels.ActionInfo
+﻿@using Humanizer
+@model WebfrontCore.ViewModels.ActionInfo
 @{
     Layout = null;
+}
+<h5 class="modal-title mb-10">@Model.Name.Titleize()</h5>
+@if (Model.Inputs.Any())
+{
+    <hr class="mb-10"/>
 }
 <form class="action-form @(Model.ShouldRefresh ? "refreshable" : "")" action="/Action/@Model.Action">
     @foreach (var input in Model.Inputs)
     {
-        string inputType = input.Type ?? "text";
-        string value = input.Value ?? "";
+        var inputType = input.Type ?? "text";
+        var value = input.Value ?? "";
 
         if (input.Type != "hidden")
         {
-            <div class="input-group mb-3">
+            <div class="input-group mb-10">
 
                 <div class="input-group-prepend">
                     <span class="input-group-text" id="basic-addon-@input.Name">@input.Label</span>
@@ -21,7 +27,9 @@
                     <select name="@input.Name" class="form-control" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
                         @foreach (var item in input.Values)
                         {
-                            <option value="@item.Key"><color-code value="@item.Value"></color-code></option>
+                            <option value="@item.Key">
+                                <color-code value="@item.Value"></color-code>
+                            </option>
                         }
                     </select>
                 }
@@ -37,7 +45,7 @@
 
                 else
                 {
-                    <input type="@inputType" name="@input.Name" value="@value" class="form-control" placeholder="@input.Placeholder" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
+                    <input type="@inputType" name="@input.Name" value="@value" class="form-control @(input.Required ? "required" : "")" placeholder="@input.Placeholder" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
                 }
 
             </div>
@@ -47,5 +55,12 @@
             <input type="@inputType" name="@input.Name" value="@value" hidden="hidden">
         }
     }
-    <button type="submit" class="btn btn-block btn-primary">@Model.ActionButtonLabel</button>
+    @if (Model.Inputs.Any())
+    {
+        <hr class="mb-10"/>
+    }
+    <div class="ml-auto">
+        <button type="submit" class="btn btn-primary">@Model.ActionButtonLabel</button>
+        <a href="#" class="btn mr-5" role="button">Close</a>
+    </div>
 </form>

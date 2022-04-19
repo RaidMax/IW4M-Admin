@@ -83,7 +83,6 @@ namespace IW4MAdmin.Application.Meta
                     Value = lastMapMeta.Value,
                     ShouldDisplay = true,
                     Type = MetaType.Information,
-                    Column = 1,
                     Order = 6
                 });
             }
@@ -101,8 +100,7 @@ namespace IW4MAdmin.Application.Meta
                     Value = lastServerMeta.Value,
                     ShouldDisplay = true,
                     Type = MetaType.Information,
-                    Column = 0,
-                    Order = 6
+                    Order = 7
                 });
             }
 
@@ -120,8 +118,7 @@ namespace IW4MAdmin.Application.Meta
                 Key = _transLookup["WEBFRONT_PROFILE_META_PLAY_TIME"],
                 Value = TimeSpan.FromHours(client.TotalConnectionTime / 3600.0).HumanizeForCurrentCulture(),
                 ShouldDisplay = true,
-                Column = 1,
-                Order = 0,
+                Order = 8,
                 Type = MetaType.Information
             });
 
@@ -131,8 +128,7 @@ namespace IW4MAdmin.Application.Meta
                 Key = _transLookup["WEBFRONT_PROFILE_META_FIRST_SEEN"],
                 Value = (DateTime.UtcNow - client.FirstConnection).HumanizeForCurrentCulture(),
                 ShouldDisplay = true,
-                Column = 1,
-                Order = 1,
+                Order = 9,
                 Type = MetaType.Information
             });
 
@@ -142,8 +138,7 @@ namespace IW4MAdmin.Application.Meta
                 Key = _transLookup["WEBFRONT_PROFILE_META_LAST_SEEN"],
                 Value = (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture(),
                 ShouldDisplay = true,
-                Column = 1,
-                Order = 2,
+                Order = 10,
                 Type = MetaType.Information
             });
 
@@ -154,8 +149,7 @@ namespace IW4MAdmin.Application.Meta
                 Value = client.Connections.ToString("#,##0",
                     new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                 ShouldDisplay = true,
-                Column = 1,
-                Order = 3,
+                Order = 11,
                 Type = MetaType.Information
             });
 
@@ -167,8 +161,7 @@ namespace IW4MAdmin.Application.Meta
                     ? Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_TRUE"]
                     : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
                 IsSensitive = true,
-                Column = 1,
-                Order = 4,
+                Order = 12,
                 Type = MetaType.Information
             });
 

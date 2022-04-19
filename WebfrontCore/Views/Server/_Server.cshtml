@@ -18,65 +18,70 @@
     }
 }
 
-<div class="row server-header pt-1 pb-1 bg-primary " id="server_header_@Model.ID">
-    <div class="col-md-4 text-center text-md-left d-inline-flex justify-content-center justify-content-md-start">
-        <color-code value="@Model.Name"></color-code>
-        <a href="@Model.ConnectProtocolUrl" class="ml-2 mr-2 align-self-center d-none d-md-flex server-join-button" title="@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
-            <span class="oi oi-play-circle mr-1 align-self-center"></span>
-            <span class="server-header-ip-address" style="display:none;">@Model.IPAddress</span>
-        </a>
-        @if (ViewBag.Authorized)
-        {
-            <span class="oi oi-chat align-self-center profile-action d-none d-md-flex mr-2" data-action="chat" data-action-id="@Model.ID"></span>
-        }
-        <a asp-controller="Server" asp-action="Scoreboard" asp-fragment="server_@Model.ID" title="@ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]"
-           class="align-self-center d-none d-md-flex">
-            <span class="oi oi-spreadsheet ml-1"></span>
-        </a>
-    </div>
-
-    <div class="text-center col-md-4 align-self-center">
-        <span>@Model.Map</span>
-        @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
-        {
-            <span>&ndash;</span>
-            <span>@Model.GameType</span>
-        }
-    </div>
-    <div class="text-center text-md-right col-md-4 d-flex align-self-center justify-content-center justify-content-md-end flex-column-reverse flex-sm-row">
-        @if (Model.LobbyZScore != null)
-        {
-            <div title="@ViewBag.Localization["WEBFRONT_HOME_RATING_DESC"]" class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">
-                <span>@(Model.LobbyZScore ?? 0)</span>
-                <span class="oi oi-bolt align-self-center mr-1 ml-1"></span>
+<div class="card mt-20 mb-20 ml-0 mr-0 p-0">
+    <div class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-md-row flex-wrap justify-content-between text-light" id="server_header_@Model.ID">
+        <div class="d-flex align-self-center flex-column-reverse flex-md-row">
+            <div class="ml-5 mr-5 text-center">
+                <color-code value="@Model.Name"></color-code>
             </div>
-        }
-        <div>
-            <span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span>
+            <div class="d-flex justify-content-center">
+                <!-- connect button -->
+                <a href="@Model.ConnectProtocolUrl" class="text-light align-self-center" title="@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
+                    <i class="oi oi-play-circle ml-5 mr-5"></i>
+                    <span class="server-header-ip-address" style="display:none;">@(Model.ExternalIPAddress):@(Model.Port)</span>
+                </a>
+                <has-permission entity="AdminMenu" required-permission="Update">
+                    <!-- send message button -->
+                    <a href="#actionModal" class="profile-action text-light align-self-center" data-action="chat" data-action-id="@Model.ID">
+                        <i class="oi oi-chat ml-5 mr-5"></i>
+                    </a>
+                </has-permission>
+                <!-- scoreboard button -->
+                <a asp-controller="Server" asp-action="Scoreboard" asp-route-serverId="@Model.Endpoint" title="@ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]"
+                   class="text-light align-self-center">
+                    <i class="oi oi-spreadsheet ml-5 mr-5"></i>
+                </a>
+            </div>
+        </div>
+        <div class="align-self-center">
+            <span>@Model.Map</span>
+            @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
+            {
+                <span>&ndash;</span>
+                <span>@Model.GameType</span>
+            }
+        </div>
+        <div class="align-self-center d-flex flex-column flex-md-row">
+            @if (Model.LobbyZScore != null)
+            {
+                <div data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_HOME_RATING_DESC"]" class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">
+                    <span>@(Model.LobbyZScore ?? 0)</span>
+                    <span class="oi oi-bolt align-self-center" style="margin-right: 2px; margin-left:  2px"></span>
+                </div>
+            }
+            <div class="mr-5 ml-5 align-self-center">
+                <span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span>
+            </div>
         </div>
     </div>
 
-    @if (ViewBag.Authorized)
+    <div id="server_clientactivity_@Model.ID" class="bg-dark-dm bg-light-lm server-activity">
+        <partial name="../Server/_ClientActivity" for="@Model"/>
+    </div>
+     
+    @if (Model.Players.Any())
     {
-        <div class="p-1 d-flex d-md-none justify-content-center col-12">
-            <span class="oi oi-chat align-self-center profile-action d-flex d-md-none" data-action="chat" data-action-id="@Model.ID"></span>
+        <div class="ml-15 mr-15">
+            <hr/>
         </div>
     }
-    <a asp-controller="Server" asp-action="Scoreboard" title="@ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]"
-               class="p-1 d-flex d-md-none justify-content-center col-12">
-                <span class="oi oi-spreadsheet ml-1"></span>
-    </a>
-</div>
 
-<div id="server_clientactivity_@Model.ID" class="bg-dark row server-activity @(Model.ClientCount > 0 ? "pt-2 pb-2" : "")">
-    @await Html.PartialAsync("../Server/_ClientActivity", Model)
-</div>
-
-<div class="row server-history mb-4">
-    <div class="server-history-row m-auto" style="position:relative; width: 100%" id="server_history_@Model.ID" data-serverid="@Model.ID"
-         data-clienthistory='@Html.Raw(Json.Serialize(Model.ClientHistory))'
-         data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientHistory.ClientCounts))'
-         data-online="@Model.Online">
-        <canvas id="server_history_canvas_@Model.ID" height="100"></canvas>
+    <div class="server-history">
+        <div class="server-history-row m-auto bg-dark-dm bg-light-lm rounded-bottom" style="position:relative; width: 100%" id="server_history_@Model.ID" data-serverid="@Model.ID"
+             data-clienthistory='@Html.Raw(Json.Serialize(Model.ClientHistory))'
+             data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientHistory.ClientCounts))'
+             data-online="@Model.Online">
+            <canvas id="server_history_canvas_@Model.ID" class="rounded-bottom" height="100"></canvas>
+        </div>
     </div>
 </div>

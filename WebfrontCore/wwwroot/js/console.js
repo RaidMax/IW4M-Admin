@@ -7,16 +7,30 @@
     }
 
     showLoader();
-    $.get('/Console/ExecuteAsync', { serverId: serverId, command: command })
+    $.get('/Console/Execute', { serverId: serverId, command: command })
         .done(function (response) {
+            $('#console_command_response pre').html('');
+            
             hideLoader();
-            $('#console_command_response').append(response);
+            response.map(r => r.response).forEach(item => {
+                $('#console_command_response').append(`<div>${item}</div>`);
+            })
+            
+            $('#console_command_response').append('<hr/>')
             $('#console_command_value').val("");
         })
-        .fail(function (jqxhr, textStatus, error) {
+        .fail(function (response) {
+            $('#console_command_response pre').html('');
             errorLoader();
             hideLoader();
-            $('#console_command_response').text(_localization['WEBFRONT_CONSOLE_ERROR'] + error).addClass('text-danger');
+            
+            if (response.status < 500) {
+                response.responseJSON.map(r => r.response).forEach(item => {
+                    $('#console_command_response').append(`<div class="text-danger">${item}</div>`);
+                })
+            } else {
+                $('#console_command_response').append(`<div class="text-danger">Could not execute command...</div>`);
+            }
         });
 }
 

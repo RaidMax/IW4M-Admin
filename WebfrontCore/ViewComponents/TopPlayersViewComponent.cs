@@ -16,22 +16,16 @@ namespace WebfrontCore.ViewComponents
             _config = config;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(int count, int offset, long? serverId = null)
+        public async Task<IViewComponentResult> InvokeAsync(int count, int offset, string serverEndpoint = null)
         {
-            if (serverId == 0)
-            {
-                serverId = null;
-            }
+            var server = Plugin.ServerManager.GetServers()
+                .FirstOrDefault(server => server.ToString() == serverEndpoint);
 
-            var server = Plugin.ServerManager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
-
-            if (server != null)
-            {
-                serverId = StatManager.GetIdForServer(server);
-            }
-
+            var serverId = server is null ? (long?)null : StatManager.GetIdForServer(server);
 
             ViewBag.UseNewStats = _config?.EnableAdvancedMetrics ?? true;
+            ViewBag.SelectedServerName = server?.Hostname;
+            
             return View("~/Views/Client/Statistics/Components/TopPlayers/_List.cshtml",
                 ViewBag.UseNewStats
                     ? await Plugin.Manager.GetNewTopStats(offset, count, serverId)

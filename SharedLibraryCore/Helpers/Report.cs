@@ -1,4 +1,5 @@
-﻿using SharedLibraryCore.Database.Models;
+﻿using System;
+using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore.Helpers
 {
@@ -7,5 +8,6 @@ namespace SharedLibraryCore.Helpers
         public EFClient Target { get; set; }
         public EFClient Origin { get; set; }
         public string Reason { get; set; }
+        public DateTime ReportedOn { get; set; }
     }
 }

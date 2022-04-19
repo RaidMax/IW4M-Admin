@@ -1,10 +1,10 @@
 ﻿function refreshScoreboard() {
-    const serverPanel = $('.scoreboard-container.active');
+    const serverPanel = $('.scoreboard-container');
     const serverId = $(serverPanel).data('server-id');
 
     const scoreboardTable = $(serverPanel).children('.table-sort');
 
-    $.get(`../Server/${serverId}/Scoreboard?order=${scoreboardTable.data('sort-column')}&down=${scoreboardTable.data('sort-down')}`, (response) => {
+    $.get(`/Server/${serverId}/Scoreboard?order=${scoreboardTable.data('sort-column')}&down=${scoreboardTable.data('sort-down')}`, (response) => {
         $(serverPanel).html(response);
         setupDataSorting();
     });
@@ -16,10 +16,6 @@ $(document).ready(() => {
     }
     
     setInterval(refreshScoreboard, 5000);
-    
-    $(window.location.hash).tab('show');
-    $(`${window.location.hash}_nav`).addClass('active');
-
     setupDataSorting();
 })
 

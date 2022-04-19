@@ -3,17 +3,16 @@ using SharedLibraryCore.Database.Models;
 
 namespace WebfrontCore.ViewModels
 {
-   
     public class ScoreboardInfo
     {
-       public string ServerName { get; set; }
-       public long ServerId { get; set; }
-       public string MapName { get; set; }
-       public string OrderByKey { get; set; }
-       public bool ShouldOrderDescending { get; set; }
-       public List<ClientScoreboardInfo> ClientInfo { get; set; }
+        public string ServerName { get; set; }
+        public string ServerId { get; set; }
+        public string MapName { get; set; }
+        public string OrderByKey { get; set; }
+        public bool ShouldOrderDescending { get; set; }
+        public List<ClientScoreboardInfo> ClientInfo { get; set; }
     }
-    
+
     public class ClientScoreboardInfo
     {
         public string ClientName { get; set; }

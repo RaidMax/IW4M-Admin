@@ -1,21 +1,22 @@
 ﻿@using SharedLibraryCore.Dtos.Meta.Responses
+@using Humanizer
 @model IList<MessageResponse>
 @{
     Layout = null;
 }
 
-<div class="client-message-context">
-    <h5 class="bg-primary pt-2 pb-2 pl-3 mb-0 mt-2 text-white">@Model.First().When.ToString()</h5>
-    <div class="bg-dark p-3 mb-2 border-bottom">
+<div class="client-message-context mt-10 mb-10">
+    <h5 class="rounded-top bg-primary text-light mb-0 p-10 pt-5 pb-5">@Model.First().When.Humanize()</h5>
+    <div class="bg-dark-dm bg-light-lm p-10 pr-20 rounded-bottom">
         @foreach (var message in Model)
         {
-            <span class="text-white">
-                <color-code value="@message.ClientName" allow="ViewBag.EnableColorCodes"></color-code>
+            <span>
+                <color-code value="@message.ClientName" allow="@ViewBag.EnableColorCodes"></color-code>
             </span>
             <span>
                 &mdash;
-                <span class="@(message.IsQuickMessage ? "font-italic" : "")">
-                    <color-code value="@(message.IsHidden ? message.HiddenMessage : message.Message)" allow="ViewBag.EnableColorCodes"></color-code>
+                <span class="@(message.IsQuickMessage ? "font-italic" : "") text-light-dm text-dark-lm">
+                    <color-code value="@(message.IsHidden ? message.HiddenMessage : message.Message)" allow="@ViewBag.EnableColorCodes"></color-code>
                 </span>
             </span>
             <br />

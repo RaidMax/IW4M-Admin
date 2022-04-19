@@ -1,15 +1,16 @@
 ﻿@model Exception
-@using SharedLibraryCore
 
 @{
     ViewData["Title"] = "Error";
 }
 
-<h4 class="text-danger">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_TITLE"]</h4>
-<h4 class="text-danger">@SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_DESC"]</h4>
-<strong class="text-warning">
-    @if (Model != null)
-    {
-        @SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_CODE"].FormatExt(Model.Message);
-    }
-</strong>
+<div class="content">
+    <h2 class="content-title text-danger">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_TITLE"]</h2>
+    <h2 class="content-title text-muted">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_GENERIC_DESC"]</h2>
+    <strong class="text-warning">
+        @if (Model != null)
+        {
+            @Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ERROR_CODE"].FormatExt(Model.Message)
+        }
+    </strong>
+</div>

@@ -34,11 +34,11 @@ namespace WebfrontCore.Controllers
             return View(activeServers);
         }
 
-        public async Task<IActionResult> ExecuteAsync(long serverId, string command)
+        public async Task<IActionResult> Execute(long serverId, string command)
         {
             var server = Manager.GetServers().First(s => s.EndPoint == serverId);
 
-            var client = new EFClient()
+            var client = new EFClient
             {
                 ClientId = Client.ClientId,
                 Level = Client.Level,
@@ -50,7 +50,7 @@ namespace WebfrontCore.Controllers
                 }
             };
 
-            var remoteEvent = new GameEvent()
+            var remoteEvent = new GameEvent
             {
                 Type = GameEvent.EventType.Command,
                 Data = command.StartsWith(_appconfig.CommandPrefix) ||
@@ -97,15 +97,15 @@ namespace WebfrontCore.Controllers
             {
                 response = new[]
                 {
-                    new CommandResponseInfo()
+                    new CommandResponseInfo
                     {
                         ClientId = client.ClientId,
                         Response = Utilities.CurrentLocalization.LocalizationIndex["COMMADS_RESTART_SUCCESS"]
                     }
                 };
             }
-
-            return View("_Response", response);
+            
+            return remoteEvent.Failed ? StatusCode(400, response) : Ok(response);
         }
     }
 }

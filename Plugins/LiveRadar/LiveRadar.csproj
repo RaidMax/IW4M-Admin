@@ -15,13 +15,6 @@
     <StartupObject />
   </PropertyGroup>
 
-
-  <ItemGroup>
-    <Content Update="Views\_ViewImports.cshtml">
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2022.3.23.1" PrivateAssets="All" />
   </ItemGroup>

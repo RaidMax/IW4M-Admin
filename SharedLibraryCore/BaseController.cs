@@ -130,7 +130,7 @@ namespace SharedLibraryCore
                     new Claim(ClaimTypes.NameIdentifier, Client.CurrentAlias.Name),
                     new Claim(ClaimTypes.Role, Client.Level.ToString()),
                     new Claim(ClaimTypes.Sid, Client.ClientId.ToString()),
-                    new Claim(ClaimTypes.PrimarySid, Client.NetworkId.ToString("X"))
+                    new Claim(ClaimTypes.PrimarySid, Client.NetworkId.ToString("X")),
                 };
                 var claimsIdentity = new ClaimsIdentity(claims, "login");
                 SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
@@ -161,6 +161,14 @@ namespace SharedLibraryCore
             ViewBag.EnablePrivilegedUserPrivacy = AppConfig.EnablePrivilegedUserPrivacy;
             ViewBag.Configuration = AppConfig;
             ViewBag.ScriptInjection = AppConfig.Webfront?.ScriptInjection;
+            ViewBag.CommunityInformation = AppConfig.CommunityInformation;
+            ViewBag.ClientCount = Manager.GetServers().Sum(server => server.ClientNum);
+            ViewBag.AdminCount = Manager.GetServers().Sum(server =>
+                server.GetClientsAsList()
+                    .Count(client => client.Level >= Data.Models.Client.EFClient.Permission.Trusted));
+            ViewBag.ReportCount = Manager.GetServers().Sum(server =>
+                server.Reports.Count(report => DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)));
+            ViewBag.PermissionsSet = PermissionsSet;
 
             base.OnActionExecuting(context);
         }

@@ -1,0 +1,166 @@
+﻿@using SharedLibraryCore.Configuration
+@using SharedLibraryCore.Dtos
+@using Data.Models.Client
+
+<!-- left side navigation -->
+<div class="sidebar-overlay" onclick="halfmoon.toggleSidebar()"></div>
+<div class="sidebar">
+    <div class="sidebar-menu list">
+        <div class="sidebar-content m-0">
+            <div class="pr-20 pl-20 mb-20 d-block d-lg-none">
+                <partial name="_SearchResourceForm"/>
+            </div>
+            <span class="sidebar-title ">Main</span>
+            <div class="sidebar-divider"></div>
+            <!-- servers -->
+            <a asp-controller="Home" asp-action="Index" class="sidebar-link">
+                <i class="oi oi-hard-drive mr-5"></i>
+                <span class="name">@ViewBag.Localization["WEBFRONT_NAV_SERVERS"]</span>
+            </a>
+            <!-- about -->
+            <a asp-controller="About" asp-action="Index" class="sidebar-link">
+                <i class="oi oi-info mr-5"></i>
+                <span class="name">@ViewBag.Localization["WEBFRONT_NAV_ABOUT"]</span>
+            </a>
+            <!-- penalties -->
+            <a asp-controller="Penalty" asp-action="List" class="sidebar-link">
+                <i class="oi oi-lock-locked mr-5"></i>
+                <span class="name">@ViewBag.Localization["WEBFRONT_NAV_PENALTIES"]</span>
+            </a>
+            <!-- privileged -->
+            <has-permission entity="PrivilegedClientsPage" required-permission="Read">
+                <a asp-controller="Client" asp-action="Privileged" class="sidebar-link">
+                    <i class="oi oi-people mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_PRIVILEGED"]</span>
+                </a>
+            </has-permission>
+            <!-- help -->
+            <has-permission entity="HelpPage" required-permission="Read">
+                <a asp-controller="Home" asp-action="Help" class="sidebar-link">
+                    <i class="oi oi-question-mark mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_HELP"]</span>
+                </a>
+            </has-permission>
+            <!-- profile -->
+            <has-permission entity="ProfilePage" required-permission="Read">
+                <a asp-controller="Client" asp-action="Profile" asp-route-id="@ViewBag.User.ClientId" class="sidebar-link">
+                    <i class="oi oi-person mr-5"></i>
+                    <span class="name">Profile</span>
+                </a>
+            </has-permission>
+
+            @if (!ViewBag.Authorized)
+            {
+                <a href="#actionModal" class="profile-action sidebar-link" data-action="login">
+                    <i class="oi oi-key mr-5"></i>
+                    <span class="name">Login</span>
+                </a>
+            }
+
+            <br/>
+            <!-- stats -->
+            <div class="sidebar-title ">Stats</div>
+            <div class="sidebar-divider"></div>
+
+            @foreach (Page pageLink in ViewBag.Pages)
+            {
+                <a class="sidebar-link" href="@pageLink.Location">
+                    <i class="oi @(pageLink.Location.EndsWith("Radar/All") ? "oi-wifi" : "oi-bar-chart") mr-5"></i>
+                    <span class="name">@pageLink.Name</span>
+                </a>
+            }
+            <!-- scoreboard -->
+            <a asp-controller="Server" asp-action="Scoreboard" class="sidebar-link">
+                <i class="oi oi-spreadsheet mr-5"></i>
+                <span class="name">Scoreboard</span>
+            </a>
+            <br/>
+
+            <!-- socials -->
+            @if (ViewBag.CommunityInformation?.IsEnabled && ViewBag.CommunityInformation.SocialAccounts.Length > 0)
+            {
+                <span class="sidebar-title ">Socials</span>
+                <div class="sidebar-divider"></div>
+            }
+
+            @foreach (var social in ViewBag.CommunityInformation?.SocialAccounts ?? Array.Empty<SocialAccountConfiguration>())
+            {
+                <a href="@social.Url" class="sidebar-link" target="_blank" title="@social.Title">
+                    @if (!string.IsNullOrWhiteSpace(social.IconId))
+                    {
+                        <i class="oi @social.IconId mr-5"></i>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(social.IconUrl))
+                    {
+                        var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out Uri parsedUrl)
+                            ? parsedUrl.AbsoluteUri
+                            : $"/images/community/{social.IconUrl}";
+                        <img class="img-fluid mr-5" style="max-height: 1.2rem" src="@url" alt="@social.Title"/>
+                    }
+                    <span class="name">@social.Title</span>
+                </a>
+            }
+            <br/>
+
+            <!-- admin -->
+            <has-permission entity="AdminMenu" required-permission="Read">
+                <div class="sidebar-title ">Admin</div>
+                <div class="sidebar-divider"></div>
+
+                <has-permission entity="ConsolePage" required-permission="Read">
+                    <a asp-controller="Console" asp-action="Index" class="sidebar-link">
+                        <i class="oi oi-terminal mr-5"></i>
+                        <span class="name">@ViewBag.Localization["WEBFRONT_NAV_CONSOLE"]</span>
+                    </a>
+                </has-permission>
+                @if (ViewBag.User.Level == EFClient.Permission.Owner)
+                {
+                    <a asp-controller="Configuration" asp-action="Edit" class="sidebar-link">
+                        <i class="oi oi-cog mr-5"></i>
+                        <span class="name">Configuration</span>
+                    </a>
+                }
+                <has-permission entity="AuditPage" required-permission="Read">
+                    <a asp-controller="Admin" asp-action="AuditLog" class="sidebar-link">
+                        <i class="oi oi-book mr-5"></i>
+                        <span class="name">@ViewBag.Localization["WEBFRONT_NAV_AUDIT_LOG"]</span>
+                    </a>
+                </has-permission>
+                @*<has-permission entity="RecentPlayersPage" required-permission="Read">
+                    <a class="sidebar-link profile-action" href="#actionModal" data-action="RecentClients" title="@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]">
+                        <i class="oi oi-timer mr-5"></i>
+                        <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]</span>
+                    </a>
+                </has-permission>*@
+                <a class="sidebar-link profile-action" href="#actionModal" data-action="GenerateLoginToken" title="@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]">
+                    <i class="oi oi-key mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]</span>
+                </a>
+            </has-permission>
+            @if (ViewBag.Authorized)
+            {
+                <a asp-controller="Account" asp-action="Logout" class="sidebar-link">
+                    <i class="oi oi-account-logout mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_LOGOUT"]</span>
+                </a>
+            }
+
+            <br/>
+            <!-- version -->
+            <div class="sidebar-link font-size-12 font-weight-light">
+                @if (ViewBag.Authorized)
+                {
+                    <span>Logged in as <color-code value="@ViewBag.User.Name"></color-code></span>
+                }
+                else
+                {
+                    <span>Not logged in</span>
+                }
+            </div>
+            <div class="sidebar-divider mt-0 mb-0"></div>
+            <a href="https://github.com/RaidMax/IW4M-Admin/releases" class="sidebar-link" target="_blank">
+                <span class="name font-size-12 font-weight-light">IW4MAdmin <span class="text-primary">@Program.Manager.Version</span></span>
+            </a>
+        </div>
+    </div>
+</div>

@@ -529,32 +529,36 @@ namespace SharedLibraryCore
         public static bool HasPermission<TEntity, TPermission>(this IEnumerable<string> permissionsSet, TEntity entity,
             TPermission permission) where TEntity : Enum where TPermission : Enum
         {
-            return permissionsSet?.Any(raw =>
+            if (permissionsSet == null)
             {
-                if (raw == "*")
+                return false;
+            }
+            
+            var requiredPermission = $"{entity.ToString()}.{permission.ToString()}";
+            var hasAllPermissions = permissionsSet.Any(p => p.Equals("*"));
+            var permissionCheckResult = permissionsSet.Select(p =>
+            {
+                if (p.Equals(requiredPermission, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
                 }
-                
-                var split = raw.Split(".");
 
-                if (split.Length != 2)
+                if (p.Equals($"-{requiredPermission}", StringComparison.InvariantCultureIgnoreCase))
                 {
                     return false;
                 }
 
-                if (!Enum.TryParse(typeof(TEntity), split[0], out var e))
-                {
-                    return false;
-                }
+                return (bool?)null;
+            }).ToList();
 
-                if (!Enum.TryParse(typeof(TPermission), split[1], out var p))
-                {
-                    return false;
-                }
+            var permissionNegated = permissionCheckResult.Any(result => result.HasValue && !result.Value);
 
-                return (e?.Equals(entity) ?? false) && (p?.Equals(permission) ?? false);
-            }) ?? false;
+            if (permissionNegated)
+            {
+                return false;
+            }
+
+            return hasAllPermissions || permissionCheckResult.Any(result => result.HasValue && result.Value);
         }
 
         public static bool HasPermission<TEntity, TPermission>(this ApplicationConfiguration appConfig,

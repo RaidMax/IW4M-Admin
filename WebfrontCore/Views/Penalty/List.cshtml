@@ -1,86 +1,101 @@
-﻿@model Data.Models.EFPenalty.PenaltyType
+﻿@using Humanizer
+@using Data.Models
+@model Data.Models.EFPenalty.PenaltyType
 @{
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
+    var loc = Utilities.CurrentLocalization.LocalizationIndex;
 }
-<h4 class="pb-3 text-center">@ViewBag.Title</h4>
-<div class="row">
-    <div class="d-block d-md-flex w-100 pb-2">
-        <select class="form-control bg-dark text-muted" id="penalty_filter_selection">
-            @{
-                foreach (var penaltyType in Enum.GetValues(typeof(Data.Models.EFPenalty.PenaltyType)))
-                {
-                    if ((Data.Models.EFPenalty.PenaltyType)penaltyType == Data.Models.EFPenalty.PenaltyType.Any)
-                    {
-                        if (Model == Data.Models.EFPenalty.PenaltyType.Any)
+<div class="content mt-20">
+    <h2 class="content-title mt-15">@ViewBag.Title</h2>
+    <table class="table with-fixed-layout bg-dark-dm bg-light-lm">
+        <thead>
+        <tr class="bg-primary text-light d-none d-lg-table-row">
+            <th colspan="20%">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
+            <th colspan="10%">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
+            <th colspan="35%">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
+            <th colspan="20%">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
+            <th colspan="15%" class="text-right">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</th>
+        </tr>
+        <tr class="d-flex d-lg-table-row flex-column">
+            <td colspan="20%" class="p-10 pb-10">
+                <div class="d-flex p-5 pr-15 bg-dark-dm bg-light-lm rounded">
+                    <div class="custom-switch">
+                        @if (ViewBag.HideAutomatedPenalties)
                         {
-                            <option value="@Convert.ToInt32(penaltyType)" selected="selected" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"] @penaltyType.ToString()</option>
+                            <input type="checkbox" id="hide_automated_penalties_checkbox" checked="checked"/>
                         }
                         else
                         {
-                            <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOW"]  @penaltyType.ToString()</option>
+                            <input type="checkbox" id="hide_automated_penalties_checkbox"/>
                         }
-                    }
-                    else
-                    {
-                        if ((Data.Models.EFPenalty.PenaltyType)penaltyType == Model)
+                        <label for="hide_automated_penalties_checkbox">@loc["WEBFRONT_PENALTY_HIDE_AUTOMATED"]</label>
+                    </div>
+                </div>
+            </td>
+            <td colspan="46%" class="p-10 pt-5 pb-5">
+                <div class="input-group mb-10 mb-lg-0">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"].Titleize()</span>
+                    </div>
+                    <select class="pl-15 form-control" id="penalty_filter_selection">
+                        @foreach (var penaltyType in Enum.GetValues(typeof(EFPenalty.PenaltyType)).Cast<EFPenalty.PenaltyType>().OrderByDescending(penalty => penalty == EFPenalty.PenaltyType.Any))
                         {
-                            <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
+                            if (penaltyType == EFPenalty.PenaltyType.Any)
+                            {
+                                if (Model == EFPenalty.PenaltyType.Any)
+                                {
+                                    <option value="@Convert.ToInt32(penaltyType)" selected="selected">@penaltyType.ToString()</option>
+                                }
+                                else
+                                {
+                                    <option value="@Convert.ToInt32(penaltyType)">@penaltyType.ToString()</option>
+                                }
+                            }
+                            else
+                            {
+                                if (penaltyType == Model)
+                                {
+                                    <option value="@Convert.ToInt32(penaltyType)" selected="selected">@penaltyType.ToString()</option>
+                                }
+                                else
+                                {
+                                    <option value="@Convert.ToInt32(penaltyType)">@penaltyType.ToString()</option>
+                                }
+                            }
                         }
-                        else
-                        {
-                            <option value="@Convert.ToInt32(penaltyType)" )>@loc["WEBFRONT_PENALTY_TEMPLATE_SHOWONLY"]  @penaltyType.ToString()s</option>
-                        }
-                    }
-                }
-            }
-        </select>
-        <div class="pl-md-2 pr-md-2 pt-2 pt-md-0">
-            <label class="toggle-switch">
-                @if (ViewBag.HideAutomatedPenalties)
-                {
-                    <input type="checkbox" id="hide_automated_penalties_checkbox" checked="checked" />
-                }
-
-                else
-                {
-                    <input type="checkbox" id="hide_automated_penalties_checkbox" />
-                }
-                <span class="toggle-switch-slider"></span>
-            </label>
-        </div>
-        <div class="align-self-center">
-            <span class="text-light text-nowrap">@loc["WEBFRONT_PENALTY_HIDE_AUTOMATED"]</span>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <table class="table table-striped">
-        <thead class="d-none d-lg-table-header-group">
-            <tr class="bg-primary pt-2 pb-2">
-                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
-                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
-                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</th>
-                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
-                <th scope="col" class="text-right">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</th>
-            </tr>
+                    </select>
+                </div>
+            </td>
+        </tr>
         </thead>
-        <tbody id="penalty_table" class="border-bottom bg-dark">
-            @await Component.InvokeAsync("PenaltyList", new WebfrontCore.ViewModels.PenaltyFilterInfo()
-            {
-                Offset = 0,
-                ShowOnly = Model,
-                IgnoreAutomated = ViewBag.HideAutomatedPenalties
-            })
+        <tbody id="penalty_table">
+        @await Component.InvokeAsync("PenaltyList", new WebfrontCore.ViewModels.PenaltyFilterInfo
+        {
+            Offset = 0,
+            Count = 30,
+            ShowOnly = Model,
+            IgnoreAutomated = ViewBag.HideAutomatedPenalties,
+        })
         </tbody>
     </table>
-    <table class="table d-table d-lg-none">
-        <tbody></tbody>
-    </table>
-    <span id="load_penalties_button" class="oi oi-chevron-bottom text-center text-primary w-100 h3 pb-0 mb-0 d-none d-lg-block"></span>
+    
+    <div class="w-full text-center">
+        <i id="loaderLoad" class="oi oi-chevron-bottom mt-10 loader-load-more text-primary m-auto" aria-hidden="true"></i>
+    </div>
+    
 </div>
 
 @section scripts {
     <environment include="Development">
+        <script type="text/javascript" src="~/js/loader.js"></script>
         <script type="text/javascript" src="~/js/penalty.js"></script>
     </environment>
+    <script>        
+    initLoader('/Penalty/ListAsync', '#penalty_table', 30, 30, [{
+                        'name': 'hideAutomatedPenalties',
+                        'value': () => document.getElementById('hide_automated_penalties_checkbox').checked
+                    }, {
+                        'name': 'showOnly',
+                        'value': () => $('#penalty_filter_selection').val()
+                    }]);
+    </script>
 }

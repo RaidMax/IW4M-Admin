@@ -20,6 +20,7 @@ namespace SharedLibraryCore.Dtos
         public bool Online { get; set; }
         public string ConnectProtocolUrl { get; set; }
         public string IPAddress { get; set; }
+        public string ExternalIPAddress { get; set; }
         public bool IsPasswordProtected { get; set; }
         public string Endpoint => $"{IPAddress}:{Port}";
 

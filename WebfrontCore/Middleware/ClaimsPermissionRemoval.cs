@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Data.Models.Client;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using static SharedLibraryCore.GameEvent;
 
 namespace WebfrontCore.Middleware
@@ -81,7 +82,7 @@ namespace WebfrontCore.Middleware
                 // they've been removed
                 if (!_privilegedClientIds.Contains(clientId) && clientId != 1)
                 {
-                    await context.SignOutAsync();
+                    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 }
             }
 

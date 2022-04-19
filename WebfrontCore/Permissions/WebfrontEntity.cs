@@ -2,8 +2,19 @@
 
 public enum WebfrontEntity
 {
-    IPAddress,
-    MetaAliasUpdate
+    ClientIPAddress,
+    ClientGuid,
+    ClientLevel,
+    MetaAliasUpdate,
+    Penalty,
+    PrivilegedClientsPage,
+    HelpPage,
+    ConsolePage,
+    ConfigurationPage,
+    AuditPage,
+    RecentPlayersPage,
+    ProfilePage,
+    AdminMenu
 }
 
 public enum WebfrontPermission

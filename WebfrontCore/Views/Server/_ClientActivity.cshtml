@@ -2,146 +2,81 @@
 
 @{
     Layout = null;
-    int half = Model.ClientCount == 0 || Model.Players.Count == 0 ? 0 : (int)Math.Ceiling(Model.ClientCount / 2.0);
-}
-<div class="col-12 col-md-7 d-none d-md-block">
-    @{
-        for (int i = 0; i < Model.ChatHistory.Count; i++)
+    var half = Model.ClientCount == 0 || Model.Players.Count == 0 ? 0 : (int)Math.Ceiling(Model.ClientCount / 2.0);
+    var groupedClients = Model.Players.Select((client, i) => new { index = i, client })
+        .OrderBy(client => client.client.Name)
+        .GroupBy(client => client.index >= half).Select((group, index) => new
         {
-            if (Model.ChatHistory[i] == null ||
-                Model.ChatHistory[i].Message == null ||
-                Model.ChatHistory[i].Name == null)
-            {
-                continue;
-            }
+            group,
+            index
+        }).ToList();
 
-            string message = Model.ChatHistory[i].IsHidden && !ViewBag.Authorized ? Model.ChatHistory[i].HiddenMessage : Model.ChatHistory[i].Message;
-
-            if (Model.ChatHistory[i].Message == "CONNECTED")
-            {
-                <span class="text-light">
-                    <span class="oi oi-account-login mr-2 text-success"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
-                </span><br />
-            }
-            if (Model.ChatHistory[i].Message == "DISCONNECTED")
-            {
-                <span class="text-light">
-                    <span class="oi oi-account-logout mr-2 text-danger"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
-                </span><br />
-            }
-            if (Model.ChatHistory[i].Message != "CONNECTED" && Model.ChatHistory[i].Message != "DISCONNECTED")
-            {
-                <span class="text-light">
-                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
-                </span>
-                <span>
-                    &mdash;
-                    <color-code value="@message.CapClientName(48)"></color-code>
-                </span><br />
-            }
-        }
+    string GetIconForState(string messageState)
+    {
+        return messageState switch
+        {
+            "CONNECTED" => "oi-account-login text-success mr-5",
+            "DISCONNECTED" => "oi-account-logout text-danger mr-5",
+            _ => ""
+            };
     }
-</div>
-<div class="col-md-5">
-    <div class="row" style="overflow-wrap: anywhere">
-        <div class="col-6 text-left text-md-right">
-            @{
-                for (int i = 0; i < half; i++)
-                {
-                    if (i > Model.Players.Count - 1)
+}
+
+<div class="pt-15 pl-15 pr-15 d-flex flex-wrap flex-column flex-md-row justify-content-between w-full w-auto-lg">
+    @if (groupedClients.Count > 0)
+    {
+        <div class="flex-fill flex-lg-grow-0 w-half-md mr-md-10 mb-md-10">
+            @foreach (var chat in Model.ChatHistory)
+            {
+                var message = chat.IsHidden && !ViewBag.Authorized ? chat.HiddenMessage : chat.Message;
+                var stateIcon = GetIconForState(chat.Message);
+
+                <div>
+                    <i class="oi @stateIcon"></i>
+
+                    <span>
+                        <color-code value="@chat.Name"></color-code>
+                    </span>
+                    @if (stateIcon == "")
                     {
-                        continue;
+                        <span class="text-truncate">
+                            &mdash;
+                            <span class="text-white-dm text-black-lm">
+                                <color-code value="@message?.CapClientName(48)"></color-code>
+                            </span>
+                        </span>
                     }
-
-                    string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
-                    <div class="d-inline-flex">
-                        @if (ViewBag.Authorized)
-                        {
-                            <div class="oi oi-circle-x ml-0 mr-1 profile-action action-kick-button d-inline d-md-none" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
-                        }
-
-                        <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
-                            <color-code value="@Model.Players[i].Name"></color-code>
-                        </a>
-
-                        @if (ViewBag.Authorized)
-                        {
-                            <div class="oi oi-circle-x ml-1 profile-action action-kick-button d-none d-md-inline" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></div>
-                        }
-                    </div>
-                    <br />
-                }
+                </div>
+        
             }
+                <hr class="d-block d-md-none"/>
         </div>
-        <div class="col-6 text-right w-50">
-            @{
-                for (int i = half; i < Math.Min(Model.ClientCount, Model.Players.Count); i++)
+    }
+
+    <div class="d-flex flex-row flex-fill flex-lg-grow-0 w-half-md">
+        
+        @foreach (var clientIndex in groupedClients)
+        {
+            <div class="@(clientIndex.index == 1 ? "pl-md-10 text-right" : "pr-md-10") flex-fill">
+                @foreach (var client in clientIndex.group)
                 {
-                    if (i > Model.Players.Count - 1)
-                    {
-                        continue;
-                    }
-
-                    string levelColorClass = !ViewBag.Authorized ? "" : $"level-color-{Model.Players[i].LevelInt}";
-
-                    <div>
-                        <a asp-controller="Client" asp-action="ProfileAsync" asp-route-id="@Model.Players[i].ClientId" class="@levelColorClass">
-                            <color-code value="@Model.Players[i].Name"></color-code>
+                    var levelColorClass = !ViewBag.Authorized || client.client.LevelInt == 0 ? "text-light-dm text-dark-lm" : $"level-color-{client.client.LevelInt}";
+                    <div class="d-flex @(clientIndex.index == 1 ? "flex-row-reverse" : "") w-xl-150">
+                        <has-permission entity="AdminMenu" required-permission="Update">
+                            <a href="#actionModal" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId" aria-hidden="true">
+                                <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
+                            </a>
+                        </has-permission>
+                        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.client.ClientId" class="@(clientIndex.index == 1 ? "mr-5" : "ml-5") @levelColorClass no-decoration">
+                            <color-code value="@client.client.Name"></color-code>
                         </a>
-                        @if (ViewBag.Authorized)
-                        {
-                            <span class="oi oi-circle-x profile-action align-baseline action-kick-button flex-column mt-0" data-action="kick" data-action-id="@Model.Players[i].ClientId" aria-hidden="true"></span>
-                        }
-                        <br />
                     </div>
                 }
-            }
-        </div>
+            </div>
+        }
+         @if (groupedClients.Count > 0)
+         {
+             <br/>
+         }
     </div>
-</div>
-@if (Model.ChatHistory.Count > 0)
-{
-    <div class="w-100 border-bottom d-md-none d-block mt-1 mb-1"></div>
-}
-<div class="col-12 col-md-8 d-md-none d-block text-left">
-    @{
-        for (int i = 0; i < Model.ChatHistory.Count; i++)
-        {
-            if (Model.ChatHistory[i] == null ||
-                Model.ChatHistory[i].Message == null ||
-                Model.ChatHistory[i].Name == null)
-            {
-                continue;
-            }
-
-            string message = Model.ChatHistory[i].IsHidden && !ViewBag.Authorized ? Model.ChatHistory[i].HiddenMessage : Model.ChatHistory[i].Message;
-
-            if (Model.ChatHistory[i].Message == "CONNECTED")
-            {
-                <span class="text-light">
-                    <span class="oi oi-account-login mr-2 text-success"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
-                </span><br />
-            }
-            if (Model.ChatHistory[i].Message == "DISCONNECTED")
-            {
-                <span class="text-light">
-                    <span class="oi oi-account-logout mr-2 text-danger"> </span>
-                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
-                </span><br />
-            }
-            if (Model.ChatHistory[i].Message != "CONNECTED" && Model.ChatHistory[i].Message != "DISCONNECTED")
-            {
-                <span class="text-light">
-                    <color-code value="@Model.ChatHistory[i].Name"></color-code>
-                </span>
-                <span>
-                    &mdash;
-                    <color-code value="@message.CapClientName(48)"></color-code>
-                </span><br />
-            }
-        }
-    }
 </div>

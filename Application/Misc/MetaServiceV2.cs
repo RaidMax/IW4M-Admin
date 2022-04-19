@@ -446,54 +446,7 @@ public class MetaServiceV2 : IMetaServiceV2
 
     private static IEnumerable<T> ProcessInformationMeta<T>(IEnumerable<T> meta) where T : IClientMeta
     {
-        var metaList = meta.ToList();
-        var metaWithColumn = metaList
-            .Where(m => m.Column != null)
-            .ToList();
-
-        var columnGrouping = metaWithColumn
-            .GroupBy(m => m.Column)
-            .ToList();
-
-        var metaToSort = metaList.Except(metaWithColumn).ToList();
-
-        var table = columnGrouping.Select(metaItem => new List<T>(metaItem)).ToList();
-
-        while (metaToSort.Count > 0)
-        {
-            var sortingMeta = metaToSort.First();
-
-            int IndexOfSmallestColumn()
-            {
-                var index = 0;
-                var smallestColumnSize = int.MaxValue;
-                for (var i = 0; i < table.Count; i++)
-                {
-                    if (table[i].Count >= smallestColumnSize)
-                    {
-                        continue;
-                    }
-
-                    smallestColumnSize = table[i].Count;
-                    index = i;
-                }
-
-                return index;
-            }
-
-            var columnIndex = IndexOfSmallestColumn();
-
-            sortingMeta.Column = columnIndex;
-            sortingMeta.Order = columnGrouping
-                .First(group => group.Key == columnIndex)
-                .Count();
-
-            table[columnIndex].Add(sortingMeta);
-
-            metaToSort.Remove(sortingMeta);
-        }
-
-        return metaList;
+        return meta;
     }
 
     private static bool ValidArgs(string key, int clientId) => !string.IsNullOrWhiteSpace(key) && clientId > 0;

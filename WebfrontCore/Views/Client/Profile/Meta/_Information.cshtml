@@ -1,20 +1,20 @@
 ﻿@model IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>
 @{
     var informationMeta = Model
-        .Where(_meta => _meta.Type == SharedLibraryCore.Interfaces.MetaType.Information)
-        .OrderBy(_meta => _meta.Order)
-        .GroupBy(_meta => _meta.Column)
-        .OrderBy(_grouping => _grouping.Key);
+        .Where(meta => meta.Type == SharedLibraryCore.Interfaces.MetaType.Information)
+        .OrderBy(meta => meta.Order)
+        .Select((meta, i) => new { index = i, meta })
+        .GroupBy(meta => meta.index / 5);
 }
 
 @foreach (var metaColumn in informationMeta)
 {
-    <div class="text-center text-lg-left mr-0 mr-lg-4">
+    <div class="mr-20">
         @foreach (var meta in metaColumn)
         {
-            <div class="profile-meta-entry" title="@meta.ToolTipText">
+            <div class="profile-meta-entry font-size-12" data-toggle="@(!string.IsNullOrEmpty(meta.meta.ToolTipText) ? "tooltip" : "")" data-title="@meta.meta.ToolTipText" data-placement="bottom">
 
-                @{var results = Utilities.SplitTranslationTokens(meta.Key);}
+                @{var results = Utilities.SplitTranslationTokens(meta.meta.Key);}
 
                 @if (results.Any(_result => _result.IsInterpolation))
                 {
@@ -22,7 +22,7 @@
                     {
                         if (result.IsInterpolation)
                         {
-                            <span class="profile-meta-value text-primary"><color-code value="@meta.Value"></color-code></span>
+                            <span class="profile-meta-value text-primary"><color-code value="@meta.meta.Value"></color-code></span>
                         }
 
                         else
@@ -34,8 +34,8 @@
 
                 else
                 {
-                    <span class="profile-meta-value text-primary"><color-code value="@meta.Value"></color-code></span>
-                    <span class="profile-meta-title text-muted"> @meta.Key</span>
+                    <span class="profile-meta-value text-primary"><color-code value="@meta.meta.Value"></color-code></span>
+                    <span class="profile-meta-title text-muted">@meta.meta.Key</span>
                 }
             </div>
         }

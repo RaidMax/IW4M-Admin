@@ -19,11 +19,11 @@ namespace WebfrontCore.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> LoginAsync(int clientId, string password)
+        public async Task<IActionResult> Login(int clientId, string password)
         {
             if (clientId == 0 || string.IsNullOrEmpty(password))
             {
-                return Unauthorized();
+                return Unauthorized("Invalid credentials");
             }
 
             try
@@ -63,20 +63,20 @@ namespace WebfrontCore.Controllers
                             : HttpContext.Connection.RemoteIpAddress.ToString()
                     });
 
-                    return Ok();
+                    return Ok($"Welcome {privilegedClient.Name}. You are now logged in");
                 }
             }
 
             catch (Exception)
             {
-                return Unauthorized();
+                return Unauthorized("Could not validate credentials");
             }
 
-            return Unauthorized();
+            return Unauthorized("Invalid credentials");
         }
 
         [HttpGet]
-        public async Task<IActionResult> LogoutAsync()
+        public async Task<IActionResult> Logout()
         {
             if (Authorized)
             {

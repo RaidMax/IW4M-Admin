@@ -2,7 +2,7 @@
 @using System.Text.RegularExpressions
 @model WebfrontCore.ViewModels.CommunityInfo
 @{
-    IEnumerable<KeyValuePair<(string, long), string[]>> allRules = new[] {new KeyValuePair<(string, long), string[]>((ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], 0), Model.GlobalRules)};
+    IEnumerable<KeyValuePair<(string, long), string[]>> allRules = new[] { new KeyValuePair<(string, long), string[]>((ViewBag.Localization["WEBFRONT_ABOUT_GLOBAL_RULES"], 0), Model.GlobalRules) };
     var serverRules = Model.ServerRules?.Where(server => server.Value != null && server.Value.Any()).ToList();
     if (serverRules?.Any() ?? false)
     {
@@ -10,26 +10,29 @@
     }
 }
 
-<div class="row text-break">
+<div class="content text-wrap mt-20">
     @if (Model.CommunityInformation.EnableBanner)
     {
-        <img class="img-fluid mb-3" style="max-height: 250px" src="images/community/banner.png" alt="@Model.CommunityInformation.Name"/>
+        <img class="img-fluid mb-20" style="max-height: 250px" src="images/community/banner.png" alt="@Model.CommunityInformation.Name"/>
     }
 
     @if (!string.IsNullOrWhiteSpace(Model.CommunityInformation.Name))
     {
-        <h2 class="mb-4 p-0 col-12 text-center text-md-left">
+        <h2 class="content-title">
             <color-code value="@Model.CommunityInformation.Name"></color-code>
         </h2>
     }
 
-    @if (!string.IsNullOrWhiteSpace(Model.CommunityInformation.Description))
-    {
-        <div class="p-4 bg-dark border border-primary mb-4 text-white-50 col-12">
-            <h4 class="text-primary">@ViewBag.Localization["WEBFRONT_ABOUT_TITLE"]</h4>
-            <color-code value="@Model.CommunityInformation.Description"></color-code>
-            <div class="mt-3">
-                @foreach (var social in Model.CommunityInformation.SocialAccounts ?? new SocialAccountConfiguration[0])
+
+    <div class="card m-0 rounded">
+        @if (!string.IsNullOrWhiteSpace(Model.CommunityInformation.Description))
+        {
+            <h5 class="text-primary mt-0">@ViewBag.Localization["WEBFRONT_ABOUT_TITLE"]</h5>
+            <div class="text-md-justify">
+                <color-code value="@Model.CommunityInformation.Description"></color-code>
+            </div>
+            <div class="mt-10">
+                @foreach (var social in Model.CommunityInformation.SocialAccounts ?? Array.Empty<SocialAccountConfiguration>())
                 {
                     <div>
                         <a href="@social.Url" target="_blank" title="@social.Title">
@@ -39,8 +42,8 @@
                             }
                             else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                             {
-                                var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl) 
-                                    ? parsedUrl.AbsoluteUri 
+                                var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
+                                    ? parsedUrl.AbsoluteUri
                                     : $"images/community/{social.IconUrl}";
                                 <img class="img-fluid" style="max-width: 1rem; fill: white" src="@url" alt="@social.Title"/>
                             }
@@ -49,37 +52,40 @@
                     </div>
                 }
             </div>
-        </div>
-    }
+        }
+
+    </div>
 
     @if (allRules.Any(rule => rule.Value.Any()))
     {
-        <h2 class="pb-3 p-0 col-12 text-center text-md-left">@ViewBag.Localization["WEBFRONT_ABOUT_COMMUNITY_GUIDELINES"]</h2>
+        <h2 class="content-title mt-20">@ViewBag.Localization["WEBFRONT_ABOUT_COMMUNITY_GUIDELINES"]</h2>
     }
 
-    @foreach (var ((serverName, id), rules) in allRules)
-    {
-        if (!rules.Any())
+    <div class="card m-0 rounded">
+        @foreach (var ((serverName, id), rules) in allRules)
         {
-            continue;
-        }
+            if (!rules.Any())
+            {
+                continue;
+            }
 
-        var start = 1;
-        <div class="col-12 bg-dark p-4 border border-primary mb-4 col-12">
-            <div class="text-primary h4">
+            var start = 1;
+            <h5 class="text-primary mt-0">
                 <color-code value="@serverName"></color-code>
-            </div>
+            </h5>
             @foreach (var rule in rules)
             {
-                <div class="text-white-50">
+                <div class="rule">
                     @if (!rule.StartsWith("#") && !Regex.IsMatch(rule, @"^\d+(.|\))"))
                     {
-                        <span class="text-white">@start.</span>
+                        <span>@start.</span>
                     }
-                    <color-code value="@rule"></color-code>
+                    <span class="text-muted">
+                        <color-code value="@rule"></color-code>
+                    </span>
                 </div>
                 start++;
             }
-        </div>
-    }
+        }
+    </div>
 </div>

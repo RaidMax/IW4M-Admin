@@ -1,44 +1,57 @@
-﻿@model SharedLibraryCore.Dtos.IW4MAdminInfo
-@{ 
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
-    string formatTranslation(string translationKey, params object[] values)
+﻿@using WebfrontCore.ViewModels
+@using Humanizer
+@model SharedLibraryCore.Dtos.IW4MAdminInfo
+@{
+    var loc = Utilities.CurrentLocalization.LocalizationIndex;
+
+    string FormatTranslation(string translationKey, params object[] values)
     {
         var split = loc[translationKey].Split("::");
-        return split.Count() == 2 ? $"<span class='font-weight-bold text-primary'>{SharedLibraryCore.Utilities.FormatExt(split[0], values)}</span><span>{split[1]}</span>" : translationKey;
+        return split.Length == 2 ? $"<span class='font-weight-bold text-primary'>{split[0].FormatExt(values)}</span><span>{split[1]}</span>" : translationKey;
     }
 }
-<div class="row mb-4 border-bottom border-top pt-3 pb-3 bg-dark">
-    <div class="col-xl-3 col-12">
-        <div class="text-muted text-center text-xl-left">@Html.Raw(formatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</div>
-    </div>
-    <div class="col-xl-3 col-12 moment-date" title="@Model.MaxConcurrentClientsTime">
-            <div class="text-muted text-center text-xl-left">@Html.Raw(formatTranslation("WEBFRONT_HOME_MAX_CONCURRENT_CLIENTS", Model.MaxConcurrentClients.ToString("#,##0")))</div>
-        </div>
-    <div class="col-xl-3 col-12">
-        <div class="text-muted text-center">@Html.Raw(formatTranslation("WEBFRONT_HOME_RECENT_CLIENTS", Model.RecentClientCount.ToString("#,##0")))</div>
-    </div>
-    <div class="col-xl-3 col-12">
-        <div class="text-muted text-center text-xl-right">@Html.Raw(formatTranslation("WEBFRONT_HOME_TOTAL_CLIENTS", Model.TotalClientCount.ToString("#,##0")))</div>
-    </div>
-</div>
-
-@if (Model.ActiveServerGames.Length > 1)
-{
-    <ul class="nav nav-tabs border-top border-bottom nav-fill row mb-4" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link @(Model.Game.HasValue ? "" : "active")" href="/" role="tab" aria-selected="true">@loc["GAME_ALL"]</a>
-        </li>
-
-        @foreach (var gameName in Model.ActiveServerGames)
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9 col-xl-10">
+        <h2 class="content-title mb-0">Server Overview</h2>
+        @if (Model.Game.HasValue)
         {
-            <li class="nav-item">
-                <a asp-action="Index" asp-controller="Home" asp-route-game="@gameName" class="nav-link @(Model.Game == gameName ? "active" : "")" role="tab" aria-selected="false">@loc[$"GAME_{gameName}"]</a>
-            </li>
+            <span class="text-muted">@loc[$"GAME_{Model.Game.Value}"]</span>
         }
-    </ul>
-}
-
-@await Component.InvokeAsync("ServerList", Model.Game)
+        else
+        {
+            <span class="text-muted">@ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"]</span>
+        }
+        <div class="card p-0 m-0">
+            <div class="d-flex flex-column flex-md-row justify-content-md-between bg-dark-dm bg-light-lm p-10 mt-15 mb-15 rounded">
+                <div class="align-self-center align-content-md-start">@Html.Raw(FormatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</div>
+                <div class="align-self-center align-content-md-start" data-toggle="tooltip" data-title="@Model.MaxConcurrentClientsTime.HumanizeForCurrentCulture().Titleize()">@Html.Raw(FormatTranslation("WEBFRONT_HOME_MAX_CONCURRENT_CLIENTS", Model.MaxConcurrentClients.ToString("#,##0")))</div>
+                <div class="align-self-center align-content-md-start">@Html.Raw(FormatTranslation("WEBFRONT_HOME_RECENT_CLIENTS", Model.RecentClientCount.ToString("#,##0")))</div>
+                <div class="align-self-center align-content-md-start">@Html.Raw(FormatTranslation("WEBFRONT_HOME_TOTAL_CLIENTS", Model.TotalClientCount.ToString("#,##0")))</div>
+            </div>
+        </div>
+        @await Component.InvokeAsync("ServerList", Model.Game)
+    </div>
+    
+    @{
+        var menuItems = new SideContextMenuItems
+        {
+            MenuTitle = "Game", Items = Model.ActiveServerGames.Select(game => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = Url.Action("Index", "Home", new { game }),
+                Title = loc[$"GAME_{game}"],
+                IsActive = game == Model.Game
+            }).Prepend(new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = Url.Action("Index", "Home"),
+                Title = loc["GAME_ALL"],
+                IsActive = !Model.Game.HasValue
+            }).ToList()
+        };
+    }
+    <partial name="_SideContextMenu" for="@menuItems"></partial>
+</div>
 
 @section scripts {
     <environment include="Development">

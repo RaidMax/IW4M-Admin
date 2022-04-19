@@ -1,52 +1,101 @@
 ﻿function hideLoader() {
-    $('.layout-loading-icon').fadeOut();
+    $('#mainLoadingBar').fadeOut();
+    $('#modalLoadingBar').fadeOut();
 }
 
 function showLoader() {
-    $('.layout-loading-icon').attr('style', 'visibility:visible');
-    $('.layout-loading-icon').removeClass('text-danger');
-    $('.layout-loading-icon').removeClass('text-muted');
-    $('.layout-loading-icon').fadeIn();
+    $('#mainLoadingBar').fadeIn();
+    $('#modalLoadingBar').fadeIn();
 }
 
 function errorLoader() {
-    $('.layout-loading-icon').addClass('text-danger');
+    $('#mainLoadingBar').addClass('bg-danger').delay(2000).fadeOut();
 }
 
 function staleLoader() {
-    $('.layout-loading-icon').addClass('text-muted');
+    $('#mainLoadingBar').addClass('bg-grey');
+}
+
+function getUrlParameter(sParam) {
+    let sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+    return false;
+}
+
+function clearQueryString() {
+    const uri = window.location.href.toString();
+    if (uri.indexOf("?") > 0) {
+        const cleanUri = uri.substring(0, uri.indexOf("?"));
+        window.history.replaceState({}, document.title, cleanUri);
+    }
+}
+
+const entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;'
+};
+
+function escapeHtml (string) {
+    return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+        return entityMap[s];
+    });
 }
 
 $(document).ready(function () {
+    
+    let toastMessage = getUrlParameter('toastMessage');
+     
+    if (toastMessage) {
+        toastMessage = unescape(toastMessage);
+    }
+    
+    if (toastMessage) {
+        clearQueryString();
+        halfmoon.initStickyAlert({
+            content: toastMessage,
+            title: 'Success',
+            alertType: 'alert-success',
+            fillType: 'filled'
+        });
+    }
+    
     hideLoader();
 
-    /*
-     * hide loader when clicking
-     */
-    $(document).click(function (e) {
-        //hideLoader()
-    });
-
-    /*
-     * handle action modal
-     */
     $(document).off('click', '.profile-action');
-    $(document).on('click', '.profile-action', function (e) {
+    $(document).on('click', '.profile-action', function () {
         const actionType = $(this).data('action');
         const actionId = $(this).data('action-id');
-        const actionIdKey = actionId === undefined ? '' : '?id=' + actionId;
-        $.get('/Action/' + actionType + 'Form' + actionIdKey)
+        const actionIdKey = actionId === undefined ? '' : `?id=${actionId}`;
+        showLoader();
+        $.get(`/Action/${actionType}Form/${actionIdKey}`)
             .done(function (response) {
                 $('#actionModal .modal-message').fadeOut('fast');
-                $('#actionModal .modal-body-content').html(response);
-                $('#actionModal').modal();
-                $('#actionModal').trigger('action_form_received', actionType);
+                $('#actionModalContent').html(response);
+                hideLoader();
             })
             .fail(function (jqxhr, textStatus, error) {
-                $('#actionModal .modal-body-content').html('');
-                $('#actionModal .modal-message').text(_localization['GLOBAL_ERROR'] + ' — ' + jqxhr.responseText);
-                $('#actionModal').modal();
-                $('#actionModal .modal-message').fadeIn('fast');
+                halfmoon.initStickyAlert({
+                    content: jqxhr.responseText,
+                    title: 'Error',
+                    alertType: 'alert-danger',
+                    fillType: 'filled'
+                });
             });
     });
 
@@ -56,35 +105,58 @@ $(document).ready(function () {
     $(document).on('submit', '.action-form', function (e) {
         e.preventDefault();
         $(this).append($('#target_id input'));
-        $('#actionModal').data('should-refresh', $('#actionModal').find('.refreshable').length !== 0);
+        const modal = $('#actionModal');
+        const shouldRefresh = modal.data('should-refresh', modal.find('.refreshable').length !== 0);
         const data = $(this).serialize();
         showLoader();
+
         $.get($(this).attr('action') + '/?' + data)
             .done(function (response) {
                 hideLoader();
                 // success without content
                 if (response.length === 0) {
                     location.reload();
-                }
-                else {
-                    $('#actionModal .modal-message').fadeOut('fast');
-                    $('#actionModal .modal-body-content').html(response);
-                    $('#actionModal').modal();
+                } else {
+                    let message = response; 
+                    try {
+                        message = response.map(r => escapeHtml(r.response));
+                    }
+                    catch{}
+                    if (shouldRefresh) {
+                        window.location = `${window.location.href.replace('#actionModal', '')}?toastMessage=${escape(message)}`;
+                    }
+                    else {
+                        modal.modal();
+                        halfmoon.initStickyAlert({
+                            content: escapeHtml(message),
+                            title: 'Executed',
+                            alertType: 'alert-primary',
+                            fillType: 'filled'
+                        });
+                    }
                 }
             })
-            .fail(function (jqxhr, textStatus, error) {
-                errorLoader();
+            .fail(function (jqxhr) {
                 hideLoader();
-                if ($('#actionModal .modal-message').text.length > 0) {
-                    $('#actionModal .modal-message').fadeOut('fast');
+
+                let message = jqxhr.responseText;
+                
+                try {
+                    const jsonMessage = $.parseJSON(message);
+
+                    if (jsonMessage) {
+                        message = jsonMessage.map(r => escapeHtml(r.response));
+                    }
                 }
-                if (jqxhr.status === 401) {
-                    $('#actionModal .modal-message').text(_localization['WEBFRONT_ACTION_CREDENTIALS']);
-                }
-                else {
-                    $('#actionModal .modal-message').text(_localization['GLOBAL_ERROR'] + ' — ' + jqxhr.responseText);
-                }
-                $('#actionModal .modal-message').fadeIn('fast');
+                
+                catch{}
+                
+                halfmoon.initStickyAlert({
+                    content: message.join("<br/>"),
+                    title: 'Error',
+                    alertType: 'alert-danger',
+                    fillType: 'filled'
+                });
             });
     });
 
@@ -96,24 +168,13 @@ $(document).ready(function () {
         if (actionType === 'RecentClients') {
             const ipAddresses = $('.client-location-flag');
             $.each(ipAddresses, function (index, address) {
-                $.get('https://ip2c.org/' + $(address).data('ip'), function (result) {
-                    const countryCode = result.split(';')[1].toLowerCase();
+                $.get(`https://get.geojs.io/v1/ip/country/${(address).data('ip')}.json`, function (result) {
+                    const countryCode = result['country'].toLowerCase();
                     if (countryCode !== 'zz') {
                         $(address).css('background-image', `url('https://flagcdn.com/w80/${countryCode}.png')`);
                     }
                 });
             });
-        }
-    });
-
-    /* 
-     * handle close event to refresh if need be
-     */
-    $("#actionModal").on("hidden.bs.modal", function () {
-        let shouldRefresh = $(this).data('should-refresh');
-
-        if (shouldRefresh !== undefined && shouldRefresh) {
-            location.reload();
         }
     });
 });

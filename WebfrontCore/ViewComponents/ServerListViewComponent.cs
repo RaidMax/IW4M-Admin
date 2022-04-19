@@ -94,8 +94,8 @@ namespace WebfrontCore.ViewComponents
                         }).ToList(),
                     ChatHistory = server.ChatHistory.ToList(),
                     Online = !server.Throttled,
-                    IPAddress =
-                        $"{(server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP)}:{server.Port}",
+                    IPAddress = server.IP,
+                    ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP,
                     ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                         server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP,
                         server.Port)

@@ -19,17 +19,16 @@
       "destination": "wwwroot/lib/open-iconic/"
     },
     {
-      "provider": "jsdelivr",
-      "library": "bootstrap@4.3.1",
-      "destination": "wwwroot/lib/bootstrap/"
-    },
-    {
       "library": "moment@2.24.0",
       "destination": "wwwroot/lib/moment.js/"
     },
     {
       "library": "chart.js@2.9.4",
       "destination": "wwwroot/lib/chart.js"
+    },
+    {
+      "library": "halfmoon@1.1.1",
+      "destination": "wwwroot/lib/halfmoon"
     }
   ]
 }

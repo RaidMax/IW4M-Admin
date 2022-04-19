@@ -1,34 +1,48 @@
-﻿<ul class="nav nav-tabs border-top border-bottom nav-fill row" role="tablist" id="stats_top_players">
-    <li class="nav-item">
-        <a class="nav-link active top-players-link" href="#server_0" role="tab" data-toggle="tab" aria-selected="true" data-serverid="0">@ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"]</a>
-    </li>
+﻿@model IEnumerable<SharedLibraryCore.Dtos.ServerInfo>
+@using WebfrontCore.ViewModels
 
-    @foreach (var server in ViewBag.Servers)
-    {
-        <li class="nav-item ">
-            <a class="nav-link top-players-link" href="#server_@server.ID" role="tab" data-toggle="tab" aria-selected="false" data-serverid="@server.ID">
-                <color-code value="@server.Name"></color-code>
-            </a>
-        </li>
-    }
-</ul>
-<div class="tab-content border-bottom row">
-    <div role="tabpanel" class="tab-pane active striped flex-fill" id="server_0">
-        @await Component.InvokeAsync("TopPlayers", new { count = 25, offset = 0 })
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9 col-xl-10 mt-0">
+        <h2 class="content-title mb-0">Top Players</h2>
+        <span class="text-muted">
+            <color-code value="@(ViewBag.SelectedServerName ?? ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"])"></color-code>
+        </span>
+        
+        <div id="topPlayersContainer">
+            @await Component.InvokeAsync("TopPlayers", new { count = 25, offset = 0, serverEndpoint = ViewBag.SelectedServerId })
+        </div>
+        <div class="text-center">
+            <i id="loaderLoad" class="oi oi-chevron-bottom loader-load-more text-primary mt-5" aria-hidden="true"></i>
+        </div>
     </div>
 
-    @foreach (var server in ViewBag.Servers)
-    {
-        <div role="tabpanel" class="tab-pane striped flex-fill" id="server_@server.ID">
-        </div>
+    <!-- side context menu -->
+    @{
+        var menuItems = new SideContextMenuItems
+        {
+            MenuTitle = "Game", Items = Model.Select(server => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = Url.Action("TopPlayers", "Stats", new { serverId = server.Endpoint }),
+                Title = server.Name.StripColors(),
+                IsActive = ViewBag.SelectedServerId == server.Endpoint
+            }).Prepend(new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = Url.Action("TopPlayers", "Stats"),
+                Title = ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"],
+                IsActive = ViewBag.SelectedServerId is null
+            }).ToList()
+        };
     }
+    <partial name="_SideContextMenu" for="@menuItems"></partial>
 </div>
 
 @section scripts
-    {
+{
     <environment include="Development">
         <script type="text/javascript" src="~/js/loader.js"></script>
         <script type="text/javascript" src="~/js/stats.js"></script>
     </environment>
-    <script>initLoader('/Stats/GetTopPlayersAsync', '#server_0', 25);</script>
+    <script>initLoader('/Stats/GetTopPlayersAsync', '#topPlayersContainer', 25);</script>
 }

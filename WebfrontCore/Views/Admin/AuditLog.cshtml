@@ -1,26 +1,26 @@
 ﻿@{
     var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
-<h4 class="pb-3 text-center">@ViewBag.Title</h4>
+<div class="content mt-0">
+    <h2 class="content-title mt-20">@ViewBag.Title</h2>
 
-<table class="table table-striped">
-    <thead class="d-none d-lg-table-header-group">
-        <tr class="bg-primary pt-2 pb-2">
+    <table class="table">
+        <thead class="d-none d-lg-table-header-group">
+        <tr class="bg-primary text-light pt-2 pb-2">
             <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</th>
             <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</th>
             <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
             <th scope="col">@loc["WEBFRONT_ADMIN_AUDIT_LOG_INFO"]</th>
-            <!--<th scope="col">@loc["WEBFRONT_ADMIN_AUDIT_LOG_PREVIOUS"]</th>-->
             <th scope="col">@loc["WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"]</th>
             <th scope="col" class="text-right">@loc["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</th>
         </tr>
-    </thead>
-    <tbody id="audit_log_table_body" class="border-bottom bg-dark">
-        <partial name="_ListAuditLog" />
-    </tbody>
-
-</table>
-<span id="load_audit_log_button" class="loader-load-more oi oi-chevron-bottom text-center text-primary w-100 h3 pb-0 mb-0 d-none d-lg-block"></span>
+        </thead>
+        <tbody id="audit_log_table_body" class="border-bottom bg-dark">
+        <partial name="_ListAuditLog"/>
+        </tbody>
+    </table>
+    <i id="loaderLoad" class="loader-load-more oi oi-chevron-bottom text-center text-primary d-none d-lg-block mt-10"></i>
+</div>
 
 @section scripts {
     <environment include="Development">

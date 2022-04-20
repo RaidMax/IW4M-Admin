@@ -65,6 +65,19 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
       
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish projects'
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: |
+      **/WebfrontCore.csproj
+      **/Application.csproj
+    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(Build.BuildNumber)'
+    zipAfterPublish: false
+    modifyOutputPath: false
+
 - task: PowerShell@2
   displayName: 'Bundle JS Files'
   inputs:
@@ -79,18 +92,6 @@ steps:
       $(Build.Repository.LocalPath)\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Publish projects'
-  inputs:
-    command: 'publish'
-    publishWebProjects: false
-    projects: |
-      **/WebfrontCore.csproj
-      **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(Build.BuildNumber)'
-    zipAfterPublish: false
-    modifyOutputPath: false
     
 - task: PowerShell@2
   displayName: 'Run publish script 1'

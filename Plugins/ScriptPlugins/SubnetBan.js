@@ -1,5 +1,6 @@
 ﻿const cidrRegex = /^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$/;
 const validCIDR = input => cidrRegex.test(input);
+let subnetList = [];
 
 const commands = [{
     name: "bansubnet",
@@ -20,8 +21,8 @@ const commands = [{
             return;
         }
 
-        plugin.subnetList.push(input);
-        _configHandler.SetValue('SubnetBanList', plugin.subnetList);
+        subnetList.push(input);
+        _configHandler.SetValue('SubnetBanList', subnetList);
 
         gameEvent.Origin.Tell(`Added ${input} to subnet banlist`);
     }
@@ -73,7 +74,7 @@ const plugin = {
 
     onEventAsync: (gameEvent, server) => {
         if (gameEvent.TypeName === 'Join') {
-            if (!isSubnetBanned(gameEvent.Origin.IPAddressString, this.subnetList, this.logger)) {
+            if (!isSubnetBanned(gameEvent.Origin.IPAddressString, subnetList, this.logger)) {
                 return;
             }
 
@@ -91,7 +92,7 @@ const plugin = {
         if (list !== undefined) {
             list.forEach(element => {
                 const ban = String(element);
-                this.subnetList.push(ban)
+                subnetList.push(ban)
             });
             this.logger.WriteInfo(`Loaded ${list.length} banned subnets`);
         } else {

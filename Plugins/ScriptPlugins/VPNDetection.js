@@ -1,3 +1,4 @@
+let vpnExceptionIds = [];
 const commands = [{
     name: "whitelistvpn",
     description: "whitelists a player's client id from VPN detection",
@@ -9,8 +10,8 @@ const commands = [{
         required: true
     }],
     execute: (gameEvent) => {
-        plugin.vpnExceptionIds.push(gameEvent.Target.ClientId);
-        plugin.configHandler.SetValue('vpnExceptionIds', plugin.vpnExceptionIds);
+        vpnExceptionIds.push(gameEvent.Target.ClientId);
+        plugin.configHandler.SetValue('vpnExceptionIds', vpnExceptionIds);
 
         gameEvent.Origin.Tell(`Successfully whitelisted ${gameEvent.Target.Name}`);
     }
@@ -22,12 +23,12 @@ const plugin = {
     name: 'VPN Detection Plugin',
     manager: null,
     logger: null,
-    vpnExceptionIds: [],
+
 
     checkForVpn: function (origin) {
         let exempt = false;
         // prevent players that are exempt from being kicked
-        this.vpnExceptionIds.forEach(function (id) {
+        vpnExceptionIds.forEach(function (id) {
             if (id === origin.ClientId) {
                 exempt = true;
                 return false;
@@ -79,8 +80,8 @@ const plugin = {
         this.logger = manager.GetLogger(0);
 
         this.configHandler = _configHandler;
-        this.configHandler.GetValue('vpnExceptionIds').forEach(element => this.vpnExceptionIds.push(element));
-        this.logger.WriteInfo(`Loaded ${this.vpnExceptionIds.length} ids into whitelist`);
+        this.configHandler.GetValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(element));
+        this.logger.WriteInfo(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
     },
 
     onUnloadAsync: function () {

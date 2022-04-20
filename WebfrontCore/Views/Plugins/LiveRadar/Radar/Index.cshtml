@@ -1,0 +1,69 @@
+﻿@using WebfrontCore.ViewModels
+@model IEnumerable<SharedLibraryCore.Dtos.ServerInfo>
+
+<style>
+    .progress {
+        border-radius: 0;
+    }
+    .player-stat-icon {
+        height: 1.5rem;
+        width: 1.5rem;
+        background-size: 1.5rem 1.5rem;
+    }
+</style>
+
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9 col-xl-10">
+        <h2 class="content-title mb-0">Live Radar</h2> 
+        <div class="text-muted mb-15">
+            <color-code value="@((Model.FirstOrDefault(server => server.Endpoint == ViewBag.SelectedServerId) ?? Model.First()).Name)"></color-code>
+        </div>
+        <div class="d-flex flex-column flex-md-row justify-content-between ">
+            <div class="player-data-left w-md-quarter" style="opacity: 0;">
+            </div>
+            <div class="w-md-half m-0 mb-15 ml-md-15 mr-md-15">
+                <div id="map_name" class="bg-dark-dm bg-light-lm text-center p-10 rounded-top">&mdash;</div>
+                <div id="map_list" class="rounded" style="background-size:cover; padding-bottom: 100% !important;">
+                    <canvas id="map_canvas" style="position:absolute;"></canvas>
+                </div>
+            </div>
+            <div class="player-data-right w-md-quarter" style="opacity: 0;">
+            </div>
+        </div>
+    </div>
+
+    <!-- side context menu -->
+    @{
+        var menuItems = new SideContextMenuItems
+        {
+            MenuTitle = "Game", Items = Model.Select(server => new SideContextMenuItem
+            {
+                IsLink = true,
+                // ReSharper disable Mvc.ActionNotResolved
+                // ReSharper disable Mvc.ControllerNotResolved
+                Reference = Url.Action("Index", "Radar", new { serverId = server.Endpoint }),
+                Title = server.Name.StripColors(),
+                IsActive = ViewBag.SelectedServerId == server.Endpoint 
+            }).ToList()
+        };
+    }
+    
+    <partial name="_SideContextMenu" for="@menuItems"></partial>
+
+    <!-- images used by canvas -->
+    <img class="hide" id="hud_death" src="~/images/radar/death.png"/>
+
+</div>
+
+@section scripts {
+    <environment include="Development">
+        <script type="text/javascript" src="~/js/liveradar.js" defer="defer"></script>
+    </environment>
+
+    <script type="text/javascript">
+        const radarDataUrl = '@Url.Action("Data", "Radar", new { serverId = ViewBag.SelectedServerId })';
+        const mapDataUrl = '@Url.Action("Map", "Radar", new { serverId = ViewBag.SelectedServerId })';
+        // ReSharper restore Mvc.ActionNotResolved
+        // ReSharper restore Mvc.ControllerNotResolved
+    </script>
+}

@@ -224,7 +224,6 @@ bootstrap-custom.min.css
 bootstrap-custom.css
 **/Master/static
 **/Master/dev_env
-/WebfrontCore/Views/Plugins/*
 /WebfrontCore/wwwroot/**/dds
 /WebfrontCore/wwwroot/images/radar/*
 

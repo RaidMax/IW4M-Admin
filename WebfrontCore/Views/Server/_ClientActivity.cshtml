@@ -53,7 +53,7 @@
         </div>
     }
 
-    <div class="d-flex flex-row w-full w-md-half w-xl-auto pl-md-10 pb-md-10">
+    <div class="d-flex flex-row w-full w-md-half pl-md-10 pb-md-10">
         
         @foreach (var clientIndex in groupedClients)
         {
@@ -61,10 +61,10 @@
                 @foreach (var client in clientIndex.group)
                 {
                     var levelColorClass = !ViewBag.Authorized || client.client.LevelInt == 0 ? "text-light-dm text-dark-lm" : $"level-color-{client.client.LevelInt}";
-                    <div class="d-flex @(clientIndex.index == 1 ? "justify-content-end ml-auto" : "ml-auto") w-full w-xl-200">
+                    <div class="d-flex @(clientIndex.index == 1 ? "justify-content-start ml-auto flex-row-reverse" : "ml-auto") w-full w-xl-200">
                         <has-permission entity="AdminMenu" required-permission="Update">
                             <a href="#actionModal" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId" aria-hidden="true">
-                                <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
+                                <i class="oi oi-circle-x font-size-12 @levelColorClass @(clientIndex.index == 1 ? "ml-5" : "mr-5")"></i>
                             </a>
                         </has-permission>
                         <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.client.ClientId" class="@levelColorClass no-decoration text-truncate">

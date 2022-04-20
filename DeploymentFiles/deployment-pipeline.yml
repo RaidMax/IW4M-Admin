@@ -54,7 +54,8 @@ steps:
             Write-Host 'Build Configuration is $(buildConfiguration), Release Type is $(releaseType)'
             md -Force lib\open-iconic\font\css
             wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss
-            ((Get-Content -path lib\open-iconic\font\css\open-iconic-bootstrap.scss -Raw) -replace '../fonts/','/fonts/') | Set-Content -Path lib\open-iconic\font\css\open-iconic-bootstrap.scss
+            cd lib\open-iconic\font\css
+            ${c:open-iconic-bootstrap.scss} = ${c:open-iconic-bootstrap.scss} -replace '../fonts/','/fonts/'
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
 
@@ -170,72 +171,72 @@ steps:
     targetPath: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
     artifact: 'IW4MAdmin-$(Build.BuildNumber).zip'
 
-- task: FtpUpload@2
-  displayName: 'Upload zip file to website'
-  inputs:
-    credentialsOption: 'inputs'
-    serverUrl: '$(FTPUrl)'
-    username: '$(FTPUsername)'
-    password: '$(FTPPassword)'
-    rootDirectory: '$(Build.ArtifactStagingDirectory)'
-    filePatterns: '*.zip'
-    remoteDirectory: 'IW4MAdmin/Download'
-    clean: false
-    cleanContents: false
-    preservePaths: false
-    trustSSL: false
-
-- task: FtpUpload@2
-  displayName: 'Upload version info to website'
-  inputs:
-    credentialsOption: 'inputs'
-    serverUrl: '$(FTPUrl)'
-    username: '$(FTPUsername)'
-    password: '$(FTPPassword)'
-    rootDirectory: '$(Build.ArtifactStagingDirectory)'
-    filePatterns: 'version_$(releaseType).txt'
-    remoteDirectory: 'IW4MAdmin'
-    clean: false
-    cleanContents: false
-    preservePaths: false
-    trustSSL: false
-
-- task: GitHubRelease@1
-  displayName: 'Make GitHub release'
-  inputs:
-    gitHubConnection: 'github.com_RaidMax'
-    repositoryName: 'RaidMax/IW4M-Admin'
-    action: 'create'
-    target: '$(Build.SourceVersion)'
-    tagSource: 'userSpecifiedTag'
-    tag: '$(Build.BuildNumber)-$(releaseType)'
-    title: 'IW4MAdmin $(Build.BuildNumber) ($(releaseType))'
-    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
-    isPreRelease: $(isPreRelease)
-    releaseNotesSource: 'inline'
-    releaseNotesInline: 'todo'
-    changeLogCompareToRelease: 'lastNonDraftRelease'
-    changeLogType: 'commitBased'
-
-- task: PowerShell@2
-  displayName: 'Update master version'
-  inputs:
-    targetType: 'inline'
-    script: |
-      $payload = @{
-          'current-version-$(releaseType)' = '$(Build.BuildNumber)'
-          'jwt-secret' = '$(JWTSecret)'
-      } | ConvertTo-Json
-              
-      
-      $params = @{
-          Uri         = 'http://api.raidmax.org:5000/version'
-          Method      = 'POST'
-          Body        = $payload
-          ContentType = 'application/json'
-      }
-      
-      Invoke-RestMethod @params
+#- task: FtpUpload@2
+#  displayName: 'Upload zip file to website'
+#  inputs:
+#    credentialsOption: 'inputs'
+#    serverUrl: '$(FTPUrl)'
+#    username: '$(FTPUsername)'
+#    password: '$(FTPPassword)'
+#    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+#    filePatterns: '*.zip'
+#    remoteDirectory: 'IW4MAdmin/Download'
+#    clean: false
+#    cleanContents: false
+#    preservePaths: false
+#    trustSSL: false
+#
+#- task: FtpUpload@2
+#  displayName: 'Upload version info to website'
+#  inputs:
+#    credentialsOption: 'inputs'
+#    serverUrl: '$(FTPUrl)'
+#    username: '$(FTPUsername)'
+#    password: '$(FTPPassword)'
+#    rootDirectory: '$(Build.ArtifactStagingDirectory)'
+#    filePatterns: 'version_$(releaseType).txt'
+#    remoteDirectory: 'IW4MAdmin'
+#    clean: false
+#    cleanContents: false
+#    preservePaths: false
+#    trustSSL: false
+#
+#- task: GitHubRelease@1
+#  displayName: 'Make GitHub release'
+#  inputs:
+#    gitHubConnection: 'github.com_RaidMax'
+#    repositoryName: 'RaidMax/IW4M-Admin'
+#    action: 'create'
+#    target: '$(Build.SourceVersion)'
+#    tagSource: 'userSpecifiedTag'
+#    tag: '$(Build.BuildNumber)-$(releaseType)'
+#    title: 'IW4MAdmin $(Build.BuildNumber) ($(releaseType))'
+#    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
+#    isPreRelease: $(isPreRelease)
+#    releaseNotesSource: 'inline'
+#    releaseNotesInline: 'todo'
+#    changeLogCompareToRelease: 'lastNonDraftRelease'
+#    changeLogType: 'commitBased'
+#
+#- task: PowerShell@2
+#  displayName: 'Update master version'
+#  inputs:
+#    targetType: 'inline'
+#    script: |
+#      $payload = @{
+#          'current-version-$(releaseType)' = '$(Build.BuildNumber)'
+#          'jwt-secret' = '$(JWTSecret)'
+#      } | ConvertTo-Json
+#              
+#      
+#      $params = @{
+#          Uri         = 'http://api.raidmax.org:5000/version'
+#          Method      = 'POST'
+#          Body        = $payload
+#          ContentType = 'application/json'
+#      }
+#      
+#      Invoke-RestMethod @params
 
 - task: PublishPipelineArtifact@1
   displayName: 'Publish artifact for analysis'

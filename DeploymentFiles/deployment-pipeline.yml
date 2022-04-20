@@ -54,6 +54,7 @@ steps:
             Write-Host 'Build Configuration is $(buildConfiguration), Release Type is $(releaseType)'
             md -Force lib\open-iconic\font\css
             wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss
+            ((Get-Content -path lib\open-iconic\font\css\open-iconic-bootstrap.scss -Raw) -replace '../fonts/','/fonts/') | Set-Content -Path lib\open-iconic\font\css\open-iconic-bootstrap.scss
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
 

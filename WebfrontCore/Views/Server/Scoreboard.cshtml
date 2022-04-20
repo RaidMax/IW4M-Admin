@@ -1,12 +1,15 @@
 ﻿@using WebfrontCore.ViewModels
 @model IEnumerable<WebfrontCore.ViewModels.ScoreboardInfo>
+@{
+    var selectedServer = Model?.FirstOrDefault(server => server.ServerId == ViewBag.SelectedServerId) ?? Model?.First();
+}
 
 <div class="content mt-20 row">
     <div class="col-12 col-lg-9 col-xl-10">
         @if (Model is not null)
         {
             <div class=" scoreboard-container" data-server-id="@ViewBag.SelectedServerId">
-                @await Html.PartialAsync("_Scoreboard", Model.FirstOrDefault(server => server.ServerId == ViewBag.SelectedServerId) ?? Model.First())
+                <partial name="_Scoreboard" for="@selectedServer"/>
             </div>
         }
     </div>

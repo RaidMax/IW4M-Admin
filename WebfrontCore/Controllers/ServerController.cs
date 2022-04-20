@@ -60,7 +60,7 @@ namespace WebfrontCore.Controllers
             ViewBag.Title = Localization["WEBFRONT_TITLE_SCOREBOARD"];
             ViewBag.SelectedServerId = string.IsNullOrEmpty(serverId) ? Manager.GetServers().FirstOrDefault()?.ToString() : serverId;
             
-            return View(ProjectScoreboard(Manager.GetServers(), null, true, false));
+            return View(ProjectScoreboard(Manager.GetServers(), null, true));
         }
 
         [HttpGet("[controller]/{id}/scoreboard")]
@@ -79,7 +79,7 @@ namespace WebfrontCore.Controllers
         }
 
         private static IEnumerable<ScoreboardInfo> ProjectScoreboard(IEnumerable<Server> servers, string order,
-            bool down, bool includeDetails = true)
+            bool down)
         {
             return servers.Select((server, index) => new ScoreboardInfo
             {
@@ -88,7 +88,7 @@ namespace WebfrontCore.Controllers
                 MapName = server.CurrentMap.ToString(),
                 ServerName = server.Hostname,
                 ServerId = server.ToString(),
-                ClientInfo = index == 0 && !includeDetails || includeDetails ? server.GetClientsAsList().Select(client =>
+                ClientInfo = server.GetClientsAsList().Select(client =>
                         new
                         {
                             stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY),
@@ -107,7 +107,7 @@ namespace WebfrontCore.Controllers
                         ZScore = clientData.stats?.ZScore == null || clientData.stats.ZScore == 0 ? null : clientData.stats.ZScore,
                         Team = clientData.client.Team
                     })
-                    .ToList() : new List<ClientScoreboardInfo>()
+                    .ToList()
             }).ToList();
         }
     }

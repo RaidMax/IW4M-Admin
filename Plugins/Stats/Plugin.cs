@@ -186,7 +186,7 @@ namespace IW4MAdmin.Plugins.Stats
             manager.GetPageList()
                 .Pages.Add(
                     Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"],
-                   "/Stats/TopPlayersAsync");
+                   "/Stats/TopPlayers");
 
             // meta data info
             async Task<IEnumerable<InformationResponse>> GetStats(ClientPaginationRequest request, CancellationToken token = default)
@@ -301,8 +301,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Key =  $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 1",
                         Value = chestRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 0,
+                        Order = 100,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM1"],
                         IsSensitive = true
                     },
@@ -311,8 +310,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 2",
                         Value = abdomenRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 1,
+                        Order = 101,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM2"],
                         IsSensitive = true
                     },
@@ -321,8 +319,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 3",
                         Value = chestAbdomenRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 2,
+                        Order = 102,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM3"],
                         IsSensitive = true
                     },
@@ -331,8 +328,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 4",
                         Value = headRatio.ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)) + '%',
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 3,
+                        Order = 103,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM4"],
                         IsSensitive = true
                     },
@@ -342,8 +338,7 @@ namespace IW4MAdmin.Plugins.Stats
                         // todo: make sure this is wrapped somewhere else
                         Value = $"{Math.Round(((float)hitOffsetAverage), 4).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))}°",
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 4,
+                        Order = 104,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM5"],
                         IsSensitive = true
                     },
@@ -352,8 +347,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 6",
                         Value = Math.Round(maxStrain, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 5,
+                        Order = 105,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM6"],
                         IsSensitive = true
                     },
@@ -362,8 +356,7 @@ namespace IW4MAdmin.Plugins.Stats
                         Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 7",
                         Value = Math.Round(averageSnapValue, 3).ToString(new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                         Type = MetaType.Information,
-                        Column = 2,
-                        Order = 6,
+                        Order = 106,
                         ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
                         IsSensitive = true
                     }

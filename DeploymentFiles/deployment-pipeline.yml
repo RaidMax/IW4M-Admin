@@ -75,6 +75,7 @@ steps:
       Write-Host 'Unzipping download'
       Expand-Archive -LiteralPath $(Build.Repository.LocalPath)\dotnet-bundle.zip -DestinationPath $(Build.Repository.LocalPath)
       Write-Host 'Executing dotnet-bundle'
+      $(Build.Repository.LocalPath)\dotnet-bundle.exe clean $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
       $(Build.Repository.LocalPath)\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore'

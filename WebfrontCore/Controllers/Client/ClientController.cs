@@ -35,7 +35,7 @@ namespace WebfrontCore.Controllers
         [Obsolete]
         public IActionResult ProfileAsync(int id, MetaType? metaFilterType,
             CancellationToken token = default) => RedirectToAction("Profile", "Client", new
-            { id, metaFilterType, token });
+            { id, metaFilterType });
 
         public async Task<IActionResult> Profile(int id, MetaType? metaFilterType, CancellationToken token = default)
         {

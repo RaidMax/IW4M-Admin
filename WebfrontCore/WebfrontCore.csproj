@@ -8,7 +8,7 @@
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
     <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
-    <Version>2.0.0</Version>
+    <Version>2022.0.0</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>IW4MAdmin</Product>
@@ -31,15 +31,6 @@
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
   
-  <ItemGroup>
-    <None Include="bundleconfig.json" />
-    <None Include="compilerconfig.json" />
-    <None Remove="dotnet-bundle.exe" />
-    <None Remove="dotnet-bundle.dll" />
-    <None Remove="Newtonsoft.Json.dll" />
-    <None Remove="NUglify.dll" />
-  </ItemGroup>
-
   <ItemGroup>
     <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
     <Content Update="wwwroot\css\src\global.css" CopyToPublishDirectory="Never" />

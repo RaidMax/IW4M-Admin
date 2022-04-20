@@ -4,7 +4,8 @@
     "inputFiles": [
       "wwwroot/lib/halfmoon/css/halfmoon-variables.min.css",
       "wwwroot/css/global.css",
-      "wwwroot/lib/chart.js/dist/Chart.min.css"
+      "wwwroot/lib/chart.js/dist/Chart.min.css",
+      "wwwroot/css/open-iconic.css"
     ]
   },
   {
@@ -15,6 +16,7 @@
       "wwwroot/lib/moment-timezone/moment-timezone.min.js",
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
       "wwwroot/lib/halfmoon/js/halfmoon.min.js",
+      "wwwroot/lib/canvas.js/canvasjs.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",

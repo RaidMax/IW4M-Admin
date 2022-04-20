@@ -1,7 +1,6 @@
 ﻿@import 'profile.scss';
 
 $icon-font-path: '/font/' !default;
-@import '../../lib/open-iconic/font/css/open-iconic-bootstrap.scss';
 
 :root {
     --blue-color: #007ACC;
@@ -22,8 +21,6 @@ $icon-font-path: '/font/' !default;
     --lm-base-body-bg-color: rgb(245, 245, 245);
     --lm-card-bg-color: var(--gray-color-light);
     --gray-color-light: white;
-    //--dm-border-color: var(--primary-color);
-    //--lm-border-color: var(--primary-color);
     --card-border-width: 0;
 }
 

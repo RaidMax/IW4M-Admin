@@ -1,0 +1,14 @@
+﻿[
+  {
+    "outputFile": "wwwroot/css/global.css",
+    "inputFile": "wwwroot/css/src/main.scss"
+  },
+  {
+    "outputFile": "wwwroot/css/src/profile.css",
+    "inputFile": "wwwroot/css/src/profile.scss"
+  },
+  {
+    "outputFile": "wwwroot/css/open-iconic.css",
+    "inputFile": "wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap.scss"
+  }
+]

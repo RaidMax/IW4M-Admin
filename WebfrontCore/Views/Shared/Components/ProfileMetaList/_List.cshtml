@@ -44,7 +44,7 @@
 @{ var start = 0; }
 @foreach (var meta in Model.OrderByDescending(meta => meta.When))
 {
-    if (lastHeaderEventDate - meta.When > TimeSpanForEvent(lastHeaderEventDate) && (start > 0 || (DateTime.UtcNow - meta.When).TotalDays > 3))
+    if (lastHeaderEventDate - meta.When > TimeSpanForEvent(lastHeaderEventDate))
     {
         TempData["ShowMetaHeader"] = true;
         lastHeaderEventDate = meta.When;

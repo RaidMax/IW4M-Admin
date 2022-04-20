@@ -12,30 +12,29 @@
     <meta name="description" content="@ViewBag.Description">
     <meta name="keywords" content="@ViewBag.Keywords">
     <link rel="icon" type="image/png" href="~/images/icon.png">
-
     <environment include="Development">
         <link rel="stylesheet" href="~/lib/halfmoon/css/halfmoon-variables.css"/>
         <link rel="stylesheet" href="/css/src/main.css"/>
-        @if (ViewBag.Configuration.WebfrontPrimaryColor is not null)
-        {
-            <style>
-                :root {
-                    --blue-color: @ViewBag.Configuration.WebfrontPrimaryColor;
-                }
-            </style>
-        }
-        @if (ViewBag.Configuration.WebfrontSecondaryColor is not null)
-        {
-            <style>
-                :root {
-                    --yellow-color: @ViewBag.Configuration.WebfrontSecondaryColor;
-                }
-            </style>
-        }
     </environment>
     <environment include="Production">
         <link rel="stylesheet" href="~/css/global.min.css?version=@ViewBag.Version"/>
     </environment>
+    @if (ViewBag.Configuration.WebfrontPrimaryColor is not null)
+    {
+        <style>
+                    :root {
+                        --blue-color: @ViewBag.Configuration.WebfrontPrimaryColor;
+                    }
+                </style>
+    }
+    @if (ViewBag.Configuration.WebfrontSecondaryColor is not null)
+    {
+        <style>
+                    :root {
+                        --yellow-color: @ViewBag.Configuration.WebfrontSecondaryColor;
+                    }
+                </style>
+    }
     @await RenderSectionAsync("styles", false)
 </head>
 <body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars" data-set-preferred-mode-onload="true">

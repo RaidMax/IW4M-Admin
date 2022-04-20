@@ -9,6 +9,6 @@
   },
   {
     "outputFile": "wwwroot/css/open-iconic.css",
-    "inputFile": "wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap.scss"
+    "inputFile": "wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss"
   }
 ]

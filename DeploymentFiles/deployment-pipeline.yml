@@ -53,9 +53,9 @@ steps:
     script: |
             Write-Host 'Build Configuration is $(buildConfiguration), Release Type is $(releaseType)'
             md -Force lib\open-iconic\font\css
-            wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap.scss
+            wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap-override.scss
             cd lib\open-iconic\font\css
-            (Get-Content open-iconic-bootstrap.scss).replace('../fonts/', '/fonts/') | Set-Content open-iconic-bootstrap.scss
+            (Get-Content open-iconic-bootstrap-override.scss).replace('../fonts/', '/fonts/') | Set-Content open-iconic-bootstrap-override.scss
     failOnStderr: true
     workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
 

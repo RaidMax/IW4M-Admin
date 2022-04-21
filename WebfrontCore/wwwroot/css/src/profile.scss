@@ -5,9 +5,13 @@
 .level-color-user, .level-color-guest, .level-color-0 {
 }
 
-.level-bgcolor-user, .level-bgcolor-guest, .level-bgcolor-0 {
+.dark-mode .level-bgcolor-user, .dark-mode .level-bgcolor-guest, .dark-mode .level-bgcolor-0 {
     background-color: #6c757d !important;
     background-color: rgba(255, 255, 255, 0.68) !important;
+}
+
+.level-bgcolor-user, .level-bgcolor-guest, .level-bgcolor-0 {
+    background-color: var(--lm-base-body-bg-color) !important;
 }
 
 .level-color-trusted, .level-color-2 {
@@ -188,10 +192,11 @@
     word-break: break-all;
 }
 
-.ip-lookup-profile {
+.profile-country-flag {
     background-size: contain; 
     background-repeat: no-repeat; 
     background-position: center;
+    height:5rem;
 }
 
 .status-indicator {

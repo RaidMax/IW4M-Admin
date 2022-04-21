@@ -78,6 +78,6 @@
   </ProjectExtensions>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="if $(ConfigurationName) == Debug ( &#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap-override.scss&#xA;echo d | xcopy /f /y $(ProjectDir)wwwroot\lib\open-iconic\font\fonts $(ProjectDir)wwwroot\font\&#xA;powershell -Command &quot;((Get-Content -path  $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap-override.scss -Raw) -replace '../fonts/','/fonts/') | Set-Content -Path $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap-override.scss&quot;&#xA;)" />
+    <Exec Command="if $(ConfigurationName) == Debug ( &#xA;powershell -Command wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap-override.scss&#xA;echo d | xcopy /f /y $(ProjectDir)wwwroot\lib\open-iconic\font\fonts $(ProjectDir)wwwroot\font\&#xA;powershell -Command &quot;((Get-Content -path  $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap-override.scss -Raw) -replace '../fonts/','/font/') | Set-Content -Path $(ProjectDir)wwwroot\lib\open-iconic\font\css\open-iconic-bootstrap-override.scss&quot;&#xA;)" />
   </Target>
 </Project>

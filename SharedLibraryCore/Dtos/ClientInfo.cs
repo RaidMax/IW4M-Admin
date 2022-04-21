@@ -10,5 +10,6 @@ namespace SharedLibraryCore.Dtos
         public int LinkId { get; set; }
         public EFClient.Permission Level { get; set; }
         public DateTime LastConnection { get; set; }
+        public bool IsMasked { get; set; }
     }
 }

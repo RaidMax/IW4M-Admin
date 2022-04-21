@@ -1,7 +1,7 @@
 ﻿@import 'profile.scss';
 
 :root {
-    --blue-color: #007ACC;
+    --blue-color: #117ac0;
     
     --yellow-color: #fe7e4c;
     --yellow-color-dark: #fe7e4c88;
@@ -20,6 +20,8 @@
     --lm-card-bg-color: var(--gray-color-light);
     --gray-color-light: white;
     --card-border-width: 0;
+
+    --dm-modal-overlay-bg-color: rgba(0, 0, 0, 0.8);
 }
 
 .server-history-row {

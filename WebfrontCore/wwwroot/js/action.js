@@ -1,11 +1,11 @@
 ﻿function hideLoader() {
     $('#mainLoadingBar').fadeOut();
-    $('#modalLoadingBar').fadeOut();
+    $('.modal-loading-bar').fadeOut();
 }
 
 function showLoader() {
     $('#mainLoadingBar').fadeIn();
-    $('#modalLoadingBar').fadeIn();
+    $('.modal-loading-bar').fadeIn();
 }
 
 function errorLoader() {
@@ -151,8 +151,13 @@ $(document).ready(function () {
                 
                 catch{}
                 
+                if (message instanceof Array)
+                {
+                    message = message.join("<br/>");
+                }
+                
                 halfmoon.initStickyAlert({
-                    content: message.join("<br/>"),
+                    content: message,
                     title: 'Error',
                     alertType: 'alert-danger',
                     fillType: 'filled'

@@ -9,7 +9,8 @@
 
 else
 {
-    <h2 class="content-title mt-20">@Html.Raw(Utilities.FormatExt(ViewBag.Localization["WEBFRONT_STATS_MESSAGES_FOUND"], $"<span class=\"badge badge-primary font-size-18\">{Model.TotalResultCount.ToString("N0")}</span>"))</h2>
+    <h2 class="content-title mt-20 mb-0">Search Results</h2>
+    <div class="text-muted mb-15">@Html.Raw(Utilities.FormatExt(ViewBag.Localization["WEBFRONT_STATS_MESSAGES_FOUND"], $"<span class=\"badge\">{Model.TotalResultCount.ToString("N0")}</span>"))</div>
 
     <table class="table bg-dark-dm bg-light-lm rounded" style="table-layout: fixed">
         <thead class="d-none d-lg-table-header-group">

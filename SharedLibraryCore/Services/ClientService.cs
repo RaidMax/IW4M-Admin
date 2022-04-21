@@ -47,13 +47,15 @@ namespace SharedLibraryCore.Services
         private readonly ApplicationConfiguration _appConfig;
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ILogger _logger;
+        private readonly IGeoLocationService _geoLocationService;
 
         public ClientService(ILogger<ClientService> logger, IDatabaseContextFactory databaseContextFactory,
-            ApplicationConfiguration appConfig)
+            ApplicationConfiguration appConfig, IGeoLocationService geoLocationService)
         {
             _contextFactory = databaseContextFactory;
             _logger = logger;
             _appConfig = appConfig;
+            _geoLocationService = geoLocationService;
         }
 
         public async Task<EFClient> Create(EFClient entity)
@@ -782,7 +784,8 @@ namespace SharedLibraryCore.Services
                     Password = client.Password,
                     PasswordSalt = client.PasswordSalt,
                     NetworkId = client.NetworkId,
-                    LastConnection = client.LastConnection
+                    LastConnection = client.LastConnection,
+                    Masked = client.Masked
                 };
 
             return await iqClients.ToListAsync();
@@ -901,18 +904,24 @@ namespace SharedLibraryCore.Services
 
             await using var context = _contextFactory.CreateContext(false);
             var iqClients = context.Clients
-                .Where(_client => _client.CurrentAlias.IPAddress != null)
-                .Where(_client => _client.FirstConnection >= startOfPeriod)
-                .OrderByDescending(_client => _client.FirstConnection)
-                .Select(_client => new PlayerInfo
+                .Where(client => client.CurrentAlias.IPAddress != null)
+                .Where(client => client.FirstConnection >= startOfPeriod)
+                .OrderByDescending(client => client.FirstConnection)
+                .Select(client => new PlayerInfo
                 {
-                    ClientId = _client.ClientId,
-                    Name = _client.CurrentAlias.Name,
-                    IPAddress = _client.CurrentAlias.IPAddress.ConvertIPtoString(),
-                    LastConnection = _client.FirstConnection
+                    ClientId = client.ClientId,
+                    Name = client.CurrentAlias.Name,
+                    IPAddress = client.CurrentAlias.IPAddress.ConvertIPtoString(),
+                    LastConnection = client.FirstConnection
                 });
 
-            return await iqClients.ToListAsync();
+            var clientList = await iqClients.ToListAsync();
+            foreach (var client in clientList)
+            {
+                client.GeoLocationInfo = await _geoLocationService.Locate(client.IPAddress);
+            }
+
+            return clientList;
         }
 
         #endregion

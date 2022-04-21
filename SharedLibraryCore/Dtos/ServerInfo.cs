@@ -15,6 +15,7 @@ namespace SharedLibraryCore.Dtos
         public int MaxClients { get; set; }
         public List<ChatInfo> ChatHistory { get; set; }
         public List<PlayerInfo> Players { get; set; }
+        public List<Report> Reports { get; set; }
         public ClientHistoryInfo ClientHistory { get; set; }
         public long ID { get; set; }
         public bool Online { get; set; }

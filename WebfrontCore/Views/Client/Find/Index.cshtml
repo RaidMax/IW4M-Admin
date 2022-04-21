@@ -5,7 +5,8 @@
 
 <!-- desktop -->
 <div class="content mt-0">
-    <h2 class="content-title mt-20">@ViewBag.ResultCount result(s) for <span class="badge badge-primary font-size-18">@ViewBag.SearchTerm</span></h2>
+    <h2 class="content-title mt-20 mb-0">Search Results</h2>
+    <div class="text-muted mb-15"><span class="badge">@ViewBag.SearchTerm</span> returned <span class="text-primary">@ViewBag.ResultCount</span> matche(s)</div>
 
     <table class="table d-none d-md-table">
         <thead>

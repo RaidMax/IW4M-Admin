@@ -23,10 +23,12 @@
                 <span class="name">@ViewBag.Localization["WEBFRONT_NAV_ABOUT"]</span>
             </a>
             <!-- penalties -->
-            <a asp-controller="Penalty" asp-action="List" class="sidebar-link">
-                <i class="oi oi-lock-locked mr-5"></i>
-                <span class="name">@ViewBag.Localization["WEBFRONT_NAV_PENALTIES"]</span>
-            </a>
+            <has-permission entity="Penalty" required-permission="Read">
+                <a asp-controller="Penalty" asp-action="List" class="sidebar-link">
+                    <i class="oi oi-lock-locked mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_PENALTIES"]</span>
+                </a>
+            </has-permission>
             <!-- privileged -->
             <has-permission entity="PrivilegedClientsPage" required-permission="Read">
                 <a asp-controller="Client" asp-action="Privileged" class="sidebar-link">
@@ -126,12 +128,12 @@
                         <span class="name">@ViewBag.Localization["WEBFRONT_NAV_AUDIT_LOG"]</span>
                     </a>
                 </has-permission>
-                @*<has-permission entity="RecentPlayersPage" required-permission="Read">
+                <has-permission entity="RecentPlayersPage" required-permission="Read">
                     <a class="sidebar-link profile-action" href="#actionModal" data-action="RecentClients" title="@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]">
                         <i class="oi oi-timer mr-5"></i>
                         <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]</span>
                     </a>
-                </has-permission>*@
+                </has-permission>
                 <a class="sidebar-link profile-action" href="#actionModal" data-action="GenerateLoginToken" title="@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]">
                     <i class="oi oi-key mr-5"></i>
                     <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]</span>

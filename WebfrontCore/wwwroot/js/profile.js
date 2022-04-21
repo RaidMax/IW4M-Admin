@@ -55,36 +55,35 @@
     /*
      get ip geolocation info into modal
      */
-    $('.ip-locate-link').click(function (e) {
-        e.preventDefault();
+    $('.profile-ip-lookup').click(function (e) {
         const ip = $(this).data("ip");
         $.getJSON(`https://ipwhois.app/json/${ip}`)
             .done(function (response) {
-                $('#mainModal .modal-title').text(ip);
-                $('#mainModal .modal-body').text('');
+                $('#contextModal .modal-title').text(ip);
+                const modalBody = $('#contextModal .modal-body');
+                modalBody.text('');
                 if (response.isp.length > 0) {
-                    $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ISP']} &mdash; ${response.isp}<br/>`);
+                    modalBody.append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ISP']} &mdash; <span class="text-muted">${response.isp}</span><br/>`);
                 }
                 if (response.org.length > 0) {
-                    $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ORG']} &mdash; ${response.org}<br/>`);
+                    modalBody.append(`${_localization['WEBFRONT_PROFILE_LOOKUP_ORG']} &mdash; <span class="text-muted">${response.org}</span><br/>`);
                 }
                 if (response.region.length > 0 || response.city.length > 0 || response.country.length > 0 || response.timezone_gmt.length > 0) {
-                    $('#mainModal .modal-body').append(`${_localization['WEBFRONT_PROFILE_LOOKUP_LOCATION']} &mdash; `);
+                    modalBody.append(`${_localization['WEBFRONT_PROFILE_LOOKUP_LOCATION']} &mdash;`);
                 }
                 if (response.city.length > 0) {
-                    $('#mainModal .modal-body').append(response.city);
+                    modalBody.append(`<span class="text-muted">${response.city}</span>`);
                 }
                 if (response.region.length > 0) {
-                    $('#mainModal .modal-body').append((response.region.length > 0 ? ', ' : '') + response.region);
+                    modalBody.append(`<span class="text-muted">${(response.region.length > 0 ? ', ' : '') + response.region}</span>`);
                 }
                 if (response.country.length > 0) {
-                    $('#mainModal .modal-body').append((response.country.length > 0 ? ', ' : '') + response.country);
+                    modalBody.append(`<span class="text-muted">${(response.country.length > 0 ? ', ' : '') + response.country}</span>`);
                 }
                 if (response.timezone_gmt.length > 0) {
-                    $('#mainModal .modal-body').append((response.timezone_gmt.length > 0 ? ', ' : '') + response.timezone_gmt);
+                    modalBody.append(`<br/>Timezone &mdash; <span class="text-muted">UTC${response.timezone_gmt}</span>`);
                 }
-
-                $('#mainModal').modal();
+                modalBody.append('</span>');
             })
             .fail(function (jqxhr, textStatus, error) {
                 $('#mainModal .modal-title').text("Error");

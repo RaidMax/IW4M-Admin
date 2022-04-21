@@ -176,11 +176,12 @@ namespace WebfrontCore.Controllers
                     adminsDict.Add(admin.Level, new List<ClientInfo>());
                 }
 
-                adminsDict[admin.Level].Add(new ClientInfo()
+                adminsDict[admin.Level].Add(new ClientInfo
                 {
                     Name = admin.Name,
                     ClientId = admin.ClientId,
-                    LastConnection = admin.LastConnection
+                    LastConnection = admin.LastConnection,
+                    IsMasked = admin.Masked
                 });
             }
 

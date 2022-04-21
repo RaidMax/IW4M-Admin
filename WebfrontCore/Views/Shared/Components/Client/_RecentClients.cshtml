@@ -1,52 +1,33 @@
 ﻿@model IEnumerable<SharedLibraryCore.Dtos.PlayerInfo>
 @{
     Layout = null;
-    var loc = SharedLibraryCore.Utilities.CurrentLocalization.LocalizationIndex;
 }
 
-
-@*<table class="table table-striped">
-        <thead>
-            <tr class="bg-primary pt-2 pb-2">
-                <th scope="col">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</th>
-                <th scope="col">@loc["WEBFRONT_CONFIGURATION_SERVER_IP"]</th>
-                <th scope="col">@loc["WEBFRONT_PROFILE_LOOKUP_LOCATION"]</th>
-                <th scope="col" class="text-right">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</th>
-            </tr>
-        </thead>
-
-        @foreach (var client in Model)
-        {
-            <tr>
-                <td class="w-25">
-                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="link-inverse">@client.Name</a>
-                </td>
-                <td class="w-25">
-                    @client.IPAddress
-                </td>
-                <td>
-                    <div class="client-location-flag" data-ip="@client.IPAddress" />
-                </td>
-                <td class="text-right">
-                    @client.LastConnectionText
-                </td>
-            </tr>
-
-        }
-    </table>*@
+<div class="mb-15 text-center font-weight-lighter">New clients connected in the last <span class="text-primary">24</span> hours</div>
 
 @foreach (var client in Model)
 {
-    <div class="p-2 mb-3 border-bottom" style="background-color: #222;">
+    <div class="bg-very-dark-dm bg-light-ex-lm p-15 rounded mb-10">
         <div class="d-flex flex-row">
             <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="h4 mr-auto">
                 <color-code value="@client.Name"></color-code>
             </a>
-            <div class="client-location-flag align-self-center" data-ip="@client.IPAddress"></div>
+            @if (client.GeoLocationInfo is not null)
+            {
+                @if (!string.IsNullOrEmpty(client.GeoLocationInfo.CountryCode))
+                {
+                    <div data-toggle="tooltip" data-title="@client.GeoLocationInfo.Country">
+                        <div class="rounded" style="width: 40px; height: 25.66px; background-repeat: no-repeat; background-position: center center; background-image: url('https://flagcdn.com/w40/@(client.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
+                    </div>
+                }
+            }
         </div>
         <div class="d-flex flex-row">
-            <div class="align-self-center  mr-auto">@client.IPAddress</div>
-            <div class="align-self-center">@client.LastConnectionText</div>
+            <has-permission entity="ClientIPAddress" required-permission="Read">
+                <div class="align-self-center mr-auto">@client.IPAddress</div>
+            </has-permission>
+            <div class="align-self-center text-muted font-size-12">@client.LastConnection.HumanizeForCurrentCulture()</div>
         </div>
+
     </div>
 }

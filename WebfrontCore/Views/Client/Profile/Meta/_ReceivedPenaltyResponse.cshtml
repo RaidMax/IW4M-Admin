@@ -32,7 +32,7 @@
 
                 else if (match.MatchValue == "reason")
                 {
-                    <span class="text-light-dm text-dark-lm">
+                    <span class="text-white-dm text-black-lm">
                         @if (ViewBag.Authorized && !string.IsNullOrEmpty(Model.AutomatedOffense) && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Warning && Model.PenaltyType != Data.Models.EFPenalty.PenaltyType.Kick)
                         {
                             <span>@Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.AutomatedOffense)</span>

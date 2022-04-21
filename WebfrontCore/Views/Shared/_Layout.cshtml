@@ -23,36 +23,57 @@
     @if (ViewBag.Configuration.WebfrontPrimaryColor is not null)
     {
         <style>
-                    :root {
-                        --blue-color: @ViewBag.Configuration.WebfrontPrimaryColor;
-                    }
-                </style>
+            :root {
+                --blue-color: @ViewBag.Configuration.WebfrontPrimaryColor;
+            }
+        </style>
     }
     @if (ViewBag.Configuration.WebfrontSecondaryColor is not null)
     {
         <style>
-                    :root {
-                        --yellow-color: @ViewBag.Configuration.WebfrontSecondaryColor;
-                    }
-                </style>
+            :root {
+                --yellow-color: @ViewBag.Configuration.WebfrontSecondaryColor;
+            }
+        </style>
     }
     @await RenderSectionAsync("styles", false)
 </head>
 <body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars" data-set-preferred-mode-onload="true">
 
-<!-- Action Modal -->
+<!-- action modal -->
 <div class="modal" id="actionModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
-        <div id="modalLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display:none">
+        <div id="modalLoadingBar" class="modal-loading-bar progress-bar position-absolute flex-fill position-fixed z-30" style="display:none">
             <div class="progress-bar-value"></div>
         </div>
-        <div class="modal-content">
+        <div class="modal-content p-10">
             <div class="modal-content">
                 <a href="#" class="btn close" role="button" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </a>
                 <div id="actionModalContent">
                     <h4 class="mt-20">No content available yet...</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- context modal -->
+<div class="modal" id="contextModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-loading-bar progress-bar position-absolute flex-fill position-fixed z-30" style="display:none">
+            <div class="progress-bar-value"></div>
+        </div>
+        <div class="modal-content">
+            <div class="modal-content p-10">
+                <a href="#" class="btn close" role="button" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </a>
+                <div id="contextModalContent">
+                    <div class="modal-title"></div>
+                    <hr/>
+                    <div class="modal-body font-size-12"></div>
                 </div>
             </div>
         </div>
@@ -88,47 +109,36 @@
             </has-permission>
 
             <has-permission entity="AdminMenu" required-permission="Read">
-                <div class="badge-group ml-10" role="group">
-                    <span class="badge badge-danger">@(ViewBag.ReportCount ?? "-")</span>
-                    <span class="badge bg-dark-dm bg-light-lm">Reports</span>
-                </div>
+                <a href="#actionModal" class="profile-action no-decoration" data-action="RecentReports" data-toggle="tooltip" data-title="View recent reports" data-placement="bottom">
+                    <div class="badge-group ml-10" role="group">
+                        <span class="badge badge-danger">@(ViewBag.ReportCount ?? "-")</span>
+                        <span class="badge bg-dark-dm bg-light-lm">Reports</span>
+                    </div>
+                </a>
             </has-permission>
         </div>
 
-        <div class="d-flex d-lg-none ml-auto">
-            <a href="#contextMenuModal">
-                <button class="btn" type="button">
-                    <i class="oi oi-ellipses"></i>
-                </button>
-            </a>
+        <div class="d-flex ml-auto">
+            <div class="btn btn-action mr-10 ml-10" onclick="halfmoon.toggleDarkMode()" data-toggle="tooltip" data-title="Toggle display mode" data-placement="bottom">
+                <i class="oi oi-moon"></i>
+            </div>
+            <div class="d-none d-md-block ">
+
+                <partial name="_SearchResourceForm"/>
+            </div>
+            <div class="d-flex d-lg-none">
+                <a href="#contextMenuModal">
+                    <button class="btn" type="button">
+                        <i class="oi oi-ellipses"></i>
+                    </button>
+                </a>
+            </div>
         </div>
 
-        @*<div class="d-none d-md-flex ml-auto">
-            <div class="btn oi btn-square btn-action mr-10" data-glyph="moon" onclick="halfmoon.toggleDarkMode()" title="Toggle display mode"></div>
-        </div>*@
-
-        <div class="d-none d-lg-block ml-auto">
-            <partial name="_SearchResourceForm"/>
-        </div>
     </nav>
 
     <partial name="_LeftNavBar"/>
 
-    <!-- Main Modal -->
-    <!--<div class="modal fade" id="mainModal" tabindex="-1" role="dialog" aria-labelledby="mainModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content bg-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="mainModalLabel"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true" class="text-danger">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                </div>
-            </div>
-        </div>
-    </div>-->
     <!-- End Main Modal -->
     <div id="target_id">
         @await RenderSectionAsync("targetid", required: false)

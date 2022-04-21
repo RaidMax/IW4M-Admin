@@ -1,4 +1,5 @@
-﻿@model IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>
+﻿@using Humanizer
+@model IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>
 @{
     var informationMeta = Model
         .Where(meta => meta.Type == SharedLibraryCore.Interfaces.MetaType.Information)
@@ -7,12 +8,13 @@
         .GroupBy(meta => meta.index / 5);
 }
 
+<div class="d-flex flex-wrap">
 @foreach (var metaColumn in informationMeta)
 {
-    <div class="mr-20">
+  <!--  <div class="mr-20"> -->
         @foreach (var meta in metaColumn)
         {
-            <div class="profile-meta-entry font-size-12" data-toggle="@(!string.IsNullOrEmpty(meta.meta.ToolTipText) ? "tooltip" : "")" data-title="@meta.meta.ToolTipText" data-placement="bottom">
+            <div class="m-md-5 p-15 w-half rounded bg-very-dark-dm bg-light-ex-lm profile-meta-entry font-size-12  w-md-100 w-lg-150" data-toggle="@(!string.IsNullOrEmpty(meta.meta.ToolTipText) ? "tooltip" : "")" data-title="@meta.meta.ToolTipText" data-placement="bottom">
 
                 @{var results = Utilities.SplitTranslationTokens(meta.meta.Key);}
 
@@ -22,22 +24,23 @@
                     {
                         if (result.IsInterpolation)
                         {
-                            <span class="profile-meta-value text-primary"><color-code value="@meta.meta.Value"></color-code></span>
+                            <div class="profile-meta-value text-primary font-size-14"><color-code value="@meta.meta.Value"></color-code></div>
                         }
 
                         else
                         {
-                            <span class="profile-meta-title text-muted">@result.MatchValue</span>
+                            <span class="profile-meta-title text-muted font-size-12">@result.MatchValue.Titleize()</span>
                         }
                     }
                 }
 
                 else
                 {
-                    <span class="profile-meta-value text-primary"><color-code value="@meta.meta.Value"></color-code></span>
-                    <span class="profile-meta-title text-muted">@meta.meta.Key</span>
+                    <div class="profile-meta-value text-primary font-size-14"><color-code value="@meta.meta.Value"></color-code></div>
+                    <div class="profile-meta-title text-muted font-size-12">@meta.meta.Key.Titleize()</div>
                 }
             </div>
         }
-    </div>
+  <!--  </div> -->
 }
+</div>

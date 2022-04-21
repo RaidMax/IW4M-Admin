@@ -33,205 +33,217 @@
 
 <div class="content row mt-20">
 <div class="col-12 col-lg-9 col-xl-10">
-    @if (Model.ActivePenalty != null)
-    {
-        <has-permission entity="ClientLevel" required-permission="Read">
-            <div class="alert @ClassForPenaltyType(Model.ActivePenalty.Type) mt-10 mb-10" role="alert">
-                @foreach (var result in Utilities.SplitTranslationTokens(translationKey))
+@if (Model.ActivePenalty != null)
+{
+    <has-permission entity="ClientLevel" required-permission="Read">
+        <div class="alert @ClassForPenaltyType(Model.ActivePenalty.Type) mt-10 mb-10" role="alert">
+            @foreach (var result in Utilities.SplitTranslationTokens(translationKey))
+            {
+                switch (result.MatchValue)
                 {
-                    switch (result.MatchValue)
-                    {
-                        case "reason":
-                            <span class="text-light-dm font-weight-lighter">@(ViewBag.Authorized ? !string.IsNullOrEmpty(Model.ActivePenalty.AutomatedOffense) && Model.ActivePenalty.Type != EFPenalty.PenaltyType.Warning ? Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.ActivePenalty.AutomatedOffense) : Model.ActivePenalty.Offense.StripColors() : Model.ActivePenalty.Offense.StripColors())</span>
-                            break;
-                        case "time":
-                            <span class="text-light-dm font-weight-lighter">
-                                @((Model.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture())
-                            </span>
-                            break;
-                        default:
-                            <span>@result.MatchValue</span>
-                            break;
-                    }
+                    case "reason":
+                        <span class="text-light-dm font-weight-lighter">@(ViewBag.Authorized ? !string.IsNullOrEmpty(Model.ActivePenalty.AutomatedOffense) && Model.ActivePenalty.Type != EFPenalty.PenaltyType.Warning ? Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.ActivePenalty.AutomatedOffense) : Model.ActivePenalty.Offense.StripColors() : Model.ActivePenalty.Offense.StripColors())</span>
+                        break;
+                    case "time":
+                        <span class="text-light-dm font-weight-lighter">
+                            @((Model.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture())
+                        </span>
+                        break;
+                    default:
+                        <span>@result.MatchValue</span>
+                        break;
+                }
+            }
+        </div>
+    </has-permission>
+}
+
+<h2 class="content-title mb-10">Player Profile</h2>
+
+<div id="profile_wrapper" class="mb-10 mt-10">
+
+    <!-- online status indicator -->
+    @if (Model.Online)
+    {
+        <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10" data-toggle="tooltip" data-placement="bottom" data-title="Client is online"></div>
+        <div class="bg-success rounded-circle position-absolute status-indicator with-ripple z-10 mt-10 ml-10"></div>
+    }
+
+    <!-- main profile row -->
+    <div class="card p-15 ml-0 mr-0 mt-0 mb-10 d-flex flex-fill flex-wrap flex-column flex-md-row justify-content-center">
+        <div class="pl-5 pr-5 d-flex flex-column flex-md-row">
+            <div id="profile_avatar" class="w-150 w-md-100 h-150 h-md-100 mt-5 mb-5 d-flex justify-content-center align-self-center rounded @ClassForProfileBackground() @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")">
+                @if (string.IsNullOrEmpty(gravatarUrl))
+                {
+                    <div class="profile-shortcode align-self-center text-dark-lm">@shortCode</div>
                 }
             </div>
-        </has-permission>
-    }
+            <div class="d-flex flex-column align-self-center ml-20 mr-20 mt-10 mb-10 mt-md-0 mb-md-0 text-center text-md-left">
+                <!-- name -->
+                <div id="profile_name">
+                    <span class="font-size-20 font-weight-medium">
+                        <color-code value="@Model.Name"></color-code>
+                    </span>
+                    <has-permission entity="MetaAliasUpdate" required-permission="Read">
+                        <div class="dropdown with-arrow">
+                            <div data-toggle="dropdown" id="profileAliasHistory" aria-haspopup="true" aria-expanded="false">
+                                @if (Model.Aliases.Any())
+                                {
+                                    <i class="oi oi-caret-bottom font-size-12" aria-hidden="true"></i>
+                                }
+                            </div>
 
-    <h2 class="content-title mb-10">Player Profile</h2>
-
-    <div id="profile_wrapper" class="mb-10 mt-10">
-
-        <!-- online status indicator -->
-        @if (Model.Online)
-        {
-            <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10" data-toggle="tooltip" data-placement="bottom" data-title="Client is online"></div>
-            <div class="bg-success rounded-circle position-absolute status-indicator with-ripple z-10 mt-10 ml-10"></div>
-        }
-
-        <!-- main profile row -->
-        <div class="card p-20 ml-0 mr-0 mt-0 mb-10 d-flex flex-fill flex-wrap flex-column flex-md-row justify-content-center">
-            <div class="d-flex flex-column flex-md-row">
-                <div id="profile_avatar" class="w-150 w-md-100 h-150 h-md-100 mt-10 mb-10 d-flex justify-content-center align-self-center rounded @ClassForProfileBackground() @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")">
-                    @if (string.IsNullOrEmpty(gravatarUrl))
-                    {
-                        <div class="profile-shortcode align-self-center text-dark-lm">@shortCode</div>
-                    }
+                            <div class="dropdown-menu dropdown-menu-center @(Model.Aliases.Where(alias => !alias.Item1.Contains(" ")).Max(alias => (int?)alias.Item1.Length) >= 15 ? "w-250" : "")" aria-labelledby="profileAliasHistory">
+                                @foreach (var (alias, dateAdded) in Model.Aliases.OrderByDescending(alias => alias.Item2).Take(15))
+                                {
+                                    <a asp-controller="Client" asp-action="Find" asp-route-clientName="@alias.StripColors()" class="dropdown-item" data-toggle="tooltip" data-title="@dateAdded.HumanizeForCurrentCulture()">
+                                        <i class="oi oi-magnifying-glass text-muted mr-5"></i>
+                                        <color-code value="@alias"></color-code>
+                                    </a>
+                                }
+                                @if (Model.Aliases.Count > 15)
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <span class="dropdown-item bg-dark-dm bg-light-lm">...and @(Model.Aliases.Count - 15) more</span>
+                                }
+                            </div>
+                        </div>
+                    </has-permission>
                 </div>
-                <div class="d-flex flex-column align-self-center ml-20 mr-20 mt-10 mb-10 mt-md-0 mb-md-0 text-center text-md-left">
-                    <!-- name -->
-                    <div id="profile_name">
-                        <span class="font-size-20 font-weight-medium">
-                            <color-code value="@Model.Name"></color-code>
-                        </span>
-                        <has-permission entity="MetaAliasUpdate" required-permission="Read">
-                            <div class="dropdown dropright with-arrow">
-                                <div data-toggle="dropdown" id="profileAliasHistory" aria-haspopup="true" aria-expanded="false">
-                                    @if (Model.Aliases.Any())
-                                    {
-                                        <i class="oi oi-caret-bottom font-size-12" aria-hidden="true"></i>
-                                    }
-                                </div>
-
-                                <div class="dropdown-menu @(Model.Aliases.Where(alias => !alias.Item1.Contains(" ")).Max(alias => (int?)alias.Item1.Length) >= 15 ? "w-250" : "") " aria-labelledby="profileAliasHistory">
-                                    @foreach (var (alias, dateAdded) in Model.Aliases.OrderByDescending(alias => alias.Item2).Take(15))
-                                    {
-                                        <a asp-controller="Client" asp-action="Find" asp-route-clientName="@alias" class="dropdown-item" data-toggle="tooltip" data-title="@dateAdded.HumanizeForCurrentCulture()">
-                                            <i class="oi oi-magnifying-glass text-muted mr-5"></i>
-                                            <color-code value="@alias"></color-code>
-                                        </a>
-                                    }
-                                    @if (Model.Aliases.Count > 15)
-                                    {
-                                        <div class="dropdown-divider"></div>
-                                        <span class="dropdown-item bg-dark-dm bg-light-lm">...and @(Model.Aliases.Count - 15) more</span>
-                                    }
-                                </div>
-                            </div>
-                        </has-permission>
+                <!-- permission level -->
+                <has-permission entity="ClientLevel" required-permission="Read">
+                    <div class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Model.LevelInt">
+                        <div class="d-flex flex-row">
+                            <span>@Model.Level</span>
+                        </div>
                     </div>
-                    <!-- permission level -->
-                    <has-permission entity="ClientLevel" required-permission="Read">
-                        <div class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Model.LevelInt">
-                            <div class="d-flex flex-row">
-                                <span>@Model.Level</span>
+                </has-permission>
+
+                <!-- guid -->
+                <has-permission entity="ClientGuid" required-permission="Read">
+                    <div class="dropdown dropup with-arrow">
+                        <div class="text-muted" data-toggle="dropdown" id="altGuidFormatsDropdown" aria-haspopup="true" aria-expanded="false">@Model.NetworkId.ToString("X")</div>
+                        <div class="dropdown-menu" aria-labelledby="altGuidFormatsDropdown">
+                            <div class="p-10 font-size-12">
+                                <div class="">Alternative Formats</div>
+                                <div class="dropdown-divider mt-5 mb-5"></div>
+                                <div class="text-muted font-weight-lighter">@((ulong)Model.NetworkId)</div>
                             </div>
                         </div>
-                    </has-permission>
+                    </div>
+                </has-permission>
 
-                    <!-- guid -->
-                    <has-permission entity="ClientGuid" required-permission="Read">
-                        <div class="dropdown dropup with-arrow">
-                            <div class="text-muted" data-toggle="dropdown" id="altGuidFormatsDropdown" aria-haspopup="true" aria-expanded="false">@Model.NetworkId.ToString("X")</div>
-                            <div class="dropdown-menu" aria-labelledby="altGuidFormatsDropdown">
-                                <div class="p-10 font-size-12">
-                                    <div class="">Alternative Formats</div>
-                                    <div class="dropdown-divider mt-5 mb-5"></div>
-                                    <div class="text-muted font-weight-lighter">@((ulong)Model.NetworkId)</div>
-                                </div>
+                <!-- ip address -->
+                <div class="align-self-center align-self-md-start d-flex flex-row">
+                    <span class="text-muted mr-5">@Model.IPAddress</span>
+                    <has-permission entity="MetaAliasUpdate" required-permission="Read">
+                        <div class="dropdown with-arrow">
+                            <div data-toggle="dropdown" id="profileIPAddressHistory" aria-haspopup="true" aria-expanded="false">
+                                @if (Model.IPs.Any(ip => !string.IsNullOrEmpty(ip.Item1)))
+                                {
+                                    <i class="oi oi-caret-bottom font-size-12 text-muted" aria-hidden="true"></i>
+                                }
                             </div>
-                        </div>
-                    </has-permission>
-
-                    <!-- ip address -->
-                    <div class="align-self-center align-self-md-start d-flex flex-row">
-                        <span class="text-muted mr-5">@Model.IPAddress</span>
-                        <has-permission entity="MetaAliasUpdate" required-permission="Read">
-                            <div class="dropdown dropright with-arrow">
-                                <div data-toggle="dropdown" id="profileIPAddressHistory" aria-haspopup="true" aria-expanded="false">
-                                    @if (Model.IPs.Any(ip => !string.IsNullOrEmpty(ip.Item1)))
+                            <div class="dropdown-menu dropdown-menu-center" aria-labelledby="profileAliasHistory">
+                                @foreach (var (ip, dateAdded) in Model.IPs.OrderByDescending(ip => ip.Item2).Take(15))
+                                {
+                                    if (string.IsNullOrEmpty(ip))
                                     {
-                                        <i class="oi oi-caret-bottom font-size-12" aria-hidden="true"></i>
+                                        continue;
                                     }
-                                </div>
-                                <div class="dropdown-menu" aria-labelledby="profileAliasHistory">
-                                    @foreach (var (ip, dateAdded) in Model.IPs.OrderByDescending(ip => ip.Item2).Take(15))
-                                    {
-                                        <a asp-controller="Client" asp-action="Find" asp-route-clientName="@ip" class="dropdown-item" data-toggle="tooltip" data-title="@dateAdded.HumanizeForCurrentCulture()">
+                                    <div class="d-flex dropdown-item" data-toggle="tooltip" data-title="@dateAdded.HumanizeForCurrentCulture()">
+                                        <a asp-controller="Client" asp-action="Find" asp-route-clientName="@ip">
                                             <i class="oi oi-magnifying-glass text-muted mr-5"></i>
+                                        </a>
+                                        <a href="#contextModal" class="profile-ip-lookup dropdown-item p-0 m-0" data-ip="@ip">
                                             <color-code value="@ip"></color-code>
                                         </a>
-                                    }
-                                    @if (Model.IPs.Count > 15)
-                                    {
-                                        <div class="dropdown-divider"></div>
-                                        <span class="dropdown-item bg-dark-dm bg-light-lm">...and @(Model.IPs.Count - 15) more</span>
-                                    }
-                                </div>
+                                    </div>
+                                }
+                                @if (Model.IPs.Count > 15)
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <span class="dropdown-item bg-dark-dm bg-light-lm">...and @(Model.IPs.Count - 15) more</span>
+                                }
                             </div>
-                        </has-permission>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex-fill d-flex justify-content-center justify-content-md-end mt-10 mt-md-0">
-                <!-- country flag -->
-                <div id="ipGeoDropdown" class="dropdown dropleft with-arrow align-self-center">
-                    <a href="#" data-toggle="dropdown" id="avatar-popover-toggle" aria-haspopup="true" aria-expanded="false">
-                        @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.CountryCode))
-                        {
-                            <div class="ip-lookup-profile w-100 rounded align-self-center" style="height:5rem;background-image: url('https://flagcdn.com/w80/@(Model.GeoLocationInfo.CountryCode.ToLower()).png')" data-ip="@Model.IPAddress"></div>
-                        }
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-center z-30" aria-labelledby="avatar-popover-toggle">
-                        <has-permission entity="ClientIPAddress" required-permission="Read">
-                            <h6 class="dropdown-header font-weight-bold">@Model.IPAddress</h6>
-                            <div class="dropdown-divider"></div>
-                        </has-permission>
-
-                        <div class="dropdown-item geo-country">@Model.GeoLocationInfo.Country</div>
-                        @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.Region))
-                        {
-                            <div class="dropdown-item text-muted geo-region">@Model.GeoLocationInfo.Region</div>
-                            <div class="dropdown-divider"></div>
-                        }
-                        @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.Organization))
-                        {
-                            <div class="dropdown-item geo-organization">@Model.GeoLocationInfo.Organization</div>
-                        }
-                    </div>
+                        </div>
+                    </has-permission>
                 </div>
             </div>
         </div>
+
+        <div class="flex-fill d-flex justify-content-center justify-content-md-end mt-10 mt-md-0">
+            <!-- country flag -->
+            <div id="ipGeoDropdown" class="dropdown with-arrow align-self-center">
+                <a href="#" data-toggle="dropdown" id="avatar-popover-toggle" aria-haspopup="true" aria-expanded="false">
+                    @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.CountryCode))
+                    {
+                        <div class="profile-country-flag w-100 rounded align-self-center" style="background-image: url('https://flagcdn.com/w160/@(Model.GeoLocationInfo.CountryCode.ToLower()).png')" data-ip="@Model.IPAddress"></div>
+                    }
+                </a>
+                <div class="dropdown-menu dropdown-menu-center z-30" aria-labelledby="avatar-popover-toggle">
+                    <has-permission entity="ClientIPAddress" required-permission="Read">
+                        <h6 class="dropdown-header font-weight-bold">@Model.IPAddress</h6>
+                        <div class="dropdown-divider"></div>
+                    </has-permission>
+
+                    <div class="dropdown-item geo-country">@Model.GeoLocationInfo.Country</div>
+                    @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.Region))
+                    {
+                        <div class="dropdown-item text-muted geo-region">@Model.GeoLocationInfo.Region</div>
+                        <div class="dropdown-divider"></div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.Organization))
+                    {
+                        <div class="dropdown-item geo-organization">@Model.GeoLocationInfo.Organization</div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <hr class="mr-5 ml-5"/>
+            <!-- meta info block -->
+            <div class="d-flex flex-column flex-md-row text-center text-md-left flex-wrap">
+                <partial name="Meta/_Information.cshtml" model="@Model.Meta"/>
+            </div>
+        </div>
     </div>
+</div>
 
-    <!-- meta info block -->
-    <div class="d-flex flex-column flex-md-row text-center text-md-left flex-wrap">
-        <partial name="Meta/_Information.cshtml" model="@Model.Meta"/>
-    </div>
 
-    <hr class="mt-10 mb-10"/>
+<hr class="mt-10 mb-10"/>
 
-    <!-- meta filter list -->
-    <div class="mb-10 mt-10">
-        @foreach (var type in Enum.GetValues(typeof(MetaType)).Cast<MetaType>().Where(meta => !ignoredMetaTypes.Contains(meta)).OrderByDescending(meta => meta == MetaType.All))
-        {
-            var buttonClass = !Model.MetaFilterType.HasValue && type == MetaType.All || Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-light" : "text-muted";
-            <a asp-action="Profile" asp-controller="Client"
-               class="meta-filter no-decoration"
-               asp-route-id="@Model.ClientId"
-               asp-route-metaFilterType="@type"
-               data-meta-type="@type">
-                <button class="btn btn-sm d-none d-md-inline mt-5 mb-5 @buttonClass">@type.ToTranslatedName()</button>
-                <button class="btn btn-block d-block d-md-none mt-10 mb-10 @buttonClass">@type.ToTranslatedName()</button>
-            </a>
-        }
-    </div>
-
-    @if (!ViewBag.Authorized && !ViewBag.EnablePrivilegedUserPrivacy || ViewBag.Authorized)
+<!-- meta filter list -->
+<div class="mb-10 mt-15">
+    @foreach (var type in Enum.GetValues(typeof(MetaType)).Cast<MetaType>().Where(meta => !ignoredMetaTypes.Contains(meta)).OrderByDescending(meta => meta == MetaType.All))
     {
-        <div class="row d-md-flex pt-2">
-            <div id="profile_events" class="text-muted text-left pl-md-0 pr-md-0">
-                @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
-            </div>
-        </div>
+        var buttonClass = !Model.MetaFilterType.HasValue && type == MetaType.All || Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-light" : "text-muted";
+        <a asp-action="Profile" asp-controller="Client"
+           class="meta-filter no-decoration"
+           asp-route-id="@Model.ClientId"
+           asp-route-metaFilterType="@type"
+           data-meta-type="@type">
+            <button class="btn btn-sm d-none d-md-inline mt-5 mb-5 @buttonClass">@type.ToTranslatedName()</button>
+            <button class="btn btn-block d-block d-md-none mt-10 mb-10 @buttonClass">@type.ToTranslatedName()</button>
+        </a>
     }
+</div>
 
-    <hr class="mt-10 mb-10"/>
-
-    <div class="text-center">
-        <i id="loaderLoad" class="oi oi-chevron-bottom loader-load-more text-primary" aria-hidden="true"></i>
+@if (!ViewBag.Authorized && !ViewBag.EnablePrivilegedUserPrivacy || ViewBag.Authorized)
+{
+    <div class="row d-md-flex pt-2">
+        <div id="profile_events" class="text-muted text-left pl-md-0 pr-md-0">
+            @await Component.InvokeAsync("ProfileMetaList", new { clientId = Model.ClientId, count = 30, offset = 0, startAt = DateTime.UtcNow, metaType = Model.MetaFilterType })
+        </div>
     </div>
+}
+
+<hr class="mt-10 mb-10"/>
+
+<div class="text-center">
+    <i id="loaderLoad" class="oi oi-chevron-bottom loader-load-more text-primary" aria-hidden="true"></i>
+</div>
 
 </div>
 

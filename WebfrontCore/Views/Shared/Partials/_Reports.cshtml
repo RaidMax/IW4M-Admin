@@ -1,0 +1,39 @@
+﻿@using Data.Models
+@using SharedLibraryCore.Dtos.Meta.Responses
+@model IEnumerable<SharedLibraryCore.Dtos.ServerInfo>
+@{
+    Layout = null;
+}
+<div class="content-title">Recent Reports</div>
+<div class="text-muted">Last 24 hours</div>
+
+@foreach (var server in Model)
+{
+    <div class="rounded bg-very-dark-dm bg-light-ex-lm mt-10 mb-10 p-10">
+        <h5 class="mt-0 text-truncate">
+            <color-code value="@server.Name"></color-code>
+        </h5>
+        @foreach (var report in server.Reports.OrderByDescending(report => report.ReportedOn))
+        {
+            var penalty = new ReceivedPenaltyResponse
+            {
+                OffenderName = report.Target.Name,
+                OffenderClientId = report.Target.ClientId,
+                PunisherName = report.Origin.Name,
+                PunisherClientId = report.Origin.ClientId,
+                Offense = report.Reason,
+                PenaltyType = EFPenalty.PenaltyType.Report,
+                ClientId = report.Target.ClientId
+            };
+            <div class="font-weight-bold">@report.ReportedOn.HumanizeForCurrentCulture()</div>
+            <div class="font-size-12">
+            <a asp-action="Profile" asp-controller="Client" asp-route-id="@report.Target.ClientId">
+                <color-code value="@report.Target.Name"></color-code>
+            </a>
+                <partial name="~/Views/Client/Profile/Meta/_ReceivedPenaltyResponse.cshtml" for="@penalty"/>
+                </div>
+            <hr/>
+   
+        }
+    </div>
+}

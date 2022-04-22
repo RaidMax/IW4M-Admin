@@ -46,7 +46,7 @@ namespace LiveRadar
                     S.CustomCallback &&
                     !addedPage)
                 {
-                    E.Owner.Manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar/All");
+                    E.Owner.Manager.GetPageList().Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar");
                     addedPage = true;
                 }
             }

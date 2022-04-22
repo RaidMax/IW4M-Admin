@@ -15,7 +15,8 @@ namespace LiveRadar.Web.Controllers
         private static LiveRadarConfiguration _config;
         private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
 
-        public RadarController(IManager manager, IConfigurationHandlerFactory configurationHandlerFactory) : base(manager)
+        public RadarController(IManager manager, IConfigurationHandlerFactory configurationHandlerFactory) :
+            base(manager)
         {
             _manager = manager;
             _configurationHandler =
@@ -23,10 +24,10 @@ namespace LiveRadar.Web.Controllers
         }
 
         [HttpGet]
-        [Route("Radar/{serverId}")]
+        [Route("Radar/{serverId?}")]
         public IActionResult Index(string serverId = null)
         {
-            var servers =  _manager.GetServers()
+            var servers = _manager.GetServers()
                 .Where(server => server.GameName == Server.Game.IW4)
                 .Select(server => new ServerInfo
                 {
@@ -34,7 +35,7 @@ namespace LiveRadar.Web.Controllers
                     IPAddress = server.IP,
                     Port = server.Port
                 });
-            
+
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
             ViewBag.SelectedServerId = string.IsNullOrEmpty(serverId) ? servers.FirstOrDefault()?.Endpoint : serverId;
 
@@ -44,10 +45,12 @@ namespace LiveRadar.Web.Controllers
 
         [HttpGet]
         [Route("Radar/{serverId}/Map")]
-        public async Task<IActionResult> Map(long? serverId = null)
+        public async Task<IActionResult> Map(string serverId = null)
         {
-            var server = serverId == null ? _manager.GetServers().FirstOrDefault() : _manager.GetServers().FirstOrDefault(_server => _server.EndPoint == serverId);
-            
+            var server = serverId == null
+                ? _manager.GetServers().FirstOrDefault()
+                : _manager.GetServers().FirstOrDefault(server => server.ToString() == serverId);
+
             if (server == null)
             {
                 return NotFound();
@@ -58,15 +61,15 @@ namespace LiveRadar.Web.Controllers
                 await _configurationHandler.BuildAsync();
                 _config = _configurationHandler.Configuration() ?? new LiveRadarConfiguration();
             }
-            
-            var map = _config.Maps.FirstOrDefault(_map => _map.Name == server.CurrentMap.Name);
+
+            var map = _config.Maps.FirstOrDefault(map => map.Name == server.CurrentMap.Name);
 
             if (map == null)
             {
                 // occurs if we don't recognize the map
                 return StatusCode(StatusCodes.Status422UnprocessableEntity);
             }
-            
+
             map.Alias = server.CurrentMap.Alias;
             return Json(map);
         }
@@ -74,27 +77,21 @@ namespace LiveRadar.Web.Controllers
         [HttpGet]
         [Route("Radar/{serverId}/Data")]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Data(long? serverId = null)
+        public IActionResult Data(string serverId = null)
         {
-            var server = serverId == null ? _manager.GetServers()[0] : _manager.GetServers().First(_server => _server.EndPoint == serverId);
-            var radarInfo = server.GetClientsAsList().Select(_client => _client.GetAdditionalProperty<RadarEvent>("LiveRadar")).ToList();
-            return Json(radarInfo);
-        }
-
-        [HttpGet]
-        [Route("Radar/Update")]
-        public IActionResult Update(string payload)
-        {
-            /*var radarUpdate = RadarEvent.Parse(payload);
-            var client = _manager.GetActiveClients().FirstOrDefault(_client => _client.NetworkId == radarUpdate.Guid);
-
-            if (client != null)
+            var server = serverId == null
+                ? _manager.GetServers().FirstOrDefault()
+                : _manager.GetServers().FirstOrDefault(server => server.ToString() == serverId);
+            
+            if (server == null)
             {
-                radarUpdate.Name = client.Name.StripColors();
-                client.SetAdditionalProperty("LiveRadar", radarUpdate);
-            }*/
-
-            return Ok();
+                return NotFound();
+            }
+            
+            var radarInfo = server.GetClientsAsList()
+                .Select(client => client.GetAdditionalProperty<RadarEvent>("LiveRadar")).ToList();
+            
+            return Json(radarInfo);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿@{ 
     Layout = null;
     
-    bool CanSeeLevel(PenaltyInfo penalty) => (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) && penalty.PenaltyType == EFPenalty.PenaltyType.Report;
+    bool CanSeeLevel(PenaltyInfo penalty) => (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) || penalty.PenaltyType == EFPenalty.PenaltyType.Report;
 }
 @using WebfrontCore.Permissions
 @using SharedLibraryCore.Dtos

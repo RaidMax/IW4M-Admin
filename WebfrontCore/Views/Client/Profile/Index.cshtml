@@ -297,6 +297,17 @@
             Icon = "oi-flag"
         });
     }
+    
+    if (Model.LevelInt < (int)ViewBag.User.Level && Model.Online)
+    {
+        menuItems.Items.Add(new SideContextMenuItem
+        {
+            Title = "Kick",
+            IsButton = true,
+            Reference = "kick",
+            Icon = "oi-circle-x",
+        });
+    }
 
     if ((Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty || isTempBanned) && ViewBag.Authorized)
     {

@@ -24,7 +24,7 @@
                 else if (match.MatchValue == "punisher")
                 {
                     <span class="text-highlight">
-                        <a class="link-inverse" href="@Model.PunisherClientId">
+                        <a asp-action="Profile" asp-controller="Client" asp-route-id="@Model.PunisherClientId">
                             <color-code value="@Model.PunisherName"></color-code>
                         </a>
                     </span>

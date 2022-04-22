@@ -7,10 +7,10 @@
 <div class="content-title">Recent Reports</div>
 <div class="text-muted">Last 24 hours</div>
 
-@foreach (var server in Model)
+@foreach (var server in Model.Where(server => server.Reports.Any()))
 {
     <div class="rounded bg-very-dark-dm bg-light-ex-lm mt-10 mb-10 p-10">
-        <h5 class="mt-0 text-truncate">
+        <h5 class="mt-0 mb-5 text-truncate">
             <color-code value="@server.Name"></color-code>
         </h5>
         @foreach (var report in server.Reports.OrderByDescending(report => report.ReportedOn))

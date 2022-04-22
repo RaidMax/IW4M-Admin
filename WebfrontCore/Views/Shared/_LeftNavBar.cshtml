@@ -67,7 +67,7 @@
             @foreach (Page pageLink in ViewBag.Pages)
             {
                 <a class="sidebar-link" href="@pageLink.Location">
-                    <i class="oi @(pageLink.Location.EndsWith("Radar/All") ? "oi-wifi" : "oi-bar-chart") mr-5"></i>
+                    <i class="oi @(pageLink.Location.EndsWith("Radar") ? "oi-wifi" : "oi-bar-chart") mr-5"></i>
                     <span class="name">@pageLink.Name</span>
                 </a>
             }

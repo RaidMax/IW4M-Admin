@@ -71,6 +71,9 @@ namespace Data.Migrations.Postgresql
                     b.Property<DateTime>("FirstConnection")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<int?>("GameName")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("LastConnection")
                         .HasColumnType("timestamp without time zone");
 

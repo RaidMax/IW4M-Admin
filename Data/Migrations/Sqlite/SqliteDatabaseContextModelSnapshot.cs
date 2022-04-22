@@ -62,6 +62,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<DateTime>("FirstConnection")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("GameName")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastConnection")
                         .HasColumnType("TEXT");
 
@@ -805,7 +808,7 @@ namespace Data.Migrations.Sqlite
                     b.Property<string>("SearchableIPAddress")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("TEXT")
-                        .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)");
+                        .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
 
                     b.Property<string>("SearchableName")
                         .HasMaxLength(24)

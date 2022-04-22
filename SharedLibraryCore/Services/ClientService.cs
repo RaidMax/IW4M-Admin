@@ -103,7 +103,8 @@ namespace SharedLibraryCore.Services
                     Level = Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     LastConnection = DateTime.UtcNow,
-                    NetworkId = entity.NetworkId
+                    NetworkId = entity.NetworkId,
+                    GameName = (Reference.Game)entity.CurrentServer.GameName
                 };
 
                 _logger.LogDebug("[create] adding {entity} to context", entity.ToString());
@@ -283,6 +284,8 @@ namespace SharedLibraryCore.Services
                 entity.PasswordSalt = temporalClient.PasswordSalt;
             }
 
+            entity.GameName ??= temporalClient.GameName;
+
             // update in database
             await context.SaveChangesAsync();
             return entity.ToPartialClient();
@@ -357,7 +360,8 @@ namespace SharedLibraryCore.Services
                     Level = Permission.User,
                     FirstConnection = DateTime.UtcNow,
                     LastConnection = DateTime.UtcNow,
-                    NetworkId = entity.NetworkId
+                    NetworkId = entity.NetworkId,
+                    GameName = (Reference.Game)entity.CurrentServer.GameName
                 };
 
                 if (existingAlias == null)

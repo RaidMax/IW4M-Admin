@@ -431,6 +431,7 @@ namespace IW4MAdmin
                         Clients[E.Origin.ClientNumber] = E.Origin;
                         try
                         {
+                            E.Origin.GameName = (Reference.Game?)GameName;
                             E.Origin = await OnClientConnected(E.Origin);
                             E.Target = E.Origin;
                         }
@@ -952,6 +953,8 @@ namespace IW4MAdmin
                                  !string.IsNullOrEmpty(client.Name) && (client.Ping != 999 || client.IsBot)))
                     {
                         client.CurrentServer = this;
+                        client.GameName = (Reference.Game?)GameName;
+                        
                         var e = new GameEvent
                         {
                             Type = GameEvent.EventType.PreConnect,
@@ -959,7 +962,7 @@ namespace IW4MAdmin
                             Owner = this,
                             IsBlocking = true,
                             Extra = client.GetAdditionalProperty<string>("BotGuid"),
-                            Source = GameEvent.EventSource.Status
+                            Source = GameEvent.EventSource.Status,
                         };
 
                         Manager.AddEvent(e);

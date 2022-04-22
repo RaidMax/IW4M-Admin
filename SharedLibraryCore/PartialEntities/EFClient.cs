@@ -626,6 +626,8 @@ namespace SharedLibraryCore.Database.Models
                 Utilities.DefaultLogger.LogInformation("Client {client} is joining the game from {source}", ToString(),
                     ipAddress.HasValue ? "Status" : "Log");
 
+                GameName = (Reference.Game)CurrentServer.GameName;
+
                 if (ipAddress != null)
                 {
                     IPAddress = ipAddress;

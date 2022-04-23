@@ -115,7 +115,7 @@
                         <span class="name">@ViewBag.Localization["WEBFRONT_NAV_CONSOLE"]</span>
                     </a>
                 </has-permission>
-                @if (ViewBag.User.Level == EFClient.Permission.Owner)
+                @if (ViewBag.User.Level >= EFClient.Permission.Owner)
                 {
                     <a asp-controller="Configuration" asp-action="Edit" class="sidebar-link">
                         <i class="oi oi-cog mr-5"></i>

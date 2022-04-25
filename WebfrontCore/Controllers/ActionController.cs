@@ -327,7 +327,7 @@ namespace WebfrontCore.Controllers
                 new ServerInfo
                 {
                     Name = server.Hostname,
-                    Reports = server.Reports
+                    Reports = server.Reports.Where(report => (DateTime.UtcNow - report.ReportedOn).TotalHours <= 24).ToList()
                 });
 
             return View("Partials/_Reports", serverInfo);

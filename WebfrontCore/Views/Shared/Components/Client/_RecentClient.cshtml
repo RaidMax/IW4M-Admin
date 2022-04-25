@@ -1,0 +1,24 @@
+﻿@model SharedLibraryCore.Dtos.PlayerInfo
+
+<div class="bg-very-dark-dm bg-light-ex-lm p-15 rounded mb-10">
+    <div class="d-flex flex-row">
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.ClientId" class="h4 mr-auto">
+            <color-code value="@Model.Name"></color-code>
+        </a>
+        @if (Model.GeoLocationInfo is not null)
+        {
+            @if (!string.IsNullOrEmpty(Model.GeoLocationInfo.CountryCode))
+            {
+                <div data-toggle="tooltip" data-title="@Model.GeoLocationInfo.Country">
+                    <div class="rounded" style="width: 40px; height: 25.66px; background-repeat: no-repeat; background-position: center center; background-image: url('https://flagcdn.com/w40/@(Model.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
+                </div>
+            }
+        }
+    </div>
+    <div class="d-flex flex-row">
+        <has-permission entity="ClientIPAddress" required-permission="Read">
+            <div class="align-self-center mr-auto">@Model.IPAddress</div>
+        </has-permission>
+        <div class="align-self-center text-muted font-size-12">@Model.LastConnection.HumanizeForCurrentCulture()</div>
+    </div>
+</div>

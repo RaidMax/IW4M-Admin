@@ -902,7 +902,7 @@ namespace SharedLibraryCore.Services
         ///     gets the 10 most recently added clients to IW4MAdmin
         /// </summary>
         /// <returns></returns>
-        public async Task<IList<PlayerInfo>> GetRecentClients()
+        public async Task<IList<PlayerInfo>> GetRecentClients(PaginationRequest request)
         {
             var startOfPeriod = DateTime.UtcNow.AddHours(-24);
 
@@ -917,7 +917,9 @@ namespace SharedLibraryCore.Services
                     Name = client.CurrentAlias.Name,
                     IPAddress = client.CurrentAlias.IPAddress.ConvertIPtoString(),
                     LastConnection = client.FirstConnection
-                });
+                })
+                .Skip(request.Offset)
+                .Take(request.Count);
 
             var clientList = await iqClients.ToListAsync();
             foreach (var client in clientList)

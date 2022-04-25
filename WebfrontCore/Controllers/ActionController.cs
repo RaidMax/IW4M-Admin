@@ -315,12 +315,19 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public async Task<IActionResult> RecentClientsForm()
+        public async Task<IActionResult> RecentClientsForm(PaginationRequest request)
         {
-            var clients = await Manager.GetClientService().GetRecentClients();
+            ViewBag.First = request.Offset == 0;
+            
+            if (request.Count > 30)
+            {
+                request.Count = 30;
+            }
+            
+            var clients = await Manager.GetClientService().GetRecentClients(request);
             return View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
         }
-
+        
         public IActionResult RecentReportsForm()
         {
             var serverInfo = Manager.GetServers().Select(server =>

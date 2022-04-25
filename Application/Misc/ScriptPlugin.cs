@@ -456,7 +456,7 @@ namespace IW4MAdmin.Application.Misc
 
         private void GetDvarAsync(Server server, string dvarName, Delegate onCompleted)
         {
-            Task.Run<Task>(async () =>
+            Task.Run(() =>
             {
                 var tokenSource = new CancellationTokenSource();
                 tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
@@ -464,14 +464,14 @@ namespace IW4MAdmin.Application.Misc
                 var success = true;
                 try
                 {
-                    result = (await server.GetDvarAsync<string>(dvarName, token: tokenSource.Token)).Value;
+                    result = server.GetDvarAsync<string>(dvarName, token: tokenSource.Token).GetAwaiter().GetResult().Value;
                 }
                 catch
                 {
                     success = false;
                 }
 
-                await _onProcessing.WaitAsync();
+                _onProcessing.Wait();
                 try
                 {
                     onCompleted.DynamicInvoke(JsValue.Undefined,
@@ -495,7 +495,7 @@ namespace IW4MAdmin.Application.Misc
         }
         private void SetDvarAsync(Server server, string dvarName, string dvarValue, Delegate onCompleted)
         {
-            Task.Run<Task>(async () =>
+            Task.Run(() =>
             {
                 var tokenSource = new CancellationTokenSource();
                 tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
@@ -503,14 +503,14 @@ namespace IW4MAdmin.Application.Misc
 
                 try
                 {
-                    await server.SetDvarAsync(dvarName, dvarValue, tokenSource.Token);
+                    server.SetDvarAsync(dvarName, dvarValue, tokenSource.Token).GetAwaiter().GetResult();
                 }
                 catch
                 {
                     success = false;
                 }
 
-                await _onProcessing.WaitAsync();
+                _onProcessing.Wait();
                 try
                 {
                     onCompleted.DynamicInvoke(JsValue.Undefined,

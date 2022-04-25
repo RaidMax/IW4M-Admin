@@ -482,7 +482,7 @@ const pollForEvents = server => {
     if (!state.waitingOnOutput) {
         if (state.queuedMessages.length === 0) {
             logger.WriteDebug('No messages in queue');
-            return;``
+            return;
         }
 
         state.waitingOnOutput = true;

@@ -33,7 +33,8 @@ namespace Integrations.Cod
         private readonly Encoding _gameEncoding;
         private readonly int _retryAttempts;
 
-        public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log, Encoding gameEncoding, int retryAttempts)
+        public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log,
+            Encoding gameEncoding, int retryAttempts)
         {
             RConPassword = password;
             _gameEncoding = gameEncoding;
@@ -66,21 +67,31 @@ namespace Integrations.Cod
             }
             finally
             {
+                using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                {
+                    _log.LogDebug("Releasing OnComplete {Count}", ActiveQueries[Endpoint].OnComplete.CurrentCount);
+                }
+
                 if (ActiveQueries[Endpoint].OnComplete.CurrentCount == 0)
                 {
                     ActiveQueries[Endpoint].OnComplete.Release();
                 }
             }
         }
-        
-        private async Task<string[]> SendQueryAsyncInternal(StaticHelpers.QueryType type, string parameters = "", CancellationToken token = default)
+
+        private async Task<string[]> SendQueryAsyncInternal(StaticHelpers.QueryType type, string parameters = "",
+            CancellationToken token = default)
         {
             if (!ActiveQueries.ContainsKey(Endpoint))
             {
                 ActiveQueries.TryAdd(Endpoint, new ConnectionState());
             }
 
-            var connectionState = ActiveQueries[Endpoint];
+            if (!ActiveQueries.TryGetValue(Endpoint, out var connectionState))
+            {
+                _log.LogError("Could not retrieve connection state");
+                throw new InvalidOperationException("Could not get connection state");
+            }
 
             _log.LogDebug("Waiting for semaphore to be released [{Endpoint}]", Endpoint);
 
@@ -91,6 +102,8 @@ namespace Integrations.Cod
             }
             catch (OperationCanceledException)
             {
+                _log.LogDebug("OnComplete did not complete before timeout {Count}",
+                    connectionState.OnComplete.CurrentCount);
                 throw new RConException("Timed out waiting for access to rcon socket");
             }
 
@@ -100,16 +113,20 @@ namespace Integrations.Cod
             {
                 try
                 {
-                    await Task.Delay(_config.FloodProtectInterval - (int)timeSinceLastQuery, token);
+                    var delay = _config.FloodProtectInterval - (int)timeSinceLastQuery;
+                    _log.LogDebug("Delaying for {Delay}ms", delay);
+                    await Task.Delay(delay, token);
                 }
                 catch (OperationCanceledException)
                 {
+                    _log.LogDebug("Waiting for flood protect did not complete before timeout timeout {Count}",
+                        connectionState.OnComplete.CurrentCount);
                     throw new RConException("Timed out waiting for flood protect to expire");
                 }
             }
 
             _log.LogDebug("Semaphore has been released [{Endpoint}]", Endpoint);
-            _log.LogDebug("Query {@QueryInfo}", new { endpoint=Endpoint.ToString(), type, parameters });
+            _log.LogDebug("Query {@QueryInfo}", new { endpoint = Endpoint.ToString(), type, parameters });
 
             byte[] payload = null;
             var waitForResponse = _config.WaitForResponse;
@@ -163,7 +180,6 @@ namespace Integrations.Cod
             // e.g: emoji -> windows-1252
             catch (OverflowException ex)
             {
-               
                 using (LogContext.PushProperty("Server", Endpoint.ToString()))
                 {
                     _log.LogError(ex, "Could not convert RCon data payload to desired encoding {Encoding} {Params}",
@@ -181,8 +197,8 @@ namespace Integrations.Cod
                 using (LogContext.PushProperty("Server", Endpoint.ToString()))
                 {
                     _log.LogInformation(
-                        "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts) with parameters {Payload}", 
-                        connectionState.ConnectionAttempts, 
+                        "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts) with parameters {Payload}",
+                        connectionState.ConnectionAttempts,
                         _retryAttempts, parameters);
                 }
             }
@@ -201,6 +217,7 @@ namespace Integrations.Cod
                 }
                 catch (OperationCanceledException)
                 {
+                    _log.LogDebug("OnSent did not complete in time");
                     throw new RConException("Timed out waiting for access to RCon send socket");
                 }
 
@@ -211,14 +228,13 @@ namespace Integrations.Cod
                 }
                 catch (OperationCanceledException)
                 {
-                    throw new RConException("Timed out waiting for access to RCon receive socket");
-                }
-                finally
-                {
+                    _log.LogDebug("OnReceived did not complete in time");
                     if (connectionState.OnSentData.CurrentCount == 0)
                     {
                         connectionState.OnSentData.Release();
                     }
+
+                    throw new RConException("Timed out waiting for access to RCon receive socket");
                 }
 
                 connectionState.SendEventArgs.UserToken = new ConnectionUserToken
@@ -242,6 +258,7 @@ namespace Integrations.Cod
 
                     if ((response?.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
+                        _log.LogDebug("0 bytes received from rcon request");
                         throw new RConException("Expected response but got 0 bytes back");
                     }
 
@@ -252,6 +269,7 @@ namespace Integrations.Cod
                 {
                     // if we timed out due to the cancellation token,
                     // we don't want to count that as an attempt
+                    _log.LogDebug("OperationCanceledException when waiting for payload send to complete");
                     connectionState.ConnectionAttempts = 0;
                 }
                 catch
@@ -265,7 +283,8 @@ namespace Integrations.Cod
                         }
                         catch (OperationCanceledException)
                         {
-                            return Array.Empty<string>();
+                            _log.LogDebug("OperationCancelled while waiting for retry");
+                            throw;
                         }
 
                         goto retrySend;
@@ -311,11 +330,13 @@ namespace Integrations.Cod
                 return Array.Empty<string>();
             }
 
-            var responseString = type == StaticHelpers.QueryType.COMMAND_STATUS ?
-               ReassembleSegmentedStatus(response) : RecombineMessages(response);
+            var responseString = type == StaticHelpers.QueryType.COMMAND_STATUS
+                ? ReassembleSegmentedStatus(response)
+                : RecombineMessages(response);
 
             // note: not all games respond if the password is wrong or not set
-            if (responseString.Contains("Invalid password") || responseString.Contains("rconpassword"))
+            if (responseString.Contains("Invalid password", StringComparison.InvariantCultureIgnoreCase) ||
+                responseString.Contains("rconpassword"))
             {
                 throw new RConException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_RCON_INVALID"]);
             }
@@ -327,11 +348,14 @@ namespace Integrations.Cod
 
             if (responseString.Contains(_config.ServerNotRunningResponse))
             {
-                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"].FormatExt(Endpoint.ToString()));
+                throw new ServerException(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_NOT_RUNNING"]
+                    .FormatExt(Endpoint.ToString()));
             }
 
             var responseHeaderMatch = Regex.Match(responseString, _config.CommandPrefixes.RConResponse).Value;
-            var headerSplit = responseString.Split(type == StaticHelpers.QueryType.GET_INFO ? _config.CommandPrefixes.RconGetInfoResponseHeader : responseHeaderMatch);
+            var headerSplit = responseString.Split(type == StaticHelpers.QueryType.GET_INFO
+                ? _config.CommandPrefixes.RconGetInfoResponseHeader
+                : responseHeaderMatch);
 
             if (headerSplit.Length != 2)
             {
@@ -369,7 +393,8 @@ namespace Integrations.Cod
 
                 else
                 {
-                    splitStatusStrings.Add(responseString.Replace(_config.CommandPrefixes.RConResponse, "").TrimEnd('\0'));
+                    splitStatusStrings.Add(responseString.Replace(_config.CommandPrefixes.RConResponse, "")
+                        .TrimEnd('\0'));
                 }
             }
 
@@ -396,8 +421,10 @@ namespace Integrations.Cod
                 {
                     message = message.Replace(_config.CommandPrefixes.RConResponse, "");
                 }
+
                 builder.Append(message);
             }
+
             builder.Append('\n');
             return builder.ToString();
         }
@@ -410,6 +437,7 @@ namespace Integrations.Cod
 
             if (rconSocket is null)
             {
+                _log.LogDebug("Invalid state");
                 throw new InvalidOperationException("State is not valid for socket operation");
             }
 
@@ -419,6 +447,7 @@ namespace Integrations.Cod
                 // setup the event handlers only once because we're reusing the event args
                 connectionState.SendEventArgs.Completed += OnDataSent;
                 connectionState.ReceiveEventArgs.Completed += OnDataReceived;
+                connectionState.ReceiveEventArgs.UserToken = connectionState.SendEventArgs.UserToken;
                 connectionState.SendEventArgs.RemoteEndPoint = Endpoint;
                 connectionState.ReceiveEventArgs.RemoteEndPoint = Endpoint;
                 connectionState.ReceiveEventArgs.DisconnectReuseSocket = true;
@@ -435,15 +464,15 @@ namespace Integrations.Cod
                 // the send has not been completed asynchronously
                 // this really shouldn't ever happen because it's UDP
                 var complete = await connectionState.OnSentData.WaitAsync(StaticHelpers.SocketTimeout(4), token);
-                
+
                 if (!complete)
                 {
-                    using(LogContext.PushProperty("Server", Endpoint.ToString()))
+                    using (LogContext.PushProperty("Server", Endpoint.ToString()))
                     {
                         _log.LogWarning("Socket timed out while sending RCon data on attempt {Attempt}",
                             connectionState.ConnectionAttempts);
                     }
-                    
+
                     rconSocket.Close();
                     throw new NetworkException("Timed out sending RCon data", rconSocket);
                 }
@@ -461,7 +490,8 @@ namespace Integrations.Cod
 
             if (receiveDataPending)
             {
-                _log.LogDebug("Waiting to asynchronously receive data on attempt #{ConnectionAttempts}", connectionState.ConnectionAttempts);
+                _log.LogDebug("Waiting to asynchronously receive data on attempt #{ConnectionAttempts}",
+                    connectionState.ConnectionAttempts);
 
                 var completed = false;
 
@@ -493,6 +523,7 @@ namespace Integrations.Cod
                     }
 
                     rconSocket.Close();
+                    _log.LogDebug("OnDataReceived did not complete in allocated time");
                     throw new NetworkException("Timed out receiving RCon response", rconSocket);
                 }
             }
@@ -521,13 +552,14 @@ namespace Integrations.Cod
 
         private void OnDataReceived(object sender, SocketAsyncEventArgs e)
         {
-            _log.LogDebug("Read {BytesTransferred} bytes from {Endpoint}", e.BytesTransferred, e.RemoteEndPoint?.ToString());
+            _log.LogDebug("Read {BytesTransferred} bytes from {Endpoint}", e.BytesTransferred,
+                e.RemoteEndPoint?.ToString());
 
             // this occurs when we close the socket
             if (e.BytesTransferred == 0)
             {
                 _log.LogDebug("No bytes were transmitted so the connection was probably closed");
-               
+
                 var semaphore = ActiveQueries[Endpoint].OnReceivedData;
 
                 try
@@ -545,7 +577,7 @@ namespace Integrations.Cod
 
                 return;
             }
-            
+
             var state = ActiveQueries[Endpoint];
             var cancellationRequested = ((ConnectionUserToken)e.UserToken)?.CancellationToken.IsCancellationRequested ??
                                         false;
@@ -566,12 +598,12 @@ namespace Integrations.Cod
                     // ignored because we can have the socket operation cancelled (which releases the semaphore) but 
                     // this thread is not notified because it's an event
                 }
-            
+
                 return;
             }
-            
+
             state.BytesReadPerSegment.Add(e.BytesTransferred);
-            
+
             // I don't even want to know why this works for getting more data from Cod4x
             // but I'm leaving it in here as long as it doesn't break anything.
             // it's very stupid...
@@ -582,7 +614,7 @@ namespace Integrations.Cod
                 var totalBytesTransferred = e.BytesTransferred;
                 _log.LogDebug("{Total} total bytes transferred with {Available} bytes remaining", totalBytesTransferred,
                     sock.Available);
-                
+
                 // we still have available data so the payload was segmented
                 while (sock.Available > 0)
                 {
@@ -596,17 +628,17 @@ namespace Integrations.Cod
                             bufferSpaceAvailable);
                         continue;
                     }
-                    
+
                     state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, totalBytesTransferred, sock.Available);
                     if (sock.ReceiveAsync(state.ReceiveEventArgs))
                     {
                         _log.LogDebug("Remaining bytes are async");
                         continue;
                     }
-                    
+
                     _log.LogDebug("Read {BytesTransferred} synchronous bytes from {Endpoint}",
                         state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint?.ToString());
-                    
+
                     // we need to increment this here because the callback isn't executed if there's no pending IO
                     state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
                     totalBytesTransferred += state.ReceiveEventArgs.BytesTransferred;
@@ -638,8 +670,9 @@ namespace Integrations.Cod
 
         private void OnDataSent(object sender, SocketAsyncEventArgs e)
         {
-            _log.LogDebug("Sent {ByteCount} bytes to {Endpoint}", e.Buffer?.Length, e.ConnectSocket?.RemoteEndPoint?.ToString());
-            
+            _log.LogDebug("Sent {ByteCount} bytes to {Endpoint}", e.Buffer?.Length,
+                e.ConnectSocket?.RemoteEndPoint?.ToString());
+
             var semaphore = ActiveQueries[Endpoint].OnSentData;
             try
             {

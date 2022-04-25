@@ -20,7 +20,7 @@ namespace Integrations.Cod
         public int ConnectionAttempts { get; set; }
         private const int BufferSize = 16384;
         public readonly byte[] ReceiveBuffer = new byte[BufferSize];
-        public readonly SemaphoreSlim OnComplete = new SemaphoreSlim(1, 1);
+        public readonly SemaphoreSlim OnComplete = new(1, 1);
         public readonly SemaphoreSlim OnSentData = new(1, 1);
         public readonly SemaphoreSlim OnReceivedData = new (1, 1);
        

@@ -13,7 +13,7 @@
             
             hideLoader();
             response.map(r => r.response).forEach(item => {
-                $('#console_command_response').append(`<div>${item}</div>`);
+                $('#console_command_response').append(`<div>${escapeHtml(item)}</div>`);
             })
             
             $('#console_command_response').append('<hr/>')
@@ -26,7 +26,7 @@
             
             if (response.status < 500) {
                 response.responseJSON.map(r => r.response).forEach(item => {
-                    $('#console_command_response').append(`<div class="text-danger">${item}</div>`);
+                    $('#console_command_response').append(`<div class="text-danger">${escapeHtml(item)}</div>`);
                 })
             } else {
                 $('#console_command_response').append(`<div class="text-danger">Could not execute command...</div>`);

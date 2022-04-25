@@ -319,9 +319,9 @@ namespace WebfrontCore.Controllers
         {
             ViewBag.First = request.Offset == 0;
             
-            if (request.Count > 30)
+            if (request.Count > 20)
             {
-                request.Count = 30;
+                request.Count = 20;
             }
             
             var clients = await Manager.GetClientService().GetRecentClients(request);

@@ -80,6 +80,7 @@ namespace IW4MAdmin.Application.RConParsers
 
         public async Task<string[]> ExecuteCommandAsync(IRConConnection connection, string command, CancellationToken token = default)
         {
+            command = command.FormatMessageForEngine(Configuration?.ColorCodeMapping);
             var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND, command, token);
             return response.Where(item => item != Configuration.CommandPrefixes.RConResponse).ToArray();
         }

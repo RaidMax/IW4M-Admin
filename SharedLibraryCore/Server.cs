@@ -222,7 +222,7 @@ namespace SharedLibraryCore
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
             var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "",
-                $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping)}");
+                $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message}");
             ServerLogger.LogDebug("All-> {Message}",
                 message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping).StripColors());
 
@@ -270,8 +270,6 @@ namespace SharedLibraryCore
         /// <param name="targetClient">EFClient to send message to</param>
         protected async Task Tell(string message, EFClient targetClient)
         {
-            var engineMessage = message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping);
-
             if (!Utilities.IsDevelopment)
             {
                 var temporalClientId = targetClient.GetAdditionalProperty<string>("ConnectionClientId");
@@ -280,7 +278,7 @@ namespace SharedLibraryCore
 
                 var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell,
                     clientNumber,
-                    $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{engineMessage}");
+                    $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message}");
                 if (targetClient.ClientNumber > -1 && message.Length > 0 &&
                     targetClient.Level != Data.Models.Client.EFClient.Permission.Console)
                 {
@@ -296,13 +294,14 @@ namespace SharedLibraryCore
             if (targetClient.Level == Data.Models.Client.EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
+                var cleanMessage = message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping)
+                    .StripColors();
                 using (LogContext.PushProperty("Server", ToString()))
                 {
-                    ServerLogger.LogInformation("Command output received: {Message}",
-                        engineMessage.StripColors());
+                    ServerLogger.LogInformation("Command output received: {Message}", cleanMessage);
                 }
 
-                Console.WriteLine(engineMessage.StripColors());
+                Console.WriteLine(cleanMessage);
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
         }

@@ -77,7 +77,15 @@ namespace LiveRadar
 
                     lock (lockObject)
                     {
-                        generatedBotGuid = _botGuidLookups.ContainsKey(botKey) 
+                        var hasBotKey = _botGuidLookups.ContainsKey(botKey);
+
+                        if (!hasBotKey && ((string)E.Extra).IsBotGuid())
+                        {
+                            // edge case where the bot guid has not been registered yet
+                            return Task.CompletedTask;
+                        }
+                        
+                        generatedBotGuid = hasBotKey
                             ? _botGuidLookups[botKey] 
                             : (E.Extra.ToString() ?? "0").ConvertGuidToLong(NumberStyles.HexNumber);
                     }

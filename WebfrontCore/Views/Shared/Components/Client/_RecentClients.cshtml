@@ -3,28 +3,28 @@
     Layout = null;
 }
 
-@if (ViewBag.First)
-{
-    <div class="mb-15 text-center font-weight-lighter">New clients connected in the last <span class="text-primary">24</span> hours</div>
-}
-
 @foreach (var client in Model)
 {
-    @if (ViewBag.First)
-    {
-        <div id="recentClientsContainer">
-            <partial name="~/Views/Shared/Components/Client/_RecentClient.cshtml" for="@client"/>
+    <div class="bg-very-dark-dm bg-light-ex-lm p-15 rounded mb-10">
+        <div class="d-flex flex-row">
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="h4 mr-auto">
+                <color-code value="@client.Name"></color-code>
+            </a>
+            @if (client.GeoLocationInfo is not null)
+            {
+                @if (!string.IsNullOrEmpty(client.GeoLocationInfo.CountryCode))
+                {
+                    <div data-toggle="tooltip" data-title="@client.GeoLocationInfo.Country">
+                        <div class="rounded" style="width: 40px; height: 25.66px; background-repeat: no-repeat; background-position: center center; background-image: url('https://flagcdn.com/w40/@(client.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
+                    </div>
+                }
+            }
         </div>
-    }
-    else
-    {
-        <partial name="~/Views/Shared/Components/Client/_RecentClient.cshtml" for="@client"/>
-    }
-}
-
-@if (ViewBag.First)
-{
-    <i id="loaderLoad" class="loader-load-more oi oi-chevron-bottom text-center text-primary d-none d-lg-block mt-10"></i>
-
-    <script>initLoader('/Action/RecentClientsForm', '#recentClientsContainer', 20);</script>
+        <div class="d-flex flex-row">
+            <has-permission entity="ClientIPAddress" required-permission="Read">
+                <div class="align-self-center mr-auto">@client.IPAddress</div>
+            </has-permission>
+            <div class="align-self-center text-muted font-size-12">@client.LastConnection.HumanizeForCurrentCulture()</div>
+        </div>
+    </div>
 }

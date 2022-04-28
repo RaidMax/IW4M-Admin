@@ -31,9 +31,6 @@ else
     </div>
 
     @section scripts {
-        <environment include="Development">
-            <script type="text/javascript" src="~/js/loader.js"></script>
-        </environment>
         <script>
         $(document).ready(function () {
             initLoader('/Message/FindNext?query=@ViewBag.Query', '#message_table_body', @Model.RetrievedResultCount, @ViewBag.QueryLimit);

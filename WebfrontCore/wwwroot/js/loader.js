@@ -14,11 +14,20 @@ function initLoader(location, loaderId, count = 10, start = count, additional = 
     loaderOffset = start;
     additionalParams = additional;
 
-    setupMonitor();
+    try {
+        setupMonitor();
+    }
+    catch {
+        // ignored (can happen when the action modal loader exists but no page level loader does)
+    }
 
     $('#loaderLoad').click(function () {
         loadMoreItems();
     });
+    
+    $('.loader-load-more').click(function() {
+        loadMoreItems();
+    })
 }
 
 function setupMonitor() {

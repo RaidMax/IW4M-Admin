@@ -325,7 +325,10 @@ namespace WebfrontCore.Controllers
             }
             
             var clients = await Manager.GetClientService().GetRecentClients(request);
-            return View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
+
+            return request.Offset == 0
+                ? View("~/Views/Shared/Components/Client/_RecentClientsContainer.cshtml", clients)
+                : View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
         }
         
         public IActionResult RecentReportsForm()

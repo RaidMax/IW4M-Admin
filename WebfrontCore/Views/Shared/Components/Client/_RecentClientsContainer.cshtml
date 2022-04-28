@@ -1,0 +1,13 @@
+﻿@model IEnumerable<SharedLibraryCore.Dtos.PlayerInfo>
+@{
+    Layout = null;
+}
+
+<div class="mb-15 text-center font-weight-lighter">New clients connected in the last <span class="text-primary">24</span> hours</div>
+
+<div id="recentClientContainer">
+    <partial name="~/Views/Shared/Components/Client/_RecentClients.cshtml" for="@Model"/>
+</div>
+
+<i class="loader-load-more oi oi-chevron-bottom text-center text-primary w-full"></i>
+<script>initLoader('/Action/RecentClientsForm', '#recentClientContainer', 20);</script>

@@ -97,9 +97,9 @@
                         var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out Uri parsedUrl)
                             ? parsedUrl.AbsoluteUri
                             : $"/images/community/{social.IconUrl}";
-                        <img class="img-fluid mr-5" style="max-height: 1.2rem" src="@url" alt="@social.Title"/>
+                        <img class="img-fluid social-icon" style="max-height: 1.2rem" src="@url" alt="@social.Title"/>
                     }
-                    <span class="name">@social.Title</span>
+                    <span class="name text-truncate">@social.Title</span>
                 </a>
             }
             <br/>

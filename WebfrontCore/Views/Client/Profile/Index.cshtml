@@ -275,6 +275,7 @@
             IsButton = true,
             Reference = "edit",
             Icon = "oi-cog",
+            EntityId = Model.ClientId
         });
     }
 
@@ -294,7 +295,8 @@
             Title = isFlagged ? "Unflag" : "Flag",
             IsButton = true,
             Reference = isFlagged ? "unflag" : "flag",
-            Icon = "oi-flag"
+            Icon = "oi-flag",
+            EntityId = Model.ClientId
         });
     }
     
@@ -306,6 +308,7 @@
             IsButton = true,
             Reference = "kick",
             Icon = "oi-circle-x",
+            EntityId = Model.ClientId
         });
     }
 
@@ -317,6 +320,7 @@
             IsButton = true,
             Reference = "ban",
             Icon = "oi-lock-unlocked",
+            EntityId = Model.ClientId
         });
     }
 
@@ -328,6 +332,7 @@
             IsButton = true,
             Reference = "unban",
             Icon = "oi-lock-locked",
+            EntityId = Model.ClientId
         });
     }
 }

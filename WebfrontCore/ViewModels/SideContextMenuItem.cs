@@ -11,6 +11,7 @@ public class SideContextMenuItem
     public string Reference { get; set; }
     public string Icon { get; set; }
     public string Tooltip { get; set; }
+    public int? EntityId { get; set; }
 }
 
 

@@ -8,7 +8,7 @@
 
             @foreach (var item in Model.Items)
             {
-                <a href="#" class="@(item.IsLink ? "" : "profile-action")" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId">
+                <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "profile-action")" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId">
                     <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
                         <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
                         <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
@@ -28,7 +28,7 @@
                 @foreach (var item in Model.Items)
                 {
                     <div class="mt-15 mb-15">
-                        <a href="#" class="@(item.IsLink ? "" : "profile-action") no-decoration" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId">
+                        <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "profile-action") no-decoration" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId">
                             <div class="btn btn-block btn-lg @(item.IsActive ? "btn-primary" : "") text-truncate" data-title="@item.Tooltip" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
                                 <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
                                 <span>@item.Title</span>

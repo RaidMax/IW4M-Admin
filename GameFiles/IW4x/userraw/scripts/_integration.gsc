@@ -22,6 +22,8 @@ init()
     level.eventTypes.setClientDataRequested     = "SetClientDataRequested";
     level.eventTypes.setClientDataCompleted     = "SetClientDataCompleted";
     level.eventTypes.executeCommandRequested    = "ExecuteCommandRequested";
+    
+    level.iw4adminIntegrationDebug = false;
                                                                              
     SetDvarIfUninitialized( level.eventBus.inVar, "" );
     SetDvarIfUninitialized( level.eventBus.outVar, "" );
@@ -58,6 +60,12 @@ OnPlayerConnect()
         level waittill( "connected", player );
         
         level.iw4adminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
+        
+        if ( player.pers["isBot"] ) 
+        {
+            // we don't want to track bots
+            continue;    
+        }
         
         if ( !isDefined( player.pers[level.clientDataKey] ) )
         {

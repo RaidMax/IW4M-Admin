@@ -184,7 +184,7 @@ namespace SharedLibraryCore
                 output = output.Replace(match.Value, mapping.TryGetValue(key, out var code) ? code : "");
             }
 
-            return output.FixIW4ForwardSlash() + mapping[ColorCodes.White.ToString()];
+            return output.FixIW4ForwardSlash();
         }
 
         private static readonly IList<string> _zmGameTypes = new[] { "zclassic", "zstandard", "zcleansed", "zgrief" };

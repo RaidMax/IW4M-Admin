@@ -573,10 +573,8 @@ namespace IW4MAdmin
                         Time = DateTime.UtcNow
                     });
 
-                    await _metaService.SetPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin.ClientId,
-                        Manager.CancellationToken);
-                    await _metaService.SetPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin.ClientId,
-                        Manager.CancellationToken);
+                    await _metaService.SetPersistentMeta("LastMapPlayed", CurrentMap.Alias, E.Origin.ClientId);
+                    await _metaService.SetPersistentMeta("LastServerPlayed", E.Owner.Hostname, E.Origin.ClientId);
                 }
 
                 else if (E.Type == GameEvent.EventType.PreDisconnect)

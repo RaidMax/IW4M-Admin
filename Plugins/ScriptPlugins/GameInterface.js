@@ -130,9 +130,9 @@ let commands = [{
         }
     },
     {
-        name: 'freeze',
-        description: 'freezes target player',
-        alias: 'frz',
+        name: 'lockcontrols',
+        description: 'locks target player\'s controls',
+        alias: 'lc',
         permission: 'Administrator',
         targetRequired: true,
         arguments: [{
@@ -148,9 +148,9 @@ let commands = [{
         }
     },
     {
-        name: 'unfreeze',
-        description: 'unfreezes target player',
-        alias: 'ufrz',
+        name: 'unlockcontrols',
+        description: 'unlocks target player\'s controls',
+        alias: 'ulc',
         permission: 'Administrator',
         targetRequired: true,
         arguments: [{

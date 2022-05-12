@@ -109,26 +109,26 @@ OnPlayerDisconnect()
 
 OnPlayerJoinedTeam()
 {
-	self endon( "disconnect" );
+    self endon( "disconnect" );
 
-	for( ;; )
-	{
-		self waittill( "joined_team" );
+    for( ;; )
+    {
+        self waittill( "joined_team" );
         // join spec and join team occur at the same moment - out of order logging would be problematic
         wait( 0.25 ); 
         LogPrint( GenerateJoinTeamString( false ) );
-	}
+    }
 }
 
 OnPlayerJoinedSpectators()
 {
-	self endon( "disconnect" );
+    self endon( "disconnect" );
 
-	for( ;; )
-	{
+    for( ;; )
+    {
         self waittill( "joined_spectators" );
         LogPrint( GenerateJoinTeamString( true ) );
-	}
+    }
 }
 
 OnGameEnded() 
@@ -561,6 +561,18 @@ OnExecuteCommand( event )
         case "Unhide":
             response = self UnhideImpl();
             break;
+        case "Freeze":
+            response = self FreezeImpl( event.target );
+            break;
+        case "UnFreeze":
+            response = self UnFreezeImpl( event.target );
+            break;
+        case "NoClip":
+            response = self NoClipImpl();
+            break;
+        case "UnNoClip":
+            response = self UnNoClipImpl();
+            break;
         case "Alert":
             response = event.target AlertImpl( data );
             break;
@@ -573,6 +585,9 @@ OnExecuteCommand( event )
             {
                 response = self GotoImpl( data );
             }
+            break;
+        case "PlayerToMe":
+            response = self PlayerToMeImpl( event.target );
             break;
         case "Kill":
             response = event.target KillImpl();
@@ -653,6 +668,74 @@ TeamSwitchImpl()
     return self.name + "^7 switched to " + self.team;
 }
 
+FreezeImpl( target )
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+    target freezeControlsWrapper(true);
+    target God(true);
+    target Hide();
+    
+    target thread maps\mp\gametypes\_hud_message::oldNotifyMessage( "ALERT", "You have been frozen!", "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+
+    self IPrintLnBold( target.name + " is frozen" );
+}
+
+UnFreezeImpl( target )
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+    target freezeControlsWrapper(false);
+    target God(false);
+    target Show();
+    
+    self IPrintLnBold( target.name + " is unfrozen" );
+}
+
+NoClipImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 1 );
+    self SetClientDvar( "sv_cheats", 0 );
+
+    self God(true);
+    self NoClip(true);
+    self Hide();
+
+    self IPrintLnBold( "NoClip enabled" );
+}
+
+UnNoClipImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+    
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 0 );
+    self SetClientDvar( "sv_cheats", 0 );
+
+    self God(false);
+    self NoClip(false);
+    self Show();
+
+    self IPrintLnBold( "NoClip disabled" );
+}
+
 HideImpl()
 {
     if ( !IsAlive( self ) )
@@ -665,16 +748,7 @@ HideImpl()
     self SetClientDvar( "cg_thirdperson", 1 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    if ( !IsDefined( self.savedHealth ) || self.health < 1000  )
-    {
-        self.savedHealth = self.health;
-        self.savedMaxHealth = self.maxhealth;
-    }
-
-    self.maxhealth = 99999;
-    self.health = 99999;
-    self.isHidden = true;
-    
+    self God(true);
     self Hide();
 
     self IPrintLnBold( "You are now ^5hidden ^7from other players" );
@@ -698,10 +772,7 @@ UnhideImpl()
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self.health = self.savedHealth;
-    self.maxhealth = self.savedMaxHealth;
-    self.isHidden = false;
-
+    self God(false);
     self Show();
     self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }
@@ -735,6 +806,18 @@ GotoPlayerImpl( target )
 
     self SetOrigin( target GetOrigin() );
     self IPrintLnBold( "Moved to " + target.name );
+}
+
+PlayerToMeImpl( target )
+{
+    if ( !IsAlive( target ) )
+    {
+        self IPrintLnBold( target.name + " is not alive" );
+        return;
+    }
+
+    self SetOrigin( target GetOrigin() );
+    target IPrintLnBold( "Moved here " + self.name );    
 }
 
 KillImpl()

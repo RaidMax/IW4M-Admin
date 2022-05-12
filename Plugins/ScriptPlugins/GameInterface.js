@@ -130,6 +130,72 @@ let commands = [{
         }
     },
     {
+        name: 'freeze',
+        description: 'freezes target player',
+        alias: 'frz',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Freeze', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'unfreeze',
+        description: 'unfreezes target player',
+        alias: 'ufrz',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'UnFreeze', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'noclip',
+        description: 'noclip yourself ingame',
+        alias: 'nc',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'NoClip', gameEvent.Origin, gameEvent.Origin, undefined);
+        }
+    },
+    {
+        name: 'unnoclip',
+        description: 'unnoclip yourself ingame',
+        alias: 'unc',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'UnNoClip', gameEvent.Origin, gameEvent.Origin, undefined);
+        }
+    },
+    {
         name: 'hide',
         description: 'hide yourself ingame',
         alias: 'hi',
@@ -199,7 +265,25 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, 0);
+        }
+    },
+    {
+        name: 'playertome',
+        description: 'teleport a player to you',
+        alias: 'p2m',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Target, gameEvent.Origin, 1);
         }
     },
     {
@@ -489,7 +573,7 @@ const pollForEvents = server => {
         const nextMessage = state.queuedMessages.splice(0, 1);
         setDvar(server, outDvar, nextMessage, onSetDvar);
     }
- 
+
     if (state.waitingOnOutput) {
         getDvar(server, outDvar, onReceivedDvar);
     }

@@ -144,7 +144,7 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Freeze', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.Owner, 'LockControls', gameEvent.Origin, gameEvent.Target, undefined);
         }
     },
     {
@@ -162,7 +162,7 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'UnFreeze', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.Owner, 'UnLockControls', gameEvent.Origin, gameEvent.Target, undefined);
         }
     },
     {

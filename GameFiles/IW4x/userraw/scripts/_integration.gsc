@@ -561,11 +561,11 @@ OnExecuteCommand( event )
         case "Unhide":
             response = self UnhideImpl();
             break;
-        case "Freeze":
-            response = self FreezeImpl( event.target );
+        case "LockControls":
+            response = self LockControlsImpl( event.target );
             break;
-        case "UnFreeze":
-            response = self UnFreezeImpl( event.target );
+        case "UnLockControls":
+            response = self UnLockControlsImpl( event.target );
             break;
         case "NoClip":
             response = self NoClipImpl();
@@ -668,7 +668,7 @@ TeamSwitchImpl()
     return self.name + "^7 switched to " + self.team;
 }
 
-FreezeImpl( target )
+LockControlsImpl( target )
 {
     if ( !IsAlive( self ) )
     {
@@ -681,10 +681,10 @@ FreezeImpl( target )
     
     target thread maps\mp\gametypes\_hud_message::oldNotifyMessage( "ALERT", "You have been frozen!", "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
 
-    self IPrintLnBold( target.name + " is frozen" );
+    self IPrintLnBold( target.name + "\'s controls are locked" );
 }
 
-UnFreezeImpl( target )
+UnLockControlsImpl( target )
 {
     if ( !IsAlive( self ) )
     {
@@ -695,7 +695,7 @@ UnFreezeImpl( target )
     target God(false);
     target Show();
     
-    self IPrintLnBold( target.name + " is unfrozen" );
+    self IPrintLnBold( target.name + "\'s controls are unlocked" );
 }
 
 NoClipImpl()

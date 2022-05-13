@@ -562,16 +562,16 @@ OnExecuteCommand( event )
             response = self UnhideImpl();
             break;
         case "LockControls":
-            response = self LockControlsImpl( event.target );
+            response = event.target LockControlsImpl();
             break;
-        case "UnLockControls":
-            response = self UnLockControlsImpl( event.target );
+        case "UnlockControls":
+            response = event.target UnlockControlsImpl();
             break;
         case "NoClip":
             response = self NoClipImpl();
             break;
-        case "UnNoClip":
-            response = self UnNoClipImpl();
+        case "NoClipOff":
+            response = self NoClipOffImpl();
             break;
         case "Alert":
             response = event.target AlertImpl( data );
@@ -587,7 +587,7 @@ OnExecuteCommand( event )
             }
             break;
         case "PlayerToMe":
-            response = self PlayerToMeImpl( event.target );
+            response = event.target PlayerToMeImpl( self );
             break;
         case "Kill":
             response = event.target KillImpl();
@@ -668,34 +668,38 @@ TeamSwitchImpl()
     return self.name + "^7 switched to " + self.team;
 }
 
-LockControlsImpl( target )
+LockControlsImpl()
 {
     if ( !IsAlive( self ) )
     {
         return self.name + "^7 is not alive";
     }
     
-    target freezeControlsWrapper(true);
-    target God(true);
-    target Hide();
-    
-    target thread maps\mp\gametypes\_hud_message::oldNotifyMessage( "ALERT", "You have been frozen!", "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    self freezeControlsWrapper( true );
+    self God( true );
+    self Hide();
+	
+	info = [];
+	info[ "alertType" ] = "Alert!";
+	info[ "message" ] = "You've been frozen!";
+	
+    self AlertImpl( info );
 
-    self IPrintLnBold( target.name + "\'s controls are locked" );
+    return self.name + "\'s controls are locked";
 }
 
-UnLockControlsImpl( target )
+UnlockControlsImpl()
 {
     if ( !IsAlive( self ) )
     {
         return self.name + "^7 is not alive";
     }
     
-    target freezeControlsWrapper(false);
-    target God(false);
-    target Show();
-    
-    self IPrintLnBold( target.name + "\'s controls are unlocked" );
+    self freezeControlsWrapper( false );
+    self God( false );
+    self Show();
+
+    return self.name + "\'s controls are unlocked";
 }
 
 NoClipImpl()
@@ -710,14 +714,14 @@ NoClipImpl()
     self SetClientDvar( "cg_thirdperson", 1 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self God(true);
-    self NoClip(true);
+    self God( true );
+    self NoClip( true );
     self Hide();
 
     self IPrintLnBold( "NoClip enabled" );
 }
 
-UnNoClipImpl()
+NoClipOffImpl()
 {
     if ( !IsAlive( self ) )
     {
@@ -729,8 +733,8 @@ UnNoClipImpl()
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self God(false);
-    self NoClip(false);
+    self God( false );
+    self NoClip( false );
     self Show();
 
     self IPrintLnBold( "NoClip disabled" );
@@ -748,7 +752,7 @@ HideImpl()
     self SetClientDvar( "cg_thirdperson", 1 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self God(true);
+    self God( true );
     self Hide();
 
     self IPrintLnBold( "You are now ^5hidden ^7from other players" );
@@ -772,7 +776,7 @@ UnhideImpl()
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self God(false);
+    self God( false );
     self Show();
     self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }
@@ -810,9 +814,9 @@ GotoPlayerImpl( target )
 
 PlayerToMeImpl( target )
 {
-    if ( !IsAlive( target ) )
+    if ( !IsAlive( self ) )
     {
-        self IPrintLnBold( target.name + " is not alive" );
+        target IPrintLnBold( self.name + " is not alive" );
         return;
     }
 

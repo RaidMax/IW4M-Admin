@@ -162,12 +162,12 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'UnLockControls', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.Owner, 'UnlockControls', gameEvent.Origin, gameEvent.Target, undefined);
         }
     },
     {
         name: 'noclip',
-        description: 'noclip yourself ingame',
+        description: 'enable noclip on yourself ingame',
         alias: 'nc',
         permission: 'SeniorAdmin',
         targetRequired: false,
@@ -181,9 +181,9 @@ let commands = [{
         }
     },
     {
-        name: 'unnoclip',
-        description: 'unnoclip yourself ingame',
-        alias: 'unc',
+        name: 'noclipoff',
+        description: 'disable noclip on yourself ingame',
+        alias: 'nco',
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
@@ -192,7 +192,7 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'UnNoClip', gameEvent.Origin, gameEvent.Origin, undefined);
+            sendScriptCommand(gameEvent.Owner, 'NoClipOff', gameEvent.Origin, gameEvent.Origin, undefined);
         }
     },
     {
@@ -283,7 +283,7 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Target, gameEvent.Origin, undefined);
+            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Origin, gameEvent.Target, undefined);
         }
     },
     {

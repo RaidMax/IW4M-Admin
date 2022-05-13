@@ -1,7 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
-#include maps\mp\gametypes\_playerlogic;
+//#include maps\mp\gametypes\_playerlogic;
 
 init()
 {
@@ -12,6 +12,7 @@ init()
     level.eventBus.failKey      = "fail";
     level.eventBus.timeoutKey   = "timeout";
     level.eventBus.timeout      = 30;
+    level.eventBus.gamename     = getDvar("gamename"); // We want to do a few small detail different on IW5 compared to IW4, nothing where 2 files would make sense.
     
     level.clientDataKey = "clientData";
 
@@ -35,6 +36,20 @@ init()
     level.eventCallbacks[level.eventTypes.clientDataReceived]       = ::OnClientDataReceived;
     level.eventCallbacks[level.eventTypes.executeCommandRequested]  = ::OnExecuteCommand; 
     level.eventCallbacks[level.eventTypes.setClientDataCompleted]   = ::OnSetClientDataCompleted;
+
+    level.clientCommandCallbacks = [];
+    level.clientCommandRusAsTarget = [];
+    //Populate collections above
+    addClientCommand("GiveWeapon",   true,  ::GiveWeaponImpl);
+    addClientCommand("TakeWeapons",  true,  ::TakeWeaponsImpl);
+    addClientCommand("SwitchTeams",  true,  ::TeamSwitchImpl);
+    addClientCommand("Hide",         false, ::HideImpl);
+    addClientCommand("Unhide",       false, ::UnhideImpl);
+    addClientCommand("Alert",        true,  ::AlertImpl);
+    addClientCommand("Goto",         false, ::GotoImpl);
+    addClientCommand("Kill",         true,  ::KillImpl);
+    addClientCommand("SetSpectator", true,  ::SetSpectatorImpl);
+    addClientCommand("NightMode",    false, ::NightModeImpl); //This really should be a level command
     
     if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
     {
@@ -61,7 +76,7 @@ OnPlayerConnect()
         
         level.iw4adminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
         
-        if ( player.pers["isBot"] ) 
+        if ( isDefined(player.pers["isBot"]) && player.pers["isBot"] ) 
         {
             // we don't want to track bots
             continue;    
@@ -209,7 +224,7 @@ MonitorClientEvents()
  
         if ( level.iw4adminIntegrationDebug == 1 )
         {
-            self IPrintLn( "Processing Event " + client.event.type + "-" + client.event.subtype );
+            IPrintLn( "Processing Event " + client.event.type + "-" + client.event.subtype );
         }
         
         eventHandler = level.eventCallbacks[client.event.type];
@@ -490,12 +505,57 @@ NotifyClientEvent( eventInfo )
     if ( level.iw4adminIntegrationDebug == 1 )
     {
         IPrintLn( "NotifyClientEvent->" + event.data );
+        if(int(eventInfo[3]) != -1 && !isDefined(origin))
+        {
+            IPrintLn("origin is null but the slot id is " + int(eventInfo[3]));
+        }
+        if(int(eventInfo[4]) != -1 && !isDefined(target))
+        {
+            IPrintLn("target is null but the slot id is " + int(eventInfo[4]));
+        }
     }
 
-    client = event.origin;
+    if(isDefined(target))
+    {
+        client = event.target;
+    }
+    else if(isDefined(origin))
+    {
+        client = event.origin;
+    }
+    else
+    {
+        if ( level.iw4adminIntegrationDebug == 1 )
+        {
+            IPrintLn( "Neither origin or target are set but we are a Client Event, aborting" );
+        }
+        return;
+    }
     client.event = event;
 
     level notify( level.eventTypes.localClientEvent, client );
+}
+
+getPlayerFromClientNum( clientNum )
+{
+	if ( clientNum < 0 )
+		return undefined;
+	
+	for ( i = 0; i < level.players.size; i++ )
+	{
+		if ( level.players[i] getEntityNumber() == clientNum )
+			return level.players[i];
+	}
+	return undefined;
+}
+
+addClientCommand(cmd, runAsTarget, callback, overwrite)
+{
+    if (isDefined(level.clientCommandCallbacks[cmd]) && isDefined(overwrite) && !overwrite) {
+        return;
+    }
+    level.clientCommandCallbacks[cmd] = callback;
+    level.clientCommandRusAsTarget[cmd] = runAsTarget == true; //might speed up things later in case someone gives us a string or number instead of a boolean
 }
 
 //////////////////////////////////
@@ -544,45 +604,18 @@ OnExecuteCommand( event )
     data = ParseDataString( event.data );
     response = "";
 
-    switch ( event.subtype ) 
+    cmd = level.clientCommandCallbacks[event.subtype];
+    runAsTarget = level.clientCommandRusAsTarget[event.subtype];
+    context = event.origin;
+    if (runAsTarget) {
+        context = event.target;
+    }
+    if (isDefined(cmd)) {
+        response = context [[cmd]](event, data);
+    }
+    else if ( level.iw4adminIntegrationDebug == 1 )
     {
-        case "GiveWeapon":
-            response = event.target GiveWeaponImpl( data );
-            break;
-        case "TakeWeapons":
-            response = event.target TakeWeaponsImpl();
-            break;
-        case "SwitchTeams":
-            response = event.target TeamSwitchImpl();
-            break;
-        case "Hide":
-            response = self HideImpl();
-            break;
-        case "Unhide":
-            response = self UnhideImpl();
-            break;
-        case "Alert":
-            response = event.target AlertImpl( data );
-            break;
-        case "Goto":
-            if ( IsDefined( event.target ) )
-            {
-                response = self GotoPlayerImpl( event.target );
-            }
-            else
-            {
-                response = self GotoImpl( data );
-            }
-            break;
-        case "Kill":
-            response = event.target KillImpl();
-            break;
-        case "NightMode":
-            NightModeImpl();
-            break;
-        case "SetSpectator":
-            response = event.target SetSpectatorImpl();
-            break;
+        IPrintLn( "Unkown Client command->" +  event.subtype);
     }
     
     // send back the response to the origin, but only if they're not the target
@@ -605,7 +638,7 @@ OnSetClientDataCompleted( event )
 // Command Implementations
 /////////////////////////////////
 
-GiveWeaponImpl( data )
+GiveWeaponImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -636,7 +669,7 @@ TeamSwitchImpl()
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + "^7 is not alive";
+        return self + "^7 is not alive";
     }
     
     team = level.allies;
@@ -706,13 +739,30 @@ UnhideImpl()
     self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }
 
-AlertImpl( data )
+AlertImpl( event, data )
 {
-    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    if (level.eventBus.gamename == "IW4") {
+        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    }
+    if (level.eventBus.gamename == "IW5") { //IW5's notification are a bit different...
+        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    }
     return "Sent alert to " + self.name; 
 }
 
-GotoImpl( data )
+GotoImpl(event, data)
+{
+    if ( IsDefined( event.target ) )
+    {
+        return self GotoPlayerImpl( event.target );
+    }
+    else
+    {
+        return self GotoCoordImpl( data );
+    }
+}
+
+GotoCoordImpl( data )
 {
     if ( !IsAlive( self ) )
     {

@@ -265,7 +265,7 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, 0);
+            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
         }
     },
     {
@@ -283,7 +283,7 @@ let commands = [{
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Target, gameEvent.Origin, 1);
+            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Target, gameEvent.Origin, undefined);
         }
     },
     {

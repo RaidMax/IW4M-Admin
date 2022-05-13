@@ -678,11 +678,11 @@ LockControlsImpl()
     self freezeControlsWrapper( true );
     self God( true );
     self Hide();
-	
-	info = [];
-	info[ "alertType" ] = "Alert!";
-	info[ "message" ] = "You've been frozen!";
-	
+    
+    info = [];
+    info[ "alertType" ] = "Alert!";
+    info[ "message" ] = "You've been frozen!";
+    
     self AlertImpl( info );
 
     return self.name + "\'s controls are locked";

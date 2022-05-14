@@ -4,7 +4,7 @@ Allows integration of IW4M-Admin to GSC, mainly used for special commands that n
 But can also be used to read / write metadata from / to a profile and to get the player permission level.
 
 
-## Installation PIW5
+## Installation Plutonium IW5
 
 
 Move `_integration.gsc` to `%localappdata%\Plutonium\storage\iw5\scripts\`

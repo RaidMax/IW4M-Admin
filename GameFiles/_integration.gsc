@@ -1,7 +1,6 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
-//#include maps\mp\gametypes\_playerlogic;
 
 init()
 {
@@ -12,7 +11,7 @@ init()
     level.eventBus.failKey      = "fail";
     level.eventBus.timeoutKey   = "timeout";
     level.eventBus.timeout      = 30;
-    level.eventBus.gamename     = getDvar("gamename"); // We want to do a few small detail different on IW5 compared to IW4, nothing where 2 files would make sense.
+    level.eventBus.gamename     = getDvar( "gamename" ); // We want to do a few small detail different on IW5 compared to IW4, nothing where 2 files would make sense.
     
     level.clientDataKey = "clientData";
 
@@ -40,16 +39,16 @@ init()
     level.clientCommandCallbacks = [];
     level.clientCommandRusAsTarget = [];
     //Populate collections above
-    addClientCommand("GiveWeapon",   true,  ::GiveWeaponImpl);
-    addClientCommand("TakeWeapons",  true,  ::TakeWeaponsImpl);
-    addClientCommand("SwitchTeams",  true,  ::TeamSwitchImpl);
-    addClientCommand("Hide",         false, ::HideImpl);
-    addClientCommand("Unhide",       false, ::UnhideImpl);
-    addClientCommand("Alert",        true,  ::AlertImpl);
-    addClientCommand("Goto",         false, ::GotoImpl);
-    addClientCommand("Kill",         true,  ::KillImpl);
-    addClientCommand("SetSpectator", true,  ::SetSpectatorImpl);
-    addClientCommand("NightMode",    false, ::NightModeImpl); //This really should be a level command
+    addClientCommand( "GiveWeapon",   true,  ::GiveWeaponImpl );
+    addClientCommand( "TakeWeapons",  true,  ::TakeWeaponsImpl );
+    addClientCommand( "SwitchTeams",  true,  ::TeamSwitchImpl );
+    addClientCommand( "Hide",         false, ::HideImpl );
+    addClientCommand( "Unhide",       false, ::UnhideImpl );
+    addClientCommand( "Alert",        true,  ::AlertImpl );
+    addClientCommand( "Goto",         false, ::GotoImpl );
+    addClientCommand( "Kill",         true,  ::KillImpl );
+    addClientCommand( "SetSpectator", true,  ::SetSpectatorImpl );
+    addClientCommand( "NightMode",    false, ::NightModeImpl ); //This really should be a level command
     
     if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
     {
@@ -505,21 +504,21 @@ NotifyClientEvent( eventInfo )
     if ( level.iw4adminIntegrationDebug == 1 )
     {
         IPrintLn( "NotifyClientEvent->" + event.data );
-        if(int(eventInfo[3]) != -1 && !isDefined(origin))
+        if( int( eventInfo[3] ) != -1 && !isDefined( origin ) )
         {
-            IPrintLn("origin is null but the slot id is " + int(eventInfo[3]));
+            IPrintLn( "origin is null but the slot id is " + int( eventInfo[3] ) );
         }
-        if(int(eventInfo[4]) != -1 && !isDefined(target))
+        if( int( eventInfo[4] ) != -1 && !isDefined( target ) )
         {
-            IPrintLn("target is null but the slot id is " + int(eventInfo[4]));
+            IPrintLn( "target is null but the slot id is " + int( eventInfo[4] ) );
         }
     }
 
-    if(isDefined(target))
+    if( isDefined( target ) )
     {
         client = event.target;
     }
-    else if(isDefined(origin))
+    else if( isDefined( origin ) )
     {
         client = event.origin;
     }
@@ -529,6 +528,7 @@ NotifyClientEvent( eventInfo )
         {
             IPrintLn( "Neither origin or target are set but we are a Client Event, aborting" );
         }
+        
         return;
     }
     client.event = event;
@@ -536,7 +536,7 @@ NotifyClientEvent( eventInfo )
     level notify( level.eventTypes.localClientEvent, client );
 }
 
-getPlayerFromClientNum( clientNum )
+GetPlayerFromClientNum( clientNum )
 {
 	if ( clientNum < 0 )
 		return undefined;
@@ -544,18 +544,21 @@ getPlayerFromClientNum( clientNum )
 	for ( i = 0; i < level.players.size; i++ )
 	{
 		if ( level.players[i] getEntityNumber() == clientNum )
+        {
 			return level.players[i];
+        }
 	}
 	return undefined;
 }
 
-addClientCommand(cmd, runAsTarget, callback, overwrite)
+AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
 {
-    if (isDefined(level.clientCommandCallbacks[cmd]) && isDefined(overwrite) && !overwrite) {
+    if ( isDefined( level.clientCommandCallbacks[commandName] ) && isDefined( shouldOverwrite ) && !shouldOverwrite ) {
+
         return;
     }
-    level.clientCommandCallbacks[cmd] = callback;
-    level.clientCommandRusAsTarget[cmd] = runAsTarget == true; //might speed up things later in case someone gives us a string or number instead of a boolean
+    level.clientCommandCallbacks[commandName] = callback;
+    level.clientCommandRusAsTarget[commandName] = shouldRunAsTarget == true; //might speed up things later in case someone gives us a string or number instead of a boolean
 }
 
 //////////////////////////////////
@@ -604,14 +607,14 @@ OnExecuteCommand( event )
     data = ParseDataString( event.data );
     response = "";
 
-    cmd = level.clientCommandCallbacks[event.subtype];
+    command = level.clientCommandCallbacks[event.subtype];
     runAsTarget = level.clientCommandRusAsTarget[event.subtype];
-    context = event.origin;
-    if (runAsTarget) {
-        context = event.target;
+    executionContextEntity = event.origin;
+    if ( runAsTarget ) {
+        executionContextEntity = event.target;
     }
-    if (isDefined(cmd)) {
-        response = context [[cmd]](event, data);
+    if ( isDefined( command ) ) {
+        response = executionContextEntity [[command]]( event, data );
     }
     else if ( level.iw4adminIntegrationDebug == 1 )
     {
@@ -741,16 +744,16 @@ UnhideImpl()
 
 AlertImpl( event, data )
 {
-    if (level.eventBus.gamename == "IW4") {
+    if ( level.eventBus.gamename == "IW4" ) {
         self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
     }
-    if (level.eventBus.gamename == "IW5") { //IW5's notification are a bit different...
+    if ( level.eventBus.gamename == "IW5" ) { //IW5's notification are a bit different...
         self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
     }
     return "Sent alert to " + self.name; 
 }
 
-GotoImpl(event, data)
+GotoImpl( event, data )
 {
     if ( IsDefined( event.target ) )
     {

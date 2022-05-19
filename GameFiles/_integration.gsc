@@ -38,28 +38,22 @@ init()
 
     level.clientCommandCallbacks = [];
     level.clientCommandRusAsTarget = [];
-    //Populate collections above
-    addClientCommand( "GiveWeapon",   true,  ::GiveWeaponImpl );
-    addClientCommand( "TakeWeapons",  true,  ::TakeWeaponsImpl );
-    addClientCommand( "SwitchTeams",  true,  ::TeamSwitchImpl );
-    addClientCommand( "Hide",         false, ::HideImpl );
-    addClientCommand( "Unhide",       false, ::UnhideImpl );
-    addClientCommand( "Alert",        true,  ::AlertImpl );
-    addClientCommand( "Goto",         false, ::GotoImpl );
-    addClientCommand( "Kill",         true,  ::KillImpl );
-    addClientCommand( "SetSpectator", true,  ::SetSpectatorImpl );
-    addClientCommand( "NightMode",    false, ::NightModeImpl ); //This really should be a level command
     
     if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
     {
         return;
     }
     
+    InitializeGameMethods();
+    RegisterClientCommands();
+    
     // start long running tasks
     level thread MonitorClientEvents();
     level thread MonitorBus();
     level thread OnPlayerConnect();
 }
+
+
 
 //////////////////////////////////
 // Client Methods
@@ -123,26 +117,26 @@ OnPlayerDisconnect()
 
 OnPlayerJoinedTeam()
 {
-	self endon( "disconnect" );
+    self endon( "disconnect" );
 
-	for( ;; )
-	{
-		self waittill( "joined_team" );
+    for( ;; )
+    {
+        self waittill( "joined_team" );
         // join spec and join team occur at the same moment - out of order logging would be problematic
         wait( 0.25 ); 
         LogPrint( GenerateJoinTeamString( false ) );
-	}
+    }
 }
 
 OnPlayerJoinedSpectators()
 {
-	self endon( "disconnect" );
+    self endon( "disconnect" );
 
-	for( ;; )
-	{
+    for( ;; )
+    {
         self waittill( "joined_spectators" );
         LogPrint( GenerateJoinTeamString( true ) );
-	}
+    }
 }
 
 OnGameEnded() 
@@ -240,6 +234,47 @@ MonitorClientEvents()
 //////////////////////////////////
 // Helper Methods
 //////////////////////////////////
+
+RegisterClientCommands() 
+{
+    AddClientCommand( "GiveWeapon",     true,  ::GiveWeaponImpl );
+    AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
+    AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
+    AddClientCommand( "Hide",           false, ::HideImpl );
+    AddClientCommand( "Unhide",         false, ::UnhideImpl );
+    AddClientCommand( "Alert",          true,  ::AlertImpl );
+    AddClientCommand( "Goto",           false, ::GotoImpl );
+    AddClientCommand( "Kill",           true,  ::KillImpl );
+    AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
+    AddClientCommand( "NightMode",      false, ::NightModeImpl ); //This really should be a level command
+    AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
+    AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
+    AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
+    AddClientCommand( "NoClip",         false, ::NoClipImpl );
+    AddClientCommand( "NoClipOff",      false, ::NoClipOffImpl );
+}
+
+InitializeGameMethods() 
+{
+    level.overrideMethods = [];
+    level.overrideMethods["god"] = ::_god;
+    level.overrideMethods["noclip"] = ::UnsupportedFunc;
+    
+    if ( isDefined( ::God ) )
+    {
+        level.overrideMethods["god"] = ::God;
+    }
+    
+    if ( isDefined( ::NoClip ) )
+    {
+        level.overrideMethods["noclip"] = ::NoClip;
+    }
+}
+
+UnsupportedFunc()
+{ 
+    self IPrintLnBold( "Function isn't supported!" );
+}
 
 RequestClientMeta( metaKey )
 {
@@ -538,17 +573,17 @@ NotifyClientEvent( eventInfo )
 
 GetPlayerFromClientNum( clientNum )
 {
-	if ( clientNum < 0 )
-		return undefined;
-	
-	for ( i = 0; i < level.players.size; i++ )
-	{
-		if ( level.players[i] getEntityNumber() == clientNum )
+    if ( clientNum < 0 )
+        return undefined;
+    
+    for ( i = 0; i < level.players.size; i++ )
+    {
+        if ( level.players[i] getEntityNumber() == clientNum )
         {
-			return level.players[i];
+            return level.players[i];
         }
-	}
-	return undefined;
+    }
+    return undefined;
 }
 
 AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
@@ -560,6 +595,8 @@ AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
     level.clientCommandCallbacks[commandName] = callback;
     level.clientCommandRusAsTarget[commandName] = shouldRunAsTarget == true; //might speed up things later in case someone gives us a string or number instead of a boolean
 }
+
+
 
 //////////////////////////////////
 // Event Handlers
@@ -689,6 +726,79 @@ TeamSwitchImpl()
     return self.name + "^7 switched to " + self.team;
 }
 
+LockControlsImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+
+    self freezeControls( true );
+    self call [[level.overrideMethods["god"]]]( true );
+    self Hide();
+
+    info = [];
+    info[ "alertType" ] = "Alert!";
+    info[ "message" ] = "You've been frozen!";
+    
+    self AlertImpl( undefined, info );
+
+    return self.name + "\'s controls are locked";
+}
+
+UnlockControlsImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+    self freezeControls( false );
+    self call [[level.overrideMethods["god"]]]( false );
+    self Show();
+
+    return self.name + "\'s controls are unlocked";
+}
+
+NoClipImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 1 );
+    self SetClientDvar( "sv_cheats", 0 );
+
+    self call [[level.overrideMethods["god"]]]( true );
+    self call [[level.overrideMethods["noclip"]]]( true );
+    self Hide();
+
+    self IPrintLnBold( "NoClip enabled" );
+}
+
+NoClipOffImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+    
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 0 );
+    self SetClientDvar( "sv_cheats", 0 );
+
+    self call [[level.overrideMethods["god"]]]( false );
+    self call [[level.overrideMethods["noclip"]]]( false );
+    self Show();
+
+    self IPrintLnBold( "NoClip disabled" );
+}
+
 HideImpl()
 {
     if ( !IsAlive( self ) )
@@ -707,10 +817,7 @@ HideImpl()
         self.savedMaxHealth = self.maxhealth;
     }
 
-    self.maxhealth = 99999;
-    self.health = 99999;
-    self.isHidden = true;
-    
+    self call [[level.overrideMethods["god"]]]( true );
     self Hide();
 
     self IPrintLnBold( "You are now ^5hidden ^7from other players" );
@@ -734,11 +841,9 @@ UnhideImpl()
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self.health = self.savedHealth;
-    self.maxhealth = self.savedMaxHealth;
-    self.isHidden = false;
-
+    self call [[level.overrideMethods["god"]]]( false );
     self Show();
+    
     self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }
 
@@ -789,6 +894,18 @@ GotoPlayerImpl( target )
     self SetOrigin( target GetOrigin() );
     self IPrintLnBold( "Moved to " + target.name );
 }
+
+PlayerToMeImpl( event )
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + " is not alive";;
+    }
+
+    self SetOrigin( event.origin GetOrigin() );
+    return "Moved here " + self.name;    
+}
+
 
 KillImpl()
 {
@@ -857,4 +974,34 @@ SetSpectatorImpl()
     self IPrintLnBold( "You have been moved to spectator" );
     
     return self.name + " has been moved to spectator";
+}
+
+//////////////////////////////////
+// Function Overrides
+//////////////////////////////////
+
+_god( isEnabled ) 
+{
+    if ( isEnabled == true ) 
+    {
+        if ( !IsDefined( self.savedHealth ) || self.health < 1000  )
+        {
+            self.savedHealth = self.health;
+            self.savedMaxHealth = self.maxhealth;
+        }
+        
+        self.maxhealth = 99999;
+        self.health = 99999;
+    }
+    
+    else 
+    {
+        if ( !IsDefined( self.savedHealth ) || !IsDefined( self.savedMaxHealth ) )
+        {
+            return;
+        }
+        
+        self.health = self.savedHealth;
+        self.maxhealth = self.savedMaxHealth;
+    }
 }

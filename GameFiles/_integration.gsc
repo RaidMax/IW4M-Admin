@@ -269,16 +269,17 @@ InitializeGameMethods()
     {
         level.overrideMethods["noclip"] = ::NoClip;
     }
-
-    if (level.eventBus.gamename == "IW5") { //PlutoIW5 only allows Godmode and NoClip if cheats are on..
-        level.overrideMethods["god"] =    ::IW5_God;
+	
+    if ( level.eventBus.gamename == "IW5" ) 
+	{ //PlutoIW5 only allows Godmode and NoClip if cheats are on..
+        level.overrideMethods["god"] 	= ::IW5_God;
         level.overrideMethods["noclip"] = ::IW5_NoClip;
     }
 }
 
 UnsupportedFunc()
 { 
-    self IPrintLnBold( "Function isn't supported!" );
+    self IPrintLnBold( "Function is not supported!" );
 }
 
 RequestClientMeta( metaKey )
@@ -745,7 +746,7 @@ LockControlsImpl()
 
     info = [];
     info[ "alertType" ] = "Alert!";
-    info[ "message" ] = "You've been frozen!";
+    info[ "message" ] = "You have been frozen!";
     
     self AlertImpl( undefined, info );
 

@@ -899,7 +899,7 @@ PlayerToMeImpl( event )
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + " is not alive";;
+        return self.name + " is not alive";
     }
 
     self SetOrigin( event.origin GetOrigin() );

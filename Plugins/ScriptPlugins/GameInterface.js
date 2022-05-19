@@ -85,7 +85,7 @@ let commands = [{
             name: 'weapon name',
             required: true
         }],
-    supportedGames: ['IW4'],
+    supportedGames: ['IW4', 'IW5'],
     execute: (gameEvent) => {
         if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
             return;
@@ -103,7 +103,7 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -121,12 +121,78 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
             sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'lockcontrols',
+        description: 'locks target player\'s controls',
+        alias: 'lc',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'LockControls', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'unlockcontrols',
+        description: 'unlocks target player\'s controls',
+        alias: 'ulc',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'UnlockControls', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'noclip',
+        description: 'enable noclip on yourself ingame',
+        alias: 'nc',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4', 'IW5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'NoClip', gameEvent.Origin, gameEvent.Origin, undefined);
+        }
+    },
+    {
+        name: 'noclipoff',
+        description: 'disable noclip on yourself ingame',
+        alias: 'nco',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4', 'IW5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'NoClipOff', gameEvent.Origin, gameEvent.Origin, undefined);
         }
     },
     {
@@ -136,7 +202,7 @@ let commands = [{
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -151,7 +217,7 @@ let commands = [{
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -173,7 +239,7 @@ let commands = [{
                 name: 'message',
                 required: true
             }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -194,12 +260,30 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
             }
             sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
+        }
+    },
+    {
+        name: 'playertome',
+        description: 'teleport a player to you',
+        alias: 'p2m',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Origin, gameEvent.Target, undefined);
         }
     },
     {
@@ -220,7 +304,7 @@ let commands = [{
                 name: 'z',
                 required: true
             }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -244,7 +328,7 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -259,7 +343,7 @@ let commands = [{
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -277,7 +361,7 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -489,7 +573,7 @@ const pollForEvents = server => {
         const nextMessage = state.queuedMessages.splice(0, 1);
         setDvar(server, outDvar, nextMessage, onSetDvar);
     }
- 
+
     if (state.waitingOnOutput) {
         getDvar(server, outDvar, onReceivedDvar);
     }

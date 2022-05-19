@@ -1,7 +1,6 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\gametypes\_hud_util;
-#include maps\mp\gametypes\_playerlogic;
 
 init()
 {
@@ -12,6 +11,7 @@ init()
     level.eventBus.failKey      = "fail";
     level.eventBus.timeoutKey   = "timeout";
     level.eventBus.timeout      = 30;
+    level.eventBus.gamename     = getDvar( "gamename" ); // We want to do a few small detail different on IW5 compared to IW4, nothing where 2 files would make sense.
     
     level.clientDataKey = "clientData";
 
@@ -35,17 +35,25 @@ init()
     level.eventCallbacks[level.eventTypes.clientDataReceived]       = ::OnClientDataReceived;
     level.eventCallbacks[level.eventTypes.executeCommandRequested]  = ::OnExecuteCommand; 
     level.eventCallbacks[level.eventTypes.setClientDataCompleted]   = ::OnSetClientDataCompleted;
+
+    level.clientCommandCallbacks = [];
+    level.clientCommandRusAsTarget = [];
     
     if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
     {
         return;
     }
     
+    InitializeGameMethods();
+    RegisterClientCommands();
+    
     // start long running tasks
     level thread MonitorClientEvents();
     level thread MonitorBus();
     level thread OnPlayerConnect();
 }
+
+
 
 //////////////////////////////////
 // Client Methods
@@ -61,7 +69,7 @@ OnPlayerConnect()
         
         level.iw4adminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
         
-        if ( player.pers["isBot"] ) 
+        if ( isDefined(player.pers["isBot"]) && player.pers["isBot"] ) 
         {
             // we don't want to track bots
             continue;    
@@ -109,26 +117,26 @@ OnPlayerDisconnect()
 
 OnPlayerJoinedTeam()
 {
-	self endon( "disconnect" );
+    self endon( "disconnect" );
 
-	for( ;; )
-	{
-		self waittill( "joined_team" );
+    for( ;; )
+    {
+        self waittill( "joined_team" );
         // join spec and join team occur at the same moment - out of order logging would be problematic
         wait( 0.25 ); 
         LogPrint( GenerateJoinTeamString( false ) );
-	}
+    }
 }
 
 OnPlayerJoinedSpectators()
 {
-	self endon( "disconnect" );
+    self endon( "disconnect" );
 
-	for( ;; )
-	{
+    for( ;; )
+    {
         self waittill( "joined_spectators" );
         LogPrint( GenerateJoinTeamString( true ) );
-	}
+    }
 }
 
 OnGameEnded() 
@@ -209,7 +217,7 @@ MonitorClientEvents()
  
         if ( level.iw4adminIntegrationDebug == 1 )
         {
-            self IPrintLn( "Processing Event " + client.event.type + "-" + client.event.subtype );
+            IPrintLn( "Processing Event " + client.event.type + "-" + client.event.subtype );
         }
         
         eventHandler = level.eventCallbacks[client.event.type];
@@ -226,6 +234,53 @@ MonitorClientEvents()
 //////////////////////////////////
 // Helper Methods
 //////////////////////////////////
+
+RegisterClientCommands() 
+{
+    AddClientCommand( "GiveWeapon",     true,  ::GiveWeaponImpl );
+    AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
+    AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
+    AddClientCommand( "Hide",           false, ::HideImpl );
+    AddClientCommand( "Unhide",         false, ::UnhideImpl );
+    AddClientCommand( "Alert",          true,  ::AlertImpl );
+    AddClientCommand( "Goto",           false, ::GotoImpl );
+    AddClientCommand( "Kill",           true,  ::KillImpl );
+    AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
+    AddClientCommand( "NightMode",      false, ::NightModeImpl ); //This really should be a level command
+    AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
+    AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
+    AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
+    AddClientCommand( "NoClip",         false, ::NoClipImpl );
+    AddClientCommand( "NoClipOff",      false, ::NoClipOffImpl );
+}
+
+InitializeGameMethods() 
+{
+    level.overrideMethods = [];
+    level.overrideMethods["god"] = ::_god;
+    level.overrideMethods["noclip"] = ::UnsupportedFunc;
+    
+    if ( isDefined( ::God ) )
+    {
+        level.overrideMethods["god"] = ::God;
+    }
+    
+    if ( isDefined( ::NoClip ) )
+    {
+        level.overrideMethods["noclip"] = ::NoClip;
+    }
+	
+    if ( level.eventBus.gamename == "IW5" ) 
+	{ //PlutoIW5 only allows Godmode and NoClip if cheats are on..
+        level.overrideMethods["god"] 	= ::IW5_God;
+        level.overrideMethods["noclip"] = ::IW5_NoClip;
+    }
+}
+
+UnsupportedFunc()
+{ 
+    self IPrintLnBold( "Function is not supported!" );
+}
 
 RequestClientMeta( metaKey )
 {
@@ -490,13 +545,64 @@ NotifyClientEvent( eventInfo )
     if ( level.iw4adminIntegrationDebug == 1 )
     {
         IPrintLn( "NotifyClientEvent->" + event.data );
+        if( int( eventInfo[3] ) != -1 && !isDefined( origin ) )
+        {
+            IPrintLn( "origin is null but the slot id is " + int( eventInfo[3] ) );
+        }
+        if( int( eventInfo[4] ) != -1 && !isDefined( target ) )
+        {
+            IPrintLn( "target is null but the slot id is " + int( eventInfo[4] ) );
+        }
     }
 
-    client = event.origin;
+    if( isDefined( target ) )
+    {
+        client = event.target;
+    }
+    else if( isDefined( origin ) )
+    {
+        client = event.origin;
+    }
+    else
+    {
+        if ( level.iw4adminIntegrationDebug == 1 )
+        {
+            IPrintLn( "Neither origin or target are set but we are a Client Event, aborting" );
+        }
+        
+        return;
+    }
     client.event = event;
 
     level notify( level.eventTypes.localClientEvent, client );
 }
+
+GetPlayerFromClientNum( clientNum )
+{
+    if ( clientNum < 0 )
+        return undefined;
+    
+    for ( i = 0; i < level.players.size; i++ )
+    {
+        if ( level.players[i] getEntityNumber() == clientNum )
+        {
+            return level.players[i];
+        }
+    }
+    return undefined;
+}
+
+AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
+{
+    if ( isDefined( level.clientCommandCallbacks[commandName] ) && isDefined( shouldOverwrite ) && !shouldOverwrite ) {
+
+        return;
+    }
+    level.clientCommandCallbacks[commandName] = callback;
+    level.clientCommandRusAsTarget[commandName] = shouldRunAsTarget == true; //might speed up things later in case someone gives us a string or number instead of a boolean
+}
+
+
 
 //////////////////////////////////
 // Event Handlers
@@ -544,45 +650,18 @@ OnExecuteCommand( event )
     data = ParseDataString( event.data );
     response = "";
 
-    switch ( event.subtype ) 
+    command = level.clientCommandCallbacks[event.subtype];
+    runAsTarget = level.clientCommandRusAsTarget[event.subtype];
+    executionContextEntity = event.origin;
+    if ( runAsTarget ) {
+        executionContextEntity = event.target;
+    }
+    if ( isDefined( command ) ) {
+        response = executionContextEntity [[command]]( event, data );
+    }
+    else if ( level.iw4adminIntegrationDebug == 1 )
     {
-        case "GiveWeapon":
-            response = event.target GiveWeaponImpl( data );
-            break;
-        case "TakeWeapons":
-            response = event.target TakeWeaponsImpl();
-            break;
-        case "SwitchTeams":
-            response = event.target TeamSwitchImpl();
-            break;
-        case "Hide":
-            response = self HideImpl();
-            break;
-        case "Unhide":
-            response = self UnhideImpl();
-            break;
-        case "Alert":
-            response = event.target AlertImpl( data );
-            break;
-        case "Goto":
-            if ( IsDefined( event.target ) )
-            {
-                response = self GotoPlayerImpl( event.target );
-            }
-            else
-            {
-                response = self GotoImpl( data );
-            }
-            break;
-        case "Kill":
-            response = event.target KillImpl();
-            break;
-        case "NightMode":
-            NightModeImpl();
-            break;
-        case "SetSpectator":
-            response = event.target SetSpectatorImpl();
-            break;
+        IPrintLn( "Unkown Client command->" +  event.subtype);
     }
     
     // send back the response to the origin, but only if they're not the target
@@ -605,7 +684,7 @@ OnSetClientDataCompleted( event )
 // Command Implementations
 /////////////////////////////////
 
-GiveWeaponImpl( data )
+GiveWeaponImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -636,7 +715,7 @@ TeamSwitchImpl()
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + "^7 is not alive";
+        return self + "^7 is not alive";
     }
     
     team = level.allies;
@@ -651,6 +730,79 @@ TeamSwitchImpl()
     self [[team]]();
 
     return self.name + "^7 switched to " + self.team;
+}
+
+LockControlsImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+
+    self freezeControls( true );
+    self call [[level.overrideMethods["god"]]]( true );
+    self Hide();
+
+    info = [];
+    info[ "alertType" ] = "Alert!";
+    info[ "message" ] = "You have been frozen!";
+    
+    self AlertImpl( undefined, info );
+
+    return self.name + "\'s controls are locked";
+}
+
+UnlockControlsImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + "^7 is not alive";
+    }
+    
+    self freezeControls( false );
+    self call [[level.overrideMethods["god"]]]( false );
+    self Show();
+
+    return self.name + "\'s controls are unlocked";
+}
+
+NoClipImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 1 );
+    self SetClientDvar( "sv_cheats", 0 );
+
+    self call [[level.overrideMethods["god"]]]( true );
+    self call [[level.overrideMethods["noclip"]]]( true );
+    self Hide();
+
+    self IPrintLnBold( "NoClip enabled" );
+}
+
+NoClipOffImpl()
+{
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+        return;
+    }
+    
+    self SetClientDvar( "sv_cheats", 1 );
+    self SetClientDvar( "cg_thirdperson", 0 );
+    self SetClientDvar( "sv_cheats", 0 );
+
+    self call [[level.overrideMethods["god"]]]( false );
+    self call [[level.overrideMethods["noclip"]]]( false );
+    self Show();
+
+    self IPrintLnBold( "NoClip disabled" );
 }
 
 HideImpl()
@@ -671,10 +823,7 @@ HideImpl()
         self.savedMaxHealth = self.maxhealth;
     }
 
-    self.maxhealth = 99999;
-    self.health = 99999;
-    self.isHidden = true;
-    
+    self call [[level.overrideMethods["god"]]]( true );
     self Hide();
 
     self IPrintLnBold( "You are now ^5hidden ^7from other players" );
@@ -698,21 +847,36 @@ UnhideImpl()
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    self.health = self.savedHealth;
-    self.maxhealth = self.savedMaxHealth;
-    self.isHidden = false;
-
+    self call [[level.overrideMethods["god"]]]( false );
     self Show();
+    
     self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }
 
-AlertImpl( data )
+AlertImpl( event, data )
 {
-    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    if ( level.eventBus.gamename == "IW4" ) {
+        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    }
+    if ( level.eventBus.gamename == "IW5" ) { //IW5's notification are a bit different...
+        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
+    }
     return "Sent alert to " + self.name; 
 }
 
-GotoImpl( data )
+GotoImpl( event, data )
+{
+    if ( IsDefined( event.target ) )
+    {
+        return self GotoPlayerImpl( event.target );
+    }
+    else
+    {
+        return self GotoCoordImpl( data );
+    }
+}
+
+GotoCoordImpl( data )
 {
     if ( !IsAlive( self ) )
     {
@@ -736,6 +900,18 @@ GotoPlayerImpl( target )
     self SetOrigin( target GetOrigin() );
     self IPrintLnBold( "Moved to " + target.name );
 }
+
+PlayerToMeImpl( event )
+{
+    if ( !IsAlive( self ) )
+    {
+        return self.name + " is not alive";
+    }
+
+    self SetOrigin( event.origin GetOrigin() );
+    return "Moved here " + self.name;    
+}
+
 
 KillImpl()
 {
@@ -804,4 +980,49 @@ SetSpectatorImpl()
     self IPrintLnBold( "You have been moved to spectator" );
     
     return self.name + " has been moved to spectator";
+}
+
+//////////////////////////////////
+// Function Overrides
+//////////////////////////////////
+
+_god( isEnabled ) 
+{
+    if ( isEnabled == true ) 
+    {
+        if ( !IsDefined( self.savedHealth ) || self.health < 1000  )
+        {
+            self.savedHealth = self.health;
+            self.savedMaxHealth = self.maxhealth;
+        }
+        
+        self.maxhealth = 99999;
+        self.health = 99999;
+    }
+    
+    else 
+    {
+        if ( !IsDefined( self.savedHealth ) || !IsDefined( self.savedMaxHealth ) )
+        {
+            return;
+        }
+        
+        self.health = self.savedHealth;
+        self.maxhealth = self.savedMaxHealth;
+    }
+}
+
+
+IW5_God()
+{
+    SetDvar( "sv_cheats", 1 );
+    self God();
+    SetDvar( "sv_cheats", 0 );
+}
+
+IW5_NoClip()
+{
+    SetDvar( "sv_cheats", 1 );
+    self NoClip();
+    SetDvar( "sv_cheats", 0 );
 }

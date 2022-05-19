@@ -139,7 +139,7 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -157,7 +157,7 @@ let commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -172,7 +172,7 @@ let commands = [{
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;
@@ -187,7 +187,7 @@ let commands = [{
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
-        supportedGames: ['IW4'],
+        supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
                 return;

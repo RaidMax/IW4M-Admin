@@ -100,6 +100,8 @@ OnPlayerSpawned()
     for ( ;; )
     {
         self waittill( "spawned_player" );
+        self IW5_God();
+        self IW5_NoClip();
         self PlayerConnectEvents();
     }
 }
@@ -268,6 +270,11 @@ InitializeGameMethods()
     if ( isDefined( ::NoClip ) )
     {
         level.overrideMethods["noclip"] = ::NoClip;
+    }
+
+    if (level.eventBus.gamename == "IW5") { //PlutoIW5 only allows Godmode and NoClip if cheats are on..
+        level.overrideMethods["god"] =    ::IW5_God;
+        level.overrideMethods["noclip"] = ::IW5_NoClip;
     }
 }
 
@@ -1004,4 +1011,19 @@ _god( isEnabled )
         self.health = self.savedHealth;
         self.maxhealth = self.savedMaxHealth;
     }
+}
+
+
+IW5_God()
+{
+    SetDvar( "sv_cheats", 1 );
+    self God();
+    SetDvar( "sv_cheats", 0 );
+}
+
+IW5_NoClip()
+{
+    SetDvar( "sv_cheats", 1 );
+    self NoClip();
+    SetDvar( "sv_cheats", 0 );
 }

@@ -100,8 +100,6 @@ OnPlayerSpawned()
     for ( ;; )
     {
         self waittill( "spawned_player" );
-        self IW5_God();
-        self IW5_NoClip();
         self PlayerConnectEvents();
     }
 }

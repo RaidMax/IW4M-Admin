@@ -159,12 +159,12 @@
       "Game": "IW5",
       "Gametypes": [
         {
-          "Name": "tdm",
-          "Alias": "Team Deathmatch"
-        },
-        {
           "Name": "dom",
           "Alias": "Domination"
+        },
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
         },
         {
           "Name": "ctf",
@@ -175,36 +175,28 @@
           "Alias": "Demolition"
         },
         {
-          "Name": "dz",
-          "Alias": "Drop Zone"
-        },
-        {
-          "Name": "ffa",
+          "Name": "dm",
           "Alias": "Free For All"
         },
         {
-          "Name": "gg",
-          "Alias": "Gun Game"
+          "Name": "grnd",
+          "Alias": "Drop Zone"
         },
         {
-          "Name": "hq",
-          "Alias": "Headquarters"
+          "Name": "gun",
+          "Alias": "Gun Game"
         },
         {
           "Name": "koth",
           "Alias": "Headquarters"
         },
         {
-          "Name": "inf",
+          "Name": "infect",
           "Alias": "Infected"
         },
         {
-          "Name": "jug",
+          "Name": "jugg",
           "Alias": "Juggernaut"
-        },
-        {
-          "Name": "kc",
-          "Alias": "Kill Confirmed"
         },
         {
           "Name": "oic",
@@ -223,8 +215,12 @@
           "Alias": "Team Defender"
         },
         {
-          "Name": "tj",
+          "Name": "tjugg",
           "Alias": "Team Juggernaut"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
         }
       ]
     },

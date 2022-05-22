@@ -29,7 +29,7 @@ const plugin = {
         let exempt = false;
         // prevent players that are exempt from being kicked
         vpnExceptionIds.forEach(function (id) {
-            if (id === origin.ClientId) {
+            if (id == origin.ClientId) { // when loaded from the config the "id" type is not the same as the ClientId type
                 exempt = true;
                 return false;
             }

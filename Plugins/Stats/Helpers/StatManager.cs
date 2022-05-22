@@ -633,32 +633,44 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     return;
                 }
 
-                var hit = new EFClientKill()
+                EFClientKill hit;
+                try
                 {
-                    Active = true,
-                    AttackerId = attacker.ClientId,
-                    VictimId = victim.ClientId,
-                    ServerId = serverId,
-                    DeathOrigin = vDeathOrigin,
-                    KillOrigin = vKillOrigin,
-                    DeathType = (int) ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
-                    Damage = int.Parse(damage),
-                    HitLoc = (int) ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
-                    WeaponReference = weapon,
-                    ViewAngles = vViewAngles,
-                    TimeOffset = long.Parse(offset),
-                    When = time,
-                    IsKillstreakKill = isKillstreakKill[0] != '0',
-                    AdsPercent = float.Parse(Ads, System.Globalization.CultureInfo.InvariantCulture),
-                    Fraction = double.Parse(fraction, System.Globalization.CultureInfo.InvariantCulture),
-                    VisibilityPercentage = double.Parse(visibilityPercentage,
-                        System.Globalization.CultureInfo.InvariantCulture),
-                    IsKill = !isDamage,
-                    AnglesList = snapshotAngles,
-                    IsAlive = isAlive == "1",
-                    TimeSinceLastAttack = long.Parse(lastAttackTime),
-                    GameName = (int) attacker.CurrentServer.GameName
-                };
+                    hit = new EFClientKill
+                    {
+                        Active = true,
+                        AttackerId = attacker.ClientId,
+                        VictimId = victim.ClientId,
+                        ServerId = serverId,
+                        DeathOrigin = vDeathOrigin,
+                        KillOrigin = vKillOrigin,
+                        DeathType = (int) ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
+                        Damage = int.Parse(damage),
+                        HitLoc = (int) ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
+                        WeaponReference = weapon,
+                        ViewAngles = vViewAngles,
+                        TimeOffset = long.Parse(offset),
+                        When = time,
+                        IsKillstreakKill = isKillstreakKill[0] != '0',
+                        AdsPercent = float.Parse(Ads, System.Globalization.CultureInfo.InvariantCulture),
+                        Fraction = double.Parse(fraction, System.Globalization.CultureInfo.InvariantCulture),
+                        VisibilityPercentage = double.Parse(visibilityPercentage,
+                            System.Globalization.CultureInfo.InvariantCulture),
+                        IsKill = !isDamage,
+                        AnglesList = snapshotAngles,
+                        IsAlive = isAlive == "1",
+                        TimeSinceLastAttack = long.Parse(lastAttackTime),
+                        GameName = (int) attacker.CurrentServer.GameName
+                    };
+
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex, "Could not parse script hit data. Damage={Damage}, TimeOffset={Offset}, TimeSinceLastAttack={LastAttackTime}",
+                        damage, offset, lastAttackTime);
+
+                    return;
+                }
                 
                 hit.SetAdditionalProperty("HitLocationReference", hitLoc);
 
@@ -769,7 +781,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "Could not save hit or anti-cheat info {@attacker} {@victim} {server}", attacker,
+                _log.LogError(ex, "Could not save hit or anti-cheat info {Attacker} {Victim} {Server}", attacker,
                     victim, serverId);
             }
 

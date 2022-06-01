@@ -792,8 +792,16 @@ namespace IW4MAdmin
         /// <returns></returns>
         async Task<List<EFClient>[]> PollPlayersAsync()
         {
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
             var currentClients = GetClientsAsList();
-            var statusResponse = await this.GetStatusAsync(Manager.CancellationToken);
+            var statusResponse = await this.GetStatusAsync(tokenSource.Token);
+
+            if (statusResponse is null)
+            {
+                return null;
+            }
+            
             var polledClients = statusResponse.Clients.AsEnumerable();
 
             if (Manager.GetApplicationSettings().Configuration().IgnoreBots)
@@ -929,6 +937,11 @@ namespace IW4MAdmin
                     }
 
                     var polledClients = await PollPlayersAsync();
+
+                    if (polledClients is null)
+                    {
+                        return true;
+                    }
 
                     foreach (var disconnectingClient in polledClients[1]
                                  .Where(client => !client.IsZombieClient /* ignores "fake" zombie clients */))

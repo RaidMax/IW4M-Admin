@@ -276,8 +276,8 @@ namespace IW4MAdmin.Application.Misc
             {
                 _logger.LogDebug("OnLoad executing for {Name}", Name);
                 _scriptEngine.SetValue("_manager", manager);
-                _scriptEngine.SetValue("getDvar", GetDvarAsync);
-                _scriptEngine.SetValue("setDvar", SetDvarAsync);
+                _scriptEngine.SetValue("getDvar", BeginGetDvar);
+                _scriptEngine.SetValue("setDvar", BeginSetDvar);
                 _scriptEngine.Evaluate("plugin.onLoadAsync(_manager)");
 
                 return Task.CompletedTask;
@@ -343,7 +343,8 @@ namespace IW4MAdmin.Application.Misc
         /// <param name="commands">commands value from jint parser</param>
         /// <param name="scriptCommandFactory">factory to create the command from</param>
         /// <returns></returns>
-        private IEnumerable<IManagerCommand> GenerateScriptCommands(JsValue commands, IScriptCommandFactory scriptCommandFactory)
+        private IEnumerable<IManagerCommand> GenerateScriptCommands(JsValue commands,
+            IScriptCommandFactory scriptCommandFactory)
         {
             var commandList = new List<IManagerCommand>();
 
@@ -410,7 +411,7 @@ namespace IW4MAdmin.Application.Misc
 
                         _scriptEngine.SetValue("_event", gameEvent);
                         var jsEventObject = _scriptEngine.Evaluate("_event");
-                        
+
                         dynamicCommand.execute.Target.Invoke(_scriptEngine, jsEventObject);
                     }
 
@@ -424,7 +425,7 @@ namespace IW4MAdmin.Application.Misc
 
                         throw new PluginException("A runtime error occured while executing action for script plugin");
                     }
-                    
+
                     catch (Exception ex)
                     {
                         using (LogContext.PushProperty("Server", gameEvent.Owner?.ToString()))
@@ -454,83 +455,71 @@ namespace IW4MAdmin.Application.Misc
             return commandList;
         }
 
-        private void GetDvarAsync(Server server, string dvarName, Delegate onCompleted)
+        private void BeginGetDvar(Server server, string dvarName, Delegate onCompleted)
         {
-            Task.Run(() =>
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
+            
+            server.BeginGetDvar(dvarName, result =>
             {
-                var tokenSource = new CancellationTokenSource();
-                tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
-                string result = null;
-                var success = true;
+                var shouldRelease = false;
                 try
                 {
-                    result = server.GetDvarAsync<string>(dvarName, token: tokenSource.Token).GetAwaiter().GetResult().Value;
-                }
-                catch
-                {
-                    success = false;
-                }
+                    _onProcessing.Wait(tokenSource.Token);
+                    shouldRelease = true;
+                    var (success, value) = (ValueTuple<bool, string>)result.AsyncState;
 
-                _onProcessing.Wait();
-                try
-                {
-                    onCompleted.DynamicInvoke(JsValue.Undefined,
-                        new[]
-                        {
-                            JsValue.FromObject(_scriptEngine, server), 
-                            JsValue.FromObject(_scriptEngine, dvarName),
-                            JsValue.FromObject(_scriptEngine, result),
-                            JsValue.FromObject(_scriptEngine, success), 
-                        });
-                }
-
-                finally
-                {
-                    if (_onProcessing.CurrentCount == 0)
-                    {
-                        _onProcessing.Release();
-                    }
-                }
-            });
-        }
-        private void SetDvarAsync(Server server, string dvarName, string dvarValue, Delegate onCompleted)
-        {
-            Task.Run(() =>
-            {
-                var tokenSource = new CancellationTokenSource();
-                tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
-                var success = true;
-
-                try
-                {
-                    server.SetDvarAsync(dvarName, dvarValue, tokenSource.Token).GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    success = false;
-                }
-
-                _onProcessing.Wait();
-                try
-                {
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
                         {
                             JsValue.FromObject(_scriptEngine, server),
-                            JsValue.FromObject(_scriptEngine, dvarName), 
-                            JsValue.FromObject(_scriptEngine, dvarValue),
+                            JsValue.FromObject(_scriptEngine, dvarName),
+                            JsValue.FromObject(_scriptEngine, value),
                             JsValue.FromObject(_scriptEngine, success)
                         });
                 }
 
                 finally
                 {
-                    if (_onProcessing.CurrentCount == 0)
+                    if (_onProcessing.CurrentCount == 0 && shouldRelease)
                     {
                         _onProcessing.Release();
                     }
                 }
-            });
+            }, tokenSource.Token);
+        }
+
+        private void BeginSetDvar(Server server, string dvarName, string dvarValue, Delegate onCompleted)
+        {
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
+            
+            server.BeginSetDvar(dvarName, dvarValue, result =>
+            {
+                var shouldRelease = false;
+                try
+                {
+                    _onProcessing.Wait(tokenSource.Token);
+                    shouldRelease = true;
+                    var success = (bool)result.AsyncState;
+                    
+                    onCompleted.DynamicInvoke(JsValue.Undefined,
+                        new[]
+                        {
+                            JsValue.FromObject(_scriptEngine, server),
+                            JsValue.FromObject(_scriptEngine, dvarName),
+                            JsValue.FromObject(_scriptEngine, dvarValue),
+                            JsValue.FromObject(_scriptEngine, success)
+                        });
+                }
+                finally
+                {
+                    if (_onProcessing.CurrentCount == 0 && shouldRelease)
+                    {
+                        _onProcessing.Release();
+                    }
+                }
+            }, tokenSource.Token);
         }
     }
 

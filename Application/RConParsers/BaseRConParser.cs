@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
+using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.Logging;
 using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -141,6 +142,30 @@ namespace IW4MAdmin.Application.RConParsers
             };
         }
 
+        public void BeginGetDvar(IRConConnection connection, string dvarName, AsyncCallback callback, CancellationToken token = default)
+        {
+            GetDvarAsync<string>(connection, dvarName, token: token).ContinueWith(action =>
+            {
+                if (action.Exception is null)
+                {
+                    callback?.Invoke(new AsyncResult
+                    {
+                        IsCompleted = true,
+                        AsyncState = (true, action.Result.Value)
+                    });
+                }
+
+                else
+                {
+                    callback?.Invoke(new AsyncResult
+                    {
+                        IsCompleted = true,
+                        AsyncState = (false, (string)null)
+                    });
+                }
+            }, token);
+        }
+
         public virtual async Task<IStatusResponse> GetStatusAsync(IRConConnection connection, CancellationToken token = default)
         {
             var response = await connection.SendQueryAsync(StaticHelpers.QueryType.COMMAND_STATUS, "status", token);
@@ -194,6 +219,31 @@ namespace IW4MAdmin.Application.RConParsers
                 : $"{dvarName} {dvarValue}";
 
             return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString, token)).Length > 0;
+        }
+
+        public void BeginSetDvar(IRConConnection connection, string dvarName, object dvarValue, AsyncCallback callback,
+            CancellationToken token = default)
+        {
+            SetDvarAsync(connection, dvarName, dvarValue, token).ContinueWith(action =>
+            {
+                if (action.Exception is null)
+                {
+                    callback?.Invoke(new AsyncResult
+                    {
+                        IsCompleted = true,
+                        AsyncState = true
+                    });
+                }
+
+                else
+                {
+                    callback?.Invoke(new AsyncResult
+                    {
+                        IsCompleted = true,
+                        AsyncState = false
+                    });
+                }
+            }, token);
         }
 
         private List<EFClient> ClientsFromStatus(string[] Status)

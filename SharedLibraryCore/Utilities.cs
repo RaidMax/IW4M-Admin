@@ -773,6 +773,11 @@ namespace SharedLibraryCore
         {
             return await server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue, token);
         }
+
+        public static void BeginGetDvar(this Server server, string dvarName, AsyncCallback callback, CancellationToken token = default)
+        {
+            server.RconParser.BeginGetDvar(server.RemoteConnection, dvarName, callback, token);
+        }
         
         public static async Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName,
             T fallbackValue = default)
@@ -808,6 +813,12 @@ namespace SharedLibraryCore
         {
             await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token);
         }
+
+        public static void BeginSetDvar(this Server server, string dvarName, object dvarValue,
+            AsyncCallback callback, CancellationToken token = default)
+        {
+            server.RconParser.BeginSetDvar(server.RemoteConnection, dvarName, dvarValue, callback, token);
+        }
         
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
         {
@@ -824,9 +835,17 @@ namespace SharedLibraryCore
             return await ExecuteCommandAsync(server, commandName, default);
         }
 
-        public static Task<IStatusResponse> GetStatusAsync(this Server server, CancellationToken token)
+        public static async Task<IStatusResponse> GetStatusAsync(this Server server, CancellationToken token)
         {
-            return server.RconParser.GetStatusAsync(server.RemoteConnection, token);
+            try
+            {
+                return await server.RconParser.GetStatusAsync(server.RemoteConnection, token);
+            }
+
+            catch (TaskCanceledException)
+            {
+                return null;
+            }
         }
 
         /// <summary>

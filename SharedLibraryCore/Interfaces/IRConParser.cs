@@ -55,6 +55,8 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="token"></param>
         /// <returns></returns>
         Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default, CancellationToken token = default);
+        
+        void BeginGetDvar(IRConConnection connection, string dvarName, AsyncCallback callback, CancellationToken token = default);
 
         /// <summary>
         ///     set value of DVAR by name
@@ -65,6 +67,8 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="token"></param>
         /// <returns></returns>
         Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default);
+        
+        void BeginSetDvar(IRConConnection connection, string dvarName, object dvarValue, AsyncCallback callback, CancellationToken token = default);
 
         /// <summary>
         ///     executes a console command on the server

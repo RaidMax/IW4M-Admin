@@ -22,10 +22,10 @@
     }
 }
 
-<div class="pt-15 pl-15 pr-15 d-flex flex-wrap flex-column flex-md-row justify-content-between w-full w-auto-lg">
+<div class="pt-15 pl-15 pr-15 d-flex flex-wrap flex-column flex-md-row w-full w-auto-lg">
     @if (groupedClients.Count > 0)
     {
-        <div class="flex-fill flex-lg-grow-0 w-full w-md-half pr-md-10 pb-md-10">
+        <div class="flex-fill flex-lg-grow-0 w-full w-md-half">
             @foreach (var chat in Model.ChatHistory)
             {
                 var message = chat.IsHidden && !ViewBag.Authorized ? chat.HiddenMessage : chat.Message;
@@ -33,7 +33,6 @@
 
                 <div class="text-truncate">
                     <i class="oi @stateIcon"></i>
-
                     <span>
                         <color-code value="@chat.Name"></color-code>
                     </span>
@@ -47,36 +46,34 @@
                         </span>
                     }
                 </div>
-        
             }
-                <hr class="d-block d-md-none"/>
+            <hr class="d-block d-md-none"/>
         </div>
     }
 
-    <div class="d-flex flex-row w-full w-md-half pl-md-10 pb-md-10">
-        
+    <div class="d-flex flex-row w-full w-md-half">
         @foreach (var clientIndex in groupedClients)
         {
-            <div class="@(clientIndex.index == 1 ? "pl-md-10" : "pr-md-10") w-half w-xl-full">
+            <div class="w-half">
                 @foreach (var client in clientIndex.group)
                 {
                     var levelColorClass = !ViewBag.Authorized || client.client.LevelInt == 0 ? "text-light-dm text-dark-lm" : $"level-color-{client.client.LevelInt}";
-                    <div class="d-flex @(clientIndex.index == 1 ? "justify-content-start ml-auto flex-row-reverse" : "ml-auto") w-full w-xl-200">
+                    <div class="d-flex @(clientIndex.index == 1 ? "justify-content-start flex-row-reverse" : "")">
                         <has-permission entity="AdminMenu" required-permission="Update">
                             <a href="#actionModal" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId" aria-hidden="true">
-                                <i class="oi oi-circle-x font-size-12 @levelColorClass @(clientIndex.index == 1 ? "ml-5" : "mr-5")"></i>
+                                <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
                             </a>
                         </has-permission>
-                        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.client.ClientId" class="@levelColorClass no-decoration text-truncate">
+                        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.client.ClientId" class="@levelColorClass no-decoration text-truncate ml-5 mr-5">
                             <color-code value="@client.client.Name"></color-code>
                         </a>
                     </div>
                 }
             </div>
         }
-         @if (groupedClients.Count > 0)
-         {
-             <br/>
-         }
+        @if (groupedClients.Count > 0)
+        {
+            <br/>
+        }
     </div>
 </div>

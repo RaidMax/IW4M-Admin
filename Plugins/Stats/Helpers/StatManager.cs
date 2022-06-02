@@ -818,7 +818,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
         {
-            var detectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.ServerDetectionTypes;
+            var serverDetectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.ServerDetectionTypes;
+            var gameDetectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.GameDetectionTypes;
             var ignoredClients = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredClientIds;
 
             if (ignoredClients.Contains(clientId))
@@ -826,10 +827,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return false;
             }
 
-
             try
             {
-                if (!detectionTypes[server.EndPoint].Contains(detectionType))
+                if (!serverDetectionTypes[server.EndPoint].Contains(detectionType))
                 {
                     return false;
                 }
@@ -837,6 +837,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             catch (KeyNotFoundException)
             {
+            }
+            
+            try
+            {
+                if (!gameDetectionTypes[server.GameName].Contains(detectionType))
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                // ignored
             }
 
             return true;

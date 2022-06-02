@@ -269,10 +269,10 @@ InitializeGameMethods()
     {
         level.overrideMethods["noclip"] = ::NoClip;
     }
-	
+
     if ( level.eventBus.gamename == "IW5" ) 
-	{ //PlutoIW5 only allows Godmode and NoClip if cheats are on..
-        level.overrideMethods["god"] 	= ::IW5_God;
+    { //PlutoIW5 only allows Godmode and NoClip if cheats are on..
+        level.overrideMethods["god"] = ::IW5_God;
         level.overrideMethods["noclip"] = ::IW5_NoClip;
     }
 }
@@ -772,7 +772,9 @@ NoClipImpl()
     if ( !IsAlive( self ) )
     {
         self IPrintLnBold( "You are not alive" );
-        return;
+        // Due to bug when sometimes disabling noclip game thinks you're dead
+        // removing the return and allowing them to go back into noclip is probably better.
+        //return; 
     }
 
     self SetClientDvar( "sv_cheats", 1 );
@@ -783,17 +785,19 @@ NoClipImpl()
     self call [[level.overrideMethods["noclip"]]]( true );
     self Hide();
 
+    self.isNoClipped = true;
+
     self IPrintLnBold( "NoClip enabled" );
 }
 
 NoClipOffImpl()
 {
-    if ( !IsAlive( self ) )
+    if ( !IsDefined( self.isNoClipped ) || !self.isNoClipped ) 
     {
-        self IPrintLnBold( "You are not alive" );
+        self IPrintLnBold( "You are not no-clipped" );
         return;
     }
-    
+
     self SetClientDvar( "sv_cheats", 1 );
     self SetClientDvar( "cg_thirdperson", 0 );
     self SetClientDvar( "sv_cheats", 0 );
@@ -803,6 +807,16 @@ NoClipOffImpl()
     self Show();
 
     self IPrintLnBold( "NoClip disabled" );
+
+    if ( !IsAlive( self ) && self.isNoClipped )
+    {
+        // Sometimes you will bug exiting noclip where the game thinks you're dead
+        // but you're not. You will retain godmode but be able to run around and kill people. 
+        // So, it's important to let the user know.
+        self IPrintLnBold( "^1You are bugged! ^4Swap team." );
+    }
+
+    self.isNoClipped = false;
 }
 
 HideImpl()
@@ -817,7 +831,7 @@ HideImpl()
     self SetClientDvar( "cg_thirdperson", 1 );
     self SetClientDvar( "sv_cheats", 0 );
 
-    if ( !IsDefined( self.savedHealth ) || self.health < 1000  )
+    if ( !IsDefined( self.savedHealth ) || self.health < 1000 )
     {
         self.savedHealth = self.health;
         self.savedMaxHealth = self.maxhealth;
@@ -825,6 +839,8 @@ HideImpl()
 
     self call [[level.overrideMethods["god"]]]( true );
     self Hide();
+
+    self.isHidden = true;
 
     self IPrintLnBold( "You are now ^5hidden ^7from other players" );
 }
@@ -849,6 +865,8 @@ UnhideImpl()
 
     self call [[level.overrideMethods["god"]]]( false );
     self Show();
+
+    self.isHidden = false;
     
     self IPrintLnBold( "You are now ^5visible ^7to other players" );
 }

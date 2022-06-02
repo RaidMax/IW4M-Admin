@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Dtos
         public int Offset { get; set; }
 
         /// <summary>
-        ///     how many itesm to take
+        ///     how many items to take
         /// </summary>
         public int Count { get; set; } = 100;
 

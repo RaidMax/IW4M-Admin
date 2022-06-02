@@ -24,11 +24,12 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Helpers;
-using IW4MAdmin.Plugins.Stats.Config;
 using Stats.Client.Abstractions;
 using Stats.Config;
 using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
+using WebfrontCore.QueryHelpers;
+using WebfrontCore.QueryHelpers.Models;
 
 namespace WebfrontCore
 {
@@ -127,6 +128,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaServiceV2>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ApplicationConfiguration>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ClientService>());
+            services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>(); 
             services.AddSingleton(
                 Program.ApplicationServiceProvider.GetRequiredService<IServerDistributionCalculator>());
             services.AddSingleton(Program.ApplicationServiceProvider

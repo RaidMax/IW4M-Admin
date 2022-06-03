@@ -46,7 +46,7 @@ namespace IW4MAdmin.Application.RConParsers
             {ColorCodes.White.ToString(), "^7"},
             {ColorCodes.Map.ToString(), "^8"},
             {ColorCodes.Grey.ToString(), "^9"},
-            {ColorCodes.Wildcard.ToString(), ":^"},
+            {ColorCodes.Wildcard.ToString(), "^:"}
         };
 
         public DynamicRConParserConfiguration(IParserRegexFactory parserRegexFactory)

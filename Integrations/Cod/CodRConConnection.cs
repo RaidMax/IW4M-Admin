@@ -368,7 +368,9 @@ namespace Integrations.Cod
                 throw new RConException("Unexpected response header from server");
             }
 
-            var splitResponse = headerSplit.Last().Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var splitResponse = headerSplit.Last().Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.StartsWith("^7") ? line[2..] : line).ToArray();
+            
             return splitResponse;
         }
 

@@ -4,11 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
+using Data.Models;
 using Data.Models.Client.Stats;
-using Microsoft.AspNetCore.Hosting.Server;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using static SharedLibraryCore.Server;
@@ -72,6 +70,7 @@ namespace WebfrontCore.ViewComponents
                     ID = server.EndPoint,
                     Port = server.Port,
                     Map = server.CurrentMap.Alias,
+                    Game = (Reference.Game)server.GameName,
                     ClientCount = server.Clients.Count(client => client != null),
                     MaxClients = server.MaxClients,
                     GameType = server.GametypeName,

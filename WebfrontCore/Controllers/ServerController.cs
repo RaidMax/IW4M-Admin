@@ -5,6 +5,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
+using Data.Models;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using WebfrontCore.ViewModels;
@@ -34,6 +35,7 @@ namespace WebfrontCore.Controllers
                 ID = s.EndPoint,
                 Port = s.Port,
                 Map = s.CurrentMap.Alias,
+                Game = (Reference.Game)s.GameName,
                 ClientCount = s.Clients.Count(client => client != null),
                 MaxClients = s.MaxClients,
                 GameType = s.GametypeName,

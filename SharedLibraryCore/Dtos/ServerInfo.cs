@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Data.Models;
 using SharedLibraryCore.Helpers;
 
 namespace SharedLibraryCore.Dtos
@@ -40,5 +41,6 @@ namespace SharedLibraryCore.Dtos
                 return Math.Round(valid.Select(player => player.ZScore.Value).Average(), 2);
             }
         }
+        public Reference.Game Game { get; set; }
     }
 }

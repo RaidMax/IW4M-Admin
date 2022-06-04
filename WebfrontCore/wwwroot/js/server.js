@@ -150,7 +150,7 @@ function refreshClientActivity(serverId) {
 
 $(document).ready(function () {
     $('.server-join-button').click(function (e) {
-        $(this).children('.server-header-ip-address').show();
+        $(this).parent().parent().find('.server-header-ip-address').show();
     });
 
     $('.server-history-row').each(function (index, element) {

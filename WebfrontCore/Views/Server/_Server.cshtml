@@ -19,16 +19,17 @@
 }
 
 <div class="card mt-20 mb-20 ml-0 mr-0 p-0">
-    <div class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-md-row flex-wrap justify-content-between text-light" id="server_header_@Model.ID">
-        <div class="d-flex align-self-center flex-column-reverse flex-md-row">
-            <div class="ml-5 mr-5 text-center">
+    <div class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-lg-row flex-wrap justify-content-between text-light" id="server_header_@Model.ID">
+        <!-- first column -->
+        <div class="d-flex align-self-center flex-column-reverse flex-lg-row col-12 col-lg-6">
+            <div class="ml-5 mr-5 text-center text-lg-left">
                 <color-code value="@Model.Name"></color-code>
+                <div class="server-header-ip-address font-weight-light" style="display:none">@(Model.ExternalIPAddress):@(Model.Port)</div>
             </div>
             <div class="d-flex justify-content-center">
                 <!-- connect button -->
-                <a href="@Model.ConnectProtocolUrl" class="text-light align-self-center" title="@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
+                <a href="@Model.ConnectProtocolUrl" class="text-light align-self-center server-join-button" title="@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
                     <i class="oi oi-play-circle ml-5 mr-5"></i>
-                    <span class="server-header-ip-address" style="display:none;">@(Model.ExternalIPAddress):@(Model.Port)</span>
                 </a>
                 <has-permission entity="AdminMenu" required-permission="Update">
                     <!-- send message button -->
@@ -43,7 +44,8 @@
                 </a>
             </div>
         </div>
-        <div class="align-self-center">
+        <!-- second column -->
+        <div class="col-12 align-self-center text-center text-lg-left col-lg-4">
             <span>@Model.Map</span>
             @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
             {
@@ -51,7 +53,8 @@
                 <span>@Model.GameType</span>
             }
         </div>
-        <div class="align-self-center d-flex flex-column flex-md-row">
+         <!-- third column -->
+        <div class="align-self-center d-flex flex-column flex-lg-row col-12 col-lg-2 justify-content-end">
             @if (Model.LobbyZScore != null)
             {
                 <div data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_HOME_RATING_DESC"]" class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">

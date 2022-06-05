@@ -115,30 +115,35 @@
                         <span class="name">@ViewBag.Localization["WEBFRONT_NAV_CONSOLE"]</span>
                     </a>
                 </has-permission>
-                @if (ViewBag.User.Level >= EFClient.Permission.Owner)
-                {
-                    <a asp-controller="Configuration" asp-action="Edit" class="sidebar-link">
-                        <i class="oi oi-cog mr-5"></i>
-                        <span class="name">Configuration</span>
-                    </a>
-                }
-                <has-permission entity="AuditPage" required-permission="Read">
-                    <a asp-controller="Admin" asp-action="AuditLog" class="sidebar-link">
-                        <i class="oi oi-book mr-5"></i>
-                        <span class="name">@ViewBag.Localization["WEBFRONT_NAV_AUDIT_LOG"]</span>
-                    </a>
-                </has-permission>
-                <has-permission entity="RecentPlayersPage" required-permission="Read">
-                    <a class="sidebar-link profile-action" href="#actionModal" data-action="RecentClients" title="@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]">
-                        <i class="oi oi-timer mr-5"></i>
-                        <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]</span>
-                    </a>
-                </has-permission>
-                <a class="sidebar-link profile-action" href="#actionModal" data-action="GenerateLoginToken" data-response-duration="30000" title="@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]">
-                    <i class="oi oi-key mr-5"></i>
-                    <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]</span>
+                <has-permission entity="Penalty" required-permission="Read"></has-permission>
+                <a asp-controller="Admin" asp-action="BanManagement" class="sidebar-link">
+                    <i class="oi oi-ban mr-5"></i>
+                    <span class="name">Ban Management</span>
                 </a>
             </has-permission>
+            @if (ViewBag.User.Level >= EFClient.Permission.Owner)
+            {
+                <a asp-controller="Configuration" asp-action="Edit" class="sidebar-link">
+                    <i class="oi oi-cog mr-5"></i>
+                    <span class="name">Configuration</span>
+                </a>
+            }
+            <has-permission entity="AuditPage" required-permission="Read">
+                <a asp-controller="Admin" asp-action="AuditLog" class="sidebar-link">
+                    <i class="oi oi-book mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_AUDIT_LOG"]</span>
+                </a>
+            </has-permission>
+            <has-permission entity="RecentPlayersPage" required-permission="Read">
+                <a class="sidebar-link profile-action" href="#actionModal" data-action="RecentClients" title="@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]">
+                    <i class="oi oi-timer mr-5"></i>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]</span>
+                </a>
+            </has-permission>
+            <a class="sidebar-link profile-action" href="#actionModal" data-action="GenerateLoginToken" data-response-duration="30000" title="@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]">
+                <i class="oi oi-key mr-5"></i>
+                <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]</span>
+            </a>
             @if (ViewBag.Authorized)
             {
                 <a asp-controller="Account" asp-action="Logout" class="sidebar-link">

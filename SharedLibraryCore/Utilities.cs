@@ -47,6 +47,8 @@ namespace SharedLibraryCore
         public static char[] DirectorySeparatorChars = { '\\', '/' };
         public static char CommandPrefix { get; set; } = '!';
 
+        public static string ToStandardFormat(this DateTime? time) => time?.ToString("yyyy-MM-dd H:mm:ss");
+
         public static EFClient IW4MAdminClient(Server server = null)
         {
             return new EFClient

@@ -1,0 +1,66 @@
+@model IEnumerable<WebfrontCore.QueryHelpers.Models.BanInfo>
+
+<div class="content mt-0">
+    <h2 class="content-title mt-20 mb-10">@ViewBag.Title</h2>
+    @if (!Model.Any())
+    {
+        <div class="text-muted mb-10">Search for records...</div>
+    }
+    <form method="get" class="mt-10">
+        <div class="d-flex flex-column flex-md-row">
+            <div class="input-group">
+                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientNameInput" name="clientName" value="@ViewBag.ClientName" placeholder="Client Name">
+                <div class="input-group-append">
+                    <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
+                        <i class="oi oi-magnifying-glass"></i>
+                    </button>
+                </div>
+
+            </div>
+            <div class="input-group mr-md-5 ml-md-10 mt-10 mb-5 mt-md-0 mb-md-0">
+                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientGuidInput" name="clientGuid" value="@ViewBag.ClientGuid" placeholder="Client GUID">
+                <div class="input-group-append">
+                    <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
+                        <i class="oi oi-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="input-group mr-md-10 ml-md-5 mb-10 mt-5 mt-md-0 mb-md-0">
+                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientIPInput" name="clientIP" value="@ViewBag.ClientIP" placeholder="Client IP">
+                <div class="input-group-append">
+                    <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
+                        <i class="oi oi-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="input-group">
+                <input type="number" class="form-control bg-dark-dm bg-light-ex-lm" id="clientIdInput" name="clientId" value="@ViewBag.ClientId" placeholder="Client Id">
+                <div class="input-group-append">
+                    <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
+                        <i class="oi oi-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    <div id="ban_entry_list">
+        <partial name="_BanEntries" for="@Model"/>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="w-full text-center">
+            <i id="loaderLoad" class="oi oi-chevron-bottom mt-10 loader-load-more text-primary m-auto" aria-hidden="true"></i>
+        </div>
+    }
+</div>
+
+@section scripts {
+    <script>        
+    initLoader('/Admin/BanManagementList', '#ban_entry_list', 10, 10, [{ 'name': 'clientIP', 'value': () => $('#clientIPInput').val() },
+                                                                       { 'name': 'clientGuid', 'value': () => $('#clientGuidInput').val() },
+                                                                       { 'name': 'clientName', 'value': () => $('#clientNameInput').val() },
+                                                                       { 'name': 'clientId', 'value': () => $('#clientIdInput').val() }]);
+    </script>
+}

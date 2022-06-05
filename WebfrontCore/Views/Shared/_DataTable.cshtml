@@ -1,4 +1,5 @@
-﻿@model WebfrontCore.ViewModels.TableInfo
+﻿@using WebfrontCore.ViewModels
+@model WebfrontCore.ViewModels.TableInfo
 @{
     Layout = null;
 }
@@ -17,7 +18,7 @@
     </tr>
     </thead>
     <tbody>
-    @{ var start = 0;}
+    @{ var start = 0; }
     @if (!Model.Rows.Any())
     {
         <!-- desktop -->
@@ -35,15 +36,40 @@
     @foreach (var row in Model.Rows)
     {
         <!-- desktop -->
-        <tr class="bg-dark-dm bg-light-lm @(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row-lg": "d-none d-lg-table-row")">
+        <tr class="bg-dark-dm bg-light-lm @(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row-lg" : "d-none d-lg-table-row")">
             @for (var i = 0; i < Model.Columns.Count; i++)
             {
-                <td>@row.Datum[i]</td>
+                var data = row.Datum[i];
+                <td>
+                    @if (data.Template is null)
+                    {
+                        if (data.Type == ColumnType.Text)
+                        {
+                            <span>@data.Value</span>
+                        }
+                        if (data.Type == ColumnType.Link)
+                        {
+                            <a href="@data.Data" class="no-decoration">@data.Value</a>
+                        }
+                        if (data.Type == ColumnType.Icon)
+                        {
+                            <span class="oi @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
+                        }
+                        if (data.Type == ColumnType.Button)
+                        {
+                            <div class="btn profile-action" data-action="@data.Data" data-action-id="@data.Id">@data.Value</div>
+                        }
+                    }
+                    else
+                    {
+                        @data.Template
+                    }
+                </td>
             }
         </tr>
 
         <!-- mobile -->
-        <tr class="@(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row": "d-flex d-table-row d-lg-none")">
+        <tr class="@(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row" : "d-flex d-table-row d-lg-none")">
             <td class="bg-primary text-light text-right w-125">
                 @foreach (var column in Model.Columns)
                 {
@@ -53,7 +79,21 @@
             <td class="bg-dark-dm bg-light-lm flex-fill w-200">
                 @for (var i = 0; i < Model.Columns.Count; i++)
                 {
-                    <div class="mt-5 mb-5 text-truncate" style="min-width:0">@row.Datum[i]</div>
+                    var data = row.Datum[i];
+                    <div class="mt-5 mb-5 text-truncate" style="min-width:0">
+                        @if (data.Type == ColumnType.Text)
+                        {
+                            <span>@data.Value</span>
+                        }
+                        @if (data.Type == ColumnType.Link)
+                        {
+                            <a href="@data.Data">@data.Value</a>
+                        }
+                        @if (data.Type == ColumnType.Icon)
+                        {
+                            <span class="oi @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
+                        }
+                    </div>
                 }
             </td>
         </tr>

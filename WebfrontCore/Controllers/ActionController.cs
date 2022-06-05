@@ -142,7 +142,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult UnbanForm()
+        public IActionResult UnbanForm(long? id)
         {
             var info = new ActionInfo
             {
@@ -159,6 +159,15 @@ namespace WebfrontCore.Controllers
                 Action = "UnbanAsync",
                 ShouldRefresh = true
             };
+            if (id is not null)
+            {
+                info.Inputs.Add(new()
+                {
+                    Name = "targetId",
+                    Value = id.ToString(),
+                    Type = "hidden"
+                });
+            }
 
             return View("_ActionForm", info);
         }

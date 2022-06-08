@@ -790,12 +790,10 @@ namespace IW4MAdmin
         /// array index 2 = updated clients
         /// </summary>
         /// <returns></returns>
-        async Task<List<EFClient>[]> PollPlayersAsync()
+        async Task<List<EFClient>[]> PollPlayersAsync(CancellationToken token)
         {
-            var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
             var currentClients = GetClientsAsList();
-            var statusResponse = await this.GetStatusAsync(tokenSource.Token);
+            var statusResponse = await this.GetStatusAsync(token);
 
             if (statusResponse is null)
             {
@@ -918,11 +916,11 @@ namespace IW4MAdmin
         private DateTime _lastMessageSent = DateTime.Now;
         private DateTime _lastPlayerCount = DateTime.Now;
 
-        public override async Task<bool> ProcessUpdatesAsync(CancellationToken cts)
+        public override async Task<bool> ProcessUpdatesAsync(CancellationToken token)
         {
             try
             {
-                if (cts.IsCancellationRequested)
+                if (token.IsCancellationRequested)
                 {
                     await ShutdownInternal();
                     return true;
@@ -936,7 +934,7 @@ namespace IW4MAdmin
                         return true;
                     }
 
-                    var polledClients = await PollPlayersAsync();
+                    var polledClients = await PollPlayersAsync(token);
 
                     if (polledClients is null)
                     {
@@ -947,7 +945,7 @@ namespace IW4MAdmin
                                  .Where(client => !client.IsZombieClient /* ignores "fake" zombie clients */))
                     {
                         disconnectingClient.CurrentServer = this;
-                        var e = new GameEvent()
+                        var e = new GameEvent
                         {
                             Type = GameEvent.EventType.PreDisconnect,
                             Origin = disconnectingClient,

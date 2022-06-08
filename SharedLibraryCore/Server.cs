@@ -201,7 +201,7 @@ namespace SharedLibraryCore
                 .ToList();
         }
 
-        public virtual Task<bool> ProcessUpdatesAsync(CancellationToken cts)
+        public virtual Task<bool> ProcessUpdatesAsync(CancellationToken token)
         {
             return (Task<bool>)Task.CompletedTask;
         }

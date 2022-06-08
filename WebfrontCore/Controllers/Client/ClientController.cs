@@ -88,6 +88,7 @@ namespace WebfrontCore.Controllers
             var clientDto = new PlayerInfo
             {
                 Name = client.Name,
+                Game = client.GameName ?? Reference.Game.UKN,
                 Level = displayLevel,
                 LevelInt = displayLevelInt,
                 ClientId = client.ClientId,
@@ -181,7 +182,8 @@ namespace WebfrontCore.Controllers
                     Name = admin.Name,
                     ClientId = admin.ClientId,
                     LastConnection = admin.LastConnection,
-                    IsMasked = admin.Masked
+                    IsMasked = admin.Masked,
+                    Game = admin.GameName ?? Reference.Game.UKN
                 });
             }
 

@@ -178,6 +178,7 @@ namespace SharedLibraryCore.Services
                 .Select(_client => new EFClient
                 {
                     ClientId = _client.ClientId,
+                    GameName = _client.GameName,
                     AliasLinkId = _client.AliasLinkId,
                     Level = _client.Level,
                     Connections = _client.Connections,
@@ -789,7 +790,8 @@ namespace SharedLibraryCore.Services
                     PasswordSalt = client.PasswordSalt,
                     NetworkId = client.NetworkId,
                     LastConnection = client.LastConnection,
-                    Masked = client.Masked
+                    Masked = client.Masked,
+                    GameName = client.GameName
                 };
 
             return await iqClients.ToListAsync();

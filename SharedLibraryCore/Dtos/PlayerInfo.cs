@@ -9,6 +9,7 @@ namespace SharedLibraryCore.Dtos
     public class PlayerInfo
     {
         public string Name { get; set; }
+        public Reference.Game Game { get; set; }
         public int ClientId { get; set; }
         public string Level { get; set; }
         public string Tag { get; set; }

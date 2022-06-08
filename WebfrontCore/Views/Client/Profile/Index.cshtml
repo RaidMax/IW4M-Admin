@@ -58,7 +58,8 @@
     </has-permission>
 }
 
-<h2 class="content-title mb-10">Player Profile</h2>
+<h2 class="content-title mb-0">Player Profile</h2>
+<div class="font-size-12 text-muted">@ViewBag.Localization[$"GAME_{Model.Game}"]</div>
 
 <div id="profile_wrapper" class="mb-10 mt-10">
 
@@ -200,7 +201,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div>
             <hr class="mr-5 ml-5"/>
             <!-- meta info block -->
@@ -299,7 +300,7 @@
             EntityId = Model.ClientId
         });
     }
-    
+
     if (Model.LevelInt < (int)ViewBag.User.Level && Model.Online)
     {
         menuItems.Items.Add(new SideContextMenuItem

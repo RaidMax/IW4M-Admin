@@ -61,6 +61,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
             }
             
             ViewBag.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
+            ViewBag.ServerId = matchedServerId;
 
             return View("~/Views/Client/Statistics/Index.cshtml", _manager.GetServers()
                 .Select(server => new ServerInfo

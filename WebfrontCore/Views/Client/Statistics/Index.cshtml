@@ -43,6 +43,7 @@
 {
     <environment include="Development">
         <script type="text/javascript" src="~/js/stats.js"></script>
+        <script type="text/javascript" src="~/lib/canvas.js/canvasjs.js"></script>
     </environment>
-    <script>initLoader('/Stats/GetTopPlayersAsync', '#topPlayersContainer', 25);</script>
+    <script>initLoader('/Stats/GetTopPlayersAsync', '#topPlayersContainer', 25, 25, [{ 'name': 'serverId', 'value' : () => @(ViewBag.ServerId ?? 0) }]);</script>
 }

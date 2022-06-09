@@ -2,7 +2,7 @@
 @using WebfrontCore.ViewModels
 
 <div class="content mt-20 row">
-    <div class="col-12 col-lg-9 col-xl-10 mt-0">
+    <div class="col-12 col-lg-9 mt-0">
         <h2 class="content-title mb-0">Top Players</h2>
         <span class="text-muted">
             <color-code value="@(Model.FirstOrDefault(m => m.Endpoint == ViewBag.SelectedServerId)?.Name ?? ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"])"></color-code>

@@ -13,7 +13,7 @@
 </style>
 
 <div class="content mt-20 row">
-    <div class="col-12 col-lg-9 col-xl-10">
+    <div class="col-12 col-lg-9">
         <h2 class="content-title mb-0">Live Radar</h2> 
         <div class="text-muted mb-15">
             <color-code value="@((Model.FirstOrDefault(server => server.Endpoint == ViewBag.SelectedServerId) ?? Model.First()).Name)"></color-code>

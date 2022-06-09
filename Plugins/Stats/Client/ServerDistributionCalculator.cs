@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models.Client;
@@ -88,8 +89,8 @@ namespace Stats.Client
                 return zScore ?? 0;
             }, MaxZScoreCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30));
 
-            await _distributionCache.GetCacheItem(DistributionCacheKey);
-            await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey);
+            await _distributionCache.GetCacheItem(DistributionCacheKey, new CancellationToken());
+            await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new CancellationToken());
 
             /*foreach (var serverId in _serverIds)
             {
@@ -132,7 +133,7 @@ namespace Stats.Client
 
         public async Task<double> GetZScoreForServer(long serverId, double value)
         {
-            var serverParams = await _distributionCache.GetCacheItem(DistributionCacheKey);
+            var serverParams = await _distributionCache.GetCacheItem(DistributionCacheKey, new CancellationToken());
             if (!serverParams.ContainsKey(serverId))
             {
                 return 0.0;
@@ -150,7 +151,7 @@ namespace Stats.Client
 
         public async Task<double?> GetRatingForZScore(double? value)
         {
-            var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey);
+            var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new CancellationToken());
             return maxZScore == 0 ? null : value.GetRatingForZScore(maxZScore);
         }
     }

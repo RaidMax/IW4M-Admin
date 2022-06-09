@@ -42,10 +42,11 @@ namespace IW4MAdmin.Plugins.Stats
         private readonly ILogger<Plugin> _logger;
         private readonly List<IClientStatisticCalculator> _statCalculators;
         private readonly IServerDistributionCalculator _serverDistributionCalculator;
+        private readonly IServerDataViewer _serverDataViewer;
 
         public Plugin(ILogger<Plugin> logger, IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory databaseContextFactory,
             ITranslationLookup translationLookup, IMetaServiceV2 metaService, IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper, ILogger<StatManager> managerLogger, 
-            IEnumerable<IClientStatisticCalculator> statCalculators, IServerDistributionCalculator serverDistributionCalculator)
+            IEnumerable<IClientStatisticCalculator> statCalculators, IServerDistributionCalculator serverDistributionCalculator, IServerDataViewer serverDataViewer)
         {
             Config = configurationHandlerFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
             _databaseContextFactory = databaseContextFactory;
@@ -56,6 +57,7 @@ namespace IW4MAdmin.Plugins.Stats
             _logger = logger;
             _statCalculators = statCalculators.ToList();
             _serverDistributionCalculator = serverDistributionCalculator;
+            _serverDataViewer = serverDataViewer;
         }
 
         public async Task OnEventAsync(GameEvent gameEvent, Server server)
@@ -201,13 +203,17 @@ namespace IW4MAdmin.Plugins.Stats
                 var performancePlayTime = validPerformanceValues.Sum(s => s.TimePlayed);
                 var performance = Math.Round(validPerformanceValues.Sum(c => c.Performance * c.TimePlayed / performancePlayTime), 2);
                 var spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Count(c => c.SPM > 0), 1);
+                var overallRanking = await Manager.GetClientOverallRanking(request.ClientId);
 
                 return new List<InformationResponse>
                 {
                     new InformationResponse
                     {
                         Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
-                        Value = "#" + (await Manager.GetClientOverallRanking(request.ClientId)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
+                        Value = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING_FORMAT"].FormatExt((overallRanking == 0 ? "--" :
+                            overallRanking.ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))),
+                            (await _serverDataViewer.RankedClientsCountAsync(token: token)).ToString("#,##0", new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))
+                        ),
                         Column = 0,
                         Order = 0,
                         Type = MetaType.Information

@@ -86,6 +86,7 @@ namespace Data.Models.Configuration
                 entity.HasIndex(ranking => ranking.Ranking);
                 entity.HasIndex(ranking => ranking.ZScore);
                 entity.HasIndex(ranking => ranking.UpdatedDateTime);
+                entity.HasIndex(ranking => ranking.CreatedDateTime);
             });
         }
     }

@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -13,26 +15,38 @@ namespace WebfrontCore.Controllers
     {
         private IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> _queryHelper;
         private readonly DefaultSettings _defaultConfig;
+        private readonly IServerDataViewer _serverDataViewer;
 
         public ClientStatisticsController(IManager manager,
             IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> queryHelper,
-            DefaultSettings defaultConfig) : base(manager)
+            DefaultSettings defaultConfig, IServerDataViewer serverDataViewer) : base(manager)
         {
             _queryHelper = queryHelper;
             _defaultConfig = defaultConfig;
+            _serverDataViewer = serverDataViewer;
         }
 
         [HttpGet("{id:int}/advanced")]
-        public async Task<IActionResult> Advanced(int id, [FromQuery] string serverId)
+        public async Task<IActionResult> Advanced(int id, [FromQuery] string serverId, CancellationToken token = default)
         {
             ViewBag.Config = _defaultConfig.GameStrings;
-            var hitInfo = await _queryHelper.QueryResource(new StatsInfoRequest
+            var hitInfo = (await _queryHelper.QueryResource(new StatsInfoRequest
             {
                 ClientId = id,
                 ServerEndpoint = serverId
-            });
+            })).Results.First();
+            
+            var server = Manager.GetServers().FirstOrDefault(server => server.ToString() == serverId);
+            long? matchedServerId = null;
 
-            return View("~/Views/Client/Statistics/Advanced.cshtml", hitInfo.Results.First());
+            if (server != null)
+            {
+                matchedServerId = StatManager.GetIdForServer(server);
+            }
+
+            hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
+
+            return View("~/Views/Client/Statistics/Advanced.cshtml", hitInfo);
         }
     }
 }

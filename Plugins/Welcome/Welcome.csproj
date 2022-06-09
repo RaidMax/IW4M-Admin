@@ -20,7 +20,7 @@
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2022.3.23.1" PrivateAssets="All" />
+    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2022.6.9.1" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

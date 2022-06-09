@@ -79,7 +79,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             }
             else
             {
-                gameEvent.Owner.Broadcast(topStats);
+                await gameEvent.Owner.BroadcastAsync(topStats);
             }
         }
     }

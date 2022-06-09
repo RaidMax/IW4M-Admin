@@ -14,6 +14,7 @@ namespace Stats.Dtos
         public EFClient.Permission Level { get; set; }
         public double? Performance { get; set; }
         public int? Ranking { get; set; }
+        public int TotalRankedClients { get; set; }
         public double? ZScore { get; set; }
         public double? Rating { get; set; }
         public List<ServerInfo> Servers { get; set; }

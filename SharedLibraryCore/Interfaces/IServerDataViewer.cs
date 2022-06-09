@@ -37,5 +37,13 @@ namespace SharedLibraryCore.Interfaces
         /// <returns></returns>
         Task<IEnumerable<ClientHistoryInfo>> ClientHistoryAsync(TimeSpan? overPeriod = null,
             CancellationToken token = default);
+
+        /// <summary>
+        ///     Retrieves the number of ranked clients for given server id
+        /// </summary>
+        /// <param name="serverId">ServerId to query on</param>
+        /// <param name="token">CancellationToken</param>
+        /// <returns></returns>
+        Task<int> RankedClientsCountAsync(long? serverId = null, CancellationToken token = default);
     }
 }

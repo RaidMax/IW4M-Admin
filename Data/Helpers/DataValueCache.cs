@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
@@ -15,8 +17,7 @@ namespace Data.Helpers
         private readonly ILogger _logger;
         private readonly IDatabaseContextFactory _contextFactory;
 
-        private readonly ConcurrentDictionary<string, CacheState<TReturnType>> _cacheStates =
-            new ConcurrentDictionary<string, CacheState<TReturnType>>();
+        private readonly ConcurrentDictionary<string, Dictionary<object, CacheState<TReturnType>>> _cacheStates = new();
 
         private bool _autoRefresh;
         private const int DefaultExpireMinutes = 15;
@@ -51,41 +52,61 @@ namespace Data.Helpers
         public void SetCacheItem(Func<DbSet<TEntityType>, CancellationToken, Task<TReturnType>> getter, string key,
             TimeSpan? expirationTime = null, bool autoRefresh = false)
         {
-            if (_cacheStates.ContainsKey(key))
-            {
-                _logger.LogDebug("Cache key {Key} is already added", key);
-                return;
-            }
-
-            var state = new CacheState<TReturnType>
-            {
-                Key = key,
-                Getter = getter,
-                ExpirationTime = expirationTime ?? TimeSpan.FromMinutes(DefaultExpireMinutes)
-            };
-
-            _autoRefresh = autoRefresh;
-
-            _cacheStates.TryAdd(key, state);
-
-            if (!_autoRefresh || expirationTime == TimeSpan.MaxValue)
-            {
-                return;
-            }
-
-            _timer = new Timer(state.ExpirationTime.TotalMilliseconds);
-            _timer.Elapsed += async (sender, args) => await RunCacheUpdate(state, CancellationToken.None);
-            _timer.Start();
+            SetCacheItem(getter, key, null, expirationTime, autoRefresh);
         }
 
-        public async Task<TReturnType> GetCacheItem(string keyName, CancellationToken cancellationToken = default)
+        public void SetCacheItem(Func<DbSet<TEntityType>, CancellationToken, Task<TReturnType>> getter, string key,
+            IEnumerable<object> ids = null, TimeSpan? expirationTime = null, bool autoRefresh = false)
+        {
+            ids ??= new[] { new object() };
+            
+            if (!_cacheStates.ContainsKey(key))
+            {
+                _cacheStates.TryAdd(key, new Dictionary<object, CacheState<TReturnType>>());
+            }
+
+            foreach (var id in ids)
+            {
+                if (_cacheStates[key].ContainsKey(id))
+                {
+                    continue;
+                }
+
+                var state = new CacheState<TReturnType>
+                {
+                    Key = key,
+                    Getter = getter,
+                    ExpirationTime = expirationTime ?? TimeSpan.FromMinutes(DefaultExpireMinutes)
+                };
+
+                _cacheStates[key].Add(id, state);
+
+                _autoRefresh = autoRefresh;
+                
+
+                if (!_autoRefresh || expirationTime == TimeSpan.MaxValue)
+                {
+                    return;
+                }
+                
+                _timer = new Timer(state.ExpirationTime.TotalMilliseconds);
+                _timer.Elapsed += async (sender, args) => await RunCacheUpdate(state, CancellationToken.None);
+                _timer.Start();
+            }
+        }
+
+        public async Task<TReturnType> GetCacheItem(string keyName, CancellationToken cancellationToken = default) =>
+            await GetCacheItem(keyName, null, cancellationToken);
+
+        public async Task<TReturnType> GetCacheItem(string keyName, object id = null,
+            CancellationToken cancellationToken = default)
         {
             if (!_cacheStates.ContainsKey(keyName))
             {
                 throw new ArgumentException("No cache found for key {key}", keyName);
             }
 
-            var state = _cacheStates[keyName];
+            var state = id is null ? _cacheStates[keyName].Values.First() : _cacheStates[keyName][id];
 
             // when auto refresh is off we want to check the expiration and value
             // when auto refresh is on, we want to only check the value, because it'll be refreshed automatically

@@ -475,6 +475,8 @@ namespace Data.Migrations.Postgresql
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("CreatedDateTime");
+
                     b.HasIndex("Ranking");
 
                     b.HasIndex("ServerId");

@@ -456,6 +456,8 @@ namespace Data.Migrations.MySql
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("CreatedDateTime");
+
                     b.HasIndex("Ranking");
 
                     b.HasIndex("ServerId");

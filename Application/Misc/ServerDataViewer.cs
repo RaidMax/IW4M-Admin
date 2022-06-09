@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models.Client;
+using Data.Models.Client.Stats;
 using Data.Models.Server;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -22,18 +23,20 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDataValueCache<EFServerSnapshot, (int?, DateTime?)> _snapshotCache;
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
         private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
+        private readonly IDataValueCache<EFClientRankingHistory, int> _rankedClientsCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
             Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?) TimeSpan.FromMinutes(10);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
-            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache)
+            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache)
         {
             _logger = logger;
             _snapshotCache = snapshotCache;
             _serverStatsCache = serverStatsCache;
             _clientHistoryCache = clientHistoryCache;
+            _rankedClientsCache = rankedClientsCache;
         }
 
         public async Task<(int?, DateTime?)> 
@@ -158,6 +161,31 @@ namespace IW4MAdmin.Application.Misc
             {
                 _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(ClientHistoryAsync));
                 return Enumerable.Empty<ClientHistoryInfo>();
+            }
+        }
+
+        public async Task<int> RankedClientsCountAsync(long? serverId = null, CancellationToken token = default)
+        {
+            _rankedClientsCache.SetCacheItem(async (set, cancellationToken) =>
+            {
+                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+                return await set
+                    .Where(rating => rating.Newest)
+                    .Where(rating => rating.ServerId == serverId)
+                    .Where(rating => rating.CreatedDateTime >= fifteenDaysAgo)
+                    .Where(rating => rating.Client.Level != EFClient.Permission.Banned)
+                    .Where(rating => rating.Ranking != null)
+                    .CountAsync(cancellationToken);
+            }, nameof(_rankedClientsCache), serverId is null ? null: new[] { (object)serverId },  _cacheTimeSpan, true);
+            
+            try
+            {
+                return await _rankedClientsCache.GetCacheItem(nameof(_rankedClientsCache), serverId, token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(RankedClientsCountAsync));
+                return 0;
             }
         }
     }

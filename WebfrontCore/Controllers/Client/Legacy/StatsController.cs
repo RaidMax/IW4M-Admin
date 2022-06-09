@@ -11,6 +11,7 @@ using Stats.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -28,10 +29,11 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         private readonly ITranslationLookup _translationLookup;
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly StatsConfiguration _config;
+        private readonly IServerDataViewer _serverDataViewer;
 
         public StatsController(ILogger<StatsController> logger, IManager manager, IResourceQueryHelper<ChatSearchQuery,
                 MessageResponse> resourceQueryHelper, ITranslationLookup translationLookup,
-            IDatabaseContextFactory contextFactory, StatsConfiguration config) : base(manager)
+            IDatabaseContextFactory contextFactory, StatsConfiguration config, IServerDataViewer serverDataViewer) : base(manager)
         {
             _logger = logger;
             _manager = manager;
@@ -39,15 +41,26 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
             _translationLookup = translationLookup;
             _contextFactory = contextFactory;
             _config = config;
+            _serverDataViewer = serverDataViewer;
         }
 
         [HttpGet]
-        public IActionResult TopPlayers(string serverId = null)
+        public async Task<IActionResult> TopPlayers(string serverId = null, CancellationToken token = default)
         {
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_STATS_INDEX_TITLE"];
             ViewBag.Description = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_STATS_INDEX_DESC"];
             ViewBag.Localization = _translationLookup;
             ViewBag.SelectedServerId = serverId;
+            
+            var server = _manager.GetServers().FirstOrDefault(server => server.ToString() == serverId);
+            long? matchedServerId = null;
+
+            if (server != null)
+            {
+                matchedServerId = StatManager.GetIdForServer(server);
+            }
+            
+            ViewBag.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
 
             return View("~/Views/Client/Statistics/Index.cshtml", _manager.GetServers()
                 .Select(server => new ServerInfo

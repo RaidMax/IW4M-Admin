@@ -4,7 +4,7 @@
     Layout = null;
 }
 <h5 class="modal-title mb-10">@Model.Name.Titleize()</h5>
-@if (Model.Inputs.Any())
+@if (Model.Inputs.Any(input => input.Type != "hidden"))
 {
     <hr class="mb-10"/>
 }
@@ -55,12 +55,12 @@
             <input type="@inputType" name="@input.Name" value="@value" hidden="hidden">
         }
     }
-    @if (Model.Inputs.Any())
+    @if (Model.Inputs.Any(input => input.Type != "hidden"))
     {
         <hr class="mb-10"/>
     }
     <div class="ml-auto">
         <button type="submit" class="btn btn-primary">@Model.ActionButtonLabel</button>
-        <a href="#" class="btn mr-5" role="button" onclick="halfmoon.toggleModal('actionModal');">Close</a>
+        <a href="#" class="btn mr-5 ml-5" role="button" onclick="halfmoon.toggleModal('actionModal');">Close</a>
     </div>
 </form>

@@ -279,6 +279,18 @@
             EntityId = Model.ClientId
         });
     }
+    
+    if (ViewBag.Authorized)
+    {
+        menuItems.Items.Add(new SideContextMenuItem
+        {
+            Title = "Message",
+            IsButton = true,
+            Reference = "OfflineMessage",
+            Icon = "oi oi-envelope-closed",
+            EntityId = Model.ClientId
+        });
+    }
 
     menuItems.Items.Add(new SideContextMenuItem
     {
@@ -336,6 +348,7 @@
             EntityId = Model.ClientId
         });
     }
+
 }
 <partial name="_SideContextMenu" for="@menuItems"></partial>
 

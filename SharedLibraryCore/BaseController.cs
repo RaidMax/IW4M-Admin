@@ -20,6 +20,8 @@ namespace SharedLibraryCore
 {
     public class BaseController : Controller
     {
+        protected readonly IAlertManager AlertManager;
+
         /// <summary>
         ///     life span in months
         /// </summary>
@@ -34,6 +36,7 @@ namespace SharedLibraryCore
 
         public BaseController(IManager manager)
         {
+            AlertManager = manager.AlertManager;
             Manager = manager;
             Localization ??= Utilities.CurrentLocalization.LocalizationIndex;
             AppConfig = Manager.GetApplicationSettings().Configuration();
@@ -169,6 +172,7 @@ namespace SharedLibraryCore
             ViewBag.ReportCount = Manager.GetServers().Sum(server =>
                 server.Reports.Count(report => DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)));
             ViewBag.PermissionsSet = PermissionsSet;
+            ViewBag.Alerts = AlertManager.RetrieveAlerts(Client).ToList();
 
             base.OnActionExecuting(context);
         }

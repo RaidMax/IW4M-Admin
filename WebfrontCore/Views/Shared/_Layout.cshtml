@@ -119,11 +119,13 @@
         </div>
 
         <div class="d-flex ml-auto">
+            <div class="align-self-center">
+                @await Html.PartialAsync("Partials/_Notifications", (object)ViewBag.Alerts)
+            </div>
             <div class="btn btn-action mr-10 ml-10" onclick="halfmoon.toggleDarkMode()" data-toggle="tooltip" data-title="Toggle display mode" data-placement="bottom">
                 <i class="oi oi-moon"></i>
             </div>
             <div class="d-none d-md-block ">
-
                 <partial name="_SearchResourceForm"/>
             </div>
             <div class="d-flex d-lg-none">

@@ -57,6 +57,7 @@ namespace IW4MAdmin.Application
         private readonly List<MessageToken> MessageTokens;
         private readonly ClientService ClientSvc;
         readonly PenaltyService PenaltySvc;
+        private readonly IAlertManager _alertManager;
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         readonly IPageList PageList;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
@@ -82,13 +83,14 @@ namespace IW4MAdmin.Application
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
             IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
             IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
-            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService)
+            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
             MessageTokens = new List<MessageToken>();
             ClientSvc = clientService;
             PenaltySvc = penaltyService;
+            _alertManager = alertManager;
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
@@ -508,6 +510,7 @@ namespace IW4MAdmin.Application
             #endregion
 
             _metaRegistration.Register();
+            await _alertManager.Initialize();
 
             #region CUSTOM_EVENTS
             foreach (var customEvent in _customParserEvents.SelectMany(_events => _events.Events))
@@ -697,5 +700,6 @@ namespace IW4MAdmin.Application
         }
 
         public void RemoveCommandByName(string commandName) => _commands.RemoveAll(_command => _command.Name == commandName);
+        public IAlertManager AlertManager => _alertManager;
     }
 }

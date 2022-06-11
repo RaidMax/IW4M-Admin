@@ -24,8 +24,10 @@ using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 using Data.Models;
 using Data.Models.Server;
+using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Commands;
 using Microsoft.EntityFrameworkCore;
+using SharedLibraryCore.Alerts;
 using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
@@ -306,8 +308,16 @@ namespace IW4MAdmin
                     if (!Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                     {
                         Console.WriteLine(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{IP}:{Port}"));
+                        
+                        var alert = Alert.AlertState.Build().OfType(E.Type.ToString())
+                            .WithCategory(Alert.AlertCategory.Error)
+                            .FromSource("System")
+                            .WithMessage(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{IP}:{Port}"))
+                            .ExpiresIn(TimeSpan.FromDays(1));
+                        
+                        Manager.AlertManager.AddAlert(alert);
                     }
-
+      
                     Throttled = true;
                 }
 
@@ -318,7 +328,15 @@ namespace IW4MAdmin
                     
                     if (!Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                     {
-                        Console.WriteLine(loc["MANAGER_CONNECTION_REST"].FormatExt($"[{IP}:{Port}]"));
+                        Console.WriteLine(loc["MANAGER_CONNECTION_REST"].FormatExt($"{IP}:{Port}"));
+                        
+                        var alert = Alert.AlertState.Build().OfType(E.Type.ToString())
+                            .WithCategory(Alert.AlertCategory.Information)
+                            .FromSource("System")
+                            .WithMessage(loc["MANAGER_CONNECTION_REST"].FormatExt($"{IP}:{Port}"))
+                            .ExpiresIn(TimeSpan.FromDays(1));
+
+                        Manager.AlertManager.AddAlert(alert);
                     }
 
                     if (!string.IsNullOrEmpty(CustomSayName))

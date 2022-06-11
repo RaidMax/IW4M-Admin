@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Helpers;
 using Integrations.Source.Extensions;
+using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Localization;
 using Microsoft.Extensions.Logging;
@@ -448,6 +449,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
                 .AddSingleton<IEventPublisher, EventPublisher>()
                 .AddSingleton<IGeoLocationService>(new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
+                .AddSingleton<IAlertManager, AlertManager>()
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);

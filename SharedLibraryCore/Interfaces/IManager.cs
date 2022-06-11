@@ -102,5 +102,7 @@ namespace SharedLibraryCore.Interfaces
         ///     event executed when event has finished executing
         /// </summary>
         event EventHandler<GameEvent> OnGameEventExecuted;
+        
+        IAlertManager AlertManager { get; }
     }
 }

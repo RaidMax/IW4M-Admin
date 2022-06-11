@@ -24,6 +24,7 @@ namespace WebfrontCore.Controllers
         private readonly string _unbanCommandName;
         private readonly string _sayCommandName;
         private readonly string _kickCommandName;
+        private readonly string _offlineMessageCommandName;
         private readonly string _flagCommandName;
         private readonly string _unflagCommandName;
         private readonly string _setLevelCommandName;
@@ -63,6 +64,9 @@ namespace WebfrontCore.Controllers
                         break;
                     case nameof(SetLevelCommand):
                         _setLevelCommandName = cmd.Name;
+                        break;
+                    case "OfflineMessageCommand":
+                        _offlineMessageCommandName = cmd.Name;
                         break;
                 }
             }
@@ -213,7 +217,7 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> Login(int clientId, string password)
         {
-            return await Task.FromResult(RedirectToAction("Login", "Account", new {clientId, password}));
+            return await Task.FromResult(RedirectToAction("Login", "Account", new { clientId, password }));
         }
 
         public IActionResult EditForm()
@@ -327,26 +331,27 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> RecentClientsForm(PaginationRequest request)
         {
             ViewBag.First = request.Offset == 0;
-            
+
             if (request.Count > 20)
             {
                 request.Count = 20;
             }
-            
+
             var clients = await Manager.GetClientService().GetRecentClients(request);
 
             return request.Offset == 0
                 ? View("~/Views/Shared/Components/Client/_RecentClientsContainer.cshtml", clients)
                 : View("~/Views/Shared/Components/Client/_RecentClients.cshtml", clients);
         }
-        
+
         public IActionResult RecentReportsForm()
         {
             var serverInfo = Manager.GetServers().Select(server =>
                 new ServerInfo
                 {
                     Name = server.Hostname,
-                    Reports = server.Reports.Where(report => (DateTime.UtcNow - report.ReportedOn).TotalHours <= 24).ToList()
+                    Reports = server.Reports.Where(report => (DateTime.UtcNow - report.ReportedOn).TotalHours <= 24)
+                        .ToList()
                 });
 
             return View("Partials/_Reports", serverInfo);
@@ -470,6 +475,105 @@ namespace WebfrontCore.Controllers
             {
                 serverId = client.CurrentServer.EndPoint,
                 command = $"{_appConfig.CommandPrefix}{_kickCommandName} {client.ClientNumber} {presetReason ?? reason}"
+            }));
+        }
+
+        public IActionResult DismissAlertForm(Guid id)
+        {
+            var info = new ActionInfo
+            {
+                ActionButtonLabel = "Dismiss",
+                Name = "Dismiss Alert?",
+                Inputs = new List<InputInfo>
+                {
+                    new()
+                    {
+                        Name = "alertId",
+                        Type = "hidden",
+                        Value = id.ToString()
+                    }
+                },
+                Action = nameof(DismissAlert),
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public IActionResult DismissAlert(Guid alertId)
+        {
+            AlertManager.MarkAlertAsRead(alertId);
+            return Json(new[]
+            {
+                new CommandResponseInfo
+                {
+                    Response = "Alert dismissed"
+                }
+            });
+        }
+
+        public IActionResult DismissAllAlertsForm()
+        {
+            var info = new ActionInfo
+            {
+                ActionButtonLabel = "Dismiss",
+                Name = "Dismiss All Alerts?",
+                Inputs = new List<InputInfo>
+                {
+                    new()
+                    {
+                        Name = "targetId",
+                        Type = "hidden",
+                        Value = Client.ClientId.ToString()
+                    }
+                },
+                Action = nameof(DismissAllAlerts),
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public IActionResult DismissAllAlerts(int targetId)
+        {
+            AlertManager.MarkAllAlertsAsRead(targetId);
+            return Json(new[]
+            {
+                new CommandResponseInfo
+                {
+                    Response = "Alerts dismissed"
+                }
+            });
+        }
+
+        public IActionResult OfflineMessageForm()
+        {
+            var info = new ActionInfo
+            {
+                ActionButtonLabel = "Send",
+                Name = "Compose Message",
+                Inputs = new List<InputInfo>
+                {
+                    new()
+                    {
+                        Name = "message",
+                        Label = "Message Content",
+                    },
+                },
+                Action = "OfflineMessage",
+                ShouldRefresh = true
+            };
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> OfflineMessage(int targetId, string message)
+        {
+            var server = Manager.GetServers().First();
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
+            {
+                serverId = server.EndPoint,
+                command =
+                    $"{_appConfig.CommandPrefix}{_offlineMessageCommandName} @{targetId} {message.CapClientName(500)}"
             }));
         }
 

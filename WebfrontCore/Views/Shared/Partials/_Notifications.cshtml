@@ -1,0 +1,65 @@
+@using SharedLibraryCore.Alerts
+@using Humanizer
+@model IEnumerable<SharedLibraryCore.Alerts.Alert.AlertState>
+@{
+    Layout = null;
+}
+<div class="dropdown with-arrow" data-toggle="dropdown" id="alert-toggle" aria-haspopup="true" aria-expanded="false">
+    <div data-toggle="tooltip" data-title="@(Model.Any() ? "View Alerts" : "No Alerts")" data-placement="bottom">
+        <i class="oi oi-bell mt-5"></i>
+    </div>
+    @if (Model.Any())
+    {
+        <div class="position-absolute bg-danger rounded-circle ml-10" style="width: 0.5em;height: 0.5em;top: 0;"></div>
+        <div class="dropdown-menu dropdown-menu-right w-400" aria-labelledby="alert-toggle">
+            <div class="d-flex">
+                <h6 class="dropdown-header">@ViewBag.Alerts.Count Alerts</h6>
+                <i class="oi oi-circle-x font-size-12 ml-auto mr-10 text-danger align-self-center profile-action" data-action="DismissAllAlerts" data-action-id="@ViewBag.User.ClientId"></i>
+
+            </div>
+            <div class="dropdown-divider"></div>
+            @foreach (var alert in Model)
+            {
+                <div class="d-flex p-5 pl-10 pr-10">
+                    <div class="align-self-center">
+                        @if (alert.Category == Alert.AlertCategory.Error)
+                        {
+                            <i class="oi oi-warning text-danger font-size-12 mr-5"></i>
+                        }
+                        @if (alert.Category == Alert.AlertCategory.Warning)
+                        {
+                            <i class="oi oi-warning text-secondary font-size-12 mr-5"></i>
+                        }
+                        @if (alert.Category == Alert.AlertCategory.Information)
+                        {
+                            <i class="oi oi-circle-check font-size-12 mr-5 text-primary"></i>
+                        }
+                        @if (alert.Category == Alert.AlertCategory.Message)
+                        {
+                            <i class="oi oi-envelope-closed font-size-12 mr-5 text-primary"></i>
+                        }
+                    </div>
+                    <div class="font-size-12 p-5">
+                        <span>@alert.Message</span>
+                        <div class="text-muted d-flex">
+                            <span>@alert.OccuredAt.Humanize()</span>
+                            @if (!string.IsNullOrEmpty(alert.Source))
+                            {
+                                <span class="ml-5 mr-5">&#8226;</span>
+                                @if (alert.SourceId is null)
+                                {
+                                    <div class="text-white font-weight-light">@alert.Source.StripColors()</div>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@alert.SourceId" class="no-decoration">@alert.Source</a>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <i class="oi oi-circle-x font-size-12 ml-auto align-self-center profile-action" data-action="DismissAlert" data-action-id="@alert.AlertId"></i>
+                </div>
+            }
+        </div>
+    }
+</div>

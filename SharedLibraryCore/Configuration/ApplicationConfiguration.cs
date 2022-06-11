@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Data.Models.Misc;
 using Newtonsoft.Json;
 using SharedLibraryCore.Configuration.Attributes;
 using SharedLibraryCore.Interfaces;
@@ -152,6 +153,13 @@ namespace SharedLibraryCore.Configuration
             { Permission.SeniorAdmin.ToString(), new List<string> { "*" } },
             { Permission.Owner.ToString(), new List<string> { "*" } },
             { Permission.Console.ToString(), new List<string> { "*" } }
+        };
+
+        public Dictionary<string, Permission> MinimumAlertPermissions { get; set; } = new()
+        {
+            { nameof(EFInboxMessage), Permission.Trusted },
+            { GameEvent.EventType.ConnectionLost.ToString(), Permission.Administrator },
+            { GameEvent.EventType.ConnectionRestored.ToString(), Permission.Administrator }
         };
 
         [ConfigurationIgnore]

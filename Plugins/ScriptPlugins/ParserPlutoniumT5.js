@@ -16,7 +16,7 @@ var plugin = {
 
         rconParser.Configuration.DefaultInstallationDirectoryHint = '{LocalAppData}/Plutonium/storage/t5';
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
-        rconParser.Configuration.Dvar.Pattern = '^(?:\\^7)?\\"(.+)\\" is: \\"(.+)?\\" default: \\"(.+)?\\"\\n(?:latched: \\"(.+)?\\"\\n)? *(.+)$';
+        rconParser.Configuration.Dvar.Pattern = '^(?:\\^7)?\\"(.+)\\" is: \\"(.+)?\\" default: \\"(.+)?\\"\\n?(?:latched: \\"(.+)?\\"\\n)?\\w*(.+)*$';
         rconParser.Configuration.CommandPrefixes.Tell = 'tell {0} {1}';
         rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined;
         rconParser.Configuration.GuidNumberStyle = 7; // Integer

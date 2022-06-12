@@ -18,6 +18,7 @@ namespace Data.Helpers
         private readonly IDatabaseContextFactory _contextFactory;
 
         private readonly ConcurrentDictionary<string, Dictionary<object, CacheState<TReturnType>>> _cacheStates = new();
+        private readonly object _defaultKey = new();
 
         private bool _autoRefresh;
         private const int DefaultExpireMinutes = 15;
@@ -58,7 +59,7 @@ namespace Data.Helpers
         public void SetCacheItem(Func<DbSet<TEntityType>, CancellationToken, Task<TReturnType>> getter, string key,
             IEnumerable<object> ids = null, TimeSpan? expirationTime = null, bool autoRefresh = false)
         {
-            ids ??= new[] { new object() };
+            ids ??= new[] { _defaultKey };
             
             if (!_cacheStates.ContainsKey(key))
             {

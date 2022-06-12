@@ -100,7 +100,7 @@ namespace SharedLibraryCore.Database.Models
 
         [NotMapped] public int Score { get; set; }
 
-        [NotMapped] public bool IsBot => NetworkId == Name.GenerateGuidFromString();
+        [NotMapped] public bool IsBot => NetworkId == Name.GenerateGuidFromString() || IPAddressString == System.Net.IPAddress.Broadcast.ToString();
 
         [NotMapped] public bool IsZombieClient => IsBot && Name == "Zombie";
 

@@ -20,6 +20,7 @@ namespace IW4MAdmin.Application.RConParsers
     public class BaseRConParser : IRConParser
     {
         private readonly ILogger _logger;
+        private static string _botIpIndicator = "00000000.";
         
         public BaseRConParser(ILogger<BaseRConParser> logger, IParserRegexFactory parserRegexFactory)
         {
@@ -290,7 +291,14 @@ namespace IW4MAdmin.Application.RConParsers
                     long networkId;
                     var name = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConName]].TrimNewLine();
                     string networkIdString;
+                    
                     var ip = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]].Split(':')[0].ConvertToIP();
+
+                    if (match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConIpAddress]]
+                        .Contains(_botIpIndicator))
+                    {
+                        ip = System.Net.IPAddress.Broadcast.ToString().ConvertToIP();
+                    }
 
                     try
                     {

@@ -80,7 +80,7 @@ namespace SharedLibraryCore.Database.Models
             set => CurrentAlias.IPAddress = value;
         }
 
-        [NotMapped] public string IPAddressString => IPAddress.ConvertIPtoString();
+        [NotMapped] public string IPAddressString => IPAddress is null ? null : IPAddress.ConvertIPtoString();
 
         [NotMapped] public bool IsIngame => ClientNumber >= 0;
 

@@ -11,11 +11,10 @@
     @if (Model.Any())
     {
         <div class="position-absolute bg-danger rounded-circle ml-10" style="width: 0.5em;height: 0.5em;top: 0;"></div>
-        <div class="dropdown-menu dropdown-menu-right w-400" aria-labelledby="alert-toggle">
+        <div class="dropdown-menu dropdown-menu-right w-250 w-md-400" aria-labelledby="alert-toggle">
             <div class="d-flex">
                 <h6 class="dropdown-header">@ViewBag.Alerts.Count Alerts</h6>
                 <i class="oi oi-circle-x font-size-12 ml-auto mr-10 text-danger align-self-center profile-action" data-action="DismissAllAlerts" data-action-id="@ViewBag.User.ClientId"></i>
-
             </div>
             <div class="dropdown-divider"></div>
             @foreach (var alert in Model)
@@ -40,7 +39,7 @@
                         }
                     </div>
                     <div class="font-size-12 p-5">
-                        <span>@alert.Message</span>
+                        <span class="text-force-break">@alert.Message</span>
                         <div class="text-muted d-flex">
                             <span>@alert.OccuredAt.Humanize()</span>
                             @if (!string.IsNullOrEmpty(alert.Source))
@@ -53,11 +52,13 @@
                                 else
                                 {
                                     <a asp-controller="Client" asp-action="Profile" asp-route-id="@alert.SourceId" class="no-decoration">@alert.Source</a>
-                                }
+                                } 
                             }
                         </div>
                     </div>
-                    <i class="oi oi-circle-x font-size-12 ml-auto align-self-center profile-action" data-action="DismissAlert" data-action-id="@alert.AlertId"></i>
+                    <div class="ml-auto">
+                        <i class="oi oi-circle-x font-size-12 ml-5 align-self-center profile-action" data-action="DismissAlert" data-action-id="@alert.AlertId"></i>
+                    </div>
                 </div>
             }
         </div>

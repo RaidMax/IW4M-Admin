@@ -76,11 +76,11 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public virtual int? IPAddress
         {
-            get => CurrentAlias.IPAddress;
+            get => CurrentAlias?.IPAddress;
             set => CurrentAlias.IPAddress = value;
         }
 
-        [NotMapped] public string IPAddressString => IPAddress is null ? null : IPAddress.ConvertIPtoString();
+        [NotMapped] public string IPAddressString => IPAddress.ConvertIPtoString();
 
         [NotMapped] public bool IsIngame => ClientNumber >= 0;
 

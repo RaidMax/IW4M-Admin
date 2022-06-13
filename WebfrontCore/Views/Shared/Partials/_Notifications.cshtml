@@ -14,10 +14,11 @@
         <div class="dropdown-menu dropdown-menu-right w-250 w-md-400" aria-labelledby="alert-toggle">
             <div class="d-flex">
                 <h6 class="dropdown-header">@ViewBag.Alerts.Count Alerts</h6>
-                <i class="oi oi-circle-x font-size-12 ml-auto mr-10 text-danger align-self-center profile-action" data-action="DismissAllAlerts" data-action-id="@ViewBag.User.ClientId"></i>
+                <i class="oi oi-circle-x font-size-12 text-danger align-self-center profile-action" data-action="DismissAllAlerts" data-action-id="@ViewBag.User.ClientId"></i>
             </div>
             <div class="dropdown-divider"></div>
-            @foreach (var alert in Model)
+            <div style="max-height: 50vh; overflow: scroll" >
+                @foreach (var alert in Model)
             {
                 <div class="d-flex p-5 pl-10 pr-10">
                     <div class="align-self-center">
@@ -61,6 +62,7 @@
                     </div>
                 </div>
             }
+            </div>
         </div>
     }
 </div>

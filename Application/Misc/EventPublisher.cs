@@ -29,7 +29,7 @@ namespace IW4MAdmin.Application.Misc
                     OnClientConnect?.Invoke(this, gameEvent);
                 }
 
-                if (gameEvent.Type == GameEvent.EventType.Disconnect)
+                if (gameEvent.Type == GameEvent.EventType.Disconnect && gameEvent.Origin.ClientId != 0)
                 {
                     OnClientDisconnect?.Invoke(this, gameEvent);
                 }

@@ -214,6 +214,8 @@ namespace WebfrontCore.Controllers
 
             ViewBag.SearchTerm = clientName;
             ViewBag.ResultCount = clientsDto.Count;
+            ViewBag.Title = "Search Results";
+            
             return View("Find/Index", clientsDto);
         }
 

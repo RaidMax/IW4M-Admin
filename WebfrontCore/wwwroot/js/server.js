@@ -106,8 +106,8 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
                         display: false
                     },
                     ticks: {
-                        max: 1,
-                        min: maxClients + 2
+                        max: 0.5,
+                        min: maxClients + 1
                     }
                 }]
             },

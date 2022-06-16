@@ -56,8 +56,8 @@ namespace Stats.Helpers
             }
 
             var iqMessages = context.Set<EFClientMessage>()
-                .Where(_message => _message.TimeSent >= query.SentAfter)
-                .Where(_message => _message.TimeSent < query.SentBefore);
+                .Where(message => message.TimeSent >= query.SentAfter)
+                .Where(message => message.TimeSent < query.SentBefore);
 
             if (query.ClientId != null)
             {

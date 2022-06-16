@@ -39,7 +39,8 @@ namespace SharedLibraryCore.Services
                         TotalConnectionTime = client.TotalConnectionTime,
                         AliasLink = client.AliasLink,
                         Password = client.Password,
-                        PasswordSalt = client.PasswordSalt
+                        PasswordSalt = client.PasswordSalt,
+                        GameName = client.GameName
                     })
                     .FirstOrDefault(client => client.NetworkId == networkId && client.GameName == game)
             );
@@ -237,12 +238,8 @@ namespace SharedLibraryCore.Services
 
         public virtual async Task<EFClient> GetUnique(long entityAttribute, object altKey = null)
         {
-            if (altKey is not Reference.Game game)
-            {
-                throw new ArgumentException($"Alternate key must be of type {nameof(Reference.Game)}");
-            }
             await using var context = _contextFactory.CreateContext(false);
-            return await GetUniqueQuery(context, entityAttribute, game);
+            return await GetUniqueQuery(context, entityAttribute, (Reference.Game)altKey);
         }
 
         public async Task<EFClient> Update(EFClient temporalClient)

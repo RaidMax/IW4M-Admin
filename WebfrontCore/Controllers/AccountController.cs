@@ -41,8 +41,7 @@ namespace WebfrontCore.Controllers
                 {
                     loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(new TokenIdentifier
                                    {
-                                       NetworkId = privilegedClient.NetworkId,
-                                       Game = privilegedClient.GameName,
+                                       ClientId = clientId,
                                        Token = password
                                    }) ||
                                    (await Task.FromResult(Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] ==

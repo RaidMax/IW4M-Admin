@@ -9,25 +9,25 @@ namespace IW4MAdmin.Application.Misc
 {
     internal class TokenAuthentication : ITokenAuthentication
     {
-        private readonly ConcurrentDictionary<string, TokenState> _tokens;
+        private readonly ConcurrentDictionary<int, TokenState> _tokens;
         private readonly RandomNumberGenerator _random;
         private static readonly TimeSpan TimeoutPeriod = new(0, 0, 120);
         private const short TokenLength = 4;
 
         public TokenAuthentication()
         {
-            _tokens = new ConcurrentDictionary<string, TokenState>();
+            _tokens = new ConcurrentDictionary<int, TokenState>();
             _random = RandomNumberGenerator.Create();
         }
 
         public bool AuthorizeToken(ITokenIdentifier authInfo)
         {
-            var key = BuildKey(authInfo);
-            var authorizeSuccessful = _tokens.ContainsKey(key) && _tokens[key].Token == key;
+            var authorizeSuccessful = _tokens.ContainsKey(authInfo.ClientId) &&
+                                      _tokens[authInfo.ClientId].Token == authInfo.Token;
 
             if (authorizeSuccessful)
             {
-                _tokens.TryRemove(key, out _);
+                _tokens.TryRemove(authInfo.ClientId, out _);
             }
 
             return authorizeSuccessful;
@@ -36,15 +36,14 @@ namespace IW4MAdmin.Application.Misc
         public TokenState GenerateNextToken(ITokenIdentifier authInfo)
         {
             TokenState state;
-            var genKey = BuildKey(authInfo);
 
-            if (_tokens.ContainsKey(genKey))
+            if (_tokens.ContainsKey(authInfo.ClientId))
             {
-                state = _tokens[genKey];
+                state = _tokens[authInfo.ClientId];
 
                 if (DateTime.Now - state.RequestTime > TimeoutPeriod)
                 {
-                    _tokens.TryRemove(genKey, out _);
+                    _tokens.TryRemove(authInfo.ClientId, out _);
                 }
 
                 else
@@ -59,12 +58,12 @@ namespace IW4MAdmin.Application.Misc
                 TokenDuration = TimeoutPeriod
             };
 
-            _tokens.TryAdd(genKey, state);
+            _tokens.TryAdd(authInfo.ClientId, state);
 
             // perform some housekeeping so we don't have built up tokens if they're not ever used
             foreach (var (key, value) in _tokens)
             {
-                if ((DateTime.Now - value.RequestTime) > TimeoutPeriod)
+                if (DateTime.Now - value.RequestTime > TimeoutPeriod)
                 {
                     _tokens.TryRemove(key, out _);
                 }
@@ -97,7 +96,5 @@ namespace IW4MAdmin.Application.Misc
             _random.Dispose();
             return token.ToString();
         }
-
-        private string BuildKey(ITokenIdentifier authInfo) => $"{authInfo.NetworkId}_${authInfo.Game}";
     }
 }

@@ -103,9 +103,8 @@ namespace WebfrontCore.Controllers.API
                 {
                     var tokenData = new TokenIdentifier
                     {
-                        Game = privilegedClient.GameName,
-                        Token = request.Password,
-                        NetworkId = privilegedClient.NetworkId
+                        ClientId = clientId,
+                        Token = request.Password
                     };
                     
                     loginSuccess =

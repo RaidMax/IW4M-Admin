@@ -277,8 +277,7 @@ namespace WebfrontCore.Controllers
         {
             var state = Manager.TokenAuthenticator.GenerateNextToken(new TokenIdentifier
             {
-                NetworkId = Client.NetworkId,
-                Game = Client.GameName
+                ClientId = Client.ClientId
             });
             
             return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"],

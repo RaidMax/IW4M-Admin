@@ -31,8 +31,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
         {
             var success = gameEvent.Owner.Manager.TokenAuthenticator.AuthorizeToken(new TokenIdentifier
             {
-                NetworkId = gameEvent.Origin.NetworkId,
-                Game = gameEvent.Origin.GameName,
+                ClientId = gameEvent.Origin.ClientId,
                 Token = gameEvent.Data
             });
 

@@ -24,8 +24,7 @@ namespace SharedLibraryCore.Commands
         {
             var state = gameEvent.Owner.Manager.TokenAuthenticator.GenerateNextToken(new TokenIdentifier
             {
-                Game = gameEvent.Origin.GameName,
-                NetworkId = gameEvent.Origin.NetworkId
+                ClientId = gameEvent.Origin.ClientId
             });
             gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token,
                 $"{state.RemainingTime} {_translationLookup["GLOBAL_MINUTES"]}", gameEvent.Origin.ClientId));

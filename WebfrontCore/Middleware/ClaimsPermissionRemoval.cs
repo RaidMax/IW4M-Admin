@@ -70,7 +70,7 @@ namespace WebfrontCore.Middleware
                 hasAny = _privilegedClientIds.Any();
             }
 
-            if (hasAny)
+            if (!hasAny)
             {
                 var ids = (await _manager.GetClientService().GetPrivilegedClients())
                     .Select(client => client.ClientId);

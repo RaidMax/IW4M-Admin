@@ -85,7 +85,15 @@ namespace Data.Context
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // make network id unique
-            modelBuilder.Entity<EFClient>(entity => { entity.HasIndex(e => e.NetworkId).IsUnique(); });
+            modelBuilder.Entity<EFClient>(entity =>
+            {
+                entity.HasIndex(e => e.NetworkId);
+                entity.HasAlternateKey(client => new
+                {
+                    client.NetworkId,
+                    client.GameName
+                });
+            });
 
             modelBuilder.Entity<EFPenalty>(entity =>
             {

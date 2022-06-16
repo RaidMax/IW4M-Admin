@@ -10,7 +10,7 @@ namespace SharedLibraryCore.Interfaces
         Task<T> Delete(T entity);
         Task<T> Update(T entity);
         Task<T> Get(int entityID);
-        Task<T> GetUnique(long entityProperty);
+        Task<T> GetUnique(long entityProperty, object altKey);
         Task<IList<T>> Find(Func<T, bool> expression);
     }
 }

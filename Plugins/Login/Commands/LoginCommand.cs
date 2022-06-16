@@ -4,6 +4,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System.Threading.Tasks;
+using SharedLibraryCore.Helpers;
 
 namespace IW4MAdmin.Plugins.Login.Commands
 {
@@ -18,7 +19,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
             RequiresTarget = false;
             Arguments = new CommandArgument[]
             {
-                new CommandArgument()
+                new()
                 {
                     Name = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_ARGS_PASSWORD"],
                     Required = true
@@ -26,24 +27,29 @@ namespace IW4MAdmin.Plugins.Login.Commands
             };
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            bool success = E.Owner.Manager.TokenAuthenticator.AuthorizeToken(E.Origin.NetworkId, E.Data);
+            var success = gameEvent.Owner.Manager.TokenAuthenticator.AuthorizeToken(new TokenIdentifier
+            {
+                NetworkId = gameEvent.Origin.NetworkId,
+                Game = gameEvent.Origin.GameName,
+                Token = gameEvent.Data
+            });
 
             if (!success)
             {
-                string[] hashedPassword = await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(E.Data, E.Origin.PasswordSalt));
-                success = hashedPassword[0] == E.Origin.Password;
+                var hashedPassword = await Task.FromResult(Hashing.Hash(gameEvent.Data, gameEvent.Origin.PasswordSalt));
+                success = hashedPassword[0] == gameEvent.Origin.Password;
             }
 
             if (success)
             {
-                Plugin.AuthorizedClients[E.Origin.ClientId] = true;
+                Plugin.AuthorizedClients[gameEvent.Origin.ClientId] = true;
             }
 
             _ = success ?
-                E.Origin.Tell(_translationLookup["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]) :
-                E.Origin.Tell(_translationLookup["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_LOGIN_COMMANDS_LOGIN_SUCCESS"]) :
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_LOGIN_COMMANDS_LOGIN_FAIL"]);
         }
     }
 }

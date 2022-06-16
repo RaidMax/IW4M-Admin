@@ -15,9 +15,7 @@
     foreach (var snapshot in Model.ClientHistory.ClientCounts)
     {
         snapshot.MapAlias = GetMapName(snapshot.Map);
-    };
-
-    string MakeAbbreviation(string gameName) => string.Join("", gameName.Split(' ').Select(word => char.ToUpper(word.First())).ToArray());
+    }
 }
 
 <div class="card mt-20 mb-20 ml-0 mr-0 p-0">
@@ -44,7 +42,7 @@
                    class="text-light align-self-center">
                     <i class="oi oi-spreadsheet ml-5 mr-5"></i>
                 </a>
-                <span class="ml-5 mr-5 text-light badge font-weight-light" data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{Model.Game}"]">@MakeAbbreviation(ViewBag.Localization[$"GAME_{Model.Game}"])</span>
+                <span class="ml-5 mr-5 text-light badge font-weight-light" data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{Model.Game}"]">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{Model.Game}"])</span>
             </div>
         </div>
         <!-- second column -->

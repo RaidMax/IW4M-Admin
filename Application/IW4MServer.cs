@@ -75,7 +75,7 @@ namespace IW4MAdmin
         {
             ServerLogger.LogDebug("Client slot #{clientNumber} now reserved", clientFromLog.ClientNumber);
 
-            EFClient client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId);
+            var client = await Manager.GetClientService().GetUnique(clientFromLog.NetworkId, GameName);
 
             // first time client is connecting to server
             if (client == null)
@@ -118,7 +118,7 @@ namespace IW4MAdmin
 
         public override async Task OnClientDisconnected(EFClient client)
         {
-            if (!GetClientsAsList().Any(_client => _client.NetworkId == client.NetworkId))
+            if (GetClientsAsList().All(eachClient => eachClient.NetworkId != client.NetworkId))
             {
                 using (LogContext.PushProperty("Server", ToString()))
                 {
@@ -449,7 +449,7 @@ namespace IW4MAdmin
                         Clients[E.Origin.ClientNumber] = E.Origin;
                         try
                         {
-                            E.Origin.GameName = (Reference.Game?)GameName;
+                            E.Origin.GameName = (Reference.Game)GameName;
                             E.Origin = await OnClientConnected(E.Origin);
                             E.Target = E.Origin;
                         }
@@ -517,7 +517,7 @@ namespace IW4MAdmin
 
                     E.Target.SetLevel(Permission.User, E.Origin);
                     await Manager.GetPenaltyService().RemoveActivePenalties(E.Target.AliasLinkId, E.Target.NetworkId,
-                        E.Target.CurrentAlias?.IPAddress);
+                        E.Target.GameName, E.Target.CurrentAlias?.IPAddress);
                     await Manager.GetPenaltyService().Create(unflagPenalty);
                 }
 
@@ -763,7 +763,7 @@ namespace IW4MAdmin
 
         private async Task OnClientUpdate(EFClient origin)
         {
-            var client = Manager.GetActiveClients().FirstOrDefault(c => c.NetworkId == origin.NetworkId);
+            var client = GetClientsAsList().FirstOrDefault(c => c.NetworkId == origin.NetworkId);
 
             if (client == null)
             {
@@ -980,7 +980,7 @@ namespace IW4MAdmin
                                  !string.IsNullOrEmpty(client.Name) && (client.Ping != 999 || client.IsBot)))
                     {
                         client.CurrentServer = this;
-                        client.GameName = (Reference.Game?)GameName;
+                        client.GameName = (Reference.Game)GameName;
                         
                         var e = new GameEvent
                         {
@@ -1530,7 +1530,7 @@ namespace IW4MAdmin
             ServerLogger.LogDebug("Creating unban penalty for {targetClient}", targetClient.ToString());
             targetClient.SetLevel(Permission.User, originClient);
             await Manager.GetPenaltyService().RemoveActivePenalties(targetClient.AliasLink.AliasLinkId,
-                targetClient.NetworkId, targetClient.CurrentAlias?.IPAddress);
+                targetClient.NetworkId, targetClient.GameName, targetClient.CurrentAlias?.IPAddress);
             await Manager.GetPenaltyService().Create(unbanPenalty);
         }
 

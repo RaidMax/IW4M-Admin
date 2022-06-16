@@ -10,6 +10,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Permissions;
 using WebfrontCore.ViewModels;
@@ -274,7 +275,12 @@ namespace WebfrontCore.Controllers
         [Authorize]
         public string GenerateLoginTokenAsync()
         {
-            var state = Manager.TokenAuthenticator.GenerateNextToken(Client.NetworkId);
+            var state = Manager.TokenAuthenticator.GenerateNextToken(new TokenIdentifier
+            {
+                NetworkId = Client.NetworkId,
+                Game = Client.GameName
+            });
+            
             return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"],
                 state.Token,
                 $"{state.RemainingTime} {Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}",

@@ -47,7 +47,7 @@ namespace WebfrontCore.Controllers
             }
 
             var activePenalties = await Manager.GetPenaltyService().GetActivePenaltiesAsync(client.AliasLinkId,
-                client.CurrentAliasId, client.NetworkId, client.IPAddress);
+                client.CurrentAliasId, client.NetworkId, client.GameName, client.IPAddress);
 
             var persistentMetaTask = new[]
             {
@@ -88,7 +88,7 @@ namespace WebfrontCore.Controllers
             var clientDto = new PlayerInfo
             {
                 Name = client.Name,
-                Game = client.GameName ?? Reference.Game.UKN,
+                Game = client.GameName,
                 Level = displayLevel,
                 LevelInt = displayLevelInt,
                 ClientId = client.ClientId,
@@ -183,7 +183,7 @@ namespace WebfrontCore.Controllers
                     ClientId = admin.ClientId,
                     LastConnection = admin.LastConnection,
                     IsMasked = admin.Masked,
-                    Game = admin.GameName ?? Reference.Game.UKN
+                    Game = admin.GameName
                 });
             }
 

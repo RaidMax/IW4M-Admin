@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Data.Context;
 using Data.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -25,26 +24,32 @@ namespace SharedLibraryCore
         /// <summary>
         ///     life span in months
         /// </summary>
-        private const int COOKIE_LIFESPAN = 3;
+        private const int CookieLifespan = 3;
 
         private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
-        private static string SocialLink;
-        private static string SocialTitle;
-        protected readonly DatabaseContext Context;
+        private static string _socialLink;
+        private static string _socialTitle;
+        
         protected List<Page> Pages;
         protected List<string> PermissionsSet;
+        protected bool Authorized { get; set; }
+        protected TranslationLookup Localization { get; }
+        protected EFClient Client { get; }
+        protected ApplicationConfiguration AppConfig { get; }
+        
+        public IManager Manager { get; }
 
         public BaseController(IManager manager)
         {
             AlertManager = manager.AlertManager;
             Manager = manager;
-            Localization ??= Utilities.CurrentLocalization.LocalizationIndex;
+            Localization = Utilities.CurrentLocalization.LocalizationIndex;
             AppConfig = Manager.GetApplicationSettings().Configuration();
 
-            if (AppConfig.EnableSocialLink && SocialLink == null)
+            if (AppConfig.EnableSocialLink && _socialLink == null)
             {
-                SocialLink = AppConfig.SocialLinkAddress;
-                SocialTitle = AppConfig.SocialLinkTitle;
+                _socialLink = AppConfig.SocialLinkAddress;
+                _socialTitle = AppConfig.SocialLinkTitle;
             }
 
             Pages = Manager.GetPageList().Pages
@@ -59,7 +64,7 @@ namespace SharedLibraryCore
             ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
             ViewBag.Language = Utilities.CurrentLocalization.Culture.TwoLetterISOLanguageName;
 
-            Client ??= new EFClient
+            Client = new EFClient
             {
                 ClientId = -1,
                 Level = Data.Models.Client.EFClient.Permission.Banned,
@@ -67,11 +72,7 @@ namespace SharedLibraryCore
             };
         }
 
-        public IManager Manager { get; }
-        protected bool Authorized { get; set; }
-        protected TranslationLookup Localization { get; }
-        protected EFClient Client { get; }
-        protected ApplicationConfiguration AppConfig { get; }
+       
 
         protected async Task SignInAsync(ClaimsPrincipal claimsPrinciple)
         {
@@ -79,7 +80,7 @@ namespace SharedLibraryCore
                 new AuthenticationProperties
                 {
                     AllowRefresh = true,
-                    ExpiresUtc = DateTime.UtcNow.AddMonths(COOKIE_LIFESPAN),
+                    ExpiresUtc = DateTime.UtcNow.AddMonths(CookieLifespan),
                     IsPersistent = true,
                     IssuedUtc = DateTime.UtcNow
                 });
@@ -99,7 +100,7 @@ namespace SharedLibraryCore
                         Client.ClientId = clientId;
                         Client.NetworkId = clientId == 1
                             ? 0
-                            : User.Claims.First(_claim => _claim.Type == ClaimTypes.PrimarySid).Value
+                            : User.Claims.First(claim => claim.Type == ClaimTypes.PrimarySid).Value
                                 .ConvertGuidToLong(NumberStyles.HexNumber);
                         Client.Level = (Data.Models.Client.EFClient.Permission)Enum.Parse(
                             typeof(Data.Models.Client.EFClient.Permission),
@@ -107,6 +108,9 @@ namespace SharedLibraryCore
                         Client.CurrentAlias = new EFAlias
                             { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
                         Authorized = Client.ClientId >= 0;
+                        Client.GameName =
+                            Enum.Parse<Reference.Game>(User.Claims
+                                .First(claim => claim.Type == ClaimTypes.PrimaryGroupSid).Value);
                     }
                 }
 
@@ -134,6 +138,7 @@ namespace SharedLibraryCore
                     new Claim(ClaimTypes.Role, Client.Level.ToString()),
                     new Claim(ClaimTypes.Sid, Client.ClientId.ToString()),
                     new Claim(ClaimTypes.PrimarySid, Client.NetworkId.ToString("X")),
+                    new Claim(ClaimTypes.PrimaryGroupSid, Client.GameName.ToString())
                 };
                 var claimsIdentity = new ClaimsIdentity(claims, "login");
                 SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
@@ -153,8 +158,8 @@ namespace SharedLibraryCore
             ViewBag.Url = AppConfig.WebfrontUrl;
             ViewBag.User = Client;
             ViewBag.Version = Manager.Version;
-            ViewBag.SocialLink = SocialLink ?? "";
-            ViewBag.SocialTitle = SocialTitle;
+            ViewBag.SocialLink = _socialLink ?? "";
+            ViewBag.SocialTitle = _socialTitle;
             ViewBag.Pages = Pages;
             ViewBag.Localization = Utilities.CurrentLocalization.LocalizationIndex;
             ViewBag.CustomBranding = shouldUseCommunityName

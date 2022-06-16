@@ -632,9 +632,9 @@ namespace IW4MAdmin.Application
             return _servers.SelectMany(s => s.Clients).ToList().Where(p => p != null).ToList();
         }
 
-        public EFClient FindActiveClient(EFClient client) =>client.ClientNumber < 0 ?
+        public EFClient FindActiveClient(EFClient client) => client.ClientNumber < 0 ?
                 GetActiveClients()
-                    .FirstOrDefault(c => c.NetworkId == client.NetworkId) ?? client :
+                    .FirstOrDefault(c => c.NetworkId == client.NetworkId && c.GameName == client.GameName) ?? client :
                 client;
 
         public ClientService GetClientService()

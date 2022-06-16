@@ -63,7 +63,7 @@ namespace Data.Models.Client
         public DateTime FirstConnection { get; set; }
         [Required]
         public DateTime LastConnection { get; set; }
-        public Reference.Game? GameName { get; set; } = Reference.Game.UKN;
+        public Reference.Game GameName { get; set; } = Reference.Game.UKN;
         public bool Masked { get; set; }
         [Required]
         public int AliasLinkId { get; set; }

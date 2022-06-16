@@ -36,24 +36,26 @@ namespace WebfrontCore.Middleware
         /// <param name="gameEvent"></param>
         private void OnGameEvent(object sender, GameEvent gameEvent)
         {
-            if (gameEvent.Type == EventType.ChangePermission &&
-                gameEvent.Extra is EFClient.Permission perm)
+            if (gameEvent.Type != EventType.ChangePermission || gameEvent.Extra is not EFClient.Permission perm)
             {
-                // we want to remove the claims when the client is demoted
-                if (perm < EFClient.Permission.Trusted)
+                return;
+            }
+
+            lock (_privilegedClientIds)
+            {
+                switch (perm)
                 {
-                    lock (_privilegedClientIds)
+                    // we want to remove the claims when the client is demoted
+                    case < EFClient.Permission.Trusted:
                     {
                         _privilegedClientIds.RemoveAll(id => id == gameEvent.Target.ClientId);
+                        break;
                     }
-                }
-                // and add if promoted
-                else if (perm > EFClient.Permission.Trusted &&
-                    !_privilegedClientIds.Contains(gameEvent.Target.ClientId))
-                {
-                    lock (_privilegedClientIds)
+                    // and add if promoted
+                    case > EFClient.Permission.Trusted when !_privilegedClientIds.Contains(gameEvent.Target.ClientId):
                     {
                         _privilegedClientIds.Add(gameEvent.Target.ClientId);
+                        break;
                     }
                 }
             }
@@ -62,10 +64,16 @@ namespace WebfrontCore.Middleware
         public async Task Invoke(HttpContext context)
         {
             // we want to load the initial list of privileged clients
-            if (_privilegedClientIds.Count == 0)
+            bool hasAny;
+            lock (_privilegedClientIds)
+            {
+                hasAny = _privilegedClientIds.Any();
+            }
+
+            if (hasAny)
             {
                 var ids = (await _manager.GetClientService().GetPrivilegedClients())
-                    .Select(_client => _client.ClientId);
+                    .Select(client => client.ClientId);
 
                 lock (_privilegedClientIds)
                 {
@@ -74,13 +82,19 @@ namespace WebfrontCore.Middleware
             }
 
             // sid stores the clientId
-            string claimsId = context.User.Claims.FirstOrDefault(_claim => _claim.Type == ClaimTypes.Sid)?.Value;
+            var claimsId = context.User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Sid)?.Value;
 
             if (!string.IsNullOrEmpty(claimsId))
             {
-                int clientId = int.Parse(claimsId);
+                var clientId = int.Parse(claimsId);
+                bool hasKey;
+                lock (_privilegedClientIds)
+                {
+                    hasKey = _privilegedClientIds.Contains(clientId);
+                }
+
                 // they've been removed
-                if (!_privilegedClientIds.Contains(clientId) && clientId != 1)
+                if (!hasKey && clientId != 1)
                 {
                     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 }

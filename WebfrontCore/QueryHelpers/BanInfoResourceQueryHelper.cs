@@ -54,7 +54,8 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                 client.NetworkId,
                 client.AliasLinkId,
                 client.ClientId,
-                client.CurrentAlias.IPAddress
+                client.CurrentAlias.IPAddress,
+                client.GameName
             }).ToListAsync();
 
         var results = new List<BanInfo>();
@@ -100,7 +101,6 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                     .Where(alias => alias.IPAddress != null && searchingIps.Contains(alias.IPAddress))
                     .Select(alias => alias.LinkId)
                     .ToListAsync()).Distinct();
-
 
                 matchedPenalties = await context.Penalties.Where(penalty => penalty.Type == EFPenalty.PenaltyType.Ban)
                     .Where(penalty => penalty.Expires == null || penalty.Expires > lateDateTime)
@@ -158,6 +158,7 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                 ClientId = matchingClient.ClientId,
                 NetworkId = matchingClient.NetworkId,
                 IPAddress = matchingClient.IPAddress,
+                Game = matchingClient.GameName,
 
                 AssociatedPenalties = relatedEntities,
                 AttachedPenalty = allPenalties.FirstOrDefault(penalty =>

@@ -314,9 +314,9 @@ namespace IW4MAdmin.Application.RConParsers
                         continue;
                     }
 
-                    var client = new EFClient()
+                    var client = new EFClient
                     {
-                        CurrentAlias = new EFAlias()
+                        CurrentAlias = new EFAlias
                         {
                             Name = name,
                             IPAddress = ip

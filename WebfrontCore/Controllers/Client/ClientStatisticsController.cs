@@ -34,7 +34,12 @@ namespace WebfrontCore.Controllers
             {
                 ClientId = id,
                 ServerEndpoint = serverId
-            })).Results.First();
+            }))?.Results?.First();
+
+            if (hitInfo is null)
+            {
+                return NotFound();
+            }
             
             var server = Manager.GetServers().FirstOrDefault(server => server.ToString() == serverId);
             long? matchedServerId = null;

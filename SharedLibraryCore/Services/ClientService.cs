@@ -23,25 +23,25 @@ namespace SharedLibraryCore.Services
 {
     public class ClientService : IEntityService<EFClient>, IResourceQueryHelper<FindClientRequest, FindClientResult>
     {
-        private static readonly Func<DatabaseContext, long, Task<EFClient>> _getUniqueQuery =
-            EF.CompileAsyncQuery((DatabaseContext context, long networkId) =>
+        private static readonly Func<DatabaseContext, long, Reference.Game, Task<EFClient>> GetUniqueQuery =
+            EF.CompileAsyncQuery((DatabaseContext context, long networkId, Reference.Game game) =>
                 context.Clients
-                    .Select(_client => new EFClient
+                    .Select(client => new EFClient
                     {
-                        ClientId = _client.ClientId,
-                        AliasLinkId = _client.AliasLinkId,
-                        Level = _client.Level,
-                        Connections = _client.Connections,
-                        FirstConnection = _client.FirstConnection,
-                        LastConnection = _client.LastConnection,
-                        Masked = _client.Masked,
-                        NetworkId = _client.NetworkId,
-                        TotalConnectionTime = _client.TotalConnectionTime,
-                        AliasLink = _client.AliasLink,
-                        Password = _client.Password,
-                        PasswordSalt = _client.PasswordSalt
+                        ClientId = client.ClientId,
+                        AliasLinkId = client.AliasLinkId,
+                        Level = client.Level,
+                        Connections = client.Connections,
+                        FirstConnection = client.FirstConnection,
+                        LastConnection = client.LastConnection,
+                        Masked = client.Masked,
+                        NetworkId = client.NetworkId,
+                        TotalConnectionTime = client.TotalConnectionTime,
+                        AliasLink = client.AliasLink,
+                        Password = client.Password,
+                        PasswordSalt = client.PasswordSalt
                     })
-                    .FirstOrDefault(c => c.NetworkId == networkId)
+                    .FirstOrDefault(client => client.NetworkId == networkId && client.GameName == game)
             );
 
         private readonly ApplicationConfiguration _appConfig;
@@ -235,10 +235,14 @@ namespace SharedLibraryCore.Services
             return foundClient.Client;
         }
 
-        public virtual async Task<EFClient> GetUnique(long entityAttribute)
+        public virtual async Task<EFClient> GetUnique(long entityAttribute, object altKey = null)
         {
+            if (altKey is not Reference.Game game)
+            {
+                throw new ArgumentException($"Alternate key must be of type {nameof(Reference.Game)}");
+            }
             await using var context = _contextFactory.CreateContext(false);
-            return await _getUniqueQuery(context, entityAttribute);
+            return await GetUniqueQuery(context, entityAttribute, game);
         }
 
         public async Task<EFClient> Update(EFClient temporalClient)
@@ -285,7 +289,7 @@ namespace SharedLibraryCore.Services
                 entity.PasswordSalt = temporalClient.PasswordSalt;
             }
 
-            entity.GameName ??= temporalClient.GameName;
+            entity.GameName = temporalClient.GameName;
 
             // update in database
             await context.SaveChangesAsync();
@@ -758,19 +762,20 @@ namespace SharedLibraryCore.Services
         {
             await using var context = _contextFactory.CreateContext(false);
             return await context.Clients
-                .Select(_client => new EFClient
+                .Select(client => new EFClient
                 {
-                    NetworkId = _client.NetworkId,
-                    ClientId = _client.ClientId,
+                    NetworkId = client.NetworkId,
+                    ClientId = client.ClientId,
                     CurrentAlias = new EFAlias
                     {
-                        Name = _client.CurrentAlias.Name
+                        Name = client.CurrentAlias.Name
                     },
-                    Password = _client.Password,
-                    PasswordSalt = _client.PasswordSalt,
-                    Level = _client.Level
+                    Password = client.Password,
+                    PasswordSalt = client.PasswordSalt,
+                    GameName = client.GameName,
+                    Level = client.Level
                 })
-                .FirstAsync(_client => _client.ClientId == clientId);
+                .FirstAsync(client => client.ClientId == clientId);
         }
 
         public async Task<List<EFClient>> GetPrivilegedClients(bool includeName = true)
@@ -860,15 +865,16 @@ namespace SharedLibraryCore.Services
 
             // we want to project our results 
             var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)
-                .Select(_client => new PlayerInfo
+                .Select(client => new PlayerInfo
                 {
-                    Name = _client.CurrentAlias.Name,
-                    LevelInt = (int)_client.Level,
-                    LastConnection = _client.LastConnection,
-                    ClientId = _client.ClientId,
-                    IPAddress = _client.CurrentAlias.IPAddress.HasValue
-                        ? _client.CurrentAlias.SearchableIPAddress
-                        : ""
+                    Name = client.CurrentAlias.Name,
+                    LevelInt = (int)client.Level,
+                    LastConnection = client.LastConnection,
+                    ClientId = client.ClientId,
+                    IPAddress = client.CurrentAlias.IPAddress.HasValue
+                        ? client.CurrentAlias.SearchableIPAddress
+                        : "",
+                    Game = client.GameName
                 });
 
             var clients = await iqClientProjection.ToListAsync();

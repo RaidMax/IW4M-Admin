@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Services;
 using WebfrontCore.Controllers.API.Dtos;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -100,9 +101,16 @@ namespace WebfrontCore.Controllers.API
 
                 if (!Authorized)
                 {
+                    var tokenData = new TokenIdentifier
+                    {
+                        Game = privilegedClient.GameName,
+                        Token = request.Password,
+                        NetworkId = privilegedClient.NetworkId
+                    };
+                    
                     loginSuccess =
-                        Manager.TokenAuthenticator.AuthorizeToken(privilegedClient.NetworkId, request.Password) ||
-                        (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(request.Password,
+                        Manager.TokenAuthenticator.AuthorizeToken(tokenData) ||
+                        (await Task.FromResult(Hashing.Hash(request.Password,
                             privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
                 }
 
@@ -120,7 +128,7 @@ namespace WebfrontCore.Controllers.API
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
                     await SignInAsync(claimsPrinciple);
                     
-                    Manager.AddEvent(new GameEvent()
+                    Manager.AddEvent(new GameEvent
                     {
                         Origin = privilegedClient,
                         Type = GameEvent.EventType.Login,
@@ -149,7 +157,7 @@ namespace WebfrontCore.Controllers.API
         {
             if (Authorized)
             {
-                Manager.AddEvent(new GameEvent()
+                Manager.AddEvent(new GameEvent
                 {
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,

@@ -71,7 +71,7 @@ namespace Data.Migrations.Postgresql
                     b.Property<DateTime>("FirstConnection")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<int?>("GameName")
+                    b.Property<int>("GameName")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("LastConnection")
@@ -97,12 +97,13 @@ namespace Data.Migrations.Postgresql
 
                     b.HasKey("ClientId");
 
+                    b.HasAlternateKey("NetworkId", "GameName");
+
                     b.HasIndex("AliasLinkId");
 
                     b.HasIndex("CurrentAliasId");
 
-                    b.HasIndex("NetworkId")
-                        .IsUnique();
+                    b.HasIndex("NetworkId");
 
                     b.ToTable("EFClients", (string)null);
                 });

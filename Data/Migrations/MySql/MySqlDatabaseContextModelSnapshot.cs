@@ -64,7 +64,7 @@ namespace Data.Migrations.MySql
                     b.Property<DateTime>("FirstConnection")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int?>("GameName")
+                    b.Property<int>("GameName")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("LastConnection")
@@ -90,12 +90,13 @@ namespace Data.Migrations.MySql
 
                     b.HasKey("ClientId");
 
+                    b.HasAlternateKey("NetworkId", "GameName");
+
                     b.HasIndex("AliasLinkId");
 
                     b.HasIndex("CurrentAliasId");
 
-                    b.HasIndex("NetworkId")
-                        .IsUnique();
+                    b.HasIndex("NetworkId");
 
                     b.ToTable("EFClients", (string)null);
                 });

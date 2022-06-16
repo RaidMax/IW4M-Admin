@@ -1181,7 +1181,8 @@ namespace SharedLibraryCore
                 Meta = client.Meta,
                 ReceivedPenalties = client.ReceivedPenalties,
                 AdministeredPenalties = client.AdministeredPenalties,
-                Active = client.Active
+                Active = client.Active,
+                GameName = client.GameName
             };
         }
 
@@ -1264,5 +1265,8 @@ namespace SharedLibraryCore
 
             return allRules[index];
         }
+
+        public static string MakeAbbreviation(string gameName) => string.Join("",
+            gameName.Split(' ').Select(word => char.ToUpper(word.First())).ToArray());
     }
 }

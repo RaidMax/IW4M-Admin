@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Data.Models;
 
 namespace WebfrontCore.QueryHelpers.Models;
 
@@ -9,6 +10,7 @@ public class BanInfo
     public int ClientId { get; set; }
     public int? IPAddress { get; set; }
     public long NetworkId { get; set; }
+    public Reference.Game Game { get; set; }
     public PenaltyInfo AttachedPenalty { get; set; }
     public IEnumerable<PenaltyInfo> AssociatedPenalties { get; set; }
 }

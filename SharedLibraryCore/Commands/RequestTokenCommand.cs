@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Data.Models.Client;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Commands
@@ -19,11 +20,15 @@ namespace SharedLibraryCore.Commands
             RequiresTarget = false;
         }
 
-        public override Task ExecuteAsync(GameEvent E)
+        public override Task ExecuteAsync(GameEvent gameEvent)
         {
-            var state = E.Owner.Manager.TokenAuthenticator.GenerateNextToken(E.Origin.NetworkId);
-            E.Origin.Tell(string.Format(_translationLookup["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token,
-                $"{state.RemainingTime} {_translationLookup["GLOBAL_MINUTES"]}", E.Origin.ClientId));
+            var state = gameEvent.Owner.Manager.TokenAuthenticator.GenerateNextToken(new TokenIdentifier
+            {
+                Game = gameEvent.Origin.GameName,
+                NetworkId = gameEvent.Origin.NetworkId
+            });
+            gameEvent.Origin.Tell(string.Format(_translationLookup["COMMANDS_GENERATETOKEN_SUCCESS"], state.Token,
+                $"{state.RemainingTime} {_translationLookup["GLOBAL_MINUTES"]}", gameEvent.Origin.ClientId));
 
             return Task.CompletedTask;
         }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Data.Abstractions;
+using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats;
@@ -12,7 +13,6 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using Stats.Client.Abstractions;
 using Stats.Dtos;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -50,7 +50,8 @@ namespace Stats.Helpers
             {
                 client.ClientId,
                 client.CurrentAlias.Name,
-                client.Level
+                client.Level,
+                client.GameName
             }).FirstOrDefaultAsync(client => client.ClientId == query.ClientId);
 
             if (clientInfo == null)
@@ -111,8 +112,9 @@ namespace Stats.Helpers
                 Rating = mostRecentRanking?.PerformanceMetric,
                 All = hitStats,
                 Servers = _manager.GetServers()
-                    .Select(server => new ServerInfo()
-                        {Name = server.Hostname, IPAddress = server.IP, Port = server.Port})
+                    .Select(server => new ServerInfo
+                        {Name = server.Hostname, IPAddress = server.IP, Port = server.Port, Game = (Reference.Game)server.GameName})
+                    .Where(server => server.Game == clientInfo.GameName)
                     .ToList(),
                 Aggregate = hitStats.FirstOrDefault(hit =>
                     hit.HitLocationId == null && hit.ServerId == serverId && hit.WeaponId == null &&

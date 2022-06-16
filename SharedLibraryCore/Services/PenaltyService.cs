@@ -88,7 +88,7 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public Task<EFPenalty> GetUnique(long entityProperty)
+        public Task<EFPenalty> GetUnique(long entityProperty, object altKey)
         {
             throw new NotImplementedException();
         }
@@ -139,10 +139,10 @@ namespace SharedLibraryCore.Services
             LinkedPenalties.Contains(pi.Penalty.Type) && pi.Penalty.Active &&
             (pi.Penalty.Expires == null || pi.Penalty.Expires > DateTime.UtcNow);
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int currentAliasId, long networkId,
+        public async Task<List<EFPenalty>> GetActivePenaltiesAsync(int linkId, int currentAliasId, long networkId, Reference.Game game,
             int? ip = null)
         {
-            var penaltiesByIdentifier = await GetActivePenaltiesByIdentifier(ip, networkId);
+            var penaltiesByIdentifier = await GetActivePenaltiesByIdentifier(ip, networkId, game);
 
             if (penaltiesByIdentifier.Any())
             {
@@ -183,12 +183,12 @@ namespace SharedLibraryCore.Services
             return activePenalties.OrderByDescending(p => p.When).ToList();
         }
 
-        public async Task<List<EFPenalty>> GetActivePenaltiesByIdentifier(int? ip, long networkId)
+        public async Task<List<EFPenalty>> GetActivePenaltiesByIdentifier(int? ip, long networkId, Reference.Game game)
         {
             await using var context = _contextFactory.CreateContext(false);
 
             var activePenaltiesIds = context.PenaltyIdentifiers.Where(identifier =>
-                    identifier.IPv4Address != null && identifier.IPv4Address == ip || identifier.NetworkId == networkId)
+                    identifier.IPv4Address != null && identifier.IPv4Address == ip || identifier.NetworkId == networkId && identifier.Penalty.Offender.GameName == game)
                 .Where(FilterById);
             return await activePenaltiesIds.Select(ids => ids.Penalty).ToListAsync();
         }
@@ -214,12 +214,12 @@ namespace SharedLibraryCore.Services
             return await activePenaltiesIds.Select(ids => ids.Penalty).ToListAsync();
         }
 
-        public virtual async Task RemoveActivePenalties(int aliasLinkId, long networkId, int? ipAddress = null)
+        public virtual async Task RemoveActivePenalties(int aliasLinkId, long networkId, Reference.Game game, int? ipAddress = null)
         {
             await using var context = _contextFactory.CreateContext();
             var now = DateTime.UtcNow;
 
-            var activePenalties = await GetActivePenaltiesByIdentifier(ipAddress, networkId);
+            var activePenalties = await GetActivePenaltiesByIdentifier(ipAddress, networkId, game);
 
             if (activePenalties.Any())
             {

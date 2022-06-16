@@ -7,16 +7,15 @@ namespace SharedLibraryCore.Interfaces
         /// <summary>
         ///     generates and returns a token for the given network id
         /// </summary>
-        /// <param name="networkId">network id of the players to generate the token for</param>
+        /// <param name="authInfo">auth information for next token generation</param>
         /// <returns>4 character string token</returns>
-        TokenState GenerateNextToken(long networkId);
+        TokenState GenerateNextToken(ITokenIdentifier authInfo);
 
         /// <summary>
         ///     authorizes given token
         /// </summary>
-        /// <param name="networkId">network id of the client to authorize</param>
-        /// <param name="token">token to authorize</param>
+        /// <param name="authInfo">auth information</param>
         /// <returns>true if token authorized successfully, false otherwise</returns>
-        bool AuthorizeToken(long networkId, string token);
+        bool AuthorizeToken(ITokenIdentifier authInfo);
     }
 }

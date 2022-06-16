@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using SharedLibraryCore.Helpers;
 
 namespace WebfrontCore.Controllers
 {
@@ -19,6 +19,7 @@ namespace WebfrontCore.Controllers
         }
 
         [HttpGet]
+        [Obsolete]
         public async Task<IActionResult> Login(int clientId, string password)
         {
             if (clientId == 0 || string.IsNullOrEmpty(password))
@@ -29,14 +30,23 @@ namespace WebfrontCore.Controllers
             try
             {
                 var privilegedClient = await Manager.GetClientService().GetClientForLogin(clientId);
-                bool loginSuccess = false;
-#if DEBUG
-                loginSuccess = clientId == 1;
-#endif
+                var loginSuccess = false;
+                
+                if (Utilities.IsDevelopment)
+                {
+                    loginSuccess = clientId == 1;
+                }
+
                 if (!Authorized && !loginSuccess)
                 {
-                    loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(privilegedClient.NetworkId, password) ||
-                        (await Task.FromResult(SharedLibraryCore.Helpers.Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
+                    loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(new TokenIdentifier
+                                   {
+                                       NetworkId = privilegedClient.NetworkId,
+                                       Game = privilegedClient.GameName,
+                                       Token = password
+                                   }) ||
+                                   (await Task.FromResult(Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] ==
+                                   privilegedClient.Password;
                 }
 
                 if (loginSuccess)
@@ -46,21 +56,22 @@ namespace WebfrontCore.Controllers
                         new Claim(ClaimTypes.NameIdentifier, privilegedClient.Name),
                         new Claim(ClaimTypes.Role, privilegedClient.Level.ToString()),
                         new Claim(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-                        new Claim(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X"))
+                        new Claim(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
+                        new Claim(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, "login");
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
                     await SignInAsync(claimsPrinciple);
                     
-                    Manager.AddEvent(new GameEvent()
+                    Manager.AddEvent(new GameEvent
                     {
                         Origin = privilegedClient,
                         Type = GameEvent.EventType.Login,
                         Owner = Manager.GetServers().First(),
                         Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
                             ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
-                            : HttpContext.Connection.RemoteIpAddress.ToString()
+                            : HttpContext.Connection.RemoteIpAddress?.ToString()
                     });
 
                     return Ok($"Welcome {privilegedClient.Name}. You are now logged in");
@@ -80,14 +91,14 @@ namespace WebfrontCore.Controllers
         {
             if (Authorized)
             {
-                Manager.AddEvent(new GameEvent()
+                Manager.AddEvent(new GameEvent
                 {
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.GetServers().First(),
                     Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
                         ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
-                        : HttpContext.Connection.RemoteIpAddress.ToString()
+                        : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
             }
 

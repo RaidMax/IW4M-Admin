@@ -381,7 +381,7 @@ namespace SharedLibraryCore.Commands
         {
             // todo: don't do the lookup here
             var penalties = await gameEvent.Owner.Manager.GetPenaltyService().GetActivePenaltiesAsync(gameEvent.Target.AliasLinkId,
-                gameEvent.Target.CurrentAliasId, gameEvent.Target.NetworkId, gameEvent.Target.CurrentAlias.IPAddress);
+                gameEvent.Target.CurrentAliasId, gameEvent.Target.NetworkId, gameEvent.Target.GameName, gameEvent.Target.CurrentAlias.IPAddress);
             
             if (penalties
                     .FirstOrDefault(p =>
@@ -897,7 +897,7 @@ namespace SharedLibraryCore.Commands
         public override async Task ExecuteAsync(GameEvent E)
         {
             var existingPenalties = await E.Owner.Manager.GetPenaltyService()
-                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId, E.Target.NetworkId, E.Target.IPAddress);
+                .GetActivePenaltiesAsync(E.Target.AliasLinkId, E.Target.CurrentAliasId, E.Target.NetworkId, E.Target.GameName, E.Target.IPAddress);
             var penalty = existingPenalties.FirstOrDefault(b => b.Type > EFPenalty.PenaltyType.Kick);
 
             if (penalty == null)

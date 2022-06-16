@@ -13,7 +13,9 @@
                 <div class="align-self-center ">
                     <a asp-controller="Client" asp-action="Profile" asp-route-id="@ban.ClientId" class="font-size-18 no-decoration">@ban.ClientName</a>
                     <br/>
-                    <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                    <div data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{ban.Game}"]">
+                        <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                    </div>
                     <has-permission entity="ClientGuid" required-permission="Read">
                         <div class="text-muted">@ban.NetworkId.ToString("X")</div>
                     </has-permission>
@@ -47,6 +49,10 @@
                             <a asp-controller="Client" asp-action="Profile" asp-route-id="@associatedEntity.OffenderInfo.ClientId" class="font-size-18 no-decoration">@associatedEntity.OffenderInfo.ClientName</a>
                         </div>
                     </div>
+                    <div data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{ban.Game}"]">
+                        <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                    </div>
+                    <br/>
                     <has-permission entity="ClientGuid" required-permission="Read">
                         <div class="text-muted">@associatedEntity.OffenderInfo.NetworkId?.ToString("X")</div>
                     </has-permission>
@@ -57,7 +63,6 @@
                     <div class="text-muted font-weight-light">@associatedEntity.Offense.CapClientName(30)</div>
                     <div class="text-danger font-weight-light">@associatedEntity.DateTime.ToStandardFormat()</div>
                     <div class="btn profile-action mt-10 w-100" data-action="unban" data-action-id="@associatedEntity.OffenderInfo.ClientId">Unban</div>
-                    <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
                 </div>
             }
         </div>

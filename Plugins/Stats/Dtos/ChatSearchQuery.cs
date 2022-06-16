@@ -23,7 +23,7 @@ namespace Stats.Dtos
         /// <summary>
         /// only look for messages sent after this date
         /// </summary>
-        public DateTime SentAfter { get; set; } = DateTime.UtcNow.AddYears(-100);
+        public DateTime? SentAfter { get; set; }
 
         /// <summary>
         /// only look for messages sent before this date0

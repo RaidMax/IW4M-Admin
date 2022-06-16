@@ -853,15 +853,16 @@ namespace SharedLibraryCore.Services
 
             else
             {
-                iqClients = iqClients.Where(_client => networkId == _client.NetworkId ||
-                                                       linkIds.Contains(_client.AliasLinkId)
-                                                       || !_appConfig.EnableImplicitAccountLinking &&
-                                                       _client.CurrentAlias.IPAddress != null &&
-                                                       _client.CurrentAlias.IPAddress == ipAddress);
+                iqClients = iqClients.Where(client => networkId == client.NetworkId || linkIds.Contains(client.AliasLinkId));
+            }
+
+            if (ipAddress is not null && !_appConfig.EnableImplicitAccountLinking)
+            {
+                iqClients = iqClients.Union(context.Clients.Where(client => client.CurrentAlias.IPAddress == ipAddress));
             }
 
             // we want to project our results 
-            var iqClientProjection = iqClients.OrderByDescending(_client => _client.LastConnection)
+            var iqClientProjection = iqClients.OrderByDescending(client => client.LastConnection)
                 .Select(client => new PlayerInfo
                 {
                     Name = client.CurrentAlias.Name,
@@ -878,7 +879,9 @@ namespace SharedLibraryCore.Services
 
             // this is so we don't try to evaluate this in the linq to entities query
             foreach (var client in clients)
+            {
                 client.Level = ((Permission)client.LevelInt).ToLocalizedLevelName();
+            }
 
             return clients;
         }

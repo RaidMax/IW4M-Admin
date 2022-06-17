@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -8,12 +9,19 @@ namespace Data.Migrations.MySql
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"create index IX_EFClientMessages_TimeSentDesc on efclientmessages (TimeSent desc);");
+            try
+            {
+                migrationBuilder.Sql(@"create index IX_EFClientMessages_TimeSentDesc on EFClientMessages (TimeSent desc);");
+            }
+            catch
+            {
+                migrationBuilder.Sql(@"create index IX_EFClientMessages_TimeSentDesc on efclientmessages (TimeSent desc);");
+            }
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"drop index IX_EFClientMessages_TimeSentDesc on efclientmessages;");
+            migrationBuilder.Sql(@"drop index IX_EFClientMessages_TimeSentDesc on EFClientMessages;");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using static Data.Models.Client.EFClient;
 using static SharedLibraryCore.Server;
@@ -35,6 +36,6 @@ namespace SharedLibraryCore.Configuration
         ///     Specifies the games supporting the functionality of the command
         /// </summary>
         [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
-        public Game[] SupportedGames { get; set; } = new Game[0];
+        public Game[] SupportedGames { get; set; } = Array.Empty<Game>();
     }
 }

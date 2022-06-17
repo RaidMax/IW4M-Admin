@@ -154,10 +154,10 @@ namespace IW4MAdmin
             {
                 if (E.IsBlocking)
                 {
-                    await E.Origin?.Lock();
+                    await E.Origin.Lock();
                 }
 
-                bool canExecuteCommand = true;
+                var canExecuteCommand = true;
 
                 try
                 {
@@ -166,30 +166,30 @@ namespace IW4MAdmin
                         return;
                     }
 
-                    Command C = null;
+                    Command command = null;
                     if (E.Type == GameEvent.EventType.Command)
                     {
                         try
                         {
-                            C = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E, Manager.GetApplicationSettings().Configuration(), _commandConfiguration);
+                            command = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E, Manager.GetApplicationSettings().Configuration(), _commandConfiguration);
                         }
 
                         catch (CommandException e)
                         {
-                            ServerLogger.LogWarning(e, "Error validating command from event {@event}", 
+                            ServerLogger.LogWarning(e, "Error validating command from event {@Event}", 
                                 new { E.Type, E.Data, E.Message, E.Subtype, E.IsRemote, E.CorrelationId });
                             E.FailReason = GameEvent.EventFailReason.Invalid;
                         }
 
-                        if (C != null)
+                        if (command != null)
                         {
-                            E.Extra = C;
+                            E.Extra = command;
                         }
                     }
 
                     try
                     {
-                        var loginPlugin = Manager.Plugins.FirstOrDefault(_plugin => _plugin.Name == "Login");
+                        var loginPlugin = Manager.Plugins.FirstOrDefault(plugin => plugin.Name == "Login");
 
                         if (loginPlugin != null)
                         {
@@ -204,15 +204,15 @@ namespace IW4MAdmin
                     }
 
                     // hack: this prevents commands from getting executing that 'shouldn't' be
-                    if (E.Type == GameEvent.EventType.Command && E.Extra is Command command &&
+                    if (E.Type == GameEvent.EventType.Command && E.Extra is Command cmd &&
                         (canExecuteCommand || E.Origin?.Level == Permission.Console))
                     {
-                        ServerLogger.LogInformation("Executing command {comamnd} for {client}", command.Name, E.Origin.ToString());
-                        await command.ExecuteAsync(E);
+                        ServerLogger.LogInformation("Executing command {Command} for {Client}", cmd.Name, E.Origin.ToString());
+                        await cmd.ExecuteAsync(E);
                     }
 
                     var pluginTasks = Manager.Plugins
-                        .Where(_plugin => _plugin.Name != "Login")
+                        .Where(plugin => plugin.Name != "Login")
                         .Select(async plugin => await CreatePluginTask(plugin, E));
                     
                     await Task.WhenAll(pluginTasks);

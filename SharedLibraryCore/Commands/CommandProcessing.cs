@@ -11,163 +11,180 @@ namespace SharedLibraryCore.Commands
 {
     public class CommandProcessing
     {
-        public static async Task<Command> ValidateCommand(GameEvent E, ApplicationConfiguration appConfig,
+        public static async Task<Command> ValidateCommand(GameEvent gameEvent, ApplicationConfiguration appConfig,
             CommandConfiguration commandConfig)
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            var Manager = E.Owner.Manager;
-            var isBroadcast = E.Data.StartsWith(appConfig.BroadcastCommandPrefix);
+            var manager = gameEvent.Owner.Manager;
+            var isBroadcast = gameEvent.Data.StartsWith(appConfig.BroadcastCommandPrefix);
             var prefixLength = isBroadcast ? appConfig.BroadcastCommandPrefix.Length : appConfig.CommandPrefix.Length;
 
-            var CommandString = E.Data.Substring(prefixLength, E.Data.Length - prefixLength).Split(' ')[0];
-            E.Message = E.Data;
+            var commandString =
+                gameEvent.Data.Substring(prefixLength, gameEvent.Data.Length - prefixLength).Split(' ')[0];
+            gameEvent.Message = gameEvent.Data;
 
-            Command C = null;
-            foreach (Command cmd in Manager.GetCommands()
+            Command matchedCommand = null;
+            foreach (var availableCommand in manager.GetCommands()
                          .Where(c => c.Name != null))
-                if (cmd.Name.Equals(CommandString, StringComparison.OrdinalIgnoreCase) ||
-                    (cmd.Alias ?? "").Equals(CommandString, StringComparison.OrdinalIgnoreCase))
+            {
+                if ((availableCommand.SupportedGames?.Any() ?? false) &&
+                    !availableCommand.SupportedGames.Contains(gameEvent.Owner.GameName))
                 {
-                    C = cmd;
+                    continue;
                 }
 
-            if (C == null)
-            {
-                E.Origin.Tell(loc["COMMAND_UNKNOWN"]);
-                throw new CommandException($"{E.Origin} entered unknown command \"{CommandString}\"");
-            }
-
-            C.IsBroadcast = isBroadcast;
-
-            var allowImpersonation = commandConfig?.Commands?.ContainsKey(C.GetType().Name) ?? false
-                ? commandConfig.Commands[C.GetType().Name].AllowImpersonation
-                : C.AllowImpersonation;
-
-            if (!allowImpersonation && E.ImpersonationOrigin != null)
-            {
-                E.ImpersonationOrigin.Tell(loc["COMMANDS_RUN_AS_FAIL"]);
-                throw new CommandException($"Command {C.Name} cannot be run as another client");
-            }
-
-            E.Data = E.Data.RemoveWords(1);
-            var Args = E.Data.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            // todo: the code below can be cleaned up 
-
-            if (E.Origin.Level < C.Permission)
-            {
-                E.Origin.Tell(loc["COMMAND_NOACCESS"]);
-                throw new CommandException($"{E.Origin} does not have access to \"{C.Name}\"");
-            }
-
-            if (Args.Length < C.RequiredArgumentCount)
-            {
-                E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                E.Origin.Tell(C.Syntax);
-                throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
-            }
-
-            if (C.RequiresTarget)
-            {
-                if (Args.Length > 0)
+                if (availableCommand.Name.Equals(commandString, StringComparison.OrdinalIgnoreCase) ||
+                    (availableCommand.Alias ?? "").Equals(commandString, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!int.TryParse(Args[0], out var cNum))
+                    matchedCommand = (Command)availableCommand;
+                }
+            }
+
+            if (matchedCommand == null)
+            {
+                gameEvent.Origin.Tell(loc["COMMAND_UNKNOWN"]);
+                throw new CommandException($"{gameEvent.Origin} entered unknown command \"{commandString}\"");
+            }
+
+            matchedCommand.IsBroadcast = isBroadcast;
+
+            var allowImpersonation = commandConfig?.Commands?.ContainsKey(matchedCommand.GetType().Name) ?? false
+                ? commandConfig.Commands[matchedCommand.GetType().Name].AllowImpersonation
+                : matchedCommand.AllowImpersonation;
+
+            if (!allowImpersonation && gameEvent.ImpersonationOrigin != null)
+            {
+                gameEvent.ImpersonationOrigin.Tell(loc["COMMANDS_RUN_AS_FAIL"]);
+                throw new CommandException($"Command {matchedCommand.Name} cannot be run as another client");
+            }
+
+            gameEvent.Data = gameEvent.Data.RemoveWords(1);
+            var args = gameEvent.Data.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // todo: the code below can be cleaned up 
+            if (gameEvent.Origin.Level < matchedCommand.Permission)
+            {
+                gameEvent.Origin.Tell(loc["COMMAND_NOACCESS"]);
+                throw new CommandException($"{gameEvent.Origin} does not have access to \"{matchedCommand.Name}\"");
+            }
+
+            if (args.Length < matchedCommand.RequiredArgumentCount)
+            {
+                gameEvent.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
+                gameEvent.Origin.Tell(matchedCommand.Syntax);
+                throw new CommandException(
+                    $"{gameEvent.Origin} did not supply enough arguments for \"{matchedCommand.Name}\"");
+            }
+
+            if (matchedCommand.RequiresTarget)
+            {
+                if (args.Length > 0)
+                {
+                    if (!int.TryParse(args[0], out var cNum))
                     {
                         cNum = -1;
                     }
 
-                    if (Args[0][0] == '@') // user specifying target by database ID
+                    if (args[0][0] == '@') // user specifying target by database ID
                     {
-                        int.TryParse(Args[0].Substring(1, Args[0].Length - 1), out var dbID);
+                        int.TryParse(args[0].Substring(1, args[0].Length - 1), out var dbID);
 
-                        var found = await Manager.GetClientService().Get(dbID);
+                        var found = await manager.GetClientService().Get(dbID);
                         if (found != null)
                         {
-                            found = Manager.FindActiveClient(found);
-                            E.Target = found;
-                            E.Target.CurrentServer = found.CurrentServer ?? E.Owner;
-                            E.Data = string.Join(" ", Args.Skip(1));
+                            found = manager.FindActiveClient(found);
+                            gameEvent.Target = found;
+                            gameEvent.Target.CurrentServer = found.CurrentServer ?? gameEvent.Owner;
+                            gameEvent.Data = string.Join(" ", args.Skip(1));
                         }
                     }
 
-                    else if (Args[0].Length < 3 && cNum > -1 && cNum < E.Owner.MaxClients
+                    else if (args[0].Length < 3 && cNum > -1 && cNum < gameEvent.Owner.MaxClients
                             ) // user specifying target by client num
                     {
-                        if (E.Owner.Clients[cNum] != null)
+                        if (gameEvent.Owner.Clients[cNum] != null)
                         {
-                            E.Target = E.Owner.Clients[cNum];
-                            E.Data = string.Join(" ", Args.Skip(1));
+                            gameEvent.Target = gameEvent.Owner.Clients[cNum];
+                            gameEvent.Data = string.Join(" ", args.Skip(1));
                         }
                     }
                 }
 
                 List<EFClient> matchingPlayers;
 
-                if (E.Target == null && C.RequiresTarget) // Find active player including quotes (multiple words)
+                if (gameEvent.Target == null &&
+                    matchedCommand.RequiresTarget) // Find active player including quotes (multiple words)
                 {
-                    matchingPlayers = E.Owner.GetClientByName(E.Data);
+                    matchingPlayers = gameEvent.Owner.GetClientByName(gameEvent.Data);
                     if (matchingPlayers.Count > 1)
                     {
-                        E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
-                        throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
+                        gameEvent.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
+                        throw new CommandException(
+                            $"{gameEvent.Origin} had multiple players found for {matchedCommand.Name}");
                     }
 
                     if (matchingPlayers.Count == 1)
                     {
-                        E.Target = matchingPlayers.First();
+                        gameEvent.Target = matchingPlayers.First();
 
-                        var escapedName = Regex.Escape(E.Target.CleanedName);
+                        var escapedName = Regex.Escape(gameEvent.Target.CleanedName);
                         var reg = new Regex($"(\"{escapedName}\")|({escapedName})", RegexOptions.IgnoreCase);
-                        E.Data = reg.Replace(E.Data, "", 1).Trim();
+                        gameEvent.Data = reg.Replace(gameEvent.Data, "", 1).Trim();
 
-                        if (E.Data.Length == 0 && C.RequiredArgumentCount > 1)
+                        if (gameEvent.Data.Length == 0 && matchedCommand.RequiredArgumentCount > 1)
                         {
-                            E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                            E.Origin.Tell(C.Syntax);
-                            throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                            gameEvent.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
+                            gameEvent.Origin.Tell(matchedCommand.Syntax);
+                            throw new CommandException(
+                                $"{gameEvent.Origin} did not supply enough arguments for \"{matchedCommand.Name}\"");
                         }
                     }
                 }
 
-                if (E.Target == null && C.RequiresTarget && Args.Length > 0) // Find active player as single word
+                if (gameEvent.Target == null && matchedCommand.RequiresTarget &&
+                    args.Length > 0) // Find active player as single word
                 {
-                    matchingPlayers = E.Owner.GetClientByName(Args[0]);
+                    matchingPlayers = gameEvent.Owner.GetClientByName(args[0]);
                     if (matchingPlayers.Count > 1)
                     {
-                        E.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
+                        gameEvent.Origin.Tell(loc["COMMAND_TARGET_MULTI"]);
                         foreach (var p in matchingPlayers)
-                            E.Origin.Tell($"[(Color::Yellow){p.ClientNumber}(Color::White)] {p.Name}");
-                        throw new CommandException($"{E.Origin} had multiple players found for {C.Name}");
+                            gameEvent.Origin.Tell($"[(Color::Yellow){p.ClientNumber}(Color::White)] {p.Name}");
+                        throw new CommandException(
+                            $"{gameEvent.Origin} had multiple players found for {matchedCommand.Name}");
                     }
 
                     if (matchingPlayers.Count == 1)
                     {
-                        E.Target = matchingPlayers.First();
+                        gameEvent.Target = matchingPlayers.First();
 
-                        var escapedName = Regex.Escape(E.Target.CleanedName);
-                        var escapedArg = Regex.Escape(Args[0]);
+                        var escapedName = Regex.Escape(gameEvent.Target.CleanedName);
+                        var escapedArg = Regex.Escape(args[0]);
                         var reg = new Regex($"({escapedName})|({escapedArg})", RegexOptions.IgnoreCase);
-                        E.Data = reg.Replace(E.Data, "", 1).Trim();
+                        gameEvent.Data = reg.Replace(gameEvent.Data, "", 1).Trim();
 
-                        if ((E.Data.Trim() == E.Target.CleanedName.ToLower().Trim() ||
-                             E.Data == string.Empty) &&
-                            C.RequiresTarget)
+                        if ((gameEvent.Data.Trim() == gameEvent.Target.CleanedName.ToLower().Trim() ||
+                             gameEvent.Data == string.Empty) &&
+                            matchedCommand.RequiresTarget)
                         {
-                            E.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
-                            E.Origin.Tell(C.Syntax);
-                            throw new CommandException($"{E.Origin} did not supply enough arguments for \"{C.Name}\"");
+                            gameEvent.Origin.Tell(loc["COMMAND_MISSINGARGS"]);
+                            gameEvent.Origin.Tell(matchedCommand.Syntax);
+                            throw new CommandException(
+                                $"{gameEvent.Origin} did not supply enough arguments for \"{matchedCommand.Name}\"");
                         }
                     }
                 }
 
-                if (E.Target == null && C.RequiresTarget)
+                if (gameEvent.Target == null && matchedCommand.RequiresTarget)
                 {
-                    E.Origin.Tell(loc["COMMAND_TARGET_NOTFOUND"]);
-                    throw new CommandException($"{E.Origin} specified invalid player for \"{C.Name}\"");
+                    gameEvent.Origin.Tell(loc["COMMAND_TARGET_NOTFOUND"]);
+                    throw new CommandException(
+                        $"{gameEvent.Origin} specified invalid player for \"{matchedCommand.Name}\"");
                 }
             }
 
-            E.Data = E.Data.Trim();
-            return C;
+            gameEvent.Data = gameEvent.Data.Trim();
+            return matchedCommand;
         }
     }
 }

@@ -105,7 +105,7 @@ namespace IW4MAdmin.Application.RConParsers
                 lineSplit = Array.Empty<string>();
             }
 
-            var response = string.Join('\n', lineSplit).TrimEnd('\0');
+            var response = string.Join('\n', lineSplit).Replace("\n", "").TrimEnd('\0');
             var match = Regex.Match(response, Configuration.Dvar.Pattern);
 
             if (response.Contains("Unknown command") ||

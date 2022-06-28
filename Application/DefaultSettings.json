@@ -564,7 +564,56 @@
           "Alias": "Momentum"
         }
       ]
-    }
+    },
+{
+      "Game": "H1",
+      "Gametypes": [
+	{
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dd",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+	{
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+	{
+          "Name": "hp",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+}
   ],
   "Maps": [
     {
@@ -1768,6 +1817,103 @@
         }
       ]
     },
+    {
+      "Game": "H1",
+      "Maps": [
+        {
+          "Alias": "Ambush",
+          "Name": "mp_convoy"
+        },
+        {
+          "Alias": "Backlot",
+          "Name": "mp_backlot"
+        },
+        {
+          "Alias": "Bloc",
+          "Name": "mp_bloc"
+        },
+        {
+          "Alias": "Bog",
+          "Name": "mp_bog"
+        },
+        {
+          "Alias": "Countdown",
+          "Name": "mp_countdown"
+        },
+        {
+          "Alias": "Crash",
+          "Name": "mp_crash"
+        },
+        {
+          "Alias": "Crossfire",
+          "Name": "mp_crossfire"
+        },
+        {
+          "Alias": "District",
+          "Name": "mp_citystreets"
+        },
+        {
+          "Alias": "Downpour",
+          "Name": "mp_farm"
+        },
+        {
+          "Alias": "Overgrown",
+          "Name": "mp_overgrown"
+        },
+        {
+          "Alias": "Pipeline",
+          "Name": "mp_pipeline"
+        },
+        {
+          "Alias": "Shipment",
+          "Name": "mp_shipment"
+        },
+        {
+          "Alias": "Showdown",
+          "Name": "mp_showdown"
+        },
+        {
+          "Alias": "Strike",
+          "Name": "mp_strike"
+        },
+        {
+          "Alias": "Vacant",
+          "Name": "mp_vacant"
+        },
+        {
+          "Alias": "Wet Work",
+          "Name": "mp_cargoship"
+        },
+        {
+          "Alias": "Winter Crash",
+          "Name": "mp_crash_snow"
+        },
+        {
+          "Alias": "Broadcast",
+          "Name": "mp_broadcast"
+        },
+        {
+          "Alias": "Creek",
+          "Name": "mp_creek"
+        },
+        {
+          "Alias": "Chinatown",
+          "Name": "mp_carentan"
+        },
+        {
+          "Alias": "Killhouse",
+          "Name": "mp_killhouse"
+        },
+        {
+          "Alias": "Day Break",
+          "Name": "mp_farm_spring"
+        },
+        {
+          "Alias": "Beach Bog",
+          "Name": "mp_bog_summer"
+        }
+      ]
+    },  
     {
       "Game": "CSGO",
       "Maps": [

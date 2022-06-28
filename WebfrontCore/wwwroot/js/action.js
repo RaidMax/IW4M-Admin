@@ -57,6 +57,15 @@ function escapeHtml (string) {
     });
 }
 
+function buildToastUri(message, duration) {
+    let uri = '&';
+    if (window.location.href.toString().indexOf('?') <= 0) {
+        uri = '?';
+    }
+    uri += `toastMessage=${escape(message)}${duration ? `&duration=${duration}` : ''}`;
+    return uri;
+}
+
 $(document).ready(function () {
     
     let toastMessage = getUrlParameter('toastMessage');
@@ -130,7 +139,7 @@ $(document).ready(function () {
                     }
                     catch{}
                     if (shouldRefresh) {
-                        window.location = `${window.location.href.replace('#', '')}?toastMessage=${escape(message)}${duration ? `&duration=${duration}` : ''}`;
+                        window.location = `${window.location.href.replace('#', '')}${buildToastUri(message, duration)}`;
                     }
                     else {
                         modal.modal();

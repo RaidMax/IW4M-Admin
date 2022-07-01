@@ -1472,6 +1472,11 @@ namespace IW4MAdmin
 
             ServerLogger.LogDebug("Creating tempban penalty for {TargetClient}", targetClient.ToString());
             await newPenalty.TryCreatePenalty(Manager.GetPenaltyService(), ServerLogger);
+            
+            foreach (var reports in Manager.GetServers().Select(server => server.Reports))
+            {
+                reports.RemoveAll(report => report.Target.ClientId == targetClient.ClientId);
+            }
 
             if (activeClient.IsIngame)
             {
@@ -1501,6 +1506,11 @@ namespace IW4MAdmin
             ServerLogger.LogDebug("Creating ban penalty for {TargetClient}", targetClient.ToString());
             activeClient.SetLevel(Permission.Banned, originClient);
             await newPenalty.TryCreatePenalty(Manager.GetPenaltyService(), ServerLogger);
+
+            foreach (var reports in Manager.GetServers().Select(server => server.Reports))
+            {
+                reports.RemoveAll(report => report.Target.ClientId == targetClient.ClientId);
+            }
 
             if (activeClient.IsIngame)
             {

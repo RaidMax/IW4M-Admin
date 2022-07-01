@@ -253,8 +253,10 @@ namespace Integrations.Cod
                 try
                 {
                     connectionState.LastQuery = DateTime.Now;
+                    var timeout = _parser.OverrideTimeoutForCommand(parameters);
+                    waitForResponse = waitForResponse && timeout.HasValue;
                     response = await SendPayloadAsync(payload, waitForResponse,
-                        _parser.OverrideTimeoutForCommand(parameters), token);
+                        timeout ?? TimeSpan.Zero, token);
 
                     if ((response?.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {

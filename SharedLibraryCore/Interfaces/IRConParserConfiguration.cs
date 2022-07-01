@@ -75,6 +75,11 @@ namespace SharedLibraryCore.Interfaces
         IDictionary<string, string> DefaultDvarValues { get; }
 
         /// <summary>
+        /// contains a setup of commands that have override timeouts
+        /// </summary>
+        IDictionary<string, int?> OverrideCommandTimeouts { get; }
+
+        /// <summary>
         ///     specifies how many lines can be used for ingame notice
         /// </summary>
         int NoticeMaximumLines { get; set; }
@@ -100,7 +105,7 @@ namespace SharedLibraryCore.Interfaces
         string DefaultInstallationDirectoryHint { get; }
 
         ColorCodeMapping ColorCodeMapping { get; }
-        
+
         short FloodProtectInterval { get; }
     }
 }

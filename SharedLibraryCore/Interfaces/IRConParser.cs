@@ -110,6 +110,6 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="command">name of command being executed</param>
         /// <returns></returns>
-        TimeSpan OverrideTimeoutForCommand(string command);
+        TimeSpan? OverrideTimeoutForCommand(string command);
     }
 }

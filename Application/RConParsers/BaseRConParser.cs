@@ -368,15 +368,28 @@ namespace IW4MAdmin.Application.RConParsers
             (T)Convert.ChangeType(Configuration.DefaultDvarValues[dvarName], typeof(T)) :
             default;
 
-        public TimeSpan OverrideTimeoutForCommand(string command)
+        public TimeSpan? OverrideTimeoutForCommand(string command)
         {
-            if (command.Contains("map_rotate", StringComparison.InvariantCultureIgnoreCase) ||
-                command.StartsWith("map ", StringComparison.InvariantCultureIgnoreCase))
+            if (string.IsNullOrEmpty(command))
             {
-                return TimeSpan.FromSeconds(30);
+                return TimeSpan.Zero;
+            }
+            
+            var commandToken = command.Split(' ', StringSplitOptions.RemoveEmptyEntries).First().ToLower();
+
+            if (!Configuration.OverrideCommandTimeouts.ContainsKey(commandToken))
+            {
+                return TimeSpan.Zero;
             }
 
-            return TimeSpan.Zero;
+            var timeoutValue = Configuration.OverrideCommandTimeouts[commandToken];
+            
+            if (timeoutValue.HasValue && timeoutValue.Value != 0) // JINT doesn't seem to be able to properly set nulls on dictionaries
+            {
+                return TimeSpan.FromSeconds(timeoutValue.Value);
+            }
+
+            return null;
         }
     }
 }

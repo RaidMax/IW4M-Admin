@@ -26,6 +26,7 @@ namespace IW4MAdmin.Application.RConParsers
         public NumberStyles GuidNumberStyle { get; set; } = NumberStyles.HexNumber;
         public IDictionary<string, string> OverrideDvarNameMapping { get; set; } = new Dictionary<string, string>();
         public IDictionary<string, string> DefaultDvarValues { get; set; } = new Dictionary<string, string>();
+        public IDictionary<string, int?> OverrideCommandTimeouts { get; set; } = new Dictionary<string, int?>();
         public int NoticeMaximumLines { get; set; } = 8;
         public int NoticeMaxCharactersPerLine { get; set; } = 50;
         public string NoticeLineSeparator { get; set; } = Environment.NewLine;
@@ -58,6 +59,19 @@ namespace IW4MAdmin.Application.RConParsers
             StatusHeader = parserRegexFactory.CreateParserRegex();
             HostnameStatus = parserRegexFactory.CreateParserRegex();
             MaxPlayersStatus = parserRegexFactory.CreateParserRegex();
+
+
+            const string mapRotateCommand = "map_rotate";
+            const string mapCommand = "map";
+            const string fastRestartCommand = "fast_restart";
+
+            foreach (var command in new[] { mapRotateCommand, mapCommand, fastRestartCommand})
+            {
+                if (!OverrideCommandTimeouts.ContainsKey(command))
+                {
+                    OverrideCommandTimeouts.Add(command, 45);
+                }
+            }
         }
     }
 }

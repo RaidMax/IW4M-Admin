@@ -78,7 +78,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_BAN_NAME"],
-                Name = "Ban",
+                Name = Localization["WEBFRONT_ACTION_BAN_NAME"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -152,7 +152,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_UNBAN_NAME"],
-                Name = "Unban",
+                Name = Localization["WEBFRONT_ACTION_UNBAN_NAME"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -193,7 +193,7 @@ namespace WebfrontCore.Controllers
             var login = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LOGIN_NAME"],
-                Name = "Login",
+                Name = Localization["WEBFRONT_ACTION_LOGIN_NAME"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -226,7 +226,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_EDIT"],
-                Name = "Edit",
+                Name = Localization["WEBFRONT_ACTION_LABEL_EDIT"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -291,7 +291,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_LABEL_SUBMIT_MESSAGE"],
-                Name = "Chat",
+                Name = Localization["WEBFRONT_ACTION_LABEL_SUBMIT_MESSAGE"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -367,7 +367,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_FLAG_NAME"],
-                Name = "Flag",
+                Name = Localization["WEBFRONT_ACTION_FLAG_NAME"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -406,7 +406,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_UNFLAG_NAME"],
-                Name = "Unflag",
+                Name = Localization["WEBFRONT_ACTION_UNFLAG_NAME"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -438,7 +438,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_KICK_NAME"],
-                Name = "Kick",
+                Name = Localization["WEBFRONT_ACTION_KICK_NAME"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -488,7 +488,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = "Dismiss",
-                Name = "Dismiss Alert?",
+                Name = Localization["WEBFRONT_ACTION_DISMISS_ALERT_SINGLE"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -512,7 +512,7 @@ namespace WebfrontCore.Controllers
             {
                 new CommandResponseInfo
                 {
-                    Response = "Alert dismissed"
+                    Response = Localization["WEBFRONT_ACTION_DISMISS_ALERT_SINGLE_RESPONSE"]
                 }
             });
         }
@@ -522,7 +522,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = "Dismiss",
-                Name = "Dismiss All Alerts?",
+                Name = Localization["WEBFRONT_ACTION_DISMISS_ALERT_MANY"],
                 Inputs = new List<InputInfo>
                 {
                     new()
@@ -546,7 +546,7 @@ namespace WebfrontCore.Controllers
             {
                 new CommandResponseInfo
                 {
-                    Response = "Alerts dismissed"
+                    Response = Localization["WEBFRONT_ACTION_DISMISS_ALERT_MANY_RESPONSE"]
                 }
             });
         }
@@ -556,7 +556,7 @@ namespace WebfrontCore.Controllers
             var info = new ActionInfo
             {
                 ActionButtonLabel = "Send",
-                Name = "Compose Message",
+                Name = Localization["WEBFRONT_ACTION_OFFLINE_MESSAGE_BUTTON_COMPOSE"],
                 Inputs = new List<InputInfo>
                 {
                     new()

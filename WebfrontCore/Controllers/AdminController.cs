@@ -56,7 +56,7 @@ namespace WebfrontCore.Controllers
             ViewBag.ClientIP = request.ClientIP;
             ViewBag.ClientGuid = request.ClientGuid;
             
-            ViewBag.Title = "Ban Management";
+            ViewBag.Title = Localization["WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"];
 
             return View(results.Results);
         }

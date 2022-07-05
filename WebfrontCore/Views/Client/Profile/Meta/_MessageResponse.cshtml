@@ -7,7 +7,7 @@
 }
 
 <span class="client-message" data-serverid="@Model.ServerId" data-when="@Model.When.ToFileTimeUtc()">
-    <span data-title="View Context" data-toggle="tooltip" data-placement="right">
+    <span data-title="@ViewBag.Localization["WEBFRONT_META_TOOLTIP_CONTEXT"]" data-toggle="tooltip" data-placement="right">
         <span class="oi oi-chevron-right align-middle client-message-prefix" style="font-size: 0.75rem; margin-top: -0.256rem"></span>
     </span> 
     <span class="text-muted @(Model.IsQuickMessage ? "font-weight-bold" : "")">

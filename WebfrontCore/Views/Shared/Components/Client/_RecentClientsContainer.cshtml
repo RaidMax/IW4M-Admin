@@ -3,7 +3,20 @@
     Layout = null;
 }
 
-<div class="mb-15 text-center font-weight-lighter">New clients connected in the last <span class="text-primary">24</span> hours</div>
+<div class="mb-15 text-center font-weight-lighter">
+    @foreach (var match in Utilities.SplitTranslationTokens("WEBFRONT_MODAL_RECENT_CLIENTS_SUBTITLE"))
+    {
+        if (match.IsInterpolation && match.MatchValue == "time")
+        {
+            <span class="text-primary">24</span>
+        }
+
+        else
+        {
+            <span>@match.MatchValue</span>
+        }
+    }
+</div>
 
 <div id="recentClientContainer">
     <partial name="~/Views/Shared/Components/Client/_RecentClients.cshtml" for="@Model"/>

@@ -24,7 +24,7 @@ namespace WebfrontCore.Controllers
         {
             if (clientId == 0 || string.IsNullOrEmpty(password))
             {
-                return Unauthorized("Invalid credentials");
+                return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
             }
 
             try
@@ -73,16 +73,16 @@ namespace WebfrontCore.Controllers
                             : HttpContext.Connection.RemoteIpAddress?.ToString()
                     });
 
-                    return Ok($"Welcome {privilegedClient.Name}. You are now logged in");
+                    return Ok(Localization["WEBFRONT_ACTION_LOGIN_SUCCESS"].FormatExt(privilegedClient.CleanedName));
                 }
             }
 
             catch (Exception)
             {
-                return Unauthorized("Could not validate credentials");
+                return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
             }
 
-            return Unauthorized("Invalid credentials");
+            return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
         }
 
         [HttpGet]

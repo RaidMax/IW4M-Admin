@@ -100,7 +100,7 @@ namespace WebfrontCore.Controllers
                     new CommandResponseInfo
                     {
                         ClientId = client.ClientId,
-                        Response = Utilities.CurrentLocalization.LocalizationIndex["COMMADS_RESTART_SUCCESS"]
+                        Response = Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_RESTART_SUCCESS"]
                     }
                 };
             }

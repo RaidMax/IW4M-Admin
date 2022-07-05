@@ -146,12 +146,8 @@ namespace WebfrontCore.Controllers
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.IsSensitive));
 
             var strippedName = clientDto.Name.StripColors();
-            ViewBag.Title = strippedName.Substring(strippedName.Length - 1).ToLower()[0] == 's'
-                ? strippedName + "'"
-                : strippedName + "'s";
-            ViewBag.Title += " " + Localization["WEBFRONT_CLIENT_PROFILE_TITLE"];
-            ViewBag.Description = $"Client information for {strippedName}";
-            ViewBag.Keywords = $"IW4MAdmin, client, profile, {strippedName}";
+            ViewBag.Title = $"{strippedName} | {Localization["WEBFRONT_CLIENT_PROFILE_TITLE"]}";
+            ViewBag.Description = Localization["WEBFRONT_PROFILE_DESCRIPTION"].FormatExt(strippedName);
             ViewBag.UseNewStats = _config?.EnableAdvancedMetrics ?? true;
 
             return View("Profile/Index", clientDto);

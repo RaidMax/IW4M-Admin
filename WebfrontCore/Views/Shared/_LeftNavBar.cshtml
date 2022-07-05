@@ -10,7 +10,7 @@
             <div class="pr-20 pl-20 mb-20 d-block d-lg-none">
                 <partial name="_SearchResourceForm"/>
             </div>
-            <span class="sidebar-title ">Main</span>
+            <span class="sidebar-title">@ViewBag.Localization["WEBFRONT_NAV_TITLE_MAIN"]</span>
             <div class="sidebar-divider"></div>
             <!-- servers -->
             <a asp-controller="Home" asp-action="Index" class="sidebar-link">
@@ -47,7 +47,7 @@
             <has-permission entity="ProfilePage" required-permission="Read">
                 <a asp-controller="Client" asp-action="Profile" asp-route-id="@ViewBag.User.ClientId" class="sidebar-link">
                     <i class="oi oi-person mr-5"></i>
-                    <span class="name">Profile</span>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_TITLE_PROFILE"]</span>
                 </a>
             </has-permission>
 
@@ -55,13 +55,13 @@
             {
                 <a href="#actionModal" class="profile-action sidebar-link" data-action="login">
                     <i class="oi oi-key mr-5"></i>
-                    <span class="name">Login</span>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_TITLE_LOGIN"]</span>
                 </a>
             }
 
             <br/>
             <!-- stats -->
-            <div class="sidebar-title ">Stats</div>
+            <div class="sidebar-title ">@ViewBag.Localization["WEBFRONT_NAV_TITLE_STATS"]</div>
             <div class="sidebar-divider"></div>
 
             @foreach (Page pageLink in ViewBag.Pages)
@@ -74,14 +74,14 @@
             <!-- scoreboard -->
             <a asp-controller="Server" asp-action="Scoreboard" class="sidebar-link">
                 <i class="oi oi-spreadsheet mr-5"></i>
-                <span class="name">Scoreboard</span>
+                <span class="name">@ViewBag.Localization["WEBFRONT_NAV_TITLE_SCOREBOARD"]</span>
             </a>
             <br/>
 
             <!-- socials -->
             @if (ViewBag.CommunityInformation?.IsEnabled && ViewBag.CommunityInformation.SocialAccounts.Length > 0)
             {
-                <span class="sidebar-title ">Socials</span>
+                <span class="sidebar-title">@ViewBag.Localization["WEBFRONT_NAV_TITLE_SOCIALS"]</span>
                 <div class="sidebar-divider"></div>
             }
 
@@ -106,7 +106,7 @@
 
             <!-- admin -->
             <has-permission entity="AdminMenu" required-permission="Read">
-                <div class="sidebar-title ">Admin</div>
+                <div class="sidebar-title">@ViewBag.Localization["WEBFRONT_NAV_TITLE_ADMIN"]</div>
                 <div class="sidebar-divider"></div>
 
                 <has-permission entity="ConsolePage" required-permission="Read">
@@ -118,14 +118,14 @@
                 <has-permission entity="Penalty" required-permission="Read"></has-permission>
                 <a asp-controller="Admin" asp-action="BanManagement" class="sidebar-link">
                     <i class="oi oi-ban mr-5"></i>
-                    <span class="name">Ban Management</span>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"]</span>
                 </a>
             </has-permission>
             @if (ViewBag.User.Level >= EFClient.Permission.Owner)
             {
                 <a asp-controller="Configuration" asp-action="Edit" class="sidebar-link">
                     <i class="oi oi-cog mr-5"></i>
-                    <span class="name">Configuration</span>
+                    <span class="name">@ViewBag.Localization["WEBFRONT_NAV_TITLE_CONFIGURATION"]</span>
                 </a>
             }
             <has-permission entity="AuditPage" required-permission="Read">
@@ -140,7 +140,7 @@
                     <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]</span>
                 </a>
             </has-permission>
-  
+
             @if (ViewBag.Authorized)
             {
                 <a class="sidebar-link profile-action" href="#actionModal" data-action="GenerateLoginToken" data-response-duration="30000" title="@ViewBag.Localization["WEBFRONT_ACTION_TOKEN"]">
@@ -158,11 +158,21 @@
             <div class="sidebar-link font-size-12 font-weight-light">
                 @if (ViewBag.Authorized)
                 {
-                    <span>Logged in as <color-code value="@ViewBag.User.Name"></color-code></span>
+                    @foreach (var match in Utilities.SplitTranslationTokens(ViewBag.Localization["WEBFRONT_NAV_LOGIN_YES_FORMAT"]))
+                    {
+                        if (match.IsInterpolation && match.MatchValue == "username")
+                        {
+                            <color-code value="@ViewBag.User.Name"></color-code>
+                        }
+                        else
+                        {
+                            <span>@match.MatchValue</span>
+                        }
+                    }
                 }
                 else
                 {
-                    <span>Not logged in</span>
+                    <span>@ViewBag.Localization["WEBFRONT_NAV_LOGIN_NO_FORMAT"]</span>
                 }
             </div>
             <div class="sidebar-divider mt-0 mb-0"></div>

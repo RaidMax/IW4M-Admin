@@ -52,7 +52,7 @@
                     <span aria-hidden="true">&times;</span>
                 </a>
                 <div id="actionModalContent">
-                    <h4 class="mt-20">No content available yet...</h4>
+                    <h4 class="mt-20">@ViewBag.Localization["WEBFRONT_GLOBAL_MODAL_EMPTY"]</h4>
                 </div>
             </div>
         </div>
@@ -98,21 +98,21 @@
         <div class="d-none d-md-block">
             <div class="badge-group ml-20" role="group" aria-label="...">
                 <span class="badge badge-primary">@(ViewBag.ClientCount ?? "-")</span>
-                <span class="badge bg-dark-dm bg-light-lm">Clients</span>
+                <span class="badge bg-dark-dm bg-light-lm">@ViewBag.Localization["WEBFRONT_LAYOUT_CLIENTS_ONLINE"]</span>
             </div>
 
             <has-permission entity="PrivilegedClientsPage" required-permission="Read">
                 <div class="badge-group ml-10" role="group" aria-label="...">
                     <span class="badge badge-success">@(ViewBag.AdminCount ?? "-")</span>
-                    <span class="badge bg-dark-dm bg-light-lm">Admins</span>
+                    <span class="badge bg-dark-dm bg-light-lm">@ViewBag.Localization["WEBFRONT_LAYOUT_ADMINS_ONLINE"]</span>
                 </div>
             </has-permission>
 
             <has-permission entity="AdminMenu" required-permission="Read">
-                <a href="#actionModal" class="profile-action no-decoration" data-action="RecentReports" data-toggle="tooltip" data-title="View recent reports" data-placement="bottom">
+                <a href="#actionModal" class="profile-action no-decoration" data-action="RecentReports" data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_MODAL_REPORTS_TOOLTIP_TITLE"]" data-placement="bottom">
                     <div class="badge-group ml-10" role="group">
                         <span class="badge badge-danger">@(ViewBag.ReportCount ?? "-")</span>
-                        <span class="badge bg-dark-dm bg-light-lm">Reports</span>
+                        <span class="badge bg-dark-dm bg-light-lm">@ViewBag.Localization["WEBFRONT_LAYOUT_REPORTS"]</span>
                     </div>
                 </a>
             </has-permission>
@@ -122,7 +122,7 @@
             <div class="align-self-center">
                 @await Html.PartialAsync("Partials/_Notifications", (object)ViewBag.Alerts)
             </div>
-            <div class="btn btn-action mr-10 ml-10" onclick="halfmoon.toggleDarkMode()" data-toggle="tooltip" data-title="Toggle display mode" data-placement="bottom">
+            <div class="btn btn-action mr-10 ml-10" onclick="halfmoon.toggleDarkMode()" data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_LAYOUT_TOGGLE_DISPLAY"]" data-placement="bottom">
                 <i class="oi oi-moon"></i>
             </div>
             <div class="d-none d-md-block ">
@@ -149,12 +149,7 @@
         <div id="mainLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display: none">
             <div class="progress-bar-value"></div>
         </div>
-
         @RenderBody()
-
-        <div class="content">
-            <div class="badge text-muted">threadsafe.pw</div>
-        </div>
     </div>
 
 </div>

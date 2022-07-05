@@ -5,8 +5,31 @@
 
 <!-- desktop -->
 <div class="content mt-0">
-    <h2 class="content-title mt-20 mb-0">Search Results</h2>
-    <div class="text-muted mb-15"><span class="badge">@ViewBag.SearchTerm</span> returned <span class="text-primary">@ViewBag.ResultCount</span> matche(s)</div>
+    <h2 class="content-title mt-20 mb-0">@ViewBag.Localization["WEBFRONT_SEARCH_RESULTS_TITLE"]</h2>
+    <div class="text-muted mb-15">
+        
+        @foreach (var match in Utilities.SplitTranslationTokens("WEBFRONT_SEARCH_RESULTS_SUBTITLE_FORMAT"))
+        {
+            if (match.IsInterpolation)
+            {
+                if (match.MatchValue == "searchTerm")
+                {
+                    <span class="badge">
+                        @ViewBag.SearchTerm
+                    </span>
+                }
+                
+                else if (match.MatchValue == "searchCount")
+                {
+                    <span class="text-primary">@ViewBag.ResultCount</span>
+                }
+            }
+            else
+            {
+                <span>@match.MatchValue</span>
+            }
+        }
+    </div>
 
     <table class="table d-none d-md-table">
         <thead>

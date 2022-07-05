@@ -58,7 +58,18 @@
     <div class="profile-meta-entry loader-data-time" data-time="@meta.When.ToFileTimeUtc()" onclick="$('#metaContextDateToggle@(meta.When.ToFileTimeUtc())').show()">
         <partial name="~/Views/Client/Profile/Meta/_@(meta.GetType().Name).cshtml" model="meta"/>
         <div style="display:none" id="metaContextDateToggle@(meta.When.ToFileTimeUtc())">
-            Event occured at <span class="text-light">@meta.When.ToStandardFormat()</span>
+            @foreach (var match in Utilities.SplitTranslationTokens("WEBFRONT_META_TIME_CONTEXT"))
+            {
+                if (match.IsInterpolation && match.MatchValue == "event")
+                {
+                    <span class="text-light">@meta.When.ToStandardFormat()</span>
+                }
+
+                else
+                {
+                    <span>@match.MatchValue</span>
+                }
+            }
         </div>
     </div>
 }

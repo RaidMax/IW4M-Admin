@@ -34,7 +34,7 @@
             @info.NewValue
         </td>
         <td class="text-right">
-            @info.When.ToString()
+            @info.When.ToStandardFormat()
         </td>
     </tr>
 
@@ -65,7 +65,7 @@
             }
             <div class="mt-5 mb-5"> @info.Data</div>
             <div class="mt-5 mb-5">@info.NewValue</div>
-            <div class="mt-5 mb-5">@info.When.ToString()</div>
+            <div class="mt-5 mb-5">@info.When</div>
         </td>
     </tr>
 }

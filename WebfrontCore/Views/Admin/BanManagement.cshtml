@@ -9,7 +9,7 @@
     <form method="get" class="mt-10">
         <div class="d-flex flex-column flex-md-row">
             <div class="input-group">
-                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientNameInput" name="clientName" value="@ViewBag.ClientName" placeholder="Client Name">
+                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientNameInput" name="clientName" value="@ViewBag.ClientName" placeholder="@ViewBag.Localization["WEBFRONT_BAN_MGMT_FORM_NAME"]">
                 <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
@@ -18,7 +18,7 @@
 
             </div>
             <div class="input-group mr-md-5 ml-md-10 mt-10 mb-5 mt-md-0 mb-md-0">
-                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientGuidInput" name="clientGuid" value="@ViewBag.ClientGuid" placeholder="Client GUID">
+                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientGuidInput" name="clientGuid" value="@ViewBag.ClientGuid" placeholder="@ViewBag.Localization["WEBFRONT_BAN_MGMT_FORM_GUID"]">
                 <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
@@ -26,7 +26,7 @@
                 </div>
             </div>
             <div class="input-group mr-md-10 ml-md-5 mb-10 mt-5 mt-md-0 mb-md-0">
-                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientIPInput" name="clientIP" value="@ViewBag.ClientIP" placeholder="Client IP">
+                <input type="text" class="form-control bg-dark-dm bg-light-ex-lm" id="clientIPInput" name="clientIP" value="@ViewBag.ClientIP" placeholder="@ViewBag.Localization["WEBFRONT_BAN_MGMT_FORM_IP"]">
                 <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
@@ -34,7 +34,7 @@
                 </div>
             </div>
             <div class="input-group">
-                <input type="number" class="form-control bg-dark-dm bg-light-ex-lm" id="clientIdInput" name="clientId" value="@ViewBag.ClientId" placeholder="Client Id">
+                <input type="number" class="form-control bg-dark-dm bg-light-ex-lm" id="clientIdInput" name="clientId" value="@ViewBag.ClientId" placeholder="@ViewBag.Localization["WEBFRONT_BAN_MGMT_FORM_ID"]">
                 <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>

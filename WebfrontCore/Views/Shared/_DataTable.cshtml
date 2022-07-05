@@ -23,14 +23,14 @@
     {
         <!-- desktop -->
         <tr class="bg-dark-dm bg-light-lm d-none d-lg-table-row">
-            <td colspan="@Model.Columns.Count">No data...</td>
+            <td colspan="@Model.Columns.Count">@ViewBag.Localization["WEBFRONT_DATATABLE_NO_DATA"]</td>
         </tr>
         <!-- mobile -->
         <tr class="d-flex d-table-row d-lg-none">
             <td class="bg-primary text-light text-right w-125">
                 &mdash;
             </td>
-            <td class="bg-dark-dm bg-light-lm flex-fill w-200">No data...</td>
+            <td class="bg-dark-dm bg-light-lm flex-fill w-200">@ViewBag.Localization["WEBFRONT_DATATABLE_NO_DATA"]</td>
         </tr>
     }
     @foreach (var row in Model.Rows)
@@ -103,7 +103,7 @@
 </table>
 @if (Model.InitialRowCount > 0 && Model.Rows.Count > 0)
 {
-    <button class="btn btn-block table-slide" data-toggle="tooltip" data-title="Show @(Model.Rows.Count - Model.InitialRowCount) more rows">
+    <button class="btn btn-block table-slide" data-toggle="tooltip" data-title="@((ViewBag.Localization["WEBFRONT_DATATABLE_LOAD_MORE_FORMAT"] as string).FormatExt(Model.Rows.Count - Model.InitialRowCount))">
         <span class="oi oi-chevron-bottom"></span>
     </button>
 }

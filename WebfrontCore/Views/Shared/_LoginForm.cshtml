@@ -5,15 +5,15 @@
 <form class="action-form" asp-action="Login" asp-controller="Account">
     <div class="input-group mb-3">
         <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon-clientId">Client ID</span>
+            <span class="input-group-text" id="basic-addon-clientId">@ViewBag.Localization["WEBFRONT_LOGIN_MODAL_FORM_CLIENTID"]</span>
         </div>
         <input type="text" name="clientId" value="" class="form-control" aria-label="clientId" aria-describedby="basic-addon-clientId">
     </div>
     <div class="input-group mb-3">
         <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon-Password">Token/Password</span>
+            <span class="input-group-text" id="basic-addon-Password">@ViewBag.Localization["WEBFRONT_LOGIN_MODAL_FORM_PASSWORD"]</span>
         </div>
         <input type="password" name="Password" value="" class="form-control" aria-label="Password" aria-describedby="basic-addon-Password">
     </div>
-    <button type="submit" class="btn btn-block btn-primary">Login</button>
+    <button type="submit" class="btn btn-block btn-primary">@ViewBag.Localization["WEBFRONT_LOGIN_BUTTON_SUBMIT"]</button>
 </form>

@@ -73,7 +73,7 @@ function loadMoreItems() {
         .fail(function () {
             errorLoader();
             halfmoon.initStickyAlert({
-                content: 'Could not load more items...',
+                content: _localization['WEBFRONT_SCRIPT_LOADER_ERROR'],
                 title: 'Error',
                 alertType: 'alert-danger',
                 fillType: 'filled'

@@ -10,7 +10,7 @@
 @model Stats.Dtos.AdvancedStatsInfo
 
 @{
-    ViewBag.Title = "Advanced Client Statistics";
+    ViewBag.Title = ViewBag.Localization["WEBFRONT_ADV_STATS_TITLE"];
     ViewBag.Description = Model.ClientName.StripColors();
 
     const string headshotKey = "MOD_HEAD_SHOT";
@@ -233,7 +233,7 @@
 <div class="content row mt-20">
     <!-- main content -->
     <div class="col-12 col-lg-9 mt-0">
-        <h2 class="content-title mb-0">Player Stats</h2>
+        <h2 class="content-title mb-0">@ViewBag.Title</h2>
         <span class="text-muted">
             <color-code value="@(Model.Servers.FirstOrDefault(server => server.Endpoint == Model.ServerEndpoint)?.Name ?? ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"])"></color-code>
         </span>
@@ -263,6 +263,7 @@
                         {
                             <div class="h5 mb-0">@ViewBag.Localization["WEBFRONT_ADV_STATS_EXPIRED"]</div>
                         }
+
                         if (Model.ServerId != null)
                         {
                             <div class="h5 mb-0">@Html.Raw((ViewBag.Localization["WEBFRONT_ADV_STATS_PERFORMANCE"] as string).FormatExt($"<span class=\"text-primary\">{performance.ToNumericalString()}</span>"))</div>
@@ -375,7 +376,8 @@
     @{
         var menuItems = new SideContextMenuItems
         {
-            MenuTitle = "Game", Items = Model.Servers.Select(server => new SideContextMenuItem
+            MenuTitle = ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"],
+            Items = Model.Servers.Select(server => new SideContextMenuItem
             {
                 IsLink = true,
                 Reference = Url.Action("Advanced", "ClientStatistics", new { serverId = server.Endpoint }),

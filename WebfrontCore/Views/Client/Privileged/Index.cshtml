@@ -10,7 +10,7 @@
             <tr class="level-bgcolor-@((int)key)">
                 <th class="text-light">@key.ToLocalizedLevelName()</th>
                 <th>Game</th>
-                <th class="text-right font-weight-bold">Last Connected</th>
+                <th class="text-right font-weight-bold">@ViewBag.Localization["WEBFRONT_SEARCH_LAST_CONNECTED"]</th>
             </tr>
             </thead>
             <tbody>
@@ -25,11 +25,11 @@
                         <td>
                             @if (client.IsMasked)
                             {
-                                <span data-toggle="tooltip" data-title="Client is masked">
+                                <span data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"]">
                                     <span class="oi oi-shield mr-5 font-size-12"></span>
                                 </span>
                             }
-                            
+
                             <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId">
                                 <color-code value="@client.Name"></color-code>
                             </a>
@@ -46,5 +46,4 @@
             </tbody>
         </table>
     }
-
 </div>

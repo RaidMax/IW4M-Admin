@@ -12,7 +12,7 @@
 }
 <div class="content mt-20 row">
     <div class="col-12 col-lg-9">
-        <h2 class="content-title mb-0">Server Overview</h2>
+        <h2 class="content-title mb-0">@ViewBag.Localization["WEBFRONT_SERVERS_TITLE"]</h2>
         @if (Model.Game.HasValue)
         {
             <span class="text-muted">@loc[$"GAME_{Model.Game.Value}"]</span>
@@ -31,11 +31,12 @@
         </div>
         @await Component.InvokeAsync("ServerList", Model.Game)
     </div>
-    
+
     @{
         var menuItems = new SideContextMenuItems
         {
-            MenuTitle = "Game", Items = Model.ActiveServerGames.Select(game => new SideContextMenuItem
+            MenuTitle = ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"],
+            Items = Model.ActiveServerGames.Select(game => new SideContextMenuItem
             {
                 IsLink = true,
                 Reference = Url.Action("Index", "Home", new { game }),

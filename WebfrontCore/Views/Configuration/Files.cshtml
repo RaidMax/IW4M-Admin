@@ -25,7 +25,7 @@
             </div>
             <div class="edit-file d-none flex-column" id="edit_file_@FormatHtmlId(file.FileName)" data-file-name="@file.FileName">
                 <pre class="mt-0 font-size-12 flex-fill border-bottom" spellcheck="false"><code class="code language-json editable" contenteditable="true" id="edit_file_code_@FormatHtmlId(file.FileName)">@file.FileContent</code></pre>
-                <button type="button" class="btn btn-primary m-15  mt-0 align-self-start file-save-button" data-file-name="@file.FileName">Save</button>
+                <button type="button" class="btn btn-primary m-15  mt-0 align-self-start file-save-button" data-file-name="@file.FileName">@ViewBag.Localization["WEBFRONT_CONFIGURATION_BUTTON_SAVE"]</button>
             </div>
         </div>
     }

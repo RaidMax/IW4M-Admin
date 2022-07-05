@@ -86,7 +86,7 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                     OffenderName = penalty.Penalty.Offender.CurrentAlias.Name,
                     Offense = string.IsNullOrEmpty(penalty.Penalty.AutomatedOffense)
                         ? penalty.Penalty.Offense
-                        : "Anticheat Detection",
+                        : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_BAN_INFO_AC_DETECTION"],
                     LinkId = penalty.Penalty.Offender.AliasLinkId,
                     penalty.Penalty.OffenderId,
                     penalty.Penalty.PunisherId,
@@ -113,7 +113,7 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                         OffenderName = penalty.Offender.CurrentAlias.Name,
                         Offense = string.IsNullOrEmpty(penalty.AutomatedOffense)
                             ? penalty.Offense
-                            : "Anticheat Detection",
+                            : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_BAN_INFO_AC_DETECTION"],
                         LinkId = penalty.Offender.AliasLinkId,
                         penalty.OffenderId,
                         penalty.PunisherId,

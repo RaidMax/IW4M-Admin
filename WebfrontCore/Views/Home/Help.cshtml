@@ -5,7 +5,7 @@
 <div class="content mt-20">
     @foreach (var (pluginName, commandList) in Model)
     {
-        <h2 class="content-title mb-lg-20 mt-20 ">@(pluginName == "Native" ? "Command List" : pluginName)</h2>
+        <h2 class="content-title mb-lg-20 mt-20 ">@(pluginName == "Native" ? ViewBag.Localization["WEBFRONT_HELP_COMMANDS_NATIVE_TITLE"] : pluginName)</h2>
    
         <table class="table rounded">
             <thead>

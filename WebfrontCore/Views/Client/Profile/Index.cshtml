@@ -58,7 +58,7 @@
     </has-permission>
 }
 
-<h2 class="content-title mb-0">Player Profile</h2>
+<h2 class="content-title mb-0">@ViewBag.Localization["WEBFRONT_PROFILE_TITLE"]</h2>
 <div class="font-size-12 text-muted">@ViewBag.Localization[$"GAME_{Model.Game}"]</div>
 
 <div id="profile_wrapper" class="mb-10 mt-10">
@@ -66,7 +66,7 @@
     <!-- online status indicator -->
     @if (Model.Online)
     {
-        <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10" data-toggle="tooltip" data-placement="bottom" data-title="Client is online"></div>
+        <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10" data-toggle="tooltip" data-placement="bottom" data-title="@ViewBag.Localization["WEBFRONT_PROFILE_TOOLTIP_ONLINE"]"></div>
         <div class="bg-success rounded-circle position-absolute status-indicator with-ripple z-10 mt-10 ml-10"></div>
     }
 
@@ -105,7 +105,7 @@
                                 @if (Model.Aliases.Count > 15)
                                 {
                                     <div class="dropdown-divider"></div>
-                                    <span class="dropdown-item bg-dark-dm bg-light-lm">...and @(Model.Aliases.Count - 15) more</span>
+                                    <span class="dropdown-item bg-dark-dm bg-light-lm">@((ViewBag.Localization["WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT"] as string).FormatExt(Model.Aliases.Count - 15))</span>
                                 }
                             </div>
                         </div>
@@ -126,7 +126,7 @@
                         <div class="text-muted" data-toggle="dropdown" id="altGuidFormatsDropdown" aria-haspopup="true" aria-expanded="false">@Model.NetworkId.ToString("X")</div>
                         <div class="dropdown-menu" aria-labelledby="altGuidFormatsDropdown">
                             <div class="p-10 font-size-12">
-                                <div class="">Alternative Formats</div>
+                                <div class="">@ViewBag.Localization["WEBFRONT_PROFILE_POPOVER_ALTERNATIVE_GUID"]</div>
                                 <div class="dropdown-divider mt-5 mb-5"></div>
                                 <div class="text-muted font-weight-lighter">@((ulong)Model.NetworkId)</div>
                             </div>
@@ -164,7 +164,7 @@
                                 @if (Model.IPs.Count > 15)
                                 {
                                     <div class="dropdown-divider"></div>
-                                    <span class="dropdown-item bg-dark-dm bg-light-lm">...and @(Model.IPs.Count - 15) more</span>
+                                    <span class="dropdown-item bg-dark-dm bg-light-lm">@((ViewBag.Localization["WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT"] as string).FormatExt(Model.Aliases.Count - 15))</span>
                                 }
                             </div>
                         </div>
@@ -252,18 +252,18 @@
 @{
     var menuItems = new SideContextMenuItems
     {
-        MenuTitle = "Actions",
+        MenuTitle = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_TITLE"]
     };
 
     if (Model.Online)
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = "Join Game",
+            Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_JOIN"],
             IsLink = true,
             IsButton = true,
             Reference = Model.ConnectProtocolUrl,
-            Tooltip = $"Playing on {Model.CurrentServerName.StripColors()}",
+            Tooltip = (ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_TOOLTIP_JOIN"] as string).FormatExt(Model.CurrentServerName.StripColors()),
             Icon = "oi-play-circle"
         });
     }
@@ -272,7 +272,7 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = "Change Level",
+            Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_LEVEL"],
             IsButton = true,
             Reference = "edit",
             Icon = "oi-cog",
@@ -284,7 +284,7 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = "Message",
+            Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MESSAGE"],
             IsButton = true,
             Reference = "OfflineMessage",
             Icon = "oi oi-envelope-closed",
@@ -294,7 +294,7 @@
 
     menuItems.Items.Add(new SideContextMenuItem
     {
-        Title = "View Stats",
+        Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_STATS"],
         IsButton = true,
         IsLink = true,
         Reference = Url.Action("Advanced", "ClientStatistics", new { id = Model.ClientId }),
@@ -305,7 +305,7 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = isFlagged ? "Unflag" : "Flag",
+            Title = isFlagged ? ViewBag.Localization["WEBFRONT_ACTION_UNFLAG_NAME"] : ViewBag.Localization["WEBFRONT_ACTION_FLAG_NAME"],
             IsButton = true,
             Reference = isFlagged ? "unflag" : "flag",
             Icon = "oi-flag",
@@ -317,7 +317,7 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = "Kick",
+            Title = ViewBag.Localization["WEBFRONT_ACTION_KICK_NAME"],
             IsButton = true,
             Reference = "kick",
             Icon = "oi-circle-x",
@@ -329,7 +329,7 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = "Ban",
+            Title = ViewBag.Localization["WEBFRONT_ACTION_BAN_NAME"],
             IsButton = true,
             Reference = "ban",
             Icon = "oi-lock-unlocked",
@@ -341,7 +341,7 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = "Unban",
+            Title = ViewBag.Localization["WEBFRONT_ACTION_UNBAN_NAME"],
             IsButton = true,
             Reference = "unban",
             Icon = "oi-lock-locked",

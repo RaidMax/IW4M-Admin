@@ -79,7 +79,7 @@ $(document).ready(function () {
         clearQueryString();
         halfmoon.initStickyAlert({
             content: toastMessage,
-            title: 'Success',
+            title: _localization['WEBFRONT_SCRIPT_ACTION_SUCCESS'],
             alertType: 'alert-success',
             fillType: 'filled',
             timeShown: duration
@@ -107,7 +107,7 @@ $(document).ready(function () {
             .fail(function (jqxhr, textStatus, error) {
                 halfmoon.initStickyAlert({
                     content: jqxhr.responseText,
-                    title: 'Error',
+                    title: _localization['WEBFRONT_SCRIPT_ACTION_ERROR'],
                     alertType: 'alert-danger',
                     fillType: 'filled'
                 });
@@ -145,7 +145,7 @@ $(document).ready(function () {
                         modal.modal();
                         halfmoon.initStickyAlert({
                             content: escapeHtml(message),
-                            title: 'Executed',
+                            title: _localization['WEBFRONT_SCRIPT_ACTION_EXECUTED'],
                             alertType: 'alert-primary',
                             fillType: 'filled'
                         });
@@ -174,7 +174,7 @@ $(document).ready(function () {
                 
                 halfmoon.initStickyAlert({
                     content: message,
-                    title: 'Error',
+                    title: _localization['WEBFRONT_SCRIPT_ACTION_ERROR'],
                     alertType: 'alert-danger',
                     fillType: 'filled'
                 });

@@ -88,7 +88,7 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
                 callbacks: {
                     // todo: localization at some point
                     title: context => moment(context[0].label).local().calendar(),
-                    label: context => context.datasetIndex !== 1 ? `${context.value} players on ${playerHistory[context.index].mapAlias}` : context.value === '0' ? '' : 'Server Unreachable!',
+                    label: context => context.datasetIndex !== 1 ? `${context.value} ${_localization['WEBFRONT_SCRIPT_SERVER_PLAYERS']} | ${playerHistory[context.index].mapAlias}` : context.value === '0' ? '' : _localization['WEBFRONT_SCRIPT_SERVER_UNREACHABLE'],
                 },
                 mode: 'nearest',
                 intersect: false,

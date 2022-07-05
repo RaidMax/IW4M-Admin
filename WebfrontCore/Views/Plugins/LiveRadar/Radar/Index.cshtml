@@ -14,7 +14,7 @@
 
 <div class="content mt-20 row">
     <div class="col-12 col-lg-9">
-        <h2 class="content-title mb-0">Live Radar</h2> 
+        <h2 class="content-title mb-0">@ViewBag.Localization["WEBFRONT_LIVE_RADAR_TITLE"]</h2> 
         <div class="text-muted mb-15">
             <color-code value="@((Model.FirstOrDefault(server => server.Endpoint == ViewBag.SelectedServerId) ?? Model.First()).Name)"></color-code>
         </div>
@@ -36,7 +36,8 @@
     @{
         var menuItems = new SideContextMenuItems
         {
-            MenuTitle = "Game", Items = Model.Select(server => new SideContextMenuItem
+            MenuTitle = ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"],
+            Items = Model.Select(server => new SideContextMenuItem
             {
                 IsLink = true,
                 // ReSharper disable Mvc.ActionNotResolved

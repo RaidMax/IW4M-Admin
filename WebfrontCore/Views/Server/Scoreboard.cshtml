@@ -16,7 +16,8 @@
     @{
         var menuItems = new SideContextMenuItems
         {
-            MenuTitle = "Server", Items = Model.Select(server => new SideContextMenuItem
+            MenuTitle = ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER"], 
+            Items = Model.Select(server => new SideContextMenuItem
             {
                 IsLink = true,
                 Reference = Url.Action("Scoreboard", "Server", new { serverId = server.ServerId }),

@@ -74,21 +74,28 @@ namespace WebfrontCore.Controllers
             ViewBag.CommandPrefix = Manager.GetApplicationSettings().Configuration().CommandPrefix;
 
             // we don't need to the name of the shared library assembly
-            var excludedAssembly = typeof(BaseController).Assembly;
             var commands = Manager.GetCommands()
-                .Where(_cmd => _cmd.Permission <= Client.Level)
-                .OrderByDescending(_cmd => _cmd.Permission)
-                .GroupBy(_cmd =>
+                .Where(command => command.Permission <= Client.Level)
+                .OrderByDescending(command => command.Permission)
+                .GroupBy(command =>
                 {
-                    // we need the plugin type the command is defined in
-                    var pluginType = _cmd.GetType().Assembly.GetTypes().FirstOrDefault(_type =>
-                        _type.Assembly != excludedAssembly && typeof(IPlugin).IsAssignableFrom(_type));
-                    return pluginType == null ? _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"] :
-                        pluginType.Name == "ScriptPlugin" ? _translationLookup["WEBFRONT_HELP_SCRIPT_PLUGIN"] :
-                        Manager.Plugins.FirstOrDefault(_plugin => _plugin.GetType().FullName == pluginType.FullName)?
-                            .Name; // for now we're just returning the name of the plugin, maybe later we'll include more info
+                    if (command.GetType().Name == "ScriptCommand")
+                    {
+                        return _translationLookup["WEBFRONT_HELP_SCRIPT_PLUGIN"];
+                    }
+
+                    var assemblyName = command.GetType().Assembly.GetName().Name;
+                    if (assemblyName is "IW4MAdmin" or "SharedLibraryCore")
+                    {
+                        return _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"];
+                    }
+
+                    var pluginType = command.GetType().Assembly.GetTypes()
+                        .FirstOrDefault(type => typeof(IPlugin).IsAssignableFrom(type));
+                    return Manager.Plugins.FirstOrDefault(plugin => plugin.GetType() == pluginType)?.Name ??
+                           _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"];
                 })
-                .Select(_grp => (_grp.Key, _grp.AsEnumerable()));
+                .Select(group => (group.Key, group.AsEnumerable()));
 
             return View(commands);
         }

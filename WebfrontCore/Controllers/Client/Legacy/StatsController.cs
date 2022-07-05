@@ -221,7 +221,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
             {
                 return View("~/Views/Client/_MessageContext.cshtml", new List<MessageResponse>
                 {
-                    new MessageResponse()
+                    new()
                     {
                         ClientId = penalty.OffenderId,
                         Message = penalty.AutomatedOffense,

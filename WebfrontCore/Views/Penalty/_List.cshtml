@@ -1,7 +1,7 @@
-﻿@{ 
+﻿@{
     Layout = null;
 }
 
 @model WebfrontCore.ViewModels.PenaltyFilterInfo
 
-@await Component.InvokeAsync("PenaltyList", new { offset = Model.Offset, count= Model.Count, showOnly = Model.ShowOnly, ignoreAutomated = Model.IgnoreAutomated })
+@await Component.InvokeAsync("PenaltyList", new { offset = Model.Offset, count = Model.Count, showOnly = Model.ShowOnly, ignoreAutomated = Model.IgnoreAutomated })

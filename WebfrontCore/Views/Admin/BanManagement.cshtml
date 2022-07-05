@@ -4,7 +4,7 @@
     <h2 class="content-title mt-20 mb-10">@ViewBag.Title</h2>
     @if (!Model.Any())
     {
-        <div class="text-muted mb-10">Search for records...</div>
+        <div class="text-muted mb-10">@ViewBag.Localization["WEBFRONT_BAN_MGMT_SUBTITLE"]</div>
     }
     <form method="get" class="mt-10">
         <div class="d-flex flex-column flex-md-row">

@@ -2,14 +2,13 @@
 <div class="content mt-0">
     <h4 class="content-title mt-20">@ViewBag.Title</h4>
 
-
     @foreach (var key in Model.Keys)
     {
         <table class="table mb-20" style="table-layout:fixed;">
             <thead>
             <tr class="level-bgcolor-@((int)key)">
                 <th class="text-light">@key.ToLocalizedLevelName()</th>
-                <th>Game</th>
+                <th>@ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"]</th>
                 <th class="text-right font-weight-bold">@ViewBag.Localization["WEBFRONT_SEARCH_LAST_CONNECTED"]</th>
             </tr>
             </thead>

@@ -13,7 +13,7 @@
         <div class="position-absolute bg-danger rounded-circle ml-10" style="width: 0.5em;height: 0.5em;top: 0;"></div>
         <div class="dropdown-menu dropdown-menu-right w-250 w-md-400" aria-labelledby="alert-toggle">
             <div class="d-flex">
-                <h6 class="dropdown-header">@ViewBag.Alerts.Count Alerts</h6>
+                <h6 class="dropdown-header">@((ViewBag.Localization["WEBFRONT_ALERTS_POPOVER_COUNT"] as string).FormatExt((int)ViewBag.Alerts.Count))</h6>
                 <i class="oi oi-circle-x font-size-12 text-danger align-self-center profile-action" data-action="DismissAllAlerts" data-action-id="@ViewBag.User.ClientId"></i>
             </div>
             <div class="dropdown-divider"></div>
@@ -42,7 +42,7 @@
                     <div class="font-size-12 p-5">
                         <span class="text-force-break">@alert.Message</span>
                         <div class="text-muted d-flex">
-                            <span>@alert.OccuredAt.Humanize()</span>
+                            <span>@alert.OccuredAt.HumanizeForCurrentCulture()</span>
                             @if (!string.IsNullOrEmpty(alert.Source))
                             {
                                 <span class="ml-5 mr-5">&#8226;</span>

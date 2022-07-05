@@ -24,7 +24,7 @@
             <color-code value="@(message.ServerName ?? "--")"></color-code>
         </td>
         <td colspan="15%" class="text-right text-break">
-            @message.When
+            @message.When.ToStandardFormat()
         </td>
     </tr>
 
@@ -53,7 +53,7 @@
             <div>
                 <color-code value="@(message.ServerName ?? "--")"></color-code>
             </div>
-            <div>@message.When</div>
+            <div>@message.When.ToStandardFormat()</div>
         </td>
     </tr>
 }

@@ -8,7 +8,7 @@
     <div class="col-12 col-lg-9">
         @if (Model is not null)
         {
-            <div class=" scoreboard-container" data-server-id="@ViewBag.SelectedServerId">
+            <div class="scoreboard-container" data-server-id="@ViewBag.SelectedServerId">
                 <partial name="_Scoreboard" for="@selectedServer"/>
             </div>
         }

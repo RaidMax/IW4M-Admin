@@ -5,9 +5,8 @@
 
 <!-- desktop -->
 <div class="content mt-0">
-    <h2 class="content-title mt-20 mb-0">@ViewBag.Localization["WEBFRONT_SEARCH_RESULTS_TITLE"]</h2>
+    <h2 class="content-title mt-20 mb-0">@loc["WEBFRONT_SEARCH_RESULTS_TITLE"]</h2>
     <div class="text-muted mb-15">
-        
         @foreach (var match in Utilities.SplitTranslationTokens("WEBFRONT_SEARCH_RESULTS_SUBTITLE_FORMAT"))
         {
             if (match.IsInterpolation)

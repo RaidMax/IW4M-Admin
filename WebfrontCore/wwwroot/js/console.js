@@ -29,7 +29,7 @@
                     $('#console_command_response').append(`<div class="text-danger">${escapeHtml(item)}</div>`);
                 })
             } else {
-                $('#console_command_response').append(`<div class="text-danger">Could not execute command...</div>`);
+                $('#console_command_response').append(`<div class="text-danger">${_localization['WEBFRONT_SCRIPT_CONSOLE_ERROR']}</div>`);
             }
         });
 }

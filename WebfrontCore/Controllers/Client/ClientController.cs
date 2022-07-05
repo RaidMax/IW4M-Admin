@@ -210,7 +210,7 @@ namespace WebfrontCore.Controllers
 
             ViewBag.SearchTerm = clientName;
             ViewBag.ResultCount = clientsDto.Count;
-            ViewBag.Title = "Search Results";
+            ViewBag.Title = Localization["WEBFRONT_SEARCH_RESULTS_TITLE"];
             
             return View("Find/Index", clientsDto);
         }

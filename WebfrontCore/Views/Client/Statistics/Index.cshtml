@@ -6,7 +6,7 @@
         <h2 class="content-title mb-0">@ViewBag.Localization["WEBFRONT_TOP_PLAYERS_TITLE"]</h2>
         <span class="text-muted">
             <color-code value="@(Model.FirstOrDefault(m => m.Endpoint == ViewBag.SelectedServerId)?.Name ?? ViewBag.Localization["WEBFRONT_STATS_INDEX_ALL_SERVERS"])"></color-code>
-            &mdash; <span class="text-primary">@ViewBag.TotalRankedClients.ToString("#,##0")</span> Ranked Players
+            &mdash; <span class="text-primary">@ViewBag.TotalRankedClients.ToString("#,##0")</span> @ViewBag.Localization["WEBFRONT_TOP_PLAYERS_SUBTITLE"]
         </span>
 
         <div id="topPlayersContainer">

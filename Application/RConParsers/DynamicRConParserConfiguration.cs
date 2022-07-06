@@ -64,6 +64,7 @@ namespace IW4MAdmin.Application.RConParsers
             const string mapRotateCommand = "map_rotate";
             const string mapCommand = "map";
             const string fastRestartCommand = "fast_restart";
+            const string quitCommand = "quit";
 
             foreach (var command in new[] { mapRotateCommand, mapCommand, fastRestartCommand})
             {
@@ -71,6 +72,11 @@ namespace IW4MAdmin.Application.RConParsers
                 {
                     OverrideCommandTimeouts.Add(command, 45);
                 }
+            }
+
+            if (!OverrideCommandTimeouts.ContainsKey(quitCommand))
+            {
+                OverrideCommandTimeouts.Add(quitCommand, 0); // we don't want to wait for a response when we quit the server
             }
         }
     }

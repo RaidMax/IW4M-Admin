@@ -225,7 +225,7 @@ namespace SharedLibraryCore
             var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "",
                 $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message}");
             ServerLogger.LogDebug("All-> {Message}",
-                message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping).StripColors());
+                message.FormatMessageForEngine(RconParser.Configuration).StripColors());
 
             var e = new GameEvent
             {
@@ -289,13 +289,13 @@ namespace SharedLibraryCore
             else
             {
                 ServerLogger.LogDebug("Tell[{ClientNumber}]->{Message}", targetClient.ClientNumber,
-                    message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping).StripColors());
+                    message.FormatMessageForEngine(RconParser.Configuration).StripColors());
             }
 
             if (targetClient.Level == Data.Models.Client.EFClient.Permission.Console)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                var cleanMessage = message.FormatMessageForEngine(RconParser.Configuration.ColorCodeMapping)
+                var cleanMessage = message.FormatMessageForEngine(RconParser.Configuration)
                     .StripColors();
                 using (LogContext.PushProperty("Server", ToString()))
                 {

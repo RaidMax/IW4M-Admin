@@ -173,7 +173,7 @@ namespace SharedLibraryCore.Database.Models
                     ?.CorrelationId ?? Guid.NewGuid()
             };
 
-            e.Output.Add(message.FormatMessageForEngine(CurrentServer?.RconParser.Configuration.ColorCodeMapping)
+            e.Output.Add(message.FormatMessageForEngine(CurrentServer?.RconParser.Configuration)
                 .StripColors());
 
             CurrentServer?.Manager.AddEvent(e);

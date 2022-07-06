@@ -107,5 +107,9 @@ namespace SharedLibraryCore.Interfaces
         ColorCodeMapping ColorCodeMapping { get; }
 
         short FloodProtectInterval { get; }
+        /// <summary>
+        /// indicates if diacritics (accented characters) should be normalized
+        /// </summary>
+        bool ShouldRemoveDiacritics { get; }
     }
 }

@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, Xerxes',
-    version: 1.2,
+    version: 1.3,
     name: 'Plutonium T6 Parser',
     isParser: true,
 
@@ -29,6 +29,7 @@ var plugin = {
         rconParser.Configuration.NoticeLineSeparator = '. ';
         rconParser.Configuration.DefaultRConPort = 4976;
         rconParser.Configuration.DefaultInstallationDirectoryHint = '{LocalAppData}/Plutonium/storage/t6';
+        rconParser.Configuration.ShouldRemoveDiacritics = true;
 
         rconParser.Configuration.StatusHeader.Pattern = 'num +score +bot +ping +guid +name +lastmsg +address +qport +rate *';
         rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+|0) +(.+?) +(?:[0-9]+) +(\\d+\\.\\d+\\.\\d+\\.\\d+\\:-?\\d{1,5}|0+\\.0+:-?\\d{1,5}|loopback) +(?:-?[0-9]+) +(?:[0-9]+) *$';

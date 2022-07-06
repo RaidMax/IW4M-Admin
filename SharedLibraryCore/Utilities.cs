@@ -170,10 +170,28 @@ namespace SharedLibraryCore
         {
             return str.Replace("//", "/ /");
         }
-
-        public static string FormatMessageForEngine(this string str, ColorCodeMapping mapping)
+        
+        public static string RemoveDiacritics(this string text) 
         {
-            if (mapping == null || string.IsNullOrEmpty(str))
+            var normalizedString = text.Normalize(NormalizationForm.FormD);
+            var stringBuilder = new StringBuilder(normalizedString.Length);
+
+            foreach (var c in from c in normalizedString
+                     let unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c)
+                     where unicodeCategory != UnicodeCategory.NonSpacingMark
+                     select c)
+            {
+                stringBuilder.Append(c);
+            }
+
+            return stringBuilder
+                .ToString()
+                .Normalize(NormalizationForm.FormC);
+        }
+
+        public static string FormatMessageForEngine(this string str, IRConParserConfiguration config)
+        {
+            if (config == null || string.IsNullOrEmpty(str))
             {
                 return str;
             }
@@ -184,7 +202,12 @@ namespace SharedLibraryCore
             foreach (var match in colorCodeMatches.Where(m => m.Success))
             {
                 var key = match.Groups[1].ToString();
-                output = output.Replace(match.Value, mapping.TryGetValue(key, out var code) ? code : "");
+                output = output.Replace(match.Value, config.ColorCodeMapping.TryGetValue(key, out var code) ? code : "");
+            }
+
+            if (config.ShouldRemoveDiacritics)
+            {
+                output = output.RemoveDiacritics();
             }
 
             return output.FixIW4ForwardSlash();

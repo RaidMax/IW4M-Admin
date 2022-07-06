@@ -88,18 +88,20 @@
             @foreach (var social in ViewBag.CommunityInformation?.SocialAccounts ?? Array.Empty<SocialAccountConfiguration>())
             {
                 <a href="@social.Url" class="sidebar-link" target="_blank" title="@social.Title">
-                    @if (!string.IsNullOrWhiteSpace(social.IconId))
-                    {
-                        <i class="oi @social.IconId mr-5"></i>
-                    }
-                    else if (!string.IsNullOrWhiteSpace(social.IconUrl))
-                    {
-                        var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out Uri parsedUrl)
-                            ? parsedUrl.AbsoluteUri
-                            : $"/images/community/{social.IconUrl}";
-                        <img class="img-fluid social-icon" style="max-height: 1.2rem" src="@url" alt="@social.Title"/>
-                    }
-                    <span class="name text-truncate">@social.Title</span>
+                    <div class="d-flex align-items-center">
+                        @if (!string.IsNullOrWhiteSpace(social.IconId))
+                        {
+                            <i class="oi @social.IconId align-self-center"></i>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(social.IconUrl))
+                        {
+                            var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out Uri parsedUrl)
+                                ? parsedUrl.AbsoluteUri
+                                : $"/images/community/{social.IconUrl}";
+                            <img class="img-fluid social-icon align-self-center" src="@url" alt="@social.Title"/>
+                        }
+                        <div class="name text-truncate align-self-center">@social.Title</div>
+                    </div>
                 </a>
             }
             <br/>

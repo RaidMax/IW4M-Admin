@@ -170,23 +170,21 @@ namespace SharedLibraryCore
         {
             return str.Replace("//", "/ /");
         }
-        
-        public static string RemoveDiacritics(this string text) 
+
+        public static string RemoveDiacritics(this string text)
         {
             var normalizedString = text.Normalize(NormalizationForm.FormD);
-            var stringBuilder = new StringBuilder(normalizedString.Length);
+            var stringBuilder = new StringBuilder();
 
-            foreach (var c in from c in normalizedString
-                     let unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c)
+            foreach (var c in from c in normalizedString.EnumerateRunes()
+                     let unicodeCategory = Rune.GetUnicodeCategory(c)
                      where unicodeCategory != UnicodeCategory.NonSpacingMark
                      select c)
             {
                 stringBuilder.Append(c);
             }
 
-            return stringBuilder
-                .ToString()
-                .Normalize(NormalizationForm.FormC);
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
 
         public static string FormatMessageForEngine(this string str, IRConParserConfiguration config)

@@ -17,7 +17,7 @@
         </a>
     </td>
     <td colspan="10%" class="penalties-color-@Model.PenaltyTypeText.ToLower()">
-        @Model.PenaltyType
+        @ViewBag.Localization[$"WEBFRONT_PENALTY_{Model.PenaltyType.ToString().ToUpper()}"]
     </td>
     <td colspan="35%">
         <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>

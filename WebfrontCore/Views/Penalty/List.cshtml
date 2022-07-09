@@ -43,22 +43,22 @@
                             {
                                 if (Model == EFPenalty.PenaltyType.Any)
                                 {
-                                    <option value="@Convert.ToInt32(penaltyType)" selected="selected">@penaltyType.ToString()</option>
+                                    <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc[$"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}"]</option>
                                 }
                                 else
                                 {
-                                    <option value="@Convert.ToInt32(penaltyType)">@penaltyType.ToString()</option>
+                                    <option value="@Convert.ToInt32(penaltyType)">@loc[$"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}"]</option>
                                 }
                             }
                             else
                             {
                                 if (penaltyType == Model)
                                 {
-                                    <option value="@Convert.ToInt32(penaltyType)" selected="selected">@penaltyType.ToString()</option>
+                                    <option value="@Convert.ToInt32(penaltyType)" selected="selected">@loc[$"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}"]</option>
                                 }
                                 else
                                 {
-                                    <option value="@Convert.ToInt32(penaltyType)">@penaltyType.ToString()</option>
+                                    <option value="@Convert.ToInt32(penaltyType)">@loc[$"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}"]</option>
                                 }
                             }
                         }

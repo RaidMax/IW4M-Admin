@@ -487,7 +487,7 @@ namespace WebfrontCore.Controllers
         {
             var info = new ActionInfo
             {
-                ActionButtonLabel = "Dismiss",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_DISMISS_ALERT_FORM_SUBMIT"],
                 Name = Localization["WEBFRONT_ACTION_DISMISS_ALERT_SINGLE"],
                 Inputs = new List<InputInfo>
                 {
@@ -521,7 +521,7 @@ namespace WebfrontCore.Controllers
         {
             var info = new ActionInfo
             {
-                ActionButtonLabel = "Dismiss",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_DISMISS_ALERT_FORM_SUBMIT"],
                 Name = Localization["WEBFRONT_ACTION_DISMISS_ALERT_MANY"],
                 Inputs = new List<InputInfo>
                 {
@@ -555,14 +555,14 @@ namespace WebfrontCore.Controllers
         {
             var info = new ActionInfo
             {
-                ActionButtonLabel = "Send",
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_OFFLINE_MESSAGE_FORM_SUBMIT"],
                 Name = Localization["WEBFRONT_ACTION_OFFLINE_MESSAGE_BUTTON_COMPOSE"],
                 Inputs = new List<InputInfo>
                 {
                     new()
                     {
                         Name = "message",
-                        Label = "Message Content",
+                        Label = Localization["WEBFRONT_ACTION_OFFLINE_MESSAGE_FORM_CONTENT"],
                     },
                 },
                 Action = "OfflineMessage",

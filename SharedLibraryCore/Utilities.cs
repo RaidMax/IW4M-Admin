@@ -254,7 +254,7 @@ namespace SharedLibraryCore
         {
             var localized =
                 CurrentLocalization.LocalizationIndex[$"GLOBAL_PERMISSION_{permission.ToString().ToUpper()}"];
-            return PermissionLevelOverrides.ContainsKey(permission) && PermissionLevelOverrides[permission] != localized
+            return PermissionLevelOverrides.ContainsKey(permission) && PermissionLevelOverrides[permission] != permission.ToString()
                 ? PermissionLevelOverrides[permission]
                 : localized;
         }

@@ -7,9 +7,9 @@
         <table class="table mb-20" style="table-layout:fixed;">
             <thead>
             <tr class="level-bgcolor-@((int)key)">
-                <th class="text-light">@key.ToLocalizedLevelName()</th>
-                <th>@ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"]</th>
-                <th class="text-right font-weight-bold">@ViewBag.Localization["WEBFRONT_SEARCH_LAST_CONNECTED"]</th>
+                <th colspan="50%" class="text-light">@key.ToLocalizedLevelName()</th>
+                <th colspan="20%">@ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"]</th>
+                <th colspan="30%" class="text-right font-weight-bold text-force-break">@ViewBag.Localization["WEBFRONT_SEARCH_LAST_CONNECTED"]</th>
             </tr>
             </thead>
             <tbody>
@@ -21,7 +21,7 @@
                         continue;
                     }
                     <tr class="bg-dark-dm bg-light-lm">
-                        <td>
+                        <td colspan="50%">
                             @if (client.IsMasked)
                             {
                                 <span data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"]">
@@ -29,14 +29,17 @@
                                 </span>
                             }
 
-                            <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId">
+                            <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="text-force-break">
                                 <color-code value="@client.Name"></color-code>
                             </a>
                         </td>
-                        <td>
+                        <td colspan="20%" class="d-none d-md-table-cell">
                             <div class="badge">@ViewBag.Localization[$"GAME_{client.Game}"]</div>
                         </td>
-                        <td class="text-right">
+                        <td colspan="20%" class="d-table-cell d-md-none">
+                            <div class="badge">@(Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{client.Game}"] as string))</div>
+                        </td>
+                        <td colspan="30%" class="text-right">
                             @client.LastConnection.HumanizeForCurrentCulture()
                         </td>
                     </tr>

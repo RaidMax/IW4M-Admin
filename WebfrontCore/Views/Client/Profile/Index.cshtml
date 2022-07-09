@@ -82,7 +82,7 @@
             <div class="d-flex flex-column align-self-center ml-20 mr-20 mt-10 mb-10 mt-md-0 mb-md-0 text-center text-md-left">
                 <!-- name -->
                 <div id="profile_name">
-                    <span class="font-size-20 font-weight-medium">
+                    <span class="font-size-20 font-weight-medium text-force-break">
                         <color-code value="@Model.Name"></color-code>
                     </span>
                     <has-permission entity="MetaAliasUpdate" required-permission="Read">
@@ -115,7 +115,7 @@
                 <has-permission entity="ClientLevel" required-permission="Read">
                     <div class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Model.LevelInt">
                         <div class="d-flex flex-row">
-                            <span>@Model.Level</span>
+                            <color-code value="@Model.Level"></color-code>
                         </div>
                     </div>
                 </has-permission>
@@ -164,7 +164,7 @@
                                 @if (Model.IPs.Count > 15)
                                 {
                                     <div class="dropdown-divider"></div>
-                                    <span class="dropdown-item bg-dark-dm bg-light-lm">@((ViewBag.Localization["WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT"] as string).FormatExt(Model.Aliases.Count - 15))</span>
+                                    <span class="dropdown-item bg-dark-dm bg-light-lm">@((ViewBag.Localization["WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT"] as string).FormatExt(Model.IPs.Count - 15))</span>
                                 }
                             </div>
                         </div>

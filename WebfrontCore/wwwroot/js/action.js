@@ -26,7 +26,7 @@ function getUrlParameter(sParam) {
         sParameterName = sURLVariables[i].split('=');
 
         if (sParameterName[0] === sParam) {
-            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+            return sParameterName[1] === undefined ? true : decodeURIComponent(unescape(sParameterName[1]));
         }
     }
     return false;

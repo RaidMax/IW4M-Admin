@@ -10,12 +10,16 @@
     <div class="card p-10 m-0 mt-15 mb-15">
         <div class="d-flex flex-row flex-wrap">
             <div class="d-flex p-15 mr-md-10 w-full w-md-200 bg-very-dark-dm bg-light-ex-lm rounded">
-                <div class="align-self-center ">
-                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@ban.ClientId" class="font-size-18 no-decoration">@ban.ClientName</a>
-                    <br/>
-                    <div data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{ban.Game}"]">
-                        <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                <div class="align-self-center w-full">
+                    <div class="d-flex font-size-16">
+                        <a asp-controller="Client" asp-action="Profile" asp-route-id="@ban.ClientId" class="no-decoration flex-fill text-force-break mr-5">
+                            <color-code value="@ban.ClientName"></color-code>
+                        </a>
+                        <div data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{ban.Game}"]">
+                            <div class="badge align-self-center">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                        </div>
                     </div>
+
                     <has-permission entity="ClientGuid" required-permission="Read">
                         <div class="text-muted">@ban.NetworkId.ToString("X")</div>
                     </has-permission>
@@ -25,8 +29,11 @@
                     <br/>
                     @if (ban.AttachedPenalty is not null)
                     {
-                        <div class="text-muted font-weight-light">@ban.AttachedPenalty.Offense.CapClientName(30)</div>
+                        <div class="text-muted font-weight-light">
+                            <color-code value="@ban.AttachedPenalty.Offense.CapClientName(30)"></color-code>
+                        </div>
                         <div class="text-danger font-weight-light">@ban.AttachedPenalty.DateTime.ToStandardFormat()</div>
+                        <br/>
                         <div class="btn profile-action w-100" data-action="unban" data-action-id="@ban.ClientId">@ViewBag.Localization["WEBFRONT_BAN_MGMT_ACTION_UNBAN"]</div>
                     }
                     else
@@ -42,15 +49,20 @@
 
             @foreach (var associatedEntity in ban.AssociatedPenalties)
             {
-                <div class="d-flex flex-wrap flex-column w-full w-md-200 p-10">
-                    <div data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_BAN_MGMT_TOOLTIP_LINKED"]" class="d-flex">
-                        <i class="oi oi-link-intact align-self-center"></i>
-                        <div class="text-truncate ml-5 mr-5">
-                            <a asp-controller="Client" asp-action="Profile" asp-route-id="@associatedEntity.OffenderInfo.ClientId" class="font-size-18 no-decoration">@associatedEntity.OffenderInfo.ClientName</a>
+                <div class="d-flex flex-wrap flex-column w-full w-md-200 p-10 border rounded mt-10 mt-md-0" style="border-style: dashed !important;">
+                    <div class="d-flex font-size-16">
+                        <div data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_BAN_MGMT_TOOLTIP_LINKED"]" class="d-flex">
+                            <i class="oi oi-link-intact align-self-center"></i>
+                            <div class="text-truncate ml-5 mr-5">
+                                <a asp-controller="Client" asp-action="Profile" asp-route-id="@associatedEntity.OffenderInfo.ClientId" class="no-decoration text-force-break">
+                                    <color-code value="@associatedEntity.OffenderInfo.ClientName"></color-code>
+                                </a>
+                            </div>
+
                         </div>
-                    </div>
-                    <div data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{ban.Game}"]">
-                        <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                        <div data-toggle="tooltip" data-title="@ViewBag.Localization[$"GAME_{ban.Game}"]">
+                            <div class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization[$"GAME_{ban.Game}"])</div>
+                        </div>
                     </div>
                     <br/>
                     <has-permission entity="ClientGuid" required-permission="Read">
@@ -60,7 +72,9 @@
                         <div class="text-muted">@associatedEntity.OffenderInfo.IPAddress.ConvertIPtoString()</div>
                     </has-permission>
                     <br/>
-                    <div class="text-muted font-weight-light">@associatedEntity.Offense.CapClientName(30)</div>
+                    <div class="text-muted font-weight-light">
+                        <color-code value="@associatedEntity.Offense.CapClientName(30)"></color-code>
+                    </div>
                     <div class="text-danger font-weight-light">@associatedEntity.DateTime.ToStandardFormat()</div>
                     <div class="btn profile-action mt-10 w-100" data-action="unban" data-action-id="@associatedEntity.OffenderInfo.ClientId">@ViewBag.Localization["WEBFRONT_BAN_MGMT_ACTION_UNBAN"]</div>
                 </div>

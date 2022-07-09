@@ -46,7 +46,7 @@ let plugin = {
                 break;
             case 'warn':
                 const warningTitle = _localization.LocalizationIndex['GLOBAL_WARNING'];
-                sendScriptCommand(server, 'Alert', gameEvent.Target, {
+                sendScriptCommand(server, 'Alert', gameEvent.Origin, gameEvent.Target, {
                     alertType: warningTitle + '!',
                     message: gameEvent.Data
                 });

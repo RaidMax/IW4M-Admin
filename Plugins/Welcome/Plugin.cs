@@ -53,7 +53,7 @@ namespace IW4MAdmin.Plugins.Welcome
             {
                 var newPlayer = gameEvent.Origin;
                 if (newPlayer.Level >= Permission.Trusted && !gameEvent.Origin.Masked||
-                    !string.IsNullOrEmpty(newPlayer.GetAdditionalProperty<string>("ClientTag")) &&
+                    !string.IsNullOrEmpty(newPlayer.Tag) &&
                      newPlayer.Level != Permission.Flagged && newPlayer.Level != Permission.Banned &&
                      !newPlayer.Masked)
                     gameEvent.Owner.Broadcast(
@@ -88,7 +88,7 @@ namespace IW4MAdmin.Plugins.Welcome
         {
             msg = msg.Replace("{{ClientName}}", joining.Name);
             msg = msg.Replace("{{ClientLevel}}",
-                $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.GetAdditionalProperty<string>("ClientTag")) ? "" : $" (Color::White)({joining.GetAdditionalProperty<string>("ClientTag")}(Color::White))")}");
+                $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.Tag) ? "" : $" (Color::White){joining.Tag}(Color::White)")}");
             // this prevents it from trying to evaluate it every message
             if (msg.Contains("{{ClientLocation}}"))
             {
@@ -111,7 +111,7 @@ namespace IW4MAdmin.Plugins.Welcome
             try
             {
                 var response =
-                    await wc.GetStringAsync(new Uri($"http://ip-api.com/json/{ip}"));
+                    await wc.GetStringAsync(new Uri($"http://ip-api.com/json/{ip}?lang={Utilities.CurrentLocalization.LocalizationName.Split("-").First().ToLower()}"));
                 var responseObj = JObject.Parse(response);
                 response = responseObj["country"]?.ToString();
 

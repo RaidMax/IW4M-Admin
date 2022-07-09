@@ -373,9 +373,9 @@ namespace IW4MAdmin
                         var clientTag = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2,
                             EFMeta.ClientTagNameV2, E.Origin.ClientId, Manager.CancellationToken);
 
-                        if (clientTag?.LinkedMeta != null)
+                        if (clientTag.Value != null)
                         {
-                            E.Origin.Tag = clientTag.LinkedMeta.Value;
+                            E.Origin.Tag = clientTag.Value;
                         }
 
                         try

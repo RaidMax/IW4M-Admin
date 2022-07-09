@@ -689,23 +689,50 @@ namespace IW4MAdmin
 
                         else
                         {
-                            Gametype = dict["gametype"];
-                            Hostname = dict["hostname"];
+                            if (dict.ContainsKey("gametype"))
+                            {
+                                Gametype = dict["gametype"];
+                            }
 
-                            string mapname = dict["mapname"] ?? CurrentMap.Name;
-                            UpdateMap(mapname);
+                            if (dict.ContainsKey("hostname"))
+                            {
+                                Hostname = dict["hostname"];
+                            }
+
+                            var newMapName = dict.ContainsKey("mapname")
+                                ? dict["mapname"] ?? CurrentMap.Name
+                                : CurrentMap.Name;
+                            UpdateMap(newMapName);
                         }
                     }
 
                     else
                     {
-                        var dict = (Dictionary<string, string>) E.Extra;
-                        Gametype = dict["g_gametype"];
-                        Hostname = dict["sv_hostname"];
-                        MaxClients = int.Parse(dict["sv_maxclients"]);
+                        var dict = (Dictionary<string, string>)E.Extra;
+                        if (dict.ContainsKey("g_gametype"))
+                        {
+                            Gametype = dict["g_gametype"];
+                        }
 
-                        string mapname = dict["mapname"];
-                        UpdateMap(mapname);
+                        if (dict.ContainsKey("sv_hostname"))
+                        {
+                            Hostname = dict["sv_hostname"];
+                        }
+
+                        if (dict.ContainsKey("sv_maxclients"))
+                        {
+                            MaxClients = int.Parse(dict["sv_maxclients"]);
+                        }
+
+                        else if (dict.ContainsKey("com_maxclients"))
+                        {
+                            MaxClients = int.Parse(dict["com_maxclients"]);
+                        }
+
+                        if (dict.ContainsKey("mapname"))
+                        {
+                            UpdateMap(dict["mapname"]);
+                        }
                     }
 
                     if (E.GameTime.HasValue)

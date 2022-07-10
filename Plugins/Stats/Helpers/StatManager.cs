@@ -188,29 +188,32 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var finished = statsInfo
                 .OrderByDescending(stat => rankingsDict[stat.ClientId].Last().PerformanceMetric)
-                .Select((s, index) => new TopStatsInfo()
-            {
-                ClientId = s.ClientId,
-                Id = (int?) serverId ?? 0,
-                Deaths = s.Deaths,
-                Kills = s.Kills,
-                KDR = Math.Round(s.KDR, 2),
-                LastSeen = (DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection))
-                    .HumanizeForCurrentCulture(1, TimeUnit.Week, TimeUnit.Second, ",", false),
-                LastSeenValue = DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection),
-                Name = rankingsDict[s.ClientId].First().Name,
-                Performance = Math.Round(rankingsDict[s.ClientId].Last().PerformanceMetric ?? 0, 2),
-                RatingChange = (rankingsDict[s.ClientId].First().Ranking -
-                                rankingsDict[s.ClientId].Last().Ranking) ?? 0,
-                PerformanceHistory = rankingsDict[s.ClientId].Select(ranking => ranking.PerformanceMetric ?? 0).ToList(),
-                TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
-                TimePlayedValue = TimeSpan.FromSeconds(s.TotalTimePlayed),
-                Ranking = index + start + 1,
-                ZScore = rankingsDict[s.ClientId].Last().ZScore,
-                ServerId = serverId
-            })
-            .OrderBy(r => r.Ranking)
-            .ToList();
+                .Select((s, index) => new TopStatsInfo
+                {
+                    ClientId = s.ClientId,
+                    Id = (int?)serverId ?? 0,
+                    Deaths = s.Deaths,
+                    Kills = s.Kills,
+                    KDR = Math.Round(s.KDR, 2),
+                    LastSeen = (DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection))
+                        .HumanizeForCurrentCulture(1, TimeUnit.Week, TimeUnit.Second, ",", false),
+                    LastSeenValue = DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection),
+                    Name = rankingsDict[s.ClientId].First().Name,
+                    Performance = Math.Round(rankingsDict[s.ClientId].Last().PerformanceMetric ?? 0, 2),
+                    RatingChange = (rankingsDict[s.ClientId].First().Ranking -
+                                    rankingsDict[s.ClientId].Last().Ranking) ?? 0,
+                    PerformanceHistory = rankingsDict[s.ClientId].Select(ranking => new PerformanceHistory
+                            { Performance = ranking.PerformanceMetric ?? 0, OccurredAt = ranking.CreatedDateTime })
+                        .ToList(),
+                    TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
+                    TimePlayedValue = TimeSpan.FromSeconds(s.TotalTimePlayed),
+                    Ranking = index + start + 1,
+                    ZScore = rankingsDict[s.ClientId].Last().ZScore,
+                    ServerId = serverId
+                })
+                .OrderBy(r => r.Ranking)
+                .Take(60)
+                .ToList();
 
             return finished;
         }
@@ -289,7 +292,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var finished = topPlayers.Select(s => new TopStatsInfo()
                 {
                     ClientId = s.ClientId,
-                    Id = (int?) serverId ?? 0,
+                    Id = (int?)serverId ?? 0,
                     Deaths = s.Deaths,
                     Kills = s.Kills,
                     KDR = Math.Round(s.KDR, 2),
@@ -302,9 +305,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                    ratingInfo.First(r => r.Key == s.ClientId).Ratings.Last().Ranking,
                     PerformanceHistory = ratingInfo.First(r => r.Key == s.ClientId).Ratings.Count() > 1
                         ? ratingInfo.First(r => r.Key == s.ClientId).Ratings.OrderBy(r => r.When)
-                            .Select(r => r.Performance).ToList()
-                        : new List<double>()
-                            {clientRatingsDict[s.ClientId].Performance, clientRatingsDict[s.ClientId].Performance},
+                            .Select(r => new PerformanceHistory { Performance = r.Performance, OccurredAt = r.When })
+                            .ToList()
+                        : new List<PerformanceHistory>
+                        {
+                            new()
+                            {
+                                Performance = clientRatingsDict[s.ClientId].Performance, OccurredAt = DateTime.UtcNow
+                            },
+                            new()
+                            {
+                                Performance = clientRatingsDict[s.ClientId].Performance, OccurredAt = DateTime.UtcNow
+                            }
+                        },
                     TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
                     TimePlayedValue = TimeSpan.FromSeconds(s.TotalTimePlayed)
                 })

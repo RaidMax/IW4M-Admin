@@ -7,7 +7,7 @@ namespace Data.Models.Client.Stats
 {
     public class EFClientRankingHistory: AuditFields
     {
-        public const int MaxRankingCount = 30;
+        public const int MaxRankingCount = 1728;
         
         [Key]
         public long ClientRankingHistoryId { get; set; }

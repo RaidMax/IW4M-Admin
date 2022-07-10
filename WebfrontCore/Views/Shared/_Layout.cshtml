@@ -154,7 +154,7 @@
 </div>
 <environment include="Development">
     <script type="text/javascript" src="~/lib/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="~/lib/moment.js/moment.js"></script>
+    <script type="text/javascript" src="~/lib/moment.js/min/moment-with-locales.js"></script>
     <script type="text/javascript" src="~/lib/moment-timezone/moment-timezone.js"></script>
     <script type="text/javascript" src="~/lib/chart.js/dist/Chart.bundle.min.js"></script>
     <script type="text/javascript" src="~/lib/halfmoon/js/halfmoon.js"></script>
@@ -171,6 +171,7 @@
         $.each(_localizationTmp.set, function (key, value) {
             _localization[key] = value;
             });
+        moment.locale('@Utilities.CurrentLocalization.LocalizationName');
     </script>
 @await RenderSectionAsync("scripts", required: false)
 @Html.Raw(ViewBag.ScriptInjection)

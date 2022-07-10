@@ -79,6 +79,7 @@ namespace Stats.Helpers
                 .Where(r => r.ServerId == serverId)
                 .Where(r => r.Ranking != null)
                 .OrderByDescending(r => r.UpdatedDateTime)
+                .Take(250)
                 .ToListAsync();
 
             var mostRecentRanking = ratings.FirstOrDefault(ranking => ranking.Newest);

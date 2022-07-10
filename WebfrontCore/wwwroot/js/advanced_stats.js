@@ -321,13 +321,16 @@ function renderPerformanceChart() {
     }
 
     const labels = [];
+    const values = [];
+    
     data.forEach(function (item, i) {
-        labels.push(i);
+        labels.push(item.OccurredAt);
+        values.push(item.Performance)
     });
 
     const padding = 4;
-    let dataMin = Math.min(...data);
-    const dataMax = Math.max(...data);
+    let dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
 
     if (dataMax - dataMin === 0) {
         dataMin = 0;
@@ -341,7 +344,7 @@ function renderPerformanceChart() {
     const chartData = {
         labels: labels,
         datasets: [{
-            data: data,
+            data: values,
             pointBackgroundColor: 'rgba(255, 255, 255, 0)',
             pointBorderColor: 'rgba(255, 255, 255, 0)',
             pointHoverRadius: 5,
@@ -356,8 +359,8 @@ function renderPerformanceChart() {
         legend: false,
         tooltips: {
             callbacks: {
-                label: (tooltipItem) => Math.round(tooltipItem.yLabel) + ' ' + _localization["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
-                title: () => ''
+                label: context => moment.utc(context.label).local().calendar(),
+                title: items => Math.round(items[0].yLabel) + ' ' + _localization["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
             },
             mode: 'nearest',
             intersect: false,

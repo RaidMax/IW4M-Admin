@@ -71,31 +71,7 @@ namespace SharedLibraryCore
         /// </summary>
         public const long WORLD_ID = -1;
 
-        public static Dictionary<Permission, string> PermissionLevelOverrides { get; } =
-            new Dictionary<Permission, string>();
-
-        public static string HttpRequest(string location, string header, string headerValue)
-        {
-            using (var RequestClient = new HttpClient())
-            {
-                RequestClient.DefaultRequestHeaders.Add(header, headerValue);
-                var response = RequestClient.GetStringAsync(location).Result;
-                return response;
-            }
-        }
-
-        //Get string with specified number of spaces -- really only for visual output
-        public static string GetSpaces(int Num)
-        {
-            var SpaceString = string.Empty;
-            while (Num > 0)
-            {
-                SpaceString += ' ';
-                Num--;
-            }
-
-            return SpaceString;
-        }
+        public static Dictionary<Permission, string> PermissionLevelOverrides { get; } = new ();
 
         //Remove words from a space delimited string
         public static string RemoveWords(this string str, int num)
@@ -133,12 +109,12 @@ namespace SharedLibraryCore
         {
             var lookingFor = str.ToLower();
 
-            for (var Perm = Permission.User; Perm < Permission.Console; Perm++)
-                if (lookingFor.Contains(Perm.ToString().ToLower())
+            for (var perm = Permission.User; perm < Permission.Console; perm++)
+                if (lookingFor.Contains(perm.ToString().ToLower())
                     || lookingFor.Contains(CurrentLocalization
-                        .LocalizationIndex[$"GLOBAL_PERMISSION_{Perm.ToString().ToUpper()}"].ToLower()))
+                        .LocalizationIndex[$"GLOBAL_PERMISSION_{perm.ToString().ToUpper()}"].ToLower()))
                 {
-                    return Perm;
+                    return perm;
                 }
 
             return Permission.Banned;
@@ -211,7 +187,8 @@ namespace SharedLibraryCore
             return output.FixIW4ForwardSlash();
         }
 
-        private static readonly IList<string> _zmGameTypes = new[] { "zclassic", "zstandard", "zcleansed", "zgrief" };
+        private static readonly IList<string> ZmGameTypes = new[]
+            { "zclassic", "zstandard", "zcleansed", "zgrief", "zom", "cmp" };
 
         /// <summary>
         ///     indicates if the given server is running a zombie game mode
@@ -220,7 +197,8 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static bool IsZombieServer(this Server server)
         {
-            return server.GameName == Game.T6 && _zmGameTypes.Contains(server.Gametype.ToLower());
+            return new[] { Game.T4, Game.T5, Game.T6 }.Contains(server.GameName) &&
+                   ZmGameTypes.Contains(server.Gametype.ToLower());
         }
 
         public static bool IsCodGame(this Server server)
@@ -281,11 +259,6 @@ namespace SharedLibraryCore
         public static bool IsBroadcastCommand(this string str, string broadcastCommandPrefix)
         {
             return str.StartsWith(broadcastCommandPrefix);
-        }
-
-        public static IManagerCommand AsCommand(this GameEvent gameEvent)
-        {
-            return gameEvent.Extra as IManagerCommand;
         }
 
         /// <summary>
@@ -454,7 +427,7 @@ namespace SharedLibraryCore
         {
             var success = IPAddress.TryParse(str, out var ip);
             return success && ip.GetAddressBytes().Count(_byte => _byte == 0) != 4
-                ? (int?)BitConverter.ToInt32(ip.GetAddressBytes(), 0)
+                ? BitConverter.ToInt32(ip.GetAddressBytes(), 0)
                 : null;
         }
 
@@ -501,11 +474,6 @@ namespace SharedLibraryCore
             }
 
             return Game.UKN;
-        }
-
-        public static string EscapeMarkdown(this string markdownString)
-        {
-            return markdownString.Replace("<", "\\<").Replace(">", "\\>").Replace("|", "\\|");
         }
 
         public static TimeSpan ParseTimespan(this string input)
@@ -629,7 +597,7 @@ namespace SharedLibraryCore
         public static bool PromptBool(this string question, string description = null, bool defaultValue = true)
         {
             Console.Write($"{question}?{(string.IsNullOrEmpty(description) ? " " : $" ({description}) ")}[y/n]: ");
-            var response = Console.ReadLine().ToLower().FirstOrDefault();
+            var response = Console.ReadLine()?.ToLower().FirstOrDefault();
             return response != 0 ? response == 'y' : defaultValue;
         }
 
@@ -660,7 +628,7 @@ namespace SharedLibraryCore
             Console.WriteLine(new string('=', 52));
 
             var selectionIndex = PromptInt(CurrentLocalization.LocalizationIndex["SETUP_PROMPT_MAKE_SELECTION"], null,
-                hasDefault ? 0 : 1, selections.Length, hasDefault ? 0 : (int?)null);
+                hasDefault ? 0 : 1, selections.Length, hasDefault ? 0 : null);
 
             if (!hasDefault)
             {
@@ -688,13 +656,13 @@ namespace SharedLibraryCore
                 $"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue.Value.ToString()}]")}: ");
             int response;
 
-            string inputOrDefault()
+            string InputOrDefault()
             {
                 var input = Console.ReadLine();
                 return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue.ToString() : input;
             }
 
-            while (!int.TryParse(inputOrDefault(), out response) ||
+            while (!int.TryParse(InputOrDefault(), out response) ||
                    response < minValue ||
                    response > maxValue)
             {
@@ -719,7 +687,7 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public static string PromptString(this string question, string description = null, string defaultValue = null)
         {
-            string inputOrDefault()
+            string InputOrDefault()
             {
                 var input = Console.ReadLine();
                 return string.IsNullOrEmpty(input) && defaultValue != null ? defaultValue : input;
@@ -730,7 +698,7 @@ namespace SharedLibraryCore
             {
                 Console.Write(
                     $"{question}{(string.IsNullOrEmpty(description) ? "" : $" ({description})")}{(defaultValue == null ? "" : $" [{CurrentLocalization.LocalizationIndex["SETUP_PROMPT_DEFAULT"]} {defaultValue}]")}: ");
-                response = inputOrDefault();
+                response = InputOrDefault();
             } while (string.IsNullOrWhiteSpace(response) && response != defaultValue);
 
             return response;

@@ -458,6 +458,12 @@ namespace Integrations.Cod
                 connectionState.SendEventArgs.DisconnectReuseSocket = true;
             }
 
+            if (connectionState.ReceiveEventArgs.UserToken is ConnectionUserToken { CancellationToken.IsCancellationRequested: true })
+            {
+                // after a graceful restart we need to reset the receive user token as the cancellation has been updated
+                connectionState.ReceiveEventArgs.UserToken = connectionState.SendEventArgs.UserToken;
+            }
+
             connectionState.SendEventArgs.SetBuffer(payload);
 
             // send the data to the server

@@ -61,7 +61,7 @@ namespace IW4MAdmin.Application
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         readonly IPageList PageList;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
-        private readonly CancellationTokenSource _tokenSource;
+        private CancellationTokenSource _tokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
         private readonly ITranslationLookup _translationLookup;
         private readonly IConfigurationHandler<CommandConfiguration> _commandConfiguration;
@@ -94,8 +94,8 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser>() { new BaseEventParser(parserRegexFactory, logger, _appConfig) };
-            AdditionalRConParsers = new List<IRConParser>() { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
+            AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, _appConfig) };
+            AdditionalRConParsers = new List<IRConParser> { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
             _tokenSource = new CancellationTokenSource();
@@ -613,6 +613,7 @@ namespace IW4MAdmin.Application
         {
             IsRestartRequested = true;
             Stop().GetAwaiter().GetResult();
+            _tokenSource = new CancellationTokenSource();
         }
 
         [Obsolete]

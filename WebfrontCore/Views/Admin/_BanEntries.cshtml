@@ -34,7 +34,7 @@
                         </div>
                         <div class="text-danger font-weight-light">@ban.AttachedPenalty.DateTime.ToStandardFormat()</div>
                         <br/>
-                        <div class="btn profile-action w-100" data-action="unban" data-action-id="@ban.ClientId">@ViewBag.Localization["WEBFRONT_BAN_MGMT_ACTION_UNBAN"]</div>
+                        <div class="btn profile-action" ata-action="unban" data-action-id="@ban.ClientId">@ViewBag.Localization["WEBFRONT_BAN_MGMT_ACTION_UNBAN"]</div>
                     }
                     else
                     {
@@ -51,7 +51,7 @@
             {
                 <div class="d-flex flex-wrap flex-column w-full w-md-200 p-10 border rounded mt-10 mt-md-0" style="border-style: dashed !important;">
                     <div class="d-flex font-size-16">
-                        <div data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_BAN_MGMT_TOOLTIP_LINKED"]" class="d-flex">
+                        <div data-toggle="tooltip" data-title="@ViewBag.Localization["WEBFRONT_BAN_MGMT_TOOLTIP_LINKED"]" class="d-flex flex-fill">
                             <i class="oi oi-link-intact align-self-center"></i>
                             <div class="text-truncate ml-5 mr-5">
                                 <a asp-controller="Client" asp-action="Profile" asp-route-id="@associatedEntity.OffenderInfo.ClientId" class="no-decoration text-force-break">
@@ -76,7 +76,7 @@
                         <color-code value="@associatedEntity.Offense.CapClientName(30)"></color-code>
                     </div>
                     <div class="text-danger font-weight-light">@associatedEntity.DateTime.ToStandardFormat()</div>
-                    <div class="btn profile-action mt-10 w-100" data-action="unban" data-action-id="@associatedEntity.OffenderInfo.ClientId">@ViewBag.Localization["WEBFRONT_BAN_MGMT_ACTION_UNBAN"]</div>
+                    <div class="btn profile-action mt-10" data-action="unban" data-action-id="@associatedEntity.OffenderInfo.ClientId">@ViewBag.Localization["WEBFRONT_BAN_MGMT_ACTION_UNBAN"]</div>
                 </div>
             }
         </div>

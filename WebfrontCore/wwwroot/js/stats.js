@@ -47,7 +47,7 @@ function getStatsChart(id) {
     };
 
     const options = {
-        defaultFontFamily: '-apple-system, BlinkMacSystemFont, "Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+        defaultFontFamily: "-apple-system, BlinkMacSystemFont, 'Open Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'",
         responsive: true,
         maintainAspectRatio: false,
         legend: false,
@@ -69,7 +69,7 @@ function getStatsChart(id) {
         elements: {
             line: {
                 fill: false,
-                borderColor: halfmoon.getPreferredMode() === "light-mode" ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.75)',
+                borderColor: halfmoon.getPreferredMode() === 'light-mode' ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.75)',
                 borderWidth: 2
             },
             point: {
@@ -87,6 +87,8 @@ function getStatsChart(id) {
 
                 position: 'right',
                 ticks: {
+                    precision: 0,
+                    stepSize: 3,
                     callback: function (value, index, values) {
                         if (index === values.length - 1) {
                             return min;
@@ -127,9 +129,9 @@ $(document).ready(function () {
     });
 });
 
-$(document).on("loaderFinished", function (event, response) {
-    const ids = $.map($(response).find('.client-rating-graph'), function (elem) { return $(elem).attr('id'); });
+$(document).on('loaderFinished', function (event, response) {
+    const ids = $.map($(response).find('.client-rating-graph'), function (elem) { return $(elem).children('canvas').attr('id'); });
     ids.forEach(function (item, index) {
-        getStatsChart($(item).children('canvas').attr('id'));
+        getStatsChart(item);
     });
 });

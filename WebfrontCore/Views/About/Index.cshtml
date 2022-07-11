@@ -35,19 +35,19 @@
                 @foreach (var social in Model.CommunityInformation.SocialAccounts ?? Array.Empty<SocialAccountConfiguration>())
                 {
                     <div>
-                        <a href="@social.Url" target="_blank" title="@social.Title">
+                        <a href="@social.Url" target="_blank" title="@social.Title" class="d-flex no-decoration">
                             @if (!string.IsNullOrWhiteSpace(social.IconId))
                             {
-                                <span class="oi @social.IconId"></span>
+                                <i class="oi @social.IconId mr-5" style="width: 1.6rem;"></i>
                             }
                             else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                             {
                                 var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
                                     ? parsedUrl.AbsoluteUri
                                     : $"images/community/{social.IconUrl}";
-                                <img class="img-fluid" style="max-width: 1rem; fill: white" src="@url" alt="@social.Title"/>
+                                <img class="img-fluid mr-5" style="width: 1.6rem; fill: white" src="@url" alt="@social.Title"/>
                             }
-                            <span class="ml-1">@social.Title</span>
+                            <div class="ml-1">@social.Title</div>
                         </a>
                     </div>
                 }

@@ -30,67 +30,74 @@
 }
 
 <h4 class="content-title mb-0">
-   @ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]
+    @ViewBag.Localization["WEBFRONT_TITLE_SCOREBOARD"]
 </h4>
 <span class="text-muted">
     <color-code value="@Model.ServerName"></color-code>
 </span>
 
-<table class="table table-sort mt-15"
-       data-sort-column="@(Model.OrderByKey ?? nameof(ClientScoreboardInfo.Score))"
-       data-sort-down="@Model.ShouldOrderDescending.ToString().ToLower()">
-    <tr class="bg-dark-dm bg-white-lm d-none d-lg-table-row">
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ClientName)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ClientName)))</th>
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Score)">@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Score)))</th>
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Kills)">@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Kills)))</th>
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Deaths)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Deaths)))</th>
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Kdr)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Kdr)))</th>
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ScorePerMinute)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ScorePerMinute)))</th>
-        <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ZScore)">@ViewBag.Localization["WEBFRONT_ADV_STATS_ZSCORE"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ZScore)))</th>
-        <th class="text-right table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Ping)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Ping)))</th>
-    </tr>
-    @foreach (var client in Model.ShouldOrderDescending ? Model.ClientInfo.OrderByDescending(OrderByFunc) : Model.ClientInfo.OrderBy(OrderByFunc))
-    {
-        <!-- desktop -->
-        <tr class="@GetTeamBackgroundColorClass(client) d-none d-lg-table-row">
-            <td>
-                <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
-                    <color-code value="@client.ClientName"></color-code>
-                </a>
-            </td>
-            <td>@client.Score</td>
-            <td>@(client.Kills ?? 0)</td>
-            <td>@(client.Deaths ?? 0)</td>
-            <td>@Math.Round(client.Kdr ?? 0, 2)</td>
-            <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
-            <td>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</td>
-            <td class="text-right">@client.Ping</td>
+@if (!Model.ClientInfo.Any())
+{
+    <div class="mt-20">@ViewBag.Localization["WEBFRONT_SCOREBOARD_NO_PLAYERS"]</div>
+}
+else
+{
+    <table class="table table-sort mt-15"
+           data-sort-column="@(Model.OrderByKey ?? nameof(ClientScoreboardInfo.Score))"
+           data-sort-down="@Model.ShouldOrderDescending.ToString().ToLower()">
+        <tr class="bg-dark-dm bg-white-lm d-none d-lg-table-row">
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ClientName)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ClientName)))</th>
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Score)">@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Score)))</th>
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Kills)">@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Kills)))</th>
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Deaths)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Deaths)))</th>
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Kdr)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Kdr)))</th>
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ScorePerMinute)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ScorePerMinute)))</th>
+            <th class="table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.ZScore)">@ViewBag.Localization["WEBFRONT_ADV_STATS_ZSCORE"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.ZScore)))</th>
+            <th class="text-right table-sort-column" data-column-name="@nameof(ClientScoreboardInfo.Ping)">@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]@Html.Raw(GetColumnSortDisplay(nameof(ClientScoreboardInfo.Ping)))</th>
         </tr>
+        @foreach (var client in Model.ShouldOrderDescending ? Model.ClientInfo.OrderByDescending(OrderByFunc) : Model.ClientInfo.OrderBy(OrderByFunc))
+        {
+            <!-- desktop -->
+            <tr class="@GetTeamBackgroundColorClass(client) d-none d-lg-table-row">
+                <td>
+                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
+                        <color-code value="@client.ClientName"></color-code>
+                    </a>
+                </td>
+                <td>@client.Score</td>
+                <td>@(client.Kills ?? 0)</td>
+                <td>@(client.Deaths ?? 0)</td>
+                <td>@Math.Round(client.Kdr ?? 0, 2)</td>
+                <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
+                <td>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</td>
+                <td class="text-right">@client.Ping</td>
+            </tr>
 
-        <tr class="d-table-row d-lg-none d-flex">
-            <td class="text-right bg-primary text-light flex-grow-0">
-                <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_ADV_STATS_ZSCORE"]</div>
-                <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]</div>
-            </td>
+            <tr class="d-table-row d-lg-none d-flex">
+                <td class="text-right bg-primary text-light flex-grow-0">
+                    <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PLAYER"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_ADV_STATS_SCORE"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_ADV_STATS_KILLS"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_DEATHS"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_RATIO"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_SPM"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_ADV_STATS_ZSCORE"]</div>
+                    <div>@ViewBag.Localization["WEBFRONT_SCOREBOARD_TABLE_PING"]</div>
+                </td>
 
-            <td class="@GetTeamBackgroundColorClass(client) flex-fill">
-                <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
-                    <color-code value="@client.ClientName"></color-code>
-                </a>
-                <div>@client.Score</div>
-                <div>@(client.Kills ?? 0)</div>
-                <div>@(client.Deaths ?? 0)</div>
-                <div>@Math.Round(client.Kdr ?? 0, 2)</div>
-                <div>@Math.Round(client.ScorePerMinute ?? 0)</div>
-                <div>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</div>
-                <div>@client.Ping</div>
-            </td>
-        </tr>
-    }
-</table>
+                <td class="@GetTeamBackgroundColorClass(client) flex-fill">
+                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
+                        <color-code value="@client.ClientName"></color-code>
+                    </a>
+                    <div>@client.Score</div>
+                    <div>@(client.Kills ?? 0)</div>
+                    <div>@(client.Deaths ?? 0)</div>
+                    <div>@Math.Round(client.Kdr ?? 0, 2)</div>
+                    <div>@Math.Round(client.ScorePerMinute ?? 0)</div>
+                    <div>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</div>
+                    <div>@client.Ping</div>
+                </td>
+            </tr>
+        }
+    </table>
+}

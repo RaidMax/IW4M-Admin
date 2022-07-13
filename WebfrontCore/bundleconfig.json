@@ -12,7 +12,7 @@
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
       "wwwroot/lib/jquery/dist/jquery.js",
-      "wwwroot/lib/moment.js/moment-with-locales.min.js",
+      "wwwroot/lib/moment.js/min/moment-with-locales.min.js",
       "wwwroot/lib/moment-timezone/moment-timezone.min.js",
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
       "wwwroot/lib/halfmoon/js/halfmoon.min.js",

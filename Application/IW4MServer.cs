@@ -373,7 +373,7 @@ namespace IW4MAdmin
                         var clientTag = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2,
                             EFMeta.ClientTagNameV2, E.Origin.ClientId, Manager.CancellationToken);
 
-                        if (clientTag.Value != null)
+                        if (clientTag?.Value != null)
                         {
                             E.Origin.Tag = clientTag.Value;
                         }
@@ -767,6 +767,23 @@ namespace IW4MAdmin
                 else if (E.Type == GameEvent.EventType.JoinTeam)
                 {
                     E.Origin.UpdateTeam(E.Extra as string);
+                }
+                
+                else if (E.Type == GameEvent.EventType.MetaUpdated)
+                {
+                    if (E.Extra is "PersistentStatClientId" && int.TryParse(E.Data, out var persistentClientId))
+                    {
+                        var penalties = await Manager.GetPenaltyService().GetActivePenaltiesByClientId(persistentClientId);
+                        var banPenalty = penalties.FirstOrDefault(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
+
+                        if (banPenalty is not null && E.Origin.Level != Permission.Banned)
+                        {
+                            ServerLogger.LogInformation(
+                                "Banning {Client} as they have have provided a persistent clientId of {PersistentClientId}, which is banned",
+                                E.Origin.ToString(), persistentClientId);
+                            E.Origin.Ban(loc["SERVER_BAN_EVADE"].FormatExt(persistentClientId), Utilities.IW4MAdminClient(this), true);
+                        }
+                    }
                 }
 
                 lock (ChatHistory)

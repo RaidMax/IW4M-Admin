@@ -10,6 +10,7 @@ namespace IW4MAdmin.Application.Misc
     {
         public event EventHandler<GameEvent> OnClientDisconnect;
         public event EventHandler<GameEvent> OnClientConnect;
+        public event EventHandler<GameEvent> OnClientMetaUpdated;
 
         private readonly ILogger _logger;
 
@@ -32,6 +33,11 @@ namespace IW4MAdmin.Application.Misc
                 if (gameEvent.Type == GameEvent.EventType.Disconnect && gameEvent.Origin.ClientId != 0)
                 {
                     OnClientDisconnect?.Invoke(this, gameEvent);
+                }
+
+                if (gameEvent.Type == GameEvent.EventType.MetaUpdated)
+                {
+                    OnClientMetaUpdated?.Invoke(this, gameEvent);
                 }
             }
 

@@ -116,7 +116,8 @@ namespace IW4MAdmin.Application.Misc
                             typeof(System.Net.Http.HttpClient).Assembly,
                             typeof(EFClient).Assembly,
                             typeof(Utilities).Assembly,
-                            typeof(Encoding).Assembly
+                            typeof(Encoding).Assembly,
+                            typeof(CancellationTokenSource).Assembly
                         })
                         .CatchClrExceptions()
                         .AddObjectConverter(new PermissionLevelToStringConverter()));

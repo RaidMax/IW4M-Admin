@@ -463,7 +463,11 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
     if (input.length > 0) {
         const event = parseEvent(input)
 
-        logger.WriteDebug(`Processing input... ${event.eventType} ${event.subType} ${event.data} ${event.clientNumber}`);
+        logger.WriteDebug(`Processing input... ${event.eventType} ${event.subType} ${event.data.toString()} ${event.clientNumber}`);
+
+        const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
+        const threading = importNamespace('System.Threading');
+        const token = new threading.CancellationTokenSource().Token;
 
         // todo: refactor to mapping if possible
         if (event.eventType === 'ClientDataRequested') {
@@ -475,8 +479,8 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
                 let data = [];
 
                 if (event.subType === 'Meta') {
-                    const metaService = _serviceResolver.ResolveService('IMetaService');
-                    const meta = metaService.GetPersistentMeta(event.data, client).GetAwaiter().GetResult();
+                    const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
+                    const meta = metaService.GetPersistentMeta(event.data, client, token).GetAwaiter().GetResult();
                     data[event.data] = meta === null ? '' : meta.Value;
                 } else {
                     data = {
@@ -510,19 +514,19 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
                 sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Fail'});
             } else {
                 if (event.subType === 'Meta') {
-                    const metaService = _serviceResolver.ResolveService('IMetaService');
                     try {
-                        logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}`);
+                        logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}, Direction=${event.data['direction']} ${token}`);
                         if (event.data['direction'] != null) {
                             event.data['direction'] = 'up'
-                                ? metaService.IncrementPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult()
-                                : metaService.DecrementPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult();
+                                ? metaService.IncrementPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult()
+                                : metaService.DecrementPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
                         } else {
-                            metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId).GetAwaiter().GetResult();
+                            metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
                         }
                         sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Complete'});
                     } catch (error) {
                         sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Fail'});
+                        logger.WriteError('Could not persist client meta ' + error.toString());
                     }
                 }
             }

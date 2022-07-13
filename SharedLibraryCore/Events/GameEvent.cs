@@ -204,6 +204,11 @@ namespace SharedLibraryCore
             ///     client logged out of webfront
             /// </summary>
             Logout = 113,
+            
+            /// <summary>
+            /// meta value updated on client
+            /// </summary>
+            MetaUpdated = 114,
 
             // events "generated" by IW4MAdmin
             /// <summary>

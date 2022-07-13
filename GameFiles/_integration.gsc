@@ -53,8 +53,6 @@ init()
     level thread OnPlayerConnect();
 }
 
-
-
 //////////////////////////////////
 // Client Methods
 //////////////////////////////////
@@ -165,6 +163,28 @@ DisplayWelcomeData()
     self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
     wait( 2.0 );
     self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection );
+}
+
+SetPersistentData() 
+{
+    storedClientId = self GetPlayerData( "bests", "none" ); 
+     
+    if ( storedClientId != 0 )
+    {
+        if ( level.iw4adminIntegrationDebug == 1 )
+        {
+            IPrintLn( "Uploading persistent client id " + storedClientId );
+        }
+          
+        SetClientMeta( "PersistentStatClientId", storedClientId );
+    }
+     
+    if ( level.iw4adminIntegrationDebug == 1 )
+    {
+        IPrintLn( "Persisting client id " + self.persistentClientId );
+    }
+    
+    self SetPlayerData( "bests", "none", int( self.persistentClientId ) );
 }
 
 PlayerConnectEvents() 
@@ -643,6 +663,7 @@ OnClientDataReceived( event )
     self.persistentClientId = event.data["clientId"];
 
     self thread DisplayWelcomeData();
+    self setPersistentData();
 }
 
 OnExecuteCommand( event ) 

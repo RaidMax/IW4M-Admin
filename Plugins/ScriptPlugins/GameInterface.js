@@ -518,8 +518,8 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
                         logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}, Direction=${event.data['direction']} ${token}`);
                         if (event.data['direction'] != null) {
                             event.data['direction'] = 'up'
-                                ? metaService.IncrementPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult()
-                                : metaService.DecrementPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
+                                ? metaService.IncrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult()
+                                : metaService.DecrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult();
                         } else {
                             metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
                         }

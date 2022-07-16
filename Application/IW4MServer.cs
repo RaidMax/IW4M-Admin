@@ -9,6 +9,7 @@ using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -771,17 +772,28 @@ namespace IW4MAdmin
                 
                 else if (E.Type == GameEvent.EventType.MetaUpdated)
                 {
-                    if (E.Extra is "PersistentStatClientId" && int.TryParse(E.Data, out var persistentClientId))
+                    if (E.Extra is "PersistentClientGuid")
                     {
-                        var penalties = await Manager.GetPenaltyService().GetActivePenaltiesByClientId(persistentClientId);
-                        var banPenalty = penalties.FirstOrDefault(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
+                        var parts = E.Data.Split(",");
 
-                        if (banPenalty is not null && E.Origin.Level != Permission.Banned)
+                        if (parts.Length == 2 && int.TryParse(parts[0], out var high) &&
+                            int.TryParse(parts[1], out var low))
                         {
-                            ServerLogger.LogInformation(
-                                "Banning {Client} as they have have provided a persistent clientId of {PersistentClientId}, which is banned",
-                                E.Origin.ToString(), persistentClientId);
-                            E.Origin.Ban(loc["SERVER_BAN_EVADE"].FormatExt(persistentClientId), Utilities.IW4MAdminClient(this), true);
+                            var guid = long.Parse(high.ToString("X") + low.ToString("X"), NumberStyles.HexNumber);
+
+                            var penalties = await Manager.GetPenaltyService()
+                                .GetActivePenaltiesByIdentifier(null, guid, (Reference.Game)GameName);
+                            var banPenalty =
+                                penalties.FirstOrDefault(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
+
+                            if (banPenalty is not null && E.Origin.Level != Permission.Banned)
+                            {
+                                ServerLogger.LogInformation(
+                                    "Banning {Client} as they have have provided a persistent clientId of {PersistentClientId}, which is banned",
+                                    E.Origin.ToString(), guid);
+                                E.Origin.Ban(loc["SERVER_BAN_EVADE"].FormatExt(guid),
+                                    Utilities.IW4MAdminClient(this), true);
+                            }
                         }
                     }
                 }
@@ -1289,28 +1301,17 @@ namespace IW4MAdmin
             this.GamePassword = gamePassword.Value;
             UpdateMap(mapname);
 
-            if (RconParser.CanGenerateLogPath)
+            if (RconParser.CanGenerateLogPath && string.IsNullOrEmpty(ServerConfig.ManualLogPath))
             {
-                bool needsRestart = false;
-
                 if (logsync.Value == 0)
                 {
                     await this.SetDvarAsync("g_logsync", 2, Manager.CancellationToken); // set to 2 for continous in other games, clamps to 1 for IW4
-                    needsRestart = true;
                 }
 
                 if (string.IsNullOrWhiteSpace(logfile.Value))
                 {
                     logfile.Value = "games_mp.log";
                     await this.SetDvarAsync("g_log", logfile.Value, Manager.CancellationToken);
-                    needsRestart = true;
-                }
-
-                if (needsRestart)
-                {  
-                    // disabling this for the time being
-                    /*Logger.WriteWarning("Game log file not properly initialized, restarting map...");
-                    await this.ExecuteCommandAsync("map_restart");*/ 
                 }
 
                 // this DVAR isn't set until the a map is loaded

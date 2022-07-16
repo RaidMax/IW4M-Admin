@@ -29,8 +29,9 @@ onPlayerConnect( player )
 	for( ;; )
 	{
 		level waittill( "connected", player );	
-		player setClientDvar("cl_autorecord", 1);
-		player setClientDvar("cl_demosKeep", 200);
+		player setClientDvars( "cl_autorecord", 1,
+					"cl_demosKeep", 200 );
+
 		player thread waitForFrameThread();
 		player thread waitForAttack();
 	}
@@ -60,7 +61,7 @@ getHttpString( url )
 
 runRadarUpdates()
 {
-	interval = int(getDvar("sv_printradar_updateinterval"));
+	interval = getDvarInt( "sv_printradar_updateinterval", 500 );
 
 	for ( ;; )
 	{
@@ -191,7 +192,7 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 		i++;
 	}
 
-	lastAttack = int(getTime()) - int(self.lastAttackTime);
+	lastAttack = getTime() - self.lastAttackTime;
 	isAlive = isAlive(self);
 
 	logPrint(logString + ";" + anglesStr + ";" + isAlive + ";" + lastAttack + "\n" ); 

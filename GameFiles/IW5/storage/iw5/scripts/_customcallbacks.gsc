@@ -53,7 +53,7 @@ waitForAttack()
 
 runRadarUpdates()
 {
-	interval = int(getDvar("sv_printradar_updateinterval"));
+	interval = getDvarInt( "sv_printradar_updateinterval", 500 );
 
 	for ( ;; )
 	{
@@ -183,7 +183,7 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 		i++;
 	}
 
-	lastAttack = int(getTime()) - int(self.lastAttackTime);
+	lastAttack = getTime() - self.lastAttackTime;
 	isAlive = isAlive(self);
 
 	logPrint(logString + ";" + anglesStr + ";" + isAlive + ";" + lastAttack + "\n" ); 

@@ -88,7 +88,7 @@ function getStatsChart(id) {
                 position: 'right',
                 ticks: {
                     precision: 0,
-                    stepSize: 3,
+                    stepSize: max - min / 2,
                     callback: function (value, index, values) {
                         if (index === values.length - 1) {
                             return min;

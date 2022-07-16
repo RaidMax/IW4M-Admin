@@ -192,17 +192,7 @@ namespace SharedLibraryCore.Services
                 .Where(FilterById);
             return await activePenaltiesIds.Select(ids => ids.Penalty).ToListAsync();
         }
-
-        public async Task<List<EFPenalty>> GetActivePenaltiesByClientId(int clientId)
-        {
-            await using var context = _contextFactory.CreateContext(false);
-            return await context.PenaltyIdentifiers
-                .Where(identifier => identifier.Penalty.Offender.ClientId == clientId)
-                .Select(identifier => identifier.Penalty)
-                .Where(Filter)
-                .ToListAsync();
-        }
-
+        
         public async Task<List<EFPenalty>> ActivePenaltiesByRecentIdentifiers(int linkId)
         {
             await using var context = _contextFactory.CreateContext(false);

@@ -1,5 +1,4 @@
 ﻿@using IW4MAdmin.Plugins.Stats
-@using System.Text.Json.Serialization
 @using System.Text.Json
 @model List<IW4MAdmin.Plugins.Stats.Web.Dtos.TopStatsInfo>
 @{
@@ -86,7 +85,7 @@
             </div>
         </div>
         <div class="w-full w-md-half client-rating-graph pt-10 pb-10">
-            <canvas id="rating_history_@(stat.ClientId + "_" + stat.Id)" data-history="@(JsonSerializer.Serialize(stat.PerformanceHistory))"></canvas>
+            <canvas id="rating_history_@(stat.ClientId + "_" + stat.Id)" data-history="@(JsonSerializer.Serialize(stat.PerformanceHistory.OrderBy(perf => perf.OccurredAt)))"></canvas>
         </div>
         <div class="w-quarter align-self-center d-flex justify-content-center">
             <img class="w-100 h-100" src="~/images/stats/ranks/rank_@(stat.ZScore.RankIconIndexForZScore()).png" alt="@stat.Performance"/>

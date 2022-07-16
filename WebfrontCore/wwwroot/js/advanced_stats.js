@@ -26,7 +26,7 @@ function setupPerformanceGraph() {
     }
     const chart = $('#client_performance_history');
     const container = $('#client_performance_history_container');
-    chart.attr('height', summary.height());
+    chart.attr('height', summary.height() * 1.5);
     chart.attr('width', container.width());
     renderPerformanceChart();
 }
@@ -394,7 +394,7 @@ function renderPerformanceChart() {
                 position: 'right',
                 ticks: {
                     precision: 0,
-                    stepSize: 3,
+                    stepSize: max - min / 2,
                     callback: function (value, index, values) {
                         if (index === values.length - 1) {
                             return min;

@@ -78,7 +78,7 @@ namespace Stats.Helpers
                 .Where(r => r.ClientId == clientInfo.ClientId)
                 .Where(r => r.ServerId == serverId)
                 .Where(r => r.Ranking != null)
-                .OrderByDescending(r => r.UpdatedDateTime)
+                .OrderByDescending(r => r.CreatedDateTime)
                 .Take(250)
                 .ToListAsync();
 

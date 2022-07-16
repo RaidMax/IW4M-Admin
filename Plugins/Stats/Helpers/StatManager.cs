@@ -138,6 +138,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .CountAsync();
         }
 
+        public class RankingSnapshot
+        {
+            public int ClientId { get; set; }
+            public string Name { get; set; }
+            public DateTime LastConnection { get; set; }
+            public double? PerformanceMetric { get; set; }
+            public double? ZScore { get; set; }
+            public int? Ranking { get; set; }
+            public DateTime CreatedDateTime { get; set; }
+        }
+
         public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null)
         {
             await using var context = _contextFactory.CreateContext(false);
@@ -150,24 +161,29 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Take(count)
                 .ToListAsync();
 
-           var rankings = await context.Set<EFClientRankingHistory>()
-                .Where(ranking => clientIdsList.Contains(ranking.ClientId))
-                .Where(ranking => ranking.ServerId == serverId)
-                .Select(ranking => new
-                {
-                    ranking.ClientId,
-                    ranking.Client.CurrentAlias.Name,
-                    ranking.Client.LastConnection,
-                    ranking.PerformanceMetric,
-                    ranking.ZScore,
-                    ranking.Ranking,
-                    ranking.CreatedDateTime
-                })
-                .ToListAsync();
-
-            var rankingsDict = rankings.GroupBy(rank => rank.ClientId)
-                .ToDictionary(rank => rank.Key, rank => rank.OrderBy(r => r.CreatedDateTime).ToList());
+            var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
             
+            foreach (var clientId in clientIdsList)
+            {
+                var eachRank = await context.Set<EFClientRankingHistory>()
+                    .Where(ranking => ranking.ClientId == clientId)
+                    .Where(ranking => ranking.ServerId == serverId)
+                    .OrderByDescending(ranking => ranking.CreatedDateTime)
+                    .Select(ranking => new RankingSnapshot
+                    {
+                        ClientId = ranking.ClientId, 
+                        Name = ranking.Client.CurrentAlias.Name, 
+                        LastConnection = ranking.Client.LastConnection,
+                        PerformanceMetric = ranking.PerformanceMetric,
+                        ZScore = ranking.ZScore,
+                        Ranking = ranking.Ranking,
+                        CreatedDateTime = ranking.CreatedDateTime
+                    })
+                    .Take(60)
+                    .ToListAsync();
+                rankingsDict.Add(clientId, eachRank);
+            }
+
             var statsInfo = await context.Set<EFClientStatistics>()
                 .Where(stat => clientIdsList.Contains(stat.ClientId))
                 .Where(stat => stat.TimePlayed > 0)
@@ -185,9 +201,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     UpdatedAt = s.Max(c => c.UpdatedAt)
                 })
                 .ToListAsync();
-
+            
             var finished = statsInfo
-                .OrderByDescending(stat => rankingsDict[stat.ClientId].Last().PerformanceMetric)
+                .OrderByDescending(stat => rankingsDict[stat.ClientId].First().PerformanceMetric)
                 .Select((s, index) => new TopStatsInfo
                 {
                     ClientId = s.ClientId,
@@ -195,24 +211,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Deaths = s.Deaths,
                     Kills = s.Kills,
                     KDR = Math.Round(s.KDR, 2),
-                    LastSeen = (DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection))
+                    LastSeen = (DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].First().LastConnection))
                         .HumanizeForCurrentCulture(1, TimeUnit.Week, TimeUnit.Second, ",", false),
-                    LastSeenValue = DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].Last().LastConnection),
+                    LastSeenValue = DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].First().LastConnection),
                     Name = rankingsDict[s.ClientId].First().Name,
-                    Performance = Math.Round(rankingsDict[s.ClientId].Last().PerformanceMetric ?? 0, 2),
-                    RatingChange = (rankingsDict[s.ClientId].First().Ranking -
-                                    rankingsDict[s.ClientId].Last().Ranking) ?? 0,
+                    Performance = Math.Round(rankingsDict[s.ClientId].First().PerformanceMetric ?? 0, 2),
+                    RatingChange = (rankingsDict[s.ClientId].Last().Ranking -
+                                    rankingsDict[s.ClientId].First().Ranking) ?? 0,
                     PerformanceHistory = rankingsDict[s.ClientId].Select(ranking => new PerformanceHistory
                             { Performance = ranking.PerformanceMetric ?? 0, OccurredAt = ranking.CreatedDateTime })
                         .ToList(),
                     TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
                     TimePlayedValue = TimeSpan.FromSeconds(s.TotalTimePlayed),
                     Ranking = index + start + 1,
-                    ZScore = rankingsDict[s.ClientId].Last().ZScore,
+                    ZScore = rankingsDict[s.ClientId].First().ZScore,
                     ServerId = serverId
                 })
                 .OrderBy(r => r.Ranking)
-                .Take(60)
                 .ToList();
 
             return finished;
@@ -1322,14 +1337,20 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 context.Update(mostRecent);
             }
 
-            if (totalRankingEntries > EFClientRankingHistory.MaxRankingCount)
+            const int maxRankingCount = 1728; // 60 / 2.5 * 24 * 3 ( 3 days at sample every 2.5 minutes)
+
+            if (totalRankingEntries > maxRankingCount)
             {
                 var lastRating = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == clientId)
                     .Where(r => r.ServerId == serverId)
                     .OrderBy(r => r.CreatedDateTime)
                     .FirstOrDefaultAsync();
-                context.Remove(lastRating);
+                
+                if (lastRating is not null)
+                {
+                    context.Remove(lastRating);
+                }
             }
         }
 

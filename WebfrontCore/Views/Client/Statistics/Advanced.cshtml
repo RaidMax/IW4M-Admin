@@ -124,11 +124,12 @@
     var spm = Model.ServerId != null ? serverLegacyStat?.SPM.ToNumericalString() : Model.LegacyStats.WeightValueByPlaytime(nameof(EFClientStatistics.SPM), 0).ToNumericalString();
 
     var performanceHistory = Model.Ratings
+        .OrderBy(rating => rating.CreatedDateTime)
         .Select(rating => new PerformanceHistory { Performance = rating.PerformanceMetric, OccurredAt = rating.CreatedDateTime });
 
-    if (performance != null)
+    if (performance != null && performance != Model.Ratings.FirstOrDefault().PerformanceMetric)
     {
-        performanceHistory = performanceHistory.Append(new PerformanceHistory { Performance = performance.Value, OccurredAt = DateTime.UtcNow });
+        performanceHistory = performanceHistory.Append(new PerformanceHistory { Performance = performance.Value, OccurredAt = Model.Ratings.FirstOrDefault()?.CreatedDateTime ?? DateTime.UtcNow });
     }
 
     var score = allPerServer.Any()
@@ -285,7 +286,7 @@
                 <!-- history graph -->
                 @if (performanceHistory.Count() > 5)
                 {
-                    <div class="w-half m-auto ml-lg-auto " id="client_performance_history_container">
+                    <div class="w-full w-lg-half m-auto ml-lg-auto" id="client_performance_history_container">
                         <canvas id="client_performance_history" data-history="@(JsonSerializer.Serialize(performanceHistory))"></canvas>
                     </div>
                 }

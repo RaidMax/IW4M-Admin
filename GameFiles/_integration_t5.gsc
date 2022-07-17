@@ -1,3 +1,5 @@
+#include maps\mp\_utility;
+
 init()
 {
 
@@ -14,6 +16,8 @@ InitializeGameMethods()
     level.overrideMethods["waittill_notify_or_timeout"] = ::waittill_notify_or_timeout;
     level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
     level.overrideMethods["SetDvarIfUninitialized"] = ::SetDvarIfUninitialized;
+    level.overrideMethods["GetPlayerData"] = ::_getdstat;
+    level.overrideMethods["SetPlayerData"] = ::_setdstat;
 
 
     level notify("InitializeGameMethodsDone");
@@ -22,6 +26,19 @@ InitializeGameMethods()
 //////////////////////////////////
 // Function Overrides
 //////////////////////////////////
+
+
+//TODO: Figure out why we can't manipulate stats. The base game calls these functions.
+_getdstat( a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z )
+{
+    //getdstat( a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z );
+    return 0;
+}
+
+_setdstat( a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z )
+{
+    //setdstat( a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z );
+}
 
 GetTotalShotsFired()
 {

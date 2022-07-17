@@ -14,6 +14,8 @@ InitializeGameMethods()
     level.overrideMethods["waittill_notify_or_timeout"] = common_scripts\utility::waittill_notify_or_timeout;
     level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
     level.overrideMethods["SetDvarIfUninitialized"] = ::SetDvarIfUninitialized;
+    level.overrideMethods["GetPlayerData"] = ::GetPlayerData;
+    level.overrideMethods["SetPlayerData"] = ::SetPlayerData;
 
     
     if ( isDefined( ::God ) )

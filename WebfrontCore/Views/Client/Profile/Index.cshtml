@@ -284,6 +284,15 @@
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
+            Title = ViewBag.Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_TITLE"],
+            IsButton = true,
+            Reference = "SetClientTag",
+            Icon = "oi-tag",
+            EntityId = Model.ClientId
+        });
+        
+        menuItems.Items.Add(new SideContextMenuItem
+        {
             Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MESSAGE"],
             IsButton = true,
             Reference = "OfflineMessage",

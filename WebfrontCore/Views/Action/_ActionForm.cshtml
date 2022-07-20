@@ -25,11 +25,20 @@
                 @if (inputType == "select")
                 {
                     <select name="@input.Name" class="form-control" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">
-                        @foreach (var item in input.Values)
+                        @foreach (var (key, item) in input.Values)
                         {
-                            <option value="@item.Key">
-                                <color-code value="@item.Value"></color-code>
-                            </option>
+                            if (key.StartsWith("!selected!"))
+                            {
+                                <option value="@key.Replace("!selected!", "")" selected>
+                                    <color-code value="@item"></color-code>
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@key">
+                                    <color-code value="@item"></color-code>
+                                </option>
+                            }
                         }
                     </select>
                 }

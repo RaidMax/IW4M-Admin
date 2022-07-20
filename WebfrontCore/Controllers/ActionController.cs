@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +14,6 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Permissions;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
@@ -20,6 +21,7 @@ namespace WebfrontCore.Controllers
     public class ActionController : BaseController
     {
         private readonly ApplicationConfiguration _appConfig;
+        private readonly IMetaServiceV2 _metaService;
         private readonly string _banCommandName;
         private readonly string _tempbanCommandName;
         private readonly string _unbanCommandName;
@@ -29,11 +31,13 @@ namespace WebfrontCore.Controllers
         private readonly string _flagCommandName;
         private readonly string _unflagCommandName;
         private readonly string _setLevelCommandName;
+        private readonly string _setClientTagCommandName;
 
         public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands,
-            ApplicationConfiguration appConfig) : base(manager)
+            ApplicationConfiguration appConfig, IMetaServiceV2 metaService) : base(manager)
         {
             _appConfig = appConfig;
+            _metaService = metaService;
 
             foreach (var cmd in registeredCommands)
             {
@@ -68,6 +72,9 @@ namespace WebfrontCore.Controllers
                         break;
                     case "OfflineMessageCommand":
                         _offlineMessageCommandName = cmd.Name;
+                        break;
+                    case "SetClientTagCommand":
+                        _setClientTagCommandName = cmd.Name;
                         break;
                 }
             }
@@ -579,6 +586,57 @@ namespace WebfrontCore.Controllers
                 serverId = server.EndPoint,
                 command =
                     $"{_appConfig.CommandPrefix}{_offlineMessageCommandName} @{targetId} {message.CapClientName(500)}"
+            }));
+        }
+
+        public async Task<IActionResult> SetClientTagForm(int id, CancellationToken token)
+        {
+            var tags = await _metaService.GetPersistentMetaValue<List<LookupValue<string>>>(EFMeta.ClientTagNameV2,
+                token);
+            var existingTag = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2,
+                EFMeta.ClientTagNameV2, id, Manager.CancellationToken);
+            var info = new ActionInfo
+            {
+                ActionButtonLabel = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_SUBMIT"],
+                Name = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_TITLE"],
+                Inputs = new List<InputInfo>
+                {
+                    new()
+                    {
+                        Name = "clientTag",
+                        Type = "select",
+                        Label = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_TITLE"],
+                        Values = tags.ToDictionary(
+                            item => item.Value == existingTag?.Value ? $"!selected!{item.Value}" : item.Value,
+                            item => item.Value)
+                    }
+                },
+                Action = nameof(SetClientTag),
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> SetClientTag(int targetId, string clientTag)
+        {
+            if (targetId <= 0 || string.IsNullOrWhiteSpace(clientTag))
+            {
+                return Json(new[]
+                {
+                    new CommandResponseInfo
+                    {
+                        Response = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_NONE"]
+                    }
+                });
+            }
+
+            var server = Manager.GetServers().First();
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
+            {
+                serverId = server.EndPoint,
+                command =
+                    $"{_appConfig.CommandPrefix}{_setClientTagCommandName} @{targetId} {clientTag}"
             }));
         }
 

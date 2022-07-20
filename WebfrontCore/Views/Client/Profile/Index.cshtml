@@ -184,7 +184,9 @@
                             <div class="text-force-break">@line.TrimEnd('\r')</div>
                         }
                         <div class="mt-5">
-                            <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.NoteMeta.OriginEntityId" class="no-decoration ">@Model.NoteMeta.OriginEntityName</a>
+                            <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.NoteMeta.OriginEntityId" class="no-decoration ">
+                                <color-code value="@Model.NoteMeta.OriginEntityName"></color-code>
+                            </a>
                             <span>&mdash; @Model.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
                         </div>
                     </div>

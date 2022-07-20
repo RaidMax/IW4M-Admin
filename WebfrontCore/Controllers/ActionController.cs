@@ -598,20 +598,20 @@ namespace WebfrontCore.Controllers
         public async Task<IActionResult> SetClientTagForm(int id, CancellationToken token)
         {
             var tags = await _metaService.GetPersistentMetaValue<List<LookupValue<string>>>(EFMeta.ClientTagNameV2,
-                token);
+                token) ?? new List<LookupValue<string>>();
             var existingTag = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2,
                 EFMeta.ClientTagNameV2, id, Manager.CancellationToken);
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_SUBMIT"],
-                Name = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_TITLE"],
+                Name = Localization["WEBFRONT_PROFILE_CONTEXT_MENU_TAG"],
                 Inputs = new List<InputInfo>
                 {
                     new()
                     {
                         Name = "clientTag",
                         Type = "select",
-                        Label = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_TITLE"],
+                        Label = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_FORM_TAG"],
                         Values = tags.ToDictionary(
                             item => item.Value == existingTag?.Value ? $"!selected!{item.Value}" : item.Value,
                             item => item.Value)

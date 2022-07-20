@@ -57,7 +57,6 @@ namespace WebfrontCore.Controllers
                 _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, client.ClientId,
                     token),
                 _metaService.GetPersistentMeta("GravatarEmail", client.ClientId, token),
-                
             };
 
             var persistentMeta = await Task.WhenAll(persistentMetaTask);
@@ -71,7 +70,7 @@ namespace WebfrontCore.Controllers
                 client.SetAdditionalProperty(EFMeta.ClientTagV2, tag.Value);
             }
 
-            if (note is not null)
+            if (!string.IsNullOrWhiteSpace(note?.Note))
             {
                 note.OriginEntityName = await _clientService.GetClientNameById(note.OriginEntityId);
             }
@@ -135,7 +134,7 @@ namespace WebfrontCore.Controllers
                     ingameClient.CurrentServer.Port),
                 CurrentServerName = ingameClient?.CurrentServer?.Hostname,
                 GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString),
-                NoteMeta = note
+                NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null: note
             };
 
             var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest

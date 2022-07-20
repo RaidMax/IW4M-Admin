@@ -31,7 +31,7 @@ public class AddClientNoteCommand : Command
             new CommandArgument
             {
                 Name = _translationLookup["COMMANDS_ARGS_NOTE"],
-                Required = true
+                Required = false
             }
         };
         

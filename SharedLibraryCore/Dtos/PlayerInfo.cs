@@ -33,5 +33,6 @@ namespace SharedLibraryCore.Dtos
         public string ConnectProtocolUrl { get;set; }
         public string CurrentServerName { get; set; }
         public IGeoLocationResult GeoLocationInfo { get; set; }
+        public ClientNoteMetaResponse NoteMeta { get; set; }
     }
 }

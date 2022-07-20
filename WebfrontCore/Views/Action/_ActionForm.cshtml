@@ -51,6 +51,11 @@
                         </label>
                     </div>
                 }
+                
+                else if (inputType == "textarea")
+                {
+                    <textarea name="@input.Name" class="form-control @(input.Required ? "required" : "")" placeholder="@input.Placeholder" aria-label="@input.Name" aria-describedby="basic-addon-@input.Name">@value</textarea>
+                }
 
                 else
                 {

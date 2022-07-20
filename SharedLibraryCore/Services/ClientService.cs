@@ -938,6 +938,14 @@ namespace SharedLibraryCore.Services
             return clientList;
         }
 
+        public async Task<string> GetClientNameById(int clientId)
+        {
+            await using var context = _contextFactory.CreateContext();
+            var match = await context.Clients.Select(client => new { client.CurrentAlias.Name, client.ClientId })
+                .FirstOrDefaultAsync(client => client.ClientId == clientId);
+            return match?.Name;
+        }
+
         #endregion
     }
 }

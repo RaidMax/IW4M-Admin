@@ -14,13 +14,13 @@ public enum WebfrontEntity
     AuditPage,
     RecentPlayersPage,
     ProfilePage,
-    AdminMenu
+    AdminMenu,
+    ClientNote
 }
 
 public enum WebfrontPermission
 {
     Read,
-    Create,
-    Update,
+    Write,
     Delete
 }

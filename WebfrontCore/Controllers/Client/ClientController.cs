@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
+using SharedLibraryCore.Services;
 using Stats.Config;
 using WebfrontCore.Permissions;
 using WebfrontCore.ViewComponents;
@@ -23,13 +24,15 @@ namespace WebfrontCore.Controllers
         private readonly IMetaServiceV2 _metaService;
         private readonly StatsConfiguration _config;
         private readonly IGeoLocationService _geoLocationService;
+        private readonly ClientService _clientService;
 
         public ClientController(IManager manager, IMetaServiceV2 metaService, StatsConfiguration config,
-            IGeoLocationService geoLocationService) : base(manager)
+            IGeoLocationService geoLocationService, ClientService clientService) : base(manager)
         {
             _metaService = metaService;
             _config = config;
             _geoLocationService = geoLocationService;
+            _clientService = clientService;
         }
 
         [Obsolete]
@@ -53,16 +56,24 @@ namespace WebfrontCore.Controllers
             {
                 _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, client.ClientId,
                     token),
-                _metaService.GetPersistentMeta("GravatarEmail", client.ClientId, token)
+                _metaService.GetPersistentMeta("GravatarEmail", client.ClientId, token),
+                
             };
 
             var persistentMeta = await Task.WhenAll(persistentMetaTask);
             var tag = persistentMeta[0];
             var gravatar = persistentMeta[1];
+            var note = await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", client.ClientId,
+                token);
 
             if (tag?.Value != null)
             {
                 client.SetAdditionalProperty(EFMeta.ClientTagV2, tag.Value);
+            }
+
+            if (note is not null)
+            {
+                note.OriginEntityName = await _clientService.GetClientNameById(note.OriginEntityId);
             }
 
             // even though we haven't set their level to "banned" yet
@@ -123,7 +134,8 @@ namespace WebfrontCore.Controllers
                         : ingameClient.CurrentServer.IP,
                     ingameClient.CurrentServer.Port),
                 CurrentServerName = ingameClient?.CurrentServer?.Hostname,
-                GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString)
+                GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString),
+                NoteMeta = note
             };
 
             var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest

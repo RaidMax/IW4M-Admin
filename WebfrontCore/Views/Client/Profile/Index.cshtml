@@ -173,6 +173,25 @@
             </div>
         </div>
 
+        @if (!string.IsNullOrWhiteSpace(Model.NoteMeta?.Note))
+        {
+            <has-permission entity="ClientNote" required-permission="Read">
+                <div class="rounded border p-10 m-10 d-flex flex-column flex-md-row" style="border-style: dashed !important">
+                    <i class="align-self-center oi oi-clipboard"></i>
+                    <div class="align-self-center font-size-12 font-weight-light pl-10 pr-10">
+                        @foreach (var line in Model.NoteMeta.Note.Split("\n"))
+                        {
+                            <div class="text-force-break">@line.TrimEnd('\r')</div>
+                        }
+                        <div class="mt-5">
+                            <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.NoteMeta.OriginEntityId" class="no-decoration ">@Model.NoteMeta.OriginEntityName</a>
+                            <span>&mdash; @Model.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
+                        </div>
+                    </div>
+                </div>
+            </has-permission>
+        }
+
         <div class="flex-fill d-flex justify-content-center justify-content-md-end mt-10 mt-md-0">
             <!-- country flag -->
             <div id="ipGeoDropdown" class="dropdown with-arrow align-self-center">
@@ -279,18 +298,30 @@
             EntityId = Model.ClientId
         });
     }
-    
+
     if (ViewBag.Authorized)
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
-            Title = ViewBag.Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_TITLE"],
+            Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_TAG"],
             IsButton = true,
             Reference = "SetClientTag",
             Icon = "oi-tag",
             EntityId = Model.ClientId
         });
-        
+
+        if ((ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientNote, WebfrontPermission.Write))
+        {
+            menuItems.Items.Add(new SideContextMenuItem
+            {
+                Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_NOTE"],
+                IsButton = true,
+                Reference = "AddClientNote",
+                Icon = "oi-clipboard",
+                EntityId = Model.ClientId
+            });
+        }
+
         menuItems.Items.Add(new SideContextMenuItem
         {
             Title = ViewBag.Localization["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MESSAGE"],

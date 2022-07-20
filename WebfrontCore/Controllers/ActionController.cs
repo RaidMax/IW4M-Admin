@@ -7,11 +7,13 @@ using System.Threading.Tasks;
 using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
@@ -32,6 +34,7 @@ namespace WebfrontCore.Controllers
         private readonly string _unflagCommandName;
         private readonly string _setLevelCommandName;
         private readonly string _setClientTagCommandName;
+        private readonly string _addClientNoteCommandName;
 
         public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands,
             ApplicationConfiguration appConfig, IMetaServiceV2 metaService) : base(manager)
@@ -75,6 +78,9 @@ namespace WebfrontCore.Controllers
                         break;
                     case "SetClientTagCommand":
                         _setClientTagCommandName = cmd.Name;
+                        break;
+                    case "AddClientNoteCommand":
+                        _addClientNoteCommandName = cmd.Name;
                         break;
                 }
             }
@@ -637,6 +643,52 @@ namespace WebfrontCore.Controllers
                 serverId = server.EndPoint,
                 command =
                     $"{_appConfig.CommandPrefix}{_setClientTagCommandName} @{targetId} {clientTag}"
+            }));
+        }
+        
+        public async Task<IActionResult> AddClientNoteForm(int id)
+        {
+            var existingNote = await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", id);
+            var info = new ActionInfo
+            {
+                ActionButtonLabel = Localization["WEBFRONT_CONFIGURATION_BUTTON_SAVE"],
+                Name = Localization["WEBFRONT_PROFILE_CONTEXT_MENU_NOTE"],
+                Inputs = new List<InputInfo>
+                {
+                    new()
+                    {
+                        Name = "note",
+                        Label = Localization["WEBFRONT_ACTION_NOTE_FORM_NOTE"],
+                        Value = existingNote?.Note,
+                        Type = "textarea"
+                    }
+                },
+                Action = nameof(AddClientNote),
+                ShouldRefresh = true
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> AddClientNote(int targetId, string note)
+        {
+            if (note?.Length > 350 || note?.Count(c => c == '\n') > 4)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new[]
+                {
+                    new CommandResponseInfo
+                    {
+                        Response = Localization["WEBFRONT_ACTION_NOTE_INVALID_LENGTH"]
+                    }
+                });
+            }
+            
+            var server = Manager.GetServers().First();
+            return await Task.FromResult(RedirectToAction("Execute", "Console", new
+            {
+                serverId = server.EndPoint,
+                command =
+                    $"{_appConfig.CommandPrefix}{_addClientNoteCommandName} @{targetId} {note}"
             }));
         }
 

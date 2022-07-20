@@ -31,7 +31,7 @@
                 <a href="@Model.ConnectProtocolUrl" class="text-light align-self-center server-join-button" title="@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_HOME_JOIN_DESC"]">
                     <i class="oi oi-play-circle ml-5 mr-5"></i>
                 </a>
-                <has-permission entity="AdminMenu" required-permission="Update">
+                <has-permission entity="AdminMenu" required-permission="Write">
                     <!-- send message button -->
                     <a href="#actionModal" class="profile-action text-light align-self-center" data-action="chat" data-action-id="@Model.ID">
                         <i class="oi oi-chat ml-5 mr-5"></i>

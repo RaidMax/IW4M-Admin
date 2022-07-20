@@ -59,7 +59,7 @@
                 {
                     var levelColorClass = !ViewBag.Authorized || client.client.LevelInt == 0 ? "text-light-dm text-dark-lm" : $"level-color-{client.client.LevelInt}";
                     <div class="d-flex @(clientIndex.index == 1 ? "justify-content-start flex-row-reverse" : "")">
-                        <has-permission entity="AdminMenu" required-permission="Update">
+                        <has-permission entity="AdminMenu" required-permission="Write">
                             <a href="#actionModal" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId" aria-hidden="true">
                                 <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
                             </a>

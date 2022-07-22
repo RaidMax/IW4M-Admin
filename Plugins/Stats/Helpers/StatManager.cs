@@ -86,7 +86,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public async Task<int> GetClientOverallRanking(int clientId, long? serverId = null)
         {
             await using var context = _contextFactory.CreateContext(enableTracking: false);
-            
+
             if (_config.EnableAdvancedMetrics)
             {
                 var clientRanking = await context.Set<EFClientRankingHistory>()
@@ -117,7 +117,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return 0;
         }
 
-        public Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(int? clientId = null, long? serverId = null)
+        public Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(int? clientId = null,
+            long? serverId = null)
         {
             return (ranking) => ranking.ServerId == serverId
                                 && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
@@ -162,7 +163,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .ToListAsync();
 
             var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
-            
+
             foreach (var clientId in clientIdsList)
             {
                 var eachRank = await context.Set<EFClientRankingHistory>()
@@ -171,8 +172,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .OrderByDescending(ranking => ranking.CreatedDateTime)
                     .Select(ranking => new RankingSnapshot
                     {
-                        ClientId = ranking.ClientId, 
-                        Name = ranking.Client.CurrentAlias.Name, 
+                        ClientId = ranking.ClientId,
+                        Name = ranking.Client.CurrentAlias.Name,
                         LastConnection = ranking.Client.LastConnection,
                         PerformanceMetric = ranking.PerformanceMetric,
                         ZScore = ranking.ZScore,
@@ -181,7 +182,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     })
                     .Take(60)
                     .ToListAsync();
-                rankingsDict.Add(clientId, eachRank);
+                
+                if (rankingsDict.ContainsKey(clientId))
+                {
+                    rankingsDict[clientId] = rankingsDict[clientId].Concat(eachRank).Distinct()
+                        .OrderByDescending(ranking => ranking.CreatedDateTime).ToList();
+                }
+                else
+                {
+                    rankingsDict.Add(clientId, eachRank);
+                }
             }
 
             var statsInfo = await context.Set<EFClientStatistics>()
@@ -195,13 +205,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ClientId = s.Key,
                     Kills = s.Sum(c => c.Kills),
                     Deaths = s.Sum(c => c.Deaths),
-                    KDR = s.Sum(c => (c.Kills / (double) (c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) /
+                    KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) /
                           s.Sum(c => c.TimePlayed),
                     TotalTimePlayed = s.Sum(c => c.TimePlayed),
                     UpdatedAt = s.Max(c => c.UpdatedAt)
                 })
                 .ToListAsync();
-            
+
             var finished = statsInfo
                 .OrderByDescending(stat => rankingsDict[stat.ClientId].First().PerformanceMetric)
                 .Select((s, index) => new TopStatsInfo
@@ -239,7 +249,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 return await GetNewTopStats(start, count, serverId);
             }
-            
+
             await using var context = _contextFactory.CreateContext(enableTracking: false);
             // setup the query for the clients within the given rating range
             var iqClientRatings = (from rating in context.Set<EFRating>()
@@ -282,7 +292,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Select(grp => new
                 {
                     grp.Key,
-                    Ratings = grp.Select(r => new {r.Performance, r.Ranking, r.When})
+                    Ratings = grp.Select(r => new { r.Performance, r.Ranking, r.When })
                 });
 
             var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
@@ -296,7 +306,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     ClientId = s.Key,
                     Kills = s.Sum(c => c.Kills),
                     Deaths = s.Sum(c => c.Deaths),
-                    KDR = s.Sum(c => (c.Kills / (double) (c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) /
+                    KDR = s.Sum(c => (c.Kills / (double)(c.Deaths == 0 ? 1 : c.Deaths)) * c.TimePlayed) /
                           s.Sum(c => c.TimePlayed),
                     TotalTimePlayed = s.Sum(c => c.TimePlayed),
                 });
@@ -394,7 +404,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         Port = sv.Port,
                         EndPoint = sv.ToString(),
                         ServerId = serverId,
-                        GameName = (Reference.Game?) sv.GameName,
+                        GameName = (Reference.Game?)sv.GameName,
                         HostName = sv.Hostname
                     };
 
@@ -404,9 +414,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
 
                 // we want to set the gamename up if it's never been set, or it changed
-                else if (!server.GameName.HasValue || server.GameName.Value != (Reference.Game) sv.GameName)
+                else if (!server.GameName.HasValue || server.GameName.Value != (Reference.Game)sv.GameName)
                 {
-                    server.GameName = (Reference.Game) sv.GameName;
+                    server.GameName = (Reference.Game)sv.GameName;
                     ctx.Entry(server).Property(_prop => _prop.GameName).IsModified = true;
                     ctx.SaveChanges();
                 }
@@ -497,7 +507,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                             {
                                 Active = true,
                                 HitCount = 0,
-                                Location = (int) hl
+                                Location = (int)hl
                             }).ToList()
                     };
 
@@ -517,7 +527,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         {
                             Active = true,
                             HitCount = 0,
-                            Location = (int) hl
+                            Location = (int)hl
                         })
                         .ToList();
 
@@ -549,9 +559,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             catch (DbUpdateException updateException) when (
-                updateException.InnerException is PostgresException {SqlState: "23503"}
-                || updateException.InnerException is SqliteException {SqliteErrorCode: 787}
-                || updateException.InnerException is MySqlException {SqlState: "23503"})
+                updateException.InnerException is PostgresException { SqlState: "23503" }
+                || updateException.InnerException is SqliteException { SqliteErrorCode: 787 }
+                || updateException.InnerException is MySqlException { SqlState: "23503" })
             {
                 _log.LogWarning("Trying to add {Client} to stats before they have been added to the database",
                     pl.ToString());
@@ -672,9 +682,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         ServerId = serverId,
                         DeathOrigin = vDeathOrigin,
                         KillOrigin = vKillOrigin,
-                        DeathType = (int) ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
+                        DeathType = (int)ParseEnum<IW4Info.MeansOfDeath>.Get(type, typeof(IW4Info.MeansOfDeath)),
                         Damage = int.Parse(damage),
-                        HitLoc = (int) ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
+                        HitLoc = (int)ParseEnum<IW4Info.HitLocation>.Get(hitLoc, typeof(IW4Info.HitLocation)),
                         WeaponReference = weapon,
                         ViewAngles = vViewAngles,
                         TimeOffset = long.Parse(offset),
@@ -688,21 +698,21 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         AnglesList = snapshotAngles,
                         IsAlive = isAlive == "1",
                         TimeSinceLastAttack = long.Parse(lastAttackTime),
-                        GameName = (int) attacker.CurrentServer.GameName
+                        GameName = (int)attacker.CurrentServer.GameName
                     };
-
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex, "Could not parse script hit data. Damage={Damage}, TimeOffset={Offset}, TimeSinceLastAttack={LastAttackTime}",
+                    _log.LogError(ex,
+                        "Could not parse script hit data. Damage={Damage}, TimeOffset={Offset}, TimeSinceLastAttack={LastAttackTime}",
                         damage, offset, lastAttackTime);
 
                     return;
                 }
-                
+
                 hit.SetAdditionalProperty("HitLocationReference", hitLoc);
 
-                if (hit.HitLoc == (int) IW4Info.HitLocation.shield)
+                if (hit.HitLoc == (int)IW4Info.HitLocation.shield)
                 {
                     // we don't care about shield hits
                     return;
@@ -721,9 +731,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await waiter.WaitAsync(Utilities.DefaultCommandTimeout, Plugin.ServerManager.CancellationToken);
 
                 // increment their hit count
-                if (hit.DeathType == (int) IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
-                    hit.DeathType == (int) IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
-                    hit.DeathType == (int) IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
+                if (hit.DeathType == (int)IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
+                    hit.DeathType == (int)IW4Info.MeansOfDeath.MOD_RIFLE_BULLET ||
+                    hit.DeathType == (int)IW4Info.MeansOfDeath.MOD_HEAD_SHOT)
                 {
                     clientStats.HitLocations.First(hl => hl.Location == hit.HitLoc).HitCount += 1;
                 }
@@ -866,7 +876,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             catch (KeyNotFoundException)
             {
             }
-            
+
             try
             {
                 if (!gameDetectionTypes[server.GameName].Contains(detectionType))
@@ -898,7 +908,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         new EFPenalty()
                         {
                             AutomatedOffense = penalty.Type == Detection.DetectionType.Bone
-                                ? $"{penalty.Type}-{(int) penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}"
+                                ? $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}"
                                 : $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}",
                         }
                     };
@@ -915,7 +925,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
 
                     string flagReason = penalty.Type == Cheat.Detection.DetectionType.Bone
-                        ? $"{penalty.Type}-{(int) penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}"
+                        ? $"{penalty.Type}-{(int)penalty.Location}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}"
                         : $"{penalty.Type}-{Math.Round(penalty.Value, 2)}@{penalty.HitCount}";
 
                     penaltyClient.AdministeredPenalties = new List<EFPenalty>()
@@ -954,19 +964,19 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
-            
+
             if (attackerStats == null)
             {
                 _log.LogWarning("Stats for {Client} are not yet initialized", attacker.ToString());
                 return;
             }
-            
+
             if (victimStats == null)
             {
                 _log.LogWarning("Stats for {Client} are not yet initialized", victim.ToString());
                 return;
             }
-            
+
             // this happens when the round has changed
             if (attackerStats.SessionScore == 0)
             {
@@ -979,10 +989,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             var estimatedAttackerScore = attacker.CurrentServer.GameName != Server.Game.CSGO
-                ? attacker.Score 
+                ? attacker.Score
                 : attackerStats.SessionKills * 50;
-            var estimatedVictimScore = attacker.CurrentServer.GameName != Server.Game.CSGO  
-                ? victim.Score 
+            var estimatedVictimScore = attacker.CurrentServer.GameName != Server.Game.CSGO
+                ? victim.Score
                 : victimStats.SessionKills * 50;
 
             attackerStats.SessionScore = estimatedAttackerScore;
@@ -1070,7 +1080,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         public async Task UpdateStatHistory(EFClient client, EFClientStatistics clientStats)
         {
-            int currentSessionTime = (int) (DateTime.UtcNow - client.LastConnection).TotalSeconds;
+            int currentSessionTime = (int)(DateTime.UtcNow - client.LastConnection).TotalSeconds;
 
             // don't update their stat history if they haven't played long
             if (currentSessionTime < 60)
@@ -1243,7 +1253,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             await using var context = _contextFactory.CreateContext();
             var minPlayTime = _config.TopPlayersMinPlayTime;
-            
+
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
                 .Where(stat => stat.ClientId == clientId)
@@ -1251,7 +1261,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Where(stats => stats.UpdatedAt >= Extensions.FifteenDaysAgo())
                 .Where(stats => stats.TimePlayed >= minPlayTime)
                 .ToListAsync();
-            
+
             if (clientStats.TimePlayed >= minPlayTime)
             {
                 clientStats.ZScore = await _serverDistributionCalculator.GetZScoreForServer(serverId,
@@ -1282,8 +1292,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (performances.Any(performance => performance.TimePlayed >= minPlayTime))
             {
-                var aggregateZScore = performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
-                
+                var aggregateZScore =
+                    performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
+
                 int? aggregateRanking = await context.Set<EFClientStatistics>()
                     .Where(stat => stat.ClientId != clientId)
                     .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime))
@@ -1302,7 +1313,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         clientStats.Client?.ToString(), aggregateZScore);
                     return;
                 }
-                
+
                 var aggregateRankingSnapshot = new EFClientRankingHistory
                 {
                     ClientId = clientId,
@@ -1325,7 +1336,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
                 .CountAsync();
-            
+
             var mostRecent = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
@@ -1346,7 +1357,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .Where(r => r.ServerId == serverId)
                     .OrderBy(r => r.CreatedDateTime)
                     .FirstOrDefaultAsync();
-                
+
                 if (lastRating is not null)
                 {
                     context.Remove(lastRating);
@@ -1359,7 +1370,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="attackerStats">Stats of the attacker</param>
         /// <param name="victimStats">Stats of the victim</param>
-        public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats, 
+        public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats,
             EFClient attacker, EFClient victim)
         {
             bool suicide = attackerStats.ClientId == victimStats.ClientId;
@@ -1385,7 +1396,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate elo
             var attackerEloDifference = Math.Log(Math.Max(1, victimStats.EloRating)) -
-                                           Math.Log(Math.Max(1, attackerStats.EloRating));
+                                        Math.Log(Math.Max(1, attackerStats.EloRating));
             var winPercentage = 1.0 / (1 + Math.Pow(10, attackerEloDifference / Math.E));
 
             attackerStats.EloRating += 6.0 * (1 - winPercentage);
@@ -1395,8 +1406,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.EloRating = Math.Max(0, Math.Round(victimStats.EloRating, 2));
 
             // update after calculation
-            attackerStats.TimePlayed += (int) (DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
-            victimStats.TimePlayed += (int) (DateTime.UtcNow - victimStats.LastActive).TotalSeconds;
+            attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
+            victimStats.TimePlayed += (int)(DateTime.UtcNow - victimStats.LastActive).TotalSeconds;
             attackerStats.LastActive = DateTime.UtcNow;
             victimStats.LastActive = DateTime.UtcNow;
         }
@@ -1434,11 +1445,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var killSpm = scoreDifference / timeSinceLastCalc;
             var spmMultiplier = 2.934 *
-                                   Math.Pow(
-                                       _servers[clientStats.ServerId]
-                                           .TeamCount((IW4Info.Team) clientStats.Team == IW4Info.Team.Allies
-                                               ? IW4Info.Team.Axis
-                                               : IW4Info.Team.Allies), -0.454);
+                                Math.Pow(
+                                    _servers[clientStats.ServerId]
+                                        .TeamCount((IW4Info.Team)clientStats.Team == IW4Info.Team.Allies
+                                            ? IW4Info.Team.Axis
+                                            : IW4Info.Team.Allies), -0.454);
             killSpm *= Math.Max(1, spmMultiplier);
 
             // update this for ac tracking
@@ -1455,8 +1466,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // calculate the weight of the new play time against last 10 hours of gameplay
             int totalPlayTime = (clientStats.TimePlayed == 0)
-                ? (int) (DateTime.UtcNow - clientStats.LastActive).TotalSeconds
-                : clientStats.TimePlayed + (int) (DateTime.UtcNow - clientStats.LastActive).TotalSeconds;
+                ? (int)(DateTime.UtcNow - clientStats.LastActive).TotalSeconds
+                : clientStats.TimePlayed + (int)(DateTime.UtcNow - clientStats.LastActive).TotalSeconds;
 
             double SPMAgainstPlayWeight = timeSinceLastCalc / Math.Min(600, (totalPlayTime / 60.0));
 
@@ -1476,7 +1487,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
             {
                 _log.LogWarning("clientStats SPM/Skill NaN {@killInfo}",
-                    new {killSPM = killSpm, KDRWeight, totalPlayTime, SPMAgainstPlayWeight, clientStats, scoreDifference});
+                    new
+                    {
+                        killSPM = killSpm, KDRWeight, totalPlayTime, SPMAgainstPlayWeight, clientStats, scoreDifference
+                    });
                 clientStats.SPM = 0;
                 clientStats.Skill = 0;
             }
@@ -1517,11 +1531,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public void ResetKillstreaks(Server sv)
         {
             foreach (var session in sv.GetClientsAsList()
-                .Select(_client => new
-                {
-                    stat = _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY),
-                    detection = _client.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY)
-                }))
+                         .Select(_client => new
+                         {
+                             stat = _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY),
+                             detection = _client.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY)
+                         }))
             {
                 session.stat?.StartNewSession();
                 session.detection?.OnMapChange();
@@ -1583,8 +1597,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await ctx.SaveChangesAsync();
 
                 foreach (var stats in sv.GetClientsAsList()
-                    .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
-                    .Where(_stats => _stats != null))
+                             .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
+                             .Where(_stats => _stats != null))
                 {
                     await SaveClientStats(stats);
                 }

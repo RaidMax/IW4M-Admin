@@ -30,7 +30,7 @@
         </td>
         <td>
         @info.Data
-        <td>
+        <td class="text-force-break font-weight-light">
             @info.NewValue
         </td>
         <td class="text-right">
@@ -40,32 +40,36 @@
 
     <!-- mobile -->
     <tr class="d-table-row d-lg-none d-flex bg-dark-dm bg-light-lm">
-        <td class="bg-primary text-light text-right flex-grow-0">
+        <td class="bg-primary text-light text-right flex-grow-0 w-quarter d-flex flex-column">
             <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</div>
             <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</div>
             <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
             <div class="mt-5 mb-5">@loc["WEBFRONT_ADMIN_AUDIT_LOG_INFO"]</div>
             <div class="mt-5 mb-5">@loc["WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"]</div>
-            <div class="mt-5 mb-5">@loc["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</div>
+            <div class="mt-5 mb-5 mt-auto">@loc["WEBFRONT_ADMIN_AUDIT_LOG_TIME"]</div>
         </td>
-        <td>
+        <td class="w-three-quarter d-flex flex-column">
             <div class="mt-5 mb-5">@info.Action</div>
-            <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.OriginId" class="link-inverse">
-                <color-code value="@info.OriginName"></color-code>
-            </a>
+            <div class="mt-5 mb-5">
+                <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.OriginId" class="link-inverse">
+                    <color-code value="@info.OriginName"></color-code>
+                </a>
+            </div>
             @if (info.TargetId != null)
             {
-                <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.TargetId" class="mt-5 mb-5">
-                    <color-code value="@info.TargetName"></color-code>
-                </a>
+                <div class="mt-5 mb-5">
+                    <a asp-controller="Client" asp-action="Profile" asp-route-id="@info.TargetId">
+                        <color-code value="@info.TargetName"></color-code>
+                    </a>
+                </div>
             }
             else
             {
                 <div class="mt-5 mb-5">&ndash;</div>
             }
             <div class="mt-5 mb-5">@info.Data</div>
-            <div class="mt-5 mb-5">@info.NewValue</div>
-            <div class="mt-5 mb-5">@info.When</div>
+            <div class="mt-5 mb-5 text-force-break">@info.NewValue</div>
+            <div class="mt-5 mb-5 text-muted">@info.When.ToStandardFormat()</div>
         </td>
     </tr>
 }

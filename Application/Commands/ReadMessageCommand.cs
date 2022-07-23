@@ -24,7 +24,7 @@ namespace IW4MAdmin.Application.Commands
             Name = "readmessage";
             Description = _translationLookup["COMMANDS_READ_MESSAGE_DESC"];
             Alias = "rm";
-            Permission = EFClient.Permission.Flagged;
+            Permission = EFClient.Permission.User;
 
             _contextFactory = contextFactory;
             _logger = logger;

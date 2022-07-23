@@ -41,14 +41,14 @@
 
 <!-- mobile -->
 <tr class="d-table-row d-lg-none d-flex border-bottom">
-    <td class="bg-primary text-light text-right">
+    <td class="bg-primary text-light text-right d-flex flex-column w-quarter">
         <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_NAME"]</div>
         <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_TYPE"]</div>
         <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_OFFENSE"]</div>
-        <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</div>
+        <div class="mt-5 mb-5 mt-auto">@loc["WEBFRONT_PENALTY_TEMPLATE_ADMIN"]</div>
         <div class="mt-5 mb-5">@loc["WEBFRONT_PENALTY_TEMPLATE_TIME"]</div>
     </td>
-    <td class="flex-fill">
+    <td class=" d-flex flex-column w-three-quarter">
         <div class="mt-5 mb-5">
             <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.OffenderId" >
                 <color-code value="@Model.OffenderName"></color-code>
@@ -57,13 +57,13 @@
         <div class="mt-5 mb-5 penalties-color-@Model.PenaltyTypeText.ToLower()">
             @ViewBag.Localization[$"WEBFRONT_PENALTY_{Model.PenaltyType.ToString().ToUpper()}"]
         </div>
-        <div class="mt-5 mb-5">
+        <div class="mt-5 mb-5 text-force-break">
             <color-code value="@($"{Model.Offense}{(ViewBag.Authorized ? Model.AdditionalPenaltyInformation : "")}")"></color-code>
         </div>
         <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.PunisherId" class="mt-5 mb-5 @((!ViewBag.Authorized && ViewBag.EnablePrivilegedUserPrivacy) || Model.PunisherLevel == 0 ? "text-dark-lm text-light-dm" : "level-color-" + (int)Model.PunisherLevel)">
             <color-code value="@Model.PunisherName"></color-code>
         </a>
-        <div class="mt-5 mb-5">
+        <div class="mt-5 mb-5 text-muted">
             @if (Model.Expired)
             {
                 <span>@Model.TimePunishedString</span>

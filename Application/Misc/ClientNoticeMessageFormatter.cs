@@ -33,7 +33,7 @@ namespace IW4MAdmin.Application.Misc
             builder.Append(header);
             builder.Append(config.NoticeLineSeparator);
             // build the reason
-            var reason = _transLookup["GAME_MESSAGE_PENALTY_REASON"].FormatExt(penalty.Offense);
+            var reason = _transLookup["GAME_MESSAGE_PENALTY_REASON"].FormatExt(penalty.Offense.FormatMessageForEngine(config));
 
             if (isNewLineSeparator)
             {

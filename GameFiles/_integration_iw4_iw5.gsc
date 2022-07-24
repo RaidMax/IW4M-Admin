@@ -1,6 +1,5 @@
 init()
 {
-
     level thread InitializeGameMethods();
 }
 
@@ -16,7 +15,6 @@ InitializeGameMethods()
     level.overrideMethods["SetDvarIfUninitialized"] = ::SetDvarIfUninitialized;
     level.overrideMethods["GetPlayerData"] = ::GetPlayerData;
     level.overrideMethods["SetPlayerData"] = ::SetPlayerData;
-
     
     if ( isDefined( ::God ) )
     {

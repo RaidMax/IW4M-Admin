@@ -76,7 +76,7 @@
             @foreach (var rule in rules)
             {
                 <div class="rule">
-                    @if (!rule.StartsWith("#") && !Regex.IsMatch(rule, @"^\d+(.|\))"))
+                    @if (!rule.StartsWith("#") && !Regex.IsMatch(rule.StripColors(), @"^(Rule ?#?)?\d+(.|\))"))
                     {
                         <span>@start.</span>
                     }

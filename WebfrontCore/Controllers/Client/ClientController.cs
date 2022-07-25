@@ -78,7 +78,8 @@ namespace WebfrontCore.Controllers
             // even though we haven't set their level to "banned" yet
             // (ie they haven't reconnected with the infringing player identifier)
             // we want to show them as banned as to not confuse people.
-            if (activePenalties.Any(penalty => penalty.Type == EFPenalty.PenaltyType.Ban))
+            var hasActiveBan = activePenalties.Any(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
+            if (hasActiveBan)
             {
                 client.Level = Data.Models.Client.EFClient.Permission.Banned;
             }
@@ -86,7 +87,9 @@ namespace WebfrontCore.Controllers
             var displayLevelInt = (int)client.Level;
             var displayLevel = client.Level.ToLocalizedLevelName();
 
-            if (!Authorized && client.Level.ShouldHideLevel())
+            // if a linked ban has been revoked but they haven't reconnected, we should not show them as still banned
+            var shouldHideBanLevel = !hasActiveBan && client.Level == Data.Models.Client.EFClient.Permission.Banned;
+            if (!Authorized && client.Level.ShouldHideLevel() || shouldHideBanLevel)
             {
                 displayLevelInt = (int)Data.Models.Client.EFClient.Permission.User;
                 displayLevel = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();

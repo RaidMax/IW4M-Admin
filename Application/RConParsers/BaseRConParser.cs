@@ -176,16 +176,16 @@ namespace IW4MAdmin.Application.RConParsers
             return new StatusResponse
             {
                 Clients = ClientsFromStatus(response).ToArray(),
-                Map = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusMap, Configuration.MapStatus.Pattern),
-                GameType = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusGametype, Configuration.GametypeStatus.Pattern),
-                Hostname = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusHostname, Configuration.HostnameStatus.Pattern),
-                MaxClients = GetValueFromStatus<int?>(response, ParserRegex.GroupType.RConStatusMaxPlayers, Configuration.MaxPlayersStatus.Pattern)
+                Map = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusMap, Configuration.MapStatus),
+                GameType = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusGametype, Configuration.GametypeStatus),
+                Hostname = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusHostname, Configuration.HostnameStatus),
+                MaxClients = GetValueFromStatus<int?>(response, ParserRegex.GroupType.RConStatusMaxPlayers, Configuration.MaxPlayersStatus)
             };
         }
 
-        private T GetValueFromStatus<T>(IEnumerable<string> response, ParserRegex.GroupType groupType, string groupPattern)
+        private T GetValueFromStatus<T>(IEnumerable<string> response, ParserRegex.GroupType groupType, ParserRegex parserRegex)
         {
-            if (string.IsNullOrEmpty(groupPattern))
+            if (string.IsNullOrEmpty(parserRegex.Pattern))
             {
                 return default;
             }
@@ -193,10 +193,10 @@ namespace IW4MAdmin.Application.RConParsers
             string value = null;
             foreach (var line in response)
             {
-                var regex = Regex.Match(line, groupPattern);
-                if (regex.Success)
+                var regex = Regex.Match(line, parserRegex.Pattern);
+                if (regex.Success && parserRegex.GroupMapping.ContainsKey(groupType))
                 {
-                    value = regex.Groups[Configuration.MapStatus.GroupMapping[groupType]].ToString();
+                    value = regex.Groups[parserRegex.GroupMapping[groupType]].ToString();
                 }
             }
 

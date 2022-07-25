@@ -452,3 +452,22 @@ img.social-icon {
   min-width: 1.2rem;
   margin-right: 0.75rem;
 }
+
+
+table.no-cell-divider tr {
+  //border: none !important;
+  border-color: transparent !important;
+}
+
+table.no-cell-divider td, table.no-cell-divider th {
+  padding: 0.25rem 1.5rem;
+  font-weight: normal;
+}
+
+table.no-cell-divider td.first-row, table.no-cell-divider th.first-row {
+  padding-top: 1.5rem;
+}
+
+table.no-cell-divider td.last-row, table.no-cell-divider th.last-row {
+  padding-bottom: 1.5rem;
+}

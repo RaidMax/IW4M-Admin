@@ -5,54 +5,107 @@
 <div class="content mt-20">
     @foreach (var (pluginName, commandList) in Model)
     {
-        <h2 class="content-title mb-lg-20 mt-20 ">@(pluginName == "Native" ? ViewBag.Localization["WEBFRONT_HELP_COMMANDS_NATIVE_TITLE"] : pluginName)</h2>
-   
-        <table class="table rounded">
-            <thead>
-            <!-- desktop -->
-            <tr class="bg-primary text-light d-none d-lg-table-row ">
-                <th>@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</th>
-                <th>@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</th>
-                <th>@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</th>
-                <th>@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET"]</th>
-                <th>@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</th>
-                <th class="text-right">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var command in commandList)
-            {
+        <div class="command-assembly-container">
+            <h2 class="content-title mb-lg-20 mt-20 ">@(pluginName == "Native" ? ViewBag.Localization["WEBFRONT_HELP_COMMANDS_NATIVE_TITLE"] : pluginName)</h2>
+
+            <table class="table rounded">
+                <thead>
                 <!-- desktop -->
-                <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
-                    <td>@command.Name</td>
-                    <td>@command.Alias</td>
-                    <td>@command.Description</td>
-                    <td>@command.RequiresTarget</td>
-                    <td>@ViewBag.CommandPrefix@command.Syntax.Split(ViewBag.CommandPrefix)[1]</td>
-                    <td class="text-right level-color-@((int)command.Permission)">@command.Permission.ToLocalizedLevelName()</td>
+                <tr class="bg-primary text-light d-none d-lg-table-row ">
+                    <th>@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</th>
+                    <th>@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</th>
+                    <th>@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</th>
+                    <th>@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET"]</th>
+                    <th>@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</th>
+                    <th>@loc["WEBFRONT_HELP_SUPPORTED_GAMES"]</th>
+                    <th class="text-right">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</th>
                 </tr>
-                
-                <!-- mobile -->
-                <tr class="d-table-row d-lg-none d-flex bg-dark-dm bg-light-lm">
-                    <td class="bg-primary text-right" style="min-width: 124px;">
-                        <div class="mt-5 mb-5">@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</div>
-                        <div class="mt-5 mb-5">@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</div>
-                        <div class="mt-5 mb-5">@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</div>
-                        <div class="mt-5 mb-5">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET"]</div>
-                        <div class="mt-5 mb-5">@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</div>
-                        <div class="mt-5 mb-5">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</div>
-                    </td>
-                    <td>
-                        <div class="mt-5 mb-5">@command.Name</div>
-                        <div class="mt-5 mb-5">@command.Alias</div>
-                        <div class="mt-5 mb-5">@command.Description</div>
-                        <div class="mt-5 mb-5">@command.RequiresTarget</div>
-                        <div class="mt-5 mb-5">@ViewBag.CommandPrefix@command.Syntax.Split(ViewBag.CommandPrefix)[1]</div>
-                        <div class="mt-5 mb-5 @($"level-color-{(int)command.Permission}")">@command.Permission.ToLocalizedLevelName()</div>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                @foreach (var command in commandList)
+                {
+                    <!-- desktop -->
+                    <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
+                        <td class="font-weight-bold">@command.Name</td>
+                        <td>@command.Alias</td>
+                        <td class="text-muted">@command.Description</td>
+                        <td class="@(command.RequiresTarget ? "text-success" : "text-danger")">@command.RequiresTarget</td>
+                        <td class="text-muted">@ViewBag.CommandPrefix@command.Syntax.Split(ViewBag.CommandPrefix)[1]</td>
+                        <td>
+                            @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                            {
+                                <div class="d-flex">
+                                    @foreach (var game in command.SupportedGames)
+                                    {
+                                        <div class="mr-5" data-toggle="tooltip" data-title="@loc[$"GAME_{game.ToString().ToUpper()}"]">
+                                            <div class="badge">@game.ToString()</div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="badge">@loc["WEBFRONT_HELP_ALL_GAMES"]</div>
+                            }
+                        </td>
+                        <td class="text-right level-color-@((int)command.Permission)">@command.Permission.ToLocalizedLevelName()</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <!-- mobile -->
+            <table class="table d-lg-none rounded no-cell-divider bg-dark-dm bg-light-lm" style="border-collapse: collapse">
+                @foreach (var command in commandList)
+                {
+                    <tr>
+                        <th class="bg-primary text-right text-light first-row" style="width:40%">@loc["WEBFRONT_HELP_COMMAND_DESC_NAME"]</th>
+                        <td class="first-row font-weight-bold">@command.Name</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-primary text-right text-light">@loc["WEBFRONT_HELP_COMMAND_DESC_ALIAS"]</th>
+                        <td>@command.Alias</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-primary text-right text-light align-top">@loc["WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION"]</th>
+                        <td class="text-muted">@command.Description</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-primary text-right text-light">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET"]</th>
+                        <td class="@(command.RequiresTarget ? "text-success" : "text-danger") align-top">@command.RequiresTarget</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-primary text-right text-light align-top">@loc["WEBFRONT_HELP_COMMAND_DESC_SYNTAX"]</th>
+                        <td class="text-muted">@ViewBag.CommandPrefix@command.Syntax.Split(ViewBag.CommandPrefix)[1]</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-primary text-right text-light">@loc["WEBFRONT_HELP_SUPPORTED_GAMES"]</th>
+                        <td>
+                            @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                            {
+                                <div class="d-flex">
+                                    @foreach (var game in command.SupportedGames)
+                                    {
+                                        <div class="mr-5" data-toggle="tooltip" data-title="@loc[$"GAME_{game.ToString().ToUpper()}"]">
+                                            <div class="badge">@game.ToString()</div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="badge">@loc["WEBFRONT_HELP_ALL_GAMES"]</div>
+                            }
+                        </td>
+                    </tr>
+                    <tr class="border-bottom">
+                        <th class="bg-primary text-right text-light last-row">@loc["WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL"]</th>
+                        <td class="@($"level-color-{(int)command.Permission}") last-row">@command.Permission.ToLocalizedLevelName()</td>
+                    </tr>
+                }
+            </table>
+
+
+        </div>
     }
 </div>

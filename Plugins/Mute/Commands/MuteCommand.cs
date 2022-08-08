@@ -13,7 +13,7 @@ public class MuteCommand : Command
         Name = "mute";
         Description = "Check your winnings!";
         Alias = "mu";
-        Permission = EFClient.Permission.User;
+        Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
         Arguments = new[]
         {

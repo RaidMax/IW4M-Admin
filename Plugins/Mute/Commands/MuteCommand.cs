@@ -8,10 +8,11 @@ namespace Mute.Commands;
 
 public class MuteCommand : Command
 {
-    public MuteCommand(CommandConfiguration config, ITranslationLookup layout) : base(config, layout)
+    public MuteCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+        translationLookup)
     {
         Name = "mute";
-        Description = "Check your winnings!";
+        Description = translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_DESC"];
         Alias = "mu";
         Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
@@ -19,23 +20,22 @@ public class MuteCommand : Command
         {
             new CommandArgument
             {
-                Name = "Player",
+                Name = translationLookup["COMMANDS_ARGS_PLAYER"],
                 Required = true
             }
         };
     }
 
-    public override Task ExecuteAsync(GameEvent gameEvent)
+    public override async Task ExecuteAsync(GameEvent gameEvent)
     {
         var muteManager = new MuteManager();
 
-        if (muteManager.Mute(gameEvent))
+        if (await muteManager.Mute(gameEvent))
         {
-            gameEvent.Origin.Tell($"Muted {gameEvent.Target.Name}");
-            return Task.CompletedTask;
+            gameEvent.Origin.Tell($"{_translationLookup["PLUGINS_MUTE_MUTED"]} {gameEvent.Target.Name}");
+            return;
         }
-        
-        gameEvent.Origin.Tell($"Unmuted {gameEvent.Target.Name}");
-        return Task.CompletedTask;
+
+        gameEvent.Origin.Tell($"{_translationLookup["PLUGINS_MUTE_UNMUTED"]} {gameEvent.Target.Name}");
     }
 }

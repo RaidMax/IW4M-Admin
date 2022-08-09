@@ -16,7 +16,7 @@ public class Plugin : IPlugin
 
     public const string MuteKey = "IW4xMute";
 
-    public static DataManager DataManager;
+    public static DataManager? DataManager;
 
     public Task OnEventAsync(GameEvent gameEvent, Server server)
     {
@@ -25,7 +25,7 @@ public class Plugin : IPlugin
         switch (gameEvent.Type)
         {
             case GameEvent.EventType.Join:
-                DataManager.ReadPersistentData(gameEvent.Origin);
+                DataManager?.ReadPersistentData(gameEvent.Origin);
                 
                 if (gameEvent.Origin.GetAdditionalProperty<bool>(MuteKey))
                 {

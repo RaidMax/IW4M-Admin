@@ -16,6 +16,7 @@ public class MuteCommand : Command
         Alias = "mu";
         Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
+        SupportedGames = Plugin.SupportedGames;
         Arguments = new[]
         {
             new CommandArgument
@@ -26,11 +27,11 @@ public class MuteCommand : Command
         };
     }
 
+    private readonly MuteManager _muteManager = new();
+
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
-        var muteManager = new MuteManager();
-
-        if (await muteManager.Mute(gameEvent))
+        if (await _muteManager.Mute(gameEvent))
         {
             gameEvent.Origin.Tell($"{_translationLookup["PLUGINS_MUTE_MUTED"]} {gameEvent.Target.Name}");
             return;

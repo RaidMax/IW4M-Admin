@@ -14,28 +14,27 @@ public class Plugin : IPlugin
     public float Version => (float) Utilities.GetVersionAsDouble();
     public string Author => "Amos";
 
-    public const string MuteKey = "IW4MMute";
+    public static string MuteKey = "IW4MMute";
 
-    public static DataManager? DataManager;
+    public static DataManager DataManager;
+    public static readonly Server.Game[] SupportedGames = {Server.Game.IW4};
 
-    public Task OnEventAsync(GameEvent gameEvent, Server server)
+    public async Task OnEventAsync(GameEvent gameEvent, Server server)
     {
-        if (server.GameName != Server.Game.IW4) return Task.CompletedTask;
+        if (!SupportedGames.Contains(server.GameName)) return;
 
         switch (gameEvent.Type)
         {
             case GameEvent.EventType.Join:
-                DataManager?.ReadPersistentData(gameEvent.Origin);
+                await DataManager.ReadPersistentData(gameEvent.Origin);
 
                 if (gameEvent.Origin.GetAdditionalProperty<bool>(MuteKey))
                 {
-                    server.ExecuteCommandAsync($"muteClient {gameEvent.Origin.ClientNumber}");
+                    await server.ExecuteCommandAsync($"muteClient {gameEvent.Origin.ClientNumber}");
                 }
 
                 break;
         }
-
-        return Task.CompletedTask;
     }
 
     public Task OnLoadAsync(IManager manager)

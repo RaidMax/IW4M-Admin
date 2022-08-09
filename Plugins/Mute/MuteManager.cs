@@ -9,12 +9,12 @@ public class MuteManager
         if (gameEvent.Target.GetAdditionalProperty<bool>(Plugin.MuteKey))
         {
             await gameEvent.Owner.ExecuteCommandAsync($"unmute {gameEvent.Target.ClientNumber}");
-            Plugin.DataManager?.WritePersistentData(gameEvent.Target, false);
+            await Plugin.DataManager!.WritePersistentData(gameEvent.Target, false);
             return false;
         }
 
         await gameEvent.Owner.ExecuteCommandAsync($"muteClient {gameEvent.Target.ClientNumber}");
-        Plugin.DataManager?.WritePersistentData(gameEvent.Target, true);
+        await Plugin.DataManager!.WritePersistentData(gameEvent.Target, true);
         return true;
     }
 }

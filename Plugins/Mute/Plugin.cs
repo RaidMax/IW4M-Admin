@@ -26,11 +26,19 @@ public class Plugin : IPlugin
         switch (gameEvent.Type)
         {
             case GameEvent.EventType.Join:
-                await DataManager.ReadPersistentData(gameEvent.Origin);
+                gameEvent.Origin.SetAdditionalProperty(MuteKey, await DataManager.ReadPersistentData(gameEvent.Origin));
 
-                if (gameEvent.Origin.GetAdditionalProperty<bool>(MuteKey))
+                switch (gameEvent.Origin.GetAdditionalProperty<MuteState>(MuteKey))
                 {
-                    await server.ExecuteCommandAsync($"muteClient {gameEvent.Origin.ClientNumber}");
+                    case MuteState.Muted:
+                        await server.ExecuteCommandAsync($"muteClient {gameEvent.Origin.ClientNumber}");
+                        break;
+                    case MuteState.Unmuting:
+                        await server.ExecuteCommandAsync($"unmute {gameEvent.Origin.ClientNumber}");
+                        await DataManager.WritePersistentData(gameEvent.Origin, MuteState.Unmuted);
+                        break;
+                    case MuteState.Unmuted:
+                        break;
                 }
 
                 break;

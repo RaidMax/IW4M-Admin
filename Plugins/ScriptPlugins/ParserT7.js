@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax',
-    version: 0.4,
+    version: 0.5,
     name: 'Black Ops 3 Parser',
     isParser: true,
 
@@ -30,6 +30,7 @@ var plugin = {
         rconParser.Configuration.DefaultRConPort = 27016;
 
         rconParser.Configuration.OverrideDvarNameMapping.Add('sv_hostname', 'live_steam_server_name');
+        rconParser.Configuration.OverrideDvarNameMapping.Add('g_password', 'live_steam_server_password');
         rconParser.Configuration.DefaultDvarValues.Add('sv_running', '1');
         rconParser.Configuration.DefaultDvarValues.Add('g_gametype', '');
         rconParser.Configuration.DefaultDvarValues.Add('fs_basepath', '');

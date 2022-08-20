@@ -24,12 +24,12 @@ Add this to the WeaponNameParserConfigurations List in the StatsPluginSettings.j
     }
 ```
 
-Now create the following entry for __EVERY__ T6 server you are using this on in the ServerDetectionTypes list:
+Now update the `GameDetectionTypes` list with the following, if it does not already exist:
 
 ```
-    "1270014976": [
+    "T6": [
         "Offset",
-        "Strain",
-        "Snap"
-      ]
+        "Snap",
+        "Strain"
+    ]
 ```

@@ -105,6 +105,8 @@ namespace IW4MAdmin.Application.EventParsers
             {
                 {"say", GameEvent.EventType.Say},
                 {"sayteam", GameEvent.EventType.Say},
+                {"chat", GameEvent.EventType.Say},
+                {"chatteam", GameEvent.EventType.Say},
                 {"K", GameEvent.EventType.Kill},
                 {"D", GameEvent.EventType.Damage},
                 {"J", GameEvent.EventType.PreConnect},

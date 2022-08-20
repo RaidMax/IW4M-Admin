@@ -337,21 +337,6 @@ let commands = [{
         }
     },
     {
-        name: 'nightmode',
-        description: 'sets server into nightmode',
-        alias: 'nitem',
-        permission: 'SeniorAdmin',
-        targetRequired: false,
-        arguments: [],
-        supportedGames: ['IW4', 'IW5'],
-        execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-                return;
-            }
-            sendScriptCommand(gameEvent.Owner, 'NightMode', gameEvent.Origin, undefined, undefined);
-        }
-    },
-    {
         name: 'setspectator',
         description: 'sets a player as spectator',
         alias: 'spec',

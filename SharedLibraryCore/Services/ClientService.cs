@@ -286,7 +286,10 @@ namespace SharedLibraryCore.Services
                 entity.PasswordSalt = temporalClient.PasswordSalt;
             }
 
-            entity.GameName = temporalClient.GameName;
+            if (entity.GameName == Reference.Game.UKN && temporalClient.GameName != entity.GameName)
+            {
+                entity.GameName = temporalClient.GameName;
+            }
 
             // update in database
             await context.SaveChangesAsync();

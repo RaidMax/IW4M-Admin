@@ -286,7 +286,7 @@ namespace SharedLibraryCore.Services
                 entity.PasswordSalt = temporalClient.PasswordSalt;
             }
 
-            if (entity.GameName == Reference.Game.UKN)
+            if (entity.GameName == Reference.Game.UKN && temporalClient.GameName != entity.GameName)
             {
                 entity.GameName = temporalClient.GameName;
             }

@@ -15,10 +15,12 @@ public class DataManager
 
     public async Task<MuteState> ReadPersistentData(EFClient client)
     {
-        var clientMeta = (await _metaService.GetPersistentMeta(Plugin.MuteKey, client.ClientId))?.Value ??
-                         nameof(MuteState.Unmuted);
-        
-        return Parse<MuteState>(clientMeta);
+        var clientMuteState = client.GetAdditionalProperty<MuteState?>(Plugin.MuteKey) ??
+                              Parse<MuteState>((await _metaService.GetPersistentMeta(Plugin.MuteKey, client.ClientId))?
+                                  .Value ?? nameof(MuteState.Unmuted));
+
+        client.SetAdditionalProperty(Plugin.MuteKey, clientMuteState);
+        return clientMuteState;
     }
 
     public async Task WritePersistentData(EFClient client, MuteState state)

@@ -26,9 +26,7 @@ public class Plugin : IPlugin
         switch (gameEvent.Type)
         {
             case GameEvent.EventType.Join:
-                gameEvent.Origin.SetAdditionalProperty(MuteKey, await DataManager.ReadPersistentData(gameEvent.Origin));
-
-                switch (gameEvent.Origin.GetAdditionalProperty<MuteState>(MuteKey))
+                switch (await DataManager.ReadPersistentData(gameEvent.Origin))
                 {
                     case MuteState.Muted:
                         await server.ExecuteCommandAsync($"muteClient {gameEvent.Origin.ClientNumber}");

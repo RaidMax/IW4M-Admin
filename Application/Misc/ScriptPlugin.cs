@@ -42,6 +42,7 @@ namespace IW4MAdmin.Application.Misc
         private Engine _scriptEngine;
         private readonly string _fileName;
         private readonly SemaphoreSlim _onProcessing = new(1, 1);
+        private readonly SemaphoreSlim _onDvarActionComplete = new(1, 1);
         private bool _successfullyLoaded;
         private readonly List<string> _registeredCommandNames;
         private readonly ILogger _logger;
@@ -458,17 +459,15 @@ namespace IW4MAdmin.Application.Misc
 
         private void BeginGetDvar(Server server, string dvarName, Delegate onCompleted)
         {
-            var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
-            
-            server.BeginGetDvar(dvarName, result =>
+            void OnComplete(IAsyncResult result)
             {
-                var shouldRelease = false;
                 try
                 {
-                    _onProcessing.Wait(tokenSource.Token);
-                    shouldRelease = true;
                     var (success, value) = (ValueTuple<bool, string>)result.AsyncState;
+
+                    _logger.LogDebug("Waiting for onDvarActionComplete -> get");
+                    _onDvarActionComplete.Wait();
+                    _logger.LogDebug("Completed wait for onDvarActionComplete -> get");
 
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
@@ -479,9 +478,43 @@ namespace IW4MAdmin.Application.Misc
                             JsValue.FromObject(_scriptEngine, success)
                         });
                 }
+                catch (JavaScriptException ex)
+                {
+                    using (LogContext.PushProperty("Server", server.ToString()))
+                    {
+                        _logger.LogError(ex, "Could complete BeginGetDvar for {Filename} {@Location}",
+                            Path.GetFileName(_fileName), ex.Location);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not complete {BeginGetDvar} for {Class}", nameof(BeginGetDvar), Name);
+                }
+                finally
+                {
+                    if (_onDvarActionComplete.CurrentCount == 0)
+                    {
+                        _onDvarActionComplete.Release();
+                    }
+                }
+            }
+
+            var tokenSource = new CancellationTokenSource();
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
+            
+            server.BeginGetDvar(dvarName, result =>
+            {
+                var shouldRelease = false;
+                try
+                {
+                    _onProcessing.Wait(tokenSource.Token);
+                    shouldRelease = true;
+                }
 
                 finally
                 {
+                    OnComplete(result);
+
                     if (_onProcessing.CurrentCount == 0 && shouldRelease)
                     {
                         _onProcessing.Release();
@@ -495,15 +528,15 @@ namespace IW4MAdmin.Application.Misc
             var tokenSource = new CancellationTokenSource();
             tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
             
-            server.BeginSetDvar(dvarName, dvarValue, result =>
+            void OnComplete(IAsyncResult result)
             {
-                var shouldRelease = false;
                 try
                 {
-                    _onProcessing.Wait(tokenSource.Token);
-                    shouldRelease = true;
                     var success = (bool)result.AsyncState;
                     
+                    _logger.LogDebug("Waiting for onDvarActionComplete -> set");
+                    _onDvarActionComplete.Wait();
+                    _logger.LogDebug("Completed wait for onDvarActionComplete -> set");
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
                         {
@@ -513,8 +546,38 @@ namespace IW4MAdmin.Application.Misc
                             JsValue.FromObject(_scriptEngine, success)
                         });
                 }
+                catch (JavaScriptException ex)
+                {
+                    using (LogContext.PushProperty("Server", server.ToString()))
+                    {
+                        _logger.LogError(ex, "Could complete BeginSetDvar for {Filename} {@Location}",
+                            Path.GetFileName(_fileName), ex.Location);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not complete {BeginSetDvar} for {Class}", nameof(BeginSetDvar), Name);
+                }
                 finally
                 {
+                    if (_onDvarActionComplete.CurrentCount == 0)
+                    {
+                        _onDvarActionComplete.Release();
+                    }
+                }
+            }
+            
+            server.BeginSetDvar(dvarName, dvarValue, result =>
+            {
+                var shouldRelease = false;
+                try
+                {
+                    _onProcessing.Wait(tokenSource.Token);
+                    shouldRelease = true;
+                }
+                finally
+                {
+                    OnComplete(result);
                     if (_onProcessing.CurrentCount == 0 && shouldRelease)
                     {
                         _onProcessing.Release();

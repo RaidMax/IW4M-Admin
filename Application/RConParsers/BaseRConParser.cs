@@ -147,7 +147,7 @@ namespace IW4MAdmin.Application.RConParsers
         {
             GetDvarAsync<string>(connection, dvarName, token: token).ContinueWith(action =>
             {
-                if (action.Exception is null)
+                if (action.Exception is null && !action.IsCanceled)
                 {
                     callback?.Invoke(new AsyncResult
                     {
@@ -164,7 +164,7 @@ namespace IW4MAdmin.Application.RConParsers
                         AsyncState = (false, (string)null)
                     });
                 }
-            }, token);
+            },  CancellationToken.None);
         }
 
         public virtual async Task<IStatusResponse> GetStatusAsync(IRConConnection connection, CancellationToken token = default)
@@ -227,7 +227,7 @@ namespace IW4MAdmin.Application.RConParsers
         {
             SetDvarAsync(connection, dvarName, dvarValue, token).ContinueWith(action =>
             {
-                if (action.Exception is null)
+                if (action.Exception is null && !action.IsCanceled)
                 {
                     callback?.Invoke(new AsyncResult
                     {
@@ -244,7 +244,7 @@ namespace IW4MAdmin.Application.RConParsers
                         AsyncState = false
                     });
                 }
-            }, token);
+            }, CancellationToken.None);
         }
 
         private List<EFClient> ClientsFromStatus(string[] Status)

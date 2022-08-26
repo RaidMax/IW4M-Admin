@@ -111,7 +111,7 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
         {
             return;
         }
-
+        _logger.LogDebug("-Releasing OnTick for timer");
         _onDependentAction?.Release(1);
     }
     private void OnTick()
@@ -128,7 +128,8 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
             _onRunningTick.Reset();
 
             // the js engine is not thread safe so we need to ensure we're not executing OnTick and OnEventAsync simultaneously
-            _onDependentAction?.WaitAsync().Wait();
+            _onDependentAction?.Wait();
+            _logger.LogDebug("+Running OnTick for timer");
             var start = DateTime.Now;
             _jsAction.DynamicInvoke(JsValue.Undefined, new[] { JsValue.Undefined });
             _logger.LogDebug("OnTick took {Time}ms", (DateTime.Now - start).TotalMilliseconds);

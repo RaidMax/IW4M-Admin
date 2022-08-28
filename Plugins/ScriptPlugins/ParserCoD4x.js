@@ -15,7 +15,7 @@ var plugin = {
         eventParser = manager.GenerateDynamicEventParser(this.name);
 
         rconParser.Configuration.StatusHeader.Pattern = 'num +score +ping +playerid +steamid +name +lastmsg +address +qport +rate *';
-        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]{16,32})|0) +([[0-9]+|0]) +(.{0,32}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+.\\d+\\:-*\\d{1,5}|0+.0+:-*\\d{1,5}|loopback|bot) +(-*[0-9]+) +([0-9]+) *$';
+        rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]{16,32})|0) +([[0-9]+|0]) +(.{0,34}) +([0-9]+) +(\\d+\\.\\d+\\.\\d+.\\d+\\:-*\\d{1,5}|0+.0+:-*\\d{1,5}|loopback|bot) +(-*[0-9]+) +([0-9]+) *$';
         rconParser.Configuration.Status.AddMapping(104, 6); // RConName
         rconParser.Configuration.Status.AddMapping(105, 8); // RConIPAddress
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';

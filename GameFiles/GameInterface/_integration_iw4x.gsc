@@ -93,6 +93,8 @@ Log2Console( logLevel, message )
 
 SetPersistentData() 
 {
+    self endon( "disconnect" );
+    
     guidHigh = self GetPlayerData( "bests", "none" ); 
     guidLow = self GetPlayerData( "awards", "none" );
     persistentGuid = guidHigh + "," + guidLow;
@@ -100,6 +102,8 @@ SetPersistentData()
      
     if ( guidIsStored )
     {
+        // give IW4MAdmin time to collect IP
+        wait( 15 );
         scripts\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
         scripts\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
         return;

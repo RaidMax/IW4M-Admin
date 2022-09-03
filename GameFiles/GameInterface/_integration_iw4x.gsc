@@ -56,7 +56,6 @@ RegisterClientCommands()
     scripts\_integration_base::AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
     scripts\_integration_base::AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
     scripts\_integration_base::AddClientCommand( "Hide",           false, ::HideImpl );
-    scripts\_integration_base::AddClientCommand( "Unhide",         false, ::UnhideImpl );
     scripts\_integration_base::AddClientCommand( "Alert",          true,  ::AlertImpl );
     scripts\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
     scripts\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
@@ -330,19 +329,17 @@ NoClipImpl()
     else
     {
         self SetClientDvar( "sv_cheats", 1 );
-        self SetClientDvar( "cg_thirdperson", 1 );
+        self SetClientDvar( "cg_thirdperson", 0 );
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
         self Noclip();
-        self Hide();
+        self Show();
         
         self.isNoClipped = false;
         
         self IPrintLnBold( "NoClip disabled" );
     }
-
-    self IPrintLnBold( "NoClip enabled" );
 }
 
 HideImpl()
@@ -350,51 +347,39 @@ HideImpl()
     if ( !IsAlive( self ) )
     {
         self IPrintLnBold( "You are not alive" );
-        return;
-    }
-
-    self SetClientDvar( "sv_cheats", 1 );
-    self SetClientDvar( "cg_thirdperson", 1 );
-    self SetClientDvar( "sv_cheats", 0 );
-
-    if ( !IsDefined( self.savedHealth ) || self.health < 1000 )
-    {
-        self.savedHealth = self.health;
-        self.savedMaxHealth = self.maxhealth;
-    }
-
-    self God();
-    self Hide();
-
-    self.isHidden = true;
-
-    self IPrintLnBold( "You are now ^5hidden ^7from other players" );
-}
-
-UnhideImpl()
-{
-    if ( !IsAlive( self ) )
-    {
-        self IPrintLnBold( "You are not alive" );
-        return;
     }
     
-    if ( !IsDefined( self.isHidden ) || !self.isHidden ) 
+    if ( !IsDefined ( self.isHidden ) )
     {
-        self IPrintLnBold( "You are not hidden" );
-        return;
+        self.isHidden = false;
     }
 
-    self SetClientDvar( "sv_cheats", 1 );
-    self SetClientDvar( "cg_thirdperson", 0 );
-    self SetClientDvar( "sv_cheats", 0 );
-
-    self God();
-    self Show();
-
-    self.isHidden = false;
-    
-    self IPrintLnBold( "You are now ^5visible ^7to other players" );
+    if ( !self.isHidden )
+    {
+        self SetClientDvar( "sv_cheats", 1 );
+        self SetClientDvar( "cg_thirdperson", 1 );
+        self SetClientDvar( "sv_cheats", 0 );
+        
+        self God();
+        self Hide();
+        
+        self.isHidden = true;
+        
+        self IPrintLnBold( "Hide enabled" );
+    }
+    else
+    {
+        self SetClientDvar( "sv_cheats", 1 );
+        self SetClientDvar( "cg_thirdperson", 0 );
+        self SetClientDvar( "sv_cheats", 0 );
+        
+        self God();
+        self Show();
+        
+        self.isHidden = false;
+        
+        self IPrintLnBold( "Hide disabled" );
+    }
 }
 
 AlertImpl( event, data )

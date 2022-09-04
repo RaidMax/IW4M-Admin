@@ -148,24 +148,6 @@ let commands = [{
         }
     },
     {
-        name: 'unlockcontrols',
-        description: 'unlocks target player\'s controls',
-        alias: 'ulc',
-        permission: 'Administrator',
-        targetRequired: true,
-        arguments: [{
-            name: 'player',
-            required: true
-        }],
-        supportedGames: ['IW4', 'IW5'],
-        execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-                return;
-            }
-            sendScriptCommand(gameEvent.Owner, 'UnlockControls', gameEvent.Origin, gameEvent.Target, undefined);
-        }
-    },
-    {
         name: 'noclip',
         description: 'enable noclip on yourself ingame',
         alias: 'nc',

@@ -61,7 +61,6 @@ RegisterClientCommands()
     scripts\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
     scripts\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
     scripts\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
-    scripts\_integration_base::AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
     scripts\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
     scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
 }
@@ -271,33 +270,38 @@ LockControlsImpl()
     {
         return self.name + "^7 is not alive";
     }
-    
 
-    self freezeControls( true );
-    self God();
-    self Hide();
-
-    info = [];
-    info[ "alertType" ] = "Alert!";
-    info[ "message" ] = "You have been frozen!";
-    
-    self AlertImpl( undefined, info );
-
-    return self.name + "\'s controls are locked";
-}
-
-UnlockControlsImpl()
-{
-    if ( !IsAlive( self ) )
+    if ( !IsDefined ( self.isControlLocked ) )
     {
-        return self.name + "^7 is not alive";
+        self.isControlLocked = false;
     }
-    
-    self freezeControls( false );
-    self God();
-    self Show();
 
-    return self.name + "\'s controls are unlocked";
+    if ( !self.isControlLocked )
+    {
+        self freezeControls( true );
+        self God();
+        self Hide();
+
+        info = [];
+        info[ "alertType" ] = "Alert!";
+        info[ "message" ] = "You have been frozen!";
+        
+        self AlertImpl( undefined, info );
+
+        self.isControlLocked = true;
+        
+        return self.name + "\'s controls are locked";
+    }
+    else
+    {
+        self freezeControls( false );
+        self God();
+        self Show();
+
+        self.isControlLocked = false;
+
+        return self.name + "\'s controls are unlocked";
+    }
 }
 
 NoClipImpl()

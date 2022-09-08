@@ -22,7 +22,7 @@
             EFPenalty.PenaltyType.Flag => "alert-secondary",
             EFPenalty.PenaltyType.TempBan => "alert-secondary",
             _ => "alert"
-            };
+        };
     }
 
     string ClassForProfileBackground()
@@ -388,6 +388,20 @@
             Reference = "unban",
             Icon = "oi-lock-locked",
             EntityId = Model.ClientId
+        });
+    }
+
+    foreach (var interaction in Model.Interactions.Where(i => (int)ViewBag.User.Level >= ((int?)i.MinimumPermission ?? 0)))
+    {
+        menuItems.Items.Add(new SideContextMenuItem
+        {
+            Title = interaction.Name,
+            Tooltip = interaction.Description,
+            EntityId = interaction.EntityId,
+            Icon = interaction.DisplayMeta,
+            Reference = interaction.ActionPath,
+            Meta = System.Text.Json.JsonSerializer.Serialize(interaction.ActionMeta),
+            IsButton = true
         });
     }
 

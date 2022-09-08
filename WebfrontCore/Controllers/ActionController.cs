@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
@@ -24,6 +25,7 @@ namespace WebfrontCore.Controllers
     {
         private readonly ApplicationConfiguration _appConfig;
         private readonly IMetaServiceV2 _metaService;
+        private readonly IInteractionRegistration _interactionRegistration;
         private readonly string _banCommandName;
         private readonly string _tempbanCommandName;
         private readonly string _unbanCommandName;
@@ -37,10 +39,12 @@ namespace WebfrontCore.Controllers
         private readonly string _addClientNoteCommandName;
 
         public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands,
-            ApplicationConfiguration appConfig, IMetaServiceV2 metaService) : base(manager)
+            ApplicationConfiguration appConfig, IMetaServiceV2 metaService,
+            IInteractionRegistration interactionRegistration) : base(manager)
         {
             _appConfig = appConfig;
             _metaService = metaService;
+            _interactionRegistration = interactionRegistration;
 
             foreach (var cmd in registeredCommands)
             {
@@ -84,6 +88,81 @@ namespace WebfrontCore.Controllers
                         break;
                 }
             }
+        }
+
+        public IActionResult DynamicActionForm(int? id, string meta)
+        {
+            var metaDict = JsonSerializer.Deserialize<Dictionary<string, string>>(meta);
+
+            if (metaDict is null)
+            {
+                return BadRequest();
+            }
+
+            metaDict.TryGetValue(nameof(ActionInfo.ActionButtonLabel), out var label);
+            metaDict.TryGetValue(nameof(ActionInfo.Name), out var name);
+            metaDict.TryGetValue(nameof(ActionInfo.ShouldRefresh), out var refresh);
+            metaDict.TryGetValue("Data", out var data);
+            metaDict.TryGetValue("InteractionId", out var interactionId);
+
+            bool.TryParse(refresh, out var shouldRefresh);
+
+            var inputs = new List<InputInfo>
+            {
+                new()
+                {
+                    Name = "InteractionId",
+                    Value = interactionId,
+                    Type = "hidden"
+                },
+                new()
+                {
+                    Name = "data",
+                    Value = data,
+                    Type = "hidden"
+                },
+                new()
+                {
+                    Name = "TargetId",
+                    Value = id?.ToString(),
+                    Type = "hidden"
+                }
+            };
+
+            var info = new ActionInfo
+            {
+                ActionButtonLabel = label,
+                Name = name,
+                Action = nameof(DynamicActionAsync),
+                ShouldRefresh = shouldRefresh,
+                Inputs = inputs
+            };
+
+            return View("_ActionForm", info);
+        }
+
+        public async Task<IActionResult> DynamicActionAsync(string interactionId, string data, int? targetId,
+            CancellationToken token = default)
+        {
+            if (interactionId == "command")
+            {
+                var server = Manager.GetServers().First();
+
+                return await Task.FromResult(RedirectToAction("Execute", "Console", new
+                {
+                    serverId = server.EndPoint,
+                    command = $"{_appConfig.CommandPrefix}{data}"
+                }));
+            }
+
+            var game = (Reference.Game?)null;
+
+            if (targetId.HasValue)
+            {
+                game = (await Manager.GetClientService().Get(targetId.Value))?.GameName;
+            }
+
+            return Ok(await _interactionRegistration.ProcessInteraction(interactionId, targetId, game, token));
         }
 
         public IActionResult BanForm()
@@ -292,7 +371,7 @@ namespace WebfrontCore.Controllers
             {
                 ClientId = Client.ClientId
             });
-            
+
             return string.Format(Utilities.CurrentLocalization.LocalizationIndex["COMMANDS_GENERATETOKEN_SUCCESS"],
                 state.Token,
                 $"{state.RemainingTime} {Utilities.CurrentLocalization.LocalizationIndex["GLOBAL_MINUTES"]}",
@@ -645,7 +724,7 @@ namespace WebfrontCore.Controllers
                     $"{_appConfig.CommandPrefix}{_setClientTagCommandName} @{targetId} {clientTag}"
             }));
         }
-        
+
         public async Task<IActionResult> AddClientNoteForm(int id)
         {
             var existingNote = await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", id);
@@ -682,7 +761,7 @@ namespace WebfrontCore.Controllers
                     }
                 });
             }
-            
+
             var server = Manager.GetServers().First();
             return await Task.FromResult(RedirectToAction("Execute", "Console", new
             {

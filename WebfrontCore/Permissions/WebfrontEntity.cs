@@ -15,7 +15,8 @@ public enum WebfrontEntity
     RecentPlayersPage,
     ProfilePage,
     AdminMenu,
-    ClientNote
+    ClientNote,
+    Interaction
 }
 
 public enum WebfrontPermission

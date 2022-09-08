@@ -105,6 +105,8 @@ namespace WebfrontCore
                 {
                     options.AccessDeniedPath = "/";
                     options.LoginPath = "/";
+                    options.Events.OnValidatePrincipal += ClaimsPermissionRemoval.ValidateAsync;
+                    options.Events.OnSignedIn += ClaimsPermissionRemoval.OnSignedIn;
                 });
 
             services.AddSingleton(Program.Manager);
@@ -138,6 +140,7 @@ namespace WebfrontCore
             services.AddSingleton(Program.ApplicationServiceProvider
                             .GetRequiredService<StatsConfiguration>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IServerDataViewer>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IInteractionRegistration>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

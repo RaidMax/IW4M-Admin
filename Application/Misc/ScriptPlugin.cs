@@ -339,6 +339,41 @@ namespace IW4MAdmin.Application.Misc
             return Task.CompletedTask;
         }
 
+        public T ExecuteAction<T>(Delegate action, params object[] param)
+        {
+            try
+            {
+                _onProcessing.Wait();
+                var args = param.Select(p => JsValue.FromObject(_scriptEngine, p)).ToArray();
+                var result = action.DynamicInvoke(JsValue.Undefined, args);
+                return (T)(result as JsValue)?.ToObject();
+            }
+            finally
+            {
+                if (_onProcessing.CurrentCount == 0)
+                {
+                    _onProcessing.Release(1);
+                }
+            }
+        }
+        
+        public T WrapDelegate<T>(Delegate act, params object[] args)
+        {
+            try
+            {
+                _onProcessing.Wait();
+                return (T)(act.DynamicInvoke(JsValue.Null,
+                    args.Select(arg => JsValue.FromObject(_scriptEngine, arg)).ToArray()) as ObjectWrapper)?.ToObject();
+            }
+            finally
+            {
+                if (_onProcessing.CurrentCount == 0)
+                {
+                    _onProcessing.Release(1);
+                }
+            }
+        }
+
         /// <summary>
         /// finds declared script commands in the script plugin
         /// </summary>

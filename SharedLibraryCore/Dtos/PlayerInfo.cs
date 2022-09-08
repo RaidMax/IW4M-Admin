@@ -34,5 +34,6 @@ namespace SharedLibraryCore.Dtos
         public string CurrentServerName { get; set; }
         public IGeoLocationResult GeoLocationInfo { get; set; }
         public ClientNoteMetaResponse NoteMeta { get; set; }
+        public List<IInteractionData> Interactions { get; set; }
     }
 }

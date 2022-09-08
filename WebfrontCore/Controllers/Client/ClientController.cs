@@ -25,14 +25,16 @@ namespace WebfrontCore.Controllers
         private readonly StatsConfiguration _config;
         private readonly IGeoLocationService _geoLocationService;
         private readonly ClientService _clientService;
+        private readonly IInteractionRegistration _interactionRegistration;
 
         public ClientController(IManager manager, IMetaServiceV2 metaService, StatsConfiguration config,
-            IGeoLocationService geoLocationService, ClientService clientService) : base(manager)
+            IGeoLocationService geoLocationService, ClientService clientService, IInteractionRegistration interactionRegistration) : base(manager)
         {
             _metaService = metaService;
             _config = config;
             _geoLocationService = geoLocationService;
             _clientService = clientService;
+            _interactionRegistration = interactionRegistration;
         }
 
         [Obsolete]
@@ -74,6 +76,8 @@ namespace WebfrontCore.Controllers
             {
                 note.OriginEntityName = await _clientService.GetClientNameById(note.OriginEntityId);
             }
+
+            var interactions = await _interactionRegistration.GetInteractions(id, client.GameName, token);
 
             // even though we haven't set their level to "banned" yet
             // (ie they haven't reconnected with the infringing player identifier)
@@ -137,7 +141,8 @@ namespace WebfrontCore.Controllers
                     ingameClient.CurrentServer.Port),
                 CurrentServerName = ingameClient?.CurrentServer?.Hostname,
                 GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString),
-                NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null: note
+                NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null: note,
+                Interactions = interactions.ToList()
             };
 
             var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest

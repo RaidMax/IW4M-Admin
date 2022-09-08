@@ -91,12 +91,18 @@ $(document).ready(function () {
     $(document).off('click', '.profile-action');
     $(document).on('click', '.profile-action', function (e) {
         e.preventDefault();
-        const actionType = $(this).data('action');
+        const action = $(this).data('action');
         const actionId = $(this).data('action-id');
+        const actionMeta = $(this).data('action-meta');
         const responseDuration = $(this).data('response-duration') || 5000;
-        const actionIdKey = actionId === undefined ? '' : `?id=${actionId}`;
+        let actionKeys = actionId === undefined ? '' : `?id=${actionId}`;
+        
+        if (actionMeta !== undefined) {
+            actionKeys = actionKeys + '&meta=' + JSON.stringify(actionMeta);
+        }
         showLoader();
-        $.get(`/Action/${actionType}Form/${actionIdKey}`)
+        
+        $.get(`/Action/${action}Form/${actionKeys}`)
             .done(function (response) {
                 $('#actionModal .modal-message').fadeOut('fast')
                 $('#actionModal').attr('data-response-duration', responseDuration);

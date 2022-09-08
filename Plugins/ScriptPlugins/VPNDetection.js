@@ -19,7 +19,7 @@ const commands = [{
 
 const plugin = {
     author: 'RaidMax',
-    version: 1.3,
+    version: 1.4,
     name: 'VPN Detection Plugin',
     manager: null,
     logger: null,
@@ -82,9 +82,35 @@ const plugin = {
         this.configHandler = _configHandler;
         this.configHandler.GetValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(element));
         this.logger.WriteInfo(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
+
+        this.interactionRegistration = _serviceResolver.ResolveService('IInteractionRegistration');
+        this.interactionRegistration.RegisterScriptInteraction('WhitelistVPN', this.name, (clientId, game, token) => {
+            if (vpnExceptionIds.includes(clientId)) {
+                return;
+            }
+
+            const helpers = importNamespace('SharedLibraryCore.Helpers');
+            const interactionData = new helpers.InteractionData();
+
+            interactionData.EntityId = clientId;
+            interactionData.Name = 'Whitelist VPN';
+            interactionData.DisplayMeta = 'oi-circle-check';
+
+            interactionData.ActionMeta.Add('InteractionId', 'command');
+            interactionData.ActionMeta.Add('Data', `whitelistvpn @${clientId}`);
+            interactionData.ActionMeta.Add('ActionButtonLabel', 'Allow');
+            interactionData.ActionMeta.Add('Name', 'Allow VPN Connection');
+            interactionData.ActionMeta.Add('ShouldRefresh', true.toString());
+
+            interactionData.ActionPath = 'DynamicAction';
+            interactionData.MinimumPermission = 3;
+            interactionData.Source = this.name;
+            return interactionData;
+        });
     },
 
     onUnloadAsync: function () {
+        this.interactionRegistration.UnregisterInteraction('WhitelistVPN');
     },
 
     onTickAsync: function (server) {

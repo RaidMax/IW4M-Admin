@@ -309,6 +309,7 @@ NoClipImpl()
     if ( !IsAlive( self ) )
     {
         self IPrintLnBold( "You are not alive" );
+        return;
     }
     
     if ( !IsDefined ( self.isNoClipped ) )
@@ -351,6 +352,7 @@ HideImpl()
     if ( !IsAlive( self ) )
     {
         self IPrintLnBold( "You are not alive" );
+        return;
     }
     
     if ( !IsDefined ( self.isHidden ) )

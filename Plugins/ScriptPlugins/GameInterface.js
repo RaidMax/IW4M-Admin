@@ -465,8 +465,9 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
 
                 if (event.subType === 'Meta') {
                     const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
-                    const meta = metaService.GetPersistentMeta(event.data, client, token).GetAwaiter().GetResult();
+                    const meta = metaService.GetPersistentMeta(event.data, client.ClientId, token).GetAwaiter().GetResult();
                     data[event.data] = meta === null ? '' : meta.Value;
+                    logger.WriteDebug(`event data is ${event.data}`);
                 } else {
                     data = {
                         level: client.Level,
@@ -612,7 +613,7 @@ const parseDataString = data => {
         dict[keyValue[0]] = keyValue[1];
     }
 
-    return dict.length === 0 ? data : dict;
+    return Object.keys(dict).length === 0 ? data : dict;
 }
 
 const validateEnabled = (server, origin) => {

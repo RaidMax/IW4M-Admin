@@ -193,8 +193,6 @@ PlayerSpawnEvents()
     }
     
     self RequestClientBasicData();
-    // example of requesting meta from IW4MAdmin
-    // self RequestClientMeta( "LastServerPlayed" );
 }
 
 PlayerTrackingOnInterval() 
@@ -436,7 +434,6 @@ SaveTrackingMetrics()
     }
 
     IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
-
 }
 
 BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data ) 
@@ -664,6 +661,8 @@ OnClientDataReceived( event )
         
         metaKey = event.data[0];
         clientData.meta[metaKey] = event.data[metaKey];
+
+ 	    LogDebug( "Meta Key=" + metaKey + ", Meta Value=" + event.data[metaKey] );
         
         return;
     }

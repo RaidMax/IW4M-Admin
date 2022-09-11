@@ -47,6 +47,7 @@ OnPlayerConnect()
         }
         
         player thread SetPersistentData();
+        player thread WaitForClientEvents();
     }
 }
 
@@ -65,6 +66,28 @@ RegisterClientCommands()
     scripts\_integration_base::AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
     scripts\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
     scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
+}
+
+WaitForClientEvents()
+{
+    self endon( "disconnect" );
+    
+    // example of requesting a meta value
+    lastServerMetaKey = "LastServerPlayed";
+    // self scripts\_integration_base::RequestClientMeta( lastServerMetaKey );
+
+    for ( ;; )
+    {
+        self waittill( level.eventTypes.localClientEvent, event );
+
+	    scripts\_integration_base::LogDebug( "Received client event " + event.type );
+        
+        if ( event.type == level.eventTypes.clientDataReceived && event.data[0] == lastServerMetaKey )
+        {
+            clientData = self.pers[level.clientDataKey];
+            lastServerPlayed = clientData.meta[lastServerMetaKey];
+        }
+    }
 }
 
 GetTotalShotsFired()

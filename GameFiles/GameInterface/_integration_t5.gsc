@@ -14,7 +14,7 @@ Setup()
     // it's possible that the notify type has not been defined yet so we have to hard code it 
     level waittill( "IntegrationBootstrapInitialized" );
     
-    scripts\_integration_base::RegisterLogger( ::Log2Console );
+    scripts\mp\_integration_base::RegisterLogger( ::Log2Console );
     
     level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
     level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
@@ -40,7 +40,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( scripts\_integration_base::_IsBot( player ) ) 
+        if ( scripts\mp\_integration_base::_IsBot( player ) ) 
         {
             // we don't want to track bots
             continue;    
@@ -52,19 +52,19 @@ OnPlayerConnect()
 
 RegisterClientCommands() 
 {
-    scripts\_integration_base::AddClientCommand( "GiveWeapon",     true,  ::GiveWeaponImpl );
-    scripts\_integration_base::AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
-    scripts\_integration_base::AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
-    scripts\_integration_base::AddClientCommand( "Hide",           false, ::HideImpl );
-    scripts\_integration_base::AddClientCommand( "Unhide",         false, ::UnhideImpl );
-    scripts\_integration_base::AddClientCommand( "Alert",          true,  ::AlertImpl );
-    scripts\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
-    scripts\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
-    scripts\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
-    scripts\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
-    scripts\_integration_base::AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
-    scripts\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
-    scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
+    scripts\mp\_integration_base::AddClientCommand( "GiveWeapon",     true,  ::GiveWeaponImpl );
+    scripts\mp\_integration_base::AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
+    scripts\mp\_integration_base::AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
+    scripts\mp\_integration_base::AddClientCommand( "Hide",           false, ::HideImpl );
+    scripts\mp\_integration_base::AddClientCommand( "Unhide",         false, ::UnhideImpl );
+    scripts\mp\_integration_base::AddClientCommand( "Alert",          true,  ::AlertImpl );
+    scripts\mp\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
+    scripts\mp\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
+    scripts\mp\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
+    scripts\mp\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
+    scripts\mp\_integration_base::AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
+    scripts\mp\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
+    scripts\mp\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
 }
 
 GetTotalShotsFired()
@@ -119,14 +119,14 @@ God()
     {
         // give IW4MAdmin time to collect IP
         wait( 15 );
-        scripts\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
-        scripts\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
+        scripts\mp\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
+        scripts\mp\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
         return;
     }
     
     guid = self SplitGuid();
     
-    scripts\_integration_base::LogDebug( "Persisting client guid " + guidHigh + "," + guidLow );
+    scripts\mp\_integration_base::LogDebug( "Persisting client guid " + guidHigh + "," + guidLow );
     
     self SetPlayerData( "bests", "none", guid["high"] );
     self SetPlayerData( "awards", "none", guid["low"] );
@@ -363,7 +363,7 @@ NoClipImpl()
 
     self IPrintLnBold( "NoClip enabled" );*/
 
-    scripts\_integration_base::LogWarning( "NoClip is not supported on T5!" );
+    scripts\mp\_integration_base::LogWarning( "NoClip is not supported on T5!" );
 
 }
 

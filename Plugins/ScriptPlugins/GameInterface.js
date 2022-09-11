@@ -148,24 +148,6 @@ let commands = [{
         }
     },
     {
-        name: 'unlockcontrols',
-        description: 'unlocks target player\'s controls',
-        alias: 'ulc',
-        permission: 'Administrator',
-        targetRequired: true,
-        arguments: [{
-            name: 'player',
-            required: true
-        }],
-        supportedGames: ['IW4', 'IW5'],
-        execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-                return;
-            }
-            sendScriptCommand(gameEvent.Owner, 'UnlockControls', gameEvent.Origin, gameEvent.Target, undefined);
-        }
-    },
-    {
         name: 'noclip',
         description: 'enable noclip on yourself ingame',
         alias: 'nc',
@@ -181,21 +163,6 @@ let commands = [{
         }
     },
     {
-        name: 'noclipoff',
-        description: 'disable noclip on yourself ingame',
-        alias: 'nco',
-        permission: 'SeniorAdmin',
-        targetRequired: false,
-        arguments: [],
-        supportedGames: ['IW4', 'IW5'],
-        execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-                return;
-            }
-            sendScriptCommand(gameEvent.Owner, 'NoClipOff', gameEvent.Origin, gameEvent.Origin, undefined);
-        }
-    },
-    {
         name: 'hide',
         description: 'hide yourself ingame',
         alias: 'hi',
@@ -208,21 +175,6 @@ let commands = [{
                 return;
             }
             sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, gameEvent.Origin, undefined);
-        }
-    },
-    {
-        name: 'unhide',
-        description: 'unhide yourself ingame',
-        alias: 'unh',
-        permission: 'SeniorAdmin',
-        targetRequired: false,
-        arguments: [],
-        supportedGames: ['IW4', 'IW5'],
-        execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-                return;
-            }
-            sendScriptCommand(gameEvent.Owner, 'Unhide', gameEvent.Origin, gameEvent.Origin, undefined);
         }
     },
     {

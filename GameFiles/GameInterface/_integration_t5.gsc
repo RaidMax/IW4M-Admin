@@ -47,6 +47,7 @@ OnPlayerConnect()
         }
         
         //player thread SetPersistentData();
+        player thread WaitForClientEvents();
     }
 }
 
@@ -56,15 +57,35 @@ RegisterClientCommands()
     scripts\mp\_integration_base::AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
     scripts\mp\_integration_base::AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
     scripts\mp\_integration_base::AddClientCommand( "Hide",           false, ::HideImpl );
-    scripts\mp\_integration_base::AddClientCommand( "Unhide",         false, ::UnhideImpl );
     scripts\mp\_integration_base::AddClientCommand( "Alert",          true,  ::AlertImpl );
     scripts\mp\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
     scripts\mp\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
     scripts\mp\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
-    scripts\mp\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
-    scripts\mp\_integration_base::AddClientCommand( "UnlockControls", true,  ::UnlockControlsImpl );
+    scripts\mp\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl );
     scripts\mp\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
     scripts\mp\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
+}
+
+WaitForClientEvents()
+{
+    self endon( "disconnect" );
+    
+    // example of requesting a meta value
+    lastServerMetaKey = "LastServerPlayed";
+    // self scripts\mp\_integration_base::RequestClientMeta( lastServerMetaKey );
+
+    for ( ;; )
+    {
+        self waittill( level.eventTypes.localClientEvent, event );
+
+	    scripts\mp\_integration_base::LogDebug( "Received client event " + event.type );
+        
+        if ( event.type == level.eventTypes.clientDataReceived && event.data[0] == lastServerMetaKey )
+        {
+            clientData = self.pers[level.clientDataKey];
+            lastServerPlayed = clientData.meta[lastServerMetaKey];
+        }
+    }
 }
 
 GetTotalShotsFired()
@@ -291,33 +312,38 @@ LockControlsImpl()
     {
         return self.name + "^7 is not alive";
     }
-    
 
-    self freezeControls( true );
-    self God();
-    self Hide();
-
-    info = [];
-    info[ "alertType" ] = "Alert!";
-    info[ "message" ] = "You have been frozen!";
-    
-    self AlertImpl( undefined, info );
-
-    return self.name + "\'s controls are locked";
-}
-
-UnlockControlsImpl()
-{
-    if ( !IsAlive( self ) )
+    if ( !IsDefined ( self.isControlLocked ) )
     {
-        return self.name + "^7 is not alive";
+        self.isControlLocked = false;
     }
-    
-    self freezeControls( false );
-    self God();
-    self Show();
 
-    return self.name + "\'s controls are unlocked";
+    if ( !self.isControlLocked )
+    {
+        self freezeControls( true );
+        self God();
+        self Hide();
+
+        info = [];
+        info[ "alertType" ] = "Alert!";
+        info[ "message" ] = "You have been frozen!";
+        
+        self AlertImpl( undefined, info );
+
+        self.isControlLocked = true;
+        
+        return self.name + "\'s controls are locked";
+    }
+    else
+    {
+        self freezeControls( false );
+        self God();
+        self Show();
+
+        self.isControlLocked = false;
+
+        return self.name + "\'s controls are unlocked";
+    }
 }
 
 NoClipImpl()
@@ -374,49 +400,38 @@ HideImpl()
         self IPrintLnBold( "You are not alive" );
         return;
     }
-
-    self SetClientDvar( "sv_cheats", 1 );
-    self SetClientDvar( "cg_thirdperson", 1 );
-    self SetClientDvar( "sv_cheats", 0 );
-
-    if ( !IsDefined( self.savedHealth ) || self.health < 1000 )
-    {
-        self.savedHealth = self.health;
-        self.savedMaxHealth = self.maxhealth;
-    }
-
-    self God();
-    self Hide();
-
-    self.isHidden = true;
-
-    self IPrintLnBold( "You are now ^5hidden ^7from other players" );
-}
-
-UnhideImpl()
-{
-    if ( !IsAlive( self ) )
-    {
-        self IPrintLnBold( "You are not alive" );
-        return;
-    }
     
-    if ( !IsDefined( self.isHidden ) || !self.isHidden ) 
+    if ( !IsDefined ( self.isHidden ) )
     {
-        self IPrintLnBold( "You are not hidden" );
-        return;
+        self.isHidden = false;
     }
 
-    self SetClientDvar( "sv_cheats", 1 );
-    self SetClientDvar( "cg_thirdperson", 0 );
-    self SetClientDvar( "sv_cheats", 0 );
-
-    self God();
-    self Show();
-
-    self.isHidden = false;
-    
-    self IPrintLnBold( "You are now ^5visible ^7to other players" );
+    if ( !self.isHidden )
+    {
+        self SetClientDvar( "sv_cheats", 1 );
+        self SetClientDvar( "cg_thirdperson", 1 );
+        self SetClientDvar( "sv_cheats", 0 );
+        
+        self God();
+        self Hide();
+        
+        self.isHidden = true;
+        
+        self IPrintLnBold( "Hide enabled" );
+    }
+    else
+    {
+        self SetClientDvar( "sv_cheats", 1 );
+        self SetClientDvar( "cg_thirdperson", 0 );
+        self SetClientDvar( "sv_cheats", 0 );
+        
+        self God();
+        self Show();
+        
+        self.isHidden = false;
+        
+        self IPrintLnBold( "Hide disabled" );
+    }
 }
 
 AlertImpl( event, data )

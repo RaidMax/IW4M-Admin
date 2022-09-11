@@ -345,13 +345,13 @@ NoClipImpl()
 
     if ( !self.isNoClipped )
     {
-        self SetClientDvar( "sv_cheats", 1 );
+        SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 1 );
-        self SetClientDvar( "sv_cheats", 0 );
         
         self God();
         self Noclip();
         self Hide();
+        SetDvar( "sv_cheats", 0 );
         
         self.isNoClipped = true;
         
@@ -359,13 +359,14 @@ NoClipImpl()
     }
     else
     {
-        self SetClientDvar( "sv_cheats", 1 );
-        self SetClientDvar( "cg_thirdperson", 1 );
-        self SetClientDvar( "sv_cheats", 0 );
+        SetDvar( "sv_cheats", 1 );
+        self SetClientDvar( "cg_thirdperson", 0 );
         
         self God();
         self Noclip();
         self Hide();
+        
+        SetDvar( "sv_cheats", 0 );
         
         self.isNoClipped = false;
         
@@ -390,12 +391,12 @@ HideImpl()
 
     if ( !self.isHidden )
     {
-        self SetClientDvar( "sv_cheats", 1 );
+        SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 1 );
-        self SetClientDvar( "sv_cheats", 0 );
         
         self God();
         self Hide();
+        SetDvar( "sv_cheats", 0 );
         
         self.isHidden = true;
         
@@ -403,12 +404,12 @@ HideImpl()
     }
     else
     {
-        self SetClientDvar( "sv_cheats", 1 );
+        SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 0 );
-        self SetClientDvar( "sv_cheats", 0 );
         
         self God();
         self Show();
+        SetDvar( "sv_cheats", 0 );
         
         self.isHidden = false;
         

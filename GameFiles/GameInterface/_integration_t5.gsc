@@ -111,7 +111,13 @@ Log2Console( logLevel, message )
 
 God()
 {
-    if ( !IsDefined( self.godmode ) && !self.godmode )
+
+    if ( !IsDefined( self.godmode ) )
+    {
+        self.godmode = false;
+    }
+    
+    if (!self.godmode )
     {
         self enableInvulnerability();
         self.godmode = true;
@@ -272,7 +278,7 @@ GiveWeaponImpl( event, data )
     return self.name + "^7 has been given ^5" + data["weaponName"]; 
 }
 
-TakeWeaponsImpl()
+TakeWeaponsImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -285,7 +291,7 @@ TakeWeaponsImpl()
     return "Took weapons from " + self.name;
 }
 
-TeamSwitchImpl()
+TeamSwitchImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -306,7 +312,7 @@ TeamSwitchImpl()
     return self.name + "^7 switched to " + self.team;
 }
 
-LockControlsImpl()
+LockControlsImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -346,7 +352,7 @@ LockControlsImpl()
     }
 }
 
-NoClipImpl()
+NoClipImpl( event, data )
 {
     /*if ( !IsAlive( self ) )
     {
@@ -393,7 +399,7 @@ NoClipImpl()
 
 }
 
-HideImpl()
+HideImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -436,9 +442,7 @@ HideImpl()
 
 AlertImpl( event, data )
 {
-    if ( level.eventBus.gamename == "IW5" ) {
-        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
-    }
+    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
 
     return "Sent alert to " + self.name; 
 }
@@ -480,7 +484,7 @@ GotoPlayerImpl( target )
     self IPrintLnBold( "Moved to " + target.name );
 }
 
-PlayerToMeImpl( event )
+PlayerToMeImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -491,7 +495,7 @@ PlayerToMeImpl( event )
     return "Moved here " + self.name;    
 }
 
-KillImpl()
+KillImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -504,7 +508,7 @@ KillImpl()
     return "You killed " + self.name;
 }
 
-SetSpectatorImpl()
+SetSpectatorImpl( event, data )
 {
     if ( self.pers["team"] == "spectator" ) 
     {

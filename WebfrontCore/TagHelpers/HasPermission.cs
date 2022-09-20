@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Data.Models.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using SharedLibraryCore;
@@ -30,7 +31,7 @@ public class HasPermission : TagHelper
     {
         output.TagName = null;
         var permissionLevel = _contextAccessor?.HttpContext?.User.Claims
-            .FirstOrDefault(claim => claim.Type == ClaimTypes.Role)?.Value;
+            .FirstOrDefault(claim => claim.Type == ClaimTypes.Role)?.Value ?? EFClient.Permission.User.ToString();
 
         var hasPermission = permissionLevel != null && _permissionSets.ContainsKey(permissionLevel) &&
                             _permissionSets[permissionLevel].HasPermission(Entity, Permission);

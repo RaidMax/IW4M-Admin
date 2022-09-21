@@ -415,16 +415,19 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
 
                 let data = [];
 
+                const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
+
                 if (event.subType === 'Meta') {
-                    const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
                     const meta = metaService.GetPersistentMeta(event.data, client.ClientId, token).GetAwaiter().GetResult();
                     data[event.data] = meta === null ? '' : meta.Value;
                     logger.WriteDebug(`event data is ${event.data}`);
                 } else {
+                    const tagMeta = metaService.GetPersistentMetaByLookup('ClientTagV2', 'ClientTagNameV2', client.ClientId, token).GetAwaiter().GetResult();
                     data = {
                         level: client.Level,
                         clientId: client.ClientId,
-                        lastConnection: client.LastConnection
+                        lastConnection: client.LastConnection,
+                        tag: tagMeta?.Value
                     };
                 }
 

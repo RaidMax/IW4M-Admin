@@ -427,7 +427,7 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
                         level: client.Level,
                         clientId: client.ClientId,
                         lastConnection: client.LastConnection,
-                        tag: tagMeta?.Value
+                        tag: tagMeta?.Value ?? ''
                     };
                 }
 

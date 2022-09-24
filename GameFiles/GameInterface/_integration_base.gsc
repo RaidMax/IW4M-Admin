@@ -670,6 +670,7 @@ OnClientDataReceived( event )
     clientData.permissionLevel = event.data["level"];
     clientData.clientId = event.data["clientId"];
     clientData.lastConnection = event.data["lastConnection"];
+    clientData.tag = event.data["tag"];
     clientData.state = "complete";
     self.persistentClientId = event.data["clientId"];
 

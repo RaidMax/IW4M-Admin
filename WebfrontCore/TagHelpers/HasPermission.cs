@@ -33,7 +33,7 @@ public class HasPermission : TagHelper
         var permissionLevel = _contextAccessor?.HttpContext?.User.Claims
             .FirstOrDefault(claim => claim.Type == ClaimTypes.Role)?.Value ?? EFClient.Permission.User.ToString();
 
-        var hasPermission = permissionLevel != null && _permissionSets.ContainsKey(permissionLevel) &&
+        var hasPermission = _permissionSets.ContainsKey(permissionLevel) &&
                             _permissionSets[permissionLevel].HasPermission(Entity, Permission);
         if (!hasPermission)
         {

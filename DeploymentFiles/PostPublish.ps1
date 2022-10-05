@@ -9,7 +9,7 @@ foreach($localization in $localizations)
 {
     $url = "http://api.raidmax.org:5000/localization/{0}" -f $localization
     $filePath = "{0}\Localization\IW4MAdmin.{1}.json" -f $PublishDir, $localization
-    $response = Invoke-WebRequest $url
+    $response = Invoke-WebRequest $url -UseBasicParsing
     Out-File -FilePath $filePath -InputObject $response.Content -Encoding utf8
 }
 

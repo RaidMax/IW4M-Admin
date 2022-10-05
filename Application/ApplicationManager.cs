@@ -43,7 +43,6 @@ namespace IW4MAdmin.Application
         public bool IsInitialized { get; private set; }
         public DateTime StartTime { get; private set; }
         public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
-
         public IList<IRConParser> AdditionalRConParsers { get; }
         public IList<IEventParser> AdditionalEventParsers { get; }
         public IList<Func<GameEvent, bool>> CommandInterceptors { get; set; } =
@@ -77,15 +76,23 @@ namespace IW4MAdmin.Application
         private readonly IServiceProvider _serviceProvider;
         private readonly ChangeHistoryService _changeHistoryService;
         private readonly ApplicationConfiguration _appConfig;
-        public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } = new ConcurrentDictionary<long, GameEvent>();
 
-        public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
+        public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } =
+            new ConcurrentDictionary<long, GameEvent>();
+
+        public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler,
+            IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
-            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
-            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
-            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
-            IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
-            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager)
+            IConfigurationHandler<ApplicationConfiguration> appConfigHandler,
+            IGameServerInstanceFactory serverInstanceFactory,
+            IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory,
+            IEnumerable<IRegisterEvent> customParserEvents,
+            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory,
+            IDatabaseContextFactory contextFactory,
+            IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver,
+            ClientService clientService, IServiceProvider serviceProvider,
+            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig,
+            PenaltyService penaltyService, IAlertManager alertManager)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -96,8 +103,10 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, _appConfig) };
-            AdditionalRConParsers = new List<IRConParser> { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
+            AdditionalEventParsers = new List<IEventParser>
+                {new BaseEventParser(parserRegexFactory, logger, _appConfig)};
+            AdditionalRConParsers = new List<IRConParser>
+                {new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory)};
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
             _tokenSource = new CancellationTokenSource();
@@ -122,7 +131,7 @@ namespace IW4MAdmin.Application
         public async Task ExecuteEvent(GameEvent newEvent)
         {
             ProcessingEvents.TryAdd(newEvent.Id, newEvent);
-            
+
             // the event has failed already
             if (newEvent.Failed)
             {
@@ -151,7 +160,8 @@ namespace IW4MAdmin.Application
             catch (AuthorizationException ex)
             {
                 newEvent.FailReason = EventFailReason.Permission;
-                newEvent.Origin.Tell($"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {ex.Message}");
+                newEvent.Origin.Tell(
+                    $"{Utilities.CurrentLocalization.LocalizationIndex["COMMAND_NOTAUTHORIZED"]} - {ex.Message}");
             }
 
             catch (NetworkException ex)
@@ -175,7 +185,8 @@ namespace IW4MAdmin.Application
             catch (Exception ex)
             {
                 newEvent.FailReason = EventFailReason.Exception;
-                Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"].FormatExt(newEvent.Owner));
+                Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_EXCEPTION"]
+                    .FormatExt(newEvent.Owner));
                 using (LogContext.PushProperty("Server", newEvent.Owner?.ToString()))
                 {
                     _logger.LogError(ex, "Unexpected exception");
@@ -201,7 +212,8 @@ namespace IW4MAdmin.Application
             }
 
             // we don't want to remove events that are correlated to command
-            if (ProcessingEvents.Values.ToList()?.Count(gameEvent => gameEvent.CorrelationId == newEvent.CorrelationId) == 1)
+            if (ProcessingEvents.Values.ToList()
+                    ?.Count(gameEvent => gameEvent.CorrelationId == newEvent.CorrelationId) == 1)
             {
                 ProcessingEvents.Remove(newEvent.Id, out _);
             }
@@ -226,20 +238,23 @@ namespace IW4MAdmin.Application
         public async Task UpdateServerStates()
         {
             // store the server hash code and task for it
-            var runningUpdateTasks = new Dictionary<long, (Task task, CancellationTokenSource tokenSource, DateTime startTime)>();
+            var runningUpdateTasks =
+                new Dictionary<long, (Task task, CancellationTokenSource tokenSource, DateTime startTime)>();
 
             while (!_tokenSource.IsCancellationRequested)
             {
                 // select the server ids that have completed the update task
+                // we want to cancel if a task takes longer than 5 minutes
                 var serverTasksToRemove = runningUpdateTasks
-                    .Where(ut => ut.Value.task.Status == TaskStatus.RanToCompletion ||
-                                 ut.Value.task.Status == TaskStatus.Canceled || // we want to cancel if a task takes longer than 5 minutes
-                                 ut.Value.task.Status == TaskStatus.Faulted || DateTime.Now - ut.Value.startTime > TimeSpan.FromMinutes(5))
+                    .Where(ut =>
+                        ut.Value.task.Status is TaskStatus.RanToCompletion or TaskStatus.Canceled
+                            or TaskStatus.Faulted || DateTime.Now - ut.Value.startTime > TimeSpan.FromMinutes(5))
                     .Select(ut => ut.Key)
                     .ToList();
 
                 // remove the update tasks as they have completed
-                foreach (var serverId in serverTasksToRemove.Where(serverId => runningUpdateTasks.ContainsKey(serverId)))
+                foreach (var serverId in
+                         serverTasksToRemove.Where(serverId => runningUpdateTasks.ContainsKey(serverId)))
                 {
                     if (!runningUpdateTasks[serverId].tokenSource.Token.IsCancellationRequested)
                     {
@@ -291,6 +306,7 @@ namespace IW4MAdmin.Application
                     {
                         await server.ProcessUpdatesAsync(_tokenSource.Token);
                     }
+
                     break;
                 }
             }
@@ -302,15 +318,19 @@ namespace IW4MAdmin.Application
             ExternalIPAddress = await Utilities.GetExternalIP();
 
             #region DATABASE
+
             _logger.LogInformation("Beginning database migration sync");
             Console.WriteLine(_translationLookup["MANAGER_MIGRATION_START"]);
             await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
-            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
+            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(),
+                _tokenSource.Token);
             _logger.LogInformation("Finished database migration sync");
             Console.WriteLine(_translationLookup["MANAGER_MIGRATION_END"]);
+
             #endregion
 
             #region PLUGINS
+
             foreach (var plugin in Plugins)
             {
                 try
@@ -322,12 +342,14 @@ namespace IW4MAdmin.Application
                         {
                             try
                             {
-                                await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver);
+                                await scriptPlugin.Initialize(this, _scriptCommandFactory,
+                                    _scriptPluginServiceResolver);
                             }
 
                             catch (Exception ex)
                             {
-                                Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_ERROR"].FormatExt(scriptPlugin.Name));
+                                Console.WriteLine(Utilities.CurrentLocalization
+                                    .LocalizationIndex["PLUGIN_IMPORTER_ERROR"].FormatExt(scriptPlugin.Name));
                                 _logger.LogError(ex, "Could not properly load plugin {plugin}", scriptPlugin.Name);
                             }
                         };
@@ -344,16 +366,18 @@ namespace IW4MAdmin.Application
                     _logger.LogError(ex, $"{_translationLookup["SERVER_ERROR_PLUGIN"]} {plugin.Name}");
                 }
             }
+
             #endregion
 
             #region CONFIG
+
             // copy over default config if it doesn't exist
             if (!_appConfig.Servers?.Any() ?? true)
             {
                 var defaultHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
                 await defaultHandler.BuildAsync();
                 var defaultConfig = defaultHandler.Configuration();
-        
+
                 _appConfig.AutoMessages = defaultConfig.AutoMessages;
                 _appConfig.GlobalRules = defaultConfig.GlobalRules;
                 _appConfig.DisallowedClientNames = defaultConfig.DisallowedClientNames;
@@ -376,7 +400,8 @@ namespace IW4MAdmin.Application
                             serverConfig.AddEventParser(parser);
                         }
 
-                        _appConfig.Servers = _appConfig.Servers.Where(_servers => _servers != null).Append((ServerConfiguration)serverConfig.Generate()).ToArray();
+                        _appConfig.Servers = _appConfig.Servers.Where(_servers => _servers != null)
+                            .Append((ServerConfiguration) serverConfig.Generate()).ToArray();
                     } while (Utilities.PromptBool(_translationLookup["SETUP_SERVER_SAVE"]));
 
                     await ConfigHandler.Save();
@@ -439,6 +464,7 @@ namespace IW4MAdmin.Application
 
                         serverConfig.ModifyParsers();
                     }
+
                     await ConfigHandler.Save();
                 }
             }
@@ -449,14 +475,17 @@ namespace IW4MAdmin.Application
             }
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(_appConfig.CustomParserEncoding) ? _appConfig.CustomParserEncoding : "windows-1252");
+            Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(_appConfig.CustomParserEncoding)
+                ? _appConfig.CustomParserEncoding
+                : "windows-1252");
 
             foreach (var parser in AdditionalRConParsers)
             {
                 if (!parser.Configuration.ColorCodeMapping.ContainsKey(ColorCodes.Accent.ToString()))
                 {
                     parser.Configuration.ColorCodeMapping.Add(ColorCodes.Accent.ToString(),
-                        parser.Configuration.ColorCodeMapping.TryGetValue(_appConfig.IngameAccentColorKey, out var colorCode)
+                        parser.Configuration.ColorCodeMapping.TryGetValue(_appConfig.IngameAccentColorKey,
+                            out var colorCode)
                             ? colorCode
                             : "");
                 }
@@ -465,6 +494,7 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region COMMANDS
+
             if (await ClientSvc.HasOwnerAsync(_tokenSource.Token))
             {
                 _commands.RemoveAll(_cmd => _cmd.GetType() == typeof(OwnerCommand));
@@ -481,7 +511,8 @@ namespace IW4MAdmin.Application
 
             else
             {
-                var unsavedCommands = _commands.Where(_cmd => !cmdConfig.Commands.Keys.Contains(_cmd.CommandConfigNameForType()));
+                var unsavedCommands = _commands.Where(_cmd =>
+                    !cmdConfig.Commands.Keys.Contains(_cmd.CommandConfigNameForType()));
                 commandsToAddToConfig.AddRange(unsavedCommands);
             }
 
@@ -496,25 +527,28 @@ namespace IW4MAdmin.Application
                 {
                     continue;
                 }
+
                 cmdConfig.Commands.Add(cmd.CommandConfigNameForType(),
-                new CommandProperties
-                {
-                    Name = cmd.Name,
-                    Alias = cmd.Alias,
-                    MinimumPermission = cmd.Permission,
-                    AllowImpersonation = cmd.AllowImpersonation,
-                    SupportedGames = cmd.SupportedGames
-                });
+                    new CommandProperties
+                    {
+                        Name = cmd.Name,
+                        Alias = cmd.Alias,
+                        MinimumPermission = cmd.Permission,
+                        AllowImpersonation = cmd.AllowImpersonation,
+                        SupportedGames = cmd.SupportedGames
+                    });
             }
 
             _commandConfiguration.Set(cmdConfig);
             await _commandConfiguration.Save();
+
             #endregion
 
             _metaRegistration.Register();
             await _alertManager.Initialize();
 
             #region CUSTOM_EVENTS
+
             foreach (var customEvent in _customParserEvents.SelectMany(_events => _events.Events))
             {
                 foreach (var parser in AdditionalEventParsers)
@@ -522,6 +556,7 @@ namespace IW4MAdmin.Application
                     parser.RegisterCustomEvent(customEvent.Item1, customEvent.Item2, customEvent.Item3);
                 }
             }
+
             #endregion
 
             Console.WriteLine(_translationLookup["MANAGER_COMMUNICATION_INFO"]);
@@ -547,8 +582,10 @@ namespace IW4MAdmin.Application
                         await ServerInstance.Initialize();
 
                         _servers.Add(ServerInstance);
-                        Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(ServerInstance.Hostname.StripColors()));
-                        _logger.LogInformation("Finishing initialization and now monitoring [{Server}]", ServerInstance.Hostname);
+                        Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"]
+                            .FormatExt(ServerInstance.Hostname.StripColors()));
+                        _logger.LogInformation("Finishing initialization and now monitoring [{Server}]",
+                            ServerInstance.Hostname);
                     }
 
                     // add the start event for this server
@@ -565,11 +602,13 @@ namespace IW4MAdmin.Application
 
                 catch (ServerException e)
                 {
-                    Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"].FormatExt($"[{Conf.IPAddress}:{Conf.Port}]"));
+                    Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"]
+                        .FormatExt($"[{Conf.IPAddress}:{Conf.Port}]"));
                     using (LogContext.PushProperty("Server", $"{Conf.IPAddress}:{Conf.Port}"))
                     {
                         _logger.LogError(e, "Unexpected exception occurred during initialization");
                     }
+
                     lastException = e;
                 }
             }
@@ -604,10 +643,10 @@ namespace IW4MAdmin.Application
                 {
                     _logger.LogError(ex, "Could not cleanly unload plugin {PluginName}", plugin.Name);
                 }
-            }   
-            
+            }
+
             _tokenSource.Cancel();
-            
+
             IsRunning = false;
         }
 
@@ -635,10 +674,10 @@ namespace IW4MAdmin.Application
             return _servers.SelectMany(s => s.Clients).ToList().Where(p => p != null).ToList();
         }
 
-        public EFClient FindActiveClient(EFClient client) => client.ClientNumber < 0 ?
-                GetActiveClients()
-                    .FirstOrDefault(c => c.NetworkId == client.NetworkId && c.GameName == client.GameName) ?? client :
-                client;
+        public EFClient FindActiveClient(EFClient client) => client.ClientNumber < 0
+            ? GetActiveClients()
+                .FirstOrDefault(c => c.NetworkId == client.NetworkId && c.GameName == client.GameName) ?? client
+            : client;
 
         public ClientService GetClientService()
         {
@@ -667,7 +706,8 @@ namespace IW4MAdmin.Application
 
         public IRConParser GenerateDynamicRConParser(string name)
         {
-            return new DynamicRConParser(_serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), _parserRegexFactory)
+            return new DynamicRConParser(_serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(),
+                _parserRegexFactory)
             {
                 Name = name
             };
@@ -684,7 +724,7 @@ namespace IW4MAdmin.Application
         public async Task<IList<T>> ExecuteSharedDatabaseOperation<T>(string operationName)
         {
             var result = await _operationLookup[operationName];
-            return (IList<T>)result;
+            return (IList<T>) result;
         }
 
         public void RegisterSharedDatabaseOperation(Task<IList> operation, string operationName)
@@ -696,13 +736,16 @@ namespace IW4MAdmin.Application
         {
             if (_commands.Any(_command => _command.Name == command.Name || _command.Alias == command.Alias))
             {
-                throw new InvalidOperationException($"Duplicate command name or alias ({command.Name}, {command.Alias})");
+                throw new InvalidOperationException(
+                    $"Duplicate command name or alias ({command.Name}, {command.Alias})");
             }
 
             _commands.Add(command);
         }
 
-        public void RemoveCommandByName(string commandName) => _commands.RemoveAll(_command => _command.Name == commandName);
+        public void RemoveCommandByName(string commandName) =>
+            _commands.RemoveAll(_command => _command.Name == commandName);
+
         public IAlertManager AlertManager => _alertManager;
     }
 }

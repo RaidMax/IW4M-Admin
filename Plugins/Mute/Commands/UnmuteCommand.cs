@@ -6,14 +6,14 @@ using SharedLibraryCore.Interfaces;
 
 namespace Mute.Commands;
 
-public class MuteCommand : Command
+public class UnmuteCommand : Command
 {
-    public MuteCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+    public UnmuteCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
         translationLookup)
     {
-        Name = "mute";
-        Description = translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_DESC"];
-        Alias = "mu";
+        Name = "unmute";
+        Description = translationLookup["PLUGINS_MUTE_COMMANDS_UNMUTE_DESC"];
+        Alias = "um";
         Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
         SupportedGames = Plugin.SupportedGames;
@@ -34,16 +34,16 @@ public class MuteCommand : Command
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
-        if (await Plugin.MuteManager.Mute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, null, gameEvent.Data))
+        if (await Plugin.MuteManager.Unmute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, gameEvent.Data))
         {
-            gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_MUTED"]
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_UNMUTE_UNMUTED"]
                 .FormatExt(gameEvent.Target.CleanedName));
-            gameEvent.Target.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_TARGET_MUTED"]
+            gameEvent.Target.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_UNMUTE_TARGET_UNMUTED"]
                 .FormatExt(gameEvent.Data));
             return;
         }
 
-        gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_NOT_UNMUTED"]
+        gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_UNMUTE_NOT_MUTED"]
             .FormatExt(gameEvent.Target.CleanedName));
     }
 }

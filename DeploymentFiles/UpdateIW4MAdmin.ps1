@@ -39,7 +39,7 @@ else
 
 Write-Output "Retrieving latest version info..."
 
-$releaseInfo = (Invoke-WebRequest $releasesUri | ConvertFrom-Json) | Select -First 1
+$releaseInfo = (Invoke-WebRequest $releasesUri -UseBasicParsing | ConvertFrom-Json) | Select -First 1
 $asset = $releaseInfo.assets | Where-Object name -like $assetPattern | Select -First 1
 $downloadUri = $asset.browser_download_url
 $filename = Split-Path $downloadUri -leaf
@@ -55,7 +55,7 @@ if (!$Silent)
 
 Write-Output "Downloading update. This might take a moment..."
 
-$fileDownload = Invoke-WebRequest -Uri $downloadUri
+$fileDownload = Invoke-WebRequest -Uri $downloadUri -UseBasicParsing
 if ($fileDownload.StatusDescription -ne "OK")
 {
     throw "Could not update IW4MAdmin. ($fileDownload.StatusDescription)"

@@ -578,7 +578,11 @@ NotifyClientEvent( eventInfo )
     event.origin = origin;
     event.target = target;
     
-    LogDebug( "NotifyClientEvent->" + event.data );
+    if ( IsDefined( event.data ) )
+    {
+        LogDebug( "NotifyClientEvent->" + event.data );
+    }
+    
     if ( int( eventInfo[3] ) != -1 && !IsDefined( origin ) )
     {
         LogDebug( "origin is null but the slot id is " + int( eventInfo[3] ) );
@@ -700,7 +704,7 @@ OnExecuteCommand( event )
     }
     
     // send back the response to the origin, but only if they're not the target
-    if ( response != "" && IsPlayer( event.origin ) && event.origin != event.target ) 
+    if ( IsDefined( response ) && response != "" && IsPlayer( event.origin ) && event.origin != event.target ) 
     {
         event.origin IPrintLnBold( response );
     }

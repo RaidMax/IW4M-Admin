@@ -46,6 +46,8 @@ namespace IW4MAdmin.Application
 
         public IList<IRConParser> AdditionalRConParsers { get; }
         public IList<IEventParser> AdditionalEventParsers { get; }
+        public IList<Func<GameEvent, bool>> CommandInterceptors { get; set; } =
+            new List<Func<GameEvent, bool>>();
         public ITokenAuthentication TokenAuthenticator { get; }
         public CancellationToken CancellationToken => _tokenSource.Token;
         public string ExternalIPAddress { get; private set; }

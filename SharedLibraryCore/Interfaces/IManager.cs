@@ -23,6 +23,7 @@ namespace SharedLibraryCore.Interfaces
         IList<IRConParser> AdditionalRConParsers { get; }
         IList<IEventParser> AdditionalEventParsers { get; }
         IMiddlewareActionHandler MiddlewareActionHandler { get; }
+        IList<Func<GameEvent, bool>> CommandInterceptors { get; }
         string Version { get; }
         ITokenAuthentication TokenAuthenticator { get; }
         string ExternalIPAddress { get; }

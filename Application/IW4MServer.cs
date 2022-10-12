@@ -158,8 +158,6 @@ namespace IW4MAdmin
                     await E.Origin.Lock();
                 }
 
-                var canExecuteCommand = true;
-
                 try
                 {
                     if (!await ProcessEvent(E))
@@ -188,32 +186,31 @@ namespace IW4MAdmin
                         }
                     }
 
-                    try
+                    var canExecuteCommand = Manager.CommandInterceptors.All(interceptor =>
                     {
-                        var loginPlugin = Manager.Plugins.FirstOrDefault(plugin => plugin.Name == "Login");
-
-                        if (loginPlugin != null)
+                        try
                         {
-                            await loginPlugin.OnEventAsync(E, this);
+                            return interceptor(E);
                         }
+                        catch
+                        {
+                            return true;
+                        }
+                    });
+
+                    if (!canExecuteCommand)
+                    {
+                        E.Origin.Tell(_translationLookup["SERVER_COMMANDS_INTERCEPTED"]);
                     }
 
-                    catch (AuthorizationException e)
+                    else if (E.Type == GameEvent.EventType.Command && E.Extra is Command cmd)
                     {
-                        E.Origin.Tell($"{loc["COMMAND_NOTAUTHORIZED"]} - {e.Message}");
-                        canExecuteCommand = false;
-                    }
-
-                    // hack: this prevents commands from getting executing that 'shouldn't' be
-                    if (E.Type == GameEvent.EventType.Command && E.Extra is Command cmd &&
-                        (canExecuteCommand || E.Origin?.Level == Permission.Console))
-                    {
-                        ServerLogger.LogInformation("Executing command {Command} for {Client}", cmd.Name, E.Origin.ToString());
+                        ServerLogger.LogInformation("Executing command {Command} for {Client}", cmd.Name,
+                            E.Origin.ToString());
                         await cmd.ExecuteAsync(E);
                     }
 
                     var pluginTasks = Manager.Plugins
-                        .Where(plugin => plugin.Name != "Login")
                         .Select(async plugin => await CreatePluginTask(plugin, E));
                     
                     await Task.WhenAll(pluginTasks);

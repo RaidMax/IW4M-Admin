@@ -26,55 +26,58 @@ namespace IW4MAdmin.Plugins.Login
             _configHandler = configurationHandlerFactory.GetConfigurationHandler<Configuration>("LoginPluginSettings");
         }
 
-        public Task OnEventAsync(GameEvent E, Server S)
+        public Task OnEventAsync(GameEvent gameEvent, Server server)
         {
-            if (E.IsRemote || _configHandler.Configuration().RequirePrivilegedClientLogin == false)
+            if (gameEvent.IsRemote || _configHandler.Configuration().RequirePrivilegedClientLogin == false)
                 return Task.CompletedTask;
 
-            if (E.Type == GameEvent.EventType.Connect)
+            if (gameEvent.Type == GameEvent.EventType.Connect)
             {
-                AuthorizedClients.TryAdd(E.Origin.ClientId, false);
-                E.Origin.SetAdditionalProperty("IsLoggedIn", false);
+                AuthorizedClients.TryAdd(gameEvent.Origin.ClientId, false);
+                gameEvent.Origin.SetAdditionalProperty("IsLoggedIn", false);
             }
 
-            if (E.Type == GameEvent.EventType.Disconnect)
+            if (gameEvent.Type == GameEvent.EventType.Disconnect)
             {
-                AuthorizedClients.TryRemove(E.Origin.ClientId, out bool value);
+                AuthorizedClients.TryRemove(gameEvent.Origin.ClientId, out _);
             }
-
-            if (E.Type == GameEvent.EventType.Command)
-            {
-                if (E.Origin.Level < EFClient.Permission.Moderator ||
-                    E.Origin.Level == EFClient.Permission.Console)
-                    return Task.CompletedTask;
-
-                if (E.Extra.GetType() == typeof(SetPasswordCommand) &&
-                    E.Origin?.Password == null)
-                    return Task.CompletedTask;
-
-                if (E.Extra.GetType() == typeof(LoginCommand))
-                    return Task.CompletedTask;
-
-                if (E.Extra.GetType() == typeof(RequestTokenCommand))
-                    return Task.CompletedTask;
-
-                if (!AuthorizedClients[E.Origin.ClientId])
-                {
-                    throw new AuthorizationException(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_LOGIN_AUTH"]);
-                }
-
-                else
-                {
-                    E.Origin.SetAdditionalProperty("IsLoggedIn", true);
-                }
-            }
-
+            
             return Task.CompletedTask;
         }
 
         public async Task OnLoadAsync(IManager manager)
         {
             AuthorizedClients = new ConcurrentDictionary<int, bool>();
+
+            manager.CommandInterceptors.Add(gameEvent =>
+            {
+                if (gameEvent.Type != GameEvent.EventType.Command)
+                {
+                    return true;
+                }
+
+                if (gameEvent.Origin.Level < EFClient.Permission.Moderator ||
+                    gameEvent.Origin.Level == EFClient.Permission.Console)
+                    return true;
+
+                if (gameEvent.Extra.GetType() == typeof(SetPasswordCommand) &&
+                    gameEvent.Origin?.Password == null)
+                    return true;
+
+                if (gameEvent.Extra.GetType() == typeof(LoginCommand))
+                    return true;
+
+                if (gameEvent.Extra.GetType() == typeof(RequestTokenCommand))
+                    return true;
+
+                if (!AuthorizedClients[gameEvent.Origin.ClientId])
+                {
+                    return false;
+                }
+
+                gameEvent.Origin.SetAdditionalProperty("IsLoggedIn", true);
+                return true;
+            });
 
             await _configHandler.BuildAsync();
             if (_configHandler.Configuration() == null)

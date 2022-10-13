@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Mute.Commands;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Database.Models;
@@ -20,12 +21,14 @@ public class Plugin : IPlugin
     public static readonly Server.Game[] SupportedGames = {Server.Game.IW4};
     private static readonly string[] DisabledCommands = {nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"};
     private readonly IInteractionRegistration _interactionRegistration;
+    private readonly IRemoteCommandService _remoteCommandService;
     private static readonly string MuteInteraction = nameof(MuteInteraction);
 
-    public Plugin(IMetaServiceV2 metaService, IInteractionRegistration interactionRegistration,
-        ITranslationLookup translationLookup, ILogger<Plugin> logger)
+    public Plugin(ILogger<Plugin> logger, IMetaServiceV2 metaService, IInteractionRegistration interactionRegistration,
+        ITranslationLookup translationLookup, IRemoteCommandService remoteCommandService)
     {
         _interactionRegistration = interactionRegistration;
+        _remoteCommandService = remoteCommandService;
         MuteManager = new MuteManager(metaService, translationLookup, logger);
     }
 
@@ -119,81 +122,171 @@ public class Plugin : IPlugin
 
         manager.CommandInterceptors.Add(gameEvent =>
         {
-            if (gameEvent.Extra is not Command command) return true;
+            if (gameEvent.Extra is not Command command)
+                return true;
             return !DisabledCommands.Contains(command.GetType().Name) && !command.IsBroadcast;
         });
 
-        _interactionRegistration.RegisterInteraction(MuteInteraction, async (clientId, game, token) =>
+        _interactionRegistration.RegisterInteraction(MuteInteraction, async (targetClientId, game, token) =>
         {
-            if (!clientId.HasValue || game.HasValue && !SupportedGames.Contains((Server.Game) game.Value))
+            if (!targetClientId.HasValue || game.HasValue && !SupportedGames.Contains((Server.Game)game.Value))
             {
                 return null;
             }
 
-            var reasonInput = new {Name = "Reason", Placeholder = "Reason", TargetId = clientId};
-            var durationInput = new {Name = "Length", Placeholder = "Length", TargetId = clientId};
-            var inputs = new[] {reasonInput, durationInput};
-            var inputsJson = JsonSerializer.Serialize(inputs);
-
-            var clientMuteMetaState = (await MuteManager.GetCurrentMuteState(new EFClient {ClientId = clientId.Value}))
+            var clientMuteMetaState =
+                (await MuteManager.GetCurrentMuteState(new EFClient { ClientId = targetClientId.Value }))
                 .MuteState;
+            var server = manager.GetServers().First();
+
+            string GetCommandName(Type commandType) =>
+                manager.Commands.FirstOrDefault(command => command.GetType() == commandType)?.Name ?? "";
 
             return clientMuteMetaState is MuteState.Unmuted or MuteState.Unmuting
-                ? new InteractionData
-                {
-                    EntityId = clientId,
-                    Name = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"],
-                    DisplayMeta = "oi-volume-off",
-                    ActionPath = "DynamicAction",
-                    ActionMeta = new()
-                    {
-                        {"InteractionId", "command"},
-                        {"Data", $"mute @{clientId.Value}"},
-                        {"Outputs", $"{reasonInput.Name},{durationInput.Name}"},
-                        {"Inputs", inputsJson},
-                        {
-                            "ActionButtonLabel",
-                            Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"]
-                        },
-                        {
-                            "Name",
-                            Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"]
-                        },
-                        {"ShouldRefresh", true.ToString()}
-                    },
-                    MinimumPermission = Data.Models.Client.EFClient.Permission.Moderator,
-                    Source = Name
-                }
-                : new InteractionData
-                {
-                    EntityId = clientId,
-                    Name = Utilities.CurrentLocalization.LocalizationIndex[
-                        "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"],
-                    DisplayMeta = "oi-volume-high",
-                    ActionPath = "DynamicAction",
-                    ActionMeta = new()
-                    {
-                        {"InteractionId", "command"},
-                        {"Data", $"mute @{clientId.Value}"},
-                        {"Outputs", $"{reasonInput.Name},{durationInput.Name}"},
-                        {"Inputs", inputsJson},
-                        {
-                            "ActionButtonLabel",
-                            Utilities.CurrentLocalization.LocalizationIndex[
-                                "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"]
-                        },
-                        {
-                            "Name",
-                            Utilities.CurrentLocalization.LocalizationIndex[
-                                "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"]
-                        },
-                        {"ShouldRefresh", true.ToString()}
-                    },
-                    MinimumPermission = Data.Models.Client.EFClient.Permission.Moderator,
-                    Source = Name
-                };
+                ? CreateMuteInteraction(targetClientId.Value, server, GetCommandName)
+                : CreateUnmuteInteraction(targetClientId.Value, server, GetCommandName);
         });
         return Task.CompletedTask;
+    }
+
+    private InteractionData CreateMuteInteraction(int targetClientId, Server server, Func<Type, string> getCommandNameFunc)
+    {
+        var reasonInput = new
+        {
+            Name = "Reason",
+            Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_REASON"],
+            Type = "text",
+            Values = (Dictionary<string, string>?)null
+        };
+        
+        var durationInput = new
+        {
+            Name = "Duration",
+            Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_DURATION"],
+            Type = "select",
+            Values = (Dictionary<string, string>?)new Dictionary<string, string>
+            {
+                { "5m", TimeSpan.FromMinutes(5).HumanizeForCurrentCulture() },
+                { "30m", TimeSpan.FromMinutes(30).HumanizeForCurrentCulture() },
+                { "1h", TimeSpan.FromHours(1).HumanizeForCurrentCulture() },
+                { "6h", TimeSpan.FromHours(6).HumanizeForCurrentCulture() },
+                { "1d", TimeSpan.FromDays(1).HumanizeForCurrentCulture() },
+                { "p", Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_SELECTION_PERMANENT"] }
+            }
+        };
+        
+        var inputs = new[] { reasonInput, durationInput };
+        var inputsJson = JsonSerializer.Serialize(inputs);
+
+        return new InteractionData
+        {
+            EntityId = targetClientId,
+            Name = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"],
+            DisplayMeta = "oi-volume-off",
+            ActionPath = "DynamicAction",
+            ActionMeta = new()
+            {
+                { "InteractionId", MuteInteraction },
+                { "Inputs", inputsJson },
+                {
+                    "ActionButtonLabel",
+                    Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"]
+                },
+                {
+                    "Name",
+                    Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"]
+                },
+                { "ShouldRefresh", true.ToString() }
+            },
+            MinimumPermission = Data.Models.Client.EFClient.Permission.Moderator,
+            Source = Name,
+            Action = async (originId, targetId, gameName, meta, cancellationToken) =>
+            {
+                if (!targetId.HasValue)
+                {
+                    return "No target client id specified";
+                }
+
+                var isTempMute = meta.ContainsKey(durationInput.Name) &&
+                                 meta[durationInput.Name] != durationInput.Values?.Last().Key;
+                var muteCommand = getCommandNameFunc(isTempMute ? typeof(TempMuteCommand) : typeof(MuteCommand));
+                var args = new List<string>();
+
+                if (meta.TryGetValue(durationInput.Name, out var duration) &&
+                    duration != durationInput.Values?.Last().Key)
+                {
+                    args.Add(duration);
+                }
+
+                if (meta.TryGetValue(reasonInput.Name, out var reason))
+                {
+                    args.Add(reason);
+                }
+
+                var commandResponse =
+                    await _remoteCommandService.Execute(originId, targetId, muteCommand, args, server);
+                return string.Join(".", commandResponse.Select(result => result.Response));
+            }
+        };
+    }
+
+    private InteractionData CreateUnmuteInteraction(int targetClientId, Server server, Func<Type, string> getCommandNameFunc)
+    {
+        var reasonInput = new
+        {
+            Name = "Reason",
+            Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_REASON"],
+            Type = "text",
+        };
+
+        var inputs = new[] { reasonInput };
+        var inputsJson = JsonSerializer.Serialize(inputs);
+
+        return new InteractionData
+        {
+            EntityId = targetClientId,
+            Name = Utilities.CurrentLocalization.LocalizationIndex[
+                "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"],
+            DisplayMeta = "oi-volume-high",
+            ActionPath = "DynamicAction",
+            ActionMeta = new()
+            {
+                { "InteractionId", MuteInteraction },
+                { "Outputs", reasonInput.Name },
+                { "Inputs", inputsJson },
+                {
+                    "ActionButtonLabel",
+                    Utilities.CurrentLocalization.LocalizationIndex[
+                        "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"]
+                },
+                {
+                    "Name",
+                    Utilities.CurrentLocalization.LocalizationIndex[
+                        "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"]
+                },
+                { "ShouldRefresh", true.ToString() }
+            },
+            MinimumPermission = Data.Models.Client.EFClient.Permission.Moderator,
+            Source = Name,
+            Action = async (originId, targetId, gameName, meta, cancellationToken) =>
+            {
+                if (!targetId.HasValue)
+                {
+                    return "No target client id specified";
+                }
+
+                var args = new List<string>();
+
+                if (meta.TryGetValue(reasonInput.Name, out var reason))
+                {
+                    args.Add(reason);
+                }
+
+                var commandResponse =
+                    await _remoteCommandService.Execute(originId, targetId, getCommandNameFunc(typeof(UnmuteCommand)), args, server);
+                return string.Join(".", commandResponse.Select(result => result.Response));
+            }
+        };
     }
 
     public Task OnUnloadAsync()

@@ -98,6 +98,11 @@ public class MuteManager
         if (clientMuteMeta.MuteState is MuteState.Unmuted && clientMuteMeta.CommandExecuted) return false;
         if (!target.IsIngame && clientMuteMeta.MuteState is MuteState.Unmuting) return false;
 
+        if (clientMuteMeta.MuteState is not MuteState.Unmuting)
+        {
+            await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
+        }
+
         clientMuteMeta = new MuteStateMeta
         {
             Expiration = DateTime.UtcNow,
@@ -106,11 +111,6 @@ public class MuteManager
             CommandExecuted = false
         };
         await WritePersistentData(target, clientMuteMeta);
-
-        if (clientMuteMeta.MuteState is not MuteState.Unmuting)
-        {
-            await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
-        }
 
         // Handle game command
         var client = server.GetClientsAsList().FirstOrDefault(client => client.NetworkId == target.NetworkId);

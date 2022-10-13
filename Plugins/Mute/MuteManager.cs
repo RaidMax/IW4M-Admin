@@ -13,6 +13,7 @@ public class MuteManager
     private readonly IMetaServiceV2 _metaService;
     private readonly ITranslationLookup _translationLookup;
     private readonly ILogger _logger;
+    private readonly SemaphoreSlim _onMuteAction = new(1, 1);
 
     public MuteManager(IMetaServiceV2 metaService, ITranslationLookup translationLookup, ILogger logger)
     {
@@ -26,46 +27,52 @@ public class MuteManager
 
     public async Task<MuteStateMeta> GetCurrentMuteState(EFClient client)
     {
-        var clientMuteMeta = await ReadPersistentDataV2(client);
-        if (clientMuteMeta is not null) return clientMuteMeta;
-
-        // Return null if the client doesn't have old or new meta.
-        var muteState = await ReadPersistentDataV1(client);
-        clientMuteMeta = new MuteStateMeta
+        try
         {
-            Reason = muteState is null ? string.Empty : _translationLookup["PLUGINS_MUTE_MIGRATED"],
-            Expiration = muteState switch
+            await _onMuteAction.WaitAsync();
+            var clientMuteMeta = await ReadPersistentDataV2(client);
+            if (clientMuteMeta is not null) return clientMuteMeta;
+
+            // Return null if the client doesn't have old or new meta.
+            var muteState = await ReadPersistentDataV1(client);
+            clientMuteMeta = new MuteStateMeta
             {
-                null => DateTime.UtcNow,
-                MuteState.Muted => null,
-                _ => DateTime.UtcNow
-            },
-            MuteState = muteState ?? MuteState.Unmuted,
-            CommandExecuted = true
-        };
+                Reason = muteState is null ? string.Empty : _translationLookup["PLUGINS_MUTE_MIGRATED"],
+                Expiration = muteState switch
+                {
+                    null => DateTime.UtcNow,
+                    MuteState.Muted => null,
+                    _ => DateTime.UtcNow
+                },
+                MuteState = muteState ?? MuteState.Unmuted,
+                CommandExecuted = true
+            };
 
-        // Migrate old mute meta, else, client has no state, so set a generic one, but don't write it to database.
-        if (muteState is not null)
-        {
-            clientMuteMeta.CommandExecuted = false;
-            await WritePersistentData(client, clientMuteMeta);
-            await CreatePenalty(muteState.Value, Utilities.IW4MAdminClient(), client, clientMuteMeta.Expiration,
-                clientMuteMeta.Reason);
-        }
-        else
-        {
-            client.SetAdditionalProperty(Plugin.MuteKey, clientMuteMeta);
-        }
+            // Migrate old mute meta, else, client has no state, so set a generic one, but don't write it to database.
+            if (muteState is not null)
+            {
+                clientMuteMeta.CommandExecuted = false;
+                await WritePersistentData(client, clientMuteMeta);
+                await CreatePenalty(muteState.Value, Utilities.IW4MAdminClient(), client, clientMuteMeta.Expiration,
+                    clientMuteMeta.Reason);
+            }
+            else
+            {
+                client.SetAdditionalProperty(Plugin.MuteKey, clientMuteMeta);
+            }
 
-        return clientMuteMeta;
+            return clientMuteMeta;
+        }
+        finally
+        {
+            if (_onMuteAction.CurrentCount == 0) _onMuteAction.Release();
+        }
     }
 
     public async Task<bool> Mute(Server server, EFClient origin, EFClient target, DateTime? dateTime, string reason)
     {
         var clientMuteMeta = await GetCurrentMuteState(target);
         if (clientMuteMeta.MuteState is MuteState.Muted && clientMuteMeta.CommandExecuted) return false;
-
-        await CreatePenalty(MuteState.Muted, origin, target, dateTime, reason);
 
         clientMuteMeta = new MuteStateMeta
         {
@@ -75,6 +82,8 @@ public class MuteManager
             CommandExecuted = false
         };
         await WritePersistentData(target, clientMuteMeta);
+
+        await CreatePenalty(MuteState.Muted, origin, target, dateTime, reason);
 
         // Handle game command
         var client = server.GetClientsAsList().FirstOrDefault(client => client.NetworkId == target.NetworkId);
@@ -89,8 +98,6 @@ public class MuteManager
         if (clientMuteMeta.MuteState is MuteState.Unmuted && clientMuteMeta.CommandExecuted) return false;
         if (!target.IsIngame && clientMuteMeta.MuteState is MuteState.Unmuting) return false;
 
-        await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
-
         clientMuteMeta = new MuteStateMeta
         {
             Expiration = DateTime.UtcNow,
@@ -99,6 +106,11 @@ public class MuteManager
             CommandExecuted = false
         };
         await WritePersistentData(target, clientMuteMeta);
+
+        if (clientMuteMeta.MuteState is not MuteState.Unmuting)
+        {
+            await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
+        }
 
         // Handle game command
         var client = server.GetClientsAsList().FirstOrDefault(client => client.NetworkId == target.NetworkId);

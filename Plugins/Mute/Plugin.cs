@@ -38,9 +38,6 @@ public class Plugin : IPlugin
 
         switch (gameEvent.Type)
         {
-            case GameEvent.EventType.Command:
-
-                break;
             case GameEvent.EventType.Join:
                 // Check if user has any meta set, else ignore (unmuted)
                 var muteMetaJoin = await MuteManager.GetCurrentMuteState(gameEvent.Origin);

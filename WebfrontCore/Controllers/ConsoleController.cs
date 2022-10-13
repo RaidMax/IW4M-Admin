@@ -35,7 +35,7 @@ namespace WebfrontCore.Controllers
         {
             var server = Manager.GetServers().First(s => s.EndPoint == serverId);
             var response = await _remoteCommandService.Execute(Client.ClientId, null, command, Enumerable.Empty<string>(), server);
-            return response.Any() ? StatusCode(400, response) : Ok(response);
+            return !response.Any() ? StatusCode(400, response) : Ok(response);
         }
     }
 }

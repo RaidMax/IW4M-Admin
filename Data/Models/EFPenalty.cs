@@ -18,6 +18,9 @@ namespace Data.Models
             Unban,
             Any,
             Unflag,
+            Mute,
+            TempMute,
+            Unmute,
             Other = 100
         }
 

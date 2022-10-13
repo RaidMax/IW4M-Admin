@@ -7,6 +7,7 @@ namespace SharedLibraryCore.Dtos
     public class PenaltyInfo : SharedInfo
     {
         public string OffenderName { get; set; }
+        public Permission OffenderLevel { get; set; }
         public int OffenderId { get; set; }
         public ulong OffenderNetworkId { get; set; }
         public string OffenderIPAddress { get; set; }

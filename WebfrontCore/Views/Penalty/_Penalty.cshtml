@@ -3,7 +3,8 @@
     var loc = Utilities.CurrentLocalization.LocalizationIndex;
 
     var canSeeLevel = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) && Model.PunisherLevel != 0;
-    var punisherLevelClass =  canSeeLevel ? $"level-color-{(int)Model.PunisherLevel}" : "text-light-dm text-dark-lm";
+    var punisherLevelClass =  canSeeLevel ? $"level-color-{Model.PunisherLevel.ToString().ToLower()}" : "text-light-dm text-dark-lm";
+    var offenderLevelClass = canSeeLevel ? $"level-color-{Model.OffenderLevel.ToString().ToLower()}" : "text-light-dm text-dark-lm";
 }
 
 @using WebfrontCore.Permissions
@@ -12,7 +13,7 @@
 <!-- desktop -->
 <tr class="d-none d-lg-table-row">
     <td colspan="20%">
-        <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.OffenderId" class="link-inverse">
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@Model.OffenderId" class="@offenderLevelClass">
             <color-code value="@Model.OffenderName"></color-code>
         </a>
     </td>

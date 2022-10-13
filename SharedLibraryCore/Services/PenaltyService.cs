@@ -117,6 +117,7 @@ namespace SharedLibraryCore.Services
                     AutomatedOffense = _penalty.AutomatedOffense,
                     OffenderId = _penalty.OffenderId,
                     OffenderName = _penalty.Offender.CurrentAlias.Name,
+                    OffenderLevel = _penalty.Offender.Level,
                     PunisherId = _penalty.PunisherId,
                     PunisherName = _penalty.Punisher.CurrentAlias.Name,
                     PunisherLevel = _penalty.Punisher.Level,

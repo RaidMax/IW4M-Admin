@@ -112,13 +112,16 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 _scriptEngine = new Engine(cfg =>
-                    cfg.AllowClr(new[]
+                    cfg.AddExtensionMethods(typeof(Utilities), typeof(Enumerable), typeof(Queryable))
+                        .AllowClr(new[]
                         {
                             typeof(System.Net.Http.HttpClient).Assembly,
                             typeof(EFClient).Assembly,
                             typeof(Utilities).Assembly,
                             typeof(Encoding).Assembly,
-                            typeof(CancellationTokenSource).Assembly
+                            typeof(CancellationTokenSource).Assembly,
+                            typeof(Data.Models.Client.EFClient).Assembly,
+                            typeof(IW4MAdmin.Plugins.Stats.Plugin).Assembly
                         })
                         .CatchClrExceptions()
                         .AddObjectConverter(new PermissionLevelToStringConverter()));
@@ -392,6 +395,11 @@ namespace IW4MAdmin.Application.Misc
                 string name = dynamicCommand.name;
                 string alias = dynamicCommand.alias;
                 string description = dynamicCommand.description;
+
+                if (dynamicCommand.permission is Data.Models.Client.EFClient.Permission perm)
+                {
+                    dynamicCommand.permission = perm.ToString();
+                }
                 string permission = dynamicCommand.permission;
                 List<Server.Game> supportedGames = null;
                 var targetRequired = false;
@@ -475,7 +483,6 @@ namespace IW4MAdmin.Application.Misc
                         throw new PluginException("An error occured while executing action for script plugin");
                     }
 
-
                     finally
                     {
                         if (_onProcessing.CurrentCount == 0)
@@ -499,11 +506,6 @@ namespace IW4MAdmin.Application.Misc
                 try
                 {
                     var (success, value) = (ValueTuple<bool, string>)result.AsyncState;
-
-                    _logger.LogDebug("Waiting for onDvarActionComplete -> get");
-                    _onDvarActionComplete.Wait();
-                    _logger.LogDebug("Completed wait for onDvarActionComplete -> get");
-
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
                         {
@@ -517,7 +519,7 @@ namespace IW4MAdmin.Application.Misc
                 {
                     using (LogContext.PushProperty("Server", server.ToString()))
                     {
-                        _logger.LogError(ex, "Could complete BeginGetDvar for {Filename} {@Location}",
+                        _logger.LogError(ex, "Could not complete BeginGetDvar for {Filename} {@Location}",
                             Path.GetFileName(_fileName), ex.Location);
                     }
                 }
@@ -525,17 +527,10 @@ namespace IW4MAdmin.Application.Misc
                 {
                     _logger.LogError(ex, "Could not complete {BeginGetDvar} for {Class}", nameof(BeginGetDvar), Name);
                 }
-                finally
-                {
-                    if (_onDvarActionComplete.CurrentCount == 0)
-                    {
-                        _onDvarActionComplete.Release();
-                    }
-                }
             }
 
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
             
             server.BeginGetDvar(dvarName, result =>
             {
@@ -561,17 +556,13 @@ namespace IW4MAdmin.Application.Misc
         private void BeginSetDvar(Server server, string dvarName, string dvarValue, Delegate onCompleted)
         {
             var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(15));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
             
             void OnComplete(IAsyncResult result)
             {
                 try
                 {
                     var success = (bool)result.AsyncState;
-                    
-                    _logger.LogDebug("Waiting for onDvarActionComplete -> set");
-                    _onDvarActionComplete.Wait();
-                    _logger.LogDebug("Completed wait for onDvarActionComplete -> set");
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
                         {
@@ -592,13 +583,6 @@ namespace IW4MAdmin.Application.Misc
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Could not complete {BeginSetDvar} for {Class}", nameof(BeginSetDvar), Name);
-                }
-                finally
-                {
-                    if (_onDvarActionComplete.CurrentCount == 0)
-                    {
-                        _onDvarActionComplete.Release();
-                    }
                 }
             }
             

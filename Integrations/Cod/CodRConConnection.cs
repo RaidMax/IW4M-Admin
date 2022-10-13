@@ -243,7 +243,11 @@ namespace Integrations.Cod
                     CancellationToken = token
                 };
 
-                connectionState.ConnectionAttempts++;
+                if (!token.IsCancellationRequested)
+                {
+                    connectionState.ConnectionAttempts++;
+                }
+
                 connectionState.BytesReadPerSegment.Clear();
 
                 _log.LogDebug(

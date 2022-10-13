@@ -147,7 +147,7 @@ namespace IW4MAdmin.Application.RConParsers
         {
             GetDvarAsync<string>(connection, dvarName, token: token).ContinueWith(action =>
             {
-                if (action.Exception is null && !action.IsCanceled)
+                if (action.IsCompletedSuccessfully)
                 {
                     callback?.Invoke(new AsyncResult
                     {

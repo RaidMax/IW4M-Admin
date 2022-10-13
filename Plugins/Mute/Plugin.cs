@@ -119,7 +119,16 @@ public class Plugin : IPlugin
         manager.CommandInterceptors.Add(gameEvent =>
         {
             if (gameEvent.Extra is not Command command)
+            {
                 return true;
+            }
+
+            var muteMeta = MuteManager.GetCurrentMuteState(gameEvent.Origin).GetAwaiter().GetResult();
+            if (muteMeta.MuteState is not MuteState.Muted)
+            {
+                return true;
+            }
+
             return !DisabledCommands.Contains(command.GetType().Name) && !command.IsBroadcast;
         });
 

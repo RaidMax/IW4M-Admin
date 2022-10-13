@@ -103,23 +103,12 @@
     color: rgba(116, 147, 99, 1);
 }
 
-.penalties-color-unmute {
-    color: #749363;
-    color: rgba(180, 222, 12, 1);
-}
-
-.penalties-color-mute {
-    color: #749363;
-    color: rgba(222, 222, 12, 1);
-}
-
-.penalties-color-tempmute {
-    color: #749363;
-    color: rgba(222, 145, 12, 1);
-}
-
 .penalties-color-unflag {
     color: rgb(140, 154, 132);
+}
+
+.penalties-color-unmute {
+    color: #989f94;
 }
 
 .penalties-color-report {
@@ -136,6 +125,10 @@
     color: rgba(254, 126, 76, 0.85);
 }
 
+.penalties-color-tempmute {
+    color: #df9476;
+}
+
 .penalties-bgcolor-tempban {
     background-color: #fe7e4c;
     background-color: rgba(254, 126, 76, 0.85);
@@ -149,6 +142,10 @@
 .penalties-color-ban {
     color: #ff6060;
     color: rgba(255, 69, 69, 0.85);
+}
+
+.penalties-color-mute {
+    color: #e77171;
 }
 
 #profile_aliases_btn {

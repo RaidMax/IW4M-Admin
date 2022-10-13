@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Data.Models.Client;
-using InteractionCallback = System.Func<int?, Data.Models.Reference.Game?, System.Threading.CancellationToken, System.Threading.Tasks.Task<string>>;
-using ScriptInteractionCallback = System.Func<int?, Data.Models.Reference.Game?, System.Threading.CancellationToken, System.Threading.Tasks.Task<string>>;
+using InteractionCallback = System.Func<int, int?, Data.Models.Reference.Game?, System.Collections.Generic.IDictionary<string,string>, System.Threading.CancellationToken, System.Threading.Tasks.Task<string>>;
 
 namespace SharedLibraryCore.Interfaces;
 

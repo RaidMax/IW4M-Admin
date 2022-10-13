@@ -141,6 +141,7 @@ namespace WebfrontCore
                             .GetRequiredService<StatsConfiguration>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IServerDataViewer>());
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IInteractionRegistration>());
+            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IRemoteCommandService>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

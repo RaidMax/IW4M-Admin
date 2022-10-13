@@ -1,12 +1,12 @@
 let vpnExceptionIds = [];
 const commands = [{
-    name: "whitelistvpn",
-    description: "whitelists a player's client id from VPN detection",
-    alias: "wv",
-    permission: "SeniorAdmin",
+    name: 'whitelistvpn',
+    description: 'whitelists a player\'s client id from VPN detection',
+    alias: 'wv',
+    permission: 'SeniorAdmin',
     targetRequired: true,
     arguments: [{
-        name: "player",
+        name: 'player',
         required: true
     }],
     execute: (gameEvent) => {
@@ -19,11 +19,10 @@ const commands = [{
 
 const plugin = {
     author: 'RaidMax',
-    version: 1.4,
+    version: 1.5,
     name: 'VPN Detection Plugin',
     manager: null,
     logger: null,
-
 
     checkForVpn: function (origin) {
         let exempt = false;
@@ -80,24 +79,24 @@ const plugin = {
         this.logger = manager.GetLogger(0);
 
         this.configHandler = _configHandler;
-        this.configHandler.GetValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(element));
+        this.configHandler.GetValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(parseInt(element)));
         this.logger.WriteInfo(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
 
         this.interactionRegistration = _serviceResolver.ResolveService('IInteractionRegistration');
-        this.interactionRegistration.RegisterScriptInteraction('WhitelistVPN', this.name, (clientId, game, token) => {
-            if (vpnExceptionIds.includes(clientId)) {
+        this.interactionRegistration.RegisterScriptInteraction('WhitelistVPN', this.name, (originId, targetId, game, token) => {
+            if (vpnExceptionIds.includes(targetId)) {
                 return;
             }
 
             const helpers = importNamespace('SharedLibraryCore.Helpers');
             const interactionData = new helpers.InteractionData();
 
-            interactionData.EntityId = clientId;
+            interactionData.EntityId = targetId;
             interactionData.Name = 'Whitelist VPN';
             interactionData.DisplayMeta = 'oi-circle-check';
 
             interactionData.ActionMeta.Add('InteractionId', 'command');
-            interactionData.ActionMeta.Add('Data', `whitelistvpn @${clientId}`);
+            interactionData.ActionMeta.Add('Data', `whitelistvpn`);
             interactionData.ActionMeta.Add('ActionButtonLabel', 'Allow');
             interactionData.ActionMeta.Add('Name', 'Allow VPN Connection');
             interactionData.ActionMeta.Add('ShouldRefresh', true.toString());

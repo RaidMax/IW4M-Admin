@@ -13,5 +13,5 @@ public interface IInteractionRegistration
     void UnregisterInteraction(string interactionName);
     Task<IEnumerable<IInteractionData>> GetInteractions(int? clientId = null,
         Reference.Game? game = null, CancellationToken token = default);
-    Task<string> ProcessInteraction(string interactionId, int? clientId = null, Reference.Game? game = null, CancellationToken token = default);
+    Task<string> ProcessInteraction(string interactionId, int originId, int? targetId = null, Reference.Game? game = null, IDictionary<string, string> meta = null, CancellationToken token = default);
 }

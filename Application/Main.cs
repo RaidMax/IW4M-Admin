@@ -452,6 +452,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IAlertManager, AlertManager>()
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()
                 .AddSingleton<IInteractionRegistration, InteractionRegistration>()
+                .AddSingleton<IRemoteCommandService, RemoteCommandService>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 

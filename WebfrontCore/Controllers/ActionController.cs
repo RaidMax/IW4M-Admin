@@ -26,6 +26,7 @@ namespace WebfrontCore.Controllers
         private readonly ApplicationConfiguration _appConfig;
         private readonly IMetaServiceV2 _metaService;
         private readonly IInteractionRegistration _interactionRegistration;
+        private readonly IRemoteCommandService _remoteCommandService;
         private readonly string _banCommandName;
         private readonly string _tempbanCommandName;
         private readonly string _unbanCommandName;
@@ -40,11 +41,12 @@ namespace WebfrontCore.Controllers
 
         public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands,
             ApplicationConfiguration appConfig, IMetaServiceV2 metaService,
-            IInteractionRegistration interactionRegistration) : base(manager)
+            IInteractionRegistration interactionRegistration, IRemoteCommandService remoteCommandService) : base(manager)
         {
             _appConfig = appConfig;
             _metaService = metaService;
             _interactionRegistration = interactionRegistration;
+            _remoteCommandService = remoteCommandService;
 
             foreach (var cmd in registeredCommands)
             {
@@ -104,6 +106,20 @@ namespace WebfrontCore.Controllers
             metaDict.TryGetValue(nameof(ActionInfo.ShouldRefresh), out var refresh);
             metaDict.TryGetValue("Data", out var data);
             metaDict.TryGetValue("InteractionId", out var interactionId);
+            metaDict.TryGetValue("Inputs", out var template);
+
+            List<InputInfo> additionalInputs = null;
+            var inputKeys = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(template))
+            {
+                additionalInputs = JsonSerializer.Deserialize<List<InputInfo>>(template);
+            }
+
+            if (additionalInputs is not null)
+            {
+                inputKeys = string.Join(",", additionalInputs.Select(input => input.Name));
+            }
 
             bool.TryParse(refresh, out var shouldRefresh);
 
@@ -126,8 +142,19 @@ namespace WebfrontCore.Controllers
                     Name = "TargetId",
                     Value = id?.ToString(),
                     Type = "hidden"
+                },
+                new()
+                {
+                    Name = "CustomInputKeys",
+                    Value = inputKeys,
+                    Type = "hidden"
                 }
             };
+
+            if (additionalInputs?.Any() ?? false)
+            {
+                inputs.AddRange(additionalInputs);
+            }
 
             var info = new ActionInfo
             {
@@ -141,28 +168,51 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
-        public async Task<IActionResult> DynamicActionAsync(string interactionId, string data, int? targetId,
-            CancellationToken token = default)
+        public async Task<IActionResult> DynamicActionAsync(CancellationToken token = default)
         {
-            if (interactionId == "command")
-            {
-                var server = Manager.GetServers().First();
+            HttpContext.Request.Query.TryGetValue("InteractionId", out var interactionId);
+            HttpContext.Request.Query.TryGetValue("CustomInputKeys", out var inputKeys);
+            HttpContext.Request.Query.TryGetValue("Data", out var data);
+            HttpContext.Request.Query.TryGetValue("TargetId", out var targetIdString);
 
-                return await Task.FromResult(RedirectToAction("Execute", "Console", new
+            var inputs = new Dictionary<string, string>();
+            
+            if (!string.IsNullOrWhiteSpace(inputKeys.ToString()))
+            {
+                foreach (var key in inputKeys.ToString().Split(","))
                 {
-                    serverId = server.EndPoint,
-                    command = $"{_appConfig.CommandPrefix}{data}"
-                }));
+                    HttpContext.Request.Query.TryGetValue(key, out var input);
+
+                    if (string.IsNullOrWhiteSpace(input))
+                    {
+                        continue;
+                    }
+                    
+                    inputs.Add(key, HttpContext.Request.Query[key]);
+                }
             }
 
             var game = (Reference.Game?)null;
+            var targetId = (int?)null;
+           
+            if (int.TryParse(targetIdString.ToString().Split(",").Last(), out var parsedTargetId))
+            {
+                targetId = parsedTargetId;
+            }
 
             if (targetId.HasValue)
             {
                 game = (await Manager.GetClientService().Get(targetId.Value))?.GameName;
             }
 
-            return Ok(await _interactionRegistration.ProcessInteraction(interactionId, targetId, game, token));
+            if (interactionId.ToString() != "command")
+            {
+                return Ok(await _interactionRegistration.ProcessInteraction(interactionId, Client.ClientId, targetId, game, inputs,
+                    token));
+            }
+
+            var server = Manager.GetServers().First();
+            return Ok(await _remoteCommandService.Execute(Client.ClientId, targetId, data, inputs.Values.Select(input => input), server));
         }
 
         public IActionResult BanForm()

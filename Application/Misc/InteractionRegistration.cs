@@ -89,8 +89,8 @@ public class InteractionRegistration : IInteractionRegistration
         }))).Where(interaction => interaction is not null);
     }
 
-    public async Task<string> ProcessInteraction(string interactionId, int? clientId = null,
-        Reference.Game? game = null, CancellationToken token = default)
+    public async Task<string> ProcessInteraction(string interactionId, int originId, int? targetId = null,
+        Reference.Game? game = null, IDictionary<string, string> meta = null, CancellationToken token = default)
     {
         if (!_interactions.ContainsKey(interactionId))
         {
@@ -99,11 +99,11 @@ public class InteractionRegistration : IInteractionRegistration
 
         try
         {
-            var interaction = await _interactions[interactionId](clientId, game, token);
+            var interaction = await _interactions[interactionId](originId, game, token);
 
             if (interaction.Action is not null)
             {
-                return await interaction.Action(clientId, game, token);
+                return await interaction.Action(originId, targetId, game, meta, token);
             }
 
             if (interaction.ScriptAction is not null)
@@ -115,16 +115,15 @@ public class InteractionRegistration : IInteractionRegistration
                         continue;
                     }
 
-                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, clientId, game, token);
+                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, originId, targetId, game, token);
                 }
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Could not process interaction for interaction {InteractionName} and ClientId {ClientId}",
-                interactionId,
-                clientId);
+                "Could not process interaction for interaction {InteractionName} and OriginId {ClientId}",
+                interactionId, originId);
         }
 
         return null;

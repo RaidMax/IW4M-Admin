@@ -33,7 +33,6 @@ public class MuteManager
         var muteState = await ReadPersistentDataV1(client);
         clientMuteMeta = new MuteStateMeta
         {
-            ClientId = client.ClientId,
             Reason = muteState is null ? string.Empty : _translationLookup["PLUGINS_MUTE_MIGRATED"],
             Expiration = muteState switch
             {
@@ -41,7 +40,6 @@ public class MuteManager
                 MuteState.Muted => null,
                 _ => DateTime.UtcNow
             },
-            AdminId = Utilities.IW4MAdminClient().ClientId,
             MuteState = muteState ?? MuteState.Unmuted,
             CommandExecuted = true
         };
@@ -49,7 +47,10 @@ public class MuteManager
         // Migrate old mute meta, else, client has no state, so set a generic one, but don't write it to database.
         if (muteState is not null)
         {
+            clientMuteMeta.CommandExecuted = false;
             await WritePersistentData(client, clientMuteMeta);
+            await CreatePenalty(muteState.Value, Utilities.IW4MAdminClient(), client, clientMuteMeta.Expiration,
+                clientMuteMeta.Reason);
         }
         else
         {
@@ -64,25 +65,13 @@ public class MuteManager
         var clientMuteMeta = await GetCurrentMuteState(target);
         if (clientMuteMeta.MuteState is MuteState.Muted && clientMuteMeta.CommandExecuted) return false;
 
-        var newPenalty = new EFPenalty
-        {
-            Type = dateTime is null ? EFPenalty.PenaltyType.Mute : EFPenalty.PenaltyType.TempMute,
-            Expires = dateTime,
-            Offender = target,
-            Offense = reason,
-            Punisher = origin,
-            Link = target.AliasLink
-        };
-        _logger.LogDebug("Creating new mute for {Target} with reason {Reason}", target.Name, reason);
-        await newPenalty.TryCreatePenalty(Plugin.Manager.GetPenaltyService(), _logger);
+        await CreatePenalty(MuteState.Muted, origin, target, dateTime, reason);
 
         clientMuteMeta = new MuteStateMeta
         {
-            ClientId = target.ClientId,
             Expiration = dateTime,
             MuteState = MuteState.Muted,
             Reason = reason,
-            AdminId = origin.ClientId,
             CommandExecuted = false
         };
         await WritePersistentData(target, clientMuteMeta);
@@ -100,26 +89,13 @@ public class MuteManager
         if (clientMuteMeta.MuteState is MuteState.Unmuted && clientMuteMeta.CommandExecuted) return false;
         if (!target.IsIngame && clientMuteMeta.MuteState is MuteState.Unmuting) return false;
 
-        var newPenalty = new EFPenalty
-        {
-            Type = EFPenalty.PenaltyType.Unmute,
-            Expires = DateTime.Now,
-            Offender = target,
-            Offense = reason,
-            Punisher = origin,
-            Active = true,
-            Link = target.AliasLink
-        };
-        _logger.LogDebug("Creating new unmute for {Target} with reason {Reason}", target.Name, reason);
-        await newPenalty.TryCreatePenalty(Plugin.Manager.GetPenaltyService(), _logger);
+        await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
 
         clientMuteMeta = new MuteStateMeta
         {
-            ClientId = target.ClientId,
             Expiration = DateTime.UtcNow,
             MuteState = target.IsIngame ? MuteState.Unmuted : MuteState.Unmuting,
             Reason = reason,
-            AdminId = origin.ClientId,
             CommandExecuted = false
         };
         await WritePersistentData(target, clientMuteMeta);
@@ -129,6 +105,25 @@ public class MuteManager
         await PerformGameCommand(server, client, clientMuteMeta);
 
         return true;
+    }
+
+    private async Task CreatePenalty(MuteState muteState, EFClient origin, EFClient target, DateTime? dateTime,
+        string reason)
+    {
+        var newPenalty = new EFPenalty
+        {
+            Type = muteState is MuteState.Unmuted ? EFPenalty.PenaltyType.Unmute :
+                dateTime is null ? EFPenalty.PenaltyType.Mute : EFPenalty.PenaltyType.TempMute,
+            Expires = muteState is MuteState.Unmuted ? DateTime.UtcNow : dateTime,
+            Offender = target,
+            Offense = reason,
+            Punisher = origin,
+            Active = true,
+            Link = target.AliasLink
+        };
+        _logger.LogDebug("Creating new {MuteState} Penalty for {Target} with reason {Reason}",
+            nameof(muteState), target.Name, reason);
+        await newPenalty.TryCreatePenalty(Plugin.Manager.GetPenaltyService(), _logger);
     }
 
     public static async Task PerformGameCommand(Server server, EFClient? client, MuteStateMeta muteStateMeta)

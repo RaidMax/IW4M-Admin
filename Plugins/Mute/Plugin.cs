@@ -36,7 +36,6 @@ public class Plugin : IPlugin
     {
         if (!SupportedGames.Contains(server.GameName)) return;
 
-
         switch (gameEvent.Type)
         {
             case GameEvent.EventType.Command:
@@ -129,13 +128,13 @@ public class Plugin : IPlugin
 
         _interactionRegistration.RegisterInteraction(MuteInteraction, async (targetClientId, game, token) =>
         {
-            if (!targetClientId.HasValue || game.HasValue && !SupportedGames.Contains((Server.Game)game.Value))
+            if (!targetClientId.HasValue || game.HasValue && !SupportedGames.Contains((Server.Game) game.Value))
             {
                 return null;
             }
 
             var clientMuteMetaState =
-                (await MuteManager.GetCurrentMuteState(new EFClient { ClientId = targetClientId.Value }))
+                (await MuteManager.GetCurrentMuteState(new EFClient {ClientId = targetClientId.Value}))
                 .MuteState;
             var server = manager.GetServers().First();
 
@@ -149,33 +148,34 @@ public class Plugin : IPlugin
         return Task.CompletedTask;
     }
 
-    private InteractionData CreateMuteInteraction(int targetClientId, Server server, Func<Type, string> getCommandNameFunc)
+    private InteractionData CreateMuteInteraction(int targetClientId, Server server,
+        Func<Type, string> getCommandNameFunc)
     {
         var reasonInput = new
         {
             Name = "Reason",
             Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_REASON"],
             Type = "text",
-            Values = (Dictionary<string, string>?)null
+            Values = (Dictionary<string, string>?) null
         };
-        
+
         var durationInput = new
         {
             Name = "Duration",
             Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_DURATION"],
             Type = "select",
-            Values = (Dictionary<string, string>?)new Dictionary<string, string>
+            Values = (Dictionary<string, string>?) new Dictionary<string, string>
             {
-                { "5m", TimeSpan.FromMinutes(5).HumanizeForCurrentCulture() },
-                { "30m", TimeSpan.FromMinutes(30).HumanizeForCurrentCulture() },
-                { "1h", TimeSpan.FromHours(1).HumanizeForCurrentCulture() },
-                { "6h", TimeSpan.FromHours(6).HumanizeForCurrentCulture() },
-                { "1d", TimeSpan.FromDays(1).HumanizeForCurrentCulture() },
-                { "p", Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_SELECTION_PERMANENT"] }
+                {"5m", TimeSpan.FromMinutes(5).HumanizeForCurrentCulture()},
+                {"30m", TimeSpan.FromMinutes(30).HumanizeForCurrentCulture()},
+                {"1h", TimeSpan.FromHours(1).HumanizeForCurrentCulture()},
+                {"6h", TimeSpan.FromHours(6).HumanizeForCurrentCulture()},
+                {"1d", TimeSpan.FromDays(1).HumanizeForCurrentCulture()},
+                {"p", Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_SELECTION_PERMANENT"]}
             }
         };
-        
-        var inputs = new[] { reasonInput, durationInput };
+
+        var inputs = new[] {reasonInput, durationInput};
         var inputsJson = JsonSerializer.Serialize(inputs);
 
         return new InteractionData
@@ -186,8 +186,8 @@ public class Plugin : IPlugin
             ActionPath = "DynamicAction",
             ActionMeta = new()
             {
-                { "InteractionId", MuteInteraction },
-                { "Inputs", inputsJson },
+                {"InteractionId", MuteInteraction},
+                {"Inputs", inputsJson},
                 {
                     "ActionButtonLabel",
                     Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"]
@@ -196,7 +196,7 @@ public class Plugin : IPlugin
                     "Name",
                     Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"]
                 },
-                { "ShouldRefresh", true.ToString() }
+                {"ShouldRefresh", true.ToString()}
             },
             MinimumPermission = Data.Models.Client.EFClient.Permission.Moderator,
             Source = Name,
@@ -230,7 +230,8 @@ public class Plugin : IPlugin
         };
     }
 
-    private InteractionData CreateUnmuteInteraction(int targetClientId, Server server, Func<Type, string> getCommandNameFunc)
+    private InteractionData CreateUnmuteInteraction(int targetClientId, Server server,
+        Func<Type, string> getCommandNameFunc)
     {
         var reasonInput = new
         {
@@ -239,7 +240,7 @@ public class Plugin : IPlugin
             Type = "text",
         };
 
-        var inputs = new[] { reasonInput };
+        var inputs = new[] {reasonInput};
         var inputsJson = JsonSerializer.Serialize(inputs);
 
         return new InteractionData
@@ -251,9 +252,9 @@ public class Plugin : IPlugin
             ActionPath = "DynamicAction",
             ActionMeta = new()
             {
-                { "InteractionId", MuteInteraction },
-                { "Outputs", reasonInput.Name },
-                { "Inputs", inputsJson },
+                {"InteractionId", MuteInteraction},
+                {"Outputs", reasonInput.Name},
+                {"Inputs", inputsJson},
                 {
                     "ActionButtonLabel",
                     Utilities.CurrentLocalization.LocalizationIndex[
@@ -264,7 +265,7 @@ public class Plugin : IPlugin
                     Utilities.CurrentLocalization.LocalizationIndex[
                         "WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"]
                 },
-                { "ShouldRefresh", true.ToString() }
+                {"ShouldRefresh", true.ToString()}
             },
             MinimumPermission = Data.Models.Client.EFClient.Permission.Moderator,
             Source = Name,
@@ -283,7 +284,8 @@ public class Plugin : IPlugin
                 }
 
                 var commandResponse =
-                    await _remoteCommandService.Execute(originId, targetId, getCommandNameFunc(typeof(UnmuteCommand)), args, server);
+                    await _remoteCommandService.Execute(originId, targetId, getCommandNameFunc(typeof(UnmuteCommand)),
+                        args, server);
                 return string.Join(".", commandResponse.Select(result => result.Response));
             }
         };

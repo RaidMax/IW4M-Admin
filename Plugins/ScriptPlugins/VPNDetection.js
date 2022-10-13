@@ -83,7 +83,7 @@ const plugin = {
         this.logger.WriteInfo(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
 
         this.interactionRegistration = _serviceResolver.ResolveService('IInteractionRegistration');
-        this.interactionRegistration.RegisterScriptInteraction('WhitelistVPN', this.name, (originId, targetId, game, token) => {
+        this.interactionRegistration.RegisterScriptInteraction('WhitelistVPN', this.name, (targetId, game, token) => {
             if (vpnExceptionIds.includes(targetId)) {
                 return;
             }

@@ -99,7 +99,7 @@ public class InteractionRegistration : IInteractionRegistration
 
         try
         {
-            var interaction = await _interactions[interactionId](originId, game, token);
+            var interaction = await _interactions[interactionId](targetId, game, token);
 
             if (interaction.Action is not null)
             {
@@ -115,7 +115,7 @@ public class InteractionRegistration : IInteractionRegistration
                         continue;
                     }
 
-                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, originId, targetId, game, token);
+                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, originId, targetId, game, meta, token);
                 }
             }
         }

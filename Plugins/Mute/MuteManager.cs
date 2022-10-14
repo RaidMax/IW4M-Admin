@@ -98,7 +98,7 @@ public class MuteManager
         if (clientMuteMeta.MuteState is MuteState.Unmuted && clientMuteMeta.CommandExecuted) return false;
         if (!target.IsIngame && clientMuteMeta.MuteState is MuteState.Unmuting) return false;
 
-        if (clientMuteMeta.MuteState is not MuteState.Unmuting)
+        if (clientMuteMeta.MuteState is not MuteState.Unmuting || origin.ClientId != 1)
         {
             await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
         }

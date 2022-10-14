@@ -34,6 +34,12 @@ public class MuteCommand : Command
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
+        if (gameEvent.Origin.ClientId == gameEvent.Target.ClientId)
+        {
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_SELF_TARGET"]);
+            return;
+        }
+
         if (await Plugin.MuteManager.Mute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, null, gameEvent.Data))
         {
             gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_MUTED"]

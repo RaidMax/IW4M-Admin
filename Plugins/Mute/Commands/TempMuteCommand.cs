@@ -42,6 +42,12 @@ public class TempMuteCommand : Command
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
+        if (gameEvent.Origin.ClientId == gameEvent.Target.ClientId)
+        {
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_SELF_TARGET"]);
+            return;
+        }
+        
         var match = Regex.Match(gameEvent.Data, TempBanRegex);
         if (match.Success)
         {

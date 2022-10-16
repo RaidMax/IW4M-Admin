@@ -1,21 +1,25 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc;
 
 public class RemoteCommandService : IRemoteCommandService
 {
+    private readonly ILogger _logger;
     private readonly ApplicationConfiguration _appConfig;
     private readonly ClientService _clientService;
 
-    public RemoteCommandService(ApplicationConfiguration appConfig, ClientService clientService)
+    public RemoteCommandService(ILogger<RemoteCommandService> logger, ApplicationConfiguration appConfig, ClientService clientService)
     {
+        _logger = logger;
         _appConfig = appConfig;
         _clientService = clientService;
     }
@@ -23,6 +27,13 @@ public class RemoteCommandService : IRemoteCommandService
     public async Task<IEnumerable<CommandResponseInfo>> Execute(int originId, int? targetId, string command,
         IEnumerable<string> arguments, Server server)
     {
+        if (originId < 1)
+        {
+            _logger.LogWarning("Not executing command {Command} for {Originid} because origin id is invalid", command,
+                originId);
+            return Enumerable.Empty<CommandResponseInfo>();
+        }
+        
         var client = await _clientService.Get(originId);
         client.CurrentServer = server;
 

@@ -67,7 +67,7 @@ namespace SharedLibraryCore
             Client = new EFClient
             {
                 ClientId = -1,
-                Level = Data.Models.Client.EFClient.Permission.Banned,
+                Level = Data.Models.Client.EFClient.Permission.User,
                 CurrentAlias = new EFAlias { Name = "Webfront Guest" }
             };
         }

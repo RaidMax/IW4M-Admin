@@ -10,10 +10,12 @@ namespace WebfrontCore.Controllers
     public class ConsoleController : BaseController
     {
         private readonly IRemoteCommandService _remoteCommandService;
+        private readonly ITranslationLookup _translationLookup;
 
-        public ConsoleController(IManager manager, IRemoteCommandService remoteCommandService) : base(manager)
+        public ConsoleController(IManager manager, IRemoteCommandService remoteCommandService, ITranslationLookup translationLookup) : base(manager)
         {
             _remoteCommandService = remoteCommandService;
+            _translationLookup = translationLookup;
         }
 
         public IActionResult Index()
@@ -33,6 +35,17 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> Execute(long serverId, string command)
         {
+            if (Client.ClientId < 1)
+            {
+                return Ok(new[]
+                {
+                    new CommandResponseInfo
+                    {
+                        Response = _translationLookup["SERVER_COMMANDS_INTERCEPTED"]
+                    }
+                });
+            }
+            
             var server = Manager.GetServers().First(s => s.EndPoint == serverId);
             var response = await _remoteCommandService.Execute(Client.ClientId, null, command, Enumerable.Empty<string>(), server);
             return !response.Any() ? StatusCode(400, response) : Ok(response);

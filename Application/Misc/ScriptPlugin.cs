@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using IW4MAdmin.Application.Extensions;
 using Jint.Runtime.Interop;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
@@ -112,7 +113,7 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 _scriptEngine = new Engine(cfg =>
-                    cfg.AddExtensionMethods(typeof(Utilities), typeof(Enumerable), typeof(Queryable))
+                    cfg.AddExtensionMethods(typeof(Utilities), typeof(Enumerable), typeof(Queryable), typeof(ScriptPluginExtensions))
                         .AllowClr(new[]
                         {
                             typeof(System.Net.Http.HttpClient).Assembly,

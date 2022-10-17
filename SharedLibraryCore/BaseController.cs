@@ -19,6 +19,7 @@ namespace SharedLibraryCore
 {
     public class BaseController : Controller
     {
+        protected readonly IInteractionRegistration InteractionRegistration;
         protected readonly IAlertManager AlertManager;
 
         /// <summary>
@@ -41,6 +42,7 @@ namespace SharedLibraryCore
 
         public BaseController(IManager manager)
         {
+            InteractionRegistration = manager.InteractionRegistration;
             AlertManager = manager.AlertManager;
             Manager = manager;
             Localization = Utilities.CurrentLocalization.LocalizationIndex;
@@ -71,9 +73,7 @@ namespace SharedLibraryCore
                 CurrentAlias = new EFAlias { Name = "Webfront Guest" }
             };
         }
-
-       
-
+        
         protected async Task SignInAsync(ClaimsPrincipal claimsPrinciple)
         {
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple,
@@ -86,7 +86,7 @@ namespace SharedLibraryCore
                 });
         }
 
-        public override void OnActionExecuting(ActionExecutingContext context)
+        public override async void OnActionExecuting(ActionExecutingContext context)
         {
             if (!HttpContext.Connection.RemoteIpAddress.GetAddressBytes().SequenceEqual(LocalHost))
             {
@@ -154,6 +154,7 @@ namespace SharedLibraryCore
                                          && !communityName.Contains("IW4MAdmin")
                                          && AppConfig.CommunityInformation.IsEnabled;
 
+            ViewBag.Interactions = await InteractionRegistration.GetInteractions("Webfront::Nav");
             ViewBag.Authorized = Authorized;
             ViewBag.Url = AppConfig.WebfrontUrl;
             ViewBag.User = Client;

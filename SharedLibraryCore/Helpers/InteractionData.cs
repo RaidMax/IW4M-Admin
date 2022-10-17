@@ -10,6 +10,8 @@ namespace SharedLibraryCore.Helpers;
 public class InteractionData : IInteractionData
 {
     public int? EntityId { get; set; }
+    public string InteractionId { get; set; }
+    public InteractionType InteractionType { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }

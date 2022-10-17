@@ -70,23 +70,11 @@ public class InteractionRegistration : IInteractionRegistration
         }
     }
 
-    public async Task<IEnumerable<IInteractionData>> GetInteractions(int? clientId = null,
+    public async Task<IEnumerable<IInteractionData>> GetInteractions(string interactionPrefix = null,
+        int? clientId = null,
         Reference.Game? game = null, CancellationToken token = default)
     {
-        return (await Task.WhenAll(_interactions.Select(async kvp =>
-        {
-            try
-            {
-                return await kvp.Value(clientId, game, token);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "Could not get interaction for interaction {InteractionName} and ClientId {ClientId}", kvp.Key,
-                    clientId);
-                return null;
-            }
-        }))).Where(interaction => interaction is not null);
+        return await GetInteractionsPrivate(interactionPrefix, clientId, game, token);
     }
 
     public async Task<string> ProcessInteraction(string interactionId, int originId, int? targetId = null,
@@ -115,17 +103,40 @@ public class InteractionRegistration : IInteractionRegistration
                         continue;
                     }
 
-                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, originId, targetId, game, meta, token);
+                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, originId, targetId, game, meta,
+                        token);
                 }
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Could not process interaction for interaction {InteractionName} and OriginId {ClientId}",
+                "Could not process interaction for {InteractionName} and OriginId {ClientId}",
                 interactionId, originId);
         }
 
         return null;
+    }
+
+    private async Task<IEnumerable<IInteractionData>> GetInteractionsPrivate(string prefix = null, int? clientId = null,
+        Reference.Game? game = null, CancellationToken token = default)
+    {
+        return (await Task.WhenAll(_interactions
+            .Where(interaction => string.IsNullOrWhiteSpace(prefix) || interaction.Key.StartsWith(prefix)).Select(
+                async kvp =>
+                {
+                    try
+                    {
+                        return await kvp.Value(clientId, game, token);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "Could not get interaction for {InteractionName} and ClientId {ClientId}",
+                            kvp.Key,
+                            clientId);
+                        return null;
+                    }
+                }))).Where(interaction => interaction is not null);
     }
 }

@@ -8,6 +8,8 @@ namespace SharedLibraryCore.Interfaces;
 public interface IInteractionData
 {
     int? EntityId { get; }
+    string InteractionId { get; }
+    InteractionType InteractionType { get; }
     bool Enabled { get; }
     string Name { get; }
     string Description { get; }
@@ -21,4 +23,11 @@ public interface IInteractionData
     string Source { get; }
     InteractionCallback Action { get; }
     Delegate ScriptAction { get; }
+}
+
+public enum InteractionType
+{
+    ActionButton,
+    RawContent,
+    TemplateContent
 }

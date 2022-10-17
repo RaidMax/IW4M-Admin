@@ -85,7 +85,7 @@ namespace IW4MAdmin.Application
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
             IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
             IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
-            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager)
+            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager, IInteractionRegistration interactionRegistration)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -115,9 +115,11 @@ namespace IW4MAdmin.Application
             _changeHistoryService = changeHistoryService;
             _appConfig = appConfig;
             Plugins = plugins;
+            InteractionRegistration = interactionRegistration;
         }
 
         public IEnumerable<IPlugin> Plugins { get; }
+        public IInteractionRegistration InteractionRegistration { get; }
 
         public async Task ExecuteEvent(GameEvent newEvent)
         {

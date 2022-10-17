@@ -1,6 +1,7 @@
 ﻿@using SharedLibraryCore.Configuration
 @using SharedLibraryCore.Dtos
 @using Data.Models.Client
+@using SharedLibraryCore.Interfaces
 
 <!-- left side navigation -->
 <div class="sidebar-overlay" onclick="halfmoon.toggleSidebar()"></div>
@@ -43,6 +44,23 @@
                     <span class="name">@ViewBag.Localization["WEBFRONT_NAV_HELP"]</span>
                 </a>
             </has-permission>
+
+            @foreach (IInteractionData interactionData in ViewBag.Interactions)
+            {
+                if (!interactionData.InteractionId.StartsWith("Webfront::Nav::Main"))
+                {
+                    continue;
+                }
+
+                if (ViewBag.User.Level >= interactionData.MinimumPermission)
+                {
+                    <a asp-controller="Interaction" asp-action="Render" asp-route-interactionName="@interactionData.InteractionId" class="sidebar-link">
+                        <i class="oi @interactionData.DisplayMeta mr-5"></i>
+                        <span class="name">@interactionData.Name</span>
+                    </a>
+                }
+            }
+        
             <!-- profile -->
             <has-permission entity="ProfilePage" required-permission="Read">
                 <a asp-controller="Client" asp-action="Profile" asp-route-id="@ViewBag.User.ClientId" class="sidebar-link">
@@ -104,6 +122,23 @@
                     </div>
                 </a>
             }
+            
+            @foreach (IInteractionData interactionData in ViewBag.Interactions)
+            {
+                if (!interactionData.InteractionId.StartsWith("Webfront::Nav::Social"))
+                {
+                    continue;
+                }
+                
+                if (ViewBag.User.Level >= interactionData.MinimumPermission)
+                {
+                    <a asp-controller="Interaction" asp-action="Render" asp-route-interactionName="@interactionData.InteractionId" class="sidebar-link">
+                        <i class="oi @interactionData.DisplayMeta mr-5"></i>
+                        <span class="name">@interactionData.Name</span>
+                    </a>
+                }
+            }
+        
             <br/>
 
             <!-- admin -->
@@ -142,6 +177,22 @@
                     <span class="name">@ViewBag.Localization["WEBFRONT_ACTION_RECENT_CLIENTS"]</span>
                 </a>
             </has-permission>
+            
+            @foreach (IInteractionData interactionData in ViewBag.Interactions)
+            {
+                if (!interactionData.InteractionId.StartsWith("Webfront::Nav::Admin"))
+                {
+                    continue;
+                }
+                
+                if (ViewBag.User.Level >= interactionData.MinimumPermission)
+                {
+                    <a asp-controller="Interaction" asp-action="Render" asp-route-interactionName="@interactionData.InteractionId" class="sidebar-link">
+                        <i class="oi @interactionData.DisplayMeta mr-5"></i>
+                        <span class="name">@interactionData.Name</span>
+                    </a>
+                }
+            }
 
             @if (ViewBag.Authorized)
             {

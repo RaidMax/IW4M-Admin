@@ -105,5 +105,6 @@ namespace SharedLibraryCore.Interfaces
         event EventHandler<GameEvent> OnGameEventExecuted;
 
         IAlertManager AlertManager { get; }
+        IInteractionRegistration InteractionRegistration { get; }
     }
 }

@@ -77,7 +77,8 @@ namespace WebfrontCore.Controllers
                 note.OriginEntityName = await _clientService.GetClientNameById(note.OriginEntityId);
             }
 
-            var interactions = await _interactionRegistration.GetInteractions(id, client.GameName, token);
+            var interactions =
+                await _interactionRegistration.GetInteractions("Webfront::Profile", id, client.GameName, token);
 
             // even though we haven't set their level to "banned" yet
             // (ie they haven't reconnected with the infringing player identifier)

@@ -27,6 +27,7 @@ namespace WebfrontCore.Controllers
         private readonly IMetaServiceV2 _metaService;
         private readonly IInteractionRegistration _interactionRegistration;
         private readonly IRemoteCommandService _remoteCommandService;
+        private readonly ITranslationLookup _translationLookup;
         private readonly string _banCommandName;
         private readonly string _tempbanCommandName;
         private readonly string _unbanCommandName;
@@ -41,12 +42,14 @@ namespace WebfrontCore.Controllers
 
         public ActionController(IManager manager, IEnumerable<IManagerCommand> registeredCommands,
             ApplicationConfiguration appConfig, IMetaServiceV2 metaService,
-            IInteractionRegistration interactionRegistration, IRemoteCommandService remoteCommandService) : base(manager)
+            IInteractionRegistration interactionRegistration, IRemoteCommandService remoteCommandService, 
+            ITranslationLookup translationLookup) : base(manager)
         {
             _appConfig = appConfig;
             _metaService = metaService;
             _interactionRegistration = interactionRegistration;
             _remoteCommandService = remoteCommandService;
+            _translationLookup = translationLookup;
 
             foreach (var cmd in registeredCommands)
             {
@@ -94,7 +97,18 @@ namespace WebfrontCore.Controllers
 
         public IActionResult DynamicActionForm(int? id, string meta)
         {
-            var metaDict = JsonSerializer.Deserialize<Dictionary<string, string>>(meta);
+            if (Client.ClientId < 1)
+            {
+                return Ok(new[]
+                {
+                    new CommandResponseInfo
+                    {
+                        Response = _translationLookup["SERVER_COMMANDS_INTERCEPTED"]
+                    }
+                });
+            }
+            
+            var metaDict = JsonSerializer.Deserialize<Dictionary<string, string>>(meta.TrimEnd('"').TrimStart('"'));
 
             if (metaDict is null)
             {
@@ -170,6 +184,17 @@ namespace WebfrontCore.Controllers
 
         public async Task<IActionResult> DynamicActionAsync(CancellationToken token = default)
         {
+            if (Client.ClientId < 1)
+            {
+                return Ok(new[]
+                {
+                    new CommandResponseInfo
+                    {
+                        Response = _translationLookup["SERVER_COMMANDS_INTERCEPTED"]
+                    }
+                });
+            }
+            
             HttpContext.Request.Query.TryGetValue("InteractionId", out var interactionId);
             HttpContext.Request.Query.TryGetValue("CustomInputKeys", out var inputKeys);
             HttpContext.Request.Query.TryGetValue("Data", out var data);

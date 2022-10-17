@@ -22,7 +22,7 @@ public class Plugin : IPlugin
     private static readonly string[] DisabledCommands = {nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"};
     private readonly IInteractionRegistration _interactionRegistration;
     private readonly IRemoteCommandService _remoteCommandService;
-    private static readonly string MuteInteraction = nameof(MuteInteraction);
+    private static readonly string MuteInteraction = "Webfront::Profile::Mute";
 
     public Plugin(ILogger<Plugin> logger, IMetaServiceV2 metaService, IInteractionRegistration interactionRegistration,
         ITranslationLookup translationLookup, IRemoteCommandService remoteCommandService)

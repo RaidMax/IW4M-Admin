@@ -38,9 +38,6 @@ public class Plugin : IPlugin
 
         switch (gameEvent.Type)
         {
-            case GameEvent.EventType.Command:
-
-                break;
             case GameEvent.EventType.Join:
                 // Check if user has any meta set, else ignore (unmuted)
                 var muteMetaJoin = await MuteManager.GetCurrentMuteState(gameEvent.Origin);
@@ -122,7 +119,16 @@ public class Plugin : IPlugin
         manager.CommandInterceptors.Add(gameEvent =>
         {
             if (gameEvent.Extra is not Command command)
+            {
                 return true;
+            }
+
+            var muteMeta = MuteManager.GetCurrentMuteState(gameEvent.Origin).GetAwaiter().GetResult();
+            if (muteMeta.MuteState is not MuteState.Muted)
+            {
+                return true;
+            }
+
             return !DisabledCommands.Contains(command.GetType().Name) && !command.IsBroadcast;
         });
 

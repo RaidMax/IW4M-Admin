@@ -113,7 +113,8 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 _scriptEngine = new Engine(cfg =>
-                    cfg.AddExtensionMethods(typeof(Utilities), typeof(Enumerable), typeof(Queryable), typeof(ScriptPluginExtensions))
+                    cfg.AddExtensionMethods(typeof(Utilities), typeof(Enumerable), typeof(Queryable),
+                            typeof(ScriptPluginExtensions))
                         .AllowClr(new[]
                         {
                             typeof(System.Net.Http.HttpClient).Assembly,
@@ -360,7 +361,7 @@ namespace IW4MAdmin.Application.Misc
                 }
             }
         }
-        
+
         public T WrapDelegate<T>(Delegate act, params object[] args)
         {
             try
@@ -401,6 +402,7 @@ namespace IW4MAdmin.Application.Misc
                 {
                     dynamicCommand.permission = perm.ToString();
                 }
+
                 string permission = dynamicCommand.permission;
                 List<Server.Game> supportedGames = null;
                 var targetRequired = false;
@@ -502,10 +504,14 @@ namespace IW4MAdmin.Application.Misc
 
         private void BeginGetDvar(Server server, string dvarName, Delegate onCompleted)
         {
+            var operationTimeout = TimeSpan.FromSeconds(5);
+
             void OnComplete(IAsyncResult result)
             {
                 try
                 {
+                    _onProcessing.Wait();
+
                     var (success, value) = (ValueTuple<bool, string>)result.AsyncState;
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
@@ -520,7 +526,7 @@ namespace IW4MAdmin.Application.Misc
                 {
                     using (LogContext.PushProperty("Server", server.ToString()))
                     {
-                        _logger.LogError(ex, "Could not complete BeginGetDvar for {Filename} {@Location}",
+                        _logger.LogError(ex, "Could not invoke BeginGetDvar callback for {Filename} {@Location}",
                             Path.GetFileName(_fileName), ex.Location);
                     }
                 }
@@ -528,41 +534,51 @@ namespace IW4MAdmin.Application.Misc
                 {
                     _logger.LogError(ex, "Could not complete {BeginGetDvar} for {Class}", nameof(BeginGetDvar), Name);
                 }
-            }
-
-            var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
-            
-            server.BeginGetDvar(dvarName, result =>
-            {
-                var shouldRelease = false;
-                try
-                {
-                    _onProcessing.Wait(tokenSource.Token);
-                    shouldRelease = true;
-                }
-
                 finally
                 {
-                    OnComplete(result);
-
-                    if (_onProcessing.CurrentCount == 0 && shouldRelease)
+                    if (_onProcessing.CurrentCount == 0)
                     {
-                        _onProcessing.Release();
+                        _onProcessing.Release(1);
                     }
                 }
-            }, tokenSource.Token);
+            }
+
+            new Thread(() =>
+            {
+                var tokenSource = new CancellationTokenSource();
+                tokenSource.CancelAfter(operationTimeout);
+
+                server.GetDvarAsync<string>(dvarName, token: tokenSource.Token).ContinueWith(action =>
+                {
+                    if (action.IsCompletedSuccessfully)
+                    {
+                        OnComplete(new AsyncResult
+                        {
+                            IsCompleted = true,
+                            AsyncState = (true, action.Result.Value)
+                        });
+                    }
+                    else
+                    {
+                        OnComplete(new AsyncResult
+                        {
+                            IsCompleted = false,
+                            AsyncState = (false, (string)null)
+                        });
+                    }
+                });
+            }).Start();
         }
 
         private void BeginSetDvar(Server server, string dvarName, string dvarValue, Delegate onCompleted)
         {
-            var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
-            
+            var operationTimeout = TimeSpan.FromSeconds(5);
+
             void OnComplete(IAsyncResult result)
             {
                 try
                 {
+                    _onProcessing.Wait();
                     var success = (bool)result.AsyncState;
                     onCompleted.DynamicInvoke(JsValue.Undefined,
                         new[]
@@ -585,25 +601,40 @@ namespace IW4MAdmin.Application.Misc
                 {
                     _logger.LogError(ex, "Could not complete {BeginSetDvar} for {Class}", nameof(BeginSetDvar), Name);
                 }
-            }
-            
-            server.BeginSetDvar(dvarName, dvarValue, result =>
-            {
-                var shouldRelease = false;
-                try
-                {
-                    _onProcessing.Wait(tokenSource.Token);
-                    shouldRelease = true;
-                }
                 finally
                 {
-                    OnComplete(result);
-                    if (_onProcessing.CurrentCount == 0 && shouldRelease)
+                    if (_onProcessing.CurrentCount == 0)
                     {
-                        _onProcessing.Release();
+                        _onProcessing.Release(1);
                     }
                 }
-            }, tokenSource.Token);
+            }
+
+            new Thread(() =>
+            {
+                var tokenSource = new CancellationTokenSource();
+                tokenSource.CancelAfter(operationTimeout);
+
+                server.SetDvarAsync(dvarName, dvarValue, token: tokenSource.Token).ContinueWith(action =>
+                {
+                    if (action.IsCompletedSuccessfully)
+                    {
+                        OnComplete(new AsyncResult
+                        {
+                            IsCompleted = true,
+                            AsyncState = true
+                        });
+                    }
+                    else
+                    {
+                        OnComplete(new AsyncResult
+                        {
+                            IsCompleted = false,
+                            AsyncState = false
+                        });
+                    }
+                });
+            }).Start();
         }
     }
 
@@ -616,7 +647,6 @@ namespace IW4MAdmin.Application.Misc
                 result = value.ToString();
                 return true;
             }
-
 
             result = JsValue.Null;
             return false;

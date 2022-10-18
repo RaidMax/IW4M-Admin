@@ -856,7 +856,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
         {
+#pragma warning disable CS0612
             var serverDetectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.ServerDetectionTypes;
+#pragma warning restore CS0612
             var gameDetectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.GameDetectionTypes;
             var ignoredClients = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredClientIds;
 

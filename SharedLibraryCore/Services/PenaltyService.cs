@@ -131,7 +131,7 @@ namespace SharedLibraryCore.Services
         }
 
         private static readonly EFPenalty.PenaltyType[] LinkedPenalties =
-            { EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.Flag, EFPenalty.PenaltyType.TempBan };
+            { EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.Flag, EFPenalty.PenaltyType.TempBan, EFPenalty.PenaltyType.TempMute, EFPenalty.PenaltyType.Mute };
 
         private static readonly Expression<Func<EFPenalty, bool>> Filter = p =>
             LinkedPenalties.Contains(p.Type) && p.Active && (p.Expires == null || p.Expires > DateTime.UtcNow);

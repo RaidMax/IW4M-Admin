@@ -21,6 +21,8 @@
             EFPenalty.PenaltyType.Ban => "alert-danger",
             EFPenalty.PenaltyType.Flag => "alert-secondary",
             EFPenalty.PenaltyType.TempBan => "alert-secondary",
+            EFPenalty.PenaltyType.TempMute => "alert-secondary",
+            EFPenalty.PenaltyType.Mute => "alert-secondary",
             _ => "alert"
         };
     }
@@ -367,7 +369,7 @@
         });
     }
 
-    if ((Model.LevelInt < (int)ViewBag.User.Level && !Model.HasActivePenalty || isTempBanned) && ViewBag.Authorized)
+    if ((Model.LevelInt < (int)ViewBag.User.Level && !isPermBanned || isTempBanned) && ViewBag.Authorized)
     {
         menuItems.Items.Add(new SideContextMenuItem
         {
@@ -379,7 +381,7 @@
         });
     }
 
-    if ((Model.LevelInt < (int)ViewBag.User.Level && Model.HasActivePenalty || isTempBanned) && ViewBag.Authorized)
+    if ((Model.LevelInt < (int)ViewBag.User.Level && isPermBanned || isTempBanned) && ViewBag.Authorized)
     {
         menuItems.Items.Add(new SideContextMenuItem
         {

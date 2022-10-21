@@ -162,7 +162,12 @@ namespace WebfrontCore.Controllers
                 });
             }
 
-            clientDto.ActivePenalty = activePenalties.OrderByDescending(_penalty => _penalty.Type).FirstOrDefault();
+            clientDto.ActivePenalty = activePenalties.MaxBy(penalty => penalty.Type switch
+            {
+                EFPenalty.PenaltyType.TempMute => 0,
+                EFPenalty.PenaltyType.Mute => 1,
+                _ => (int)penalty.Type
+            });
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.IsSensitive));
 
             var strippedName = clientDto.Name.StripColors();

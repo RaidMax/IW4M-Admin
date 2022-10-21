@@ -1,4 +1,7 @@
-﻿using Data.Models;
+﻿using Data.Abstractions;
+using Data.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
@@ -13,13 +16,15 @@ public class MuteManager
     private readonly IMetaServiceV2 _metaService;
     private readonly ITranslationLookup _translationLookup;
     private readonly ILogger _logger;
+    private readonly IDatabaseContextFactory _databaseContextFactory;
     private readonly SemaphoreSlim _onMuteAction = new(1, 1);
 
-    public MuteManager(IMetaServiceV2 metaService, ITranslationLookup translationLookup, ILogger logger)
+    public MuteManager(IServiceProvider serviceProvider)
     {
-        _metaService = metaService;
-        _translationLookup = translationLookup;
-        _logger = logger;
+        _metaService = serviceProvider.GetRequiredService<IMetaServiceV2>();
+        _translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
+        _logger = serviceProvider.GetRequiredService<ILogger<MuteManager>>();
+        _databaseContextFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
     }
 
     public static bool IsExpiredMute(MuteStateMeta muteStateMeta) =>
@@ -103,6 +108,8 @@ public class MuteManager
             await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
         }
 
+        await ExpireMutePenalties(target);
+
         clientMuteMeta = new MuteStateMeta
         {
             Expiration = DateTime.UtcNow,
@@ -130,12 +137,28 @@ public class MuteManager
             Offender = target,
             Offense = reason,
             Punisher = origin,
-            Active = true,
             Link = target.AliasLink
         };
         _logger.LogDebug("Creating new {MuteState} Penalty for {Target} with reason {Reason}",
             nameof(muteState), target.Name, reason);
         await newPenalty.TryCreatePenalty(Plugin.Manager.GetPenaltyService(), _logger);
+    }
+
+    private async Task ExpireMutePenalties(EFClient client)
+    {
+        await using var context = _databaseContextFactory.CreateContext();
+        var mutePenalties = await context.Penalties
+            .Where(penalty => penalty.OffenderId == client.ClientId &&
+                penalty.Type == EFPenalty.PenaltyType.Mute || penalty.Type == EFPenalty.PenaltyType.TempMute &&
+                penalty.Expires == null || penalty.Expires > DateTime.UtcNow)
+            .ToListAsync();
+
+        foreach (var mutePenalty in mutePenalties)
+        {
+            mutePenalty.Expires = DateTime.UtcNow;
+        }
+
+        await context.SaveChangesAsync();
     }
 
     public static async Task PerformGameCommand(Server server, EFClient? client, MuteStateMeta muteStateMeta)

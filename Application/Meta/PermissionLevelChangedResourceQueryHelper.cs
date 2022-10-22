@@ -27,7 +27,8 @@ public class
         await using var context = _contextFactory.CreateContext();
 
         var auditEntries = context.EFChangeHistory.Where(change => change.TargetEntityId == query.ClientId)
-            .Where(change => change.TypeOfChange == EFChangeHistory.ChangeType.Permission);
+            .Where(change => change.TypeOfChange == EFChangeHistory.ChangeType.Permission)
+            .OrderByDescending(change => change.TimeChanged);
 
         var audits = from change in auditEntries
             join client in context.Clients

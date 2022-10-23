@@ -19,8 +19,10 @@ Setup()
     level.eventBus.timeoutKey   = "timeout";
     level.eventBus.timeout      = 30;
     
-    level.commonFunctions           = spawnstruct();
-    level.commonFunctions.SetDvar   = "SetDvarIfUninitialized";
+    level.commonFunctions              = spawnstruct();
+    level.commonFunctions.setDvar      = "SetDvarIfUninitialized";
+    
+    level.commonKeys = spawnstruct();
     
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
@@ -113,17 +115,6 @@ OnPlayerSpawned()
     {
         self waittill( "spawned_player" );
         self PlayerSpawnEvents();
-    }
-}
-
-OnPlayerDisconnect()
-{
-    self endon ( "disconnect" );
-
-    for ( ;; )
-    {
-        self waittill( "disconnect" );
-        self SaveTrackingMetrics();
     }
 }
 
@@ -245,7 +236,12 @@ _IsBot( entity )
 
 _SetDvarIfUninitialized( dvarName, dvarValue )
 {
-    [[level.overrideMethods[level.commonFunctions.SetDvar]]]( dvarName, dvarValue );
+    [[level.overrideMethods[level.commonFunctions.setDvar]]]( dvarName, dvarValue );
+}
+
+NotImplementedFunction( a, b, c, d, e, f ) 
+{
+    LogWarning( "Function not implemented" );
 }
 
 // Not every game can output to console or even game log.
@@ -675,6 +671,7 @@ OnClientDataReceived( event )
     clientData.clientId = event.data["clientId"];
     clientData.lastConnection = event.data["lastConnection"];
     clientData.tag = event.data["tag"];
+    clientData.performance = event.data["performance"];
     clientData.state = "complete";
     self.persistentClientId = event.data["clientId"];
 

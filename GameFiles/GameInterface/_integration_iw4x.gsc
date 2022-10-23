@@ -16,9 +16,17 @@ Setup()
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
-    level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
-    level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
-    level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
+    level.overrideMethods["GetTotalShotsFired"]                                    = ::GetTotalShotsFired;
+    level.overrideMethods[level.commonFunctions.setDvar]                           = ::_SetDvarIfUninitialized;
+    level.overrideMethods["waittill_notify_or_timeout"]                            = ::_waittill_notify_or_timeout;
+    level.overrideMethods[level.commonFunctions.changeTeam]                        = ::ChangeTeam;
+    level.overrideMethods[level.commonFunctions.getTeamCounts]                     = ::CountPlayers;
+    level.overrideMethods[level.commonFunctions.getMaxClients]                     = ::GetMaxClients;
+    level.overrideMethods[level.commonFunctions.getTeamBased]                      = ::GetTeamBased;
+    level.overrideMethods[level.commonFunctions.getClientTeam]                     = ::GetClientTeam;
+    level.overrideMethods[level.commonFunctions.getClientKillStreak]               = ::GetClientKillStreak;
+    level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = ::BackupRestoreClientKillStreakData;
+    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = ::WaitTillAnyTimeout;
     
     RegisterClientCommands();
     
@@ -85,6 +93,88 @@ WaitForClientEvents()
             clientData = self.pers[level.clientDataKey];
             lastServerPlayed = clientData.meta[lastServerMetaKey];
         }
+    }
+}
+
+GetMaxClients()
+{
+    return level.maxClients;
+}
+
+GetTeamBased()
+{
+    return level.teamBased;
+}
+
+CountPlayers()
+{
+    return maps\mp\gametypes\_teams::CountPlayers();
+}
+
+GetClientTeam()
+{
+    if ( IsDefined( self.pers["team"] ) && self.pers["team"] == "allies" )
+    {
+        return "allies";
+    }
+    
+    else if ( IsDefined( self.pers["team"] ) && self.pers["team"] == "axis" )
+    {
+        return "axis";
+    }
+    
+    else
+    {
+        return "none";
+    }
+}
+
+GetClientKillStreak()
+{
+    return int( self.pers["cur_kill_streak"] );
+}
+
+BackupRestoreClientKillStreakData( restore ) 
+{
+    if ( restore )
+    {
+        foreach ( index, streakStruct in self.pers["killstreaks_backup"] )
+        {
+		    self.pers["killstreaks"][index] =  self.pers["killstreaks_backup"][index];
+        }
+    }
+
+    else 
+    {
+        self.pers["killstreaks_backup"] = [];
+        
+        foreach ( index, streakStruct in self.pers["killstreaks"] )
+        {
+            self.pers["killstreaks_backup"][index] = self.pers["killstreaks"][index];
+        }
+    }
+}
+
+WaitTillAnyTimeout( timeOut, string1, string2, string3, string4, string5 )
+{
+    return common_scripts\utility::waittill_any_timeout( timeOut, string1, string2, string3, string4, string5 );
+}
+
+ChangeTeam( team )
+{
+    switch ( team )
+    {
+        case "allies":
+            self [[level.allies]]();
+            break;
+    
+        case "axis":
+            self [[level.axis]]();
+            break;
+
+        case "spectator":
+            self [[level.spectator]]();
+            break;
     }
 }
 

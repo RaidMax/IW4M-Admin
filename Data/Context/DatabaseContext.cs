@@ -32,6 +32,7 @@ namespace Data.Context
         public DbSet<EFClientMessage> ClientMessages { get; set; }
         
         public DbSet<EFServerStatistics> ServerStatistics { get; set; }
+        public DbSet<EFClientStatistics> ClientStatistics { get; set; }
         public DbSet<EFHitLocation> HitLocations { get; set; }
         public DbSet<EFClientHitStatistic> HitStatistics { get; set; }
         public DbSet<EFWeapon> Weapons { get; set; }

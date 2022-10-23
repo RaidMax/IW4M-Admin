@@ -72,27 +72,27 @@ let plugin = {
 };
 
 let commands = [{
-    name: 'giveweapon',
-    description: 'gives specified weapon',
-    alias: 'gw',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    },
-        {
-            name: 'weapon name',
+        name: 'giveweapon',
+        description: 'gives specified weapon',
+        alias: 'gw',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
             required: true
-        }],
-    supportedGames: ['IW4', 'IW5', 'T5'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-            return;
+        },
+            {
+                name: 'weapon name',
+                required: true
+            }],
+        supportedGames: ['IW4', 'IW5', 'T5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, gameEvent.Target, {weaponName: gameEvent.Data});
         }
-        sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, gameEvent.Target, {weaponName: gameEvent.Data});
-    }
-},
+    },
     {
         name: 'takeweapons',
         description: 'take all weapons from specified player',
@@ -374,6 +374,15 @@ const initialize = (server) => {
     return true;
 }
 
+const getClientStats = (client, server) => {
+    const contextFactory = _serviceResolver.ResolveService('IDatabaseContextFactory');
+    const context = contextFactory.CreateContext(false);
+    const stats = context.ClientStatistics.GetClientsStatData([client.ClientId], server.GetId()); // .Find(client.ClientId, serverId);
+    context.Dispose();
+    
+    return  stats.length > 0 ? stats[0] : undefined;
+}
+
 function onReceivedDvar(server, dvarName, dvarValue, success) {
     const logger = _serviceResolver.ResolveService('ILogger');
     logger.WriteDebug(`Received ${dvarName}=${dvarValue} success=${success}`);
@@ -422,12 +431,14 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
                     data[event.data] = meta === null ? '' : meta.Value;
                     logger.WriteDebug(`event data is ${event.data}`);
                 } else {
+                    const clientStats = getClientStats(client, server);
                     const tagMeta = metaService.GetPersistentMetaByLookup('ClientTagV2', 'ClientTagNameV2', client.ClientId, token).GetAwaiter().GetResult();
                     data = {
                         level: client.Level,
                         clientId: client.ClientId,
                         lastConnection: client.LastConnection,
-                        tag: tagMeta?.Value ?? ''
+                        tag: tagMeta?.Value ?? '',
+                        performance:  clientStats?.Performance ?? 200.0
                     };
                 }
 
@@ -456,13 +467,15 @@ function onReceivedDvar(server, dvarName, dvarValue, success) {
             } else {
                 if (event.subType === 'Meta') {
                     try {
-                        logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}, Direction=${event.data['direction']} ${token}`);
-                        if (event.data['direction'] != null) {
-                            event.data['direction'] = 'up'
-                                ? metaService.IncrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult()
-                                : metaService.DecrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult();
-                        } else {
-                            metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
+                        if (event.data['value'] != null && event.data['key'] != null) {
+                            logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}, Direction=${event.data['direction']} ${token}`);
+                            if (event.data['direction'] != null) {
+                                event.data['direction'] = 'up'
+                                    ? metaService.IncrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult()
+                                    : metaService.DecrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult();
+                            } else {
+                                metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
+                            }
                         }
                         sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Complete'});
                     } catch (error) {
@@ -500,11 +513,13 @@ const pollForEvents = server => {
     }
 
     if (server.Throttled) {
+        logger.WriteDebug('Server is throttled so we are not polling for game data');
         return;
     }
 
     if (!state.waitingOnInput) {
         state.waitingOnInput = true;
+        logger.WriteDebug('Attempting to get in dvar value');
         getDvar(server, inDvar, onReceivedDvar);
     }
 

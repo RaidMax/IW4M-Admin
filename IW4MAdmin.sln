@@ -77,6 +77,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameInterface", "GameInterf
 	ProjectSection(SolutionItems) = preProject
 		GameFiles\GameInterface\_integration_base.gsc = GameFiles\GameInterface\_integration_base.gsc
 		GameFiles\GameInterface\_integration_iw4x.gsc = GameFiles\GameInterface\_integration_iw4x.gsc
+		GameFiles\GameInterface\_integration_iw5.gsc = GameFiles\GameInterface\_integration_iw5.gsc
+		GameFiles\GameInterface\_integration_shared.gsc = GameFiles\GameInterface\_integration_shared.gsc
+		GameFiles\GameInterface\_integration_t5.gsc = GameFiles\GameInterface\_integration_t5.gsc
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AntiCheat", "AntiCheat", "{AB83BAC0-C539-424A-BF00-78487C10753C}"

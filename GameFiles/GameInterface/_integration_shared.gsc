@@ -1,3 +1,4 @@
+
 Init()
 {
     level thread Setup();
@@ -14,7 +15,7 @@ Setup()
     level.commonFunctions.getClientTeam                     = "GetClientTeam";
     level.commonFunctions.getClientKillStreak               = "GetClientKillStreak";
     level.commonFunctions.backupRestoreClientKillStreakData = "BackupRestoreClientKillStreakData";
-	level.commonFunctions.waitTillAnyTimeout                = "WaitTillAnyTimeout";
+    level.commonFunctions.waitTillAnyTimeout                = "WaitTillAnyTimeout";
     
     level.overrideMethods[level.commonFunctions.changeTeam]                        = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = scripts\_integration_base::NotImplementedFunction;
@@ -23,7 +24,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.getClientTeam]                     = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.getClientKillStreak]               = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = scripts\_integration_base::NotImplementedFunction;
-	level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = scripts\_integration_base::NotImplementedFunction;
+    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = scripts\_integration_base::NotImplementedFunction;
     
     // these can be overridden per game if needed
     level.commonKeys.team1         = "allies"; 
@@ -33,7 +34,7 @@ Setup()
     level.eventTypes.connect     = "connected";
     level.eventTypes.disconnect  = "disconnect";
     level.eventTypes.joinTeam    = "joined_team";
-	level.eventTypes.spawned	 = "spawned_player";
+    level.eventTypes.spawned	 = "spawned_player";
     level.eventTypes.gameEnd     = "game_ended";
     
     level.iw4madminIntegrationDefaultPerformance = 200;
@@ -43,7 +44,7 @@ Setup()
         return;
     }
 
-	if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 )
+    if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 )
     {
         return;
     }
@@ -67,7 +68,7 @@ OnPlayerConnect()
         teamToJoin = player GetTeamToJoin();
         player [[level.overrideMethods[level.commonFunctions.changeTeam]]]( teamToJoin );
         
-		player thread OnClientFirstSpawn();
+        player thread OnClientFirstSpawn();
         player thread OnClientJoinedTeam();
         player thread OnClientDisconnect();
         player thread WaitForClientEvents();
@@ -84,31 +85,31 @@ OnClientDisconnect()
         self waittill( level.eventTypes.disconnect );
         scripts\_integration_base::LogDebug( "client is disconnecting" );
 
-		OnTeamSizeChanged();
+        OnTeamSizeChanged();
         self notify( "disconnect_logic_end" );
     }
 }
 
 OnClientJoinedTeam()
 {
-	self endon( level.eventTypes.disconnect );
+    self endon( level.eventTypes.disconnect );
 
-	for( ;; )
-	{
-		self waittill( level.eventTypes.joinTeam );
+    for( ;; )
+    {
+        self waittill( level.eventTypes.joinTeam );
 
         if ( IsDefined( self.wasAutoBalanced ) && self.wasAutoBalanced )
         {
             self.wasAutoBalanced = false;
             continue;
         }
-		
-		newTeam = self [[level.overrideMethods[level.commonFunctions.getClientTeam]]]();
-		scripts\_integration_base::LogDebug( self.name + " switched to " + newTeam );
+        
+        newTeam = self [[level.overrideMethods[level.commonFunctions.getClientTeam]]]();
+        scripts\_integration_base::LogDebug( self.name + " switched to " + newTeam );
         
         if ( newTeam != level.commonKeys.team1 && newTeam != level.commonKeys.team2 )
         {
-			OnTeamSizeChanged();
+            OnTeamSizeChanged();
             scripts\_integration_base::LogDebug( "not force balancing " + self.name + " because they switched to spec"  );
             continue;
         }
@@ -121,13 +122,13 @@ OnClientJoinedTeam()
             wait ( 0.1 );
             self [[level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData]]]( true );
         } 		
-	}
+    }
 }
 
 OnClientFirstSpawn()
 {
-	self endon( level.eventTypes.disconnect );
-	timeoutResult = self [[level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]]]( 30, level.eventTypes.spawned );
+    self endon( level.eventTypes.disconnect );
+    timeoutResult = self [[level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]]]( 30, level.eventTypes.spawned );
 
     if ( timeoutResult != "timeout" )
     {
@@ -140,18 +141,18 @@ OnClientFirstSpawn()
 
 OnTeamSizeChanged()
 {
-	if ( level.players.size < 3 )
+    if ( level.players.size < 3 )
     {
         scripts\_integration_base::LogDebug( "not enough clients to autobalance" );
         return;
     }
 
-	if ( !IsDefined( GetSmallerTeam( 1 ) ) )
-	{
-		scripts\_integration_base::LogDebug( "teams are not unbalanced enough to auto balance" );
+    if ( !IsDefined( GetSmallerTeam( 1 ) ) )
+    {
+        scripts\_integration_base::LogDebug( "teams are not unbalanced enough to auto balance" );
         return;
-	}
-	
+    }
+    
     toSwap = FindClientToSwap();
     curentTeam = toSwap [[level.overrideMethods[level.commonFunctions.getClientTeam]]]();
     otherTeam = level.commonKeys.team1;

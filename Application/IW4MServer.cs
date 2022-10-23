@@ -867,6 +867,12 @@ namespace IW4MAdmin
         /// <returns></returns>
         async Task<List<EFClient>[]> PollPlayersAsync(CancellationToken token)
         {
+            if (DateTime.Now - (MatchEndTime ?? MatchStartTime) < TimeSpan.FromSeconds(15))
+            {
+                ServerLogger.LogDebug("Skipping status poll attempt because the match ended recently");
+                return null;
+            }
+ 
             var currentClients = GetClientsAsList();
             var statusResponse = await this.GetStatusAsync(token);
 
@@ -874,7 +880,7 @@ namespace IW4MAdmin
             {
                 return null;
             }
-            
+
             var polledClients = statusResponse.Clients.AsEnumerable();
 
             if (Manager.GetApplicationSettings().Configuration().IgnoreBots)

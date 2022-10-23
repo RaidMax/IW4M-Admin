@@ -14,8 +14,11 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
     private Action _actions;
     private Delegate _jsAction;
     private string _actionName;
+    private int _interval = DefaultInterval;
+    private long _waitingCount;
     private const int DefaultDelay = 0;
     private const int DefaultInterval = 1000;
+    private const int MaxWaiting = 10;
     private readonly ILogger _logger;
     private readonly SemaphoreSlim _onRunningTick = new(1, 1);
     private SemaphoreSlim _onDependentAction;
@@ -57,6 +60,7 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
         _logger.LogDebug("Starting script timer...");
 
         _timer ??= new Timer(callback => _actions(), null, delay, interval);
+        _interval = interval;
         IsRunning = true;
     }
 
@@ -103,55 +107,67 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
         _actions = OnTickInternal;
     }
 
-    private void ReleaseThreads()
+    private void ReleaseThreads(bool releaseOnRunning, bool releaseOnDependent)
     {
-        _logger.LogDebug("-Releasing OnTick for timer");
-
-        if (_onRunningTick.CurrentCount == 0)
+        if (releaseOnRunning && _onRunningTick.CurrentCount == 0)
         {
+            _logger.LogDebug("-Releasing OnRunning for timer");
             _onRunningTick.Release(1);
         }
 
-        if (_onDependentAction?.CurrentCount != 0)
+        if (releaseOnDependent && _onDependentAction?.CurrentCount == 0)
         {
-            return;
+            _onDependentAction?.Release(1);
         }
-
-        _onDependentAction?.Release(1);
     }
 
     private async void OnTickInternal()
     {
-        var previousTimerRunning = false;
+        var releaseOnRunning = false;
+        var releaseOnDependent = false;
+
         try
         {
-            if (_onRunningTick.CurrentCount == 0)
+            try
+            {
+                if (Interlocked.Read(ref _waitingCount) > MaxWaiting)
+                {
+                    _logger.LogWarning("Reached max number of waiting count ({WaitingCount}) for {OnTick}",
+                        _waitingCount, nameof(OnTickInternal));
+                    return;
+                }
+
+                Interlocked.Increment(ref _waitingCount);
+                using var tokenSource1 = new CancellationTokenSource();
+                tokenSource1.CancelAfter(TimeSpan.FromMilliseconds(_interval));
+                await _onRunningTick.WaitAsync(tokenSource1.Token);
+                releaseOnRunning = true;
+            }
+            catch (OperationCanceledException)
             {
                 _logger.LogDebug("Previous {OnTick} is still running, so we are skipping this one",
                     nameof(OnTickInternal));
-                previousTimerRunning = true;
                 return;
             }
 
-            await _onRunningTick.WaitAsync();
-
-            var tokenSource = new CancellationTokenSource();
+            using var tokenSource = new CancellationTokenSource();
             tokenSource.CancelAfter(TimeSpan.FromSeconds(5));
-            
+
             try
             {
                 // the js engine is not thread safe so we need to ensure we're not executing OnTick and OnEventAsync simultaneously
                 if (_onDependentAction is not null)
                 {
                     await _onDependentAction.WaitAsync(tokenSource.Token);
+                    releaseOnDependent = true;
                 }
             }
             catch (OperationCanceledException)
             {
-                _logger.LogDebug("Dependent action did not release in allotted time so we are cancelling this tick");
+                _logger.LogWarning("Dependent action did not release in allotted time so we are cancelling this tick");
                 return;
             }
-            
+
             _logger.LogDebug("+Running OnTick for timer");
             var start = DateTime.Now;
             _jsAction.DynamicInvoke(JsValue.Undefined, new[] { JsValue.Undefined });
@@ -160,8 +176,9 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
         catch (Exception ex) when (ex.InnerException is JavaScriptException jsx)
         {
             _logger.LogError(jsx,
-                "Could not execute timer tick for script action {ActionName} [@{LocationInfo}]", _actionName,
-                jsx.Location);
+                "Could not execute timer tick for script action {ActionName} [{@LocationInfo}] [{@StackTrace}]",
+                _actionName,
+                jsx.Location, jsx.JavaScriptStackTrace);
         }
         catch (Exception ex)
         {
@@ -169,10 +186,8 @@ public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
         }
         finally
         {
-            if (!previousTimerRunning)
-            {
-                ReleaseThreads();
-            }
+            ReleaseThreads(releaseOnRunning, releaseOnDependent);
+            Interlocked.Decrement(ref _waitingCount);
         }
     }
 

@@ -409,24 +409,9 @@ namespace SharedLibraryCore
 
         public abstract Task<long> GetIdForServer(Server server = null);
 
-        public string[] ExecuteServerCommand(string command, int timeoutMs = 1000)
-        {
-            var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
-
-            try
-            {
-                return this.ExecuteCommandAsync(command, tokenSource.Token).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         public string GetServerDvar(string dvarName, int timeoutMs = 1000)
         {
-            var tokenSource = new CancellationTokenSource();
+            using var tokenSource = new CancellationTokenSource();
             tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
             try
             {
@@ -440,7 +425,7 @@ namespace SharedLibraryCore
 
         public bool SetServerDvar(string dvarName, string dvarValue, int timeoutMs = 1000)
         {
-            var tokenSource = new CancellationTokenSource();
+            using var tokenSource = new CancellationTokenSource();
             tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
             try
             {

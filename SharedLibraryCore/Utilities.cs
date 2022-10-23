@@ -18,7 +18,6 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
-using SharedLibraryCore.Formatting;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Localization;
@@ -1003,9 +1002,9 @@ namespace SharedLibraryCore
                 return true;
             }
 
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogError(e, $"Could not create penalty of type {penalty.Type.ToString()}");
+                logger.LogError(ex, "Could not create penalty of type {PenaltyType}", penalty.Type.ToString());
             }
 
             return false;
@@ -1052,8 +1051,7 @@ namespace SharedLibraryCore
         {
             await Task.WhenAny(task, Task.Delay(timeout));
         }
-
-
+        
         public static bool ShouldHideLevel(this Permission perm)
         {
             return perm == Permission.Flagged;

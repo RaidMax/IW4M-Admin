@@ -10,6 +10,7 @@ using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -353,6 +354,13 @@ namespace IW4MAdmin.Application.Misc
                 var result = action.DynamicInvoke(JsValue.Undefined, args);
                 return (T)(result as JsValue)?.ToObject();
             }
+            catch (TargetInvocationException ex) when (ex.InnerException is JavaScriptException jsEx)
+            {
+                _logger.LogError(ex,
+                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {@LocationInfo} {StackTrace}",
+                    nameof(ExecuteAction), Path.GetFileName(_fileName), jsEx.Location, jsEx.JavaScriptStackTrace);
+                throw;
+            }
             finally
             {
                 if (_onProcessing.CurrentCount == 0)
@@ -369,6 +377,13 @@ namespace IW4MAdmin.Application.Misc
                 _onProcessing.Wait();
                 return (T)(act.DynamicInvoke(JsValue.Null,
                     args.Select(arg => JsValue.FromObject(_scriptEngine, arg)).ToArray()) as ObjectWrapper)?.ToObject();
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is JavaScriptException jsEx)
+            {
+                _logger.LogError(ex,
+                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {@LocationInfo} {StackTrace}",
+                    nameof(WrapDelegate), Path.GetFileName(_fileName), jsEx.Location, jsEx.JavaScriptStackTrace);
+                throw;
             }
             finally
             {
@@ -545,7 +560,21 @@ namespace IW4MAdmin.Application.Misc
 
             new Thread(() =>
             {
-                var tokenSource = new CancellationTokenSource();
+                if (DateTime.Now - (server.MatchEndTime ?? server.MatchStartTime) < TimeSpan.FromSeconds(15))
+                {
+                    using (LogContext.PushProperty("Server", server.ToString()))
+                    {
+                        _logger.LogDebug("Not getting DVar because match recently ended");
+                    }
+
+                    OnComplete(new AsyncResult
+                    {
+                        IsCompleted = false,
+                        AsyncState = (false, (string)null)
+                    });
+                }
+                
+                using var tokenSource = new CancellationTokenSource();
                 tokenSource.CancelAfter(operationTimeout);
 
                 server.GetDvarAsync<string>(dvarName, token: tokenSource.Token).ContinueWith(action =>
@@ -612,7 +641,21 @@ namespace IW4MAdmin.Application.Misc
 
             new Thread(() =>
             {
-                var tokenSource = new CancellationTokenSource();
+                if (DateTime.Now - (server.MatchEndTime ?? server.MatchStartTime) < TimeSpan.FromSeconds(15))
+                {
+                    using (LogContext.PushProperty("Server", server.ToString()))
+                    {
+                        _logger.LogDebug("Not setting DVar because match recently ended");
+                    }
+
+                    OnComplete(new AsyncResult
+                    {
+                        IsCompleted = false,
+                        AsyncState = false
+                    });
+                }
+                
+                using var tokenSource = new CancellationTokenSource();
                 tokenSource.CancelAfter(operationTimeout);
 
                 server.SetDvarAsync(dvarName, dvarValue, token: tokenSource.Token).ContinueWith(action =>

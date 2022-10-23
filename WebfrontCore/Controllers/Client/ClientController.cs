@@ -162,6 +162,7 @@ namespace WebfrontCore.Controllers
                 });
             }
 
+            // Reducing the enum value for Temp/Mute so bans appear in client banner first
             clientDto.ActivePenalty = activePenalties.MaxBy(penalty => penalty.Type switch
             {
                 EFPenalty.PenaltyType.TempMute => 0,

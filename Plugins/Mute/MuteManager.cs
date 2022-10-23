@@ -103,7 +103,7 @@ public class MuteManager
         if (clientMuteMeta.MuteState is MuteState.Unmuted && clientMuteMeta.CommandExecuted) return false;
         if (!target.IsIngame && clientMuteMeta.MuteState is MuteState.Unmuting) return false;
 
-        if (clientMuteMeta.MuteState is not MuteState.Unmuting || origin.ClientId != 1)
+        if (clientMuteMeta.MuteState is not MuteState.Unmuting && origin.ClientId != 1)
         {
             await CreatePenalty(MuteState.Unmuted, origin, target, DateTime.UtcNow, reason);
         }
@@ -149,8 +149,9 @@ public class MuteManager
         await using var context = _databaseContextFactory.CreateContext();
         var mutePenalties = await context.Penalties
             .Where(penalty => penalty.OffenderId == client.ClientId &&
-                penalty.Type == EFPenalty.PenaltyType.Mute || penalty.Type == EFPenalty.PenaltyType.TempMute &&
-                penalty.Expires == null || penalty.Expires > DateTime.UtcNow)
+                              (penalty.Type == EFPenalty.PenaltyType.Mute ||
+                               penalty.Type == EFPenalty.PenaltyType.TempMute) &&
+                              (penalty.Expires == null || penalty.Expires > DateTime.UtcNow))
             .ToListAsync();
 
         foreach (var mutePenalty in mutePenalties)

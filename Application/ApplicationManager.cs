@@ -229,14 +229,13 @@ namespace IW4MAdmin.Application
         {
             // store the server hash code and task for it
             var runningUpdateTasks = new Dictionary<long, (Task task, CancellationTokenSource tokenSource, DateTime startTime)>();
+            var timeout = TimeSpan.FromSeconds(60);
 
-            while (!_tokenSource.IsCancellationRequested)
+            while (!_tokenSource.IsCancellationRequested) // main shutdown requested
             {
                 // select the server ids that have completed the update task
                 var serverTasksToRemove = runningUpdateTasks
-                    .Where(ut => ut.Value.task.Status == TaskStatus.RanToCompletion ||
-                                 ut.Value.task.Status == TaskStatus.Canceled || // we want to cancel if a task takes longer than 5 minutes
-                                 ut.Value.task.Status == TaskStatus.Faulted || DateTime.Now - ut.Value.startTime > TimeSpan.FromMinutes(5))
+                    .Where(ut => ut.Value.task.IsCompleted)
                     .Select(ut => ut.Key)
                     .ToList();
 
@@ -252,36 +251,16 @@ namespace IW4MAdmin.Application
                 }
 
                 // select the servers where the tasks have completed
-                var serverIds = Servers.Select(s => s.EndPoint).Except(runningUpdateTasks.Select(r => r.Key)).ToList();
-                foreach (var server in Servers.Where(s => serverIds.Contains(s.EndPoint)))
+                var newTaskServers = Servers.Select(s => s.EndPoint).Except(runningUpdateTasks.Select(r => r.Key)).ToList();
+                
+                foreach (var server in Servers.Where(s => newTaskServers.Contains(s.EndPoint)))
                 {
-                    var tokenSource = new CancellationTokenSource();
-                    runningUpdateTasks.Add(server.EndPoint, (Task.Run(async () =>
-                    {
-                        try
-                        {
-                            if (runningUpdateTasks.ContainsKey(server.EndPoint))
-                            {
-                                await server.ProcessUpdatesAsync(_tokenSource.Token)
-                                    .WithWaitCancellation(runningUpdateTasks[server.EndPoint].tokenSource.Token);
-                            }
-                        }
-
-                        catch (Exception e)
-                        {
-                            using (LogContext.PushProperty("Server", server.ToString()))
-                            {
-                                _logger.LogError(e, "Failed to update status");
-                            }
-                        }
-
-                        finally
-                        {
-                            server.IsInitialized = true;
-                        }
-                    }, tokenSource.Token), tokenSource, DateTime.Now));
+                    var firstTokenSource = new CancellationTokenSource();
+                    firstTokenSource.CancelAfter(timeout);
+                    var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(firstTokenSource.Token, _tokenSource.Token);
+                    runningUpdateTasks.Add(server.EndPoint, (ProcessUpdateHandler(server, linkedTokenSource.Token), linkedTokenSource, DateTime.Now));
                 }
-
+                
                 try
                 {
                     await Task.Delay(ConfigHandler.Configuration().RConPollRate, _tokenSource.Token);
@@ -289,12 +268,31 @@ namespace IW4MAdmin.Application
                 // if a cancellation is received, we want to return immediately after shutting down
                 catch
                 {
-                    foreach (var server in Servers.Where(s => serverIds.Contains(s.EndPoint)))
+                    foreach (var server in Servers.Where(s => newTaskServers.Contains(s.EndPoint)))
                     {
                         await server.ProcessUpdatesAsync(_tokenSource.Token);
                     }
                     break;
                 }
+            }
+        }
+
+        private async Task ProcessUpdateHandler(Server server, CancellationToken token)
+        {
+            try
+            {
+                await server.ProcessUpdatesAsync(token);
+            }
+            catch (Exception ex)
+            {
+                using (LogContext.PushProperty("Server", server.ToString()))
+                {
+                    _logger.LogError(ex, "Failed to update status");
+                }
+            }
+            finally
+            {
+                server.IsInitialized = true;
             }
         }
 
@@ -617,6 +615,7 @@ namespace IW4MAdmin.Application
         {
             IsRestartRequested = true;
             Stop().GetAwaiter().GetResult();
+            _tokenSource.Dispose();
             _tokenSource = new CancellationTokenSource();
         }
 

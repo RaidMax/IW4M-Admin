@@ -56,6 +56,11 @@ namespace Integrations.Cod
             {
                 return await SendQueryAsyncInternal(type, parameters, token);
             }
+            catch (RConException ex) when (ex.IsOperationCancelled)
+            {
+                _log.LogDebug(ex, "Could not complete RCon request");
+                throw;
+            }
             catch (Exception ex)
             {
                 using (LogContext.PushProperty("Server", Endpoint.ToString()))
@@ -67,10 +72,7 @@ namespace Integrations.Cod
             }
             finally
             {
-                using (LogContext.PushProperty("Server", Endpoint.ToString()))
-                {
-                    _log.LogDebug("Releasing OnComplete {Count}", ActiveQueries[Endpoint].OnComplete.CurrentCount);
-                }
+                _log.LogDebug("Releasing OnComplete {Count}", ActiveQueries[Endpoint].OnComplete.CurrentCount);
 
                 if (ActiveQueries[Endpoint].OnComplete.CurrentCount == 0)
                 {
@@ -89,7 +91,11 @@ namespace Integrations.Cod
 
             if (!ActiveQueries.TryGetValue(Endpoint, out var connectionState))
             {
-                _log.LogError("Could not retrieve connection state");
+                using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                {
+                    _log.LogError("Could not retrieve connection state");
+                }
+
                 throw new InvalidOperationException("Could not get connection state");
             }
 
@@ -104,7 +110,7 @@ namespace Integrations.Cod
             {
                 _log.LogDebug("OnComplete did not complete before timeout {Count}",
                     connectionState.OnComplete.CurrentCount);
-                throw new RConException("Timed out waiting for access to rcon socket");
+                throw new RConException("Timed out waiting for access to rcon socket", true);
             }
 
             var timeSinceLastQuery = (DateTime.Now - connectionState.LastQuery).TotalMilliseconds;
@@ -121,7 +127,7 @@ namespace Integrations.Cod
                 {
                     _log.LogDebug("Waiting for flood protect did not complete before timeout timeout {Count}",
                         connectionState.OnComplete.CurrentCount);
-                    throw new RConException("Timed out waiting for flood protect to expire");
+                    throw new RConException("Timed out waiting for flood protect to expire", true);
                 }
             }
 
@@ -145,7 +151,7 @@ namespace Integrations.Cod
                 switch (type)
                 {
                     case StaticHelpers.QueryType.GET_DVAR:
-                        waitForResponse |= true;
+                        waitForResponse = true;
                         payload = string
                             .Format(_config.CommandPrefixes.RConGetDvar, convertedRConPassword,
                                 convertedParameters + '\0').Select(Convert.ToByte).ToArray();
@@ -161,15 +167,15 @@ namespace Integrations.Cod
                                 convertedParameters + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_STATUS:
-                        waitForResponse |= true;
+                        waitForResponse = true;
                         payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_INFO:
-                        waitForResponse |= true;
+                        waitForResponse = true;
                         payload = (_config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND_STATUS:
-                        waitForResponse |= true;
+                        waitForResponse = true;
                         payload = string.Format(_config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0")
                             .Select(Convert.ToByte).ToArray();
                         break;
@@ -189,20 +195,9 @@ namespace Integrations.Cod
                 throw new RConException("Invalid character encountered when converting encodings");
             }
 
-            byte[][] response = null;
+            byte[][] response;
 
             retrySend:
-            if (connectionState.ConnectionAttempts > 1)
-            {
-                using (LogContext.PushProperty("Server", Endpoint.ToString()))
-                {
-                    _log.LogInformation(
-                        "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts) with parameters {Payload}",
-                        connectionState.ConnectionAttempts,
-                        _retryAttempts, parameters);
-                }
-            }
-
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
                    {
                        DontFragment = false,
@@ -210,57 +205,43 @@ namespace Integrations.Cod
                        ExclusiveAddressUse = true,
                    })
             {
-                // wait for send to be ready
-                try
-                {
-                    await connectionState.OnSentData.WaitAsync(token);
-                }
-                catch (OperationCanceledException)
-                {
-                    _log.LogDebug("OnSent did not complete in time");
-                    throw new RConException("Timed out waiting for access to RCon send socket");
-                }
-
-                // wait for receive to be ready
-                try
-                {
-                    await connectionState.OnReceivedData.WaitAsync(token);
-                }
-                catch (OperationCanceledException)
-                {
-                    _log.LogDebug("OnReceived did not complete in time");
-                    if (connectionState.OnSentData.CurrentCount == 0)
-                    {
-                        connectionState.OnSentData.Release();
-                    }
-
-                    throw new RConException("Timed out waiting for access to RCon receive socket");
-                }
-
-                connectionState.SendEventArgs.UserToken = new ConnectionUserToken
-                {
-                    Socket = socket,
-                    CancellationToken = token
-                };
-
                 if (!token.IsCancellationRequested)
                 {
                     connectionState.ConnectionAttempts++;
                 }
 
-                connectionState.BytesReadPerSegment.Clear();
+                connectionState.ReceivedBytes.Clear();
 
                 _log.LogDebug(
-                    "Sending {PayloadLength} bytes to [{Endpoint}] ({ConnectionAttempts}/{AllowedConnectionFailures})",
-                    payload.Length, Endpoint, connectionState.ConnectionAttempts, _retryAttempts);
+                    "Sending {PayloadLength} bytes to [{Endpoint}] ({ConnectionAttempts}/{AllowedConnectionFailures}) parameters {Payload}",
+                    payload.Length, Endpoint, connectionState.ConnectionAttempts, _retryAttempts, parameters);
 
                 try
                 {
                     connectionState.LastQuery = DateTime.Now;
-                    var timeout = _parser.OverrideTimeoutForCommand(parameters);
-                    waitForResponse = waitForResponse && timeout.HasValue;
-                    response = await SendPayloadAsync(payload, waitForResponse,
-                        timeout ?? TimeSpan.Zero, token);
+                    var retryTimeout = StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts);
+                    var overrideTimeout = _parser.OverrideTimeoutForCommand(parameters);
+                    var maxTimeout = !overrideTimeout.HasValue || overrideTimeout == TimeSpan.Zero
+                        ? retryTimeout
+                        : overrideTimeout.Value;
+
+                    using var internalTokenSource = new CancellationTokenSource(maxTimeout);
+                    using var chainedTokenSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(token, internalTokenSource.Token);
+
+                    if (connectionState.ConnectionAttempts > 1)
+                    {
+                        using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                        {
+                            _log.LogInformation(
+                                "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts, {Timeout}ms timeout) with parameters {Payload}",
+                                connectionState.ConnectionAttempts, _retryAttempts,
+                                maxTimeout.TotalMilliseconds, parameters);
+                        }
+                    }
+
+                    waitForResponse = waitForResponse && overrideTimeout.HasValue;
+                    response = await SendPayloadAsync(socket, payload, waitForResponse, chainedTokenSource.Token);
 
                     if ((response?.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
@@ -273,26 +254,23 @@ namespace Integrations.Cod
 
                 catch (OperationCanceledException)
                 {
+                    _log.LogDebug("OperationCanceledException when waiting for payload send to complete");
+
                     // if we timed out due to the cancellation token,
                     // we don't want to count that as an attempt
-                    _log.LogDebug("OperationCanceledException when waiting for payload send to complete");
-                    connectionState.ConnectionAttempts = 0;
-                }
-                catch
-                {
-                    // we want to retry with a delay
-                    if (connectionState.ConnectionAttempts < _retryAttempts)
+                    if (token.IsCancellationRequested)
                     {
-                        try
+                        if (connectionState.ConnectionAttempts > 0)
                         {
-                            await Task.Delay(StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts), token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            _log.LogDebug("OperationCancelled while waiting for retry");
-                            throw;
+                            connectionState.ConnectionAttempts--;
                         }
 
+                        throw new RConException("Timed out waiting on retry delay for RCon socket",
+                            token.IsCancellationRequested);
+                    }
+
+                    if (connectionState.ConnectionAttempts < _retryAttempts)
+                    {
                         goto retrySend;
                     }
 
@@ -306,25 +284,24 @@ namespace Integrations.Cod
                     connectionState.ConnectionAttempts = 0;
                     throw new NetworkException("Reached maximum retry attempts to send RCon data to server");
                 }
-                finally
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        if (connectionState.OnSentData.CurrentCount == 0)
-                        {
-                            connectionState.OnSentData.Release();
-                        }
+                    _log.LogDebug(ex, "RCon Exception");
 
-                        if (connectionState.OnReceivedData.CurrentCount == 0)
-                        {
-                            connectionState.OnReceivedData.Release();
-                        }
-                    }
-                    catch
+                    if (connectionState.ConnectionAttempts < _retryAttempts)
                     {
-                        // ignored because we can have the socket operation cancelled (which releases the semaphore) but 
-                        // this thread is not notified because it's an event
+                        goto retrySend;
                     }
+
+                    using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                    {
+                        _log.LogWarning(
+                            "Made {ConnectionAttempts} attempts to send RCon data to server, but received no response",
+                            connectionState.ConnectionAttempts);
+                    }
+
+                    connectionState.ConnectionAttempts = 0;
+                    throw new NetworkException("Reached maximum retry attempts to send RCon data to server");
                 }
             }
 
@@ -340,6 +317,81 @@ namespace Integrations.Cod
                 ? ReassembleSegmentedStatus(response)
                 : RecombineMessages(response);
 
+            var validatedResponse = ValidateResponse(type, responseString);
+
+            return validatedResponse;
+        }
+
+        private async Task<byte[][]> SendPayloadAsync(Socket rconSocket, byte[] payload, bool waitForResponse,
+            CancellationToken token = default)
+        {
+            var connectionState = ActiveQueries[Endpoint];
+
+            if (rconSocket is null)
+            {
+                _log.LogDebug("Invalid state");
+                throw new InvalidOperationException("State is not valid for socket operation");
+            }
+
+            var sentByteCount = await rconSocket.SendToAsync(payload, SocketFlags.None, Endpoint, token);
+            var complete = sentByteCount == payload.Length;
+
+            if (!complete)
+            {
+                using (LogContext.PushProperty("Server", Endpoint.ToString()))
+                {
+                    _log.LogWarning("Could not send data to remote RCon socket on attempt #{ConnectionAttempts}",
+                        connectionState.ConnectionAttempts);
+                }
+
+                rconSocket.Close();
+                throw new NetworkException("Could not send data to remote RCon socket", rconSocket);
+            }
+
+            if (!waitForResponse)
+            {
+                return Array.Empty<byte[]>();
+            }
+
+            _log.LogDebug("Waiting to asynchronously receive data on attempt #{ConnectionAttempts}",
+                connectionState.ConnectionAttempts);
+
+            await ReceiveAndStoreSocketData(rconSocket, token, connectionState);
+
+            if (_parser.GameName == Server.Game.IW3)
+            {
+                await Task.Delay(100, token); // CoD4x shenanigans 
+            }
+
+            while (rconSocket.Available > 0)
+            {
+                await ReceiveAndStoreSocketData(rconSocket, token, connectionState);
+            }
+
+            rconSocket.Close();
+            return GetResponseData(connectionState);
+        }
+
+        private async Task ReceiveAndStoreSocketData(Socket rconSocket, CancellationToken token,
+            ConnectionState connectionState)
+        {
+            var result = await rconSocket.ReceiveFromAsync(connectionState.ReceiveBuffer,
+                SocketFlags.None, Endpoint, token);
+
+            if (result.ReceivedBytes == 0)
+            {
+                return;
+            }
+
+            var storageBuffer = new byte[result.ReceivedBytes];
+            Array.Copy(connectionState.ReceiveBuffer, storageBuffer, storageBuffer.Length);
+            connectionState.ReceivedBytes.Add(storageBuffer);
+        }
+
+        #region Helpers
+
+        private string[] ValidateResponse(StaticHelpers.QueryType type, string responseString)
+        {
             // note: not all games respond if the password is wrong or not set
             if (responseString.Contains("Invalid password", StringComparison.InvariantCultureIgnoreCase) ||
                 responseString.Contains("rconpassword"))
@@ -363,21 +415,19 @@ namespace Integrations.Cod
                 ? _config.CommandPrefixes.RconGetInfoResponseHeader
                 : responseHeaderMatch);
 
-            if (headerSplit.Length != 2)
+            if (headerSplit.Length == 2)
             {
-                using (LogContext.PushProperty("Server", Endpoint.ToString()))
-                {
-                    _log.LogWarning("Invalid response header from server. Expected {Expected}, but got {Response}",
-                        _config.CommandPrefixes.RConResponse, headerSplit.FirstOrDefault());
-                }
-
-                throw new RConException("Unexpected response header from server");
+                return headerSplit.Last().Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(line => line.StartsWith("^7") ? line[2..] : line).ToArray();
             }
 
-            var splitResponse = headerSplit.Last().Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(line => line.StartsWith("^7") ? line[2..] : line).ToArray();
-            
-            return splitResponse;
+            using (LogContext.PushProperty("Server", Endpoint.ToString()))
+            {
+                _log.LogWarning("Invalid response header from server. Expected {Expected}, but got {Response}",
+                    _config.CommandPrefixes.RConResponse, headerSplit.FirstOrDefault());
+            }
+
+            throw new RConException("Unexpected response header from server");
         }
 
         /// <summary>
@@ -408,7 +458,7 @@ namespace Integrations.Cod
 
             return string.Join("", splitStatusStrings);
         }
-
+        
         /// <summary>
         /// Recombines multiple game messages into one
         /// </summary>
@@ -437,269 +487,11 @@ namespace Integrations.Cod
             return builder.ToString();
         }
 
-        private async Task<byte[][]> SendPayloadAsync(byte[] payload, bool waitForResponse, TimeSpan overrideTimeout,
-            CancellationToken token = default)
-        {
-            var connectionState = ActiveQueries[Endpoint];
-            var rconSocket = ((ConnectionUserToken)connectionState.SendEventArgs.UserToken)?.Socket;
-
-            if (rconSocket is null)
-            {
-                _log.LogDebug("Invalid state");
-                throw new InvalidOperationException("State is not valid for socket operation");
-            }
-
-            if (connectionState.ReceiveEventArgs.RemoteEndPoint == null &&
-                connectionState.SendEventArgs.RemoteEndPoint == null)
-            {
-                // setup the event handlers only once because we're reusing the event args
-                connectionState.SendEventArgs.Completed += OnDataSent;
-                connectionState.ReceiveEventArgs.Completed += OnDataReceived;
-                connectionState.ReceiveEventArgs.UserToken = connectionState.SendEventArgs.UserToken;
-                connectionState.SendEventArgs.RemoteEndPoint = Endpoint;
-                connectionState.ReceiveEventArgs.RemoteEndPoint = Endpoint;
-                connectionState.ReceiveEventArgs.DisconnectReuseSocket = true;
-                connectionState.SendEventArgs.DisconnectReuseSocket = true;
-            }
-
-            if (connectionState.ReceiveEventArgs.UserToken is ConnectionUserToken { CancellationToken.IsCancellationRequested: true })
-            {
-                // after a graceful restart we need to reset the receive user token as the cancellation has been updated
-                connectionState.ReceiveEventArgs.UserToken = connectionState.SendEventArgs.UserToken;
-            }
-
-            connectionState.SendEventArgs.SetBuffer(payload);
-
-            // send the data to the server
-            var sendDataPending = rconSocket.SendToAsync(connectionState.SendEventArgs);
-
-            if (sendDataPending)
-            {
-                // the send has not been completed asynchronously
-                // this really shouldn't ever happen because it's UDP
-                var complete = await connectionState.OnSentData.WaitAsync(StaticHelpers.SocketTimeout(4), token);
-
-                if (!complete)
-                {
-                    using (LogContext.PushProperty("Server", Endpoint.ToString()))
-                    {
-                        _log.LogWarning("Socket timed out while sending RCon data on attempt {Attempt}",
-                            connectionState.ConnectionAttempts);
-                    }
-
-                    rconSocket.Close();
-                    throw new NetworkException("Timed out sending RCon data", rconSocket);
-                }
-            }
-
-            if (!waitForResponse)
-            {
-                return Array.Empty<byte[]>();
-            }
-
-            connectionState.ReceiveEventArgs.SetBuffer(connectionState.ReceiveBuffer);
-
-            // get our response back
-            var receiveDataPending = rconSocket.ReceiveFromAsync(connectionState.ReceiveEventArgs);
-
-            if (receiveDataPending)
-            {
-                _log.LogDebug("Waiting to asynchronously receive data on attempt #{ConnectionAttempts}",
-                    connectionState.ConnectionAttempts);
-
-                var completed = false;
-
-                try
-                {
-                    completed = await connectionState.OnReceivedData.WaitAsync(
-                        new[]
-                        {
-                            StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts),
-                            overrideTimeout
-                        }.Max(), token);
-                }
-                catch (OperationCanceledException)
-                {
-                    // ignored
-                }
-
-                if (!completed)
-                {
-                    if (connectionState.ConnectionAttempts > 1) // this reduces some spam for unstable connections
-                    {
-                        using (LogContext.PushProperty("Server", Endpoint.ToString()))
-                        {
-                            _log.LogWarning(
-                                "Socket timed out while waiting for RCon response on attempt {Attempt} with timeout delay of {Timeout}",
-                                connectionState.ConnectionAttempts,
-                                StaticHelpers.SocketTimeout(connectionState.ConnectionAttempts));
-                        }
-                    }
-
-                    rconSocket.Close();
-                    _log.LogDebug("OnDataReceived did not complete in allocated time");
-                    throw new NetworkException("Timed out receiving RCon response", rconSocket);
-                }
-            }
-
-            rconSocket.Close();
-            return GetResponseData(connectionState);
-        }
-
         private static byte[][] GetResponseData(ConnectionState connectionState)
         {
-            var responseList = new List<byte[]>();
-            var totalBytesRead = 0;
-
-            foreach (var bytesRead in connectionState.BytesReadPerSegment)
-            {
-                responseList.Add(connectionState.ReceiveBuffer
-                    .Skip(totalBytesRead)
-                    .Take(bytesRead)
-                    .ToArray());
-
-                totalBytesRead += bytesRead;
-            }
-
-            return responseList.ToArray();
+            return connectionState.ReceivedBytes.ToArray();
         }
-
-        private void OnDataReceived(object sender, SocketAsyncEventArgs e)
-        {
-            _log.LogDebug("Read {BytesTransferred} bytes from {Endpoint}", e.BytesTransferred,
-                e.RemoteEndPoint?.ToString());
-
-            // this occurs when we close the socket
-            if (e.BytesTransferred == 0)
-            {
-                _log.LogDebug("No bytes were transmitted so the connection was probably closed");
-
-                var semaphore = ActiveQueries[Endpoint].OnReceivedData;
-
-                try
-                {
-                    if (semaphore.CurrentCount == 0)
-                    {
-                        semaphore.Release();
-                    }
-                }
-                catch
-                {
-                    // ignored because we can have the socket operation cancelled (which releases the semaphore) but 
-                    // this thread is not notified because it's an event
-                }
-
-                return;
-            }
-
-            var state = ActiveQueries[Endpoint];
-            var cancellationRequested = ((ConnectionUserToken)e.UserToken)?.CancellationToken.IsCancellationRequested ??
-                                        false;
-
-            if (sender is not Socket sock || cancellationRequested)
-            {
-                var semaphore = ActiveQueries[Endpoint].OnReceivedData;
-
-                try
-                {
-                    if (semaphore.CurrentCount == 0)
-                    {
-                        semaphore.Release();
-                    }
-                }
-                catch
-                {
-                    // ignored because we can have the socket operation cancelled (which releases the semaphore) but 
-                    // this thread is not notified because it's an event
-                }
-
-                return;
-            }
-
-            state.BytesReadPerSegment.Add(e.BytesTransferred);
-
-            // I don't even want to know why this works for getting more data from Cod4x
-            // but I'm leaving it in here as long as it doesn't break anything.
-            // it's very stupid...
-            Thread.Sleep(150);
-
-            try
-            {
-                var totalBytesTransferred = e.BytesTransferred;
-                _log.LogDebug("{Total} total bytes transferred with {Available} bytes remaining", totalBytesTransferred,
-                    sock.Available);
-
-                // we still have available data so the payload was segmented
-                while (sock.Available > 0)
-                {
-                    _log.LogDebug("{Available} more bytes to be read", sock.Available);
-
-                    var bufferSpaceAvailable = sock.Available + totalBytesTransferred - state.ReceiveBuffer.Length;
-                    if (bufferSpaceAvailable >= 0)
-                    {
-                        _log.LogWarning(
-                            "Not enough buffer space to store incoming data {BytesNeeded} additional bytes required",
-                            bufferSpaceAvailable);
-                        continue;
-                    }
-
-                    state.ReceiveEventArgs.SetBuffer(state.ReceiveBuffer, totalBytesTransferred, sock.Available);
-                    if (sock.ReceiveAsync(state.ReceiveEventArgs))
-                    {
-                        _log.LogDebug("Remaining bytes are async");
-                        continue;
-                    }
-
-                    _log.LogDebug("Read {BytesTransferred} synchronous bytes from {Endpoint}",
-                        state.ReceiveEventArgs.BytesTransferred, e.RemoteEndPoint?.ToString());
-
-                    // we need to increment this here because the callback isn't executed if there's no pending IO
-                    state.BytesReadPerSegment.Add(state.ReceiveEventArgs.BytesTransferred);
-                    totalBytesTransferred += state.ReceiveEventArgs.BytesTransferred;
-                }
-            }
-
-            catch (ObjectDisposedException)
-            {
-                _log.LogDebug("Socket was disposed while receiving data");
-            }
-
-            finally
-            {
-                var semaphore = ActiveQueries[Endpoint].OnReceivedData;
-                try
-                {
-                    if (semaphore.CurrentCount == 0)
-                    {
-                        semaphore.Release();
-                    }
-                }
-                catch
-                {
-                    // ignored because we can have the socket operation cancelled (which releases the semaphore) but 
-                    // this thread is not notified because it's an event
-                }
-            }
-        }
-
-        private void OnDataSent(object sender, SocketAsyncEventArgs e)
-        {
-            _log.LogDebug("Sent {ByteCount} bytes to {Endpoint}", e.Buffer?.Length,
-                e.ConnectSocket?.RemoteEndPoint?.ToString());
-
-            var semaphore = ActiveQueries[Endpoint].OnSentData;
-            try
-            {
-                if (semaphore.CurrentCount == 0)
-                {
-                    semaphore.Release();
-                }
-            }
-            catch
-            {
-                // ignored because we can have the socket operation cancelled (which releases the semaphore) but 
-                // this thread is not notified because it's an event
-            }
-        }
+        
+        #endregion
     }
 }

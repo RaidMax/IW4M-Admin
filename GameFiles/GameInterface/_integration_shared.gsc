@@ -71,7 +71,6 @@ OnPlayerConnect()
         player thread OnClientFirstSpawn();
         player thread OnClientJoinedTeam();
         player thread OnClientDisconnect();
-        player thread WaitForClientEvents();
     }
 }
 
@@ -449,19 +448,4 @@ GetClientPerformanceOrDefault()
     }
 
     return performance;
-}
-
-WaitForClientEvents()
-{
-    self endon( level.eventTypes.disconnect );
-    
-    for ( ;; )
-    {
-        self waittill( level.eventTypes.localClientEvent, event );
-
-        if ( event.type == level.eventTypes.clientDataReceived )
-        {
-            clientData = self.pers[level.clientDataKey];
-        }
-    }
 }

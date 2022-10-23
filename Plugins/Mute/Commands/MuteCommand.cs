@@ -36,7 +36,7 @@ public class MuteCommand : Command
     {
         if (gameEvent.Origin.ClientId == gameEvent.Target.ClientId)
         {
-            gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_SELF_TARGET"]);
+            gameEvent.Origin.Tell(_translationLookup["COMMANDS_DENY_SELF_TARGET"]);
             return;
         }
 

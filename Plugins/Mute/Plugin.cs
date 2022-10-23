@@ -57,7 +57,7 @@ public class Plugin : IPlugin
                     case MuteState.Unmuting:
                         // Handle unmute of unmuted players.
                         await MuteManager.Unmute(server, Utilities.IW4MAdminClient(), gameEvent.Origin,
-                            muteMetaJoin.Reason);
+                            muteMetaJoin.Reason ?? string.Empty);
                         gameEvent.Origin.Tell(Utilities.CurrentLocalization
                             .LocalizationIndex["PLUGINS_MUTE_COMMANDS_UNMUTE_TARGET_UNMUTED"]
                             .FormatExt(muteMetaJoin.Reason));

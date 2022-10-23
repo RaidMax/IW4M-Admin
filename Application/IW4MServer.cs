@@ -673,7 +673,7 @@ namespace IW4MAdmin
 
                 else if (E.Type == GameEvent.EventType.MapChange)
                 {
-                    ServerLogger.LogInformation("New map loaded - {clientCount} active players", ClientNum);
+                    ServerLogger.LogInformation("New map loaded - {ClientCount} active players", ClientNum);
 
                     // iw4 doesn't log the game info
                     if (E.Extra == null)
@@ -737,6 +737,8 @@ namespace IW4MAdmin
                     {
                         lastGameTime = E.GameTime.Value;
                     }
+
+                    MatchStartTime = DateTime.Now;
                 }
 
                 else if (E.Type == GameEvent.EventType.MapEnd)
@@ -747,6 +749,8 @@ namespace IW4MAdmin
                     {
                         lastGameTime = E.GameTime.Value;
                     }
+
+                    MatchEndTime = DateTime.Now;
                 }
 
                 else if (E.Type == GameEvent.EventType.Tell)

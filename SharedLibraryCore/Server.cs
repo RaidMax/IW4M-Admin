@@ -100,6 +100,8 @@ namespace SharedLibraryCore
         public List<ChatInfo> ChatHistory { get; protected set; }
         public ClientHistoryInfo ClientHistory { get; }
         public Game GameName { get; set; }
+        public DateTime? MatchEndTime { get; protected set; }
+        public DateTime? MatchStartTime { get; protected set; }
 
         public string Hostname
         {

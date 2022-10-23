@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Data.Models;
 using SharedLibraryCore.Database.Models;
 
@@ -14,6 +15,8 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="origin">source of kick action</param>
         /// <param name="previousPenalty">previous penalty the kick is occuring for (if applicable)</param>
         /// <returns></returns>
-        public Task Kick(string reason, EFClient target, EFClient origin, EFPenalty previousPenalty = null);
+        Task Kick(string reason, EFClient target, EFClient origin, EFPenalty previousPenalty = null);
+        DateTime? MatchEndTime { get; }
+        DateTime? MatchStartTime { get; }
     }
 }

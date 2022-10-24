@@ -98,7 +98,8 @@ $(document).ready(function () {
         let actionKeys = actionId === undefined ? '' : `?id=${actionId}`;
         
         if (actionMeta !== undefined) {
-            actionKeys = actionKeys + '&meta=' + JSON.stringify(actionMeta);
+            const and = actionKeys === '' ? '?' : '&'; 
+            actionKeys = actionKeys +  and + 'meta=' + JSON.stringify(actionMeta);
         }
         showLoader();
         

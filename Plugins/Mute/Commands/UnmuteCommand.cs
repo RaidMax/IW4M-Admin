@@ -34,6 +34,12 @@ public class UnmuteCommand : Command
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
+        if (gameEvent.Origin.ClientId == gameEvent.Target.ClientId)
+        {
+            gameEvent.Origin.Tell(_translationLookup["COMMANDS_DENY_SELF_TARGET"]);
+            return;
+        }
+
         if (await Plugin.MuteManager.Unmute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, gameEvent.Data))
         {
             gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_UNMUTE_UNMUTED"]

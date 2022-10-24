@@ -10,7 +10,7 @@ using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,7 +44,6 @@ namespace IW4MAdmin.Application.Misc
         private Engine _scriptEngine;
         private readonly string _fileName;
         private readonly SemaphoreSlim _onProcessing = new(1, 1);
-        private readonly SemaphoreSlim _onDvarActionComplete = new(1, 1);
         private bool _successfullyLoaded;
         private readonly List<string> _registeredCommandNames;
         private readonly ILogger _logger;
@@ -56,7 +55,7 @@ namespace IW4MAdmin.Application.Misc
             Watcher = new FileSystemWatcher
             {
                 Path = workingDirectory ?? $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
-                NotifyFilter = NotifyFilters.Size,
+                NotifyFilter = NotifyFilters.LastWrite,
                 Filter = _fileName.Split(Path.DirectorySeparatorChar).Last()
             };
 
@@ -168,11 +167,19 @@ namespace IW4MAdmin.Application.Misc
                     }
                 }
 
+                async Task<bool> OnLoadTask()
+                {
+                    await OnLoadAsync(manager);
+                    return true;
+                }
+
+                var loadComplete = false;
+                
                 try
                 {
                     if (pluginObject.isParser)
                     {
-                        await OnLoadAsync(manager);
+                        loadComplete = await OnLoadTask();
                         IsParser = true;
                         var eventParser = (IEventParser)_scriptEngine.Evaluate("eventParser").ToObject();
                         var rconParser = (IRConParser)_scriptEngine.Evaluate("rconParser").ToObject();
@@ -185,30 +192,34 @@ namespace IW4MAdmin.Application.Misc
                 {
                     var configWrapper = new ScriptPluginConfigurationWrapper(Name, _scriptEngine);
                     await configWrapper.InitializeAsync();
-                    _scriptEngine.SetValue("_configHandler", configWrapper);
-                    await OnLoadAsync(manager);
+
+                    if (!loadComplete)
+                    {
+                        _scriptEngine.SetValue("_configHandler", configWrapper);
+                        loadComplete = await OnLoadTask();
+                    }
                 }
 
-                if (!firstRun)
+                if (!firstRun && !loadComplete)
                 {
-                    await OnLoadAsync(manager);
+                    loadComplete = await OnLoadTask();
                 }
 
-                _successfullyLoaded = true;
+                _successfullyLoaded = loadComplete;
             }
             catch (JavaScriptException ex)
             {
                 _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} at {@LocationInfo}",
-                    nameof(Initialize), Path.GetFileName(_fileName), ex.Location);
+                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} at {@LocationInfo} StackTrace={StackTrace}",
+                    nameof(Initialize), Path.GetFileName(_fileName), ex.Location, ex.JavaScriptStackTrace);
 
                 throw new PluginException("An error occured while initializing script plugin");
             }
             catch (Exception ex) when (ex.InnerException is JavaScriptException jsEx)
             {
                 _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} initialization {@LocationInfo}",
-                    nameof(Initialize), _fileName, jsEx.Location);
+                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} initialization {@LocationInfo} StackTrace={StackTrace}",
+                    nameof(Initialize), _fileName, jsEx.Location, jsEx.JavaScriptStackTrace);
 
                 throw new PluginException("An error occured while initializing script plugin");
             }
@@ -239,36 +250,14 @@ namespace IW4MAdmin.Application.Misc
             try
             {
                 await _onProcessing.WaitAsync();
-                _scriptEngine.SetValue("_gameEvent", gameEvent);
-                _scriptEngine.SetValue("_server", server);
-                _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(server));
-                _scriptEngine.Evaluate("plugin.onEventAsync(_gameEvent, _server)");
-            }
-
-            catch (JavaScriptException ex)
-            {
-                using (LogContext.PushProperty("Server", server.ToString()))
+                WrapJavaScriptErrorHandling(() =>
                 {
-                    _logger.LogError(ex,
-                        "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {EventType} {@LocationInfo}",
-                        nameof(OnEventAsync), Path.GetFileName(_fileName), gameEvent.Type, ex.Location);
-                }
-
-                throw new PluginException("An error occured while executing action for script plugin");
+                    _scriptEngine.SetValue("_gameEvent", gameEvent);
+                    _scriptEngine.SetValue("_server", server);
+                    _scriptEngine.SetValue("_IW4MAdminClient", Utilities.IW4MAdminClient(server));
+                    return _scriptEngine.Evaluate("plugin.onEventAsync(_gameEvent, _server)");
+                }, new { EventType = gameEvent.Type }, server);
             }
-
-            catch (Exception ex)
-            {
-                using (LogContext.PushProperty("Server", server.ToString()))
-                {
-                    _logger.LogError(ex,
-                        "Encountered error while running {MethodName} for script plugin {Plugin} with event type {EventType}",
-                        nameof(OnEventAsync), _fileName, gameEvent.Type);
-                }
-
-                throw new PluginException("An error occured while executing action for script plugin");
-            }
-
             finally
             {
                 if (_onProcessing.CurrentCount == 0)
@@ -276,90 +265,49 @@ namespace IW4MAdmin.Application.Misc
                     _onProcessing.Release(1);
                 }
             }
+            
         }
 
-        public Task OnLoadAsync(IManager manager)
+        public  Task OnLoadAsync(IManager manager)
         {
-            try
+            _logger.LogDebug("OnLoad executing for {Name}", Name);
+
+            WrapJavaScriptErrorHandling(() =>
             {
-                _logger.LogDebug("OnLoad executing for {Name}", Name);
                 _scriptEngine.SetValue("_manager", manager);
                 _scriptEngine.SetValue("getDvar", BeginGetDvar);
                 _scriptEngine.SetValue("setDvar", BeginSetDvar);
-                _scriptEngine.Evaluate("plugin.onLoadAsync(_manager)");
-
-                return Task.CompletedTask;
-            }
-            catch (JavaScriptException ex)
-            {
-                _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} at {@LocationInfo}",
-                    nameof(OnLoadAsync), Path.GetFileName(_fileName), ex.Location);
-
-                throw new PluginException("A runtime error occured while executing action for script plugin");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin}",
-                    nameof(OnLoadAsync), Path.GetFileName(_fileName));
-
-                throw new PluginException("An error occured while executing action for script plugin");
-            }
-        }
-
-        public async Task OnTickAsync(Server server)
-        {
-            _scriptEngine.SetValue("_server", server);
-            await Task.FromResult(_scriptEngine.Evaluate("plugin.onTickAsync(_server)"));
-        }
-
-        public Task OnUnloadAsync()
-        {
-            if (!_successfullyLoaded)
-            {
-                return Task.CompletedTask;
-            }
-
-            try
-            {
-                _scriptEngine.Evaluate("plugin.onUnloadAsync()");
-            }
-            catch (JavaScriptException ex)
-            {
-                _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} at {@LocationInfo}",
-                    nameof(OnUnloadAsync), Path.GetFileName(_fileName), ex.Location);
-
-                throw new PluginException("A runtime error occured while executing action for script plugin");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin}",
-                    nameof(OnUnloadAsync), Path.GetFileName(_fileName));
-
-                throw new PluginException("An error occured while executing action for script plugin");
-            }
+                return _scriptEngine.Evaluate("plugin.onLoadAsync(_manager)");
+            });
 
             return Task.CompletedTask;
         }
 
-        public T ExecuteAction<T>(Delegate action, params object[] param)
+        public Task OnTickAsync(Server server)
         {
+            WrapJavaScriptErrorHandling(() =>
+            {
+                _scriptEngine.SetValue("_server", server);
+                return _scriptEngine.Evaluate("plugin.onTickAsync(_server)");
+            });
+
+            return Task.CompletedTask;
+        }
+
+        public async Task OnUnloadAsync()
+        {
+            if (!_successfullyLoaded)
+            {
+                return;
+            }
+
             try
             {
-                _onProcessing.Wait();
-                var args = param.Select(p => JsValue.FromObject(_scriptEngine, p)).ToArray();
-                var result = action.DynamicInvoke(JsValue.Undefined, args);
-                return (T)(result as JsValue)?.ToObject();
-            }
-            catch (TargetInvocationException ex) when (ex.InnerException is JavaScriptException jsEx)
-            {
-                _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {@LocationInfo} {StackTrace}",
-                    nameof(ExecuteAction), Path.GetFileName(_fileName), jsEx.Location, jsEx.JavaScriptStackTrace);
-                throw;
+                await _onProcessing.WaitAsync();
+
+                _logger.LogDebug("OnUnload executing for {Name}", Name);
+
+                WrapJavaScriptErrorHandling(() => _scriptEngine.Evaluate("plugin.onUnloadAsync()"));
             }
             finally
             {
@@ -370,20 +318,58 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public T WrapDelegate<T>(Delegate act, params object[] args)
+        public T ExecuteAction<T>(Delegate action, CancellationToken token, params object[] param)
         {
             try
             {
-                _onProcessing.Wait();
-                return (T)(act.DynamicInvoke(JsValue.Null,
-                    args.Select(arg => JsValue.FromObject(_scriptEngine, arg)).ToArray()) as ObjectWrapper)?.ToObject();
+                using var forceTimeout = new CancellationTokenSource(5000);
+                using var combined = CancellationTokenSource.CreateLinkedTokenSource(forceTimeout.Token, token);
+                _onProcessing.Wait(combined.Token);
+                
+                _logger.LogDebug("Executing action for {Name}", Name);
+                
+                return WrapJavaScriptErrorHandling(T() =>
+                    {
+                        var args = param.Select(p => JsValue.FromObject(_scriptEngine, p)).ToArray();
+                        var result = action.DynamicInvoke(JsValue.Undefined, args);
+                        return (T)(result as JsValue)?.ToObject();
+                    },
+         new
+                    {
+                        Params = string.Join(", ",
+                            param?.Select(eachParam => $"Type={eachParam?.GetType().Name} Value={eachParam}") ??
+                            Enumerable.Empty<string>())
+                    });
             }
-            catch (TargetInvocationException ex) when (ex.InnerException is JavaScriptException jsEx)
+            finally
             {
-                _logger.LogError(ex,
-                    "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} with event type {@LocationInfo} {StackTrace}",
-                    nameof(WrapDelegate), Path.GetFileName(_fileName), jsEx.Location, jsEx.JavaScriptStackTrace);
-                throw;
+                if (_onProcessing.CurrentCount == 0)
+                {
+                    _onProcessing.Release(1);
+                }
+            }
+        }
+
+        public T WrapDelegate<T>(Delegate act, CancellationToken token, params object[] args)
+        {
+            try
+            {
+                using var forceTimeout = new CancellationTokenSource(5000);
+                using var combined = CancellationTokenSource.CreateLinkedTokenSource(forceTimeout.Token, token);
+                _onProcessing.Wait(combined.Token);
+
+                _logger.LogDebug("Wrapping delegate action for {Name}", Name);
+
+                return WrapJavaScriptErrorHandling(
+                    T() => (T)(act.DynamicInvoke(JsValue.Null,
+                            args.Select(arg => JsValue.FromObject(_scriptEngine, arg)).ToArray()) as ObjectWrapper)
+                        ?.ToObject(),
+                    new
+                    {
+                        Params = string.Join(", ",
+                            args?.Select(eachParam => $"Type={eachParam?.GetType().Name} Value={eachParam}") ??
+                            Enumerable.Empty<string>())
+                    });
             }
             finally
             {
@@ -573,7 +559,7 @@ namespace IW4MAdmin.Application.Misc
                         AsyncState = (false, (string)null)
                     });
                 }
-                
+
                 using var tokenSource = new CancellationTokenSource();
                 tokenSource.CancelAfter(operationTimeout);
 
@@ -654,7 +640,7 @@ namespace IW4MAdmin.Application.Misc
                         AsyncState = false
                     });
                 }
-                
+
                 using var tokenSource = new CancellationTokenSource();
                 tokenSource.CancelAfter(operationTimeout);
 
@@ -678,6 +664,42 @@ namespace IW4MAdmin.Application.Misc
                     }
                 });
             }).Start();
+        }
+
+        private T WrapJavaScriptErrorHandling<T>(Func<T> work, object additionalData = null, Server server = null,
+            [CallerMemberName] string methodName = "")
+        {
+            using (LogContext.PushProperty("Server", server?.ToString()))
+            {
+                try
+                {
+                    return work();
+                }
+                catch (JavaScriptException ex)
+                {
+                    _logger.LogError(ex,
+                        "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} at {@LocationInfo} StackTrace={StackTrace} {@AdditionalData}",
+                        methodName, Path.GetFileName(_fileName), ex.Location, ex.StackTrace, additionalData);
+
+                    throw new PluginException("A runtime error occured while executing action for script plugin");
+                }
+                catch (Exception ex) when (ex.InnerException is JavaScriptException jsEx)
+                {
+                    _logger.LogError(ex,
+                        "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin} initialization {@LocationInfo} StackTrace={StackTrace} {@AdditionalData}",
+                        methodName, _fileName, jsEx.Location, jsEx.JavaScriptStackTrace, additionalData);
+
+                    throw new PluginException("A runtime error occured while executing action for script plugin");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Encountered JavaScript runtime error while executing {MethodName} for script plugin {Plugin}",
+                        methodName, Path.GetFileName(_fileName));
+
+                    throw new PluginException("An error occured while executing action for script plugin");
+                }
+            }
         }
     }
 

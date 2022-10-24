@@ -28,6 +28,13 @@ public class InteractionRegistration : IInteractionRegistration
 
     public void RegisterScriptInteraction(string interactionName, string source, Delegate interactionRegistration)
     {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            throw new ArgumentException("Script interaction source cannot be null");
+        }
+        
+        _logger.LogDebug("Registering script interaction {InteractionName} from {Source}", interactionName, source);
+        
         var plugin = _serviceProvider.GetRequiredService<IEnumerable<IPlugin>>()
             .FirstOrDefault(plugin => plugin.Name == source);
 
@@ -36,17 +43,17 @@ public class InteractionRegistration : IInteractionRegistration
             return;
         }
 
-        var wrappedDelegate = (int? clientId, Reference.Game? game, CancellationToken token) =>
+        Task<IInteractionData> WrappedDelegate(int? clientId, Reference.Game? game, CancellationToken token) =>
             Task.FromResult(
-                scriptPlugin.WrapDelegate<IInteractionData>(interactionRegistration, clientId, game, token));
+                scriptPlugin.WrapDelegate<IInteractionData>(interactionRegistration, token, clientId, game, token));
 
         if (!_interactions.ContainsKey(interactionName))
         {
-            _interactions.TryAdd(interactionName, wrappedDelegate);
+            _interactions.TryAdd(interactionName, WrappedDelegate);
         }
         else
         {
-            _interactions[interactionName] = wrappedDelegate;
+            _interactions[interactionName] = WrappedDelegate;
         }
     }
 
@@ -54,27 +61,32 @@ public class InteractionRegistration : IInteractionRegistration
     {
         if (!_interactions.ContainsKey(interactionName))
         {
+            _logger.LogDebug("Registering interaction {InteractionName}", interactionName);
             _interactions.TryAdd(interactionName, interactionRegistration);
         }
         else
         {
+            _logger.LogDebug("Updating interaction {InteractionName}", interactionName);
             _interactions[interactionName] = interactionRegistration;
         }
     }
 
     public void UnregisterInteraction(string interactionName)
     {
-        if (_interactions.ContainsKey(interactionName))
+        if (!_interactions.ContainsKey(interactionName))
         {
-            _interactions.TryRemove(interactionName, out _);
+            return;
         }
+
+        _logger.LogDebug("Unregistering interaction {InteractionName}", interactionName);
+        _interactions.TryRemove(interactionName, out _);
     }
 
     public async Task<IEnumerable<IInteractionData>> GetInteractions(string interactionPrefix = null,
         int? clientId = null,
         Reference.Game? game = null, CancellationToken token = default)
     {
-        return await GetInteractionsPrivate(interactionPrefix, clientId, game, token);
+        return await GetInteractionsInternal(interactionPrefix, clientId, game, token);
     }
 
     public async Task<string> ProcessInteraction(string interactionId, int originId, int? targetId = null,
@@ -103,7 +115,7 @@ public class InteractionRegistration : IInteractionRegistration
                         continue;
                     }
 
-                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, originId, targetId, game, meta,
+                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, token, originId, targetId, game, meta,
                         token);
                 }
             }
@@ -118,10 +130,10 @@ public class InteractionRegistration : IInteractionRegistration
         return null;
     }
 
-    private async Task<IEnumerable<IInteractionData>> GetInteractionsPrivate(string prefix = null, int? clientId = null,
+    private async Task<IEnumerable<IInteractionData>> GetInteractionsInternal(string prefix = null, int? clientId = null,
         Reference.Game? game = null, CancellationToken token = default)
     {
-        return (await Task.WhenAll(_interactions
+        var interactions = _interactions
             .Where(interaction => string.IsNullOrWhiteSpace(prefix) || interaction.Key.StartsWith(prefix)).Select(
                 async kvp =>
                 {
@@ -137,6 +149,9 @@ public class InteractionRegistration : IInteractionRegistration
                             clientId);
                         return null;
                     }
-                }))).Where(interaction => interaction is not null);
+                }).Where(interaction => interaction is not null)
+            .ToList();
+
+        return await Task.WhenAll(interactions);
     }
 }

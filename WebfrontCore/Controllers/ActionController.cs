@@ -107,6 +107,17 @@ namespace WebfrontCore.Controllers
                     }
                 });
             }
+
+            if (meta is null)
+            {
+                return BadRequest(new[]
+                {
+                    new CommandResponseInfo
+                    {
+                        Response = "INVALID"
+                    }
+                });
+            }
             
             var metaDict = JsonSerializer.Deserialize<Dictionary<string, string>>(meta.TrimEnd('"').TrimStart('"'));
 

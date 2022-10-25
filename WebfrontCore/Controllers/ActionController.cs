@@ -248,7 +248,9 @@ namespace WebfrontCore.Controllers
             }
 
             var server = Manager.GetServers().First();
-            return Ok(await _remoteCommandService.Execute(Client.ClientId, targetId, data, inputs.Values.Select(input => input), server));
+            var (success, result) = await _remoteCommandService.ExecuteWithResult(Client.ClientId, targetId, data,
+                inputs.Values.Select(input => input), server);
+            return success ? Ok(result) : BadRequest(result);
         }
 
         public IActionResult BanForm()

@@ -27,11 +27,19 @@ public class RemoteCommandService : IRemoteCommandService
     public async Task<IEnumerable<CommandResponseInfo>> Execute(int originId, int? targetId, string command,
         IEnumerable<string> arguments, Server server)
     {
+        var (success, result) = await ExecuteWithResult(originId, targetId, command, arguments, server);
+
+        return result;
+    }
+    
+    public async Task<(bool, IEnumerable<CommandResponseInfo>)> ExecuteWithResult(int originId, int? targetId, string command,
+        IEnumerable<string> arguments, Server server)
+    {
         if (originId < 1)
         {
             _logger.LogWarning("Not executing command {Command} for {Originid} because origin id is invalid", command,
                 originId);
-            return Enumerable.Empty<CommandResponseInfo>();
+            return (false, Enumerable.Empty<CommandResponseInfo>());
         }
         
         var client = await _clientService.Get(originId);
@@ -94,6 +102,6 @@ public class RemoteCommandService : IRemoteCommandService
             };
         }
 
-        return response;
+        return (!remoteEvent.Failed, response);
     }
 }

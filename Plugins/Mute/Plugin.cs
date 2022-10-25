@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Data.Abstractions;
+using Microsoft.Extensions.Logging;
 using Mute.Commands;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
@@ -12,7 +13,7 @@ namespace Mute;
 public class Plugin : IPlugin
 {
     public string Name => "Mute";
-    public float Version => (float) Utilities.GetVersionAsDouble();
+    public float Version => (float)Utilities.GetVersionAsDouble();
     public string Author => "Amos";
 
     public const string MuteKey = "IW4MMute";
@@ -24,12 +25,12 @@ public class Plugin : IPlugin
     private readonly IRemoteCommandService _remoteCommandService;
     private static readonly string MuteInteraction = "Webfront::Profile::Mute";
 
-    public Plugin(ILogger<Plugin> logger, IMetaServiceV2 metaService, IInteractionRegistration interactionRegistration,
-        ITranslationLookup translationLookup, IRemoteCommandService remoteCommandService)
+    public Plugin(ILogger<Plugin> logger, IInteractionRegistration interactionRegistration,
+        IRemoteCommandService remoteCommandService, IServiceProvider serviceProvider)
     {
         _interactionRegistration = interactionRegistration;
         _remoteCommandService = remoteCommandService;
-        MuteManager = new MuteManager(metaService, translationLookup, logger);
+        MuteManager = new MuteManager(serviceProvider);
     }
 
     public async Task OnEventAsync(GameEvent gameEvent, Server server)
@@ -56,7 +57,7 @@ public class Plugin : IPlugin
                     case MuteState.Unmuting:
                         // Handle unmute of unmuted players.
                         await MuteManager.Unmute(server, Utilities.IW4MAdminClient(), gameEvent.Origin,
-                            muteMetaJoin.Reason);
+                            muteMetaJoin.Reason ?? string.Empty);
                         gameEvent.Origin.Tell(Utilities.CurrentLocalization
                             .LocalizationIndex["PLUGINS_MUTE_COMMANDS_UNMUTE_TARGET_UNMUTED"]
                             .FormatExt(muteMetaJoin.Reason));
@@ -134,7 +135,7 @@ public class Plugin : IPlugin
 
         _interactionRegistration.RegisterInteraction(MuteInteraction, async (targetClientId, game, token) =>
         {
-            if (!targetClientId.HasValue || game.HasValue && !SupportedGames.Contains((Server.Game) game.Value))
+            if (!targetClientId.HasValue || game.HasValue && !SupportedGames.Contains((Server.Game)game.Value))
             {
                 return null;
             }
@@ -162,7 +163,7 @@ public class Plugin : IPlugin
             Name = "Reason",
             Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_REASON"],
             Type = "text",
-            Values = (Dictionary<string, string>?) null
+            Values = (Dictionary<string, string>?)null
         };
 
         var durationInput = new
@@ -170,7 +171,7 @@ public class Plugin : IPlugin
             Name = "Duration",
             Label = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_ACTION_LABEL_DURATION"],
             Type = "select",
-            Values = (Dictionary<string, string>?) new Dictionary<string, string>
+            Values = (Dictionary<string, string>?)new Dictionary<string, string>
             {
                 {"5m", TimeSpan.FromMinutes(5).HumanizeForCurrentCulture()},
                 {"30m", TimeSpan.FromMinutes(30).HumanizeForCurrentCulture()},

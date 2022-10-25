@@ -4,7 +4,7 @@ namespace Mute;
 
 public class MuteStateMeta
 {
-    public string Reason { get; set; } = string.Empty;
+    public string? Reason { get; set; }
     public DateTime? Expiration { get; set; }
     public MuteState MuteState { get; set; }
     [JsonIgnore] public bool CommandExecuted { get; set; }

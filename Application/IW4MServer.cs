@@ -1304,7 +1304,7 @@ namespace IW4MAdmin
             this.MaxClients = maxplayers;
             this.FSGame = game.Value;
             this.Gametype = gametype;
-            this.IP = ip.Value == "localhost" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
+            this.IP = ip.Value is "localhost" or "0.0.0.0" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
             this.GamePassword = gamePassword.Value;
             UpdateMap(mapname);
 

@@ -112,6 +112,7 @@ namespace IW4MAdmin.Application.Misc
                     }
                 }
 
+                _scriptEngine?.Dispose();
                 _scriptEngine = new Engine(cfg =>
                     cfg.AddExtensionMethods(typeof(Utilities), typeof(Enumerable), typeof(Queryable),
                             typeof(ScriptPluginExtensions))
@@ -247,9 +248,12 @@ namespace IW4MAdmin.Application.Misc
                 return;
             }
 
+            var shouldRelease = false;
+
             try
             {
                 await _onProcessing.WaitAsync();
+                shouldRelease = true;
                 WrapJavaScriptErrorHandling(() =>
                 {
                     _scriptEngine.SetValue("_gameEvent", gameEvent);
@@ -260,7 +264,7 @@ namespace IW4MAdmin.Application.Misc
             }
             finally
             {
-                if (_onProcessing.CurrentCount == 0)
+                if (_onProcessing.CurrentCount == 0 && shouldRelease)
                 {
                     _onProcessing.Release(1);
                 }
@@ -268,7 +272,7 @@ namespace IW4MAdmin.Application.Misc
             
         }
 
-        public  Task OnLoadAsync(IManager manager)
+        public Task OnLoadAsync(IManager manager)
         {
             _logger.LogDebug("OnLoad executing for {Name}", Name);
 
@@ -320,11 +324,14 @@ namespace IW4MAdmin.Application.Misc
 
         public T ExecuteAction<T>(Delegate action, CancellationToken token, params object[] param)
         {
+            var shouldRelease = false;
+            
             try
             {
                 using var forceTimeout = new CancellationTokenSource(5000);
                 using var combined = CancellationTokenSource.CreateLinkedTokenSource(forceTimeout.Token, token);
                 _onProcessing.Wait(combined.Token);
+                shouldRelease = true;
                 
                 _logger.LogDebug("Executing action for {Name}", Name);
                 
@@ -343,7 +350,7 @@ namespace IW4MAdmin.Application.Misc
             }
             finally
             {
-                if (_onProcessing.CurrentCount == 0)
+                if (_onProcessing.CurrentCount == 0 && shouldRelease)
                 {
                     _onProcessing.Release(1);
                 }
@@ -352,11 +359,14 @@ namespace IW4MAdmin.Application.Misc
 
         public T WrapDelegate<T>(Delegate act, CancellationToken token, params object[] args)
         {
+            var shouldRelease = false;
+            
             try
             {
                 using var forceTimeout = new CancellationTokenSource(5000);
                 using var combined = CancellationTokenSource.CreateLinkedTokenSource(forceTimeout.Token, token);
                 _onProcessing.Wait(combined.Token);
+                shouldRelease = true;
 
                 _logger.LogDebug("Wrapping delegate action for {Name}", Name);
 
@@ -373,7 +383,7 @@ namespace IW4MAdmin.Application.Misc
             }
             finally
             {
-                if (_onProcessing.CurrentCount == 0)
+                if (_onProcessing.CurrentCount == 0 && shouldRelease)
                 {
                     _onProcessing.Release(1);
                 }

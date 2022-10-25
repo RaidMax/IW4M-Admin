@@ -130,8 +130,8 @@ public class InteractionRegistration : IInteractionRegistration
         return null;
     }
 
-    private async Task<IEnumerable<IInteractionData>> GetInteractionsInternal(string prefix = null, int? clientId = null,
-        Reference.Game? game = null, CancellationToken token = default)
+    private async Task<IEnumerable<IInteractionData>> GetInteractionsInternal(string prefix = null,
+        int? clientId = null, Reference.Game? game = null, CancellationToken token = default)
     {
         var interactions = _interactions
             .Where(interaction => string.IsNullOrWhiteSpace(prefix) || interaction.Key.StartsWith(prefix)).Select(
@@ -149,9 +149,10 @@ public class InteractionRegistration : IInteractionRegistration
                             clientId);
                         return null;
                     }
-                }).Where(interaction => interaction is not null)
-            .ToList();
+                });
 
-        return await Task.WhenAll(interactions);
+        return (await Task.WhenAll(interactions))
+            .Where(interaction => interaction is not null)
+            .ToList();
     }
 }

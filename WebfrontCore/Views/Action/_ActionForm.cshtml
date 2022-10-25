@@ -3,7 +3,7 @@
 @{
     Layout = null;
 }
-<h5 class="modal-title mb-10">@Model.Name?.Titleize()</h5>
+<h5 class="modal-title mb-10">@(Model.Name?.Split(" ").Length == 1 ? Model.Name?.Titleize() : Model.Name)</h5>
 @if (Model.Inputs.Any(input => input.Type != "hidden"))
 {
     <hr class="mb-10"/>

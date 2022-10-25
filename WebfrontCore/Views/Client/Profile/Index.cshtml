@@ -391,8 +391,13 @@
         });
     }
 
-    foreach (var interaction in Model.Interactions.Where(i => (int)ViewBag.User.Level >= ((int?)i.MinimumPermission ?? 0)))
+    foreach (var interaction in Model.Interactions?.Where(i => (int?)ViewBag.User?.Level >= ((int?)i?.MinimumPermission ?? 0)))
     {
+        if (interaction is null)
+        {
+            continue;
+        }
+        
         menuItems.Items.Add(new SideContextMenuItem
         {
             Title = interaction.Name,

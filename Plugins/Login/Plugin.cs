@@ -51,7 +51,7 @@ namespace IW4MAdmin.Plugins.Login
 
             manager.CommandInterceptors.Add(gameEvent =>
             {
-                if (gameEvent.Type != GameEvent.EventType.Command || gameEvent.Extra is null)
+                if (gameEvent.Type != GameEvent.EventType.Command || gameEvent.Extra is null || gameEvent.IsRemote)
                 {
                     return true;
                 }

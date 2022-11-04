@@ -14,6 +14,7 @@ namespace IW4MAdmin.Application.EventParsers
     {
         public string GameDirectory { get; set; }
         public ParserRegex Say { get; set; }
+        public string LocalizeText { get; set; }
         public ParserRegex Join { get; set; }
         public ParserRegex JoinTeam { get; set; }
         public ParserRegex Quit { get; set; }

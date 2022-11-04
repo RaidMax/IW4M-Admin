@@ -27,6 +27,7 @@ var plugin = {
         rconParser.Configuration.DefaultRConPort = 27016;
 
         eventParser.Configuration.GameDirectory = '';
+        eventParser.Configuration.GameDirectory = '\x1F';
 
         rconParser.Version = 'S1 MP 1.22 build 2195988 Wed Apr 18 11:26:14 2018 win64';
         rconParser.GameName = 9; // SHG1

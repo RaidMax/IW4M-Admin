@@ -17,6 +17,11 @@ namespace SharedLibraryCore.Interfaces
         ParserRegex Say { get; set; }
 
         /// <summary>
+        ///     stores the special ASCII value used by CoD games that prevents the text in the chat from being localized
+        /// </summary>
+        string LocalizeText { get; set; }
+
+        /// <summary>
         ///     stores the regex information for a join event printed in the game log
         /// </summary>
         ParserRegex Join { get; set; }

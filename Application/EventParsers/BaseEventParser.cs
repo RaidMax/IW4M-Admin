@@ -29,6 +29,7 @@ namespace IW4MAdmin.Application.EventParsers
             Configuration = new DynamicEventParserConfiguration(parserRegexFactory)
             {
                 GameDirectory = "main",
+                LocalizeText = "\x15",
             };
 
             Configuration.Say.Pattern = @"^(say|sayteam);(-?[A-Fa-f0-9_]{1,32}|bot[0-9]+|0);([0-9]+);([^;]*);(.*)$";
@@ -185,7 +186,7 @@ namespace IW4MAdmin.Application.EventParsers
                 if (matchResult.Success)
                 {
                     var message = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
-                        .Replace("\x15", "")
+                        .Replace(Configuration.LocalizeText, "")
                         .Trim();
 
                     if (message.Length > 0)

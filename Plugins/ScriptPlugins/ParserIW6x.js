@@ -2,8 +2,8 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'Xerxes, RaidMax, st0rm',
-    version: 0.4,
+    author: 'Xerxes, RaidMax, st0rm, Future',
+    version: 0.5,
     name: 'IW6x Parser',
     isParser: true,
 
@@ -34,6 +34,7 @@ var plugin = {
         eventParser.Version = 'IW6 MP 3.15 build 2 Sat Sep 14 2013 03:58:30PM win64';
         eventParser.GameName = 4; // IW6
         eventParser.Configuration.GameDirectory = '';
+        eventParser.Configuration.LocalizeText = '\x1f';
     },
 
     onUnloadAsync: function () {

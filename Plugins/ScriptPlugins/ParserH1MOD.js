@@ -2,8 +2,8 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'fed',
-    version: 0.1,
+    author: 'fed, diamante',
+    version: 0.2,
     name: 'H1-Mod Parser',
     isParser: true,
 
@@ -29,6 +29,7 @@ var plugin = {
         rconParser.Configuration.DefaultRConPort = 27016;
 
         eventParser.Configuration.GameDirectory = '';
+        eventParser.Configuration.LocalizeText = '\x1f';
 
         rconParser.Version = 'H1 MP 1.15 build 1251288 Tue Jul 23 13:38:30 2019 win64';
         rconParser.GameName = 11; // H1

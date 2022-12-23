@@ -16,7 +16,8 @@
             <span>
                 &mdash;
                 <span class="@(message.IsQuickMessage ? "font-italic" : "") text-light-dm text-dark-lm">
-                    <color-code value="@(message.IsHidden ? message.HiddenMessage : message.Message)" allow="@ViewBag.EnableColorCodes"></color-code>
+                    <color-code value="@(message.IsHidden && !ViewBag.Authorized ? message.HiddenMessage : message.Message)" 
+                                allow="@ViewBag.EnableColorCodes"></color-code>
                 </span>
             </span>
             <br />

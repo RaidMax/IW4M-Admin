@@ -39,9 +39,9 @@
     <div class="card m-0 rounded">
         <div class="input-group mb-10">
             <div class="input-group-prepend">
-                <span class="input-group-text">@ViewBag.Localization["WEBFRONT_CONSOLE_FORM_SERVER"]</span>
+                <div class="input-group-text">@ViewBag.Localization["WEBFRONT_CONSOLE_FORM_SERVER"]</div>
             </div>
-            @Html.DropDownList("Server", Model.Select(s => new SelectListItem { Text = s.Name.StripColors(), Value = s.ID.ToString() }).ToList(), new { @class = "form-control", id = "console_server_select" })
+            @Html.DropDownList("Server", Model.Select(server => new SelectListItem { Text = $"[{server.Game}] {server.Name.StripColors()}", Value = server.ID.ToString() }).ToList(), new { @class = "form-control", id = "console_server_select" })
         </div>
         <div class="input-group">
             <input id="console_command_value" class="form-control" placeholder="@ViewBag.Localization["WEBFRONT_CONSOLE_FORM_PLACEHOLDER_COMMAND"]" type="text" required="required"/>

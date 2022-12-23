@@ -24,6 +24,7 @@ namespace WebfrontCore.Controllers
             {
                 Name = s.Hostname,
                 ID = s.EndPoint,
+                Game = (Data.Models.Reference.Game)s.GameName
             });
 
             ViewBag.Description = Localization["WEFBRONT_DESCRIPTION_CONSOLE"];

@@ -25,6 +25,7 @@ var plugin = {
         rconParser.Configuration.StatusHeader.Pattern = 'num +score +bot +ping +guid +name +address +qport *';
         rconParser.Configuration.WaitForResponse = false;
         rconParser.Configuration.DefaultRConPort = 28960;
+        
         rconParser.Configuration.Status.AddMapping(102, 4);
         rconParser.Configuration.Status.AddMapping(103, 5);
         rconParser.Configuration.Status.AddMapping(104, 6);
@@ -33,7 +34,9 @@ var plugin = {
         rconParser.GameName = 4; // IW6
         eventParser.Version = 'IW6 MP 3.15 build 2 Sat Sep 14 2013 03:58:30PM win64';
         eventParser.GameName = 4; // IW6
+        
         eventParser.Configuration.GameDirectory = '';
+        eventParser.Configuration.LocalizeText = '\x1f';
     },
 
     onUnloadAsync: function () {

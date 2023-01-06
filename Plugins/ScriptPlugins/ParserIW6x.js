@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'Xerxes, RaidMax, st0rm',
-    version: 0.4,
+    version: 0.5,
     name: 'IW6x Parser',
     isParser: true,
 
@@ -20,7 +20,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Ban = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.TempBan = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
-        rconParser.Configuration.Dvar.Pattern = '^ *\\"(.+)\\" is: \\"(.+)?\\" default: \\"(.+)?\\"\\n?(?:latched: \\"(.+)?\\"\\n?)? *(.+)$';
+        rconParser.Configuration.Dvar.Pattern = '^ *\\"(.+)\\" is: \\"(.+)?\\" default: \\"(.+)?\\"\\n?(?:latched: \\"(.+)?\\"\\n?)?(.*)$';
         rconParser.Configuration.Status.Pattern = '^ *([0-9]+) +-?([0-9]+) +(Yes|No) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){8,32}|(?:[a-z]|[0-9]){8,32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +(\\d+\\.\\d+\\.\\d+.\\d+\\:-*\\d{1,5}|0+.0+:-*\\d{1,5}|loopback|unknown|bot) +(-*[0-9]+) *$';
         rconParser.Configuration.StatusHeader.Pattern = 'num +score +bot +ping +guid +name +address +qport *';
         rconParser.Configuration.WaitForResponse = false;

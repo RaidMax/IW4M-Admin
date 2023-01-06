@@ -984,6 +984,22 @@
         {
           "Alias": "Village",
           "Name": "co_hunted"
+        },
+        {
+          "Alias": "Broadcast",
+          "Name": "mp_broadcast"
+        },
+        {
+          "Alias": "Showdown",
+          "Name": "mp_showdown"
+        },
+        {
+          "Alias": "Ambush",
+          "Name": "mp_convoy"
+        },
+        {
+          "Alias": "District",
+          "Name": "mp_citystreets"
         }
       ]
     },

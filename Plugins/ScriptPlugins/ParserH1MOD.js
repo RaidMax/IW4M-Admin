@@ -2,7 +2,7 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'fed',
+    author: 'fed, diamante',
     version: 0.2,
     name: 'H1-Mod Parser',
     isParser: true,

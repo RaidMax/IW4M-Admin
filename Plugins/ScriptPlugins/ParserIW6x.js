@@ -2,7 +2,7 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'Xerxes, RaidMax, st0rm',
+    author: 'Xerxes, RaidMax, st0rm, Future',
     version: 0.5,
     name: 'IW6x Parser',
     isParser: true,

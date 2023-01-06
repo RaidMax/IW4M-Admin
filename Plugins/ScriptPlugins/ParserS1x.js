@@ -2,7 +2,7 @@
 var eventParser;
 
 var plugin = {
-    author: 'Diavolo, RaidMax',
+    author: 'Future, RaidMax',
     version: 0.4,
     name: 'S1x Parser',
     isParser: true,

@@ -1000,6 +1000,30 @@
         {
           "Alias": "District",
           "Name": "mp_citystreets"
+        },
+        {
+          "Alias": "Backlot",
+          "Name": "mp_backlot"
+        },
+        {
+          "Alias": "Pipeline",
+          "Name": "mp_pipeline"
+        },
+        {
+          "Alias": "Chinatown",
+          "Name": "mp_carentan"
+        },
+        {
+          "Alias": "Winter Crash",
+          "Name": "mp_crash_snow"
+        },
+        {
+          "Alias": "Countdown",
+          "Name": "mp_countdown"
+        },
+        {
+          "Alias": "Downpour",
+          "Name": "mp_farm"
         }
       ]
     },

@@ -52,13 +52,6 @@ waitForAttack()
 	}
 }
 
-getHttpString( url )
-{
-    request = httpGet( url );
-    request waittill( "done", success, data );
-	request destroy();
-}
-
 runRadarUpdates()
 {
 	interval = getDvarInt( "sv_printradar_updateinterval", 500 );

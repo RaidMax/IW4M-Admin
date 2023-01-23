@@ -5,7 +5,7 @@ let startAt = null;
 let isLoaderLoading = false;
 let loadUri = '';
 let loaderResponseId = '';
-let additionalParams = [];
+let additionalParams = undefined;
 
 function initLoader(location, loaderId, count = 10, start = count, additional = []) {
     loadUri = location;
@@ -52,14 +52,23 @@ function loadMoreItems() {
     showLoader();
     isLoaderLoading = true;
     let params = {offset: loaderOffset, count: loadCount, startAt: startAt};
-    for (let i = 0; i < additionalParams.length; i++) {
-        let param = additionalParams[i];
-        params[param.name] = param.value instanceof Function ? param.value() : param.value;
+    
+    if (additionalParams instanceof Function) {
+        params = {
+            ...params,
+            ...flatParams(additionalParams())
+        }
+    } else {
+        for (let i = 0; i < additionalParams.length; i++) {
+            let param = additionalParams[i];
+            params[param.name] = param.value instanceof Function ? param.value() : param.value;
+        }
     }
 
     $.get(loadUri, params)
         .done(function (response) {
             $(loaderResponseId).append(response);
+                
             if (response.trim().length === 0) {
                 staleLoader();
                 loaderReachedEnd = true;
@@ -81,4 +90,13 @@ function loadMoreItems() {
             isLoaderLoading = false;
         });
     loaderOffset += loadCount;
+}
+
+function flatParams(params) {
+    return params.map(function (b) {
+        return {[b.name]: b.value}
+    }).reduce(function (prev, curr) {
+        for (const key in curr) prev[key] = curr[key];
+        return prev;
+    })
 }

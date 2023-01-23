@@ -22,7 +22,7 @@ public class GeoLocationService : IGeoLocationService
         try
         {
             using var reader = new DatabaseReader(_sourceAddress);
-            reader.TryCountry(address, out country);
+            country = reader.Country(address);
         }
         catch
         {

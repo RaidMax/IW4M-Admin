@@ -15,7 +15,7 @@ namespace SharedLibraryCore.Dtos
         /// <summary>
         ///     how many items to take
         /// </summary>
-        public int Count { get; set; } = 100;
+        public int Count { get; set; } = 30;
 
         /// <summary>
         ///     filter query
@@ -28,6 +28,8 @@ namespace SharedLibraryCore.Dtos
         public SortDirection Direction { get; set; } = SortDirection.Descending;
 
         public DateTime? Before { get; set; }
+        
+        public DateTime? After { get; set; }
     }
 
     public enum SortDirection

@@ -16,7 +16,8 @@ public enum WebfrontEntity
     ProfilePage,
     AdminMenu,
     ClientNote,
-    Interaction
+    Interaction,
+    AdvancedSearch
 }
 
 public enum WebfrontPermission

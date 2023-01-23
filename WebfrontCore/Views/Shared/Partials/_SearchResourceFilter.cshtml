@@ -1,0 +1,125 @@
+@using Data.Models.Client
+@using SharedLibraryCore.Dtos
+@using WebfrontCore.QueryHelpers.Models
+@using Data.Models
+@model string
+@{
+    var existingClientFilter = ViewBag.ClientResourceRequest as ClientResourceRequest;
+}
+<h6 class="dropdown-header">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_TITLE"]</h6>
+<div class="dropdown-divider"></div>
+<div class="dropdown-content">
+    <form asp-controller="Client" asp-action="AdvancedFind" method="get" id="advancedSearchDropdownContent@(Model)" onsubmit="showLoader()">
+        <div class="form-group">
+            <label for="searchType@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_FOR"]</label>
+            <br/>
+            <select class="form-control" id="searchType@(Model)" name="searchType" disabled="disabled">
+                <option value="client">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_PLAYERS"]</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="clientName@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"]</label>
+            <div class="d-flex">
+                <input type="text" class="form-control" name="clientName" id="clientName@(Model)"
+                       placeholder="Unknown Soldier" value="@existingClientFilter?.ClientName"/>
+                <div class="custom-control ml-10 align-self-center">
+                    <div class="custom-switch">
+                        @if (existingClientFilter?.IsExactClientName ?? false)
+                        {
+                            <input type="checkbox" id="isExactClientName@(Model)" name="isExactClientName" value="true"
+                                   checked="checked">
+                        }
+                        else
+                        {
+                            <input type="checkbox" id="isExactClientName@(Model)" name="isExactClientName" value="true">
+                        }
+                        <label for="isExactClientName@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"]</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="clientIP@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_IP"]</label>
+            <div class="d-flex">
+                <input type="text" class="form-control" name="clientIP" id="clientIP@(Model)" placeholder="1.1.1.1"
+                       value="@existingClientFilter?.ClientIp">
+                <div class="custom-control ml-10 align-self-center">
+                    <div class="custom-switch">
+                        @if (existingClientFilter?.IsExactClientIp ?? false)
+                        {
+                            <input type="checkbox" id="isExactClientIP@(Model)" name="isExactClientIP" value="true"
+                                   checked="checked">
+                        }
+                        else
+                        {
+                            <input type="checkbox" id="isExactClientIP@(Model)" name="isExactClientIP" value="true">
+                        }
+                        <label for="isExactClientIP@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"]</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="clientGuid@(Model)">GUID <span class="text-primary">&bull;</span> XUID <span class="text-primary">&bull;</span> NetworkID</label>
+            <input type="text" class="form-control" name="clientGuid" id="clientGuid@(Model)"
+                   placeholder="110000100000001" value="@existingClientFilter?.ClientGuid"/>
+        </div>
+
+        <div class="form-group">
+            <label for="clientLevel@(Model)" class="w-half">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_PERMISSION"]</label>
+            <label for="clientGameName@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"]</label>
+
+            <div class="d-flex">
+                <select class="form-control w-half" id="clientLevel@(Model)" name="clientLevel">
+                    <option value="">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"]</option>
+                    @foreach (EFClient.Permission permission in Enum.GetValues(typeof(EFClient.Permission)))
+                    {
+                        <option value="@((int)permission)" selected="@(permission == existingClientFilter?.ClientLevel)">
+                            @permission.ToLocalizedLevelName()
+                        </option>
+                    }
+                </select>
+                <select class="form-control w-half ml-10" id="clientGameName@(Model)" name="gameName">
+                    <option value="">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"]</option>
+                    @foreach (Reference.Game game in Enum.GetValues(typeof(Reference.Game)))
+                    {
+                        <option value="@((int)game)" selected="@(game == existingClientFilter?.GameName)">
+                            @ViewBag.Localization["GAME_" + game]
+                        </option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="clientConnected@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"]</label>
+            <div class="d-flex">
+                @{ var oneYearAgo = DateTime.UtcNow.AddYears(-1).ToShortDateString(); }
+                <input type="text" class="form-control date-picker-input w-half" name="clientConnected"
+                       id="clientConnected@(Model)" data-date="@oneYearAgo"
+                       value="@(existingClientFilter?.ClientConnected?.ToShortDateString() ?? oneYearAgo)"/>
+
+                <div class="custom-control ml-10 align-self-center">
+                    <div class="custom-switch">
+                        @if (existingClientFilter?.Direction is SortDirection.Descending)
+                        {
+                            <input type="checkbox" id="resultOrder@(Model)" name="direction"
+                                   value="@((int)SortDirection.Ascending)">
+                        }
+                        else
+                        {
+                            <input type="checkbox" id="resultOrder@(Model)" name="direction"
+                                   value="@((int)SortDirection.Ascending)" checked="checked">
+                        }
+                        <label for="resultOrder@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_OLDEST_FIRST"]</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="submit" class="btn btn-primary" value="@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"]"/>
+    </form>
+</div>

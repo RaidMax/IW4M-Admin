@@ -1,0 +1,39 @@
+@model IEnumerable<WebfrontCore.QueryHelpers.Models.ClientResourceResponse>
+@{
+    var loc = Utilities.CurrentLocalization.LocalizationIndex;
+}
+
+<div class="content mt-0">
+    <h2 class="content-title mt-20">@loc["WEBFRONT_SEARCH_RESULTS_TITLE"]</h2>
+
+    <table class="table">
+        <thead>
+        <tr class="bg-primary text-light d-none d-md-table-row">
+            <td>@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL"]</td>
+            <td>@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP"]</td>
+            <td>@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY"]</td>
+            <td>@loc["WEBFRONT_PROFILE_LEVEL"]</td>
+            <td>@loc["WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"]</td>
+            <td class="text-right">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</td>
+        </tr>
+        </thead>
+        <tbody id="searchResultContainer">
+            <partial name="Find/_AdvancedFindList" model="@Model"/>
+        </tbody>
+    </table>
+
+    <div class="text-center">
+        <i id="loaderLoad" class="oi oi-chevron-bottom loader-load-more text-primary" aria-hidden="true"></i>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        initLoader('/Client/AdvancedFind', '#searchResultContainer', 30, 30, () => {
+            return $('#advancedSearchDropdownContentFullDesktop').serializeArray() 
+            || $('#advancedSearchDropdownContentCompactDesktop').serializeArray() 
+            || $('#advancedSearchDropdownContentFullMobile').serializeArray() 
+            || $('#advancedSearchDropdownContentCompactMobile').serializeArray() 
+        });
+    </script>
+}

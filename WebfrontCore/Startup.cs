@@ -115,6 +115,9 @@ namespace WebfrontCore
             services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>, AdvancedClientStatsResourceQueryHelper>();
+            services.AddScoped(sp =>
+                Program.ApplicationServiceProvider
+                    .GetRequiredService<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>>());
             services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
             // todo: this needs to be handled more gracefully
             services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<DefaultSettings>());

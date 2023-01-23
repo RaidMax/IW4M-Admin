@@ -17,6 +17,7 @@
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
       "wwwroot/lib/halfmoon/js/halfmoon.min.js",
       "wwwroot/lib/canvas.js/canvasjs.js",
+      "wwwroot/lib/vanillajs-datepicker/dist/js/datepicker.min.js",
       "wwwroot/js/action.js",
       "wwwroot/js/console.js",
       "wwwroot/js/penalty.js",

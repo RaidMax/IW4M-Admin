@@ -26,6 +26,7 @@ using static SharedLibraryCore.Server;
 using static Data.Models.Client.EFClient;
 using static Data.Models.EFPenalty;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using RegionInfo = System.Globalization.RegionInfo;
 
 namespace SharedLibraryCore
 {
@@ -316,14 +317,20 @@ namespace SharedLibraryCore
             }
         }
 
+        public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, long? fallback = null)
+        {
+            return ConvertGuidToLong(str, numberStyle, true, fallback);
+        }
+
         /// <summary>
         ///     converts a string to numerical guid
         /// </summary>
         /// <param name="str">source string for guid</param>
         /// <param name="numberStyle">how to parse the guid</param>
         /// <param name="fallback">value to use if string is empty</param>
+        /// <param name="convertSigned">convert signed values to unsigned</param>
         /// <returns></returns>
-        public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, long? fallback = null)
+        public static long ConvertGuidToLong(this string str, NumberStyles numberStyle, bool convertSigned, long? fallback = null)
         {
             // added for source games that provide the steam ID
             var match = Regex.Match(str, @"^STEAM_(\d):(\d):(\d+)$");
@@ -336,7 +343,7 @@ namespace SharedLibraryCore
                 return z * 2 + 0x0110000100000000 + y;
             }
 
-            str = str.Substring(0, Math.Min(str.Length, 19));
+            str = str.Substring(0, Math.Min(str.Length, str.StartsWith("-") ? 20 : 19));
             var parsableAsNumber = Regex.Match(str, @"([A-F]|[a-f]|[0-9])+").Value;
 
             if (string.IsNullOrWhiteSpace(str) && fallback.HasValue)
@@ -351,7 +358,7 @@ namespace SharedLibraryCore
                 {
                     long.TryParse(str, numberStyle, CultureInfo.InvariantCulture, out id);
 
-                    if (id < 0)
+                    if (id < 0 && convertSigned)
                     {
                         id = (uint)id;
                     }

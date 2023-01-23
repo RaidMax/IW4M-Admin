@@ -29,6 +29,10 @@
     {
       "library": "halfmoon@1.1.1",
       "destination": "wwwroot/lib/halfmoon"
+    },
+    {
+      "library": "vanillajs-datepicker@1.2.0",
+      "destination": "wwwroot/lib/vanillajs-datepicker"
     }
   ]
 }

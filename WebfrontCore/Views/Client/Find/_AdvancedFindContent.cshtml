@@ -1,0 +1,107 @@
+@using WebfrontCore.QueryHelpers.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using WebfrontCore.Permissions
+@using Data.Models.Client
+@model WebfrontCore.QueryHelpers.Models.ClientResourceResponse
+
+@{
+    var loc = Utilities.CurrentLocalization.LocalizationIndex;
+    var client = Model;
+
+    string FormatNameChange(ClientResourceResponse clientResponse)
+    {
+        return clientResponse.CurrentClientName.StripColors() != clientResponse.MatchedClientName?.StripColors()
+            ? $"{clientResponse.CurrentClientName} [{clientResponse.MatchedClientName}{(clientResponse.MatchedClientIp is null && clientResponse.MatchedClientIp != clientResponse.CurrentClientIp ? "" : $"/{clientResponse.MatchedClientIp.ConvertIPtoString()}")}]"
+            : clientResponse.CurrentClientName;
+    }
+
+    var canSeeLevel = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
+    var canSeeIp = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+    string ClassForLevel(EFClient.Permission permission) => !canSeeLevel ? "level-color-user" : $"level-color-{permission.ToString().ToLower()}";
+    string FormatIpForPermission(int? ip) => canSeeIp && ip is not null ? ip.ConvertIPtoString() : "-";
+}
+
+<tr class="bg-dark-dm bg-light-lm d-none d-md-table-row">
+    <td class="col-3">
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId">
+            <color-code value="@FormatNameChange(client)"></color-code>
+        </a>
+    </td>
+    <td class="col-2">
+        @FormatIpForPermission(client.CurrentClientIp)
+    </td>
+    <td class="col-2">
+        <div class="d-flex">
+            @if (string.IsNullOrEmpty(client.ClientCountryCode))
+            {
+                <div class="d-flex">
+                    <i class="oi oi-question-mark ml-5 mr-20"></i>
+                    <div class="font-size-12 font-weight-light">Unknown</div>
+                </div>
+            }
+            else
+            {
+                <img src="https://flagcdn.com/32x24/@(client.ClientCountryCode.ToLower()).png" class="mr-10 rounded align-self-center" alt="@client.ClientCountryDisplayName"/>
+            }
+            <div class="font-size-12 font-weight-light">@client.ClientCountryDisplayName</div>
+        </div>
+    </td>
+    <td class="col-2 @ClassForLevel(client.ClientLevelValue)">@(canSeeLevel ? client.ClientLevel : "-")</td>
+    <td>
+        <div data-toggle="tooltip" data-title="@ViewBag.Localization["GAME_" + client.Game]">
+            <span class="badge">@Utilities.MakeAbbreviation(ViewBag.Localization["GAME_" + client.Game])</span>
+        </div>
+    </td>
+    <td class="col-3">
+        <div class="float-right">
+            <div data-toggle="tooltip" data-title="@client.LastConnection.ToShortDateString()" data-placement="left">
+                <span class="text-muted">@client.LastConnection.HumanizeForCurrentCulture()</span>
+            </div>
+        </div>
+    </td>
+</tr>
+
+<tr class="d-flex d-block d-md-none">
+    <td class="bg-primary text-light w-half">
+        <div class="pb-5">@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME"]</div>
+        <div class="pb-5">@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_ALIAS"]</div>
+        <div class="pb-5">@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP"]</div>
+        <div class="pb-5">@loc["WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY"]</div>
+        <div class="pb-5">@loc["WEBFRONT_PROFILE_LEVEL"]</div>
+        <div class="pb-5">@loc["WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"]</div>
+        <div class="pb-5">@loc["WEBFRONT_SEARCH_LAST_CONNECTED"]</div>
+    </td>
+    <td class="w-half bg-dark">
+        <div class="pb-5">
+        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration @ClassForLevel(client.ClientLevelValue)">
+            <color-code value="@client.CurrentClientName"></color-code>
+        </a>
+        </div>
+        <div class="pb-5">
+            <color-code value="@client.MatchedClientName"></color-code>
+             @if (client.MatchedClientIp != client.CurrentClientIp)
+             {
+                <span>/ @client.MatchedClientIp.ConvertIPtoString()</span>
+             }
+        </div>
+        <div class="text-muted pb-5">
+            @FormatIpForPermission(client.CurrentClientIp)
+        </div>
+        <div class="d-flex pb-5">
+            @if (string.IsNullOrEmpty(client.ClientCountryCode))
+            {
+                <div class="mr-5">Unknown</div>
+            }
+            else
+            {
+                <div class="mr-5">@client.ClientCountryDisplayName</div>
+                <img src="https://flagcdn.com/24x18/@(client.ClientCountryCode.ToLower()).png" class="rounded align-self-center" alt="@client.ClientCountryDisplayName"/>
+            }
+        </div>
+        <div class="pb-5 @ClassForLevel(client.ClientLevelValue)">@(canSeeLevel ? client.ClientLevel : "-")</div>
+        <div data-toggle="tooltip" data-title="@ViewBag.Localization["GAME_" + client.Game]">
+            <span class="badge font-size-12 mt-5 mb-5">@Utilities.MakeAbbreviation(ViewBag.Localization["GAME_" + client.Game])</span>
+        </div>
+        <div class="text-muted pb-5">@client.LastConnection.HumanizeForCurrentCulture()</div>
+    </td>
+</tr>

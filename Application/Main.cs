@@ -30,6 +30,7 @@ using Integrations.Source.Extensions;
 using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Localization;
+using IW4MAdmin.Application.QueryHelpers;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
@@ -38,6 +39,7 @@ using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
 using Stats.Helpers;
+using WebfrontCore.QueryHelpers.Models;
 
 namespace IW4MAdmin.Application
 {
@@ -431,6 +433,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>, ConnectionsResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>, PermissionLevelChangedResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>, ClientResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
                 .AddSingleton<IMasterCommunication, MasterCommunication>()

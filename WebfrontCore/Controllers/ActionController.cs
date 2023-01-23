@@ -862,7 +862,6 @@ namespace WebfrontCore.Controllers
         private Dictionary<string, string> GetPresetPenaltyReasons() => _appConfig.PresetPenaltyReasons.Values
             .Concat(_appConfig.GlobalRules)
             .Concat(_appConfig.Servers.SelectMany(server => server.Rules ?? Array.Empty<string>()))
-            .Distinct()
             .Select((value, _) => new
             {
                 Value = value
@@ -872,6 +871,7 @@ namespace WebfrontCore.Controllers
             {
                 Value = ""
             })
+            .Distinct()
             .ToDictionary(item => item.Value, item => item.Value);
     }
 }

@@ -1,5 +1,9 @@
 ﻿@import 'profile.scss';
 
+$dp-background-color: #191c20;
+$dp-cell-focus-background-color: rgba(255, 255, 255, 0.05);  
+@import '../../lib/vanillajs-datepicker/sass/datepicker';
+
 :root {
   --blue-color: #117ac0;
 
@@ -470,4 +474,26 @@ table.no-cell-divider td.first-row, table.no-cell-divider th.first-row {
 
 table.no-cell-divider td.last-row, table.no-cell-divider th.last-row {
   padding-bottom: 1.5rem;
+}
+
+.datepicker-picker {
+  padding: 1rem;
+}
+
+.view-switch {
+  margin: 0 1rem 0 1rem;
+}
+
+.datepicker-header {
+  margin-bottom: 1rem;
+}
+
+.datepicker-view .days {
+  margin: auto !important
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 90%;
+  }
 }

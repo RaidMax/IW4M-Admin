@@ -15,6 +15,7 @@ using Data.Models;
 using SharedLibraryCore.Services;
 using Stats.Config;
 using WebfrontCore.Permissions;
+using WebfrontCore.QueryHelpers.Models;
 using WebfrontCore.ViewComponents;
 
 namespace WebfrontCore.Controllers
@@ -26,15 +27,19 @@ namespace WebfrontCore.Controllers
         private readonly IGeoLocationService _geoLocationService;
         private readonly ClientService _clientService;
         private readonly IInteractionRegistration _interactionRegistration;
+        private readonly IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse> _clientResourceHelper;
 
         public ClientController(IManager manager, IMetaServiceV2 metaService, StatsConfiguration config,
-            IGeoLocationService geoLocationService, ClientService clientService, IInteractionRegistration interactionRegistration) : base(manager)
+            IGeoLocationService geoLocationService, ClientService clientService,
+            IInteractionRegistration interactionRegistration,
+            IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse> clientResourceHelper) : base(manager)
         {
             _metaService = metaService;
             _config = config;
             _geoLocationService = geoLocationService;
             _clientService = clientService;
             _interactionRegistration = interactionRegistration;
+            _clientResourceHelper = clientResourceHelper;
         }
 
         [Obsolete]
@@ -239,6 +244,17 @@ namespace WebfrontCore.Controllers
             ViewBag.Title = Localization["WEBFRONT_SEARCH_RESULTS_TITLE"];
             
             return View("Find/Index", clientsDto);
+        }
+
+        public async Task<IActionResult> AdvancedFind(ClientResourceRequest request)
+        {
+            ViewBag.Title = Localization["WEBFRONT_SEARCH_RESULTS_TITLE"];
+            ViewBag.ClientResourceRequest = request;
+            
+            var response = await _clientResourceHelper.QueryResource(request);
+            return request.Offset > 0
+                ? PartialView("Find/_AdvancedFindList", response.Results)
+                : View("Find/AdvancedFind", response.Results);
         }
 
         public IActionResult Meta(int id, int count, int offset, long? startAt, MetaType? metaFilterType,

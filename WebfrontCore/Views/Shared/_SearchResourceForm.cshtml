@@ -1,12 +1,40 @@
-﻿<form class="form-inline ml-auto" method="get" asp-controller="Client" asp-action="Find">
+﻿@model string
+<div class="ml-auto d-inline-flex w-full">
     <div class="input-group">
-        <input id="client_search_mobile" name="clientName" class="form-control" type="text" placeholder="@ViewBag.Localization["WEBFRONT_NAV_SEARCH"]" required="required"/>
+        <has-permission entity="AdvancedSearch" required-permission="Read">
+            <div class="input-group-prepend dropdown with-arrow d-block d-md-none">
+                <button class="btn" type="button" data-toggle="dropdown">
+                    <i class="oi oi-chevron-bottom"></i>
+                </button>
+                <div class="dropdown-menu w-300">
+                    <partial name="Partials/_SearchResourceFilter" model="@(Model + "Mobile")"/>
+                </div>
+            </div>
+        </has-permission>
+
+        <form asp-controller="Client" asp-action="AdvancedFind" method="get" asp-route-isLegacyQuery="true"
+              id="basicSearchForm@(Model)" class="flex-fill">
+            <input name="clientName" class="form-control" type="text"
+                   placeholder="@ViewBag.Localization["WEBFRONT_NAV_SEARCH"]" required="required"/>
+        </form>
+
+        <has-permission entity="AdvancedSearch" required-permission="Read">
+            <div class="input-group-append dropdown dropleft with-arrow d-md-block d-none">
+                <button class="btn" type="button" data-toggle="dropdown">
+                    <i class="oi oi-chevron-bottom"></i>
+                </button>
+                <div class="dropdown-menu w-400">
+                    <partial name="Partials/_SearchResourceFilter" model="@(Model + "Desktop")"/>
+                </div>
+            </div>
+        </has-permission>
+
         <div class="input-group-append">
-            <button class="btn" type="submit">
+            <button class="btn" form="basicSearchForm@(Model)" type="submit">
                 <i class="oi oi-magnifying-glass"></i>
             </button>
         </div>
-    </div>
 
+    </div>
     <br/>
-</form>
+</div>

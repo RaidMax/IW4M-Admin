@@ -103,6 +103,8 @@ namespace Data.Migrations.Postgresql
 
                     b.HasIndex("CurrentAliasId");
 
+                    b.HasIndex("LastConnection");
+
                     b.HasIndex("NetworkId");
 
                     b.ToTable("EFClients", (string)null);

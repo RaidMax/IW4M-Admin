@@ -88,7 +88,8 @@ namespace Data.Context
             // make network id unique
             modelBuilder.Entity<EFClient>(entity =>
             {
-                entity.HasIndex(e => e.NetworkId);
+                entity.HasIndex(client => client.NetworkId);
+                entity.HasIndex(client => client.LastConnection);
                 entity.HasAlternateKey(client => new
                 {
                     client.NetworkId,

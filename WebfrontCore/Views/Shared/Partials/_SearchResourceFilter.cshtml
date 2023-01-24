@@ -2,6 +2,7 @@
 @using SharedLibraryCore.Dtos
 @using WebfrontCore.QueryHelpers.Models
 @using Data.Models
+@using System.Globalization
 @model string
 @{
     var existingClientFilter = ViewBag.ClientResourceRequest as ClientResourceRequest;
@@ -97,14 +98,14 @@
         <div class="form-group">
             <label for="clientConnected@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"]</label>
             <div class="d-flex">
-                @{ var oneYearAgo = DateTime.UtcNow.AddYears(-1).ToShortDateString(); }
+                @{ var presetDate = (existingClientFilter?.ClientConnected ?? DateTime.UtcNow.AddYears(-1)).ToString("s", CultureInfo.InvariantCulture); }
                 <input type="text" class="form-control date-picker-input w-half" name="clientConnected"
-                       id="clientConnected@(Model)" data-date="@oneYearAgo"
-                       value="@(existingClientFilter?.ClientConnected?.ToShortDateString() ?? oneYearAgo)"/>
+                       id="clientConnected@(Model)" data-date="@presetDate"
+                       value="@presetDate"/>
 
                 <div class="custom-control ml-10 align-self-center">
                     <div class="custom-switch">
-                        @if (existingClientFilter?.Direction is SortDirection.Descending)
+                        @if ((existingClientFilter?.Direction ?? SortDirection.Descending) is SortDirection.Descending)
                         {
                             <input type="checkbox" id="resultOrder@(Model)" name="direction"
                                    value="@((int)SortDirection.Ascending)">

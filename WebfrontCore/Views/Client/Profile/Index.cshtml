@@ -47,9 +47,12 @@
                         <span class="text-light-dm font-weight-lighter">@(ViewBag.Authorized ? !string.IsNullOrEmpty(Model.ActivePenalty.AutomatedOffense) && Model.ActivePenalty.Type != EFPenalty.PenaltyType.Warning ? Utilities.FormatExt(ViewBag.Localization["WEBFRONT_PROFILE_ANTICHEAT_DETECTION"], Model.ActivePenalty.AutomatedOffense) : Model.ActivePenalty.Offense.StripColors() : Model.ActivePenalty.Offense.StripColors())</span>
                         break;
                     case "time":
-                        <span class="text-light-dm font-weight-lighter">
-                            @((Model.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture())
-                        </span>
+                        if (Model.ActivePenalty.Expires.HasValue)
+                        {
+                            <span class="text-light-dm font-weight-lighter">
+                                @((Model.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture())
+                            </span>
+                        }
                         break;
                     default:
                         <span>@result.MatchValue</span>

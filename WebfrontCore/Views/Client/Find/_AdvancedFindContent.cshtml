@@ -8,15 +8,16 @@
     var loc = Utilities.CurrentLocalization.LocalizationIndex;
     var client = Model;
 
+    var canSeeLevel = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
+    var canSeeIp = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+
     string FormatNameChange(ClientResourceResponse clientResponse)
     {
         return clientResponse.CurrentClientName.StripColors() != clientResponse.MatchedClientName?.StripColors()
-            ? $"{clientResponse.CurrentClientName} [{clientResponse.MatchedClientName}{(clientResponse.MatchedClientIp is null && clientResponse.MatchedClientIp != clientResponse.CurrentClientIp ? "" : $"/{clientResponse.MatchedClientIp.ConvertIPtoString()}")}]"
+            ? $"{clientResponse.CurrentClientName} [{clientResponse.MatchedClientName}{((clientResponse.MatchedClientIp is null && clientResponse.MatchedClientIp != clientResponse.CurrentClientIp) ? "" : $"/{FormatIpForPermission(clientResponse.MatchedClientIp)}")}]"
             : clientResponse.CurrentClientName;
     }
 
-    var canSeeLevel = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
-    var canSeeIp = (ViewBag.PermissionsSet as IEnumerable<string>).HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
     string ClassForLevel(EFClient.Permission permission) => !canSeeLevel ? "level-color-user" : $"level-color-{permission.ToString().ToLower()}";
     string FormatIpForPermission(int? ip) => canSeeIp && ip is not null ? ip.ConvertIPtoString() : "-";
 }
@@ -73,16 +74,16 @@
     </td>
     <td class="w-half bg-dark">
         <div class="pb-5">
-        <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration @ClassForLevel(client.ClientLevelValue)">
-            <color-code value="@client.CurrentClientName"></color-code>
-        </a>
+            <a asp-controller="Client" asp-action="Profile" asp-route-id="@client.ClientId" class="no-decoration @ClassForLevel(client.ClientLevelValue)">
+                <color-code value="@client.CurrentClientName"></color-code>
+            </a>
         </div>
         <div class="pb-5">
             <color-code value="@client.MatchedClientName"></color-code>
-             @if (client.MatchedClientIp != client.CurrentClientIp)
-             {
+            @if (client.MatchedClientIp != client.CurrentClientIp && canSeeIp)
+            {
                 <span>/ @client.MatchedClientIp.ConvertIPtoString()</span>
-             }
+            }
         </div>
         <div class="text-muted pb-5">
             @FormatIpForPermission(client.CurrentClientIp)

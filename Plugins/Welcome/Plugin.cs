@@ -5,125 +5,120 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Database.Models;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
 using System.Net.Http;
+using System.Threading;
 using Newtonsoft.Json.Linq;
 using Humanizer;
 using Data.Abstractions;
 using Data.Models;
+using Microsoft.Extensions.DependencyInjection;
+using SharedLibraryCore.Events.Management;
+using SharedLibraryCore.Interfaces.Events;
 using static Data.Models.Client.EFClient;
 
-namespace IW4MAdmin.Plugins.Welcome
+namespace IW4MAdmin.Plugins.Welcome;
+
+public class Plugin : IPluginV2
 {
-    public class Plugin : IPlugin
+    public string Author => "RaidMax";
+    public string Version => "1.1";
+    public string Name => "Welcome Plugin";
+
+    public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
-        public string Author => "RaidMax";
+        serviceCollection.AddConfiguration<WelcomeConfiguration>("WelcomePluginSettings");
+    }
 
-        public float Version => 1.0f;
+    private readonly WelcomeConfiguration _configuration;
+    private readonly IDatabaseContextFactory _contextFactory;
 
-        public string Name => "Welcome Plugin";
+    public Plugin(WelcomeConfiguration configuration, IDatabaseContextFactory contextFactory)
+    {
+        _configuration = configuration;
+        _contextFactory = contextFactory;
 
-        private readonly IConfigurationHandler<WelcomeConfiguration> _configHandler;
-        private readonly IDatabaseContextFactory _contextFactory;
+        IManagementEventSubscriptions.ClientStateAuthorized += OnClientStateAuthorized;
+    }
 
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory, IDatabaseContextFactory contextFactory)
+    private async Task OnClientStateAuthorized(ClientStateEvent clientState, CancellationToken token)
+    {
+        var newPlayer = clientState.Client;
+
+        if (newPlayer.Level >= Permission.Trusted && !newPlayer.Masked ||
+            !string.IsNullOrEmpty(newPlayer.Tag) &&
+            newPlayer.Level != Permission.Flagged && newPlayer.Level != Permission.Banned &&
+            !newPlayer.Masked)
+            newPlayer.CurrentServer.Broadcast(
+                await ProcessAnnouncement(_configuration.PrivilegedAnnouncementMessage,
+                    newPlayer));
+
+        newPlayer.Tell(await ProcessAnnouncement(_configuration.UserWelcomeMessage, newPlayer));
+
+        if (newPlayer.Level == Permission.Flagged)
         {
-            _configHandler =
-                configurationHandlerFactory.GetConfigurationHandler<WelcomeConfiguration>("WelcomePluginSettings");
-            _contextFactory = contextFactory;
+            string penaltyReason;
+
+            await using var context = _contextFactory.CreateContext(false);
+            {
+                penaltyReason = await context.Penalties
+                    .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == EFPenalty.PenaltyType.Flag)
+                    .OrderByDescending(p => p.When)
+                    .Select(p => p.AutomatedOffense ?? p.Offense)
+                    .FirstOrDefaultAsync(cancellationToken: token);
+            }
+
+            newPlayer.CurrentServer.ToAdmins(Utilities.CurrentLocalization
+                .LocalizationIndex["PLUGINS_WELCOME_FLAG_MESSAGE"]
+                .FormatExt(newPlayer.Name, penaltyReason));
+        }
+        else
+        {
+            newPlayer.CurrentServer.Broadcast(await ProcessAnnouncement(_configuration.UserAnnouncementMessage,
+                newPlayer));
+        }
+    }
+
+    private async Task<string> ProcessAnnouncement(string msg, EFClient joining)
+    {
+        msg = msg.Replace("{{ClientName}}", joining.Name);
+        msg = msg.Replace("{{ClientLevel}}",
+            $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.Tag) ? "" : $" (Color::White){joining.Tag}(Color::White)")}");
+        // this prevents it from trying to evaluate it every message
+        if (msg.Contains("{{ClientLocation}}"))
+        {
+            msg = msg.Replace("{{ClientLocation}}", await GetCountryName(joining.IPAddressString));
         }
 
-        public async Task OnLoadAsync(IManager manager)
+        msg = msg.Replace("{{TimesConnected}}",
+            joining.Connections.Ordinalize(Utilities.CurrentLocalization.Culture));
+
+        return msg;
+    }
+
+    /// <summary>
+    /// makes a webrequest to determine IP origin 
+    /// </summary>
+    /// <param name="ip">IP address to get location of</param>
+    /// <returns></returns>
+    private async Task<string> GetCountryName(string ip)
+    {
+        using var wc = new HttpClient();
+        try
         {
-            await _configHandler.BuildAsync();
-            if (_configHandler.Configuration() == null)
-            {
-                _configHandler.Set((WelcomeConfiguration) new WelcomeConfiguration().Generate());
-                await _configHandler.Save();
-            }
+            var response =
+                await wc.GetStringAsync(new Uri(
+                    $"http://ip-api.com/json/{ip}?lang={Utilities.CurrentLocalization.LocalizationName.Split("-").First().ToLower()}"));
+            var responseObj = JObject.Parse(response);
+            response = responseObj["country"]?.ToString();
+
+            return string.IsNullOrEmpty(response)
+                ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]
+                : response;
         }
 
-        public Task OnUnloadAsync() => Task.CompletedTask;
-
-        public Task OnTickAsync(Server S) => Task.CompletedTask;
-
-        public async Task OnEventAsync(GameEvent gameEvent, Server server)
+        catch
         {
-            if (gameEvent.Type == GameEvent.EventType.Join)
-            {
-                var newPlayer = gameEvent.Origin;
-                if (newPlayer.Level >= Permission.Trusted && !gameEvent.Origin.Masked||
-                    !string.IsNullOrEmpty(newPlayer.Tag) &&
-                     newPlayer.Level != Permission.Flagged && newPlayer.Level != Permission.Banned &&
-                     !newPlayer.Masked)
-                    gameEvent.Owner.Broadcast(
-                        await ProcessAnnouncement(_configHandler.Configuration().PrivilegedAnnouncementMessage,
-                            newPlayer));
-
-                newPlayer.Tell(await ProcessAnnouncement(_configHandler.Configuration().UserWelcomeMessage, newPlayer));
-
-                if (newPlayer.Level == Permission.Flagged)
-                {
-                    string penaltyReason;
-
-                    await using var context = _contextFactory.CreateContext(false);
-                    {
-                        penaltyReason = await context.Penalties
-                            .Where(p => p.OffenderId == newPlayer.ClientId && p.Type == EFPenalty.PenaltyType.Flag)
-                            .OrderByDescending(p => p.When)
-                            .Select(p => p.AutomatedOffense ?? p.Offense)
-                            .FirstOrDefaultAsync();
-                    }
-
-                    gameEvent.Owner.ToAdmins(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_FLAG_MESSAGE"]
-                        .FormatExt(newPlayer.Name, penaltyReason));
-                }
-                else
-                    gameEvent.Owner.Broadcast(await ProcessAnnouncement(_configHandler.Configuration().UserAnnouncementMessage,
-                        newPlayer));
-            }
-        }
-
-        private async Task<string> ProcessAnnouncement(string msg, EFClient joining)
-        {
-            msg = msg.Replace("{{ClientName}}", joining.Name);
-            msg = msg.Replace("{{ClientLevel}}",
-                $"{Utilities.ConvertLevelToColor(joining.Level, joining.ClientPermission.Name)}{(string.IsNullOrEmpty(joining.Tag) ? "" : $" (Color::White){joining.Tag}(Color::White)")}");
-            // this prevents it from trying to evaluate it every message
-            if (msg.Contains("{{ClientLocation}}"))
-            {
-                msg = msg.Replace("{{ClientLocation}}", await GetCountryName(joining.IPAddressString));
-            }
-
-            msg = msg.Replace("{{TimesConnected}}", joining.Connections.Ordinalize(Utilities.CurrentLocalization.Culture));
-
-            return msg;
-        }
-
-        /// <summary>
-        /// makes a webrequest to determine IP origin 
-        /// </summary>
-        /// <param name="ip">IP address to get location of</param>
-        /// <returns></returns>
-        private async Task<string> GetCountryName(string ip)
-        {
-            using var wc = new HttpClient();
-            try
-            {
-                var response =
-                    await wc.GetStringAsync(new Uri($"http://ip-api.com/json/{ip}?lang={Utilities.CurrentLocalization.LocalizationName.Split("-").First().ToLower()}"));
-                var responseObj = JObject.Parse(response);
-                response = responseObj["country"]?.ToString();
-
-                return string.IsNullOrEmpty(response)
-                    ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]
-                    : response;
-            }
-
-            catch
-            {
-                return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_IP"];
-            }
+            return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_IP"];
         }
     }
 }

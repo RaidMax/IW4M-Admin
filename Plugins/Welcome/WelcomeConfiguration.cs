@@ -3,7 +3,7 @@ using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.Welcome
 {
-    class WelcomeConfiguration : IBaseConfiguration
+    public class WelcomeConfiguration : IBaseConfiguration
     {
         public string UserAnnouncementMessage { get; set; }
         public string UserWelcomeMessage { get; set; }

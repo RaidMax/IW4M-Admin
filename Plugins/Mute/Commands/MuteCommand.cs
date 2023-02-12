@@ -4,13 +4,16 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 
-namespace Mute.Commands;
+namespace IW4MAdmin.Plugins.Mute.Commands;
 
 public class MuteCommand : Command
 {
-    public MuteCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+    private readonly MuteManager _muteManager;
+
+    public MuteCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager) : base(config,
         translationLookup)
     {
+        _muteManager = muteManager;
         Name = "mute";
         Description = translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_DESC"];
         Alias = "mu";
@@ -40,7 +43,7 @@ public class MuteCommand : Command
             return;
         }
 
-        if (await Plugin.MuteManager.Mute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, null, gameEvent.Data))
+        if (await _muteManager.Mute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, null, gameEvent.Data))
         {
             gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_MUTE_MUTED"]
                 .FormatExt(gameEvent.Target.CleanedName));

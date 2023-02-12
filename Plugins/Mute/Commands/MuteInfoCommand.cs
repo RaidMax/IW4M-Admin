@@ -5,13 +5,16 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 
-namespace Mute.Commands;
+namespace IW4MAdmin.Plugins.Mute.Commands;
 
 public class MuteInfoCommand : Command
 {
-    public MuteInfoCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+    private readonly MuteManager _muteManager;
+
+    public MuteInfoCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager) : base(config,
         translationLookup)
     {
+        _muteManager = muteManager;
         Name = "muteinfo";
         Description = translationLookup["PLUGINS_MUTE_COMMANDS_MUTEINFO_DESC"];
         Alias = "mi";
@@ -30,7 +33,7 @@ public class MuteInfoCommand : Command
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
-        var currentMuteMeta = await Plugin.MuteManager.GetCurrentMuteState(gameEvent.Target);
+        var currentMuteMeta = await _muteManager.GetCurrentMuteState(gameEvent.Target);
         switch (currentMuteMeta.MuteState)
         {
             case MuteState.Muted when currentMuteMeta.Expiration is null:

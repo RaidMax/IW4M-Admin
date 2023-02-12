@@ -1,7 +1,6 @@
 ﻿using Data.Abstractions;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
@@ -9,7 +8,7 @@ using SharedLibraryCore.Interfaces;
 using static System.Enum;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace Mute;
+namespace IW4MAdmin.Plugins.Mute;
 
 public class MuteManager
 {
@@ -19,12 +18,13 @@ public class MuteManager
     private readonly IDatabaseContextFactory _databaseContextFactory;
     private readonly SemaphoreSlim _onMuteAction = new(1, 1);
 
-    public MuteManager(IServiceProvider serviceProvider)
+    public MuteManager(ILogger<MuteManager> logger, IDatabaseContextFactory databaseContextFactory,
+        IMetaServiceV2 metaService, ITranslationLookup translationLookup)
     {
-        _metaService = serviceProvider.GetRequiredService<IMetaServiceV2>();
-        _translationLookup = serviceProvider.GetRequiredService<ITranslationLookup>();
-        _logger = serviceProvider.GetRequiredService<ILogger<MuteManager>>();
-        _databaseContextFactory = serviceProvider.GetRequiredService<IDatabaseContextFactory>();
+        _logger = logger;
+        _databaseContextFactory = databaseContextFactory;
+        _metaService = metaService;
+        _translationLookup = translationLookup;
     }
 
     public static bool IsExpiredMute(MuteStateMeta muteStateMeta) =>

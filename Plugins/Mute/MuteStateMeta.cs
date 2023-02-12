@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Mute;
+namespace IW4MAdmin.Plugins.Mute;
 
 public class MuteStateMeta
 {

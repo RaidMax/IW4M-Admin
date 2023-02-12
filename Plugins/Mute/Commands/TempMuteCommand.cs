@@ -5,15 +5,17 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 
-namespace Mute.Commands;
+namespace IW4MAdmin.Plugins.Mute.Commands;
 
 public class TempMuteCommand : Command
 {
+    private readonly MuteManager _muteManager;
     private const string TempBanRegex = @"([0-9]+\w+)\ (.+)";
 
-    public TempMuteCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+    public TempMuteCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager) : base(config,
         translationLookup)
     {
+        _muteManager = muteManager;
         Name = "tempmute";
         Description = translationLookup["PLUGINS_MUTE_COMMANDS_TEMPMUTE_DESC"];
         Alias = "tm";
@@ -54,7 +56,7 @@ public class TempMuteCommand : Command
             var expiration = DateTime.UtcNow + match.Groups[1].ToString().ParseTimespan();
             var reason = match.Groups[2].ToString();
 
-            if (await Plugin.MuteManager.Mute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, expiration, reason))
+            if (await _muteManager.Mute(gameEvent.Owner, gameEvent.Origin, gameEvent.Target, expiration, reason))
             {
                 gameEvent.Origin.Tell(_translationLookup["PLUGINS_MUTE_COMMANDS_TEMPMUTE_TEMPMUTED"]
                     .FormatExt(gameEvent.Target.CleanedName));

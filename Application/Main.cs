@@ -352,6 +352,12 @@ namespace IW4MAdmin.Application
 
             // setup the static resources (config/master api/translations)
             var serviceCollection = new ServiceCollection();
+            serviceCollection.AddConfiguration<ApplicationConfiguration>("IW4MAdminSettings")
+                .AddConfiguration<DefaultSettings>()
+                .AddConfiguration<CommandConfiguration>()
+                .AddConfiguration<StatsConfiguration>("StatsPluginSettings");
+            
+            // for legacy purposes. update at some point
             var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             await appConfigHandler.BuildAsync();
             var defaultConfigHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
@@ -456,6 +462,9 @@ namespace IW4MAdmin.Application
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()
                 .AddSingleton<IInteractionRegistration, InteractionRegistration>()
                 .AddSingleton<IRemoteCommandService, RemoteCommandService>()
+                .AddSingleton(new ConfigurationWatcher())
+                .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
+                .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 

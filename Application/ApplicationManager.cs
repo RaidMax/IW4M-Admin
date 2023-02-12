@@ -317,12 +317,14 @@ namespace IW4MAdmin.Application
                 {
                     if (plugin is ScriptPlugin scriptPlugin)
                     {
-                        await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver);
+                        await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver, 
+                            _serviceProvider.GetService<IConfigurationHandlerV2<ScriptPluginConfiguration>>());
                         scriptPlugin.Watcher.Changed += async (sender, e) =>
                         {
                             try
                             {
-                                await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver);
+                                await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver, 
+                                    _serviceProvider.GetService<IConfigurationHandlerV2<ScriptPluginConfiguration>>());
                             }
 
                             catch (Exception ex)

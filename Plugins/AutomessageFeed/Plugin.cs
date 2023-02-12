@@ -1,88 +1,77 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using System;
 using System.Threading.Tasks;
 using Microsoft.SyndicationFeed.Rss;
-using SharedLibraryCore.Configuration;
 using System.Xml;
 using Microsoft.SyndicationFeed;
 using System.Collections.Generic;
 using SharedLibraryCore.Helpers;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.DependencyInjection;
+using SharedLibraryCore.Interfaces.Events;
 
-namespace AutomessageFeed
+namespace IW4MAdmin.Plugins.AutoMessageFeed;
+
+public class Plugin : IPluginV2
 {
-    public class Plugin : IPlugin
+    public string Name => "Automessage Feed";
+    public string Version => Utilities.GetVersionAsString();
+    public string Author => "RaidMax";
+
+    private int _currentFeedItem;
+    private readonly AutoMessageFeedConfiguration _configuration;
+
+    public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
-        public string Name => "Automessage Feed";
+        serviceCollection.AddConfiguration<AutoMessageFeedConfiguration>("AutomessageFeedPluginSettings");
+    }
 
-        public float Version => (float)Utilities.GetVersionAsDouble();
+    public Plugin(AutoMessageFeedConfiguration configuration)
+    {
+        _configuration = configuration;
 
-        public string Author => "RaidMax";
-
-        private int _currentFeedItem;
-        private readonly IConfigurationHandler<Configuration> _configurationHandler;
-
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        if (configuration.EnableFeed)
         {
-            _configurationHandler = configurationHandlerFactory.GetConfigurationHandler<Configuration>("AutomessageFeedPluginSettings");
-        }
-
-        private async Task<string> GetNextFeedItem(Server server)
-        {
-            var items = new List<string>();
-
-            using (var reader = XmlReader.Create(_configurationHandler.Configuration().FeedUrl, new XmlReaderSettings() { Async = true }))
+            IManagementEventSubscriptions.Load += (manager, _) =>
             {
-                var feedReader = new RssFeedReader(reader);
+                manager.GetMessageTokens().Add(new MessageToken("FEED", GetNextFeedItem));
+                return Task.CompletedTask;
+            };
+        }
+    }
 
-                while (await feedReader.Read())
+    private async Task<string> GetNextFeedItem(Server server)
+    {
+        if (!_configuration.EnableFeed)
+        {
+            return null;
+        }
+            
+        var items = new List<string>();
+
+        using (var reader = XmlReader.Create(_configuration.FeedUrl, new XmlReaderSettings { Async = true }))
+        {
+            var feedReader = new RssFeedReader(reader);
+
+            while (await feedReader.Read())
+            {
+                if (feedReader.ElementType != SyndicationElementType.Item)
                 {
-                    switch (feedReader.ElementType)
-                    {
-                        case SyndicationElementType.Item:
-                            var item = await feedReader.ReadItem();
-                            items.Add(Regex.Replace(item.Title, @"\<.+\>.*\</.+\>", ""));
-                            break;
-                    }
+                    continue;
                 }
+
+                var item = await feedReader.ReadItem();
+                items.Add(Regex.Replace(item.Title, @"\<.+\>.*\</.+\>", ""));
             }
-
-            if (_currentFeedItem < items.Count && (_configurationHandler.Configuration().MaxFeedItems == 0 || _currentFeedItem < _configurationHandler.Configuration().MaxFeedItems))
-            {
-                _currentFeedItem++;
-                return items[_currentFeedItem - 1];
-            }
-
-            _currentFeedItem = 0;
-            return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_NO_ITEMS"];
         }
 
-        public Task OnEventAsync(GameEvent E, Server S)
+        if (_currentFeedItem < items.Count && (_configuration.MaxFeedItems == 0 || _currentFeedItem < _configuration.MaxFeedItems))
         {
-            return Task.CompletedTask;
+            _currentFeedItem++;
+            return items[_currentFeedItem - 1];
         }
 
-        public async Task OnLoadAsync(IManager manager)
-        {
-            await _configurationHandler.BuildAsync();
-            if (_configurationHandler.Configuration() == null)
-            {
-                _configurationHandler.Set((Configuration)new Configuration().Generate());
-                await _configurationHandler.Save();
-            }
-
-            manager.GetMessageTokens().Add(new MessageToken("FEED", GetNextFeedItem));
-        }
-
-        public Task OnTickAsync(Server S)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task OnUnloadAsync()
-        {
-            return Task.CompletedTask;
-        }
+        _currentFeedItem = 0;
+        return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_AUTOMESSAGEFEED_NO_ITEMS"];
     }
 }

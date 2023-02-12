@@ -2,70 +2,182 @@ let vpnExceptionIds = [];
 const vpnAllowListKey = 'Webfront::Nav::Admin::VPNAllowList';
 const vpnWhitelistKey = 'Webfront::Profile::VPNWhitelist';
 
-const commands = [{
-    name: 'whitelistvpn',
-    description: 'whitelists a player\'s client id from VPN detection',
-    alias: 'wv',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    execute: (gameEvent) => {
-        vpnExceptionIds.push(gameEvent.Target.ClientId);
-        plugin.configHandler.SetValue('vpnExceptionIds', vpnExceptionIds);
+const init = (registerNotify, serviceResolver, config) => {
+    registerNotify('IManagementEventSubscriptions.ClientStateAuthorized', (authorizedEvent, _) => plugin.onClientAuthorized(authorizedEvent));
 
-        gameEvent.Origin.Tell(`Successfully whitelisted ${gameEvent.Target.Name}`);
-    }
-},
-{
-    name: 'disallowvpn',
-    description: 'disallows a player from connecting with a VPN',
-    alias: 'dv',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    execute: (gameEvent) => {
-        vpnExceptionIds = vpnExceptionIds.filter(exception => parseInt(exception) !== parseInt(gameEvent.Target.ClientId));
-        plugin.configHandler.SetValue('vpnExceptionIds', vpnExceptionIds);
-
-        gameEvent.Origin.Tell(`Successfully disallowed ${gameEvent.Target.Name} from connecting with VPN`);
-    }
-}];
-
-const getClientsData = (clientIds) => {
-    const contextFactory = _serviceResolver.ResolveService('IDatabaseContextFactory');
-    const context = contextFactory.CreateContext(false);
-    const clientSet = context.Clients;
-    const clients = clientSet.GetClientsBasicData(clientIds);
-    context.Dispose();
-
-    return clients;
-}
+    plugin.onLoad(serviceResolver, config);
+    return plugin;
+};
 
 const plugin = {
     author: 'RaidMax',
-    version: 1.5,
+    version: '1.6',
     name: 'VPN Detection Plugin',
     manager: null,
+    config: null,
     logger: null,
+    serviceResolver: null,
+    translations: null,
 
-    checkForVpn: function (origin) {
+    commands: [{
+        name: 'whitelistvpn',
+        description: 'whitelists a player\'s client id from VPN detection',
+        alias: 'wv',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        execute: (gameEvent) => {
+            vpnExceptionIds.push(gameEvent.Target.ClientId);
+            plugin.config.setValue('vpnExceptionIds', vpnExceptionIds);
+
+            gameEvent.origin.tell(`Successfully whitelisted ${gameEvent.target.name}`);
+        }
+    },
+        {
+            name: 'disallowvpn',
+            description: 'disallows a player from connecting with a VPN',
+            alias: 'dv',
+            permission: 'SeniorAdmin',
+            targetRequired: true,
+            arguments: [{
+                name: 'player',
+                required: true
+            }],
+            execute: (gameEvent) => {
+                vpnExceptionIds = vpnExceptionIds.filter(exception => parseInt(exception) !== parseInt(gameEvent.Target.ClientId));
+                plugin.config.setValue('vpnExceptionIds', vpnExceptionIds);
+
+                gameEvent.origin.tell(`Successfully disallowed ${gameEvent.target.name} from connecting with VPN`);
+            }
+        }
+    ],
+
+    interactions: [{
+        // registers the profile action
+        name: vpnWhitelistKey,
+        action: function(targetId, game, token) {
+            const helpers = importNamespace('SharedLibraryCore.Helpers');
+            const interactionData = new helpers.InteractionData();
+
+            interactionData.actionPath = 'DynamicAction';
+            interactionData.interactionId = vpnWhitelistKey;
+            interactionData.entityId = targetId;
+            interactionData.minimumPermission = 3;
+            interactionData.source = plugin.name;
+            interactionData.actionMeta.add('InteractionId', 'command'); // indicate we're wanting to execute a command
+            interactionData.actionMeta.add('ShouldRefresh', true.toString()); // indicates that the page should refresh after performing the action
+
+            if (vpnExceptionIds.includes(targetId)) {
+                interactionData.name = plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']; // text for the profile button
+                interactionData.displayMeta = 'oi-circle-x';
+
+                interactionData.actionMeta.add('Data', `disallowvpn`); // command to execute
+                interactionData.actionMeta.add('ActionButtonLabel', plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM']); // confirm button on the dialog
+                interactionData.actionMeta.add('Name', plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']); // title on the confirm dialog
+            } else {
+                interactionData.name = plugin.translations['WEBFRONT_VPN_ACTION_ALLOW']; // text for the profile button
+                interactionData.displayMeta = 'oi-circle-check';
+
+                interactionData.actionMeta.add('Data', `whitelistvpn`); // command to execute
+                interactionData.actionMeta.add('ActionButtonLabel', plugin.translations['WEBFRONT_VPN_ACTION_ALLOW_CONFIRM']); // confirm button on the dialog
+                interactionData.actionMeta.add('Name', plugin.translations['WEBFRONT_VPN_ACTION_ALLOW_TITLE']); // title on the confirm dialog
+            }
+
+            return interactionData;
+        }
+    },
+        {
+            name: vpnAllowListKey,
+            action: function(targetId, game, token) {
+                const helpers = importNamespace('SharedLibraryCore.Helpers');
+                const interactionData = new helpers.InteractionData();
+
+                interactionData.name = plugin.translations['WEBFRONT_NAV_VPN_TITLE']; // navigation link name
+                interactionData.description = plugin.translations['WEBFRONT_NAV_VPN_DESC']; // alt and title
+                interactionData.displayMeta = 'oi-circle-check'; // nav icon
+                interactionData.interactionId = vpnAllowListKey;
+                interactionData.minimumPermission = 3; // moderator
+                interactionData.interactionType = 2; // 1 is RawContent for apis etc..., 2 is 
+                interactionData.source = plugin.name;
+
+                interactionData.scriptAction = (sourceId, targetId, game, meta, token) => {
+                    const clientsData = plugin.getClientsData(vpnExceptionIds);
+
+                    let table = '<table class="table bg-dark-dm bg-light-lm">';
+
+                    const disallowInteraction = {
+                        InteractionId: 'command',
+                        Data: 'disallowvpn',
+                        ActionButtonLabel: plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM'],
+                        Name: plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']
+                    };
+
+                    if (clientsData.length === 0) {
+                        table += `<tr><td>No players are whitelisted.</td></tr>`;
+                    }
+
+                    clientsData.forEach(client => {
+                        table += `<tr>
+                                    <td>
+                                        <a href="/Client/Profile/${client.clientId}" class="level-color-${client.level.toLowerCase()} no-decoration">${client.currentAlias.name.stripColors()}</a>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="profile-action no-decoration float-right" data-action="DynamicAction" data-action-id="${client.clientId}"
+                                           data-action-meta="${encodeURI(JSON.stringify(disallowInteraction))}">
+                                            <div class="btn">
+                                                <i class="oi oi-circle-x mr-5 font-size-12"></i>
+                                                <span class="text-truncate">${plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']}</span>
+                                            </div>
+                                        </a>
+                                    </td>
+                                </tr>`;
+                    });
+
+                    table += '</table>';
+
+                    return table;
+                };
+
+                return interactionData;
+            }
+        }
+    ],
+
+    onClientAuthorized: function(authorizeEvent) {
+        this.checkForVpn(authorizeEvent.client);
+    },
+
+    onLoad: function(serviceResolver, config) {
+        this.serviceResolver = serviceResolver;
+        this.config = config;
+        this.manager = this.serviceResolver.resolveService('IManager');
+        this.logger = this.serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
+        this.translations = this.serviceResolver.resolveService('ITranslationLookup');
+
+        this.config.setName(this.name); // use legacy key
+        this.config.getValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(parseInt(element)));
+        this.logger.logInformation(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
+
+        this.interactionRegistration = this.serviceResolver.resolveService('IInteractionRegistration');
+        this.interactionRegistration.unregisterInteraction(vpnWhitelistKey);
+        this.interactionRegistration.unregisterInteraction(vpnAllowListKey);
+    },
+
+    checkForVpn: function(origin) {
         let exempt = false;
         // prevent players that are exempt from being kicked
-        vpnExceptionIds.forEach(function (id) {
-            if (parseInt(id) === parseInt(origin.ClientId)) {
+        vpnExceptionIds.forEach(function(id) {
+            if (parseInt(id) === parseInt(origin.clientId)) {
                 exempt = true;
                 return false;
             }
         });
 
         if (exempt) {
-            this.logger.WriteInfo(`${origin} is whitelisted, so we are not checking VPN status`);
+            this.logger.logInformation(`{origin} is whitelisted, so we are not checking VPN status`, origin);
             return;
         }
 
@@ -73,141 +185,39 @@ const plugin = {
 
         try {
             const cl = new System.Net.Http.HttpClient();
-            const re = cl.GetAsync(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`).Result;
-            const userAgent = `IW4MAdmin-${this.manager.GetApplicationSettings().Configuration().Id}`;
-            cl.DefaultRequestHeaders.Add('User-Agent', userAgent);
-            const co = re.Content;
-            const parsedJSON = JSON.parse(co.ReadAsStringAsync().Result);
-            co.Dispose();
-            re.Dispose();
-            cl.Dispose();
+            const re = cl.getAsync(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`).result;
+            const userAgent = `IW4MAdmin-${this.manager.getApplicationSettings().configuration().id}`;
+            cl.defaultRequestHeaders.add('User-Agent', userAgent);
+            const co = re.content;
+            const parsedJSON = JSON.parse(co.readAsStringAsync().result);
+            co.dispose();
+            re.dispose();
+            cl.dispose();
             usingVPN = parsedJSON.success && parsedJSON.proxy;
-        } catch (e) {
-            this.logger.WriteWarning(`There was a problem checking client IP for VPN ${e.message}`);
+        } catch (ex) {
+            this.logger.logWarning('There was a problem checking client IP for VPN {message}', ex.message);
         }
 
         if (usingVPN) {
-            this.logger.WriteInfo(origin + ' is using a VPN (' + origin.IPAddressString + ')');
-            const contactUrl = this.manager.GetApplicationSettings().Configuration().ContactUri;
+            this.logger.logInformation('{origin} is using a VPN ({ip})', origin.toString(), origin.ipAddressString);
+            const contactUrl = this.manager.getApplicationSettings().configuration().contactUri;
             let additionalInfo = '';
             if (contactUrl) {
-                additionalInfo = _localization.LocalizationIndex['SERVER_KICK_VPNS_NOTALLOWED_INFO'] + ' ' + contactUrl;
+                additionalInfo = this.translations['SERVER_KICK_VPNS_NOTALLOWED_INFO'] + ' ' + contactUrl;
             }
-            origin.Kick(_localization.LocalizationIndex['SERVER_KICK_VPNS_NOTALLOWED'] + ' ' + additionalInfo, _IW4MAdminClient);
+            origin.kick(this.translations['SERVER_KICK_VPNS_NOTALLOWED'] + ' ' + additionalInfo, origin.currentServer.asConsoleClient());
+        } else {
+            this.logger.logDebug('{client} is not using a VPN', origin);
         }
     },
 
-    onEventAsync: function (gameEvent, server) {
-        // join event
-        if (gameEvent.TypeName === 'Join') {
-            this.checkForVpn(gameEvent.Origin);
-        }
-    },
+    getClientsData: function(clientIds) {
+        const contextFactory = this.serviceResolver.resolveService('IDatabaseContextFactory');
+        const context = contextFactory.createContext(false);
+        const clientSet = context.clients;
+        const clients = clientSet.getClientsBasicData(clientIds);
+        context.dispose();
 
-    onLoadAsync: function (manager) {
-        this.manager = manager;
-        this.logger = manager.GetLogger(0);
-
-        this.configHandler = _configHandler;
-        this.configHandler.GetValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(parseInt(element)));
-        this.logger.WriteInfo(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
-
-        this.interactionRegistration = _serviceResolver.ResolveService('IInteractionRegistration');
-
-        // registers the profile action
-        this.interactionRegistration.RegisterScriptInteraction(vpnWhitelistKey, this.name, (targetId, game, token) => {
-            const helpers = importNamespace('SharedLibraryCore.Helpers');
-            const interactionData = new helpers.InteractionData();
-
-            interactionData.ActionPath = 'DynamicAction';
-            interactionData.InteractionId = vpnWhitelistKey;
-            interactionData.EntityId = targetId;
-            interactionData.MinimumPermission = 3;
-            interactionData.Source = this.name;
-            interactionData.ActionMeta.Add('InteractionId', 'command'); // indicate we're wanting to execute a command
-            interactionData.ActionMeta.Add('ShouldRefresh', true.toString()); // indicates that the page should refresh after performing the action
-
-            if (vpnExceptionIds.includes(targetId)) {
-                interactionData.Name = _localization.LocalizationIndex['WEBFRONT_VPN_BUTTON_DISALLOW']; // text for the profile button
-                interactionData.DisplayMeta = 'oi-circle-x';
-
-                interactionData.ActionMeta.Add('Data', `disallowvpn`);         // command to execute
-                interactionData.ActionMeta.Add('ActionButtonLabel', _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM']);   // confirm button on the dialog
-                interactionData.ActionMeta.Add('Name', _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']);                 // title on the confirm dialog
-            } else {
-                interactionData.Name = _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_ALLOW']; // text for the profile button
-                interactionData.DisplayMeta = 'oi-circle-check';
-                
-                interactionData.ActionMeta.Add('Data', `whitelistvpn`);         // command to execute
-                interactionData.ActionMeta.Add('ActionButtonLabel', _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_ALLOW_CONFIRM']);   // confirm button on the dialog
-                interactionData.ActionMeta.Add('Name', _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_ALLOW_TITLE']);                 // title on the confirm dialog
-            }
-
-            return interactionData;
-        });
-
-        // registers the navigation/page
-        this.interactionRegistration.RegisterScriptInteraction(vpnAllowListKey, this.name, (targetId, game, token) => {
-
-            const helpers = importNamespace('SharedLibraryCore.Helpers');
-            const interactionData = new helpers.InteractionData();
-            
-            interactionData.Name = _localization.LocalizationIndex['WEBFRONT_NAV_VPN_TITLE'];         // navigation link name
-            interactionData.Description =  _localization.LocalizationIndex['WEBFRONT_NAV_VPN_DESC'];  // alt and title
-            interactionData.DisplayMeta = 'oi-circle-check'; // nav icon
-            interactionData.InteractionId = vpnAllowListKey;
-            interactionData.MinimumPermission = 3; // moderator
-            interactionData.InteractionType = 2; // 1 is RawContent for apis etc..., 2 is 
-            interactionData.Source = this.name;
-
-            interactionData.ScriptAction = (sourceId, targetId, game, meta, token) => {
-                const clientsData = getClientsData(vpnExceptionIds);
-
-                let table = '<table class="table bg-dark-dm bg-light-lm">';
-
-                const disallowInteraction = {
-                    InteractionId: 'command',
-                    Data: 'disallowvpn',
-                    ActionButtonLabel: _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM'],
-                    Name: _localization.LocalizationIndex['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']
-                };
-
-                if (clientsData.length === 0)
-                {
-                    table += `<tr><td>No players are whitelisted.</td></tr>`
-                }
-
-                clientsData.forEach(client => {
-                    table +=    `<tr>
-                                    <td>
-                                        <a href="/Client/Profile/${client.ClientId}" class="level-color-${client.Level.toLowerCase()} no-decoration">${client.CurrentAlias.Name.StripColors()}</a>
-                                    </td>
-                                    <td>
-                                        <a href="#" class="profile-action no-decoration float-right" data-action="DynamicAction" data-action-id="${client.ClientId}"
-                                           data-action-meta="${encodeURI(JSON.stringify(disallowInteraction))}">
-                                            <div class="btn">
-                                                <i class="oi oi-circle-x mr-5 font-size-12"></i>
-                                                <span class="text-truncate">${_localization.LocalizationIndex['WEBFRONT_VPN_BUTTON_DISALLOW']}</span>
-                                            </div>
-                                        </a>
-                                    </td>
-                                </tr>`;
-                });
-
-                table += '</table>';
-                
-                return table;
-            }
-            
-            return interactionData;
-        });
-    },
-
-    onUnloadAsync: function () {
-        this.interactionRegistration.UnregisterInteraction(vpnWhitelistKey);
-        this.interactionRegistration.UnregisterInteraction(vpnAllowListKey);
-    },
-
-    onTickAsync: function (server) {
+        return clients;
     }
 };

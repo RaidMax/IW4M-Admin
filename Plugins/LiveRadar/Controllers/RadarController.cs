@@ -1,26 +1,24 @@
-﻿using LiveRadar.Configuration;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
+using IW4MAdmin.Plugins.LiveRadar.Configuration;
 using Microsoft.AspNetCore.Http;
 
-namespace LiveRadar.Web.Controllers
+namespace IW4MAdmin.Plugins.LiveRadar.Web.Controllers
 {
     public class RadarController : BaseController
     {
         private readonly IManager _manager;
-        private static LiveRadarConfiguration _config;
-        private readonly IConfigurationHandler<LiveRadarConfiguration> _configurationHandler;
+        private readonly LiveRadarConfiguration _config;
 
-        public RadarController(IManager manager, IConfigurationHandlerFactory configurationHandlerFactory) :
+        public RadarController(IManager manager, LiveRadarConfiguration config) :
             base(manager)
         {
             _manager = manager;
-            _configurationHandler =
-                configurationHandlerFactory.GetConfigurationHandler<LiveRadarConfiguration>("LiveRadarConfiguration");
+            _config = config;
         }
 
         [HttpGet]
@@ -32,8 +30,8 @@ namespace LiveRadar.Web.Controllers
                 .Select(server => new ServerInfo
                 {
                     Name = server.Hostname,
-                    IPAddress = server.IP,
-                    Port = server.Port
+                    IPAddress = server.ListenAddress,
+                    Port = server.ListenPort
                 });
 
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
@@ -54,12 +52,6 @@ namespace LiveRadar.Web.Controllers
             if (server == null)
             {
                 return NotFound();
-            }
-
-            if (_config == null)
-            {
-                await _configurationHandler.BuildAsync();
-                _config = _configurationHandler.Configuration() ?? new LiveRadarConfiguration();
             }
 
             var map = _config.Maps.FirstOrDefault(map => map.Name == server.CurrentMap.Name);

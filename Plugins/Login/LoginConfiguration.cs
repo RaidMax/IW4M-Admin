@@ -1,9 +1,8 @@
-﻿using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
+﻿using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.Login
 {
-    class Configuration : IBaseConfiguration
+    public class LoginConfiguration : IBaseConfiguration
     {
         public bool RequirePrivilegedClientLogin { get; set; }
 

@@ -1,94 +1,96 @@
 ﻿using System.Collections.Concurrent;
-using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using IW4MAdmin.Plugins.Login.Commands;
+using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Interfaces.Events;
+using EFClient = Data.Models.Client.EFClient;
 
-namespace IW4MAdmin.Plugins.Login
+namespace IW4MAdmin.Plugins.Login;
+
+public class Plugin : IPluginV2
 {
-    public class Plugin : IPlugin
+    public string Name => "Login";
+    public string Version => Utilities.GetVersionAsString();
+    public string Author => "RaidMax";
+
+    public static ConcurrentDictionary<int, bool> AuthorizedClients { get; private set; }
+    private const string LoginKey = "IsLoggedIn";
+
+    public Plugin(LoginConfiguration configuration)
     {
-        public string Name => "Login";
-
-        public float Version => Assembly.GetExecutingAssembly().GetName().Version.Major + Assembly.GetExecutingAssembly().GetName().Version.Minor / 10.0f;
-
-        public string Author => "RaidMax";
-
-        public static ConcurrentDictionary<int, bool> AuthorizedClients { get; private set; }
-        private readonly IConfigurationHandler<Configuration> _configHandler;
-
-        public Plugin(IConfigurationHandlerFactory configurationHandlerFactory)
+        if (!configuration?.RequirePrivilegedClientLogin ?? false)
         {
-            _configHandler = configurationHandlerFactory.GetConfigurationHandler<Configuration>("LoginPluginSettings");
+            return;
         }
 
-        public Task OnEventAsync(GameEvent gameEvent, Server server)
+        IManagementEventSubscriptions.Load += OnLoad;
+        IManagementEventSubscriptions.ClientStateInitialized += OnClientStateInitialized;
+        IManagementEventSubscriptions.ClientStateDisposed += (clientEvent, token) =>
         {
-            if (gameEvent.IsRemote || _configHandler.Configuration().RequirePrivilegedClientLogin == false)
-                return Task.CompletedTask;
-
-            if (gameEvent.Type == GameEvent.EventType.Connect)
-            {
-                AuthorizedClients.TryAdd(gameEvent.Origin.ClientId, false);
-                gameEvent.Origin.SetAdditionalProperty("IsLoggedIn", false);
-            }
-
-            if (gameEvent.Type == GameEvent.EventType.Disconnect)
-            {
-                AuthorizedClients.TryRemove(gameEvent.Origin.ClientId, out _);
-            }
-            
+            AuthorizedClients.TryRemove(clientEvent.Client.ClientId, out _);
             return Task.CompletedTask;
-        }
+        };
+    }
 
-        public async Task OnLoadAsync(IManager manager)
+    public static void RegisterDependencies(IServiceCollection serviceCollection)
+    {
+        serviceCollection.AddConfiguration<LoginConfiguration>("LoginConfiguration");
+    }
+
+    private static Task OnClientStateInitialized(ClientStateInitializeEvent clientEvent, CancellationToken token)
+    {
+        AuthorizedClients.TryAdd(clientEvent.Client.ClientId, false);
+        clientEvent.Client.SetAdditionalProperty(LoginKey, false);
+
+        return Task.CompletedTask;
+    }
+
+    private static Task OnLoad(IManager manager, CancellationToken token)
+    {
+        AuthorizedClients = new ConcurrentDictionary<int, bool>();
+
+        manager.CommandInterceptors.Add(gameEvent =>
         {
-            AuthorizedClients = new ConcurrentDictionary<int, bool>();
-
-            manager.CommandInterceptors.Add(gameEvent =>
+            if (gameEvent.Type != GameEvent.EventType.Command || gameEvent.Extra is null || gameEvent.IsRemote)
             {
-                if (gameEvent.Type != GameEvent.EventType.Command || gameEvent.Extra is null || gameEvent.IsRemote)
-                {
-                    return true;
-                }
-
-                if (gameEvent.Origin.Level < EFClient.Permission.Moderator ||
-                    gameEvent.Origin.Level == EFClient.Permission.Console)
-                    return true;
-
-                if (gameEvent.Extra.GetType() == typeof(SetPasswordCommand) &&
-                    gameEvent.Origin?.Password == null)
-                    return true;
-
-                if (gameEvent.Extra.GetType() == typeof(LoginCommand))
-                    return true;
-
-                if (gameEvent.Extra.GetType() == typeof(RequestTokenCommand))
-                    return true;
-
-                if (!AuthorizedClients[gameEvent.Origin.ClientId])
-                {
-                    return false;
-                }
-
-                gameEvent.Origin.SetAdditionalProperty("IsLoggedIn", true);
                 return true;
-            });
-
-            await _configHandler.BuildAsync();
-            if (_configHandler.Configuration() == null)
-            {
-                _configHandler.Set((Configuration)new Configuration().Generate());
-                await _configHandler.Save();
             }
-        }
 
-        public Task OnTickAsync(Server S) => Task.CompletedTask;
+            if (gameEvent.Origin.Level is < EFClient.Permission.Moderator or EFClient.Permission.Console)
+            {
+                return true;
+            }
 
-        public Task OnUnloadAsync() => Task.CompletedTask;
+            if (gameEvent.Extra.GetType() == typeof(SetPasswordCommand) &&
+                gameEvent.Origin?.Password == null)
+            {
+                return true;
+            }
+
+            if (gameEvent.Extra.GetType() == typeof(LoginCommand))
+            {
+                return true;
+            }
+
+            if (gameEvent.Extra.GetType() == typeof(RequestTokenCommand))
+            {
+                return true;
+            }
+
+            if (!AuthorizedClients[gameEvent.Origin.ClientId])
+            {
+                return false;
+            }
+
+            gameEvent.Origin.SetAdditionalProperty(LoginKey, true);
+            return true;
+        });
+
+        return Task.CompletedTask;
     }
 }

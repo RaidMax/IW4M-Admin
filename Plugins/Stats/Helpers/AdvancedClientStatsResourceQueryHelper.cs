@@ -7,7 +7,6 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats;
-using IW4MAdmin.Plugins.Stats.Config;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Dtos;
@@ -114,7 +113,7 @@ namespace Stats.Helpers
                 All = hitStats,
                 Servers = _manager.GetServers()
                     .Select(server => new ServerInfo
-                        {Name = server.Hostname, IPAddress = server.IP, Port = server.Port, Game = (Reference.Game)server.GameName})
+                        {Name = server.Hostname, IPAddress = server.ListenAddress, Port = server.ListenPort, Game = (Reference.Game)server.GameName})
                     .Where(server => server.Game == clientInfo.GameName)
                     .ToList(),
                 Aggregate = hitStats.FirstOrDefault(hit =>

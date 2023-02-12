@@ -1,6 +1,5 @@
 ﻿using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Helpers;
-using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +9,7 @@ using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using Stats.Config;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Plugins.Stats.Cheat
@@ -37,6 +37,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
         Dictionary<IW4Info.HitLocation, HitInfo> HitLocationCount;
         double AngleDifferenceAverage;
         EFClientStatistics ClientStats;
+        private readonly StatsConfiguration _statsConfiguration;
         long LastOffset;
         string LastWeapon;
         ILogger Log;
@@ -55,7 +56,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             public double Offset { get; set; }
         };
 
-        public Detection(ILogger log, EFClientStatistics clientStats)
+        public Detection(ILogger log, EFClientStatistics clientStats, StatsConfiguration statsConfiguration)
         {
             Log = log;
             HitLocationCount = new Dictionary<IW4Info.HitLocation, HitInfo>();
@@ -65,6 +66,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             }
 
             ClientStats = clientStats;
+            _statsConfiguration = statsConfiguration;
             Strain = new Strain();
             Tracker = new ChangeTracking<EFACSnapshot>();
             TrackedHits = new List<EFClientKill>();
@@ -308,7 +310,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             bool shouldIgnoreDetection = false;
             try
             {
-                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Recoil]
+                shouldIgnoreDetection = _statsConfiguration.AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Recoil]
                     .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
@@ -340,7 +342,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             try
             {
                 shouldIgnoreDetection = false;
-                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Button]
+                shouldIgnoreDetection = _statsConfiguration.AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Button]
                     .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 
@@ -453,7 +455,7 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             try
             {
                 shouldIgnoreDetection = false; // reset previous value
-                shouldIgnoreDetection = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Chest]
+                shouldIgnoreDetection = _statsConfiguration.AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Chest]
                     .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
             }
 

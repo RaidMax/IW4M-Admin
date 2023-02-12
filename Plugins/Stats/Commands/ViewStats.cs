@@ -15,9 +15,10 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     public class ViewStatsCommand : Command
     {
         private readonly IDatabaseContextFactory _contextFactory;
+        private readonly StatManager _statManager;
 
         public ViewStatsCommand(CommandConfiguration config, ITranslationLookup translationLookup,
-            IDatabaseContextFactory contextFactory) : base(config, translationLookup)
+            IDatabaseContextFactory contextFactory, StatManager statManager) : base(config, translationLookup)
         {
             Name = "stats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_VIEW_DESC"];
@@ -34,6 +35,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             };
             
             _contextFactory = contextFactory;
+            _statManager = statManager;
         }
 
         public override async Task ExecuteAsync(GameEvent E)
@@ -53,12 +55,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 
             var serverId = StatManager.GetIdForServer(E.Owner);
 
-            var totalRankedPlayers = await Plugin.Manager.GetTotalRankedPlayers(serverId);
+            var totalRankedPlayers = await _statManager.GetTotalRankedPlayers(serverId);
 
             // getting stats for a particular client
             if (E.Target != null)
             {
-                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Target.ClientId, serverId);
+                var performanceRanking = await _statManager.GetClientOverallRanking(E.Target.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
                     : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking}/{totalRankedPlayers}";
@@ -87,7 +89,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             // getting self stats
             else
             {
-                var performanceRanking = await Plugin.Manager.GetClientOverallRanking(E.Origin.ClientId, serverId);
+                var performanceRanking = await _statManager.GetClientOverallRanking(E.Origin.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
                     : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking}/{totalRankedPlayers}";

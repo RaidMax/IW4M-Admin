@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Data.Models;
 using IW4MAdmin.Plugins.Stats.Config;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
@@ -21,26 +22,26 @@ namespace Stats.Config
         public WeaponNameParserConfiguration[] WeaponNameParserConfigurations { get; set; } = {
             new()
             {
-                Game = Server.Game.IW3,
+                Game = Reference.Game.IW3,
                 WeaponSuffix = "mp",
                 Delimiters = new[] {'_'}
             },
             new()
             {
-                Game = Server.Game.IW4,
+                Game = Reference.Game.IW4,
                 WeaponSuffix = "mp",
                 Delimiters = new[] {'_'}
             },
             new()
             {
-                Game = Server.Game.IW5,
+                Game = Reference.Game.IW5,
                 WeaponSuffix = "mp",
                 WeaponPrefix = "iw5",
                 Delimiters = new[] {'_'}
             },
             new()
             {
-                Game = Server.Game.T6,
+                Game = Reference.Game.T6,
                 WeaponSuffix = "mp",
                 Delimiters = new[] {'_', '+'}
             }

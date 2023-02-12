@@ -1,10 +1,9 @@
-﻿using SharedLibraryCore;
+﻿using Data.Models;
 using Stats.Client.Game;
 
-namespace Stats.Client.Abstractions
+namespace Stats.Client.Abstractions;
+
+public interface IWeaponNameParser
 {
-    public interface IWeaponNameParser
-    {
-        WeaponInfo Parse(string weaponName, Server.Game gameName);
-    }
+    WeaponInfo Parse(string weaponName, Reference.Game gameName);
 }

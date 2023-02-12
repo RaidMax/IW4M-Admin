@@ -3,7 +3,7 @@ using Stats.Client.Abstractions;
 using Stats.Client.Game;
 using System.Collections.Generic;
 using System.Linq;
-using SharedLibraryCore;
+using Data.Models;
 using Stats.Config;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -20,7 +20,7 @@ namespace Stats.Client
             _config = config;
         }
 
-        public WeaponInfo Parse(string weaponName, Server.Game gameName)
+        public WeaponInfo Parse(string weaponName, Reference.Game gameName)
         {
             var configForGame = _config.WeaponNameParserConfigurations
                 ?.FirstOrDefault(config => config.Game == gameName) ?? new WeaponNameParserConfiguration()

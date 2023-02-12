@@ -2,111 +2,101 @@
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
-using EventGeneratorCallback = System.ValueTuple<string, string, 
+using SharedLibraryCore.Events.Game;
+using EventGeneratorCallback = System.ValueTuple<string, string,
     System.Func<string, SharedLibraryCore.Interfaces.IEventParserConfiguration,
-    SharedLibraryCore.GameEvent, 
-    SharedLibraryCore.GameEvent>>;
+        SharedLibraryCore.GameEvent,
+        SharedLibraryCore.GameEvent>>;
 
 namespace IW4MAdmin.Plugins.Stats.Events
 {
     public class Script : IRegisterEvent
     {
-        private const string EVENT_SCRIPTKILL = "ScriptKill";
-        private const string EVENT_SCRIPTDAMAGE = "ScriptDamage";
-        private const string EVENT_JOINTEAM = "JoinTeam";
+        private const string EventScriptKill = "ScriptKill";
+        private const string EventScriptDamage = "ScriptDamage";
 
         /// <summary>
         /// this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
         /// </summary>
         /// <returns></returns>
-        private EventGeneratorCallback ScriptKill()
+        private static EventGeneratorCallback ScriptKill()
         {
-            return (EVENT_SCRIPTKILL, EVENT_SCRIPTKILL, (string eventLine, IEventParserConfiguration config, GameEvent autoEvent) =>
-            {
-                string[] lineSplit = eventLine.Split(";");
+            return (EventScriptKill, EventScriptKill,
+                    (eventLine, config, autoEvent) =>
+                    {
+                        var lineSplit = eventLine.Split(";");
 
-                if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
-                {
-                    return autoEvent;
-                }
+                        if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
+                        {
+                            return autoEvent;
+                        }
 
-                long originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
-                long targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
+                        var originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
+                        var targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
 
-                autoEvent.Type = GameEvent.EventType.ScriptKill;
-                autoEvent.Origin = new EFClient() { NetworkId = originId };
-                autoEvent.Target = new EFClient() { NetworkId = targetId };
-                autoEvent.RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target;
-                autoEvent.GameTime = autoEvent.GameTime;
+                        var anticheatEvent = new AntiCheatDamageEvent
+                        {
+                            ScriptData = eventLine,
+                            Type = GameEvent.EventType.ScriptKill,
+                            Origin = new EFClient { NetworkId = originId },
+                            Target = new EFClient { NetworkId = targetId },
+                            RequiredEntity =
+                                GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
+                            GameTime = autoEvent.GameTime,
+                            IsKill = true
+                        };
 
-                return autoEvent;
-            }
-            );
+                        return anticheatEvent;
+                    }
+                );
         }
 
         /// <summary>
         /// this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
         /// </summary>
         /// <returns></returns>
-        private EventGeneratorCallback ScriptDamage()
+        public EventGeneratorCallback ScriptDamage()
         {
             // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
-            return (EVENT_SCRIPTDAMAGE, EVENT_SCRIPTDAMAGE, (string eventLine, IEventParserConfiguration config, GameEvent autoEvent) =>
-            {
-                string[] lineSplit = eventLine.Split(";");
+            return (EventScriptDamage, EventScriptDamage,
+                    (eventLine, config, autoEvent) =>
+                    {
+                        var lineSplit = eventLine.Split(";");
 
-                if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
-                {
-                    return autoEvent;
-                }
+                        if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
+                        {
+                            return autoEvent;
+                        }
 
-                long originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
-                long targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
+                        var originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
+                        var targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
 
-                autoEvent.Type = GameEvent.EventType.ScriptDamage;
-                autoEvent.Origin = new EFClient() { NetworkId = originId };
-                autoEvent.Target = new EFClient() { NetworkId = targetId };
-                autoEvent.RequiredEntity = GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target;
+                        var anticheatEvent = new AntiCheatDamageEvent
+                        {
+                            ScriptData = eventLine,
+                            Type = GameEvent.EventType.ScriptDamage,
+                            Origin = new EFClient { NetworkId = originId },
+                            Target = new EFClient { NetworkId = targetId },
+                            RequiredEntity =
+                                GameEvent.EventRequiredEntity.Origin | GameEvent.EventRequiredEntity.Target,
+                            GameTime = autoEvent.GameTime
+                        };
 
-                return autoEvent;
-            }
-            );
-        }
-
-        /// <summary>
-        /// this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
-        /// </summary>
-        /// <returns></returns>
-        private EventGeneratorCallback JoinTeam()
-        {
-            // this is a custom event printed out by _customcallbacks.gsc (used for anticheat)
-            return (EVENT_JOINTEAM, EVENT_JOINTEAM, (string eventLine, IEventParserConfiguration config, GameEvent autoEvent) =>
-            {
-                string[] lineSplit = eventLine.Split(";");
-
-                if (lineSplit[1].IsBotGuid() || lineSplit[2].IsBotGuid())
-                {
-                    return autoEvent;
-                }
-
-                long originId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle, 1);
-                long targetId = lineSplit[2].ConvertGuidToLong(config.GuidNumberStyle, 1);
-
-                autoEvent.Type = GameEvent.EventType.JoinTeam;
-                autoEvent.Origin = new EFClient() { NetworkId = lineSplit[1].ConvertGuidToLong(config.GuidNumberStyle) };
-                autoEvent.RequiredEntity = GameEvent.EventRequiredEntity.Target;
-
-                return autoEvent;
-            }
-            );
+                        return anticheatEvent;
+                    }
+                );
         }
 
         public IEnumerable<EventGeneratorCallback> Events =>
             new[]
             {
                 ScriptKill(),
-                ScriptDamage(),
-                JoinTeam()
+                ScriptDamage()
             };
+    }
+
+    public class AntiCheatDamageEvent : GameScriptEvent
+    {
+        public bool IsKill { get; init; }
     }
 }

@@ -11,15 +11,15 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class TopStats : Command
     {
-        public static async Task<List<string>> GetTopStats(Server s, ITranslationLookup translationLookup)
+        public static async Task<List<string>> GetTopStats(IGameServer server, ITranslationLookup translationLookup, StatManager statManager)
         {
-            var serverId = StatManager.GetIdForServer(s);
+            var serverId = StatManager.GetIdForServer(server);
             var topStatsText = new List<string>()
             {
                 $"(Color::Accent)--{translationLookup["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"
             };
 
-            var stats = await Plugin.Manager.GetTopStats(0, 5, serverId);
+            var stats = await statManager.GetTopStats(0, 5, serverId);
             var statsList = stats.Select((stats, index) =>
                 translationLookup["COMMANDS_TOPSTATS_RESULT"]
                     .FormatExt(index + 1, stats.Name, stats.KDR, stats.Performance));
@@ -39,8 +39,9 @@ namespace IW4MAdmin.Plugins.Stats.Commands
         }
 
         private new readonly CommandConfiguration _config;
+        private readonly StatManager _statManager;
 
-        public TopStats(CommandConfiguration config, ITranslationLookup translationLookup) : base(config,
+        public TopStats(CommandConfiguration config, ITranslationLookup translationLookup, StatManager statManager) : base(config,
             translationLookup)
         {
             Name = "topstats";
@@ -50,11 +51,12 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             RequiresTarget = false;
 
             _config = config;
+            _statManager = statManager;
         }
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
-            var topStats = await GetTopStats(gameEvent.Owner, _translationLookup);
+            var topStats = await GetTopStats(gameEvent.Owner, _translationLookup, _statManager);
             if (!gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
                 await gameEvent.Origin.TellAsync(topStats, gameEvent.Owner.Manager.CancellationToken);

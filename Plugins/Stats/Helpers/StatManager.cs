@@ -46,7 +46,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private readonly SemaphoreSlim _addPlayerWaiter = new SemaphoreSlim(1, 1);
         private readonly IServerDistributionCalculator _serverDistributionCalculator;
 
-        public StatManager(ILogger<StatManager> logger, IManager mgr, IDatabaseContextFactory contextFactory,
+        public StatManager(ILogger<StatManager> logger, IDatabaseContextFactory contextFactory,
             StatsConfiguration statsConfig,
             IServerDistributionCalculator serverDistributionCalculator)
         {
@@ -360,13 +360,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return finished;
         }
 
-        /// <summary>
-        /// Add a server to the StatManager server pool
-        /// </summary>
-        /// <param name="sv"></param>
-        public void AddServer(Server sv)
+        public async Task EnsureServerAdded(IGameServer gameServer, CancellationToken token)
         {
-            // insert the server if it does not exist
             try
             {
                 if (serverModels == null)
@@ -374,76 +369,75 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     SetupServerIds();
                 }
 
-                long serverId = GetIdForServer(sv);
-                EFServer server;
+                var serverId = GetIdForServer(gameServer as Server);
 
-                using var ctx = _contextFactory.CreateContext(enableTracking: false);
+                await using var ctx = _contextFactory.CreateContext(enableTracking: false);
                 var serverSet = ctx.Set<EFServer>();
                 // get the server from the database if it exists, otherwise create and insert a new one
-                server = serverSet.FirstOrDefault(s => s.ServerId == serverId);
+                var cachedServerModel = await serverSet.FirstOrDefaultAsync(s => s.ServerId == serverId, token);
 
                 // the server might be using legacy server id
-                if (server == null)
+                if (cachedServerModel == null)
                 {
-                    server = serverSet.FirstOrDefault(s => s.EndPoint == sv.ToString());
+                    cachedServerModel = await serverSet.FirstOrDefaultAsync(s => s.EndPoint == gameServer.Id, token);
 
-                    if (server != null)
+                    if (cachedServerModel != null)
                     {
                         // this provides a way to identify legacy server entries
-                        server.EndPoint = sv.ToString();
-                        ctx.Update(server);
+                        cachedServerModel.EndPoint = gameServer.Id;
+                        ctx.Update(cachedServerModel);
                         ctx.SaveChanges();
                     }
                 }
 
                 // server has never been added before
-                if (server == null)
+                if (cachedServerModel == null)
                 {
-                    server = new EFServer()
+                    cachedServerModel = new EFServer
                     {
-                        Port = sv.Port,
-                        EndPoint = sv.ToString(),
+                        Port = gameServer.ListenPort,
+                        EndPoint = gameServer.Id,
                         ServerId = serverId,
-                        GameName = (Reference.Game?)sv.GameName,
-                        HostName = sv.Hostname
+                        GameName = gameServer.GameCode,
+                        HostName = gameServer.ListenAddress
                     };
 
-                    server = serverSet.Add(server).Entity;
+                    cachedServerModel = serverSet.Add(cachedServerModel).Entity;
                     // this doesn't need to be async as it's during initialization
-                    ctx.SaveChanges();
+                    await ctx.SaveChangesAsync(token);
                 }
 
                 // we want to set the gamename up if it's never been set, or it changed
-                else if (!server.GameName.HasValue || server.GameName.Value != (Reference.Game)sv.GameName)
+                else if (!cachedServerModel.GameName.HasValue || cachedServerModel.GameName.Value != gameServer.GameCode)
                 {
-                    server.GameName = (Reference.Game)sv.GameName;
-                    ctx.Entry(server).Property(_prop => _prop.GameName).IsModified = true;
-                    ctx.SaveChanges();
+                    cachedServerModel.GameName = gameServer.GameCode;
+                    ctx.Entry(cachedServerModel).Property(property => property.GameName).IsModified = true;
+                    await ctx.SaveChangesAsync(token);
                 }
 
-                if (server.HostName == null || server.HostName != sv.Hostname)
+                if (cachedServerModel.HostName == null || cachedServerModel.HostName != gameServer.ServerName)
                 {
-                    server.HostName = sv.Hostname;
-                    ctx.Entry(server).Property(_prop => _prop.HostName).IsModified = true;
-                    ctx.SaveChanges();
+                    cachedServerModel.HostName = gameServer.ServerName;
+                    ctx.Entry(cachedServerModel).Property(property => property.HostName).IsModified = true;
+                    await ctx.SaveChangesAsync(token);
                 }
 
-                ctx.Entry(server).Property(_prop => _prop.IsPasswordProtected).IsModified = true;
-                server.IsPasswordProtected = !string.IsNullOrEmpty(sv.GamePassword);
-                ctx.SaveChanges();
+                ctx.Entry(cachedServerModel).Property(property => property.IsPasswordProtected).IsModified = true;
+                cachedServerModel.IsPasswordProtected = !string.IsNullOrEmpty(gameServer.GamePassword);
+                await ctx.SaveChangesAsync(token);
 
                 // check to see if the stats have ever been initialized
-                var serverStats = InitializeServerStats(server.ServerId);
+                var serverStats = InitializeServerStats(cachedServerModel.ServerId);
 
-                _servers.TryAdd(serverId, new ServerStats(server, serverStats, sv)
+                _servers.TryAdd(serverId, new ServerStats(cachedServerModel, serverStats, gameServer as Server)
                 {
-                    IsTeamBased = sv.Gametype != "dm"
+                    IsTeamBased = gameServer.Gametype != "dm"
                 });
             }
 
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _log.LogError(e, "{message}",
+                _log.LogError(ex, "{Message}",
                     Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_STATS_ERROR_ADD"]);
             }
         }
@@ -552,7 +546,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.SessionScore = pl.Score;
                 clientStats.LastScore = pl.Score;
 
-                pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats));
+                pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats, _config));
                 _log.LogDebug("Added {client} to stats", pl.ToString());
 
                 return clientStats;
@@ -586,41 +580,42 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <summary>
         /// Perform stat updates for disconnecting client
         /// </summary>
-        /// <param name="pl">Disconnecting client</param>
+        /// <param name="client">Disconnecting client</param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task RemovePlayer(EFClient pl)
+        public async Task RemovePlayer(EFClient client, CancellationToken cancellationToken)
         {
-            _log.LogDebug("Removing {client} from stats", pl.ToString());
+            _log.LogDebug("Removing {Client} from stats", client.ToString());
 
-            if (pl.CurrentServer == null)
+            if (client.CurrentServer == null)
             {
-                _log.LogWarning("Disconnecting client {client} is not on a server", pl.ToString());
+                _log.LogWarning("Disconnecting client {Client} is not on a server", client.ToString());
                 return;
             }
 
-            var serverId = GetIdForServer(pl.CurrentServer);
+            var serverId = GetIdForServer(client.CurrentServer);
             var serverStats = _servers[serverId].ServerStatistics;
 
             // get individual client's stats
-            var clientStats = pl.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
+            var clientStats = client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             // sync their stats before they leave
             if (clientStats != null)
             {
-                clientStats = UpdateStats(clientStats, pl);
+                clientStats = UpdateStats(clientStats, client);
                 await SaveClientStats(clientStats);
                 if (_config.EnableAdvancedMetrics)
                 {
-                    await UpdateHistoricalRanking(pl.ClientId, clientStats, serverId);
+                    await UpdateHistoricalRanking(client.ClientId, clientStats, serverId);
                 }
 
                 // increment the total play time
-                serverStats.TotalPlayTime += pl.ConnectionLength;
-                pl.SetAdditionalProperty(CLIENT_STATS_KEY, null);
+                serverStats.TotalPlayTime += client.ConnectionLength;
+                client.SetAdditionalProperty(CLIENT_STATS_KEY, null);
             }
 
             else
             {
-                _log.LogWarning("Disconnecting client {client} has not been added to stats", pl.ToString());
+                _log.LogWarning("Disconnecting client {Client} has not been added to stats", client.ToString());
             }
         }
 
@@ -743,7 +738,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     return;
                 }
 
-                if (Plugin.Config.Configuration().StoreClientKills)
+                if (_config.StoreClientKills)
                 {
                     var serverWaiter = _servers[serverId].OnSaving;
                     try
@@ -772,7 +767,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                if (Plugin.Config.Configuration().AnticheatConfiguration.Enable && !attacker.IsBot &&
+                if (_config.AnticheatConfiguration.Enable && !attacker.IsBot &&
                     attacker.ClientId != victim.ClientId)
                 {
                     clientDetection.TrackedHits.Add(hit);
@@ -857,10 +852,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
         {
 #pragma warning disable CS0612
-            var serverDetectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.ServerDetectionTypes;
+            var serverDetectionTypes = _config.AnticheatConfiguration.ServerDetectionTypes;
 #pragma warning restore CS0612
-            var gameDetectionTypes = Plugin.Config.Configuration().AnticheatConfiguration.GameDetectionTypes;
-            var ignoredClients = Plugin.Config.Configuration().AnticheatConfiguration.IgnoredClientIds;
+            var gameDetectionTypes = _config.AnticheatConfiguration.GameDetectionTypes;
+            var ignoredClients = _config.AnticheatConfiguration.IgnoredClientIds;
 
             if (ignoredClients.Contains(clientId))
             {
@@ -1011,9 +1006,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.LastScore = estimatedVictimScore;
 
             // show encouragement/discouragement
-            var streakMessage = (attackerStats.ClientId != victimStats.ClientId)
-                ? StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak)
-                : StreakMessage.MessageOnStreak(-1, -1);
+            var streakMessage = attackerStats.ClientId != victimStats.ClientId
+                ? StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak, _config)
+                : StreakMessage.MessageOnStreak(-1, -1, _config);
 
             if (streakMessage != string.Empty)
             {
@@ -1530,13 +1525,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return serverStats;
         }
 
-        public void ResetKillstreaks(Server sv)
+        public void ResetKillstreaks(IGameServer gameServer)
         {
-            foreach (var session in sv.GetClientsAsList()
-                         .Select(_client => new
+            foreach (var session in gameServer.ConnectedClients
+                         .Select(client => new
                          {
-                             stat = _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY),
-                             detection = _client.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY)
+                             stat = client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY),
+                             detection = client.GetAdditionalProperty<Detection>(CLIENT_DETECTIONS_KEY)
                          }))
             {
                 session.stat?.StartNewSession();
@@ -1563,7 +1558,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             stats.EloRating = 200;
         }
 
-        public async Task AddMessageAsync(int clientId, long serverId, bool sentIngame, string message)
+        public async Task AddMessageAsync(int clientId, long serverId, bool sentIngame, string message,
+            CancellationToken cancellationToken)
         {
             // the web users can have no account
             if (clientId < 1)
@@ -1571,8 +1567,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
-            ctx.Set<EFClientMessage>().Add(new EFClientMessage()
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            context.Set<EFClientMessage>().Add(new EFClientMessage()
             {
                 ClientId = clientId,
                 Message = message,
@@ -1581,26 +1577,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 SentIngame = sentIngame
             });
 
-            await ctx.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task Sync(Server sv)
+        public async Task Sync(IGameServer gameServer, CancellationToken token)
         {
-            long serverId = GetIdForServer(sv);
+            var serverId = GetIdForServer(gameServer);
 
             var waiter = _servers[serverId].OnSaving;
             try
             {
-                await waiter.WaitAsync();
+                await waiter.WaitAsync(token);
 
-                await using var ctx = _contextFactory.CreateContext();
-                var serverStatsSet = ctx.Set<EFServerStatistics>();
+                await using var context = _contextFactory.CreateContext();
+                var serverStatsSet = context.Set<EFServerStatistics>();
                 serverStatsSet.Update(_servers[serverId].ServerStatistics);
-                await ctx.SaveChangesAsync();
+                await context.SaveChangesAsync(token);
 
-                foreach (var stats in sv.GetClientsAsList()
-                             .Select(_client => _client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
-                             .Where(_stats => _stats != null))
+                foreach (var stats in gameServer.ConnectedClients
+                             .Select(client => client.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY))
+                             .Where(stats => stats != null))
                 {
                     await SaveClientStats(stats);
                 }
@@ -1608,9 +1604,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await SaveHitCache(serverId);
             }
 
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _log.LogError(e, "There was a problem syncing server stats");
+                _log.LogError(ex, "There was a problem syncing server stats");
             }
 
             finally
@@ -1627,28 +1623,24 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             _servers[serverId].IsTeamBased = isTeamBased;
         }
 
-        public static long GetIdForServer(Server server)
+        public static long GetIdForServer(IGameServer gameServer)
         {
-            if ($"{server.IP}:{server.Port.ToString()}" == "66.150.121.184:28965")
+            if (gameServer.Id == "66.150.121.184:28965")
             {
                 return 886229536;
             }
 
             // todo: this is not stable and will need to be migrated again...
-            long id = HashCode.Combine(server.IP, server.Port);
+            long id = HashCode.Combine(gameServer.ListenAddress, gameServer.ListenPort);
             id = id < 0 ? Math.Abs(id) : id;
-            long? serverId;
 
-            serverId = serverModels.FirstOrDefault(_server => _server.ServerId == server.EndPoint ||
-                                                              _server.EndPoint == server.ToString() ||
-                                                              _server.ServerId == id)?.ServerId;
+#pragma warning disable CS0618
+            var serverId = serverModels.FirstOrDefault(cachedServer => cachedServer.ServerId == gameServer.LegacyEndpoint ||
+#pragma warning restore CS0618
+                                                                       cachedServer.EndPoint == gameServer.ToString() ||
+                                                                       cachedServer.ServerId == id)?.ServerId;
 
-            if (!serverId.HasValue)
-            {
-                return id;
-            }
-
-            return serverId.Value;
+            return serverId ?? id;
         }
     }
 }

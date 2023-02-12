@@ -7,15 +7,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models.Client.Stats;
+using IW4MAdmin.Plugins.Stats.Helpers;
+using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ResetStats : Command
     {
         private readonly IDatabaseContextFactory _contextFactory;
-        
+        private readonly StatManager _statManager;
+
         public ResetStats(CommandConfiguration config, ITranslationLookup translationLookup, 
-            IDatabaseContextFactory contextFactory) : base(config, translationLookup)
+            IDatabaseContextFactory contextFactory, StatManager statManager) : base(config, translationLookup)
         {
             Name = "resetstats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_RESET_DESC"];
@@ -25,6 +28,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             AllowImpersonation = true;
 
             _contextFactory = contextFactory;
+            _statManager = statManager;
         }
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
@@ -53,7 +57,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 }
 
                 // reset the cached version
-                Plugin.Manager.ResetStats(gameEvent.Origin);
+                _statManager.ResetStats(gameEvent.Origin);
 
                 gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_RESET_SUCCESS"]);
             }

@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
-using SharedLibraryCore;
+using SharedLibraryCore.Events;
 
 namespace IW4MAdmin.Plugins.Stats.Client.Abstractions
 {
     public interface IClientStatisticCalculator
     {
         Task GatherDependencies();
-        Task CalculateForEvent(GameEvent gameEvent);
+        Task CalculateForEvent(CoreEvent coreEvent);
     }
 }

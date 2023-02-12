@@ -4,7 +4,7 @@ using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.ProfanityDeterment
 {
-    class Configuration : IBaseConfiguration
+    public class ProfanityDetermentConfiguration : IBaseConfiguration
     {
         public List<string> OffensiveWords { get; set; }
         public bool EnableProfanityDeterment { get; set; }
@@ -45,6 +45,6 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
             return this;
         }
 
-        public string Name() => "Configuration";
+        public string Name() => "ProfanityDetermentSettings";
     }
 }

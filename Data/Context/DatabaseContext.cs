@@ -131,6 +131,7 @@ namespace Data.Context
                 ent.HasIndex(_alias => _alias.SearchableName);
                 ent.HasIndex(_alias => new {_alias.Name, _alias.IPAddress});
                 ent.Property(alias => alias.SearchableIPAddress)
+                    .HasMaxLength(255)
                     .HasComputedColumnSql(@"((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", stored: true);
                 ent.HasIndex(alias => alias.SearchableIPAddress);
             });

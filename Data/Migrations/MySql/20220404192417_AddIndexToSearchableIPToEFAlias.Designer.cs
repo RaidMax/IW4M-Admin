@@ -808,6 +808,7 @@ namespace Data.Migrations.MySql
 
                     b.Property<string>("SearchableIPAddress")
                         .ValueGeneratedOnAddOrUpdate()
+                        .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
                         .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
 

@@ -11,7 +11,8 @@ namespace Data.Migrations.MySql
             migrationBuilder.AddColumn<string>(
                 name: "SearchableIPAddress",
                 table: "EFAlias",
-                type: "longtext",
+                type: "varchar(255)",
+                maxLength: 255,
                 nullable: true,
                 computedColumnSql: "CONCAT((IPAddress & 255), \".\", ((IPAddress >> 8) & 255), \".\", ((IPAddress >> 16) & 255), \".\", ((IPAddress >> 24) & 255))",
                 stored: true)

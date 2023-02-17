@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using SharedLibraryCore.Alerts;
 using SharedLibraryCore.Configuration;
@@ -15,6 +16,7 @@ public class AlertManager : IAlertManager
     private readonly ApplicationConfiguration _appConfig;
     private readonly ConcurrentDictionary<int, List<Alert.AlertState>> _states = new();
     private readonly List<Func<Task<IEnumerable<Alert.AlertState>>>> _staticSources = new();
+    private readonly SemaphoreSlim _onModifyingAlerts = new(1, 1);
 
     public AlertManager(ApplicationConfiguration appConfig)
     {
@@ -38,8 +40,9 @@ public class AlertManager : IAlertManager
 
     public IEnumerable<Alert.AlertState> RetrieveAlerts(EFClient client)
     {
-        lock (_states)
+        try
         {
+            _onModifyingAlerts.Wait();
             var alerts = Enumerable.Empty<Alert.AlertState>();
             if (client.Level > Data.Models.Client.EFClient.Permission.Trusted)
             {
@@ -54,12 +57,20 @@ public class AlertManager : IAlertManager
 
             return alerts.OrderByDescending(alert => alert.OccuredAt);
         }
+        finally
+        {
+            if (_onModifyingAlerts.CurrentCount == 0)
+            {
+                _onModifyingAlerts.Release(1);
+            }
+        }
     }
 
     public void MarkAlertAsRead(Guid alertId)
     {
-        lock (_states)
+        try
         {
+            _onModifyingAlerts.Wait();
             foreach (var items in _states.Values)
             {
                 var matchingEvent = items.FirstOrDefault(item => item.AlertId == alertId);
@@ -73,12 +84,20 @@ public class AlertManager : IAlertManager
                 OnAlertConsumed?.Invoke(this, matchingEvent);
             }
         }
+        finally
+        {
+            if (_onModifyingAlerts.CurrentCount == 0)
+            {
+                _onModifyingAlerts.Release(1);
+            }
+        }
     }
 
     public void MarkAllAlertsAsRead(int recipientId)
     {
-        lock (_states)
+        try
         {
+            _onModifyingAlerts.Wait();
             foreach (var items in _states.Values)
             {
                 items.RemoveAll(item =>
@@ -93,12 +112,20 @@ public class AlertManager : IAlertManager
                 });
             }
         }
+        finally
+        {
+            if (_onModifyingAlerts.CurrentCount == 0)
+            {
+                _onModifyingAlerts.Release(1);
+            }
+        }
     }
 
     public void AddAlert(Alert.AlertState alert)
     {
-        lock (_states)
+        try
         {
+            _onModifyingAlerts.Wait();
             if (alert.RecipientId is null)
             {
                 _states[0].Add(alert);
@@ -119,6 +146,14 @@ public class AlertManager : IAlertManager
 
             PruneOldAlerts();
         }
+        finally
+        {
+            if (_onModifyingAlerts.CurrentCount == 0)
+            {
+                _onModifyingAlerts.Release(1);
+            }
+        }
+        
     }
 
     public void RegisterStaticAlertSource(Func<Task<IEnumerable<Alert.AlertState>>> alertSource)

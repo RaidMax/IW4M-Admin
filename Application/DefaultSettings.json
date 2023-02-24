@@ -69,6 +69,39 @@
     }
   ],
   "Gametypes": [
+    }
+      "Game": "IW3",
+      "Gametypes": [
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+    },
     {
       "Game": "IW4",
       "Gametypes": [

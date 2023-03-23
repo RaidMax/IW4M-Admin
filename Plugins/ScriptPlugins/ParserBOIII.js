@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'Diamante',
-    version: 0.1,
+    version: 0.2,
     name: 'BOIII Parser',
     isParser: true,
 
@@ -18,7 +18,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.Kick = 'clientkick {0}';
         rconParser.Configuration.CommandPrefixes.Ban = 'clientkick {0}';
         rconParser.Configuration.CommandPrefixes.TempBan = 'clientkick {0}';
-        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint ';
+        rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint( |\x01)';
         rconParser.Configuration.GametypeStatus.Pattern = 'Gametype: (.+)';
         rconParser.Configuration.MapStatus.Pattern = 'Map: (.+)';
         rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined; // disables this, because it's useless on T7/BOIII

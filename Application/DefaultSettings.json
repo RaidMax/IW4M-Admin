@@ -1020,7 +1020,43 @@
         {
           "Alias": "Downpour",
           "Name": "mp_farm"
-        }
+        },
+        {
+          "Alias": "Dome",
+          "Name": "mp_dome"
+        },
+        {
+          "Alias": "Hardhat",
+          "Name": "mp_hardhat"
+        },
+        {
+          "Alias": "Resistance",
+          "Name": "mp_paris"
+        },
+        {
+          "Alias": "Seatown",
+          "Name": "mp_seatown"
+        },
+	{
+          "Alias": "Mission",
+          "Name": "mp_bravo"
+        },
+        {
+          "Alias": "Underground",
+          "Name": "mp_underground"
+        },
+        {
+          "Alias": "Arkaden",
+          "Name": "mp_plaza2"
+        },
+        {
+          "Alias": "Village",
+          "Name": "mp_village"
+        },
+        {
+          "Alias": "Lockdown",
+          "Name": "mp_alpha"
+        }	      
       ]
     },
     {

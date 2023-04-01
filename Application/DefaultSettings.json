@@ -152,7 +152,11 @@
         {
           "Name": "twar",
           "Alias": "War"
-        }
+        },
+	{
+          "Name": "cmp",
+          "Alias": "Zombies"
+        }	      
       ]
     },
     {
@@ -404,7 +408,15 @@
         {
           "Name": "tdm",
           "Alias": "Team Deathmatch"
-        }
+        },
+        {
+          "Name": "zclassic",
+          "Alias": "Zombies Classic"
+        },
+	{
+          "Name": "zstandard",
+          "Alias": "Zombies"
+        }      
       ]
     },
     {
@@ -505,7 +517,11 @@
         {
           "Name": "hc_tdm",
           "Alias": "Hardcore Team Deathmatch"
-        }
+        },
+	{
+          "Name": "zclassic",
+          "Alias": "Zombies Classic"
+        }	      
       ]
     },
     {

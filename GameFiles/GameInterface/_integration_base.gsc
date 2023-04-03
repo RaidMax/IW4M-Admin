@@ -4,7 +4,7 @@
 
 Init()
 {    
-    level Setup();
+    thread Setup();
 }
 
 Setup()

@@ -4,7 +4,7 @@ Init()
 {
     level.eventBus.gamename = "IW5";
 
-    level Setup();
+    thread Setup();
 }
 
 Setup()

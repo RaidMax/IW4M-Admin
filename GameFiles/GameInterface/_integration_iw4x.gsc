@@ -443,7 +443,7 @@ NoClipImpl()
         
         self God();
 
-		self.clientflags |= 1; // IW4x specific
+        self.clientflags |= 1; // IW4x specific
 
         self Hide();
         

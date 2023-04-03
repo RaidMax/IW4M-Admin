@@ -49,7 +49,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( player call [[ level.overrideMethods[level.commonFunctions.isBot] ]]() ) 
+        if ( player call [[ level.overrideMethods[ level.commonFunctions.isBot ] ]]() ) 
         {
             // we don't want to track bots
             continue;    

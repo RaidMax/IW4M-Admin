@@ -49,20 +49,13 @@ namespace IW4MAdmin.Application.Commands
                     return;
                 }
 
-                var index = 1;
-                foreach (var inboxItem in inboxItems)
+                await gameEvent.Origin.TellAsync(inboxItems.Select((inboxItem, index) =>
                 {
-                    await gameEvent.Origin.Tell(_translationLookup["COMMANDS_READ_MESSAGE_SUCCESS"]
-                            .FormatExt($"{index}/{inboxItems.Count}", inboxItem.SourceClient.CurrentAlias.Name))
-                        .WaitAsync();
+                    var header = _translationLookup["COMMANDS_READ_MESSAGE_SUCCESS"]
+                        .FormatExt($"{index + 1}/{inboxItems.Count}", inboxItem.SourceClient.CurrentAlias.Name);
 
-                    foreach (var messageFragment in inboxItem.Message.FragmentMessageForDisplay())
-                    {
-                        await gameEvent.Origin.Tell(messageFragment).WaitAsync();
-                    }
-
-                    index++;
-                }
+                    return new[] { header }.Union(inboxItem.Message.FragmentMessageForDisplay());
+                }).SelectMany(item => item));
 
                 inboxItems.ForEach(item => { item.IsDelivered = true; });
 

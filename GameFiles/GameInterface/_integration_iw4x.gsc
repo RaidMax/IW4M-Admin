@@ -18,6 +18,7 @@ Setup()
     
     level.overrideMethods["GetTotalShotsFired"]                                    = ::GetTotalShotsFired;
     level.overrideMethods[level.commonFunctions.setDvar]                           = ::_SetDvarIfUninitialized;
+    level.overrideMethods[level.commonFunctions.isBot]                             = ::IsTestClient;
     level.overrideMethods["waittill_notify_or_timeout"]                            = ::_waittill_notify_or_timeout;
     level.overrideMethods[level.commonFunctions.changeTeam]                        = ::ChangeTeam;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = ::CountPlayers;
@@ -48,7 +49,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( scripts\_integration_base::_IsBot( player ) ) 
+        if ( [[ level.overrideMethods[level.commonFunctions.isBot] ]]( player ) ) 
         {
             // we don't want to track bots
             continue;    

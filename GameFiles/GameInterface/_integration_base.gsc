@@ -21,7 +21,8 @@ Setup()
     
     level.commonFunctions              = spawnstruct();
     level.commonFunctions.setDvar      = "SetDvarIfUninitialized";
-    
+    level.commonFunctions.isBot        = "IsBot";
+
     level.commonKeys = spawnstruct();
     
     level.notifyTypes                                   = spawnstruct();

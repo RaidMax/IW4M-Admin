@@ -4,7 +4,7 @@ Init()
 {
     level.eventBus.gamename = "IW4";
 
-    level thread Setup();
+    level Setup();
 }
 
 Setup()
@@ -49,7 +49,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( [[ level.overrideMethods[level.commonFunctions.isBot] ]]( player ) ) 
+        if ( player call [[ level.overrideMethods[level.commonFunctions.isBot] ]]() ) 
         {
             // we don't want to track bots
             continue;    

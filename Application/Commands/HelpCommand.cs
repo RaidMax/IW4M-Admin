@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace IW4MAdmin.Application.Commands
             };
         }
 
-        public override Task ExecuteAsync(GameEvent gameEvent)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
             var searchTerm = gameEvent.Data.Trim();
             var availableCommands = gameEvent.Owner.Manager.Commands.Distinct().Where(command =>
@@ -70,24 +71,25 @@ namespace IW4MAdmin.Application.Commands
                     });
 
                 var helpResponse = new StringBuilder();
+                var messageList = new List<string>();
 
                 foreach (var item in commandStrings)
                 {
                     helpResponse.Append(item.response);
+                    
                     if (item.index == 0 || item.index % 4 != 0)
                     {
                         continue;
                     }
 
-                    gameEvent.Origin.Tell(helpResponse.ToString());
+                    messageList.Add(helpResponse.ToString());
                     helpResponse = new StringBuilder();
                 }
 
-                gameEvent.Origin.Tell(helpResponse.ToString());
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_HELP_MOREINFO"]);
-            }
+                messageList.Add(helpResponse.ToString());
 
-            return Task.CompletedTask;
+                await gameEvent.Origin.TellAsync(messageList);
+            }
         }
     }
 }

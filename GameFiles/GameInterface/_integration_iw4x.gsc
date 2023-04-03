@@ -442,7 +442,9 @@ NoClipImpl()
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
-        self Noclip();
+
+		self.clientflags |= 1; // IW4x specific
+
         self Hide();
         
         self.isNoClipped = true;
@@ -456,7 +458,9 @@ NoClipImpl()
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
-        self Noclip();
+
+        self.clientflags &= ~1; // IW4x specific
+
         self Show();
         
         self.isNoClipped = false;

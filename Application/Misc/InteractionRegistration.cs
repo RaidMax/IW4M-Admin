@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
+using IW4MAdmin.Application.Plugin.Script;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Interfaces;
@@ -86,8 +87,6 @@ public class InteractionRegistration : IInteractionRegistration
         int? clientId = null,
         Reference.Game? game = null, CancellationToken token = default)
     {
-        return Enumerable.Empty<IInteractionData>();
-        // fixme: multi-threading is broken when dealing with script plugins
         return await GetInteractionsInternal(interactionPrefix, clientId, game, token);
     }
 
@@ -119,6 +118,18 @@ public class InteractionRegistration : IInteractionRegistration
 
                     return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, token, originId, targetId, game, meta,
                         token);
+                }
+                
+                foreach (var plugin in _serviceProvider.GetRequiredService<IEnumerable<IPluginV2>>())
+                {
+                    if (plugin is not ScriptPluginV2 scriptPlugin || scriptPlugin.Name != interaction.Source)
+                    {
+                        continue;
+                    }
+
+                    return scriptPlugin
+                        .QueryWithErrorHandling(interaction.ScriptAction, originId, targetId, game, meta, token)
+                        ?.ToString();
                 }
             }
         }

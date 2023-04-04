@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using IW4MAdmin.Application.Misc;
+using IW4MAdmin.Application.Plugin;
 using Newtonsoft.Json;
 using RestEase;
 using SharedLibraryCore.Helpers;

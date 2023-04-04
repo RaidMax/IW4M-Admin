@@ -1,98 +1,400 @@
 ﻿const servers = {};
 const inDvar = 'sv_iw4madmin_in';
 const outDvar = 'sv_iw4madmin_out';
-const pollRate = 900;
-const enableCheckTimeout = 10000;
-let logger = {};
-const maxQueuedMessages = 25;
+const integrationEnabledDvar = 'sv_iw4madmin_integration_enabled';
+const pollingRate = 300;
 
-let plugin = {
+const init = (registerNotify, serviceResolver, config) => {
+    registerNotify('IManagementEventSubscriptions.ClientStateInitialized', (clientEvent, _) => plugin.onClientEnteredMatch(clientEvent));
+    registerNotify('IGameServerEventSubscriptions.ServerValueReceived', (serverValueEvent, _) => plugin.onServerValueReceived(serverValueEvent));
+    registerNotify('IGameServerEventSubscriptions.ServerValueSetCompleted', (serverValueEvent, _) => plugin.onServerValueSetCompleted(serverValueEvent));
+    registerNotify('IGameServerEventSubscriptions.MonitoringStarted', (monitorStartEvent, _) => plugin.onServerMonitoringStart(monitorStartEvent));
+    registerNotify('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => plugin.onPenalty(penaltyEvent));
+
+    plugin.onLoad(serviceResolver, config);
+    return plugin;
+};
+
+const plugin = {
     author: 'RaidMax',
-    version: 1.1,
+    version: '2.0',
     name: 'Game Interface',
+    serviceResolver: null,
+    eventManager: null,
+    logger: null,
+    commands: null,
 
-    onEventAsync: (gameEvent, server) => {
-        if (servers[server.EndPoint] != null && !servers[server.EndPoint].enabled) {
-            return;
-        }
+    onLoad: function (serviceResolver, config) {
+        this.serviceResolver = serviceResolver;
+        this.eventManager = serviceResolver.resolveService('IManager');
+        this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
+        this.commands = commands;
+        this.config = config;
+    },
 
-        const eventType = String(gameEvent.TypeName).toLowerCase();
+    onClientEnteredMatch: function (clientEvent) {
+        const serverState = servers[clientEvent.client.currentServer.id];
 
-        if (eventType === undefined) {
-            return;
-        }
-
-        switch (eventType) {
-            case 'start':
-                const enabled = initialize(server);
-
-                if (!enabled) {
-                    return;
-                }
-                break;
-            case 'preconnect':
-                // when the plugin is reloaded after the servers are started
-                if (servers[server.EndPoint] === undefined || servers[server.EndPoint] == null) {
-                    const enabled = initialize(server);
-
-                    if (!enabled) {
-                        return;
-                    }
-                }
-                const timer = servers[server.EndPoint].timer;
-                if (!timer.IsRunning) {
-                    timer.Start(0, pollRate);
-                }
-                break;
-            case 'warn':
-                const warningTitle = _localization.LocalizationIndex['GLOBAL_WARNING'];
-                sendScriptCommand(server, 'Alert', gameEvent.Origin, gameEvent.Target, {
-                    alertType: warningTitle + '!',
-                    message: gameEvent.Data
-                });
-                break;
+        if (serverState === undefined || serverState == null) {
+            this.initializeServer(clientEvent.client.currentServer);
+        } else if (!serverState.running && !serverState.initializationInProgress) {
+            serverState.running = true;
+            this.requestGetDvar(inDvar, clientEvent.client.currentServer);
         }
     },
 
-    onLoadAsync: manager => {
-        logger = _serviceResolver.ResolveService('ILogger');
-        logger.WriteInfo('Game Interface Startup');
+    onPenalty: function (penaltyEvent) {
+        const warning = 1;
+        if (penaltyEvent.penalty.type !== warning || !penaltyEvent.client.isIngame) {
+            return;
+        }
+
+        sendScriptCommand(penaltyEvent.client.currentServer, 'Alert', penaltyEvent.penalty.punisher, penaltyEvent.client, {
+            alertType: this.translations('GLOBAL_WARNING') + '!',
+            message: penaltyEvent.penalty.offense
+        });
     },
 
-    onUnloadAsync: () => {
-        for (let i = 0; i < servers.length; i++) {
-            if (servers[i].enabled) {
-                servers[i].timer.Stop();
+    onServerValueReceived: function (serverValueEvent) {
+        const name = serverValueEvent.response.name;
+        if (name === integrationEnabledDvar) {
+            this.handleInitializeServerData(serverValueEvent);
+        } else if (name === inDvar) {
+            this.handleIncomingServerData(serverValueEvent);
+        }
+    },
+
+    onServerValueSetCompleted: async function (serverValueEvent) {
+        if (serverValueEvent.valueName !== inDvar && serverValueEvent.valueName !== outDvar) {
+            this.logger.logDebug('Ignoring set complete of {name}', serverValueEvent.valueName);
+            return;
+        }
+
+        const serverState = servers[serverValueEvent.server.id];
+        serverState.outQueue.shift();
+
+        this.logger.logDebug('outQueue len = {outLen}, inQueue len = {inLen}', serverState.outQueue.length, serverState.inQueue.length);
+
+        // if it didn't succeed, we need to retry
+        if (!serverValueEvent.success && !this.eventManager.cancellationToken.isCancellationRequested) {
+            this.logger.logDebug('Set of server value failed... retrying');
+            this.requestSetDvar(serverValueEvent.valueName, serverValueEvent.value, serverValueEvent.server);
+            return;
+        }
+
+        // we informed the server that we received the event
+        if (serverState.inQueue.length > 0 && serverValueEvent.valueName === inDvar) {
+            const input = serverState.inQueue.shift();
+
+            // if we queued an event then the next loop will be at the value set complete
+            if (await this.processEventMessage(input, serverValueEvent.server)) {
+                // return;
             }
         }
+
+        this.logger.logDebug('loop complete');
+        // loop restarts
+        this.requestGetDvar(inDvar, serverValueEvent.server);
     },
 
-    onTickAsync: server => {
+    initializeServer: function (server) {
+        servers[server.id] = {
+            enabled: false,
+            running: false,
+            initializationInProgress: true,
+            queuedMessages: [],
+            inQueue: [],
+            outQueue: [],
+            commandQueue: []
+        };
+
+        this.logger.logDebug('Initializing game interface for {serverId}', server.id);
+        this.requestGetDvar(integrationEnabledDvar, server);
+    },
+
+    handleInitializeServerData: function (responseEvent) {
+        this.logger.logInformation('GSC integration enabled = {integrationValue} for {server}',
+            responseEvent.response.value, responseEvent.server.id);
+
+        if (responseEvent.response.value !== '1') {
+            return;
+        }
+
+        const serverState = servers[responseEvent.server.id];
+        serverState.outQueue.shift();
+        serverState.enabled = true;
+        serverState.running = true;
+        serverState.initializationInProgress = false;
+
+        this.requestGetDvar(inDvar, responseEvent.server);
+    },
+
+    handleIncomingServerData: function (responseEvent) {
+        this.logger.logDebug('Received {dvarName}={dvarValue} success={success} from {server}', responseEvent.response.name,
+            responseEvent.response.value, responseEvent.success, responseEvent.server.id);
+
+        const serverState = servers[responseEvent.server.id];
+        serverState.outQueue.shift();
+
+        if (responseEvent.server.connectedClients.count === 0) {
+            // no clients connected so we don't need to query
+            serverState.running = false;
+            return;
+        }
+
+        // read failed, so let's retry
+        if (!responseEvent.success && !this.eventManager.cancellationToken.isCancellationRequested) {
+            this.logger.logDebug('Get of server value failed... retrying');
+            this.requestGetDvar(responseEvent.response.name, responseEvent.server);
+            return;
+        }
+
+        let input = responseEvent.response.value;
+        const server = responseEvent.server;
+
+        if (this.eventManager.cancellationToken.isCancellationRequested) {
+            return;
+        }
+
+        // no data available so we poll again or send any outgoing messages
+        if (isEmpty(input)) {
+            this.logger.logDebug('No data to process from server');
+            if (serverState.commandQueue.length > 0) {
+                this.logger.logDebug('Sending next out message');
+                const nextMessage = serverState.commandQueue.shift();
+                this.requestSetDvar(outDvar, nextMessage, server);
+            } else {
+                this.requestGetDvar(inDvar, server);
+            }
+            return;
+        }
+
+        serverState.inQueue.push(input);
+
+        // let server know that we received the data
+        this.requestSetDvar(inDvar, '', server);
+    },
+
+    processEventMessage: async function (input, server) {
+        let messageQueued = false;
+        const event = parseEvent(input);
+
+        this.logger.logDebug('Processing input... {eventType} {subType} {data} {clientNumber}', event.eventType,
+            event.subType, event.data.toString(), event.clientNumber);
+
+        const metaService = this.serviceResolver.ResolveService('IMetaServiceV2');
+        const threading = importNamespace('System.Threading');
+        const tokenSource = new threading.CancellationTokenSource();
+        const token = tokenSource.token;
+
+        // todo: refactor to mapping if possible
+        if (event.eventType === 'ClientDataRequested') {
+            const client = server.getClientByNumber(event.clientNumber);
+
+            if (client != null) {
+                this.logger.logDebug('Found client {name}', client.name);
+
+                let data = [];
+
+                const metaService = this.serviceResolver.ResolveService('IMetaServiceV2');
+
+                if (event.subType === 'Meta') {
+                    const meta = (await metaService.getPersistentMeta(event.data, client.clientId, token)).result;
+                    data[event.data] = meta === null ? '' : meta.Value;
+                    this.logger.logDebug('event data is {data}', event.data);
+                } else {
+                    const clientStats = getClientStats(client, server);
+                    const tagMeta = (await metaService.getPersistentMetaByLookup('ClientTagV2', 'ClientTagNameV2', client.clientId, token)).result;
+                    data = {
+                        level: client.level,
+                        clientId: client.clientId,
+                        lastConnection: client.lastConnection,
+                        tag: tagMeta?.value ?? '',
+                        performance: clientStats?.performance ?? 200.0
+                    };
+                }
+
+                this.sendEventMessage(server, false, 'ClientDataReceived', event.subType, client, undefined, data);
+                messageQueued = true;
+            } else {
+                this.logger.logWarning('Could not find client slot {clientNumber} when processing {eventType}', event.clientNumber, event.eventType);
+                this.sendEventMessage(server, false, 'ClientDataReceived', 'Fail', event.clientNumber, undefined, {
+                    ClientNumber: event.clientNumber
+                });
+                messageQueued = true;
+            }
+        }
+
+        if (event.eventType === 'SetClientDataRequested') {
+            let client = server.getClientByNumber(event.clientNumber);
+            let clientId;
+
+            if (client != null) {
+                clientId = client.clientId;
+            } else {
+                clientId = parseInt(event.data['clientId']);
+            }
+
+            this.logger.logDebug('ClientId={clientId}', clientId);
+
+            if (clientId == null) {
+                this.logger.logWarning('Could not find client slot {clientNumber} when processing {eventType}', event.clientNumber, event.eventType);
+                this.sendEventMessage(server, false, 'SetClientDataCompleted', 'Meta', {
+                    ClientNumber: event.clientNumber
+                }, undefined, {
+                    status: 'Fail'
+                });
+                messageQueued = true;
+            } else {
+                if (event.subType === 'Meta') {
+                    try {
+                        if (event.data['value'] != null && event.data['key'] != null) {
+                            this.logger.logDebug('Key={key}, Value={value}, Direction={direction} {token}', event.data['key'], event.data['value'], event.data['direction'], token);
+                            if (event.data['direction'] != null) {
+                                const parsedValue = parseInt(event.data['value']);
+                                const key = event.data['key'].toString();
+                                if (!isNaN(parsedValue)) {
+                                    event.data['direction'] = 'up' ?
+                                        (await metaService.incrementPersistentMeta(key, parsedValue, clientId, token)).result :
+                                        (await metaService.decrementPersistentMeta(key, parsedValue, clientId, token)).result;
+                                }
+                            } else {
+                                const _ = (await metaService.setPersistentMeta(event.data['key'], event.data['value'], clientId, token)).result;
+                            }
+
+                            if (event.data['key'] === 'PersistentClientGuid') {
+                                const serverEvents = importNamespace('SharedLibraryCore.Events.Management');
+                                const persistentIdEvent = new serverEvents.ClientPersistentIdReceiveEvent(client, event.data['value']);
+                                this.eventManager.queueEvent(persistentIdEvent);
+                            }
+                        }
+                        this.sendEventMessage(server, false, 'SetClientDataCompleted', 'Meta', {
+                            ClientNumber: event.clientNumber
+                        }, undefined, {
+                            status: 'Complete'
+                        });
+                        messageQueued = true;
+                    } catch (error) {
+                        this.sendEventMessage(server, false, 'SetClientDataCompleted', 'Meta', {
+                            ClientNumber: event.clientNumber
+                        }, undefined, {
+                            status: 'Fail'
+                        });
+                        this.logger.logError('Could not persist client meta {Key}={Value} {error} for {Client}', event.data['key'], event.data['value'], error.toString(), clientId);
+                        messageQueued = true;
+                    }
+                }
+            }
+        }
+
+        tokenSource.dispose();
+        return messageQueued;
+    },
+
+    sendEventMessage: function (server, responseExpected, event, subtype, origin, target, data) {
+        let targetClientNumber = -1;
+        if (target != null) {
+            targetClientNumber = target.ClientNumber;
+        }
+
+        const output = `${responseExpected ? '1' : '0'};${event};${subtype};${origin.ClientNumber};${targetClientNumber};${buildDataString(data)}`;
+        this.logger.logDebug('Queuing output for server {output}', output);
+
+        servers[server.id].commandQueue.push(output);
+    },
+
+    requestGetDvar: function (dvarName, server) {
+        const serverState = servers[server.id];
+        const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
+        const requestEvent = new serverEvents.ServerValueRequestEvent(dvarName, server);
+        requestEvent.delayMs = pollingRate;
+        requestEvent.timeoutMs = 2000;
+        requestEvent.source = this.name;
+
+        if (server.matchEndTime !== null) {
+            const extraDelay = 15000;
+            const end = new Date(server.matchEndTime.toString());
+            const diff = new Date().getTime() - end.getTime();
+
+            if (diff < extraDelay) {
+                requestEvent.delayMs = (extraDelay - diff) + pollingRate;
+                this.logger.logDebug('Increasing delay time to {Delay}ms due to recent map change', requestEvent.delayMs);
+            }
+        }
+
+        this.logger.logDebug('requesting {dvar}', dvarName);
+
+        serverState.outQueue.push(requestEvent);
+
+        if (serverState.outQueue.length <= 1) {
+            this.eventManager.queueEvent(requestEvent);
+        } else {
+            this.logger.logError('[requestGetDvar] Queue is full!');
+        }
+    },
+
+    requestSetDvar: function (dvarName, dvarValue, server) {
+        const serverState = servers[server.id];
+
+        const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
+        const requestEvent = new serverEvents.ServerValueSetRequestEvent(dvarName, dvarValue, server);
+        requestEvent.delayMs = pollingRate;
+        requestEvent.timeoutMs = 2000;
+        requestEvent.source = this.name;
+
+        if (server.matchEndTime !== null) {
+            const extraDelay = 15000;
+            const end = new Date(server.matchEndTime.toString());
+            const diff = new Date().getTime() - end.getTime();
+
+            if (diff < extraDelay) {
+                requestEvent.delayMs = (extraDelay - diff) + pollingRate;
+                this.logger.logDebug('Increasing delay time to {Delay}ms due to recent map change', requestEvent.delayMs);
+            }
+        }
+
+        serverState.outQueue.push(requestEvent);
+
+        this.logger.logDebug('outQueue size = {length}', serverState.outQueue.length);
+
+        // if this is the only item in the out-queue we can send it immediately
+        if (serverState.outQueue.length === 1) {
+            this.eventManager.queueEvent(requestEvent);
+        } else {
+            this.logger.logError('[requestSetDvar] Queue is full!');
+        }
+    },
+
+    onServerMonitoringStart: function (monitorStartEvent) {
+        this.initializeServer(monitorStartEvent.server);
     }
 };
 
-let commands = [{
-        name: 'giveweapon',
-        description: 'gives specified weapon',
-        alias: 'gw',
-        permission: 'SeniorAdmin',
-        targetRequired: true,
-        arguments: [{
-            name: 'player',
-            required: true
-        },
-            {
-                name: 'weapon name',
-                required: true
-            }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
-        execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
-                return;
-            }
-            sendScriptCommand(gameEvent.Owner, 'GiveWeapon', gameEvent.Origin, gameEvent.Target, {weaponName: gameEvent.Data});
-        }
+const commands = [{
+    name: 'giveweapon',
+    description: 'gives specified weapon',
+    alias: 'gw',
+    permission: 'SeniorAdmin',
+    targetRequired: true,
+    arguments: [{
+        name: 'player',
+        required: true
     },
+        {
+            name: 'weapon name',
+            required: true
+        }
+    ],
+    supportedGames: ['IW4', 'IW5', 'T5'],
+    execute: (gameEvent) => {
+        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+            return;
+        }
+        sendScriptCommand(gameEvent.owner, 'GiveWeapon', gameEvent.origin, gameEvent.target, {
+            weaponName: gameEvent.data
+        });
+    }
+},
     {
         name: 'takeweapons',
         description: 'take all weapons from specified player',
@@ -105,10 +407,10 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'TakeWeapons', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'TakeWeapons', gameEvent.origin, gameEvent.target, undefined);
         }
     },
     {
@@ -123,10 +425,10 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'SwitchTeams', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'SwitchTeams', gameEvent.origin, gameEvent.target, undefined);
         }
     },
     {
@@ -141,10 +443,10 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'LockControls', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'LockControls', gameEvent.origin, gameEvent.target, undefined);
         }
     },
     {
@@ -156,10 +458,10 @@ let commands = [{
         arguments: [],
         supportedGames: ['IW4', 'IW5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'NoClip', gameEvent.Origin, gameEvent.Origin, undefined);
+            sendScriptCommand(gameEvent.owner, 'NoClip', gameEvent.origin, gameEvent.origin, undefined);
         }
     },
     {
@@ -171,10 +473,10 @@ let commands = [{
         arguments: [],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Hide', gameEvent.Origin, gameEvent.Origin, undefined);
+            sendScriptCommand(gameEvent.owner, 'Hide', gameEvent.origin, gameEvent.origin, undefined);
         }
     },
     {
@@ -190,13 +492,14 @@ let commands = [{
             {
                 name: 'message',
                 required: true
-            }],
+            }
+        ],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.Origin, gameEvent.Target, {
+            sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.origin, gameEvent.target, {
                 alertType: 'Alert',
                 message: gameEvent.Data
             });
@@ -214,10 +517,10 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'Goto', gameEvent.origin, gameEvent.target, undefined);
         }
     },
     {
@@ -232,10 +535,10 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'PlayerToMe', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'PlayerToMe', gameEvent.origin, gameEvent.target, undefined);
         }
     },
     {
@@ -255,15 +558,16 @@ let commands = [{
             {
                 name: 'z',
                 required: true
-            }],
+            }
+        ],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
 
             const args = String(gameEvent.Data).split(' ');
-            sendScriptCommand(gameEvent.Owner, 'Goto', gameEvent.Origin, gameEvent.Target, {
+            sendScriptCommand(gameEvent.owner, 'Goto', gameEvent.origin, gameEvent.target, {
                 x: args[0],
                 y: args[1],
                 z: args[2]
@@ -282,10 +586,10 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'Kill', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'Kill', gameEvent.origin, gameEvent.target, undefined);
         }
     },
     {
@@ -300,244 +604,30 @@ let commands = [{
         }],
         supportedGames: ['IW4', 'IW5', 'T5'],
         execute: (gameEvent) => {
-            if (!validateEnabled(gameEvent.Owner, gameEvent.Origin)) {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
             }
-            sendScriptCommand(gameEvent.Owner, 'SetSpectator', gameEvent.Origin, gameEvent.Target, undefined);
+            sendScriptCommand(gameEvent.owner, 'SetSpectator', gameEvent.origin, gameEvent.target, undefined);
         }
-    }];
+    }
+];
 
 const sendScriptCommand = (server, command, origin, target, data) => {
-    const state = servers[server.EndPoint];
-    if (state === undefined || !state.enabled) {
+    const serverState = servers[server.id];
+    if (serverState === undefined || !serverState.enabled) {
         return;
     }
-    sendEvent(server, false, 'ExecuteCommandRequested', command, origin, target, data);
-}
-
-const sendEvent = (server, responseExpected, event, subtype, origin, target, data) => {
-    const logger = _serviceResolver.ResolveService('ILogger');
-    const state = servers[server.EndPoint];
-
-    if (state.queuedMessages.length >= maxQueuedMessages) {
-        logger.WriteWarning('Too many queued messages so we are skipping');
-        return;
-    }
-
-    let targetClientNumber = -1;
-    if (target != null) {
-        targetClientNumber = target.ClientNumber;
-    }
-
-    const output = `${responseExpected ? '1' : '0'};${event};${subtype};${origin.ClientNumber};${targetClientNumber};${buildDataString(data)}`;
-    logger.WriteDebug(`Queuing output for server ${output}`);
-
-    state.queuedMessages.push(output);
+    plugin.sendEventMessage(server, false, 'ExecuteCommandRequested', command, origin, target, data);
 };
 
-const initialize = (server) => {
-    const logger = _serviceResolver.ResolveService('ILogger');
-
-    servers[server.EndPoint] = {
-        enabled: false
-    }
-
-    let enabled = false;
-    try {
-        enabled = server.GetServerDvar('sv_iw4madmin_integration_enabled', enableCheckTimeout) === '1';
-    } catch (error) {
-        logger.WriteError(`Could not get integration status of ${server.EndPoint} - ${error}`);
-    }
-
-    logger.WriteInfo(`GSC Integration enabled = ${enabled}`);
-
-    if (!enabled) {
-        return false;
-    }
-
-    logger.WriteDebug(`Setting up bus timer for ${server.EndPoint}`);
-
-    let timer = _serviceResolver.ResolveService('IScriptPluginTimerHelper');
-    timer.OnTick(() => pollForEvents(server), `GameEventPoller ${server.ToString()}`);
-    // necessary to prevent multi-threaded access to the JS context
-    timer.SetDependency(_lock);
-
-    servers[server.EndPoint].timer = timer;
-    servers[server.EndPoint].enabled = true;
-    servers[server.EndPoint].waitingOnInput = false;
-    servers[server.EndPoint].waitingOnOutput = false;
-    servers[server.EndPoint].queuedMessages = [];
-
-    setDvar(server, inDvar, '', onSetDvar);
-    setDvar(server, outDvar, '', onSetDvar);
-
-    return true;
-}
-
 const getClientStats = (client, server) => {
-    const contextFactory = _serviceResolver.ResolveService('IDatabaseContextFactory');
-    const context = contextFactory.CreateContext(false);
-    const stats = context.ClientStatistics.GetClientsStatData([client.ClientId], server.GetId()); // .Find(client.ClientId, serverId);
-    context.Dispose();
-    
-    return  stats.length > 0 ? stats[0] : undefined;
-}
+    const contextFactory = plugin.serviceResolver.ResolveService('IDatabaseContextFactory');
+    const context = contextFactory.createContext(false);
+    const stats = context.clientStatistics.getClientsStatData([client.ClientId], server.legacyDatabaseId);
+    context.dispose();
 
-function onReceivedDvar(server, dvarName, dvarValue, success) {
-    const logger = _serviceResolver.ResolveService('ILogger');
-    logger.WriteDebug(`Received ${dvarName}=${dvarValue} success=${success}`);
-
-    let input = dvarValue;
-    const state = servers[server.EndPoint];
-
-    if (state.waitingOnOutput && dvarName === outDvar && isEmpty(dvarValue)) {
-        logger.WriteDebug('Setting out bus to read to send');
-        // reset our flag letting use the out bus is open
-        state.waitingOnOutput = !success;
-    }
-
-    if (state.waitingOnInput && dvarName === inDvar) {
-        logger.WriteDebug('Setting in bus to ready to receive');
-        // we've received the data so now we can mark it as ready for more
-        state.waitingOnInput = false;
-    }
-
-    if (isEmpty(input)) {
-        input = '';
-    }
-
-    if (input.length > 0) {
-        const event = parseEvent(input)
-
-        logger.WriteDebug(`Processing input... ${event.eventType} ${event.subType} ${event.data.toString()} ${event.clientNumber}`);
-
-        const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
-        const threading = importNamespace('System.Threading');
-        const token = new threading.CancellationTokenSource().Token;
-
-        // todo: refactor to mapping if possible
-        if (event.eventType === 'ClientDataRequested') {
-            const client = server.GetClientByNumber(event.clientNumber);
-
-            if (client != null) {
-                logger.WriteDebug(`Found client ${client.Name}`);
-
-                let data = [];
-
-                const metaService = _serviceResolver.ResolveService('IMetaServiceV2');
-
-                if (event.subType === 'Meta') {
-                    const meta = metaService.GetPersistentMeta(event.data, client.ClientId, token).GetAwaiter().GetResult();
-                    data[event.data] = meta === null ? '' : meta.Value;
-                    logger.WriteDebug(`event data is ${event.data}`);
-                } else {
-                    const clientStats = getClientStats(client, server);
-                    const tagMeta = metaService.GetPersistentMetaByLookup('ClientTagV2', 'ClientTagNameV2', client.ClientId, token).GetAwaiter().GetResult();
-                    data = {
-                        level: client.Level,
-                        clientId: client.ClientId,
-                        lastConnection: client.LastConnection,
-                        tag: tagMeta?.Value ?? '',
-                        performance:  clientStats?.Performance ?? 200.0
-                    };
-                }
-
-                sendEvent(server, false, 'ClientDataReceived', event.subType, client, undefined, data);
-            } else {
-                logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
-                sendEvent(server, false, 'ClientDataReceived', 'Fail', event.clientNumber, undefined, {ClientNumber: event.clientNumber});
-            }
-        }
-
-        if (event.eventType === 'SetClientDataRequested') {
-            let client = server.GetClientByNumber(event.clientNumber);
-            let clientId;
-
-            if (client != null) {
-                clientId = client.ClientId;
-            } else {
-                clientId = parseInt(event.data.clientId);
-            }
-
-            logger.WriteDebug(`ClientId=${clientId}`);
-
-            if (clientId == null) {
-                logger.WriteWarning(`Could not find client slot ${event.clientNumber} when processing ${event.eventType}`);
-                sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Fail'});
-            } else {
-                if (event.subType === 'Meta') {
-                    try {
-                        if (event.data['value'] != null && event.data['key'] != null) {
-                            logger.WriteDebug(`Key=${event.data['key']}, Value=${event.data['value']}, Direction=${event.data['direction']} ${token}`);
-                            if (event.data['direction'] != null) {
-                                event.data['direction'] = 'up'
-                                    ? metaService.IncrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult()
-                                    : metaService.DecrementPersistentMeta(event.data['key'], parseInt(event.data['value']), clientId, token).GetAwaiter().GetResult();
-                            } else {
-                                metaService.SetPersistentMeta(event.data['key'], event.data['value'], clientId, token).GetAwaiter().GetResult();
-                            }
-                        }
-                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Complete'});
-                    } catch (error) {
-                        sendEvent(server, false, 'SetClientDataCompleted', 'Meta', {ClientNumber: event.clientNumber}, undefined, {status: 'Fail'});
-                        logger.WriteError('Could not persist client meta ' + error.toString());
-                    }
-                }
-            }
-        }
-
-        setDvar(server, inDvar, '', onSetDvar);
-    } else if (server.ClientNum === 0) {
-        servers[server.EndPoint].timer.Stop();
-    }
-}
-
-function onSetDvar(server, dvarName, dvarValue, success) {
-    const logger = _serviceResolver.ResolveService('ILogger');
-    logger.WriteDebug(`Completed set of dvar ${dvarName}=${dvarValue}, success=${success}`);
-
-    const state = servers[server.EndPoint];
-
-    if (dvarName === inDvar && success && isEmpty(dvarValue)) {
-        logger.WriteDebug('In bus is ready for new data');
-        // reset our flag letting use the in bus is ready for more data
-        state.waitingOnInput = false;
-    }
-}
-
-const pollForEvents = server => {
-    const state = servers[server.EndPoint];
-
-    if (state === null || !state.enabled) {
-        return;
-    }
-
-    if (server.Throttled) {
-        logger.WriteDebug('Server is throttled so we are not polling for game data');
-        return;
-    }
-
-    if (!state.waitingOnInput) {
-        state.waitingOnInput = true;
-        logger.WriteDebug('Attempting to get in dvar value');
-        getDvar(server, inDvar, onReceivedDvar);
-    }
-
-    if (!state.waitingOnOutput) {
-        if (state.queuedMessages.length === 0) {
-            logger.WriteDebug('No messages in queue');
-            return;
-        }
-
-        state.waitingOnOutput = true;
-        const nextMessage = state.queuedMessages.splice(0, 1);
-        setDvar(server, outDvar, nextMessage, onSetDvar);
-    }
-
-    if (state.waitingOnOutput) {
-        getDvar(server, outDvar, onReceivedDvar);
-    }
-}
+    return stats.length > 0 ? stats[0] : undefined;
+};
 
 const parseEvent = (input) => {
     if (input === undefined) {
@@ -551,8 +641,8 @@ const parseEvent = (input) => {
         subType: eventInfo[2],
         clientNumber: eventInfo[3],
         data: eventInfo.length > 4 ? parseDataString(eventInfo[4]) : undefined
-    }
-}
+    };
+};
 
 const buildDataString = data => {
     if (data === undefined) {
@@ -561,21 +651,23 @@ const buildDataString = data => {
 
     let formattedData = '';
 
-    for (const prop in data) {
-        formattedData += `${prop}=${data[prop]}|`;
+    for (let [key, value] of Object.entries(data)) {
+        formattedData += `${key}=${value}|`;
     }
 
-    return formattedData.substring(0, Math.max(0, formattedData.length - 1));
-}
+    return formattedData.slice(0, -1);
+};
 
 const parseDataString = data => {
     if (data === undefined) {
         return '';
     }
 
-    const dict = {}
+    const dict = {};
+    const split = data.split('|');
 
-    for (const segment of data.split('|')) {
+    for (let i = 0; i < split.length; i++) {
+        const segment = split[i];
         const keyValue = segment.split('=');
         if (keyValue.length !== 2) {
             continue;
@@ -584,16 +676,16 @@ const parseDataString = data => {
     }
 
     return Object.keys(dict).length === 0 ? data : dict;
-}
+};
 
 const validateEnabled = (server, origin) => {
-    const enabled = servers[server.EndPoint] != null && servers[server.EndPoint].enabled;
+    const enabled = servers[server.id] != null && servers[server.id].enabled;
     if (!enabled) {
-        origin.Tell('Game interface is not enabled on this server');
+        origin.tell('Game interface is not enabled on this server');
     }
     return enabled;
-}
+};
 
-function isEmpty(value) {
+const isEmpty = (value) => {
     return value == null || false || value === '' || value === 'null';
-}
+};

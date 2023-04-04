@@ -1,8 +1,8 @@
-﻿using SharedLibraryCore.Interfaces;
-using System;
+﻿using System;
 using System.Linq;
+using SharedLibraryCore.Interfaces;
 
-namespace IW4MAdmin.Application.Misc
+namespace IW4MAdmin.Application.Plugin.Script
 {
     /// <summary>
     /// implementation of IScriptPluginServiceResolver
@@ -25,7 +25,7 @@ namespace IW4MAdmin.Application.Misc
         public object ResolveService(string serviceName, string[] genericParameters)
         {
             var serviceType = DetermineRootType(serviceName, genericParameters.Length);
-            var genericTypes = genericParameters.Select(_genericTypeParam => DetermineRootType(_genericTypeParam));
+            var genericTypes = genericParameters.Select(genericTypeParam => DetermineRootType(genericTypeParam));
             var resolvedServiceType = serviceType.MakeGenericType(genericTypes.ToArray());
             return _serviceProvider.GetService(resolvedServiceType);
         }
@@ -34,8 +34,8 @@ namespace IW4MAdmin.Application.Misc
         {
             var typeCollection = AppDomain.CurrentDomain.GetAssemblies()
                        .SelectMany(t => t.GetTypes());
-            string generatedName = $"{serviceName}{(genericParamCount == 0 ? "" : $"`{genericParamCount}")}".ToLower();
-            var serviceType = typeCollection.FirstOrDefault(_type => _type.Name.ToLower() == generatedName);
+            var generatedName = $"{serviceName}{(genericParamCount == 0 ? "" : $"`{genericParamCount}")}".ToLower();
+            var serviceType = typeCollection.FirstOrDefault(type => type.Name.ToLower() == generatedName);
 
             if (serviceType == null)
             {

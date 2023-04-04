@@ -1,7 +1,7 @@
 const init = (registerEventCallback, serviceResolver, _) => {
     plugin.onLoad(serviceResolver);
 
-    registerEventCallback('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, token) => {
+    registerEventCallback('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => {
         plugin.onPenalty(penaltyEvent);
     });
 
@@ -10,7 +10,7 @@ const init = (registerEventCallback, serviceResolver, _) => {
 
 const plugin = {
     author: 'RaidMax',
-    version: '1.2',
+    version: '2.0',
     name: 'Action on Report',
     enabled: false, // indicates if the plugin is enabled
     reportAction: 'TempBan', // can be TempBan or Ban
@@ -20,7 +20,7 @@ const plugin = {
         'report': 0
     },
 
-    onPenalty: function(penaltyEvent) {
+    onPenalty: function (penaltyEvent) {
         if (!this.enabled || penaltyEvent.penalty.type !== this.penaltyType['report']) {
             return;
         }
@@ -48,7 +48,7 @@ const plugin = {
         }
     },
 
-    onLoad: function(serviceResolver) {
+    onLoad: function (serviceResolver) {
         this.translations = serviceResolver.resolveService('ITranslationLookup');
         this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
         this.logger.logInformation('ActionOnReport {version} by {author} loaded. Enabled={enabled}', this.version, this.author, this.enabled);

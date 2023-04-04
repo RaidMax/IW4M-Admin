@@ -2,22 +2,23 @@ let vpnExceptionIds = [];
 const vpnAllowListKey = 'Webfront::Nav::Admin::VPNAllowList';
 const vpnWhitelistKey = 'Webfront::Profile::VPNWhitelist';
 
-const init = (registerNotify, serviceResolver, config) => {
-    registerNotify('IManagementEventSubscriptions.ClientStateAuthorized', (authorizedEvent, _) => plugin.onClientAuthorized(authorizedEvent));
+const init = (registerNotify, serviceResolver, config, pluginHelper) => {
+    registerNotify('IManagementEventSubscriptions.ClientStateAuthorized', (authorizedEvent, token) => plugin.onClientAuthorized(authorizedEvent, token));
 
-    plugin.onLoad(serviceResolver, config);
+    plugin.onLoad(serviceResolver, config, pluginHelper);
     return plugin;
 };
 
 const plugin = {
     author: 'RaidMax',
-    version: '1.6',
+    version: '2.0',
     name: 'VPN Detection Plugin',
     manager: null,
     config: null,
     logger: null,
     serviceResolver: null,
     translations: null,
+    pluginHelper: null,
 
     commands: [{
         name: 'whitelistvpn',
@@ -58,7 +59,7 @@ const plugin = {
     interactions: [{
         // registers the profile action
         name: vpnWhitelistKey,
-        action: function(targetId, game, token) {
+        action: function (targetId, game, token) {
             const helpers = importNamespace('SharedLibraryCore.Helpers');
             const interactionData = new helpers.InteractionData();
 
@@ -91,7 +92,7 @@ const plugin = {
     },
         {
             name: vpnAllowListKey,
-            action: function(targetId, game, token) {
+            action: function (targetId, game, token) {
                 const helpers = importNamespace('SharedLibraryCore.Helpers');
                 const interactionData = new helpers.InteractionData();
 
@@ -146,13 +147,17 @@ const plugin = {
         }
     ],
 
-    onClientAuthorized: function(authorizeEvent) {
-        this.checkForVpn(authorizeEvent.client);
+    onClientAuthorized: async function (authorizeEvent, token) {
+        if (authorizeEvent.client.isBot) {
+            return;
+        }
+        await this.checkForVpn(authorizeEvent.client, token);
     },
 
-    onLoad: function(serviceResolver, config) {
+    onLoad: function (serviceResolver, config, pluginHelper) {
         this.serviceResolver = serviceResolver;
         this.config = config;
+        this.pluginHelper = pluginHelper;
         this.manager = this.serviceResolver.resolveService('IManager');
         this.logger = this.serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
         this.translations = this.serviceResolver.resolveService('ITranslationLookup');
@@ -166,10 +171,10 @@ const plugin = {
         this.interactionRegistration.unregisterInteraction(vpnAllowListKey);
     },
 
-    checkForVpn: function(origin) {
+    checkForVpn: async function (origin, token) {
         let exempt = false;
         // prevent players that are exempt from being kicked
-        vpnExceptionIds.forEach(function(id) {
+        vpnExceptionIds.forEach(function (id) {
             if (parseInt(id) === parseInt(origin.clientId)) {
                 exempt = true;
                 return false;
@@ -181,25 +186,40 @@ const plugin = {
             return;
         }
 
-        let usingVPN = false;
-
-        try {
-            const cl = new System.Net.Http.HttpClient();
-            const re = cl.getAsync(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`).result;
-            const userAgent = `IW4MAdmin-${this.manager.getApplicationSettings().configuration().id}`;
-            cl.defaultRequestHeaders.add('User-Agent', userAgent);
-            const co = re.content;
-            const parsedJSON = JSON.parse(co.readAsStringAsync().result);
-            co.dispose();
-            re.dispose();
-            cl.dispose();
-            usingVPN = parsedJSON.success && parsedJSON.proxy;
-        } catch (ex) {
-            this.logger.logWarning('There was a problem checking client IP for VPN {message}', ex.message);
+        if (origin.IPAddressString === null) {
+            this.logger.logDebug('{Client} does not have an IP Address yet, so we are no checking their VPN status', origin);
         }
 
+        const userAgent = `IW4MAdmin-${this.manager.getApplicationSettings().configuration().id}`;
+        const headers = {
+            'User-Agent': userAgent
+        };
+
+        try {
+            this.pluginHelper.getUrl(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`, headers,
+                (response) => this.onVpnResponse(response, origin));
+
+        } catch (ex) {
+            this.logger.logWarning('There was a problem checking client IP ({IP}) for VPN - {message}',
+                origin.IPAddressString, ex.message);
+        }
+    },
+
+    onVpnResponse: function (response, origin) {
+        let parsedJSON = null;
+
+        try {
+            parsedJSON = JSON.parse(response);
+        } catch {
+            this.logger.logWarning('There was a problem checking client IP ({IP}) for VPN - {message}',
+                origin.IPAddressString, response);
+            return;
+        }
+
+        const usingVPN = parsedJSON.success && parsedJSON.proxy;
+
         if (usingVPN) {
-            this.logger.logInformation('{origin} is using a VPN ({ip})', origin.toString(), origin.ipAddressString);
+            this.logger.logInformation('{origin} is using a VPN ({ip})', origin.toString(), origin.IPAddressString);
             const contactUrl = this.manager.getApplicationSettings().configuration().contactUri;
             let additionalInfo = '';
             if (contactUrl) {
@@ -207,11 +227,11 @@ const plugin = {
             }
             origin.kick(this.translations['SERVER_KICK_VPNS_NOTALLOWED'] + ' ' + additionalInfo, origin.currentServer.asConsoleClient());
         } else {
-            this.logger.logDebug('{client} is not using a VPN', origin);
+            this.logger.logDebug('{Client} is not using a VPN', origin);
         }
     },
 
-    getClientsData: function(clientIds) {
+    getClientsData: function (clientIds) {
         const contextFactory = this.serviceResolver.resolveService('IDatabaseContextFactory');
         const context = contextFactory.createContext(false);
         const clientSet = context.clients;

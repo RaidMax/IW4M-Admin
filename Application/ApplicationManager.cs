@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Context;
 using IW4MAdmin.Application.Migration;
+using IW4MAdmin.Application.Plugin.Script;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;

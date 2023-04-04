@@ -27,11 +27,18 @@ public class InteractionController : BaseController
         }
 
         ViewBag.Title = interactionData.Description;
+        var meta = HttpContext.Request.Query.ToDictionary(key => key.Key, value => value.Value.ToString());
+        var result = await _interactionRegistration.ProcessInteraction(interactionName, Client.ClientId, meta: meta, token: token);
 
-        var result = await _interactionRegistration.ProcessInteraction(interactionName, Client.ClientId, token: token);
-        
-        return interactionData.InteractionType == InteractionType.TemplateContent
-            ? View("Render", result ?? "")
-            : Ok(result);
+        if (interactionData.InteractionType == InteractionType.TemplateContent)
+        {
+            return View("Render", result ?? "");
+        }
+
+        return new ContentResult
+        {
+            Content = result,
+            ContentType = interactionData.DisplayMeta ?? "text/html"
+        };
     }
 }

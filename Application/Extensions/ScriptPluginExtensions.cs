@@ -2,7 +2,6 @@
 using System.Linq;
 using Data.Models.Client.Stats;
 using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore;
 
 namespace IW4MAdmin.Application.Extensions;
 
@@ -25,10 +24,5 @@ public static class ScriptPluginExtensions
         double serverId)
     {
         return set.Where(stat => clientIds.Contains(stat.ClientId) && stat.ServerId == (long)serverId).ToList();
-    }
-
-    public static object GetId(this Server server)
-    {
-        return server.GetIdForServer().GetAwaiter().GetResult();
     }
 }

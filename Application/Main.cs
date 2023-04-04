@@ -30,6 +30,8 @@ using Integrations.Source.Extensions;
 using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Localization;
+using IW4MAdmin.Application.Plugin;
+using IW4MAdmin.Application.Plugin.Script;
 using IW4MAdmin.Application.QueryHelpers;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -321,10 +323,13 @@ namespace IW4MAdmin.Application
                 serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
             }
 
-            // register any script plugins
-            foreach (var plugin in pluginImporter.DiscoverScriptPlugins())
+            var scriptPlugins = pluginImporter.DiscoverScriptPlugins();
+
+            foreach (var scriptPlugin in scriptPlugins)
             {
-                serviceCollection.AddSingleton(plugin);
+                serviceCollection.AddSingleton(scriptPlugin.Item1, sp =>
+                    sp.GetRequiredService<IScriptPluginFactory>()
+                        .CreateScriptPlugin(scriptPlugin.Item1, scriptPlugin.Item2));
             }
 
             // register any eventable types

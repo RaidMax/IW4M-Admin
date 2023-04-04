@@ -1,48 +1,60 @@
-const broadcastMessage = (server, message) => {
-    server.Manager.GetServers().forEach(s => {
-        s.Broadcast(message);
-    });
+const init = (registerNotify, serviceResolver, config) => {
+    registerNotify('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => plugin.onClientPenalty(penaltyEvent));
+
+    plugin.onLoad(serviceResolver, config);
+    return plugin;
 };
 
 const plugin = {
-    author: 'Amos',
-    version: 1.0,
+    author: 'Amos, RaidMax',
+    version: '2.0',
     name: 'Broadcast Bans',
+    config: null,
+    logger: null,
+    translations: null,
+    manager: null,
 
-    onEventAsync: function (gameEvent, server) {
+    onClientPenalty: function (penaltyEvent) {
         if (!this.enableBroadcastBans) {
             return;
         }
 
-        if (gameEvent.TypeName === 'Ban') {
-            let penalty = undefined;
-            gameEvent.Origin.AdministeredPenalties?.forEach(p => {
-                penalty = p.AutomatedOffense;
-            })
+        let automatedPenaltyMessage;
 
-            if (gameEvent.Origin.ClientId === 1 && penalty !== undefined) {
-                let localization = _localization.LocalizationIndex['PLUGINS_BROADCAST_BAN_ACMESSAGE'].replace('{{targetClient}}', gameEvent.Target.CleanedName);
-                broadcastMessage(server, localization);
-            } else {
-                let localization = _localization.LocalizationIndex['PLUGINS_BROADCAST_BAN_MESSAGE'].replace('{{targetClient}}', gameEvent.Target.CleanedName);
-                broadcastMessage(server, localization);
-            }
+        penaltyEvent.penalty.punisher.administeredPenalties?.forEach(penalty => {
+            automatedPenaltyMessage = penalty.automatedOffense;
+        });
+
+        if (penaltyEvent.penalty.punisher.clientId === 1 && automatedPenaltyMessage !== undefined) {
+            let message = this.translations['PLUGINS_BROADCAST_BAN_ACMESSAGE'].replace('{{targetClient}}', penaltyEvent.client.cleanedName);
+            this.broadcastMessage(message);
+        } else {
+            let message = this.translations['PLUGINS_BROADCAST_BAN_MESSAGE'].replace('{{targetClient}}', penaltyEvent.client.cleanedName);
+            this.broadcastMessage(message);
         }
     },
 
-    onLoadAsync: function (manager) {
-        this.configHandler = _configHandler;
-        this.enableBroadcastBans = this.configHandler.GetValue('EnableBroadcastBans');
+    broadcastMessage: function (message) {
+        this.manager.getServers().forEach(server => {
+            server.broadcast(message);
+        });
+    },
+
+    onLoad: function (serviceResolver, config) {
+        this.config = config;
+        this.config.setName(this.name);
+        this.enableBroadcastBans = this.config.getValue('EnableBroadcastBans');
+
+        this.manager = serviceResolver.resolveService('IManager');
+        this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
+        this.translations = serviceResolver.resolveService('ITranslationLookup');
 
         if (this.enableBroadcastBans === undefined) {
             this.enableBroadcastBans = false;
-            this.configHandler.SetValue('EnableBroadcastBans', this.enableBroadcastBans);
+            this.config.setValue('EnableBroadcastBans', this.enableBroadcastBans);
         }
-    },
 
-    onUnloadAsync: function () {
-    },
-
-    onTickAsync: function (server) {
+        this.logger.logInformation('{Name} {Version} by {Author} loaded. Enabled={enabled}', this.name, this.version,
+            this.author, this.enableBroadcastBans);
     }
 };

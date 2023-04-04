@@ -6,8 +6,9 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IW4MAdmin.Application.Misc;
+namespace IW4MAdmin.Application.Plugin.Script;
 
+[Obsolete("This architecture is superseded by the request notify delay architecture")]
 public class ScriptPluginTimerHelper : IScriptPluginTimerHelper
 {
     private Timer _timer;

@@ -1,12 +1,4 @@
 ﻿using System;
-using Jint;
-using Jint.Native;
-using Jint.Runtime;
-using Microsoft.CSharp.RuntimeBinder;
-using SharedLibraryCore;
-using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Exceptions;
-using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,13 +6,25 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
+using IW4MAdmin.Application.Configuration;
 using IW4MAdmin.Application.Extensions;
+using IW4MAdmin.Application.Misc;
+using Jint;
+using Jint.Native;
+using Jint.Runtime;
 using Jint.Runtime.Interop;
+using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using SharedLibraryCore;
+using SharedLibraryCore.Commands;
+using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IW4MAdmin.Application.Misc
+namespace IW4MAdmin.Application.Plugin.Script
 {
     /// <summary>
     /// implementation of IPlugin
@@ -70,7 +74,7 @@ namespace IW4MAdmin.Application.Misc
         }
 
         public async Task Initialize(IManager manager, IScriptCommandFactory scriptCommandFactory,
-            IScriptPluginServiceResolver serviceResolver)
+            IScriptPluginServiceResolver serviceResolver, IConfigurationHandlerV2<ScriptPluginConfiguration> configHandler)
         {
             try
             {
@@ -130,11 +134,17 @@ namespace IW4MAdmin.Application.Misc
                         .AddObjectConverter(new PermissionLevelToStringConverter()));
 
                 _scriptEngine.Execute(script);
+                if (!_scriptEngine.GetValue("init").IsUndefined())
+                {
+                    // this is a v2 plugin and we don't want to try to load it
+                    Watcher.EnableRaisingEvents = false;
+                    Watcher.Dispose();
+                    return;
+                }
                 _scriptEngine.SetValue("_localization", Utilities.CurrentLocalization);
                 _scriptEngine.SetValue("_serviceResolver", serviceResolver);
-                _scriptEngine.SetValue("_lock", _onProcessing);
                 dynamic pluginObject = _scriptEngine.Evaluate("plugin").ToObject();
-
+                
                 Author = pluginObject.author;
                 Name = pluginObject.name;
                 Version = (float)pluginObject.version;
@@ -191,8 +201,7 @@ namespace IW4MAdmin.Application.Misc
 
                 catch (RuntimeBinderException)
                 {
-                    var configWrapper = new ScriptPluginConfigurationWrapper(Name, _scriptEngine);
-                    await configWrapper.InitializeAsync();
+                    var configWrapper = new ScriptPluginConfigurationWrapper(Name, _scriptEngine, configHandler);
 
                     if (!loadComplete)
                     {
@@ -252,7 +261,7 @@ namespace IW4MAdmin.Application.Misc
 
             try
             {
-                await _onProcessing.WaitAsync();
+                await _onProcessing.WaitAsync(Utilities.DefaultCommandTimeout / 2);
                 shouldRelease = true;
                 WrapJavaScriptErrorHandling(() =>
                 {
@@ -269,7 +278,6 @@ namespace IW4MAdmin.Application.Misc
                     _onProcessing.Release(1);
                 }
             }
-            
         }
 
         public Task OnLoadAsync(IManager manager)
@@ -279,8 +287,6 @@ namespace IW4MAdmin.Application.Misc
             WrapJavaScriptErrorHandling(() =>
             {
                 _scriptEngine.SetValue("_manager", manager);
-                _scriptEngine.SetValue("getDvar", BeginGetDvar);
-                _scriptEngine.SetValue("setDvar", BeginSetDvar);
                 return _scriptEngine.Evaluate("plugin.onLoadAsync(_manager)");
             });
 
@@ -289,12 +295,6 @@ namespace IW4MAdmin.Application.Misc
 
         public Task OnTickAsync(Server server)
         {
-            WrapJavaScriptErrorHandling(() =>
-            {
-                _scriptEngine.SetValue("_server", server);
-                return _scriptEngine.Evaluate("plugin.onTickAsync(_server)");
-            });
-
             return Task.CompletedTask;
         }
 
@@ -415,10 +415,10 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 string permission = dynamicCommand.permission;
-                List<Server.Game> supportedGames = null;
+                List<Reference.Game> supportedGames = null;
                 var targetRequired = false;
 
-                var args = new List<(string, bool)>();
+                var args = new List<CommandArgument>();
                 dynamic arguments = null;
 
                 try
@@ -445,7 +445,7 @@ namespace IW4MAdmin.Application.Misc
                 {
                     foreach (var arg in dynamicCommand.arguments)
                     {
-                        args.Add((arg.name, (bool)arg.required));
+                        args.Add(new CommandArgument { Name = arg.name, Required = (bool)arg.required });
                     }
                 }
 
@@ -453,8 +453,8 @@ namespace IW4MAdmin.Application.Misc
                 {
                     foreach (var game in dynamicCommand.supportedGames)
                     {
-                        supportedGames ??= new List<Server.Game>();
-                        supportedGames.Add(Enum.Parse(typeof(Server.Game), game.ToString()));
+                        supportedGames ??= new List<Reference.Game>();
+                        supportedGames.Add(Enum.Parse(typeof(Reference.Game), game.ToString()));
                     }
                 }
                 catch (RuntimeBinderException)
@@ -507,173 +507,10 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 commandList.Add(scriptCommandFactory.CreateScriptCommand(name, alias, description, permission,
-                    targetRequired, args, Execute, supportedGames?.ToArray()));
+                    targetRequired, args, Execute, supportedGames));
             }
 
             return commandList;
-        }
-
-        private void BeginGetDvar(Server server, string dvarName, Delegate onCompleted)
-        {
-            var operationTimeout = TimeSpan.FromSeconds(5);
-
-            void OnComplete(IAsyncResult result)
-            {
-                try
-                {
-                    _onProcessing.Wait();
-
-                    var (success, value) = (ValueTuple<bool, string>)result.AsyncState;
-                    onCompleted.DynamicInvoke(JsValue.Undefined,
-                        new[]
-                        {
-                            JsValue.FromObject(_scriptEngine, server),
-                            JsValue.FromObject(_scriptEngine, dvarName),
-                            JsValue.FromObject(_scriptEngine, value),
-                            JsValue.FromObject(_scriptEngine, success)
-                        });
-                }
-                catch (JavaScriptException ex)
-                {
-                    using (LogContext.PushProperty("Server", server.ToString()))
-                    {
-                        _logger.LogError(ex, "Could not invoke BeginGetDvar callback for {Filename} {@Location}",
-                            Path.GetFileName(_fileName), ex.Location);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Could not complete {BeginGetDvar} for {Class}", nameof(BeginGetDvar), Name);
-                }
-                finally
-                {
-                    if (_onProcessing.CurrentCount == 0)
-                    {
-                        _onProcessing.Release(1);
-                    }
-                }
-            }
-
-            new Thread(() =>
-            {
-                if (DateTime.Now - (server.MatchEndTime ?? server.MatchStartTime) < TimeSpan.FromSeconds(15))
-                {
-                    using (LogContext.PushProperty("Server", server.ToString()))
-                    {
-                        _logger.LogDebug("Not getting DVar because match recently ended");
-                    }
-
-                    OnComplete(new AsyncResult
-                    {
-                        IsCompleted = false,
-                        AsyncState = (false, (string)null)
-                    });
-                }
-
-                using var tokenSource = new CancellationTokenSource();
-                tokenSource.CancelAfter(operationTimeout);
-
-                server.GetDvarAsync<string>(dvarName, token: tokenSource.Token).ContinueWith(action =>
-                {
-                    if (action.IsCompletedSuccessfully)
-                    {
-                        OnComplete(new AsyncResult
-                        {
-                            IsCompleted = true,
-                            AsyncState = (true, action.Result.Value)
-                        });
-                    }
-                    else
-                    {
-                        OnComplete(new AsyncResult
-                        {
-                            IsCompleted = false,
-                            AsyncState = (false, (string)null)
-                        });
-                    }
-                });
-            }).Start();
-        }
-
-        private void BeginSetDvar(Server server, string dvarName, string dvarValue, Delegate onCompleted)
-        {
-            var operationTimeout = TimeSpan.FromSeconds(5);
-
-            void OnComplete(IAsyncResult result)
-            {
-                try
-                {
-                    _onProcessing.Wait();
-                    var success = (bool)result.AsyncState;
-                    onCompleted.DynamicInvoke(JsValue.Undefined,
-                        new[]
-                        {
-                            JsValue.FromObject(_scriptEngine, server),
-                            JsValue.FromObject(_scriptEngine, dvarName),
-                            JsValue.FromObject(_scriptEngine, dvarValue),
-                            JsValue.FromObject(_scriptEngine, success)
-                        });
-                }
-                catch (JavaScriptException ex)
-                {
-                    using (LogContext.PushProperty("Server", server.ToString()))
-                    {
-                        _logger.LogError(ex, "Could complete BeginSetDvar for {Filename} {@Location}",
-                            Path.GetFileName(_fileName), ex.Location);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Could not complete {BeginSetDvar} for {Class}", nameof(BeginSetDvar), Name);
-                }
-                finally
-                {
-                    if (_onProcessing.CurrentCount == 0)
-                    {
-                        _onProcessing.Release(1);
-                    }
-                }
-            }
-
-            new Thread(() =>
-            {
-                if (DateTime.Now - (server.MatchEndTime ?? server.MatchStartTime) < TimeSpan.FromSeconds(15))
-                {
-                    using (LogContext.PushProperty("Server", server.ToString()))
-                    {
-                        _logger.LogDebug("Not setting DVar because match recently ended");
-                    }
-
-                    OnComplete(new AsyncResult
-                    {
-                        IsCompleted = false,
-                        AsyncState = false
-                    });
-                }
-
-                using var tokenSource = new CancellationTokenSource();
-                tokenSource.CancelAfter(operationTimeout);
-
-                server.SetDvarAsync(dvarName, dvarValue, token: tokenSource.Token).ContinueWith(action =>
-                {
-                    if (action.IsCompletedSuccessfully)
-                    {
-                        OnComplete(new AsyncResult
-                        {
-                            IsCompleted = true,
-                            AsyncState = true
-                        });
-                    }
-                    else
-                    {
-                        OnComplete(new AsyncResult
-                        {
-                            IsCompleted = false,
-                            AsyncState = false
-                        });
-                    }
-                });
-            }).Start();
         }
 
         private T WrapJavaScriptErrorHandling<T>(Func<T> work, object additionalData = null, Server server = null,

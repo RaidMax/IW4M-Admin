@@ -22,36 +22,36 @@ namespace WebfrontCore.Controllers
         [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult ClientActivity(long id)
         {
-            var s = Manager.GetServers().FirstOrDefault(_server => _server.EndPoint == id);
+            var matchingServer = Manager.GetServers().FirstOrDefault(server => server.EndPoint == id);
 
-            if (s == null)
+            if (matchingServer == null)
             {
                 return NotFound();
             }
 
             var serverInfo = new ServerInfo
             {
-                Name = s.Hostname,
-                ID = s.EndPoint,
-                Port = s.Port,
-                Map = s.CurrentMap.Alias,
-                Game = (Reference.Game)s.GameName,
-                ClientCount = s.Clients.Count(client => client != null),
-                MaxClients = s.MaxClients,
-                GameType = s.GametypeName,
-                Players = s.GetClientsAsList()
-                    .Select(p => new PlayerInfo
+                Name = matchingServer.Hostname,
+                ID = matchingServer.EndPoint,
+                Port = matchingServer.ListenPort,
+                Map = matchingServer.CurrentMap?.Alias,
+                Game = (Reference.Game)matchingServer.GameName,
+                ClientCount = matchingServer.ClientNum,
+                MaxClients = matchingServer.MaxClients,
+                GameType = matchingServer.GametypeName,
+                Players = matchingServer.GetClientsAsList()
+                    .Select(client => new PlayerInfo
                     {
-                        Name = p.Name,
-                        ClientId = p.ClientId,
-                        Level = p.Level.ToLocalizedLevelName(),
-                        LevelInt = (int) p.Level,
-                        ZScore = p.GetAdditionalProperty<EFClientStatistics>(StatManager
+                        Name = client.Name,
+                        ClientId = client.ClientId,
+                        Level = client.Level.ToLocalizedLevelName(),
+                        LevelInt = (int)client.Level,
+                        ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager
                             .CLIENT_STATS_KEY)?.ZScore
                     }).ToList(),
-                ChatHistory = s.ChatHistory.ToList(),
-                ClientHistory = s.ClientHistory,
-                IsPasswordProtected = !string.IsNullOrEmpty(s.GamePassword)
+                ChatHistory = matchingServer.ChatHistory.ToList(),
+                ClientHistory = matchingServer.ClientHistory,
+                IsPasswordProtected = !string.IsNullOrEmpty(matchingServer.GamePassword)
             };
             return PartialView("_ClientActivity", serverInfo);
         }

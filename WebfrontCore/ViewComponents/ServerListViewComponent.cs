@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using Data.Models;
 using Data.Models.Client.Stats;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using static SharedLibraryCore.Server;
@@ -68,10 +69,10 @@ namespace WebfrontCore.ViewComponents
                 {
                     Name = server.Hostname,
                     ID = server.EndPoint,
-                    Port = server.Port,
-                    Map = server.CurrentMap.Alias,
+                    Port = server.ListenPort,
+                    Map = server.CurrentMap?.Alias,
                     Game = (Reference.Game)server.GameName,
-                    ClientCount = server.Clients.Count(client => client != null),
+                    ClientCount = server.ClientNum,
                     MaxClients = server.MaxClients,
                     GameType = server.GametypeName,
                     ClientHistory = new ClientHistoryInfo
@@ -80,15 +81,14 @@ namespace WebfrontCore.ViewComponents
                         ClientCounts = counts.ToList()
                     },
                     Players = server.GetClientsAsList()
-                        .Select(p => new PlayerInfo()
+                        .Select(client => new PlayerInfo
                         {
-                            Name = p.Name,
-                            ClientId = p.ClientId,
-                            Level = p.Level.ToLocalizedLevelName(),
-                            LevelInt = (int) p.Level,
-                            Tag = p.Tag,
-                            ZScore = p.GetAdditionalProperty<EFClientStatistics>(IW4MAdmin.Plugins.Stats.Helpers
-                                .StatManager
+                            Name = client.Name,
+                            ClientId = client.ClientId,
+                            Level = client.Level.ToLocalizedLevelName(),
+                            LevelInt = (int)client.Level,
+                            Tag = client.Tag,
+                            ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager
                                 .CLIENT_STATS_KEY)?.ZScore
                         }).ToList(),
                     ChatHistory = server.ChatHistory.ToList(),
@@ -97,7 +97,7 @@ namespace WebfrontCore.ViewComponents
                     ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP,
                     ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                         server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP,
-                        server.Port)
+                        server.ListenPort)
                 });
             }
 

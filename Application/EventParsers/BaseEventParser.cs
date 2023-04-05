@@ -306,7 +306,7 @@ namespace IW4MAdmin.Application.EventParsers
             };
         }
 
-        private GameEvent? ParseJoinTeamEvent(string logLine, long gameTime)
+        private GameEvent ParseJoinTeamEvent(string logLine, long gameTime)
         {
             var match = Configuration.JoinTeam.PatternMatcher.Match(logLine);
 
@@ -360,7 +360,7 @@ namespace IW4MAdmin.Application.EventParsers
             };
         }
 
-        private GameEvent? ParseClientEnterMatchEvent(string logLine, long gameTime)
+        private GameEvent ParseClientEnterMatchEvent(string logLine, long gameTime)
         {
             var match = Configuration.Join.PatternMatcher.Match(logLine);
 
@@ -409,7 +409,7 @@ namespace IW4MAdmin.Application.EventParsers
 
         #region DAMAGE
 
-        private GameEvent? ParseDamageEvent(string logLine, long gameTime)
+        private GameEvent ParseDamageEvent(string logLine, long gameTime)
         {
             var match = Configuration.Damage.PatternMatcher.Match(logLine);
 

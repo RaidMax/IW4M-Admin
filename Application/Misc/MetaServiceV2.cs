@@ -7,10 +7,7 @@ using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SharedLibraryCore;
-using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
@@ -22,7 +19,6 @@ public class MetaServiceV2 : IMetaServiceV2
 {
     private readonly IDictionary<MetaType, List<dynamic>> _metaActions;
     private readonly IDatabaseContextFactory _contextFactory;
-    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
 
     public MetaServiceV2(ILogger<MetaServiceV2> logger, IDatabaseContextFactory contextFactory, IServiceProvider serviceProvider)
@@ -30,7 +26,6 @@ public class MetaServiceV2 : IMetaServiceV2
         _logger = logger;
         _metaActions = new Dictionary<MetaType, List<dynamic>>();
         _contextFactory = contextFactory;
-        _serviceProvider = serviceProvider;
     }
 
     public async Task SetPersistentMeta(string metaKey, string metaValue, int clientId,
@@ -69,26 +64,6 @@ public class MetaServiceV2 : IMetaServiceV2
         }
 
         await context.SaveChangesAsync(token);
-            
-            
-        var manager = _serviceProvider.GetRequiredService<IManager>();
-        var matchingClient = manager.GetActiveClients().FirstOrDefault(client => client.ClientId == clientId);
-        var server = matchingClient?.CurrentServer ?? manager.GetServers().FirstOrDefault();
-
-        if (server is not null)
-        {
-            manager.AddEvent(new GameEvent
-            {
-                Type = GameEvent.EventType.MetaUpdated,
-                Origin = matchingClient ?? new EFClient
-                {
-                    ClientId = clientId
-                },
-                Data = metaValue,
-                Extra = metaKey,
-                Owner = server
-            });
-        }
     }
 
     public async Task SetPersistentMetaValue<T>(string metaKey, T metaValue, int clientId,

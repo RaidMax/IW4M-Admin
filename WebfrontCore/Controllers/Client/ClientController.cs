@@ -143,8 +143,8 @@ namespace WebfrontCore.Controllers
                 ConnectProtocolUrl = ingameClient?.CurrentServer.EventParser.URLProtocolFormat.FormatExt(
                     ingameClient.CurrentServer.ResolvedIpEndPoint.Address.IsInternal()
                         ? Program.Manager.ExternalIPAddress
-                        : ingameClient.CurrentServer.IP,
-                    ingameClient.CurrentServer.Port),
+                        : ingameClient.CurrentServer.ListenAddress,
+                    ingameClient.CurrentServer.ListenPort),
                 CurrentServerName = ingameClient?.CurrentServer?.Hostname,
                 GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString),
                 NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null: note,

@@ -93,10 +93,10 @@ namespace WebfrontCore.ViewComponents
                         }).ToList(),
                     ChatHistory = server.ChatHistory.ToList(),
                     Online = !server.Throttled,
-                    IPAddress = server.IP,
-                    ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP,
+                    IPAddress = server.ListenAddress,
+                    ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.ListenAddress,
                     ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
-                        server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.IP,
+                        server.ResolvedIpEndPoint.Address.IsInternal() ? Program.Manager.ExternalIPAddress : server.ListenAddress,
                         server.ListenPort)
                 });
             }

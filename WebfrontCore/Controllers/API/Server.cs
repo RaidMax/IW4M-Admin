@@ -23,9 +23,9 @@ namespace WebfrontCore.Controllers.API
             return new JsonResult(Manager.GetServers().Select(server => new
             {
                 Id = server.EndPoint,
-                server.Hostname,
-                server.IP,
-                server.Port,
+                server.ServerName,
+                server.ListenAddress,
+                server.ListenPort,
                 Game = server.GameName.ToString(),
                 server.ClientNum,
                 server.MaxClients,
@@ -52,9 +52,9 @@ namespace WebfrontCore.Controllers.API
             return new JsonResult(new
             {
                 Id = foundServer.EndPoint,
-                foundServer.Hostname,
-                foundServer.IP,
-                foundServer.Port,
+                foundServer.ServerName,
+                foundServer.ListenAddress,
+                foundServer.ListenPort,
                 Game = foundServer.GameName.ToString(),
                 foundServer.ClientNum,
                 foundServer.MaxClients,

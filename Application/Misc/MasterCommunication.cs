@@ -103,17 +103,15 @@ namespace IW4MAdmin.Application.Misc
                         await UploadStatus();
                     }
                 }
-
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Could not send heartbeat");
+                    _logger.LogWarning("Could not send heartbeat - {Message}", ex.Message);
                 }
 
                 try
                 {
                     await Task.Delay(Interval, token);
                 }
-
                 catch
                 {
                     break;
@@ -149,13 +147,13 @@ namespace IW4MAdmin.Application.Misc
                                 Map = s.CurrentMap.Name,
                                 MaxClientNum = s.MaxClients,
                                 Id = s.EndPoint,
-                                Port = (short)s.Port,
-                                IPAddress = s.IP
+                                Port = (short)s.ListenPort,
+                                IPAddress = s.ListenAddress
                             }).ToList(),
                 WebfrontUrl = _appConfig.WebfrontUrl
             };
 
-            Response<ResultMessage> response = null;
+            Response<ResultMessage> response;
 
             if (_firstHeartBeat)
             {
@@ -170,7 +168,7 @@ namespace IW4MAdmin.Application.Misc
 
             if (response.ResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                _logger.LogWarning("Non success response code from master is {statusCode}, message is {message}", response.ResponseMessage.StatusCode, response.StringContent);
+                _logger.LogWarning("Non success response code from master is {StatusCode}, message is {Message}", response.ResponseMessage.StatusCode, response.StringContent);
             }
         }
     }

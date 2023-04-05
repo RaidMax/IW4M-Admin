@@ -85,9 +85,14 @@ namespace SharedLibraryCore
             InitializeAutoMessages();
         }
 
-        public long EndPoint => IPAddress.TryParse(IP, out _)
-            ? Convert.ToInt64($"{IP.Replace(".", "")}{Port}")
-            : $"{IP.Replace(".", "")}{Port}".GetStableHashCode();
+        public long EndPoint => IPAddress.TryParse(ListenAddress, out _)
+            ? Convert.ToInt64($"{ListenAddress!.Replace(".", "")}{ListenPort}")
+            : $"{ListenAddress!.Replace(".", "")}{ListenPort}".GetStableHashCode();
+
+        public long LegacyEndpoint => EndPoint;
+
+        public abstract long LegacyDatabaseId { get; }
+        public string Id => $"{ListenAddress}:{ListenPort}";
 
         // Objects
         public IManager Manager { get; protected set; }
@@ -141,6 +146,8 @@ namespace SharedLibraryCore
         ///     this is actually the hostname now
         /// </summary>
         public string IP { get; protected set; }
+
+        public string ListenAddress => IP;
 
         public IPEndPoint ResolvedIpEndPoint { get; protected set; }
         public string Version { get; protected set; }
@@ -391,7 +398,7 @@ namespace SharedLibraryCore
 
         public override string ToString()
         {
-            return $"{IP}:{Port}";
+            return $"{ListenAddress}:{ListenPort}";
         }
 
         protected async Task<bool> ScriptLoaded()

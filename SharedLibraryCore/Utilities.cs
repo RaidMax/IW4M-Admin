@@ -1242,7 +1242,7 @@ namespace SharedLibraryCore
 
             var serverConfig = appConfig.Servers?
                 .FirstOrDefault(configServer =>
-                    configServer.IPAddress == server.IP && configServer.Port == server.Port);
+                    configServer.IPAddress == server.ListenAddress && configServer.Port == server.ListenPort);
 
             var allRules = appConfig.GlobalRules?.ToList() ?? new List<string>();
             if (serverConfig?.Rules != null)

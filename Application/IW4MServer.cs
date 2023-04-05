@@ -307,12 +307,12 @@ namespace IW4MAdmin
 
                     if (!Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                     {
-                        Console.WriteLine(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{IP}:{Port}"));
+                        Console.WriteLine(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{ListenAddress}:{ListenPort}"));
                         
                         var alert = Alert.AlertState.Build().OfType(E.Type.ToString())
                             .WithCategory(Alert.AlertCategory.Error)
                             .FromSource("System")
-                            .WithMessage(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{IP}:{Port}"))
+                            .WithMessage(loc["SERVER_ERROR_COMMUNICATION"].FormatExt($"{ListenAddress}:{ListenPort}"))
                             .ExpiresIn(TimeSpan.FromDays(1));
                         
                         Manager.AlertManager.AddAlert(alert);
@@ -328,12 +328,12 @@ namespace IW4MAdmin
                     
                     if (!Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                     {
-                        Console.WriteLine(loc["MANAGER_CONNECTION_REST"].FormatExt($"{IP}:{Port}"));
+                        Console.WriteLine(loc["MANAGER_CONNECTION_REST"].FormatExt($"{ListenAddress}:{ListenPort}"));
                         
                         var alert = Alert.AlertState.Build().OfType(E.Type.ToString())
                             .WithCategory(Alert.AlertCategory.Information)
                             .FromSource("System")
-                            .WithMessage(loc["MANAGER_CONNECTION_REST"].FormatExt($"{IP}:{Port}"))
+                            .WithMessage(loc["MANAGER_CONNECTION_REST"].FormatExt($"{ListenAddress}:{ListenPort}"))
                             .ExpiresIn(TimeSpan.FromDays(1));
 
                         Manager.AlertManager.AddAlert(alert);
@@ -1159,7 +1159,7 @@ namespace IW4MAdmin
                     ServerLogger.LogError(e, "Unexpected exception occured during processing updates");
                 }
 
-                Console.WriteLine(loc["SERVER_ERROR_EXCEPTION"].FormatExt($"[{IP}:{Port}]"));
+                Console.WriteLine(loc["SERVER_ERROR_EXCEPTION"].FormatExt($"[{ListenAddress}:{ListenPort}]"));
                 return false;
             }
         }
@@ -1198,13 +1198,13 @@ namespace IW4MAdmin
             {
                 ResolvedIpEndPoint =
                     new IPEndPoint(
-                        (await Dns.GetHostAddressesAsync(IP)).First(address =>
-                            address.AddressFamily == AddressFamily.InterNetwork), Port);
+                        (await Dns.GetHostAddressesAsync(ListenAddress)).First(address =>
+                            address.AddressFamily == AddressFamily.InterNetwork), ListenPort);
             }
             catch (Exception ex)
             {
-                ServerLogger.LogWarning(ex, "Could not resolve hostname or IP for RCon connection {IP}:{Port}", IP, Port);
-                ResolvedIpEndPoint = new IPEndPoint(IPAddress.Parse(IP), Port);
+                ServerLogger.LogWarning(ex, "Could not resolve hostname or IP for RCon connection {Address}:{Port}", ListenAddress, ListenPort);
+                ResolvedIpEndPoint = new IPEndPoint(IPAddress.Parse(ListenAddress), ListenPort);
             }
 
             RconParser = Manager.AdditionalRConParsers

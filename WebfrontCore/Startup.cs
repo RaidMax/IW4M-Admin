@@ -24,6 +24,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Helpers;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Stats.Client.Abstractions;
 using Stats.Config;
 using WebfrontCore.Controllers.API.Validation;
@@ -64,23 +65,8 @@ namespace WebfrontCore
             }
 
             // Add framework services.
-            var mvcBuilder = services.AddMvc(_options => _options.SuppressAsyncSuffixInActionNames = false)
-                .AddFluentValidation()
-                .ConfigureApplicationPartManager(_partManager =>
-                {
-                    foreach (var assembly in pluginAssemblies())
-                    {
-                        if (assembly.FullName.Contains("Views"))
-                        {
-                            _partManager.ApplicationParts.Add(new CompiledRazorAssemblyPart(assembly));
-                        }
-
-                        else if (assembly.FullName.Contains("Web"))
-                        {
-                            _partManager.ApplicationParts.Add(new AssemblyPart(assembly));
-                        }
-                    }
-                });
+            var mvcBuilder = services.AddMvc(options => options.SuppressAsyncSuffixInActionNames = false);
+            services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 
 #if DEBUG
             {
@@ -109,42 +95,13 @@ namespace WebfrontCore
                     options.Events.OnSignedIn += ClaimsPermissionRemoval.OnSignedIn;
                 });
 
-            services.AddSingleton(Program.Manager);
             services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
             services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
             services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>, AdvancedClientStatsResourceQueryHelper>();
-            services.AddScoped(sp =>
-                Program.ApplicationServiceProvider
-                    .GetRequiredService<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>>());
             services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
-            // todo: this needs to be handled more gracefully
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<DefaultSettings>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ILoggerFactory>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IConfigurationHandlerFactory>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IDatabaseContextFactory>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IAuditInformationRepository>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ITranslationLookup>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IEnumerable<IManagerCommand>>());
-#pragma warning disable CS0618
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaService>());
-#pragma warning restore CS0618
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IMetaServiceV2>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ApplicationConfiguration>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<ClientService>());
-            services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>(); 
-            services.AddSingleton(
-                Program.ApplicationServiceProvider.GetRequiredService<IServerDistributionCalculator>());
-            services.AddSingleton(Program.ApplicationServiceProvider
-                .GetRequiredService<IConfigurationHandler<DefaultSettings>>());
-            services.AddSingleton(Program.ApplicationServiceProvider
-                .GetRequiredService<IGeoLocationService>());
-            services.AddSingleton(Program.ApplicationServiceProvider
-                            .GetRequiredService<StatsConfiguration>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IServerDataViewer>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IInteractionRegistration>());
-            services.AddSingleton(Program.ApplicationServiceProvider.GetRequiredService<IRemoteCommandService>());
+            services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

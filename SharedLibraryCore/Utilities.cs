@@ -14,10 +14,13 @@ using System.Threading.Tasks;
 using Data.Models;
 using Humanizer;
 using Humanizer.Localisation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
+using SharedLibraryCore.Events.Server;
+using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Localization;
@@ -26,7 +29,6 @@ using static SharedLibraryCore.Server;
 using static Data.Models.Client.EFClient;
 using static Data.Models.EFPenalty;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
-using RegionInfo = System.Globalization.RegionInfo;
 
 namespace SharedLibraryCore
 {
@@ -43,7 +45,7 @@ namespace SharedLibraryCore
         public static Encoding EncodingType;
         public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
 
-        public static TimeSpan DefaultCommandTimeout { get; set; } = new(0, 0, Utilities.IsDevelopment ? 360 : 25);
+        public static TimeSpan DefaultCommandTimeout { get; set; } = new(0, 0, /*Utilities.IsDevelopment ? 360 : */25);
         public static char[] DirectorySeparatorChars = { '\\', '/' };
         public static char CommandPrefix { get; set; } = '!';
 
@@ -58,6 +60,22 @@ namespace SharedLibraryCore
                 State = EFClient.ClientState.Connected,
                 Level = Permission.Console,
                 CurrentServer = server,
+                CurrentAlias = new EFAlias
+                {
+                    Name = "IW4MAdmin"
+                },
+                AdministeredPenalties = new List<EFPenalty>()
+            };
+        }
+
+        public static EFClient AsConsoleClient(this IGameServer server)
+        {
+            return new EFClient
+            {
+                ClientId = 1,
+                State = EFClient.ClientState.Connected,
+                Level = Permission.Console,
+                CurrentServer = server as Server,
                 CurrentAlias = new EFAlias
                 {
                     Name = "IW4MAdmin"
@@ -95,14 +113,19 @@ namespace SharedLibraryCore
 
         /// <summary>
         ///     caps client name to the specified character length - 3
-        ///     and adds ellipses to the end of the reamining client name
+        ///     and adds ellipses to the end of the remaining client name
         /// </summary>
-        /// <param name="str">client name</param>
+        /// <param name="name">client name</param>
         /// <param name="maxLength">max number of characters for the name</param>
         /// <returns></returns>
-        public static string CapClientName(this string str, int maxLength)
+        public static string CapClientName(this string name, int maxLength)
         {
-            return str.Length > maxLength ? $"{str.Substring(0, maxLength - 3)}..." : str;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return "-";
+            }
+            
+            return name.Length > maxLength ? $"{name[..(maxLength - 3)]}..." : name;
         }
 
         public static Permission MatchPermission(string str)
@@ -712,15 +735,21 @@ namespace SharedLibraryCore
 
         public static Dictionary<string, string> DictionaryFromKeyValue(this string eventLine)
         {
-            var values = eventLine.Substring(1).Split('\\');
+            var values = eventLine[1..].Split('\\');
 
-            Dictionary<string, string> dict = null;
+            Dictionary<string, string> dict = new();
 
-            if (values.Length > 1)
+            if (values.Length <= 1)
             {
-                dict = new Dictionary<string, string>();
-                for (var i = values.Length % 2 == 0 ? 0 : 1; i < values.Length; i += 2)
+                return dict;
+            }
+
+            for (var i = values.Length % 2 == 0 ? 0 : 1; i < values.Length; i += 2)
+            {
+                if (!dict.ContainsKey(values[i]))
+                {
                     dict.Add(values[i], values[i + 1]);
+                }
             }
 
             return dict;
@@ -771,11 +800,6 @@ namespace SharedLibraryCore
         {
             return await server.RconParser.GetDvarAsync(server.RemoteConnection, dvarName, fallbackValue, token);
         }
-
-        public static void BeginGetDvar(this Server server, string dvarName, AsyncCallback callback, CancellationToken token = default)
-        {
-            server.RconParser.BeginGetDvar(server.RemoteConnection, dvarName, callback, token);
-        }
         
         public static async Task<Dvar<T>> GetDvarAsync<T>(this Server server, string dvarName,
             T fallbackValue = default)
@@ -807,30 +831,36 @@ namespace SharedLibraryCore
             return await server.GetDvarAsync(mappedKey, defaultValue, token: token);
         }
 
-        public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue, CancellationToken token = default)
+        public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue,
+            CancellationToken token)
         {
             await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token);
         }
 
-        public static void BeginSetDvar(this Server server, string dvarName, object dvarValue,
-            AsyncCallback callback, CancellationToken token = default)
-        {
-            server.RconParser.BeginSetDvar(server.RemoteConnection, dvarName, dvarValue, callback, token);
-        }
-        
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
         {
             await SetDvarAsync(server, dvarName, dvarValue, default);
         }
 
-        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName, CancellationToken token = default)
+        public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName,
+            CancellationToken token)
         {
-            return await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName, token);
+            var response = await server.RconParser.ExecuteCommandAsync(server.RemoteConnection, commandName, token);
+
+            server.Manager.QueueEvent(new ServerCommandExecuteEvent
+            {
+                Server = server,
+                Source = server,
+                Command = commandName,
+                Output = response
+            });
+
+            return response;
         }
-        
+
         public static async Task<string[]> ExecuteCommandAsync(this Server server, string commandName)
         {
-            return await ExecuteCommandAsync(server, commandName, default);
+           return await ExecuteCommandAsync(server, commandName, default);
         }
 
         public static async Task<IStatusResponse> GetStatusAsync(this Server server, CancellationToken token)
@@ -1262,5 +1292,44 @@ namespace SharedLibraryCore
 
         public static string MakeAbbreviation(string gameName) => string.Join("",
             gameName.Split(' ').Select(word => char.ToUpper(word.First())).ToArray());
+
+        public static IServiceCollection AddConfiguration<TConfigurationType>(
+            this IServiceCollection serviceCollection, string fileName = null, TConfigurationType defaultConfig = null)
+            where TConfigurationType : class
+        {
+            serviceCollection.AddSingleton(serviceProvider =>
+            {
+                var configurationHandler =
+                    serviceProvider.GetRequiredService<IConfigurationHandlerV2<TConfigurationType>>();
+
+                var configuration =
+                    Task.Run(() => configurationHandler.Get(fileName ?? typeof(TConfigurationType).Name, defaultConfig))
+                        .GetAwaiter().GetResult();
+
+                if (typeof(TConfigurationType).GetInterface(nameof(IBaseConfiguration)) is not null &&
+                    defaultConfig is null && configuration is null)
+                {
+                    defaultConfig =
+                        (TConfigurationType)((IBaseConfiguration)Activator.CreateInstance<TConfigurationType>())
+                        .Generate();
+                }
+
+                if (defaultConfig is not null && configuration is null)
+                {
+                    Task.Run(() => configurationHandler.Set(defaultConfig)).GetAwaiter().GetResult();
+                    configuration = defaultConfig;
+                }
+
+                if (configuration is null)
+                {
+                    throw new ConfigurationException(
+                        $"Could not register configuration {typeof(TConfigurationType).Name}. Configuration file does not exist and no default configuration was provided.");
+                }
+
+                return configuration;
+            });
+
+            return serviceCollection;
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -27,7 +28,7 @@ public class RemoteCommandService : IRemoteCommandService
     public async Task<IEnumerable<CommandResponseInfo>> Execute(int originId, int? targetId, string command,
         IEnumerable<string> arguments, Server server)
     {
-        var (success, result) = await ExecuteWithResult(originId, targetId, command, arguments, server);
+        var (_, result) = await ExecuteWithResult(originId, targetId, command, arguments, server);
 
         return result;
     }
@@ -56,7 +57,8 @@ public class RemoteCommandService : IRemoteCommandService
                 : $"{_appConfig.CommandPrefix}{command}",
             Origin = client,
             Owner = server,
-            IsRemote = true
+            IsRemote = true,
+            CorrelationId = Guid.NewGuid()
         };
 
         server.Manager.AddEvent(remoteEvent);
@@ -72,7 +74,7 @@ public class RemoteCommandService : IRemoteCommandService
             {
                 response = new[]
                 {
-                    new CommandResponseInfo()
+                    new CommandResponseInfo
                     {
                         ClientId = client.ClientId,
                         Response = Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_COMMAND_TIMEOUT"]
@@ -90,7 +92,7 @@ public class RemoteCommandService : IRemoteCommandService
             }
         }
 
-        catch (System.OperationCanceledException)
+        catch (OperationCanceledException)
         {
             response = new[]
             {

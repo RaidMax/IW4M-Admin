@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -23,12 +24,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Context;
+using Data.Models;
+using IW4MAdmin.Application.Configuration;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Plugin.Script;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using SharedLibraryCore.Events;
+using SharedLibraryCore.Events.Management;
+using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Formatting;
+using SharedLibraryCore.Interfaces.Events;
 using static SharedLibraryCore.GameEvent;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using ObsoleteLogger = SharedLibraryCore.Interfaces.ILogger;
@@ -50,7 +57,7 @@ namespace IW4MAdmin.Application
         public IList<Func<GameEvent, bool>> CommandInterceptors { get; set; } =
             new List<Func<GameEvent, bool>>();
         public ITokenAuthentication TokenAuthenticator { get; }
-        public CancellationToken CancellationToken => _tokenSource.Token;
+        public CancellationToken CancellationToken => _isRunningTokenSource.Token;
         public string ExternalIPAddress { get; private set; }
         public bool IsRestartRequested { get; private set; }
         public IMiddlewareActionHandler MiddlewareActionHandler { get; }
@@ -64,29 +71,30 @@ namespace IW4MAdmin.Application
         public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
         readonly IPageList PageList;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
-        private CancellationTokenSource _tokenSource;
+        private CancellationTokenSource _isRunningTokenSource;
+        private CancellationTokenSource _eventHandlerTokenSource;
         private readonly Dictionary<string, Task<IList>> _operationLookup = new Dictionary<string, Task<IList>>();
         private readonly ITranslationLookup _translationLookup;
         private readonly IConfigurationHandler<CommandConfiguration> _commandConfiguration;
         private readonly IGameServerInstanceFactory _serverInstanceFactory;
         private readonly IParserRegexFactory _parserRegexFactory;
         private readonly IEnumerable<IRegisterEvent> _customParserEvents;
-        private readonly IEventHandler _eventHandler;
+        private readonly ICoreEventHandler _coreEventHandler;
         private readonly IScriptCommandFactory _scriptCommandFactory;
         private readonly IMetaRegistration _metaRegistration;
         private readonly IScriptPluginServiceResolver _scriptPluginServiceResolver;
         private readonly IServiceProvider _serviceProvider;
         private readonly ChangeHistoryService _changeHistoryService;
         private readonly ApplicationConfiguration _appConfig;
-        public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } = new ConcurrentDictionary<long, GameEvent>();
+        public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } = new();
 
         public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
             IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
-            IEventHandler eventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
+            ICoreEventHandler coreEventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
             IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
-            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager, IInteractionRegistration interactionRegistration)
+            ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager, IInteractionRegistration interactionRegistration, IEnumerable<IPluginV2> v2PLugins)
         {
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
@@ -101,14 +109,14 @@ namespace IW4MAdmin.Application
             AdditionalRConParsers = new List<IRConParser> { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
-            _tokenSource = new CancellationTokenSource();
+            _isRunningTokenSource = new CancellationTokenSource();
             _commands = commands.ToList();
             _translationLookup = translationLookup;
             _commandConfiguration = commandConfiguration;
             _serverInstanceFactory = serverInstanceFactory;
             _parserRegexFactory = parserRegexFactory;
             _customParserEvents = customParserEvents;
-            _eventHandler = eventHandler;
+            _coreEventHandler = coreEventHandler;
             _scriptCommandFactory = scriptCommandFactory;
             _metaRegistration = metaRegistration;
             _scriptPluginServiceResolver = scriptPluginServiceResolver;
@@ -117,6 +125,8 @@ namespace IW4MAdmin.Application
             _appConfig = appConfig;
             Plugins = plugins;
             InteractionRegistration = interactionRegistration;
+            
+            IManagementEventSubscriptions.ClientPersistentIdReceived += OnClientPersistentIdReceived;
         }
 
         public IEnumerable<IPlugin> Plugins { get; }
@@ -124,7 +134,7 @@ namespace IW4MAdmin.Application
 
         public async Task ExecuteEvent(GameEvent newEvent)
         {
-            ProcessingEvents.TryAdd(newEvent.Id, newEvent);
+            ProcessingEvents.TryAdd(newEvent.IncrementalId, newEvent);
             
             // the event has failed already
             if (newEvent.Failed)
@@ -142,12 +152,12 @@ namespace IW4MAdmin.Application
 
             catch (TaskCanceledException)
             {
-                _logger.LogDebug("Received quit signal for event id {eventId}, so we are aborting early", newEvent.Id);
+                _logger.LogDebug("Received quit signal for event id {EventId}, so we are aborting early", newEvent.IncrementalId);
             }
 
             catch (OperationCanceledException)
             {
-                _logger.LogDebug("Received quit signal for event id {eventId}, so we are aborting early", newEvent.Id);
+                _logger.LogDebug("Received quit signal for event id {EventId}, so we are aborting early", newEvent.IncrementalId);
             }
 
             // this happens if a plugin requires login
@@ -186,11 +196,11 @@ namespace IW4MAdmin.Application
             }
 
             skip:
-            if (newEvent.Type == EventType.Command && newEvent.ImpersonationOrigin == null)
+            if (newEvent.Type == EventType.Command && newEvent.ImpersonationOrigin == null && newEvent.CorrelationId is not null)
             {
                 var correlatedEvents =
                     ProcessingEvents.Values.Where(ev =>
-                            ev.CorrelationId == newEvent.CorrelationId && ev.Id != newEvent.Id)
+                            ev.CorrelationId == newEvent.CorrelationId && ev.IncrementalId != newEvent.IncrementalId)
                         .ToList();
 
                 await Task.WhenAll(correlatedEvents.Select(ev =>
@@ -199,14 +209,16 @@ namespace IW4MAdmin.Application
 
                 foreach (var correlatedEvent in correlatedEvents)
                 {
-                    ProcessingEvents.Remove(correlatedEvent.Id, out _);
+                    ProcessingEvents.Remove(correlatedEvent.IncrementalId, out _);
                 }
             }
 
             // we don't want to remove events that are correlated to command
-            if (ProcessingEvents.Values.ToList()?.Count(gameEvent => gameEvent.CorrelationId == newEvent.CorrelationId) == 1)
+            if (ProcessingEvents.Values.Count(gameEvent =>
+                    newEvent.CorrelationId is not null && newEvent.CorrelationId == gameEvent.CorrelationId) == 1 ||
+                newEvent.CorrelationId is null)
             {
-                ProcessingEvents.Remove(newEvent.Id, out _);
+                ProcessingEvents.Remove(newEvent.IncrementalId, out _);
             }
 
             // tell anyone waiting for the output that we're done
@@ -226,75 +238,58 @@ namespace IW4MAdmin.Application
 
         public IReadOnlyList<IManagerCommand> Commands => _commands.ToImmutableList();
 
-        public async Task UpdateServerStates()
+        private Task UpdateServerStates()
         {
-            // store the server hash code and task for it
-            var runningUpdateTasks = new Dictionary<long, (Task task, CancellationTokenSource tokenSource, DateTime startTime)>();
-            var timeout = TimeSpan.FromSeconds(60);
-
-            while (!_tokenSource.IsCancellationRequested) // main shutdown requested
+            var index = 0;
+            return Task.WhenAll(_servers.Select(server =>
             {
-                // select the server ids that have completed the update task
-                var serverTasksToRemove = runningUpdateTasks
-                    .Where(ut => ut.Value.task.IsCompleted)
-                    .Select(ut => ut.Key)
-                    .ToList();
-
-                // remove the update tasks as they have completed
-                foreach (var serverId in serverTasksToRemove.Where(serverId => runningUpdateTasks.ContainsKey(serverId)))
-                {
-                    if (!runningUpdateTasks[serverId].tokenSource.Token.IsCancellationRequested)
-                    {
-                        runningUpdateTasks[serverId].tokenSource.Cancel();
-                    }
-
-                    runningUpdateTasks.Remove(serverId);
-                }
-
-                // select the servers where the tasks have completed
-                var newTaskServers = Servers.Select(s => s.EndPoint).Except(runningUpdateTasks.Select(r => r.Key)).ToList();
-                
-                foreach (var server in Servers.Where(s => newTaskServers.Contains(s.EndPoint)))
-                {
-                    var firstTokenSource = new CancellationTokenSource();
-                    firstTokenSource.CancelAfter(timeout);
-                    var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(firstTokenSource.Token, _tokenSource.Token);
-                    runningUpdateTasks.Add(server.EndPoint, (ProcessUpdateHandler(server, linkedTokenSource.Token), linkedTokenSource, DateTime.Now));
-                }
-                
-                try
-                {
-                    await Task.Delay(ConfigHandler.Configuration().RConPollRate, _tokenSource.Token);
-                }
-                // if a cancellation is received, we want to return immediately after shutting down
-                catch
-                {
-                    foreach (var server in Servers.Where(s => newTaskServers.Contains(s.EndPoint)))
-                    {
-                        await server.ProcessUpdatesAsync(_tokenSource.Token);
-                    }
-                    break;
-                }
-            }
+                var thisIndex = index;
+                Interlocked.Increment(ref index);
+                return ProcessUpdateHandler(server, thisIndex);
+            }));
         }
 
-        private async Task ProcessUpdateHandler(Server server, CancellationToken token)
+        private async Task ProcessUpdateHandler(Server server, int index)
         {
-            try
+            const int delayScalar = 50; // Task.Delay is inconsistent enough there's no reason to try to prevent collisions
+            var timeout = TimeSpan.FromMinutes(2);
+
+            while (!_isRunningTokenSource.IsCancellationRequested)
             {
-                await server.ProcessUpdatesAsync(token);
-            }
-            catch (Exception ex)
-            {
-                using (LogContext.PushProperty("Server", server.ToString()))
+                try
                 {
-                    _logger.LogError(ex, "Failed to update status");
+                    var delayFactor = Math.Min(_appConfig.RConPollRate, delayScalar * index);
+                    await Task.Delay(delayFactor, _isRunningTokenSource.Token);
+
+                    using var timeoutTokenSource = new CancellationTokenSource();
+                    timeoutTokenSource.CancelAfter(timeout);
+                    using var linkedTokenSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token,
+                            _isRunningTokenSource.Token);
+                    await server.ProcessUpdatesAsync(linkedTokenSource.Token);
+
+                    await Task.Delay(Math.Max(1000, _appConfig.RConPollRate - delayFactor),
+                        _isRunningTokenSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // ignored
+                }
+                catch (Exception ex)
+                {
+                    using (LogContext.PushProperty("Server", server.Id))
+                    {
+                        _logger.LogError(ex, "Failed to update status");
+                    }
+                }
+                finally
+                {
+                    server.IsInitialized = true;
                 }
             }
-            finally
-            {
-                server.IsInitialized = true;
-            }
+            
+            // run the final updates to clean up server
+            await server.ProcessUpdatesAsync(_isRunningTokenSource.Token);
         }
 
         public async Task Init()
@@ -305,18 +300,24 @@ namespace IW4MAdmin.Application
             #region DATABASE
             _logger.LogInformation("Beginning database migration sync");
             Console.WriteLine(_translationLookup["MANAGER_MIGRATION_START"]);
-            await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
-            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _tokenSource.Token);
+            await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _isRunningTokenSource.Token);
+            await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _isRunningTokenSource.Token);
             _logger.LogInformation("Finished database migration sync");
             Console.WriteLine(_translationLookup["MANAGER_MIGRATION_END"]);
             #endregion
+            
+            #region EVENTS                        
+            IGameServerEventSubscriptions.ServerValueRequested += OnServerValueRequested;
+            IGameServerEventSubscriptions.ServerValueSetRequested += OnServerValueSetRequested;
+            await IManagementEventSubscriptions.InvokeLoadAsync(this, CancellationToken);
+            # endregion
 
             #region PLUGINS
             foreach (var plugin in Plugins)
             {
                 try
                 {
-                    if (plugin is ScriptPlugin scriptPlugin)
+                    if (plugin is ScriptPlugin scriptPlugin && !plugin.IsParser)
                     {
                         await scriptPlugin.Initialize(this, _scriptCommandFactory, _scriptPluginServiceResolver, 
                             _serviceProvider.GetService<IConfigurationHandlerV2<ScriptPluginConfiguration>>());
@@ -391,13 +392,11 @@ namespace IW4MAdmin.Application
                 if (string.IsNullOrEmpty(_appConfig.Id))
                 {
                     _appConfig.Id = Guid.NewGuid().ToString();
-                    await ConfigHandler.Save();
                 }
 
                 if (string.IsNullOrEmpty(_appConfig.WebfrontBindUrl))
                 {
                     _appConfig.WebfrontBindUrl = "http://0.0.0.0:1624";
-                    await ConfigHandler.Save();
                 }
 
 #pragma warning disable 618
@@ -442,8 +441,8 @@ namespace IW4MAdmin.Application
 
                         serverConfig.ModifyParsers();
                     }
-                    await ConfigHandler.Save();
                 }
+                await ConfigHandler.Save();
             }
 
             if (_appConfig.Servers.Length == 0)
@@ -468,7 +467,7 @@ namespace IW4MAdmin.Application
             #endregion
 
             #region COMMANDS
-            if (await ClientSvc.HasOwnerAsync(_tokenSource.Token))
+            if (await ClientSvc.HasOwnerAsync(_isRunningTokenSource.Token))
             {
                 _commands.RemoveAll(_cmd => _cmd.GetType() == typeof(OwnerCommand));
             }
@@ -526,7 +525,7 @@ namespace IW4MAdmin.Application
                 }
             }
             #endregion
-
+            
             Console.WriteLine(_translationLookup["MANAGER_COMMUNICATION_INFO"]);
             await InitializeServers();
             IsInitialized = true;
@@ -543,26 +542,23 @@ namespace IW4MAdmin.Application
                 try
                 {
                     // todo: this might not always be an IW4MServer
-                    var ServerInstance = _serverInstanceFactory.CreateServer(Conf, this) as IW4MServer;
-                    using (LogContext.PushProperty("Server", ServerInstance.ToString()))
+                    var serverInstance = _serverInstanceFactory.CreateServer(Conf, this) as IW4MServer;
+                    using (LogContext.PushProperty("Server", serverInstance!.ToString()))
                     {
                         _logger.LogInformation("Beginning server communication initialization");
-                        await ServerInstance.Initialize();
+                        await serverInstance.Initialize();
 
-                        _servers.Add(ServerInstance);
-                        Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(ServerInstance.Hostname.StripColors()));
-                        _logger.LogInformation("Finishing initialization and now monitoring [{Server}]", ServerInstance.Hostname);
+                        _servers.Add(serverInstance);
+                        Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(serverInstance.Hostname.StripColors()));
+                        _logger.LogInformation("Finishing initialization and now monitoring [{Server}]", serverInstance.Hostname);
                     }
 
-                    // add the start event for this server
-                    var e = new GameEvent()
+                    QueueEvent(new MonitorStartEvent
                     {
-                        Type = EventType.Start,
-                        Data = $"{ServerInstance.GameName} started",
-                        Owner = ServerInstance
-                    };
-
-                    AddEvent(e);
+                        Server = serverInstance,
+                        Source = this
+                    });                    
+                    
                     successServers++;
                 }
 
@@ -593,11 +589,27 @@ namespace IW4MAdmin.Application
             }
         }
 
-        public async Task Start() => await UpdateServerStates();
+        public async Task Start()
+        {
+            _eventHandlerTokenSource = new CancellationTokenSource();
+            
+            var eventHandlerThread = new Thread(() =>
+            {
+                _coreEventHandler.StartProcessing(_eventHandlerTokenSource.Token);
+            })
+            {
+                Name = nameof(CoreEventHandler)
+            };
+
+            eventHandlerThread.Start();
+            await UpdateServerStates();
+            _eventHandlerTokenSource.Cancel();
+            eventHandlerThread.Join();
+        }
 
         public async Task Stop()
         {
-            foreach (var plugin in Plugins)
+            foreach (var plugin in Plugins.Where(plugin => !plugin.IsParser))
             {
                 try
                 {
@@ -607,19 +619,32 @@ namespace IW4MAdmin.Application
                 {
                     _logger.LogError(ex, "Could not cleanly unload plugin {PluginName}", plugin.Name);
                 }
-            }   
-            
-            _tokenSource.Cancel();
-            
+            }
+
+            _isRunningTokenSource.Cancel();
+
             IsRunning = false;
         }
 
-        public void Restart()
+        public async Task Restart()
         {
             IsRestartRequested = true;
-            Stop().GetAwaiter().GetResult();
-            _tokenSource.Dispose();
-            _tokenSource = new CancellationTokenSource();
+            await Stop();
+            
+            using var subscriptionTimeoutToken = new CancellationTokenSource();
+            subscriptionTimeoutToken.CancelAfter(Utilities.DefaultCommandTimeout);
+
+            await IManagementEventSubscriptions.InvokeUnloadAsync(this, subscriptionTimeoutToken.Token);
+
+            IGameEventSubscriptions.ClearEventInvocations();
+            IGameServerEventSubscriptions.ClearEventInvocations();
+            IManagementEventSubscriptions.ClearEventInvocations();
+            
+            _isRunningTokenSource.Dispose();
+            _isRunningTokenSource = new CancellationTokenSource();
+            
+            _eventHandlerTokenSource.Dispose();
+            _eventHandlerTokenSource = new CancellationTokenSource();
         }
 
         [Obsolete]
@@ -661,9 +686,14 @@ namespace IW4MAdmin.Application
 
         public void AddEvent(GameEvent gameEvent)
         {
-            _eventHandler.HandleEvent(this, gameEvent);
+            _coreEventHandler.QueueEvent(this, gameEvent);
         }
 
+        public void QueueEvent(CoreEvent coreEvent)
+        {
+            _coreEventHandler.QueueEvent(this, coreEvent);
+        }
+        
         public IPageList GetPageList()
         {
             return PageList;
@@ -698,15 +728,132 @@ namespace IW4MAdmin.Application
 
         public void AddAdditionalCommand(IManagerCommand command)
         {
-            if (_commands.Any(_command => _command.Name == command.Name || _command.Alias == command.Alias))
+            lock (_commands)
             {
-                throw new InvalidOperationException($"Duplicate command name or alias ({command.Name}, {command.Alias})");
-            }
+                if (_commands.Any(cmd => cmd.Name == command.Name || cmd.Alias == command.Alias))
+                {
+                    throw new InvalidOperationException(
+                        $"Duplicate command name or alias ({command.Name}, {command.Alias})");
+                }
 
-            _commands.Add(command);
+                _commands.Add(command);
+            }
         }
 
         public void RemoveCommandByName(string commandName) => _commands.RemoveAll(_command => _command.Name == commandName);
         public IAlertManager AlertManager => _alertManager;
+        
+        private async Task OnServerValueRequested(ServerValueRequestEvent requestEvent, CancellationToken token)
+        {
+            if (requestEvent.Server is not IW4MServer server)
+            {
+                return;
+            }
+
+            Dvar<string> serverValue = null;
+            try
+            {
+                if (requestEvent.DelayMs.HasValue)
+                {
+                    await Task.Delay(requestEvent.DelayMs.Value, token);
+                }
+
+                var waitToken = token;
+                using var timeoutTokenSource = new CancellationTokenSource();
+                using var linkedTokenSource =
+                    CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, token);
+                
+                if (requestEvent.TimeoutMs is not null)
+                {
+                    timeoutTokenSource.CancelAfter(requestEvent.TimeoutMs.Value);
+                    waitToken = linkedTokenSource.Token;
+                }
+
+                serverValue =
+                    await server.GetDvarAsync(requestEvent.ValueName, requestEvent.FallbackValue, waitToken);
+            }
+            catch
+            {
+                //  ignored
+            }
+            finally
+            {
+                QueueEvent(new ServerValueReceiveEvent
+                {
+                    Server = server,
+                    Source = server,
+                    Response = serverValue ?? new Dvar<string> { Name = requestEvent.ValueName },
+                    Success = serverValue is not null
+                });
+            }
+        }
+
+        private async Task OnServerValueSetRequested(ServerValueSetRequestEvent requestEvent, CancellationToken token)
+        {
+            if (requestEvent.Server is not IW4MServer server)
+            {
+                return;
+            }
+
+            var completed = false;
+            try
+            {
+                if (requestEvent.DelayMs.HasValue)
+                {
+                    await Task.Delay(requestEvent.DelayMs.Value, token);
+                }
+
+                if (requestEvent.TimeoutMs is not null)
+                {
+                    using var timeoutTokenSource = new CancellationTokenSource(requestEvent.TimeoutMs.Value);
+                    using var linkedTokenSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, token);
+                    token = linkedTokenSource.Token;
+                }
+
+                await server.SetDvarAsync(requestEvent.ValueName, requestEvent.Value, token);
+                completed = true;
+            }
+            catch
+            {
+                //  ignored
+            }
+            finally
+            {
+                QueueEvent(new ServerValueSetCompleteEvent
+                {
+                    Server = server,
+                    Source = server,
+                    Success = completed,
+                    Value = requestEvent.Value,
+                    ValueName = requestEvent.ValueName
+                });
+            }
+        }
+
+        private async Task OnClientPersistentIdReceived(ClientPersistentIdReceiveEvent receiveEvent, CancellationToken token)
+        {
+            var parts = receiveEvent.PersistentId.Split(",");
+
+            if (parts.Length == 2 && int.TryParse(parts[0], out var high) &&
+                int.TryParse(parts[1], out var low))
+            {
+                var guid = long.Parse(high.ToString("X") + low.ToString("X"), NumberStyles.HexNumber);
+
+                var penalties = await PenaltySvc
+                    .GetActivePenaltiesByIdentifier(null, guid, receiveEvent.Client.GameName);
+                var banPenalty =
+                    penalties.FirstOrDefault(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
+
+                if (banPenalty is not null && receiveEvent.Client.Level != Data.Models.Client.EFClient.Permission.Banned)
+                {
+                    _logger.LogInformation(
+                        "Banning {Client} as they have have provided a persistent clientId of {PersistentClientId}, which is banned",
+                        receiveEvent.Client, guid);
+                    receiveEvent.Client.Ban(_translationLookup["SERVER_BAN_EVADE"].FormatExt(guid),
+                        receiveEvent.Client.CurrentServer.AsConsoleClient(), true);
+                }
+            }
+        }
     }
 }

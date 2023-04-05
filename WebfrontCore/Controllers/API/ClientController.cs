@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Services;
 using WebfrontCore.Controllers.API.Dtos;
@@ -136,6 +137,16 @@ namespace WebfrontCore.Controllers.API
                             ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
                             : HttpContext.Connection.RemoteIpAddress.ToString()
                     });
+                    
+                    Manager.QueueEvent(new LoginEvent
+                    {
+                        Source = this,
+                        LoginSource = LoginEvent.LoginSourceType.Webfront,
+                        EntityId = Client.ClientId.ToString(),
+                        Identifier = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                            : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    });
 
                     return Ok();
                 }
@@ -164,6 +175,16 @@ namespace WebfrontCore.Controllers.API
                     Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
                         ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
                         : HttpContext.Connection.RemoteIpAddress.ToString()
+                });
+                
+                Manager.QueueEvent(new LogoutEvent
+                {
+                    Source = this,
+                    LoginSource = LoginEvent.LoginSourceType.Webfront,
+                    EntityId = Client.ClientId.ToString(),
+                    Identifier = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                        : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
             }
             

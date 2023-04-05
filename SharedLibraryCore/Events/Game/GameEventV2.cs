@@ -4,5 +4,5 @@ namespace SharedLibraryCore.Events.Game;
 
 public abstract class GameEventV2 : GameEvent
 {
-    public IGameServer Server { get; init; }
+    public IGameServer Server => Owner;
 }

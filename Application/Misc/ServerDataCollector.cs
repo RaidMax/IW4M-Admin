@@ -12,8 +12,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Events.Management;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Interfaces.Events;
 
 namespace IW4MAdmin.Application.Misc
 {
@@ -24,28 +26,20 @@ namespace IW4MAdmin.Application.Misc
         private readonly IManager _manager;
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly ApplicationConfiguration _appConfig;
-        private readonly IEventPublisher _eventPublisher;
 
         private bool _inProgress;
         private TimeSpan _period;
 
         public ServerDataCollector(ILogger<ServerDataCollector> logger, ApplicationConfiguration appConfig,
-            IManager manager, IDatabaseContextFactory contextFactory, IEventPublisher eventPublisher)
+            IManager manager, IDatabaseContextFactory contextFactory)
         {
             _logger = logger;
             _appConfig = appConfig;
             _manager = manager;
             _contextFactory = contextFactory;
-            _eventPublisher = eventPublisher;
 
-            _eventPublisher.OnClientConnect += SaveConnectionInfo;
-            _eventPublisher.OnClientDisconnect += SaveConnectionInfo;
-        }
-
-        ~ServerDataCollector()
-        {
-            _eventPublisher.OnClientConnect -= SaveConnectionInfo;
-            _eventPublisher.OnClientDisconnect -= SaveConnectionInfo;
+            IManagementEventSubscriptions.ClientStateAuthorized += SaveConnectionInfo;
+            IManagementEventSubscriptions.ClientStateDisposed += SaveConnectionInfo;
         }
 
         public async Task BeginCollectionAsync(TimeSpan? period = null, CancellationToken cancellationToken = default)
@@ -131,18 +125,19 @@ namespace IW4MAdmin.Application.Misc
             await context.SaveChangesAsync(token);
         }
 
-        private void SaveConnectionInfo(object sender, GameEvent gameEvent)
+        private async Task SaveConnectionInfo(ClientStateEvent stateEvent, CancellationToken token)
         {
-            using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = _contextFactory.CreateContext(enableTracking: false);
             context.ConnectionHistory.Add(new EFClientConnectionHistory
             {
-                ClientId = gameEvent.Origin.ClientId,
-                ServerId = gameEvent.Owner.GetIdForServer().Result,
-                ConnectionType = gameEvent.Type == GameEvent.EventType.Connect
+                ClientId = stateEvent.Client.ClientId,
+                ServerId = await stateEvent.Client.CurrentServer.GetIdForServer(),
+                ConnectionType = stateEvent is ClientStateAuthorizeEvent
                     ? Reference.ConnectionType.Connect
                     : Reference.ConnectionType.Disconnect
             });
-            context.SaveChanges();
+
+            await context.SaveChangesAsync();
         }
     }
 }

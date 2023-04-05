@@ -176,7 +176,7 @@ namespace IW4MAdmin.Application.Misc
                     .Where(rating => rating.Client.Level != EFClient.Permission.Banned)
                     .Where(rating => rating.Ranking != null)
                     .CountAsync(cancellationToken);
-            }, nameof(_rankedClientsCache), serverId is null ? null: new[] { (object)serverId },  _cacheTimeSpan);
+            }, nameof(_rankedClientsCache), serverId is null ? null: new[] { (object)serverId }, _cacheTimeSpan);
             
             try
             {

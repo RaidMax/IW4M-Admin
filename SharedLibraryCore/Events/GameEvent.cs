@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events;
 
 namespace SharedLibraryCore
 {
-    public class GameEvent
+    public class GameEvent : CoreEvent
     {
         public enum EventFailReason
         {
@@ -133,6 +134,8 @@ namespace SharedLibraryCore
             ///     connection was restored to a server (the server began responding again)
             /// </summary>
             ConnectionRestored,
+            
+            SayTeam = 99,
 
             // events "generated" by clients  
             /// <summary>
@@ -246,7 +249,7 @@ namespace SharedLibraryCore
             ///     team info printed out by game script
             /// </summary>
             JoinTeam = 304,
-
+            
             /// <summary>
             ///     used for community generated plugin events
             /// </summary>
@@ -267,15 +270,13 @@ namespace SharedLibraryCore
         public GameEvent()
         {
             Time = DateTime.UtcNow;
-            Id = GetNextEventId();
+            IncrementalId = GetNextEventId();
         }
         
         ~GameEvent()
         {
             _eventFinishedWaiter.Dispose();
         }
-
-        public EventSource Source { get; set; }
 
         /// <summary>
         ///     suptype of the event for more detailed classification
@@ -293,11 +294,10 @@ namespace SharedLibraryCore
         public bool IsRemote { get; set; }
         public object Extra { get; set; }
         public DateTime Time { get; set; }
-        public long Id { get; }
+        public long IncrementalId { get; }
         public EventFailReason FailReason { get; set; }
         public bool Failed => FailReason != EventFailReason.None;
-        public Guid CorrelationId { get; set; } = Guid.NewGuid();
-        public List<string> Output { get; set; } = new List<string>();
+        public List<string> Output { get; set; } = new();
 
         /// <summary>
         ///     Indicates if the event should block until it is complete
@@ -328,23 +328,31 @@ namespace SharedLibraryCore
         /// <returns>waitable task </returns>
         public async Task<GameEvent> WaitAsync(TimeSpan timeSpan, CancellationToken token)
         {
-            var processed = false;
-            Utilities.DefaultLogger.LogDebug("Begin wait for event {Id}", Id);
-            try
+            if (FailReason == EventFailReason.Timeout)
             {
-                processed = await _eventFinishedWaiter.WaitAsync(timeSpan, token);
+                return this;
             }
 
-            catch (TaskCanceledException)
+            var processed = false;
+            Utilities.DefaultLogger.LogDebug("Begin wait for {Name}, {Type}, {Id}", Type, GetType().Name,
+                IncrementalId);
+            
+            try
             {
+                await _eventFinishedWaiter.WaitAsync(timeSpan, token);
                 processed = true;
+            }
+
+            catch (OperationCanceledException)
+            {
+                processed = false;
             }
 
             finally
             {
-                if (_eventFinishedWaiter.CurrentCount == 0)
+                if (processed)
                 {
-                    _eventFinishedWaiter.Release();
+                    Complete();
                 }
             }
 

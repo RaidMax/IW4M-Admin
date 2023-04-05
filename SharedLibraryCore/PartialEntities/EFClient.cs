@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Data.Models;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
+using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Localization;
 
 namespace SharedLibraryCore.Database.Models
@@ -603,7 +604,13 @@ namespace SharedLibraryCore.Database.Models
                 LastConnection = DateTime.UtcNow;
 
                 Utilities.DefaultLogger.LogInformation("Client {client} is leaving the game", ToString());
-
+                
+                CurrentServer?.Manager.QueueEvent(new ClientStateDisposeEvent
+                {
+                    Source = CurrentServer,
+                    Client = this
+                });
+                
                 try
                 {
                     await CurrentServer.Manager.GetClientService().Update(this);
@@ -658,6 +665,11 @@ namespace SharedLibraryCore.Database.Models
                         };
 
                         CurrentServer.Manager.AddEvent(e);
+                        CurrentServer.Manager.QueueEvent(new ClientStateAuthorizeEvent
+                        {
+                            Source = CurrentServer,
+                            Client = this
+                        });
                     }
                 }
 

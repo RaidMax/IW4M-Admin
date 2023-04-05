@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -63,7 +64,7 @@ namespace SharedLibraryCore
         {
             Password = config.Password;
             IP = config.IPAddress;
-            Port = config.Port;
+            ListenPort = config.Port;
             Manager = mgr;
 #pragma warning disable CS0612
             Logger = deprecatedLogger ?? throw new ArgumentNullException(nameof(deprecatedLogger));
@@ -89,8 +90,6 @@ namespace SharedLibraryCore
             ? Convert.ToInt64($"{ListenAddress!.Replace(".", "")}{ListenPort}")
             : $"{ListenAddress!.Replace(".", "")}{ListenPort}".GetStableHashCode();
 
-        public long LegacyEndpoint => EndPoint;
-
         public abstract long LegacyDatabaseId { get; }
         public string Id => $"{ListenAddress}:{ListenPort}";
 
@@ -105,6 +104,7 @@ namespace SharedLibraryCore
         public List<ChatInfo> ChatHistory { get; protected set; }
         public ClientHistoryInfo ClientHistory { get; }
         public Game GameName { get; set; }
+        public Reference.Game GameCode => (Reference.Game)GameName;
         public DateTime? MatchEndTime { get; protected set; }
         public DateTime? MatchStartTime { get; protected set; }
 
@@ -114,14 +114,17 @@ namespace SharedLibraryCore
             protected set => hostname = value;
         }
 
+        public string ServerName => Hostname;
+
         public string Website { get; protected set; }
         public string Gametype { get; set; }
 
-        public string GametypeName => DefaultSettings.Gametypes.FirstOrDefault(gt => gt.Game == GameName)?.Gametypes
+        public string GametypeName => DefaultSettings.Gametypes?.FirstOrDefault(gt => gt.Game == GameName)?.Gametypes
             ?.FirstOrDefault(gt => gt.Name == Gametype)?.Alias ?? Gametype;
 
         public string GamePassword { get; protected set; }
         public Map CurrentMap { get; set; }
+        public Map Map => CurrentMap;
 
         public int ClientNum
         {
@@ -130,9 +133,13 @@ namespace SharedLibraryCore
 
         public int MaxClients { get; protected set; }
         public List<EFClient> Clients { get; protected set; }
+
+        public IReadOnlyList<EFClient> ConnectedClients =>
+            new ReadOnlyCollection<EFClient>(GetClientsAsList());
         public string Password { get; }
         public bool Throttled { get; protected set; }
         public bool CustomCallback { get; protected set; }
+        public bool IsLegacyGameIntegrationEnabled => CustomCallback;
         public string WorkingDirectory { get; protected set; }
         public IRConConnection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; set; }
@@ -143,7 +150,7 @@ namespace SharedLibraryCore
 
         // Internal
         /// <summary>
-        ///     this is actually the hostname now
+        ///     this is actually the listen address now
         /// </summary>
         public string IP { get; protected set; }
 
@@ -153,7 +160,7 @@ namespace SharedLibraryCore
         public string Version { get; protected set; }
         public bool IsInitialized { get; set; }
 
-        public int Port { get; }
+        public int ListenPort { get; }
         public abstract Task Kick(string reason, EFClient target, EFClient origin, EFPenalty originalPenalty);
 
         /// <summary>
@@ -415,35 +422,6 @@ namespace SharedLibraryCore
         }
 
         public abstract Task<long> GetIdForServer(Server server = null);
-
-        public string GetServerDvar(string dvarName, int timeoutMs = 1000)
-        {
-            using var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
-            try
-            {
-                return this.GetDvarAsync<string>(dvarName, token: tokenSource.Token).GetAwaiter().GetResult().Value;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        public bool SetServerDvar(string dvarName, string dvarValue, int timeoutMs = 1000)
-        {
-            using var tokenSource = new CancellationTokenSource();
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(timeoutMs));
-            try
-            {
-                this.SetDvarAsync(dvarName, dvarValue, tokenSource.Token).GetAwaiter().GetResult();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
 
         public EFClient GetClientByNumber(int clientNumber) =>
             GetClientsAsList().FirstOrDefault(client => client.ClientNumber == clientNumber);

@@ -142,12 +142,12 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
             });
     }
 
-    private static Func<IGrouping<int, ClientResourceResponse>, DateTime> SearchByAliasLocal(string? clientName,
-        string? ipAddress)
+    private static Func<IGrouping<int, ClientResourceResponse>, DateTime> SearchByAliasLocal(string clientName,
+        string ipAddress)
     {
         return group =>
         {
-            ClientResourceResponse? match = null;
+            ClientResourceResponse match = null;
             var lowercaseClientName = clientName?.ToLower();
 
             if (!string.IsNullOrWhiteSpace(lowercaseClientName))

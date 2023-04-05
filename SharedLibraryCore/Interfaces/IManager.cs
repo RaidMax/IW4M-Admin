@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Services;
 
@@ -34,7 +35,7 @@ namespace SharedLibraryCore.Interfaces
         Task Init();
         Task Start();
         Task Stop();
-        void Restart();
+        Task Restart();
 
         [Obsolete]
         ILogger GetLogger(long serverId);
@@ -86,6 +87,11 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="gameEvent">event to be processed</param>
         void AddEvent(GameEvent gameEvent);
+
+        /// <summary>
+        ///     queues an event for processing
+        /// </summary>
+        void QueueEvent(CoreEvent coreEvent);
 
         /// <summary>
         ///     adds an additional (script) command to the command list

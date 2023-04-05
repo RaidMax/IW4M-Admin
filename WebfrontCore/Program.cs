@@ -3,9 +3,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Middleware;
 
@@ -14,33 +13,36 @@ namespace WebfrontCore
     public class Program
     {
         public static IManager Manager;
-        public static IServiceCollection Services;
-        public static IServiceProvider ApplicationServiceProvider;
+        private static IWebHost _webHost;
 
-        public static Task Init(IManager mgr, IServiceProvider existingServiceProvider, IServiceCollection services, CancellationToken cancellationToken)
+        public static IServiceProvider InitializeServices(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
         {
-            Services = services;
-            Manager = mgr;
-            ApplicationServiceProvider = existingServiceProvider;
-            var config = Manager.GetApplicationSettings().Configuration();
-            Manager.MiddlewareActionHandler.Register(null, new CustomCssAccentMiddlewareAction("#007ACC", "#fd7e14", config.WebfrontPrimaryColor, config.WebfrontSecondaryColor), "custom_css_accent");
-            return BuildWebHost().RunAsync(cancellationToken);
+            _webHost = BuildWebHost(registerDependenciesAction, bindUrl);
+            Manager = _webHost.Services.GetRequiredService<IManager>();
+            return _webHost.Services;
         }
 
-        private static IWebHost BuildWebHost()
+        public static Task GetWebHostTask(CancellationToken cancellationToken)
         {
-            var config = new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .Build();
-
+            var config = _webHost.Services.GetRequiredService<ApplicationConfiguration>();
+            Manager.MiddlewareActionHandler.Register(null,
+                new CustomCssAccentMiddlewareAction("#007ACC", "#fd7e14", config.WebfrontPrimaryColor,
+                    config.WebfrontSecondaryColor), "custom_css_accent");
+            
+            return _webHost?.RunAsync(cancellationToken);
+        }
+        
+        private static IWebHost BuildWebHost(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
+        {
             return new WebHostBuilder()
 #if DEBUG
                 .UseContentRoot(Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\", "WebfrontCore")))
 #else
                 .UseContentRoot(SharedLibraryCore.Utilities.OperatingDirectory)
 #endif
-                .UseUrls(Manager.GetApplicationSettings().Configuration().WebfrontBindUrl)
+                .UseUrls(bindUrl)
                 .UseKestrel()
+                .ConfigureServices(registerDependenciesAction)
                 .UseStartup<Startup>()
                 .Build();
         }

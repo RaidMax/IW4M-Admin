@@ -43,7 +43,7 @@ namespace IW4MAdmin.Plugins.LiveRadar.Web.Controllers
 
         [HttpGet]
         [Route("Radar/{serverId}/Map")]
-        public async Task<IActionResult> Map(string serverId = null)
+        public IActionResult Map(string serverId = null)
         {
             var server = serverId == null
                 ? _manager.GetServers().FirstOrDefault()

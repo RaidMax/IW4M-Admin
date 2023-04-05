@@ -59,7 +59,9 @@ public class Plugin : IPluginV2
                 return true;
             }
 
-            var muteMeta = _muteManager.GetCurrentMuteState(gameEvent.Origin).GetAwaiter().GetResult();
+            var muteMeta = Task.Run(() => _muteManager.GetCurrentMuteState(gameEvent.Origin), cancellationToken)
+                .GetAwaiter().GetResult();
+            
             if (muteMeta.MuteState is not MuteState.Muted)
             {
                 return true;

@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
 
 namespace WebfrontCore.Controllers
@@ -72,6 +73,16 @@ namespace WebfrontCore.Controllers
                             ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
                             : HttpContext.Connection.RemoteIpAddress?.ToString()
                     });
+                    
+                    Manager.QueueEvent(new LoginEvent
+                    {
+                        Source = this,
+                        LoginSource = LoginEvent.LoginSourceType.Webfront,
+                        EntityId = privilegedClient.ClientId.ToString(),
+                        Identifier = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                            : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    });
 
                     return Ok(Localization["WEBFRONT_ACTION_LOGIN_SUCCESS"].FormatExt(privilegedClient.CleanedName));
                 }
@@ -96,6 +107,16 @@ namespace WebfrontCore.Controllers
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.GetServers().First(),
                     Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
+                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                });
+                
+                Manager.QueueEvent(new LogoutEvent
+                {
+                    Source = this,
+                    LoginSource = LoginEvent.LoginSourceType.Webfront,
+                    EntityId = Client.ClientId.ToString(),
+                    Identifier = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
                         ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
                         : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });

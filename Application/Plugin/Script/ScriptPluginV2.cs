@@ -151,10 +151,12 @@ public class ScriptPluginV2 : IPluginV2
                 }
 
                 ScriptEngine.Execute(pluginScript);
+#pragma warning disable CS8974
                 var initResult = ScriptEngine.Call("init", JsValue.FromObject(ScriptEngine, EventCallbackWrapper),
                     JsValue.FromObject(ScriptEngine, _pluginServiceResolver),
                     JsValue.FromObject(ScriptEngine, _scriptPluginConfigurationWrapper),
                     JsValue.FromObject(ScriptEngine, new ScriptPluginHelper(manager, this)));
+#pragma warning restore CS8974
 
                 if (initResult.IsNull() || initResult.IsUndefined())
                 {

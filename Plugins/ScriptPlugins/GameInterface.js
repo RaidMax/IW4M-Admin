@@ -196,7 +196,7 @@ const plugin = {
 
                 let data = [];
 
-                const metaService = this.serviceResolver.ResolveService('IMetaServiceV2');
+                const metaService = this.serviceResolver.resolveService('IMetaServiceV2');
 
                 if (event.subType === 'Meta') {
                     const meta = (await metaService.getPersistentMeta(event.data, client.clientId, token)).result;
@@ -237,8 +237,8 @@ const plugin = {
 
             this.logger.logDebug('ClientId={clientId}', clientId);
 
-            if (clientId == null) {
-                this.logger.logWarning('Could not find client slot {clientNumber} when processing {eventType}', event.clientNumber, event.eventType);
+            if (clientId == null || isNaN(clientId)) {
+                this.logger.logWarning('Could not find client slot {clientNumber} when processing {eventType}: {EventData}', event.clientNumber, event.eventType, event.data);
                 this.sendEventMessage(server, false, 'SetClientDataCompleted', 'Meta', {
                     ClientNumber: event.clientNumber
                 }, undefined, {

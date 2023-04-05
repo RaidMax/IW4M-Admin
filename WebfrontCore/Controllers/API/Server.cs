@@ -91,7 +91,7 @@ namespace WebfrontCore.Controllers.API
             var start = DateTime.Now;
             Client.CurrentServer = foundServer;
             
-            var commandEvent = new GameEvent()
+            var commandEvent = new GameEvent
             {
                 Type = GameEvent.EventType.Command,
                 Owner = foundServer,

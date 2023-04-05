@@ -17,6 +17,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
 {
     private readonly ILogger<BaseConfigurationHandlerV2<TConfigurationType>> _logger;
     private readonly ConfigurationWatcher _watcher;
+
     private readonly JsonSerializerOptions _serializerOptions = new()
     {
         WriteIndented = true,
@@ -32,7 +33,8 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
     private string _path = string.Empty;
     private event Action<string> FileUpdated;
 
-    public BaseConfigurationHandlerV2(ILogger<BaseConfigurationHandlerV2<TConfigurationType>> logger, ConfigurationWatcher watcher)
+    public BaseConfigurationHandlerV2(ILogger<BaseConfigurationHandlerV2<TConfigurationType>> logger,
+        ConfigurationWatcher watcher)
     {
         _logger = logger;
         _watcher = watcher;
@@ -69,7 +71,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             await using var fileStream = File.OpenRead(_path);
             readConfiguration =
                 await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
-            fileStream.Close();
+            await fileStream.DisposeAsync();
             _watcher.Register(_path, FileUpdated);
 
             if (readConfiguration is null)
@@ -115,7 +117,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             await InternalSet(_configurationInstance, true);
         }
     }
-    
+
     private async Task InternalSet(TConfigurationType configuration, bool awaitSemaphore)
     {
         try
@@ -124,9 +126,10 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             {
                 await _onIo.WaitAsync();
             }
+
             await using var fileStream = File.OpenWrite(_path);
             await JsonSerializer.SerializeAsync(fileStream, configuration, _serializerOptions);
-            fileStream.Close();
+            await fileStream.DisposeAsync();
             _configurationInstance = configuration;
         }
         catch (Exception ex)
@@ -150,7 +153,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             await using var fileStream = File.OpenRead(_path);
             var readConfiguration =
                 await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
-            fileStream.Close();
+            await fileStream.DisposeAsync();
 
             if (readConfiguration is null)
             {
@@ -184,7 +187,8 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             return;
         }
 
-        _logger.LogDebug("Updating existing config with new values {Type} at {Path}", typeof(TConfigurationType).Name, _path);
+        _logger.LogDebug("Updating existing config with new values {Type} at {Path}", typeof(TConfigurationType).Name,
+            _path);
 
         if (_configurationInstance is IDictionary configDict && newConfiguration is IDictionary newConfigDict)
         {

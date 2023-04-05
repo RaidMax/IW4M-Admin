@@ -49,8 +49,10 @@ namespace IW4MAdmin.Application.Misc
         {
             try
             {
+                await _onSaving.WaitAsync();
                 await using var fileStream = File.OpenRead(FileName);
                 _configuration = await JsonSerializer.DeserializeAsync<T>(fileStream, _serializerOptions);
+                await fileStream.DisposeAsync();
             }
 
             catch (FileNotFoundException)
@@ -66,6 +68,13 @@ namespace IW4MAdmin.Application.Misc
                     ConfigurationFileName = FileName
                 };
             }
+            finally
+            {
+                if (_onSaving.CurrentCount == 0)
+                {
+                    _onSaving.Release(1);
+                }
+            }
         }
 
         public async Task Save()
@@ -76,6 +85,7 @@ namespace IW4MAdmin.Application.Misc
 
                 await using var fileStream = File.Create(FileName);
                 await JsonSerializer.SerializeAsync(fileStream, _configuration, _serializerOptions);
+                await fileStream.DisposeAsync();
             }
 
             finally

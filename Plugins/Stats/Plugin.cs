@@ -71,8 +71,6 @@ public class Plugin : IPluginV2
         _statsConfig = statsConfig;
         _statManager = statManager;
 
-        IGameServerEventSubscriptions.MonitoringStarted +=
-            async (monitorEvent, token) => await _statManager.EnsureServerAdded(monitorEvent.Server, token);
         IGameServerEventSubscriptions.MonitoringStopped +=
             async (monitorEvent, token) => await _statManager.Sync(monitorEvent.Server, token);
         IManagementEventSubscriptions.ClientStateInitialized += async (clientEvent, token) =>
@@ -97,6 +95,13 @@ public class Plugin : IPluginV2
                     return;
                 }
 
+                if (clientEvent.Client.ClientId == 0)
+                {
+                    _logger.LogWarning("No client id for {Client}, so we are not doing any stat calculation",
+                        clientEvent.Client.ToString());
+                    return;
+                }
+
                 foreach (var calculator in _statCalculators)
                 {
                     await calculator.CalculateForEvent(clientEvent);
@@ -108,7 +113,7 @@ public class Plugin : IPluginV2
                 messageEvent.Client.ClientId > 1)
             {
                 await _statManager.AddMessageAsync(messageEvent.Client.ClientId,
-                    StatManager.GetIdForServer(messageEvent.Server), true, messageEvent.Message, token);
+                    messageEvent.Server.LegacyDatabaseId, true, messageEvent.Message, token);
             }
         };
         IGameEventSubscriptions.MatchEnded += OnMatchEvent;
@@ -191,7 +196,7 @@ public class Plugin : IPluginV2
             await _statManager.AddScriptHit(!antiCheatDamageEvent.IsKill, antiCheatDamageEvent.CreatedAt.DateTime,
                 antiCheatDamageEvent.Origin,
                 antiCheatDamageEvent.Target,
-                StatManager.GetIdForServer(antiCheatDamageEvent.Server), antiCheatDamageEvent.Server.Map.Name,
+                antiCheatDamageEvent.Server.LegacyDatabaseId, antiCheatDamageEvent.Server.Map.Name,
                 killInfo[7], killInfo[8],
                 killInfo[5], killInfo[6], killInfo[3], killInfo[4], killInfo[9], killInfo[10], killInfo[11],
                 killInfo[12], killInfo[13], killInfo[14], killInfo[15], killInfo[16], killInfo[17]);
@@ -205,13 +210,14 @@ public class Plugin : IPluginV2
         if (shouldPersist)
         {
             await _statManager.AddMessageAsync(commandEvent.Client.ClientId,
-                StatManager.GetIdForServer(commandEvent.Client.CurrentServer), false, commandEvent.CommandText, token);
+                (commandEvent.Client.CurrentServer as IGameServer).LegacyDatabaseId, false,
+                commandEvent.CommandText, token);
         }
     }
 
     private async Task OnMatchEvent(GameEventV2 gameEvent, CancellationToken token)
     {
-        _statManager.SetTeamBased(StatManager.GetIdForServer(gameEvent.Server), gameEvent.Server.Gametype != "dm");
+        _statManager.SetTeamBased(gameEvent.Server.LegacyDatabaseId, gameEvent.Server.Gametype != "dm");
         _statManager.ResetKillstreaks(gameEvent.Server);
         await _statManager.Sync(gameEvent.Server, token);
 
@@ -510,10 +516,10 @@ public class Plugin : IPluginV2
                     _databaseContextFactory));
         }
 
-        async Task<string> MostKills(Server gameServer)
+        async Task<string> MostKills(IGameServer gameServer)
         {
             return string.Join(Environment.NewLine,
-                await Commands.MostKillsCommand.GetMostKills(StatManager.GetIdForServer(gameServer), _statsConfig,
+                await Commands.MostKillsCommand.GetMostKills(gameServer.LegacyDatabaseId, _statsConfig,
                     _databaseContextFactory, _translationLookup));
         }
 

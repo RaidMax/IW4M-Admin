@@ -15,10 +15,10 @@ namespace IW4MAdmin.Plugins.Stats.Commands
 {
     class MostPlayedCommand : Command
     {
-        public static async Task<List<string>> GetMostPlayed(Server s, ITranslationLookup translationLookup,
+        public static async Task<List<string>> GetMostPlayed(IGameServer gameServer, ITranslationLookup translationLookup,
             IDatabaseContextFactory contextFactory)
         {
-            var serverId = StatManager.GetIdForServer(s);
+            var serverId = gameServer.LegacyDatabaseId;
 
             var mostPlayed = new List<string>
             {

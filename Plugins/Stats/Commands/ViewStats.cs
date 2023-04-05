@@ -38,37 +38,36 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             _statManager = statManager;
         }
 
-        public override async Task ExecuteAsync(GameEvent E)
+        public override async Task ExecuteAsync(GameEvent gameEvent)
         {
             string statLine;
             EFClientStatistics pStats = null;
 
-            if (E.Data.Length > 0 && E.Target == null)
+            if (gameEvent.Data.Length > 0 && gameEvent.Target == null)
             {
-                E.Target = E.Owner.GetClientByName(E.Data).FirstOrDefault();
+                gameEvent.Target = gameEvent.Owner.GetClientByName(gameEvent.Data).FirstOrDefault();
 
-                if (E.Target == null)
+                if (gameEvent.Target == null)
                 {
-                    E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_FAIL"]);
+                    gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_FAIL"]);
                 }
             }
 
-            var serverId = StatManager.GetIdForServer(E.Owner);
-
+            var serverId = (gameEvent.Owner as IGameServer).LegacyDatabaseId;
             var totalRankedPlayers = await _statManager.GetTotalRankedPlayers(serverId);
 
             // getting stats for a particular client
-            if (E.Target != null)
+            if (gameEvent.Target != null)
             {
-                var performanceRanking = await _statManager.GetClientOverallRanking(E.Target.ClientId, serverId);
+                var performanceRanking = await _statManager.GetClientOverallRanking(gameEvent.Target.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
                     : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking}/{totalRankedPlayers}";
 
                 // target is currently connected so we want their cached stats if they exist
-                if (E.Owner.GetClientsAsList().Any(client => client.Equals(E.Target)))
+                if (gameEvent.Owner.GetClientsAsList().Any(client => client.Equals(gameEvent.Target)))
                 {
-                    pStats = E.Target.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
+                    pStats = gameEvent.Target.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
                 }
 
                 // target is not connected so we want to look up via database
@@ -76,7 +75,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 {
                     await using var context = _contextFactory.CreateContext(false);
                     pStats = await context.Set<EFClientStatistics>()
-                        .FirstOrDefaultAsync(c => c.ServerId == serverId && c.ClientId == E.Target.ClientId);
+                        .FirstOrDefaultAsync(c => c.ServerId == serverId && c.ClientId == gameEvent.Target.ClientId);
                 }
 
                 // if it's still null then they've not gotten a kill or death yet
@@ -89,15 +88,15 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             // getting self stats
             else
             {
-                var performanceRanking = await _statManager.GetClientOverallRanking(E.Origin.ClientId, serverId);
+                var performanceRanking = await _statManager.GetClientOverallRanking(gameEvent.Origin.ClientId, serverId);
                 var performanceRankingString = performanceRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
                     : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking}/{totalRankedPlayers}";
 
                 // check if current client is connected to the server
-                if (E.Owner.GetClientsAsList().Any(client => client.Equals(E.Origin)))
+                if (gameEvent.Owner.GetClientsAsList().Any(client => client.Equals(gameEvent.Origin)))
                 {
-                    pStats = E.Origin.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
+                    pStats = gameEvent.Origin.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
                 }
 
                 // happens if the user has not gotten a kill/death since connecting
@@ -105,7 +104,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                 {
                     await using var context = _contextFactory.CreateContext(false);
                     pStats = (await context.Set<EFClientStatistics>()
-                        .FirstOrDefaultAsync(c => c.ServerId == serverId && c.ClientId == E.Origin.ClientId));
+                        .FirstOrDefaultAsync(c => c.ServerId == serverId && c.ClientId == gameEvent.Origin.ClientId));
                 }
 
                 // if it's still null then they've not gotten a kill or death yet
@@ -115,21 +114,21 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                         pStats.KDR, pStats.Performance, performanceRankingString);
             }
 
-            if (E.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
+            if (gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
             {
-                var name = E.Target == null ? E.Origin.Name : E.Target.Name;
-                E.Owner.Broadcast(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(name));
-                E.Owner.Broadcast(statLine);
+                var name = gameEvent.Target == null ? gameEvent.Origin.Name : gameEvent.Target.Name;
+                gameEvent.Owner.Broadcast(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(name));
+                gameEvent.Owner.Broadcast(statLine);
             }
 
             else
             {
-                if (E.Target != null)
+                if (gameEvent.Target != null)
                 {
-                    E.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(E.Target.Name));
+                    gameEvent.Origin.Tell(_translationLookup["PLUGINS_STATS_COMMANDS_VIEW_SUCCESS"].FormatExt(gameEvent.Target.Name));
                 }
 
-                E.Origin.Tell(statLine);
+                gameEvent.Origin.Tell(statLine);
             }
         }
     }

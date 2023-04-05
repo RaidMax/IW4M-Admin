@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
-using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
@@ -35,7 +34,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
         {
             if (gameEvent.Origin.ClientNumber >= 0)
             {
-                var serverId = Helpers.StatManager.GetIdForServer(gameEvent.Owner);
+                var serverId = (gameEvent.Owner as IGameServer).LegacyDatabaseId;
 
                 await using var context = _contextFactory.CreateContext();
                 var clientStats = await context.Set<EFClientStatistics>()

@@ -13,8 +13,8 @@ namespace IW4MAdmin.Plugins.Stats.Commands
     {
         public static async Task<List<string>> GetTopStats(IGameServer server, ITranslationLookup translationLookup, StatManager statManager)
         {
-            var serverId = StatManager.GetIdForServer(server);
-            var topStatsText = new List<string>()
+            var serverId = server.LegacyDatabaseId;
+            var topStatsText = new List<string>
             {
                 $"(Color::Accent)--{translationLookup["PLUGINS_STATS_COMMANDS_TOP_TEXT"]}--"
             };
@@ -29,7 +29,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             // no one qualified
             if (topStatsText.Count == 1)
             {
-                topStatsText = new List<string>()
+                topStatsText = new List<string>
                 {
                     translationLookup["PLUGINS_STATS_TEXT_NOQUALIFY"]
                 };

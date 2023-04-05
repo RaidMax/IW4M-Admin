@@ -9,7 +9,6 @@ using Data.Models.Client.Stats;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using IW4MAdmin.Plugins.Stats.Helpers;
 using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Stats.Commands;
@@ -33,7 +32,7 @@ class MostKillsCommand : Command
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
     {
-        var mostKills = await GetMostKills(StatManager.GetIdForServer(gameEvent.Owner), _statsConfig,
+        var mostKills = await GetMostKills((gameEvent.Owner as IGameServer).LegacyDatabaseId, _statsConfig,
             _contextFactory, _translationLookup);
         if (!gameEvent.Message.IsBroadcastCommand(_config.BroadcastCommandPrefix))
         {

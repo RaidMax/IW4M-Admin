@@ -39,33 +39,28 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private readonly ILogger _log;
         private readonly IDatabaseContextFactory _contextFactory;
         private readonly StatsConfiguration _config;
-        private static List<EFServer> serverModels;
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
         public static string ESTIMATED_SCORE = "EstimatedScore";
-        private readonly SemaphoreSlim _addPlayerWaiter = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _addPlayerWaiter = new(1, 1);
         private readonly IServerDistributionCalculator _serverDistributionCalculator;
+        private readonly ILookupCache<EFServer> _serverCache;
 
         public StatManager(ILogger<StatManager> logger, IDatabaseContextFactory contextFactory,
             StatsConfiguration statsConfig,
-            IServerDistributionCalculator serverDistributionCalculator)
+            IServerDistributionCalculator serverDistributionCalculator, ILookupCache<EFServer> serverCache)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
             _log = logger;
             _contextFactory = contextFactory;
             _config = statsConfig;
             _serverDistributionCalculator = serverDistributionCalculator;
+            _serverCache = serverCache;
         }
 
         ~StatManager()
         {
             _addPlayerWaiter.Dispose();
-        }
-
-        private void SetupServerIds()
-        {
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
-            serverModels = ctx.Set<EFServer>().ToList();
         }
 
         public Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
@@ -364,72 +359,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             try
             {
-                if (serverModels == null)
-                {
-                    SetupServerIds();
-                }
-
-                var serverId = GetIdForServer(gameServer as Server);
-
-                await using var ctx = _contextFactory.CreateContext(enableTracking: false);
-                var serverSet = ctx.Set<EFServer>();
-                // get the server from the database if it exists, otherwise create and insert a new one
-                var cachedServerModel = await serverSet.FirstOrDefaultAsync(s => s.ServerId == serverId, token);
-
-                // the server might be using legacy server id
-                if (cachedServerModel == null)
-                {
-                    cachedServerModel = await serverSet.FirstOrDefaultAsync(s => s.EndPoint == gameServer.Id, token);
-
-                    if (cachedServerModel != null)
-                    {
-                        // this provides a way to identify legacy server entries
-                        cachedServerModel.EndPoint = gameServer.Id;
-                        ctx.Update(cachedServerModel);
-                        ctx.SaveChanges();
-                    }
-                }
-
-                // server has never been added before
-                if (cachedServerModel == null)
-                {
-                    cachedServerModel = new EFServer
-                    {
-                        Port = gameServer.ListenPort,
-                        EndPoint = gameServer.Id,
-                        ServerId = serverId,
-                        GameName = gameServer.GameCode,
-                        HostName = gameServer.ListenAddress
-                    };
-
-                    cachedServerModel = serverSet.Add(cachedServerModel).Entity;
-                    // this doesn't need to be async as it's during initialization
-                    await ctx.SaveChangesAsync(token);
-                }
-
-                // we want to set the gamename up if it's never been set, or it changed
-                else if (!cachedServerModel.GameName.HasValue || cachedServerModel.GameName.Value != gameServer.GameCode)
-                {
-                    cachedServerModel.GameName = gameServer.GameCode;
-                    ctx.Entry(cachedServerModel).Property(property => property.GameName).IsModified = true;
-                    await ctx.SaveChangesAsync(token);
-                }
-
-                if (cachedServerModel.HostName == null || cachedServerModel.HostName != gameServer.ServerName)
-                {
-                    cachedServerModel.HostName = gameServer.ServerName;
-                    ctx.Entry(cachedServerModel).Property(property => property.HostName).IsModified = true;
-                    await ctx.SaveChangesAsync(token);
-                }
-
-                ctx.Entry(cachedServerModel).Property(property => property.IsPasswordProtected).IsModified = true;
-                cachedServerModel.IsPasswordProtected = !string.IsNullOrEmpty(gameServer.GamePassword);
-                await ctx.SaveChangesAsync(token);
-
                 // check to see if the stats have ever been initialized
-                var serverStats = InitializeServerStats(cachedServerModel.ServerId);
+                var cachedServer =
+                    await _serverCache.FirstAsync(cachedServer => cachedServer.EndPoint == gameServer.Id);
+                var serverStats = InitializeServerStats(gameServer.LegacyDatabaseId);
 
-                _servers.TryAdd(serverId, new ServerStats(cachedServerModel, serverStats, gameServer as Server)
+                _servers.TryAdd(cachedServer.ServerId, new ServerStats(cachedServer, serverStats, gameServer as Server)
                 {
                     IsTeamBased = gameServer.Gametype != "dm"
                 });
@@ -459,7 +394,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             try
             {
                 await _addPlayerWaiter.WaitAsync();
-                long serverId = GetIdForServer(pl.CurrentServer);
+                var serverId = (pl.CurrentServer as IGameServer).LegacyDatabaseId;
 
                 if (!_servers.ContainsKey(serverId))
                 {
@@ -593,7 +528,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            var serverId = GetIdForServer(client.CurrentServer);
+            var serverId = (client.CurrentServer as IGameServer).LegacyDatabaseId;
             var serverStats = _servers[serverId].ServerStatistics;
 
             // get individual client's stats
@@ -954,7 +889,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task AddStandardKill(EFClient attacker, EFClient victim)
         {
-            var serverId = GetIdForServer(attacker.CurrentServer);
+            var serverId = (attacker.CurrentServer as IGameServer).LegacyDatabaseId;
 
             var attackerStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             var victimStats = victim.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
@@ -1582,8 +1517,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task Sync(IGameServer gameServer, CancellationToken token)
         {
-            var serverId = GetIdForServer(gameServer);
-
+            var serverId = gameServer.LegacyDatabaseId;
             var waiter = _servers[serverId].OnSaving;
             try
             {
@@ -1621,26 +1555,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public void SetTeamBased(long serverId, bool isTeamBased)
         {
             _servers[serverId].IsTeamBased = isTeamBased;
-        }
-
-        public static long GetIdForServer(IGameServer gameServer)
-        {
-            if (gameServer.Id == "66.150.121.184:28965")
-            {
-                return 886229536;
-            }
-
-            // todo: this is not stable and will need to be migrated again...
-            long id = HashCode.Combine(gameServer.ListenAddress, gameServer.ListenPort);
-            id = id < 0 ? Math.Abs(id) : id;
-
-#pragma warning disable CS0618
-            var serverId = serverModels.FirstOrDefault(cachedServer => cachedServer.ServerId == gameServer.LegacyEndpoint ||
-#pragma warning restore CS0618
-                                                                       cachedServer.EndPoint == gameServer.ToString() ||
-                                                                       cachedServer.ServerId == id)?.ServerId;
-
-            return serverId ?? id;
         }
     }
 }

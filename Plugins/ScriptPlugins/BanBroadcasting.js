@@ -15,7 +15,7 @@ const plugin = {
     manager: null,
 
     onClientPenalty: function (penaltyEvent) {
-        if (!this.enableBroadcastBans) {
+        if (!this.enableBroadcastBans || penaltyEvent.penalty.type !== 5) {
             return;
         }
 

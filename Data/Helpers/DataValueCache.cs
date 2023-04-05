@@ -68,9 +68,14 @@ namespace Data.Helpers
 
             foreach (var id in ids)
             {
-                if (_cacheStates[key].ContainsKey(id))
+                var cacheInstance = _cacheStates[key];
+
+                lock (_cacheStates)
                 {
-                    continue;
+                    if (cacheInstance.ContainsKey(id))
+                    {
+                        continue;
+                    }
                 }
 
                 var state = new CacheState<TReturnType>
@@ -80,10 +85,12 @@ namespace Data.Helpers
                     ExpirationTime = expirationTime ?? TimeSpan.FromMinutes(DefaultExpireMinutes)
                 };
 
-                _cacheStates[key].Add(id, state);
+                lock (_cacheStates)
+                {
+                    cacheInstance.Add(id, state);
+                }
 
                 _autoRefresh = autoRefresh;
-                
 
                 if (!_autoRefresh || expirationTime == TimeSpan.MaxValue)
                 {
@@ -96,8 +103,8 @@ namespace Data.Helpers
             }
         }
 
-        public async Task<TReturnType> GetCacheItem(string keyName, CancellationToken cancellationToken = default) =>
-            await GetCacheItem(keyName, null, cancellationToken);
+        public Task<TReturnType> GetCacheItem(string keyName, CancellationToken cancellationToken = default) =>
+            GetCacheItem(keyName, null, cancellationToken);
 
         public async Task<TReturnType> GetCacheItem(string keyName, object id = null,
             CancellationToken cancellationToken = default)
@@ -107,7 +114,14 @@ namespace Data.Helpers
                 throw new ArgumentException("No cache found for key {key}", keyName);
             }
 
-            var state = id is null ? _cacheStates[keyName].Values.First() : _cacheStates[keyName][id];
+            var cacheInstance = _cacheStates[keyName];
+
+            CacheState<TReturnType> state;
+            
+            lock (_cacheStates)
+            {
+                state = id is null ? cacheInstance.Values.First() : _cacheStates[keyName][id];
+            }
 
             // when auto refresh is off we want to check the expiration and value
             // when auto refresh is on, we want to only check the value, because it'll be refreshed automatically

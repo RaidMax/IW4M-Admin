@@ -8,107 +8,94 @@ using System.Threading;
 using System.Threading.Tasks;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace Data.Helpers
+namespace Data.Helpers;
+
+public class LookupCache<T> : ILookupCache<T> where T : class, IUniqueId
 {
-    public class LookupCache<T> : ILookupCache<T> where T : class, IUniqueId
+    private readonly ILogger _logger;
+    private readonly IDatabaseContextFactory _contextFactory;
+    private Dictionary<long, T> _cachedItems;
+    private readonly SemaphoreSlim _onOperation = new(1, 1);
+
+    public LookupCache(ILogger<LookupCache<T>> logger, IDatabaseContextFactory contextFactory)
     {
-        private readonly ILogger _logger;
-        private readonly IDatabaseContextFactory _contextFactory;
-        private Dictionary<long, T> _cachedItems;
-        private readonly SemaphoreSlim _onOperation = new SemaphoreSlim(1, 1);
+        _logger = logger;
+        _contextFactory = contextFactory;
+    }
 
-        public LookupCache(ILogger<LookupCache<T>> logger, IDatabaseContextFactory contextFactory)
+    public async Task<T> AddAsync(T item)
+    {
+        await _onOperation.WaitAsync();
+        T existingItem = null;
+
+        if (_cachedItems.ContainsKey(item.Id))
         {
-            _logger = logger;
-            _contextFactory = contextFactory;
+            existingItem = _cachedItems[item.Id];
         }
 
-        public async Task<T> AddAsync(T item)
+        if (existingItem != null)
         {
-            await _onOperation.WaitAsync();
-            T existingItem = null;
+            _logger.LogDebug("Cached item already added for {Type} {Id} {Value}", typeof(T).Name, item.Id,
+                item.Value);
+            _onOperation.Release();
+            return existingItem;
+        }
 
-            if (_cachedItems.ContainsKey(item.Id))
+        try
+        {
+            _logger.LogDebug("Adding new {Type} with {Id} {Value}", typeof(T).Name, item.Id, item.Value);
+            await using var context = _contextFactory.CreateContext();
+            context.Set<T>().Add(item);
+            await context.SaveChangesAsync();
+            _cachedItems.Add(item.Id, item);
+            return item;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not add item to cache for {Type}", typeof(T).Name);
+            throw new Exception("Could not add item to cache");
+        }
+        finally
+        {
+            if (_onOperation.CurrentCount == 0)
             {
-                existingItem = _cachedItems[item.Id];
-            }
-
-            if (existingItem != null)
-            {
-                _logger.LogDebug("Cached item already added for {type} {id} {value}", typeof(T).Name, item.Id,
-                    item.Value);
                 _onOperation.Release();
-                return existingItem;
-            }
-
-            try
-            {
-                _logger.LogDebug("Adding new {type} with {id} {value}", typeof(T).Name, item.Id, item.Value);
-                await using var context = _contextFactory.CreateContext();
-                context.Set<T>().Add(item);
-                await context.SaveChangesAsync();
-                _cachedItems.Add(item.Id, item);
-                return item;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Could not add item to cache for {type}", typeof(T).Name);
-                throw new Exception("Could not add item to cache");
-            }
-            finally
-            {
-                if (_onOperation.CurrentCount == 0)
-                {
-                    _onOperation.Release();
-                }
             }
         }
+    }
 
-        public async Task<T> FirstAsync(Func<T, bool> query)
+    public async Task<T> FirstAsync(Func<T, bool> query)
+    {
+        try
         {
             await _onOperation.WaitAsync();
-
-            try
-            {
-                var cachedResult = _cachedItems.Values.Where(query);
-
-                if (cachedResult.Any())
-                {
-                    return cachedResult.FirstOrDefault();
-                }
-            }
-
-            catch
-            {
-            }
-
-            finally
-            {
-                if (_onOperation.CurrentCount == 0)
-                {
-                    _onOperation.Release(1);
-                }
-            }
-
-            return null;
+            var cachedResult = _cachedItems.Values.Where(query);
+            return cachedResult.FirstOrDefault();
         }
-
-        public IEnumerable<T> GetAll()
+        finally
         {
-            return _cachedItems.Values;
+            if (_onOperation.CurrentCount == 0)
+            {
+                _onOperation.Release(1);
+            }
         }
+    }
 
-        public async Task InitializeAsync()
+    public IEnumerable<T> GetAll()
+    {
+        return _cachedItems.Values;
+    }
+
+    public async Task InitializeAsync()
+    {
+        try
         {
-            try
-            {
-                await using var context = _contextFactory.CreateContext(false);
-                _cachedItems = await context.Set<T>().ToDictionaryAsync(item => item.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Could not initialize caching for {cacheType}", typeof(T).Name);
-            }
+            await using var context = _contextFactory.CreateContext(false);
+            _cachedItems = await context.Set<T>().ToDictionaryAsync(item => item.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not initialize caching for {CacheType}", typeof(T).Name);
         }
     }
 }

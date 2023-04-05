@@ -462,7 +462,6 @@ namespace IW4MAdmin.Application
                 .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
-                .AddSingleton<IEventPublisher, EventPublisher>()
                 .AddSingleton<IGeoLocationService>(new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
                 .AddSingleton<IAlertManager, AlertManager>()
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()

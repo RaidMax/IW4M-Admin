@@ -63,9 +63,8 @@ namespace SharedLibraryCore.Commands
                 .SelectMany(ev => ev.Value.Output)
                 .ToList();
 
-            foreach (var output in responses)
-                await gameEvent.Origin.Tell(_translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output))
-                    .WaitAsync();
+            await gameEvent.Origin.TellAsync(responses.Select(output =>
+                _translationLookup["COMMANDS_RUN_AS_SUCCESS"].FormatExt(output)));
         }
     }
 }

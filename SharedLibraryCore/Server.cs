@@ -64,7 +64,7 @@ namespace SharedLibraryCore
         {
             Password = config.Password;
             IP = config.IPAddress;
-            ListenPort = config.Port;
+            Port = config.Port;
             Manager = mgr;
 #pragma warning disable CS0612
             Logger = deprecatedLogger ?? throw new ArgumentNullException(nameof(deprecatedLogger));
@@ -159,8 +159,8 @@ namespace SharedLibraryCore
         public IPEndPoint ResolvedIpEndPoint { get; protected set; }
         public string Version { get; protected set; }
         public bool IsInitialized { get; set; }
-
-        public int ListenPort { get; }
+        public int Port { get; protected set; }
+        public int ListenPort => Port;
         public abstract Task Kick(string reason, EFClient target, EFClient origin, EFPenalty originalPenalty);
 
         /// <summary>

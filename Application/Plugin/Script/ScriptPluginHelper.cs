@@ -57,7 +57,7 @@ public class ScriptPluginHelper
         });
     }
 
-    public void RequestNotify(int delayMs, Delegate callback)
+    public void RequestNotifyAfterDelay(int delayMs, Delegate callback)
     {
         Task.Run(async () =>
         {

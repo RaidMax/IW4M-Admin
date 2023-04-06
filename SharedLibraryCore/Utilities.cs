@@ -1331,5 +1331,24 @@ namespace SharedLibraryCore
 
             return serviceCollection;
         }
+
+        public static void NotifyAfterDelay(TimeSpan duration, Func<Task> action) =>
+            NotifyAfterDelay((int)duration.TotalMilliseconds, action);
+        
+        public static void NotifyAfterDelay(int delayMs, Func<Task> action)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(delayMs);
+                    await action();
+                }
+                catch
+                {
+                    //  ignored
+                }
+            });
+        }
     }
 }

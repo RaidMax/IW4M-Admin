@@ -1342,6 +1342,8 @@ namespace IW4MAdmin
             var logsync = await this.GetMappedDvarValueOrDefaultAsync<int>("g_logsync", token: Manager.CancellationToken);
             var ip = await this.GetMappedDvarValueOrDefaultAsync<string>("net_ip", token: Manager.CancellationToken);
             var gamePassword = await this.GetMappedDvarValueOrDefaultAsync("g_password", overrideDefault: "", token: Manager.CancellationToken);
+            var privateClients = await this.GetMappedDvarValueOrDefaultAsync("sv_privateClients", overrideDefault: 0,
+                token: Manager.CancellationToken);
 
             if (Manager.GetApplicationSettings().Configuration().EnableCustomSayName)
             {
@@ -1383,12 +1385,14 @@ namespace IW4MAdmin
             }
 
             WorkingDirectory = basepath.Value;
-            this.Hostname = hostname;
-            this.MaxClients = maxplayers;
-            this.FSGame = game.Value;
-            this.Gametype = gametype;
-            this.IP = ip.Value is "localhost" or "0.0.0.0" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
-            this.GamePassword = gamePassword.Value;
+            Hostname = hostname;
+            MaxClients = maxplayers;
+            FSGame = game.Value;
+            Gametype = gametype;
+            IP = ip.Value is "localhost" or "0.0.0.0" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
+            GamePassword = gamePassword.Value;
+            PrivateClientSlots = privateClients.Value;
+            
             UpdateMap(mapname);
 
             if (RconParser.CanGenerateLogPath && string.IsNullOrEmpty(ServerConfig.ManualLogPath))

@@ -123,6 +123,7 @@ namespace SharedLibraryCore
             ?.FirstOrDefault(gt => gt.Name == Gametype)?.Alias ?? Gametype;
 
         public string GamePassword { get; protected set; }
+        public int PrivateClientSlots { get; protected set; }
         public Map CurrentMap { get; set; }
         public Map Map => CurrentMap;
 

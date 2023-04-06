@@ -38,6 +38,7 @@ namespace WebfrontCore.Controllers
                 Game = (Reference.Game)matchingServer.GameName,
                 ClientCount = matchingServer.ClientNum,
                 MaxClients = matchingServer.MaxClients,
+                PrivateClientSlots = matchingServer.PrivateClientSlots,
                 GameType = matchingServer.GametypeName,
                 Players = matchingServer.GetClientsAsList()
                     .Select(client => new PlayerInfo

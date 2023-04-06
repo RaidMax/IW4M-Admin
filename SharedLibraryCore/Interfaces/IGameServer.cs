@@ -74,6 +74,11 @@ namespace SharedLibraryCore.Interfaces
         string GamePassword { get; }
         
         /// <summary>
+        /// Number of private client slots
+        /// </summary>
+        int PrivateClientSlots { get; }
+        
+        /// <summary>
         /// Current map the game server is running
         /// </summary>
         Map Map { get; }

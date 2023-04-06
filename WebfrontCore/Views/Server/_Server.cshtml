@@ -65,7 +65,7 @@
                 </div>
             }
             <div class="mr-5 ml-5 align-self-center">
-                <span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@Model.MaxClients</span>
+                <span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@(Model.MaxClients - Model.PrivateClientSlots)@(Model.PrivateClientSlots > 0 ? $" ({Model.MaxClients})": "")</span>
             </div>
         </div>
     </div>

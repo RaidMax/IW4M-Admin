@@ -74,6 +74,7 @@ namespace WebfrontCore.ViewComponents
                     Game = (Reference.Game)server.GameName,
                     ClientCount = server.ClientNum,
                     MaxClients = server.MaxClients,
+                    PrivateClientSlots = server.PrivateClientSlots,
                     GameType = server.GametypeName,
                     ClientHistory = new ClientHistoryInfo
                     {

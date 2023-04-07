@@ -16,7 +16,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Data.Abstractions;
-using IW4MAdmin.Plugins.Stats.Config;
 using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
@@ -70,7 +69,8 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 {
                     Name = selectedServer.Hostname,
                     IPAddress = selectedServer.ListenAddress,
-                    Port = selectedServer.ListenPort
+                    Port = selectedServer.ListenPort,
+                    Game = selectedServer.GameCode
                 }));
         }
 

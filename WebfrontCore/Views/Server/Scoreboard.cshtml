@@ -22,7 +22,9 @@
                 IsLink = true,
                 Reference = Url.Action("Scoreboard", "Server", new { serverId = server.ServerId }),
                 Title = server.ServerName.StripColors(),
-                IsActive = ViewBag.SelectedServerId == server.ServerId
+                IsActive = ViewBag.SelectedServerId == server.ServerId,
+                IsCollapse = true,
+                Meta = server.GameCode.ToString()
             }).ToList()
         };
     }

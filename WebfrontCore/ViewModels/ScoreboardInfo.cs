@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Data.Models;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SharedLibraryCore.Database.Models;
 
 namespace WebfrontCore.ViewModels
@@ -7,6 +9,7 @@ namespace WebfrontCore.ViewModels
     {
         public string ServerName { get; set; }
         public string ServerId { get; set; }
+        public Reference.Game GameCode { get; set; }
         public string MapName { get; set; }
         public string OrderByKey { get; set; }
         public bool ShouldOrderDescending { get; set; }

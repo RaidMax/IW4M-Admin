@@ -26,6 +26,10 @@ $dp-cell-focus-background-color: rgba(255, 255, 255, 0.05);
   --card-border-width: 0;
 
   --dm-modal-overlay-bg-color: rgba(0, 0, 0, 0.8);
+  --collapse-header-padding-with-bg-image: 0.75rem 2.5rem 0.75rem 4.5rem;
+  --collapse-content-padding: 1rem 1rem 0 1rem;
+  --webkit-scrollbar-track-border-width: 0;
+  --dm-webkit-scrollbar-corner-border-color: transparent;
 }
 
 .server-history-row {
@@ -353,16 +357,17 @@ table {
 /* Sidenav */
 .on-this-page-nav {
   position: fixed;
-  margin-right: 2rem;
   z-index: 20;
   background-color: var(--lm-base-body-bg-color);
   padding: 0.5rem;
-  border-radius: 0.4rem;
+  height: 90%;
+  overflow: scroll;
 }
 
 .dark-mode .on-this-page-nav {
   background-color: #25282c;
 }
+
 
 .on-this-page-nav .title {
   font-weight: 500;

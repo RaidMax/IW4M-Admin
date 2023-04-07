@@ -31,7 +31,8 @@ namespace IW4MAdmin.Plugins.LiveRadar.Web.Controllers
                 {
                     Name = server.Hostname,
                     IPAddress = server.ListenAddress,
-                    Port = server.ListenPort
+                    Port = server.ListenPort,
+                    Game = server.GameCode
                 });
 
             ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];

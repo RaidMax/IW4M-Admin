@@ -2,21 +2,49 @@
 @{ Layout = null; }
 
 <div class="d-none d-lg-flex col-3">
-    <div class="content mt-0">
-        <div class="on-this-page-nav pt-0">
-            <div class="title">@Model.MenuTitle</div>
+        <div class="on-this-page-nav pt-0" style="margin-left: 3rem;">
+            <div>
+                <div class="title">@Model.MenuTitle</div>
 
-            @foreach (var item in Model.Items)
-            {
-                <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "profile-action")" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId" data-action-meta="@item.Meta">
-                    <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                        <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
-                        <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
-                    </div>
-                </a>
-            }
+                @{
+                    var groupedItems = Model.Items.Where(item => item.IsCollapse)
+                        .GroupBy(item => item.Meta)
+                        .ToList();
+                    var index = 0;
+                }
+
+                @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
+                {
+                    <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "profile-action")" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId" data-action-meta="@item.Meta">
+                        <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                            <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
+                            <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
+                        </div>
+                    </a>
+                }
+                
+                @foreach (var group in groupedItems)
+                {
+                    <details class="collapse-panel mt-10 mb-10" @(index == 0 ? "open" : "")>
+                        <summary class="collapse-header">
+                            @ViewBag.Localization[$"GAME_{group.Key}"]
+                        </summary>
+                        <div class="collapse-content" style="overflow: scroll; max-height: 30rem; max-width:350px;">
+                            @foreach (var item in group)
+                            {
+                                <a href="@(item.IsLink ? item.Reference : "#")" style="border: 0; padding: 0;" class="@(item.IsLink ? "" : "profile-action")" data-action="@(item.IsLink ? "" : item.Reference)" data-action-id="@item.EntityId" data-action-meta="@item.Meta">
+                                    <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                                        <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
+                                        <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    </details>
+                    index++;
+                }
+            </div>
         </div>
-    </div>
 </div>
 
 <div class="modal" id="contextMenuModal" tabindex="-1" role="dialog">

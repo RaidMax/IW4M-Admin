@@ -42,9 +42,11 @@
                 IsLink = true,
                 // ReSharper disable Mvc.ActionNotResolved
                 // ReSharper disable Mvc.ControllerNotResolved
-                Reference = Url.Action("Index", "Radar", new { serverId = server.Endpoint }),
+                Reference = Url.Action("Index", "Radar", new { serverId = (dynamic)server.Endpoint }),
                 Title = server.Name.StripColors(),
-                IsActive = ViewBag.SelectedServerId == server.Endpoint 
+                IsActive = ViewBag.SelectedServerId == server.Endpoint ,
+                IsCollapse = true,
+                Meta = server.Game.ToString()
             }).ToList()
         };
     }

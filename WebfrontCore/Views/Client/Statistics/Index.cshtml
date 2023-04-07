@@ -27,7 +27,9 @@
                 IsLink = true,
                 Reference = Url.Action("TopPlayers", "Stats", new { serverId = server.Endpoint }),
                 Title = server.Name.StripColors(),
-                IsActive = ViewBag.SelectedServerId == server.Endpoint
+                IsActive = ViewBag.SelectedServerId == server.Endpoint,
+                Meta = server.Game.ToString(),
+                IsCollapse = true
             }).Prepend(new SideContextMenuItem
             {
                 IsLink = true,

@@ -239,8 +239,10 @@ namespace SharedLibraryCore
         /// <param name="sender">Client that initiated the broadcast</param>
         public GameEvent Broadcast(string message, EFClient sender = null)
         {
+            var hasRawSupport = RconParser.Configuration.CommandPrefixes.Say.Contains("raw");
             var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Say ?? "",
-                $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message}");
+                $"{(CustomSayEnabled && hasRawSupport ? $"{CustomSayName}: " : "")}{message}");
+            
             ServerLogger.LogDebug("All-> {Message}",
                 message.FormatMessageForEngine(RconParser.Configuration).StripColors());
 
@@ -294,9 +296,11 @@ namespace SharedLibraryCore
                 var parsedClientId = string.IsNullOrEmpty(temporalClientId) ? (int?)null : int.Parse(temporalClientId);
                 var clientNumber = parsedClientId ?? targetClient.ClientNumber;
 
+                var hasRawSupport = RconParser.Configuration.CommandPrefixes.Tell.Contains("raw");
                 var formattedMessage = string.Format(RconParser.Configuration.CommandPrefixes.Tell,
                     clientNumber,
-                    $"{(CustomSayEnabled && GameName == Game.IW4 ? $"{CustomSayName}: " : "")}{message}");
+                    $"{(CustomSayEnabled && hasRawSupport ? $"{CustomSayName}: " : "")}{message}");
+                
                 if (targetClient.ClientNumber > -1 && message.Length > 0 &&
                     targetClient.Level != Data.Models.Client.EFClient.Permission.Console)
                 {

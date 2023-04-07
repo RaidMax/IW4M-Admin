@@ -330,7 +330,7 @@ namespace IW4MAdmin
                 else if (E.Type == GameEvent.EventType.ConnectionRestored)
                 {
                     ServerLogger.LogInformation(
-                        "Connection restored with {server}", ToString());
+                        "Connection restored with {Server}", ToString());
                     
                     if (!Manager.GetApplicationSettings().Configuration().IgnoreServerConnectionLost)
                     {
@@ -1347,7 +1347,7 @@ namespace IW4MAdmin
 
             if (Manager.GetApplicationSettings().Configuration().EnableCustomSayName)
             {
-                await this.SetDvarAsync("sv_sayname", Manager.GetApplicationSettings().Configuration().CustomSayName,
+                await this.SetDvarAsync("sv_sayname", CustomSayName,
                     Manager.CancellationToken);
             }
 

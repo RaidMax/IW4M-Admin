@@ -238,11 +238,8 @@
     </div>
 </div>
 
-
-<hr class="mt-10 mb-10"/>
-
 <!-- meta filter list -->
-<div class="mb-10 mt-15">
+<div class="mb-10 mt-15 m-auto">
     @foreach (var type in Enum.GetValues(typeof(MetaType)).Cast<MetaType>().Where(meta => !ignoredMetaTypes.Contains(meta)).OrderByDescending(meta => meta == MetaType.All))
     {
         var buttonClass = !Model.MetaFilterType.HasValue && type == MetaType.All || Model.MetaFilterType.HasValue && Model.MetaFilterType.Value.ToString() == type.ToString() ? "btn-primary text-light" : "text-muted";

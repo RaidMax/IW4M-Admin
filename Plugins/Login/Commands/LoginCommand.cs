@@ -10,8 +10,13 @@ namespace IW4MAdmin.Plugins.Login.Commands
 {
     public class LoginCommand : Command
     {
-        public LoginCommand(CommandConfiguration config, ITranslationLookup translationLookup) : base(config, translationLookup)
+        private readonly LoginConfiguration _loginConfig;
+        private readonly LoginStates _loginStates;
+
+        public LoginCommand(CommandConfiguration config, ITranslationLookup translationLookup, LoginConfiguration loginConfig, LoginStates loginStates) : base(config, translationLookup)
         {
+            _loginConfig = loginConfig;
+            _loginStates = loginStates;
             Name = "login";
             Description = _translationLookup["PLUGINS_LOGIN_COMMANDS_LOGIN_DESC"];
             Alias = "li";
@@ -29,6 +34,12 @@ namespace IW4MAdmin.Plugins.Login.Commands
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
         {
+            if (!_loginConfig.RequirePrivilegedClientLogin)
+            {
+                gameEvent.Origin.Tell(_translationLookup["PLUGINS_LOGIN_COMMANDS_LOGIN_DISABLED"]);
+                return;
+            }
+            
             var success = gameEvent.Owner.Manager.TokenAuthenticator.AuthorizeToken(new TokenIdentifier
             {
                 ClientId = gameEvent.Origin.ClientId,
@@ -43,7 +54,7 @@ namespace IW4MAdmin.Plugins.Login.Commands
 
             if (success)
             {
-                Plugin.AuthorizedClients[gameEvent.Origin.ClientId] = true;
+                _loginStates.AuthorizedClients[gameEvent.Origin.ClientId] = true;
             }
 
             _ = success ?

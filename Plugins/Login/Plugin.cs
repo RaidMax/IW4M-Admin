@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using IW4MAdmin.Plugins.Login.Commands;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,13 +16,13 @@ public class Plugin : IPluginV2
     public string Name => "Login";
     public string Version => Utilities.GetVersionAsString();
     public string Author => "RaidMax";
+    
+    private readonly LoginStates _loginStates;
 
-    public static ConcurrentDictionary<int, bool> AuthorizedClients { get; private set; }
-    private const string LoginKey = "IsLoggedIn";
-
-    public Plugin(LoginConfiguration configuration)
+    public Plugin(LoginConfiguration configuration, LoginStates loginStates)
     {
-        if (!configuration?.RequirePrivilegedClientLogin ?? false)
+        _loginStates = loginStates;
+        if (!(configuration?.RequirePrivilegedClientLogin ?? false))
         {
             return;
         }
@@ -32,28 +31,27 @@ public class Plugin : IPluginV2
         IManagementEventSubscriptions.ClientStateInitialized += OnClientStateInitialized;
         IManagementEventSubscriptions.ClientStateDisposed += (clientEvent, token) =>
         {
-            AuthorizedClients.TryRemove(clientEvent.Client.ClientId, out _);
+            _loginStates.AuthorizedClients.TryRemove(clientEvent.Client.ClientId, out _);
             return Task.CompletedTask;
         };
     }
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
-        serviceCollection.AddConfiguration<LoginConfiguration>("LoginConfiguration");
+        serviceCollection.AddConfiguration<LoginConfiguration>("LoginPluginSettings");
+        serviceCollection.AddSingleton(new LoginStates());
     }
 
-    private static Task OnClientStateInitialized(ClientStateInitializeEvent clientEvent, CancellationToken token)
+    private Task OnClientStateInitialized(ClientStateInitializeEvent clientEvent, CancellationToken token)
     {
-        AuthorizedClients.TryAdd(clientEvent.Client.ClientId, false);
-        clientEvent.Client.SetAdditionalProperty(LoginKey, false);
+        _loginStates.AuthorizedClients.TryAdd(clientEvent.Client.ClientId, false);
+        clientEvent.Client.SetAdditionalProperty(LoginStates.LoginKey, false);
 
         return Task.CompletedTask;
     }
 
-    private static Task OnLoad(IManager manager, CancellationToken token)
+    private Task OnLoad(IManager manager, CancellationToken token)
     {
-        AuthorizedClients = new ConcurrentDictionary<int, bool>();
-
         manager.CommandInterceptors.Add(gameEvent =>
         {
             if (gameEvent.Type != GameEvent.EventType.Command || gameEvent.Extra is null || gameEvent.IsRemote)
@@ -82,12 +80,12 @@ public class Plugin : IPluginV2
                 return true;
             }
 
-            if (!AuthorizedClients[gameEvent.Origin.ClientId])
+            if (!_loginStates.AuthorizedClients[gameEvent.Origin.ClientId])
             {
                 return false;
             }
 
-            gameEvent.Origin.SetAdditionalProperty(LoginKey, true);
+            gameEvent.Origin.SetAdditionalProperty(LoginStates.LoginKey, true);
             return true;
         });
 

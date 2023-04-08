@@ -48,7 +48,7 @@ public class Plugin : IPluginV2
 
     private Task GameEventSubscriptionsOnClientMessaged(ClientMessageEvent clientEvent, CancellationToken token)
     {
-        if (!_configuration?.EnableProfanityDeterment ?? false)
+        if (!(_configuration?.EnableProfanityDeterment ?? false))
         {
             return Task.CompletedTask;
         }

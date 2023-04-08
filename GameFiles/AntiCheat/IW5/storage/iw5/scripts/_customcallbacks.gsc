@@ -40,11 +40,11 @@ waitForAttack()
 {
 	self endon( "disconnect" );
 	
+	self notifyOnPlayerCommand( "player_shot", "+attack" );
 	self.lastAttackTime = 0;
 	
 	for( ;; )
 	{
-		self notifyOnPlayerCommand( "player_shot", "+attack" );
 		self waittill( "player_shot" );
 		
 		self.lastAttackTime = getTime();

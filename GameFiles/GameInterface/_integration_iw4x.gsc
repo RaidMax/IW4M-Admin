@@ -4,7 +4,7 @@ Init()
 {
     level.eventBus.gamename = "IW4";
 
-    level thread Setup();
+    thread Setup();
 }
 
 Setup()
@@ -18,6 +18,7 @@ Setup()
     
     level.overrideMethods["GetTotalShotsFired"]                                    = ::GetTotalShotsFired;
     level.overrideMethods[level.commonFunctions.setDvar]                           = ::_SetDvarIfUninitialized;
+    level.overrideMethods[level.commonFunctions.isBot]                             = ::IsTestClient;
     level.overrideMethods["waittill_notify_or_timeout"]                            = ::_waittill_notify_or_timeout;
     level.overrideMethods[level.commonFunctions.changeTeam]                        = ::ChangeTeam;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = ::CountPlayers;
@@ -48,7 +49,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( scripts\_integration_base::_IsBot( player ) ) 
+        if ( player call [[ level.overrideMethods[ level.commonFunctions.isBot ] ]]() ) 
         {
             // we don't want to track bots
             continue;    
@@ -441,7 +442,9 @@ NoClipImpl()
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
-        self Noclip();
+
+        self.clientflags |= 1; // IW4x specific
+
         self Hide();
         
         self.isNoClipped = true;
@@ -455,7 +458,9 @@ NoClipImpl()
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
-        self Noclip();
+
+        self.clientflags &= ~1; // IW4x specific
+
         self Show();
         
         self.isNoClipped = false;

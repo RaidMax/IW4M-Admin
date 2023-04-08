@@ -185,7 +185,11 @@
         {
           "Name": "twar",
           "Alias": "War"
-        }
+        },
+	{
+          "Name": "cmp",
+          "Alias": "Zombies"
+        }	      
       ]
     },
     {
@@ -437,7 +441,15 @@
         {
           "Name": "tdm",
           "Alias": "Team Deathmatch"
-        }
+        },
+        {
+          "Name": "zclassic",
+          "Alias": "Zombies Classic"
+        },
+	{
+          "Name": "zstandard",
+          "Alias": "Zombies"
+        }      
       ]
     },
     {
@@ -538,7 +550,11 @@
         {
           "Name": "hc_tdm",
           "Alias": "Hardcore Team Deathmatch"
-        }
+        },
+	{
+          "Name": "zclassic",
+          "Alias": "Zombies Classic"
+        }	      
       ]
     },
     {
@@ -1645,6 +1661,70 @@
         {
           "Alias": "Outlaw",
           "Name": "mp_western"
+        },
+	{
+          "Alias": "Fringe Night",
+          "Name": "mp_veiled_heyday"
+        },
+	{
+          "Alias": "Redwood Snow",
+          "Name": "mp_redwood_ice"
+        },
+	{
+          "Alias": "Shadows of Evil",
+          "Name": "zm_zod"
+        },
+	{
+          "Alias": "Der Eisendrache",
+          "Name": "zm_castle"
+        },
+	{
+          "Alias": "Zetsubou No Shima",
+          "Name": "zm_island"
+        },
+	{
+          "Alias": "Gorod Krovi",
+          "Name": "zm_stalingrad"
+        },
+	{
+          "Alias": "Revelations",
+          "Name": "zm_genesis"
+        },
+	{
+          "Alias": "Ascension",
+          "Name": "zm_cosmodrome"
+        },
+	{
+          "Alias": "Kino der Toten",
+          "Name": "zm_theater"
+        },
+	{
+          "Alias": "Moom",
+          "Name": "zm_moon"
+        },	
+	{
+          "Alias": "Nacht der Untoten",
+          "Name": "zm_prototype"
+        },
+	{
+          "Alias": "Origins",
+          "Name": "zm_tomb"
+        },
+	{
+          "Alias": "Shangri-La",
+          "Name": "zm_temple"
+        },	
+	{
+          "Alias": "Shi No Numa",
+          "Name": "zm_sumpf"
+        },
+	{
+          "Alias": "The Giant",
+          "Name": "zm_factory"
+        },
+	{
+          "Alias": "Verrückt",
+          "Name": "zm_asylum"
         }
       ]
     },

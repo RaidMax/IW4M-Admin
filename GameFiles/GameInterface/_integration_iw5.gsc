@@ -4,7 +4,7 @@ Init()
 {
     level.eventBus.gamename = "IW5";
 
-    level thread Setup();
+    thread Setup();
 }
 
 Setup()
@@ -19,6 +19,7 @@ Setup()
     level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
     level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
     level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
+    level.overrideMethods[level.commonFunctions.isBot] = ::IsTestClient;
     
     RegisterClientCommands();
     
@@ -40,7 +41,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( scripts\mp\_integration_base::_IsBot( player ) ) 
+        if ( player call [[ level.overrideMethods[ level.commonFunctions.isBot ] ]]() ) 
         {
             // we don't want to track bots
             continue;    

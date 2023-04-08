@@ -29,21 +29,29 @@ const plugin = {
     },
 
     onServerMonitoringStart: function (startEvent) {
+        let lookupComplete = true;
         if (serverLocationCache[startEvent.server.listenAddress] === undefined) {
-            serverLocationCache[startEvent.server.listenAddress] = 'UA';
+            serverLocationCache[startEvent.server.listenAddress] = 'SO';
+            lookupComplete = false;
         }
 
         if (serverOrderCache[startEvent.server.gameCode] === undefined) {
             serverOrderCache[startEvent.server.gameCode] = [];
         }
 
-        const lookupIp = startEvent.server.resolvedIpEndPoint.address.isInternal() ?
-            this.manager.externalIPAddress :
-            startEvent.server.listenAddress;
-
         serverOrderCache[startEvent.server.gameCode].push(startEvent.server);
         serverOrderCache[startEvent.server.gameCode].sort((a, b) => b.clientNum - a.clientNum);
 
+        if (lookupComplete) {
+            return;
+        }
+
+        const lookupIp = startEvent.server.resolvedIpEndPoint.address.isInternal() ?
+            this.manager.externalIPAddress :
+            startEvent.server.resolvedIpEndPoint.toString().split(':')[0];
+        
+        this.logger.logInformation('Looking up server location for IP {IP}', lookupIp);
+        
         this.scriptHelper.getUrl(`https://ipinfo.io/${lookupIp}/country`, (result) => {
             let error = true;
 
@@ -143,7 +151,7 @@ const plugin = {
 
                 const displayIp = server.resolvedIpEndPoint.address.isInternal() ?
                     plugin.manager.externalIPAddress :
-                    server.listenAddress;
+                    server.resolvedIpEndPoint.toString().split(':')[0];
 
                 return `<html>
                             <head>

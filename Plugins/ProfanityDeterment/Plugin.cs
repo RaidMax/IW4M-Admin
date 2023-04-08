@@ -32,7 +32,7 @@ public class Plugin : IPluginV2
     {
         _configuration = configuration;
 
-        if (_configuration?.EnableProfanityDeterment ?? false)
+        if (!(_configuration?.EnableProfanityDeterment ?? false))
         {
             return;
         }
@@ -97,7 +97,12 @@ public class Plugin : IPluginV2
 
     private Task OnClientStateInitialized(ClientStateInitializeEvent clientEvent, CancellationToken token)
     {
-        if (_configuration?.EnableProfanityDeterment ?? false)
+        if (!(_configuration?.EnableProfanityDeterment ?? false))
+        {
+            return Task.CompletedTask;
+        }
+
+        if (!_configuration.KickOnInfringingName)
         {
             return Task.CompletedTask;
         }

@@ -11,6 +11,7 @@ namespace IW4MAdmin.Plugins.ProfanityDeterment
         public string ProfanityWarningMessage { get; set; }
         public string ProfanityKickMessage { get; set; }
         public int KickAfterInfringementCount { get; set; }
+        public bool KickOnInfringingName { get; set; } = true;
 
         public IBaseConfiguration Generate()
         {

@@ -41,6 +41,7 @@ const plugin = {
 
         serverOrderCache[startEvent.server.gameCode].push(startEvent.server);
         serverOrderCache[startEvent.server.gameCode].sort((a, b) => b.clientNum - a.clientNum);
+        serverOrderCache.sort((a, b) => b[Object.keys(b)[0].clientNum] - b[Object.keys(a)[0].clientNum]);
 
         if (lookupComplete) {
             return;
@@ -49,9 +50,9 @@ const plugin = {
         const lookupIp = startEvent.server.resolvedIpEndPoint.address.isInternal() ?
             this.manager.externalIPAddress :
             startEvent.server.resolvedIpEndPoint.toString().split(':')[0];
-        
+
         this.logger.logInformation('Looking up server location for IP {IP}', lookupIp);
-        
+
         this.scriptHelper.getUrl(`https://ipinfo.io/${lookupIp}/country`, (result) => {
             let error = true;
 
@@ -274,7 +275,7 @@ const plugin = {
                                     <div style="overflow: hidden">
                                     <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}" width="750" height="120" style="border-width: 0; overflow: hidden;" class="rounded mb-5" ></iframe>
                                     </div>
-                                    <div class="btn mb-10" onclick="document.getElementById('showCode${eachServer.id}').style.removeProperty('display')">Show Embed</div>
+                                    <div class="btn mb-10" onclick="$(document.getElementById('showCode${eachServer.id}')).toggleClass('d-flex')">Show Embed</div>
                                     <div class="code p-5" id="showCode${eachServer.id}" style="display:none;">&lt;iframe 
 	<br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}" 
         <br/>&nbsp;width="750" height="120" style="border-width: 0; overflow: hidden;"&gt;<br/>
@@ -284,6 +285,7 @@ const plugin = {
                 });
 
                 response += '</div>';
+                response += ''
                 return response;
             };
 

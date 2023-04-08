@@ -25,7 +25,7 @@
                 
                 @foreach (var group in groupedItems)
                 {
-                    <details class="collapse-panel mt-10 mb-10" @(index == 0 ? "open" : "")>
+                    <details class="collapse-panel mt-0 pb-10 pt-10 pl-20 border-left" @(index == 0 ? "open" : "")>
                         <summary class="collapse-header">
                             @ViewBag.Localization[$"GAME_{group.Key}"]
                         </summary>

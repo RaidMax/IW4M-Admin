@@ -385,7 +385,9 @@
                 IsLink = true,
                 Reference = Url.Action("Advanced", "ClientStatistics", new { serverId = server.Endpoint }),
                 Title = server.Name.StripColors(),
-                IsActive = Model.ServerEndpoint == server.Endpoint
+                IsActive = Model.ServerEndpoint == server.Endpoint,
+                IsCollapse = true,
+                Meta = server.Game.ToString()
             }).Prepend(new SideContextMenuItem
             {
                 IsLink = true,

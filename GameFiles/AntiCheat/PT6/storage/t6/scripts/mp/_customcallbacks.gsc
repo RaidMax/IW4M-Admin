@@ -195,10 +195,10 @@ waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 	logPrint(logString + ";" + anglesStr + ";" + isAlive + ";" + lastAttack + "\n" ); 
 }
 
-vectorScale( vector, scale )
+/*vectorScale( vector, scale )
 {
 	return ( vector[0] * scale, vector[1] * scale, vector[2] * scale );
-}
+}*/
 
 Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 {
@@ -226,7 +226,7 @@ Process_Hit( type, attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon )
 	{
 		isKillstreakKill = true;
 	}
-	if(maps/mp/killstreaks/_killstreaks::iskillstreakweapon(sWeapon))
+	if(maps\mp\killstreaks\_killstreaks::iskillstreakweapon(sWeapon))
 	{
 		isKillstreakKill = true;
 	}
@@ -247,17 +247,17 @@ Callback_PlayerDamage( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sW
 		self Process_Hit( "Damage", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
 	}
 
-	self [[maps/mp/gametypes/_globallogic_player::callback_playerdamage]]( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime, boneIndex );
+	self [[maps\mp\gametypes\_globallogic_player::callback_playerdamage]]( eInflictor, attacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime, boneIndex );
 }
 
 Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
 {
 	Process_Hit( "Kill", attacker, sHitLoc, sMeansOfDeath, iDamage, sWeapon );
-	self [[maps/mp/gametypes/_globallogic_player::callback_playerkilled]]( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
+	self [[maps\mp\gametypes\_globallogic_player::callback_playerkilled]]( eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }
 
 Callback_PlayerDisconnect()
 {
 	level notify( "disconnected", self );
-	self [[maps/mp/gametypes/_globallogic_player::callback_playerdisconnect]]();
+	self [[maps\mp\gametypes\_globallogic_player::callback_playerdisconnect]]();
 }

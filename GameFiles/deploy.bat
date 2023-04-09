@@ -14,4 +14,3 @@ xcopy /y .\GameInterface\_integration_t5zm.gsc "%LOCALAPPDATA%\Plutonium\storage
 
 ECHO "Pluto T6"
 xcopy /y .\AntiCheat\PT6\storage\t6\scripts\mp\_customcallbacks.gsc "%LOCALAPPDATA%\Plutonium\storage\t6\scripts\mp"
-xcopy /y .\AntiCheat\PT6\storage\t6\scripts\mp\_customcallbacks.gsc.src "%LOCALAPPDATA%\Plutonium\storage\t6\scripts\mp"

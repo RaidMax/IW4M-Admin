@@ -1606,6 +1606,12 @@ namespace IW4MAdmin
             });
         }
 
+        public override Task<string[]> ExecuteCommandAsync(string command, CancellationToken token = default) =>
+            Utilities.ExecuteCommandAsync(this, command, token);
+
+        public override Task SetDvarAsync(string name, object value, CancellationToken token = default) =>
+            Utilities.SetDvarAsync(this, name, value, token);
+
         public override async Task TempBan(string reason, TimeSpan length, EFClient targetClient, EFClient originClient)
         {
             // ensure player gets kicked if command not performed on them in the same server

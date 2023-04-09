@@ -163,6 +163,8 @@ namespace SharedLibraryCore
         public int Port { get; protected set; }
         public int ListenPort => Port;
         public abstract Task Kick(string reason, EFClient target, EFClient origin, EFPenalty originalPenalty);
+        public abstract Task<string[]> ExecuteCommandAsync(string command, CancellationToken token = default);
+        public abstract Task SetDvarAsync(string name, object value, CancellationToken token = default);
 
         /// <summary>
         ///     Returns list of all current players

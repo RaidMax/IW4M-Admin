@@ -309,6 +309,7 @@ namespace IW4MAdmin.Application
             #region EVENTS                        
             IGameServerEventSubscriptions.ServerValueRequested += OnServerValueRequested;
             IGameServerEventSubscriptions.ServerValueSetRequested += OnServerValueSetRequested;
+            IGameServerEventSubscriptions.ServerCommandExecuteRequested += OnServerCommandExecuteRequested;
             await IManagementEventSubscriptions.InvokeLoadAsync(this, CancellationToken);
             # endregion
 
@@ -788,9 +789,63 @@ namespace IW4MAdmin.Application
             }
         }
 
-        private async Task OnServerValueSetRequested(ServerValueSetRequestEvent requestEvent, CancellationToken token)
+        private Task OnServerValueSetRequested(ServerValueSetRequestEvent requestEvent, CancellationToken token)
         {
-            if (requestEvent.Server is not IW4MServer server)
+            return ExecuteWrapperForServerQuery(requestEvent, token, async (innerEvent) =>
+            {
+                if (innerEvent.DelayMs.HasValue)
+                {
+                    await Task.Delay(innerEvent.DelayMs.Value, token);
+                }
+
+                if (innerEvent.TimeoutMs is not null)
+                {
+                    using var timeoutTokenSource = new CancellationTokenSource(innerEvent.TimeoutMs.Value);
+                    using var linkedTokenSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, token);
+                    token = linkedTokenSource.Token;
+                }
+
+                await innerEvent.Server.SetDvarAsync(innerEvent.ValueName, innerEvent.Value, token);
+            }, (completed, innerEvent) =>
+            {
+                QueueEvent(new ServerValueSetCompleteEvent
+                {
+                    Server = innerEvent.Server,
+                    Source = innerEvent.Server,
+                    Success = completed,
+                    Value = innerEvent.Value,
+                    ValueName = innerEvent.ValueName
+                });
+                return Task.CompletedTask;
+            });
+        }
+
+        private Task OnServerCommandExecuteRequested(ServerCommandRequestExecuteEvent executeEvent, CancellationToken token)
+        {
+            return ExecuteWrapperForServerQuery(executeEvent, token, async (innerEvent) =>
+            {
+                if (innerEvent.DelayMs.HasValue)
+                {
+                    await Task.Delay(innerEvent.DelayMs.Value, token);
+                }
+
+                if (innerEvent.TimeoutMs is not null)
+                {
+                    using var timeoutTokenSource = new CancellationTokenSource(innerEvent.TimeoutMs.Value);
+                    using var linkedTokenSource =
+                        CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, token);
+                    token = linkedTokenSource.Token;
+                }
+
+                await innerEvent.Server.ExecuteCommandAsync(innerEvent.Command, token);
+            }, (_, __) => Task.CompletedTask);
+        }
+
+        private async Task ExecuteWrapperForServerQuery<TEventType>(TEventType serverEvent, CancellationToken token,
+            Func<TEventType, Task> action, Func<bool, TEventType, Task> complete) where TEventType : GameServerEvent
+        {
+            if (serverEvent.Server is not IW4MServer)
             {
                 return;
             }
@@ -798,20 +853,7 @@ namespace IW4MAdmin.Application
             var completed = false;
             try
             {
-                if (requestEvent.DelayMs.HasValue)
-                {
-                    await Task.Delay(requestEvent.DelayMs.Value, token);
-                }
-
-                if (requestEvent.TimeoutMs is not null)
-                {
-                    using var timeoutTokenSource = new CancellationTokenSource(requestEvent.TimeoutMs.Value);
-                    using var linkedTokenSource =
-                        CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token, token);
-                    token = linkedTokenSource.Token;
-                }
-
-                await server.SetDvarAsync(requestEvent.ValueName, requestEvent.Value, token);
+                await action(serverEvent);
                 completed = true;
             }
             catch
@@ -820,14 +862,7 @@ namespace IW4MAdmin.Application
             }
             finally
             {
-                QueueEvent(new ServerValueSetCompleteEvent
-                {
-                    Server = server,
-                    Source = server,
-                    Success = completed,
-                    Value = requestEvent.Value,
-                    ValueName = requestEvent.ValueName
-                });
+                await complete(completed, serverEvent);
             }
         }
 

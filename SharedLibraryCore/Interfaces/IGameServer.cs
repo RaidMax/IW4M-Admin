@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using SharedLibraryCore.Database.Models;
@@ -17,6 +18,23 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="previousPenalty">previous penalty the kick is occuring for (if applicable)</param>
         /// <returns></returns>
         Task Kick(string reason, EFClient target, EFClient origin, EFPenalty previousPenalty = null);
+
+        /// <summary>
+        /// Execute a server command
+        /// </summary>
+        /// <param name="command">Server command to execute</param>
+        /// <param name="token"><see cref="CancellationToken"/></param>
+        /// <returns>Collection of console command output lines</returns>
+        Task<string[]> ExecuteCommandAsync(string command, CancellationToken token = default);
+
+        /// <summary>
+        /// Set value for server dvar
+        /// </summary>
+        /// <param name="name">Name of the server value to set</param>
+        /// <param name="value">Value of the server value</param>
+        /// <param name="token"><see cref="CancellationToken"/></param>
+        /// <returns></returns>
+        Task SetDvarAsync(string name, object value, CancellationToken token = default);
         
         /// <summary>
         /// Time the most recent match ended

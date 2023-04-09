@@ -39,6 +39,11 @@ public interface IGameServerEventSubscriptions
     static event Func<ClientDataUpdateEvent, CancellationToken, Task> ClientDataUpdated;
     
     /// <summary>
+    /// Raised when a command is requested to be executed on a game server
+    /// </summary>
+    static event Func<ServerCommandRequestExecuteEvent, CancellationToken, Task> ServerCommandExecuteRequested;
+    
+    /// <summary>
     /// Raised when a command was executed on a game server
     /// <value><see cref="ServerCommandExecuteEvent"/></value>
     /// </summary>
@@ -67,7 +72,7 @@ public interface IGameServerEventSubscriptions
     /// <value><see cref="ServerValueSetRequestEvent"/></value>
     /// </summary>
     static event Func<ServerValueSetCompleteEvent, CancellationToken, Task> ServerValueSetCompleted;
-    
+
     static Task InvokeEventAsync(CoreEvent coreEvent, CancellationToken token)
     {
         return coreEvent switch
@@ -77,6 +82,7 @@ public interface IGameServerEventSubscriptions
             ConnectionInterruptEvent connectionInterruptEvent => ConnectionInterrupted?.InvokeAsync(connectionInterruptEvent, token) ?? Task.CompletedTask,
             ConnectionRestoreEvent connectionRestoreEvent => ConnectionRestored?.InvokeAsync(connectionRestoreEvent, token) ?? Task.CompletedTask,
             ClientDataUpdateEvent clientDataUpdateEvent => ClientDataUpdated?.InvokeAsync(clientDataUpdateEvent, token) ?? Task.CompletedTask,
+            ServerCommandRequestExecuteEvent serverCommandRequestExecuteEvent => ServerCommandExecuteRequested?.InvokeAsync(serverCommandRequestExecuteEvent, token) ?? Task.CompletedTask,
             ServerCommandExecuteEvent dataReceiveEvent => ServerCommandExecuted?.InvokeAsync(dataReceiveEvent, token) ?? Task.CompletedTask,
             ServerValueRequestEvent serverValueRequestEvent => ServerValueRequested?.InvokeAsync(serverValueRequestEvent, token) ?? Task.CompletedTask,
             ServerValueReceiveEvent serverValueReceiveEvent => ServerValueReceived?.InvokeAsync(serverValueReceiveEvent, token) ?? Task.CompletedTask,
@@ -93,6 +99,7 @@ public interface IGameServerEventSubscriptions
         ConnectionInterrupted = null;
         ConnectionRestored = null;
         ClientDataUpdated = null;
+        ServerCommandExecuteRequested = null;
         ServerCommandExecuted = null;
         ServerValueReceived = null;
         ServerValueRequested = null;

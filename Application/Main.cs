@@ -388,6 +388,13 @@ namespace IW4MAdmin.Application
             };
             var masterRestClient = RestClient.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
+            
+            if (appConfig == null)
+            {
+                appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
+                appConfigHandler.Set(appConfig);
+                appConfigHandler.Save().GetAwaiter().GetResult();
+            }
 
             // register override level names
             foreach (var (key, value) in appConfig.OverridePermissionLevelNames)

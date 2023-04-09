@@ -25,6 +25,7 @@ using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Localization;
 using SharedLibraryCore.RCon;
+using static System.Threading.Tasks.Task;
 using static SharedLibraryCore.Server;
 using static Data.Models.Client.EFClient;
 using static Data.Models.EFPenalty;
@@ -886,7 +887,7 @@ namespace SharedLibraryCore
         {
             if (delay != null)
             {
-                await Task.Delay(delay.Value);
+                await Delay(delay.Value);
             }
 
             var response = await server.RemoteConnection.SendQueryAsync(StaticHelpers.QueryType.GET_INFO);
@@ -1053,7 +1054,7 @@ namespace SharedLibraryCore
         public static async Task WithWaitCancellation(this Task task,
             CancellationToken cancellationToken)
         {
-            var completedTask = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cancellationToken));
+            var completedTask = await WhenAny(task, Delay(Timeout.Infinite, cancellationToken));
             if (completedTask == task)
             {
                 await task;
@@ -1068,7 +1069,7 @@ namespace SharedLibraryCore
         public static async Task<T> WithWaitCancellation<T>(this Task<T> task,
             CancellationToken cancellationToken)
         {
-            var completedTask = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cancellationToken));
+            var completedTask = await WhenAny(task, Delay(Timeout.Infinite, cancellationToken));
             if (completedTask == task)
             {
                 return await task;
@@ -1080,13 +1081,13 @@ namespace SharedLibraryCore
 
         public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout)
         {
-            await Task.WhenAny(task, Task.Delay(timeout));
+            await WhenAny(task, Delay(timeout));
             return await task;
         }
 
         public static async Task WithTimeout(this Task task, TimeSpan timeout)
         {
-            await Task.WhenAny(task, Task.Delay(timeout));
+            await WhenAny(task, Delay(timeout));
         }
         
         public static bool ShouldHideLevel(this Permission perm)
@@ -1303,7 +1304,7 @@ namespace SharedLibraryCore
                     serviceProvider.GetRequiredService<IConfigurationHandlerV2<TConfigurationType>>();
 
                 var configuration =
-                    Task.Run(() => configurationHandler.Get(fileName ?? typeof(TConfigurationType).Name, defaultConfig))
+                    Run(() => configurationHandler.Get(fileName ?? typeof(TConfigurationType).Name, defaultConfig))
                         .GetAwaiter().GetResult();
 
                 if (typeof(TConfigurationType).GetInterface(nameof(IBaseConfiguration)) is not null &&
@@ -1316,7 +1317,7 @@ namespace SharedLibraryCore
 
                 if (defaultConfig is not null && configuration is null)
                 {
-                    Task.Run(() => configurationHandler.Set(defaultConfig)).GetAwaiter().GetResult();
+                    Run(() => configurationHandler.Set(defaultConfig)).GetAwaiter().GetResult();
                     configuration = defaultConfig;
                 }
 
@@ -1332,17 +1333,20 @@ namespace SharedLibraryCore
             return serviceCollection;
         }
 
-        public static void NotifyAfterDelay(TimeSpan duration, Func<Task> action) =>
-            NotifyAfterDelay((int)duration.TotalMilliseconds, action);
+        public static void ExecuteAfterDelay(TimeSpan duration, Func<CancellationToken, Task> action, CancellationToken token = default) =>
+            ExecuteAfterDelay((int)duration.TotalMilliseconds, action, token);
         
-        public static void NotifyAfterDelay(int delayMs, Func<Task> action)
+        public static void ExecuteAfterDelay(int delayMs, Func<CancellationToken, Task> action, CancellationToken token = default)
         {
-            Task.Run(async () =>
+            // ReSharper disable once MethodSupportsCancellation
+#pragma warning disable CA2016
+            _ = Run(async () =>
+#pragma warning restore CA2016
             {
                 try
                 {
-                    await Task.Delay(delayMs);
-                    await action();
+                    await Delay(delayMs, token);
+                    await action(token);
                 }
                 catch
                 {
@@ -1350,5 +1354,8 @@ namespace SharedLibraryCore
                 }
             });
         }
+
+        public static void ExecuteAfterDelay(this Func<CancellationToken, Task> action, int delayMs,
+            CancellationToken token = default) => ExecuteAfterDelay(delayMs, action, token);
     }
 }

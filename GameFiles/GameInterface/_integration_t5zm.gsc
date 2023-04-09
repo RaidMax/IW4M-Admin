@@ -1,4 +1,4 @@
-#include common_scripts\iw4x_utility;
+#include common_scripts\utility;
 
 Init()
 {
@@ -11,23 +11,14 @@ Setup()
     
     // it's possible that the notify type has not been defined yet so we have to hard code it 
     level waittill( "IntegrationBootstrapInitialized" );
-    level.eventBus.gamename = "IW4";
+    level.eventBus.gamename = "T5";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
-    level.overrideMethods["GetTotalShotsFired"]                                    = ::GetTotalShotsFired;
-    level.overrideMethods[level.commonFunctions.setDvar]                           = ::_SetDvarIfUninitialized;
-    level.overrideMethods[level.commonFunctions.isBot]                             = ::IsTestClient;
-    level.overrideMethods[level.commonFunctions.getXuid]                           = ::_GetXUID;
-    level.overrideMethods["waittill_notify_or_timeout"]                            = ::_waittill_notify_or_timeout;
-    level.overrideMethods[level.commonFunctions.changeTeam]                        = ::ChangeTeam;
-    level.overrideMethods[level.commonFunctions.getTeamCounts]                     = ::CountPlayers;
-    level.overrideMethods[level.commonFunctions.getMaxClients]                     = ::GetMaxClients;
-    level.overrideMethods[level.commonFunctions.getTeamBased]                      = ::GetTeamBased;
-    level.overrideMethods[level.commonFunctions.getClientTeam]                     = ::GetClientTeam;
-    level.overrideMethods[level.commonFunctions.getClientKillStreak]               = ::GetClientKillStreak;
-    level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = ::BackupRestoreClientKillStreakData;
-    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = ::WaitTillAnyTimeout;
+    level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
+    level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
+    level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
+    level.overrideMethods["GetPlayerFromClientNum"] = ::_GetPlayerFromClientNum;
     
     RegisterClientCommands();
     
@@ -49,13 +40,13 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( player call [[ level.overrideMethods[ level.commonFunctions.isBot ] ]]() ) 
+        if ( scripts\_integration_base::_IsBot( player ) ) 
         {
             // we don't want to track bots
             continue;    
         }
         
-        player thread SetPersistentData();
+        //player thread SetPersistentData();
         player thread WaitForClientEvents();
     }
 }
@@ -70,7 +61,7 @@ RegisterClientCommands()
     scripts\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
     scripts\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
     scripts\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
-    scripts\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
+    scripts\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl );
     scripts\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
     scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
 }
@@ -97,118 +88,79 @@ WaitForClientEvents()
     }
 }
 
-GetMaxClients()
-{
-    return level.maxClients;
-}
-
-GetTeamBased()
-{
-    return level.teamBased;
-}
-
-CountPlayers()
-{
-    return maps\mp\gametypes\_teams::CountPlayers();
-}
-
-GetClientTeam()
-{
-    if ( IsDefined( self.pers["team"] ) && self.pers["team"] == "allies" )
-    {
-        return "allies";
-    }
-    
-    else if ( IsDefined( self.pers["team"] ) && self.pers["team"] == "axis" )
-    {
-        return "axis";
-    }
-    
-    else
-    {
-        return "none";
-    }
-}
-
-GetClientKillStreak()
-{
-    return int( self.pers["cur_kill_streak"] );
-}
-
-BackupRestoreClientKillStreakData( restore ) 
-{
-    if ( restore )
-    {
-        foreach ( index, streakStruct in self.pers["killstreaks_backup"] )
-        {
-		    self.pers["killstreaks"][index] =  self.pers["killstreaks_backup"][index];
-        }
-    }
-
-    else 
-    {
-        self.pers["killstreaks_backup"] = [];
-        
-        foreach ( index, streakStruct in self.pers["killstreaks"] )
-        {
-            self.pers["killstreaks_backup"][index] = self.pers["killstreaks"][index];
-        }
-    }
-}
-
-WaitTillAnyTimeout( timeOut, string1, string2, string3, string4, string5 )
-{
-    return common_scripts\utility::waittill_any_timeout( timeOut, string1, string2, string3, string4, string5 );
-}
-
-ChangeTeam( team )
-{
-    switch ( team )
-    {
-        case "allies":
-            self [[level.allies]]();
-            break;
-    
-        case "axis":
-            self [[level.axis]]();
-            break;
-
-        case "spectator":
-            self [[level.spectator]]();
-            break;
-    }
-}
-
 GetTotalShotsFired()
 {
-    return maps\mp\_utility::getPlayerStat( "mostshotsfired" );
+    return 0; //ZM has no shot tracking. TODO: add tracking function for event weapon_fired
 }
 
-_SetDvarIfUninitialized( dvar, value )
+_SetDvarIfUninitialized(dvar, value)
 {
-    SetDvarIfUninitialized( dvar, value );
+	if (GetDvar(dvar)=="" )
+	{
+		SetDvar(dvar, value);
+		return value;
+	}
+	
+	return GetDvar(dvar);
 }
 
-_waittill_notify_or_timeout( _notify, timeout )
+_waittill_notify_or_timeout( msg, timer )
 {
-    common_scripts\utility::waittill_notify_or_timeout( _notify, timeout );
+	self endon( msg );
+	wait( timer );
 }
 
 Log2Console( logLevel, message ) 
 {
-    PrintConsole( "[" + logLevel + "] " + message + "\n" );
+    Print( "[" + logLevel + "] " + message + "\n" );
 }
 
-_GetXUID()
+God()
 {
-    return self GetXUID();
+
+    if ( !IsDefined( self.godmode ) )
+    {
+        self.godmode = false;
+    }
+    
+    if (!self.godmode )
+    {
+        self enableInvulnerability();
+        self.godmode = true;
+    }
+    else
+    {
+        self.godmode = false;
+        self disableInvulnerability();
+    }
+}
+
+_GetPlayerFromClientNum( clientNum )
+{
+    if ( clientNum < 0 )
+    {
+        return undefined;
+    }
+    
+    players = GetPlayers("all");
+    
+    for ( i = 0; i < players.size; i++ )
+    {
+    scripts\_integration_base::LogDebug(i+"/"+players.size+ "=" + players[i].name);
+        if ( players[i] getEntityNumber() == clientNum )
+        {
+            return players[i];
+        }
+    }
+    
+    return undefined;
 }
 
 //////////////////////////////////
 // GUID helpers
 /////////////////////////////////
 
-SetPersistentData() 
+/*SetPersistentData() 
 {
     self endon( "disconnect" );
     
@@ -333,7 +285,7 @@ GetIntForHexChar( char )
         default:
             return 0;
     }
-}
+}*/
 
 //////////////////////////////////
 // Command Implementations
@@ -353,7 +305,7 @@ GiveWeaponImpl( event, data )
     return self.name + "^7 has been given ^5" + data["weaponName"]; 
 }
 
-TakeWeaponsImpl()
+TakeWeaponsImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -366,7 +318,7 @@ TakeWeaponsImpl()
     return "Took weapons from " + self.name;
 }
 
-TeamSwitchImpl()
+TeamSwitchImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -387,7 +339,7 @@ TeamSwitchImpl()
     return self.name + "^7 switched to " + self.team;
 }
 
-LockControlsImpl()
+LockControlsImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -427,12 +379,11 @@ LockControlsImpl()
     }
 }
 
-NoClipImpl()
+NoClipImpl( event, data )
 {
-    if ( !IsAlive( self ) )
+    /*if ( !IsAlive( self ) )
     {
         self IPrintLnBold( "You are not alive" );
-        return;
     }
     
     if ( !IsDefined ( self.isNoClipped ) )
@@ -447,9 +398,7 @@ NoClipImpl()
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
-
-        self.clientflags |= 1; // IW4x specific
-
+        self Noclip();
         self Hide();
         
         self.isNoClipped = true;
@@ -459,22 +408,25 @@ NoClipImpl()
     else
     {
         self SetClientDvar( "sv_cheats", 1 );
-        self SetClientDvar( "cg_thirdperson", 0 );
+        self SetClientDvar( "cg_thirdperson", 1 );
         self SetClientDvar( "sv_cheats", 0 );
         
         self God();
-
-        self.clientflags &= ~1; // IW4x specific
-
-        self Show();
+        self Noclip();
+        self Hide();
         
         self.isNoClipped = false;
         
         self IPrintLnBold( "NoClip disabled" );
     }
+
+    self IPrintLnBold( "NoClip enabled" );*/
+
+    scripts\_integration_base::LogWarning( "NoClip is not supported on T5!" );
+
 }
 
-HideImpl()
+HideImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -517,10 +469,8 @@ HideImpl()
 
 AlertImpl( event, data )
 {
-    if ( level.eventBus.gamename == "IW4" ) 
-    {
-        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
-    }
+    //self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
+    self IPrintLnBold(data["message"]);
 
     return "Sent alert to " + self.name; 
 }
@@ -562,7 +512,7 @@ GotoPlayerImpl( target )
     self IPrintLnBold( "Moved to " + target.name );
 }
 
-PlayerToMeImpl( event )
+PlayerToMeImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -573,7 +523,7 @@ PlayerToMeImpl( event )
     return "Moved here " + self.name;    
 }
 
-KillImpl()
+KillImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -586,7 +536,7 @@ KillImpl()
     return "You killed " + self.name;
 }
 
-SetSpectatorImpl()
+SetSpectatorImpl( event, data )
 {
     if ( self.pers["team"] == "spectator" ) 
     {

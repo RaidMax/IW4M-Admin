@@ -1,6 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
-#include maps\mp\gametypes\_hud_util;
 
 Init()
 {    
@@ -22,6 +20,8 @@ Setup()
     level.commonFunctions              = spawnstruct();
     level.commonFunctions.setDvar      = "SetDvarIfUninitialized";
     level.commonFunctions.isBot        = "IsBot";
+    level.commonFunctions.getXuid      = "GetXuid";
+    level.commonFunctions.GetPlayerFromClientNum = "GetPlayerFromClientNum";
 
     level.commonKeys = spawnstruct();
     
@@ -51,6 +51,7 @@ Setup()
     level.clientCommandRusAsTarget = [];
     level.logger = spawnstruct();
     level.overrideMethods = [];
+    level.overrideMethods["GetPlayerFromClientNum"] = ::GetPlayerFromClientNum;
 
     level.iw4madminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
     InitializeLogger();
@@ -360,7 +361,7 @@ GenerateJoinTeamString( isSpectator )
         }
     }
 
-    guid = self GetXuid();
+    guid = self [[level.overrideMethods[level.commonFunctions.getXuid]]]();
 
     if ( guid == "0" )
     {
@@ -565,8 +566,8 @@ NotifyClientEventTimeout( eventType )
 
 NotifyClientEvent( eventInfo )
 {
-    origin = getPlayerFromClientNum( int( eventInfo[3] ) );
-    target = getPlayerFromClientNum( int( eventInfo[4] ) );
+    origin = [[level.overrideMethods[level.commonFunctions.GetPlayerFromClientNum]]]( int( eventInfo[3] ) );
+    target = [[level.overrideMethods[level.commonFunctions.GetPlayerFromClientNum]]]( int( eventInfo[4] ) );
     
     event = spawnstruct();
     event.type = eventInfo[1];

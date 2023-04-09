@@ -2,8 +2,6 @@
 
 Init()
 {
-    level.eventBus.gamename = "IW4";
-
     thread Setup();
 }
 
@@ -13,6 +11,7 @@ Setup()
     
     // it's possible that the notify type has not been defined yet so we have to hard code it 
     level waittill( "IntegrationBootstrapInitialized" );
+    level.eventBus.gamename = "IW4";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     

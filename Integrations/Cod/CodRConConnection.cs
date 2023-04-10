@@ -358,7 +358,7 @@ namespace Integrations.Cod
 
             await ReceiveAndStoreSocketData(rconSocket, token, connectionState);
 
-            if (_parser.GameName == Server.Game.IW3)
+            if (_parser.GameName is Server.Game.IW3 or Server.Game.T4)
             {
                 await Task.Delay(100, token); // CoD4x shenanigans 
             }

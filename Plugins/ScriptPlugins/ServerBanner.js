@@ -81,8 +81,9 @@ const plugin = {
             interactionData.interactionType = 1;
             interactionData.source = plugin.name;
 
-            interactionData.scriptAction = (sourceId, targetId, game, meta, token) => {
-                const serverId = meta['serverId'];
+            interactionData.scriptAction = (sourceId, targetId, game, meta, _) => {
+                const serverId = meta.serverId;
+                const isSmall = meta.size !== undefined && meta.size === 'small';
                 let server;
 
                 let colorLeft = 'color: #f5f5f5; text-shadow: -1px 1px 8px #000000cc;';
@@ -145,97 +146,185 @@ const plugin = {
                 colorRight = colorMappingOverride[gameCode]?.right || colorRight;
 
                 const font = 'Noto Sans Mono';
-                let status = '<div class="status-online subtitle">ONLINE</div>';
+                let status = isSmall ? '<div class="status small online-checkmark"></div>' : '<div class="status-online subtitle">ONLINE</div>';
                 if (server.throttled) {
-                    status = '<div class="status-offline subtitle">OFFLINE</div>';
+                    status = isSmall ? '<div class="status small offline-x"></div>' : '<div class="status-offline subtitle">OFFLINE</div>';
                 }
 
                 const displayIp = server.resolvedIpEndPoint.address.isInternal() ?
                     plugin.manager.externalIPAddress :
                     server.resolvedIpEndPoint.toString().split(':')[0];
 
-                return `<html>
-                            <head>
-                                <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=${font}">
-                                <style>
-                                    * {
-                                        padding: 0;
-                                        margin: 0;
-                                    }
-                                    .server-container {
-                                        padding-left: 1rem;
-                                        padding-right: 1rem;
-                                        width: calc(750px - 2rem);
-                                        height: 120px;
-                                        display: flex;
-                                        font-family: '${font}';
-                                        background: url('https://raidmax.org/resources/images/banners/${gameCode}.jpg') no-repeat;
-                                        align-items: center;
-                                    }
-                                    .contrast {
-                                        background-color: rgba(0, 0, 0, 0.5);
-                                    }
-                                    .game-icon {
-                                        border-radius: 10px;
-                                        width: 64px;
-                                        height: 64px;
-                                    }
-                                    .game-info {
-                                        padding: 0 0.75em;
-                                    }
-                                    .game-info .header {
-                                        font-weight: bold;
-                                    }
-                                    .game-info .subtitle {
-                                        font-size: 0.9rem;
-                                    }
-                                    .text-weight-lighter {
-                                        font-weight: lighter
-                                    }
-                                    .status-online {
-                                        color: green;
-                                    }
-                                    .status-offline {
-                                        color: red;
-                                    }
-                                    .players-flag-section {
-                                        flex: 1; 
-                                        display:flex; 
-                                        flex-direction: row; 
-                                        align-items: center;
-                                    }
-                                    .players-flag-section img {
-                                        margin: 0 0.5rem;
-                                        height: 0.75rem;
-                                    }
-                                    h3, div {
-                                        line-height: 1.5rem;
-                                    }
-                                    h2 {
-                                        line-height: 2rem;
-                                    }
-                                </style>
-                            </head>
-                           
-                            <div class="server-container contrast" id="server">
-                                    <div class="game-icon" 
-                                        style="background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg');">
-                                    </div>
-                                    <div style="flex: 1; ${colorLeft}" class="game-info">
-                                        <div class="header">${server.serverName.stripColors()}</div>
-                                        <div class="text-weight-lighter subtitle">${displayIp}:${server.listenPort}</div>
-                                        <div class="players-flag-section">
-                                            <div class="subtitle">${server.throttled ? '-' : server.clientNum}/${server.maxClients} Players</div>
-                                            <img src="https://flagcdn.com/h20/${serverLocationCache[server.listenAddress]?.toLowerCase()}.png" 
-                                                 alt="${serverLocationCache[server.listenAddress]}"/>
+                const head = `<head>
+                    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=${font}">
+                        <style>
+                            * {
+                                padding: 0;
+                                margin: 0;
+                            }
+                            .server-container {
+                                font-family: '${font}';
+                                background: url('https://raidmax.org/resources/images/banners/${gameCode}.jpg') no-repeat;
+                                align-items: center;
+                            }
+                            .server-container.large {
+                                padding-left: 1rem;
+                                padding-right: 1rem;
+                                width: calc(750px - 2rem);
+                                height: 120px;
+                                display: flex;
+                                background-position: center center;
+                            }
+                            .server-container.small {
+                                padding: 0.5rem;
+                                background-position: left center;
+                            }
+                            .game-icon {
+                                background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg') no-repeat;
+                                background-size: contain;
+                            }
+                            .game-icon.large {
+                                width: 64px;
+                                height: 64px;
+                                border-radius: 10px;
+                            }
+                            .game-icon.small {
+                                width: 20px;
+                                height: 20px;
+                                border-radius: 5px;
+                            }
+                            .first-line.small, .second-line.small {
+                                display: flex; 
+                                flex-direction: row;
+                            }
+                            .first-line.small .header {
+                                font-size: 10pt;
+                                font-weight: bold;
+                                margin-left: 0.5rem;
+                                align-self: center;
+                            }
+                            .second-line.small {
+                                align-self: center;
+                            }
+                            .game-info.small {
+                                margin-left: 0.5rem;
+                                font-size: 9pt;
+                            }
+                            .game-info.large {
+                                padding: 0 0.75em;
+                            }
+                            .game-info .header {
+                                font-weight: bold;
+                            }
+                            img.location-image {
+                                width: 20px;
+                                align-self: center;
+                            }
+                            .game-info.large .subtitle {
+                                font-size: 0.9rem;
+                            }
+                            .text-weight-lighter {
+                                font-weight: lighter
+                            }
+                            .status-online {
+                                color: green;
+                            }
+                            .status-offline {
+                                color: red;
+                            }
+                            .players-flag-section {
+                                flex: 1;
+                                display:flex;
+                                flex-direction: row;
+                                align-items: center;
+                            }
+                            .players-flag-section img {
+                                margin: 0 0.5rem;
+                                height: 0.75rem;
+                            }
+                            .status.small:after {
+                                position: absolute;
+                                width: 20px;
+                                height: 15px;
+                                text-align: center;
+                                border-radius: 2px;
+                                font-size: 8pt;
+                                margin-top: 0.1rem;
+                                margin-left: -0.5rem;
+                            }
+                            .online-checkmark:after {
+                                content: '\\2714';
+                                color: white;
+                                background: rgba(0, 128, 0, 0.5);
+                            }
+                            .offline-x:after {
+                                content: '\\2715';
+                                color: white;
+                                background: rgba(128, 0, 0, 0.5);
+                            }
+                            h3, .server-container.large div {
+                                line-height: 1.5rem;
+                            }
+                            h2 {
+                                line-height: 2rem;
+                            }
+                        </style>
+                        <title>${displayIp}:${server.listenPort}</title>
+                </head>`;
+
+
+                if (isSmall) {
+                    return `<html lang="en">
+                                ${head}
+                                <body>
+                                    <div class="server-container small" id="server">
+                                        <div class="first-line small"> 
+                                            <div class="game-icon small"></div>
+                                            <div class="header" style="${colorLeft}">${server.serverName.stripColors()}</div>
                                         </div>
+                                        <div class="third-line game-info small">
+                                            ${status}
+                                            <div style="${colorLeft}; margin-left: 20px;">${displayIp}:${server.listenPort}</div>
+                                        </div>
+                                        <div class="second-line small">
+                                            <img src="https://flagcdn.com/w40/${serverLocationCache[server.listenAddress]?.toLowerCase()}.png" 
+                                                 alt="${serverLocationCache[server.listenAddress]}" class="location-image">
+                                            <div class="game-info small" style="${colorLeft}">
+                                                <span>${server.throttled ? '-' : server.clientNum}/${server.maxClients}</span>
+                                                &bullet;
+                                                <span>${server.map.alias}</span>
+                                                &bullet;
+                                                <span>${server.gametypeName}</span>   
+                                            </div>
+                                        </div> 
                                     </div>
-                                    <div style="${colorRight}; text-align: right;" class="game-info">
-                                        <div class="header">${server.map.alias}</div>
-                                        <div class="text-weight-lighter subtitle">${server.gametypeName}</div>
-                                        ${status}
-                                    </div>
-                            </div>
+                                </body>
+                            </html>`;
+                }
+
+                return `<html lang="en">
+                            ${head}
+                            <body>
+                                <div class="server-container large" id="server">
+                                        <div class="game-icon large" 
+                                            style="background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg');">
+                                        </div>
+                                        <div style="flex: 1; ${colorLeft}" class="game-info large">
+                                            <div class="header">${server.serverName.stripColors()}</div>
+                                            <div class="text-weight-lighter subtitle">${displayIp}:${server.listenPort}</div>
+                                            <div class="players-flag-section">
+                                                <div class="subtitle">${server.throttled ? '-' : server.clientNum}/${server.maxClients} Players</div>
+                                                <img src="https://flagcdn.com/h20/${serverLocationCache[server.listenAddress]?.toLowerCase()}.png" 
+                                                     alt="${serverLocationCache[server.listenAddress]}"/>
+                                            </div>
+                                        </div>
+                                        <div style="${colorRight}; text-align: right;" class="game-info">
+                                            <div class="header">${server.map.alias}</div>
+                                            <div class="text-weight-lighter subtitle">${server.gametypeName}</div>
+                                            ${status}
+                                        </div>
+                                </div>
+                            </body>
                         </html>`;
             };
 
@@ -269,23 +358,40 @@ const plugin = {
                     const servers = serverOrderCache[key];
                     servers.forEach(eachServer => {
                         response += `<div class="w-full w-xl-half">
-                                    <div class="card m-10 p-20">
-                                    <div class="font-size-16 mb-10"> <div class="badge ml-10 float-right font-size-16">${eachServer.gameCode}</div>${eachServer.serverName.stripColors()}</div>
+                                        <div class="card m-10 p-20">
+                                        <div class="font-size-16 mb-10">
+                                            <div class="badge ml-10 float-right font-size-16">${eachServer.gameCode}</div>
+                                            ${eachServer.serverName.stripColors()}
+                                        </div>
                                  
-                                    <div style="overflow: hidden">
-                                    <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}" width="750" height="120" style="border-width: 0; overflow: hidden;" class="rounded mb-5" ></iframe>
-                                    </div>
-                                    <div class="btn mb-10" onclick="$(document.getElementById('showCode${eachServer.id}')).toggleClass('d-flex')">Show Embed</div>
-                                    <div class="code p-5" id="showCode${eachServer.id}" style="display:none;">&lt;iframe 
-	<br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}" 
-        <br/>&nbsp;width="750" height="120" style="border-width: 0; overflow: hidden;"&gt;<br/>
-&lt;/iframe&gt;</div>
-                                </div></div>`;
+                                        <div style="overflow: hidden">
+                                            <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}" width="750" 
+                                                    height="120" style="border-width: 0; overflow: hidden;" class="rounded mb-5" 
+                                                    title="${eachServer.id}"></iframe>
+                                        </div>
+                                        <div class="btn mb-10" onclick="$(document.getElementById('showCode${eachServer.id}')).toggleClass('d-flex')">Show Embed</div>
+                                        <div class="code p-5 mb-10" id="showCode${eachServer.id}" style="display:none;">
+                                            &lt;iframe 
+                                            <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}" 
+                                            <br/>&nbsp;width="750" height="120" style="border-width: 0; overflow: hidden;"&gt;<br/>
+                                            &lt;/iframe&gt;</div>
+                                        <div>
+                                            <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" width="400"
+                                                    height="70" style="border-width: 0; overflow: hidden;" class="rounded mb-5" 
+                                                    title="${eachServer.id}"></iframe>
+                                        </div>
+                                        <div class="btn mb-10" onclick="$(document.getElementById('showCode${eachServer.id}Small')).toggleClass('d-flex')">Show Embed</div>
+                                        <div class="code p-5" id="showCode${eachServer.id}Small" style="display:none;">
+                                            &lt;iframe 
+	                                        <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" 
+                                            <br/>&nbsp;width="400" height="70" style="border-width: 0; overflow: hidden;"&gt;<br/>
+                                            &lt;/iframe&gt;</div>
+                                        </div>
+                                    </div>`;
                     });
                 });
 
                 response += '</div>';
-                response += ''
                 return response;
             };
 

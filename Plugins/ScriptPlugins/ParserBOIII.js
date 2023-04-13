@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'Diamante',
-    version: 0.2,
+    version: 0.3,
     name: 'BOIII Parser',
     isParser: true,
 

@@ -2,8 +2,8 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'RaidMax',
-    version: 0.5,
+    author: 'RaidMax, Future',
+    version: 0.6,
     name: 'Black Ops 3 Parser',
     isParser: true,
 

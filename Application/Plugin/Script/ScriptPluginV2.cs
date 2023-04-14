@@ -278,7 +278,7 @@ public class ScriptPluginV2 : IPluginV2
                     typeof(ScriptPluginExtensions), typeof(LoggerExtensions))
                 .AllowClr(typeof(System.Net.Http.HttpClient).Assembly, typeof(EFClient).Assembly,
                     typeof(Utilities).Assembly, typeof(Encoding).Assembly, typeof(CancellationTokenSource).Assembly,
-                    typeof(Data.Models.Client.EFClient).Assembly, typeof(IW4MAdmin.Plugins.Stats.Plugin).Assembly)
+                    typeof(Data.Models.Client.EFClient).Assembly, typeof(IW4MAdmin.Plugins.Stats.Plugin).Assembly, typeof(ScriptPluginWebRequest).Assembly)
                 .CatchClrExceptions()
                 .AddObjectConverter(new EnumsToStringConverter()));
 

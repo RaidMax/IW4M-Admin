@@ -34,11 +34,6 @@ public class ScriptPluginHelper
         RequestUrl(new ScriptPluginWebRequest(url, Headers: headers), callback);
     }
     
-    public void GetUrl(string url, Dictionary<string, string> headers, Delegate callback)
-    {
-        RequestUrl(new ScriptPluginWebRequest(url, Headers: headers), callback);
-    }
-    
     public void PostUrl(string url, string body, string bearerToken, Delegate callback)
     {
         var headers = new Dictionary<string, string> { { "Authorization", $"Bearer {bearerToken}" } };
@@ -46,11 +41,6 @@ public class ScriptPluginHelper
             new ScriptPluginWebRequest(url, body, "POST", Headers: headers), callback);
     }
 
-    public void PostUrl(string url, string body, Dictionary<string, string> headers, Delegate callback)
-    {
-        RequestUrl(new ScriptPluginWebRequest(url, body, "POST", Headers: headers), callback);
-    }
-    
     public void RequestUrl(ScriptPluginWebRequest request, Delegate callback)
     {
         Task.Run(() =>

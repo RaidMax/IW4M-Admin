@@ -191,13 +191,15 @@ const plugin = {
         }
 
         const userAgent = `IW4MAdmin-${this.manager.getApplicationSettings().configuration().id}`;
-        const headers = {
-            'User-Agent': userAgent
-        };
+        const stringDict = System.Collections.Generic.Dictionary(System.String, System.String);
+        const headers = new stringDict();
+        headers.add('User-Agent', userAgent);
+        const pluginScript = importNamespace('IW4MAdmin.Application.Plugin.Script');
+        const request = new pluginScript.ScriptPluginWebRequest(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`, 
+            null, 'GET', 'application/json', headers);
 
         try {
-            this.pluginHelper.getUrl(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`, headers,
-                (response) => this.onVpnResponse(response, origin));
+            this.pluginHelper.requestUrl(request, (response) => this.onVpnResponse(response, origin));
 
         } catch (ex) {
             this.logger.logWarning('There was a problem checking client IP ({IP}) for VPN - {message}',

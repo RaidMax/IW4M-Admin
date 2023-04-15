@@ -725,12 +725,12 @@ namespace IW4MAdmin
                         {
                             if (dict.ContainsKey("gametype"))
                             {
-                                Gametype = dict["gametype"];
+                                UpdateGametype(dict["gametype"]);
                             }
 
                             if (dict.ContainsKey("hostname"))
                             {
-                                Hostname = dict["hostname"];
+                                UpdateHostname(dict["hostname"]);
                             }
 
                             var newMapName = dict.ContainsKey("mapname")
@@ -743,29 +743,30 @@ namespace IW4MAdmin
                     else
                     {
                         var dict = (Dictionary<string, string>)E.Extra;
+                        
                         if (dict.ContainsKey("g_gametype"))
                         {
-                            Gametype = dict["g_gametype"];
+                            UpdateGametype(dict["g_gametype"]);
                         }
 
                         if (dict.ContainsKey("sv_hostname"))
                         {
-                            Hostname = dict["sv_hostname"];
+                            UpdateHostname(dict["sv_hostname"]);
                         }
 
                         if (dict.ContainsKey("sv_maxclients"))
                         {
-                            MaxClients = int.Parse(dict["sv_maxclients"]);
+                            UpdateMaxPlayers(int.Parse(dict["sv_maxclients"]));
                         }
 
                         else if (dict.ContainsKey("com_maxclients"))
                         {
-                            MaxClients = int.Parse(dict["com_maxclients"]);
+                            UpdateMaxPlayers(int.Parse(dict["com_maxclients"]));
                         }
                         
                         else if (dict.ContainsKey("com_maxplayers"))
                         {
-                            MaxClients = int.Parse(dict["com_maxplayers"]);
+                            UpdateMaxPlayers(int.Parse(dict["com_maxplayers"]));
                         }
 
                         if (dict.ContainsKey("mapname"))
@@ -978,23 +979,44 @@ namespace IW4MAdmin
             return id < 0 ? Math.Abs(id) : id;
         }
 
-        private void UpdateMap(string mapname)
+        private void UpdateMap(string mapName)
         {
-            if (!string.IsNullOrEmpty(mapname))
+            if (string.IsNullOrEmpty(mapName))
             {
-                CurrentMap = Maps.Find(m => m.Name == mapname) ?? new Map()
-                {
-                    Alias = mapname,
-                    Name = mapname
-                };
+                return;
+            }
+            
+            var foundMap = Maps.Find(m => m.Name == mapName) ?? new Map
+            {
+                Alias = mapName,
+                Name = mapName
+            };
+
+            if (foundMap == CurrentMap)
+            {
+                return;
+            }
+
+            CurrentMap = foundMap;
+            
+            using(LogContext.PushProperty("Server", Id))
+            {
+                ServerLogger.LogDebug("Updating map to {@CurrentMap}", CurrentMap);
             }
         }
 
         private void UpdateGametype(string gameType)
         {
-            if (!string.IsNullOrEmpty(gameType))
+            if (string.IsNullOrEmpty(gameType))
             {
-                Gametype = gameType;
+                return;
+            }
+            
+            Gametype = gameType;
+
+            using(LogContext.PushProperty("Server", Id))
+            {
+                ServerLogger.LogDebug("Updating gametype to {Gametype}", gameType);
             }
         }
 
@@ -1005,7 +1027,7 @@ namespace IW4MAdmin
                 return;
             }
             
-            using(LogContext.PushProperty("Server", ToString()))
+            using(LogContext.PushProperty("Server", Id))
             {
                 ServerLogger.LogDebug("Updating hostname to {HostName}", hostname);
             }
@@ -1020,7 +1042,7 @@ namespace IW4MAdmin
                 return;
             }
             
-            using(LogContext.PushProperty("Server", ToString()))
+            using(LogContext.PushProperty("Server", Id))
             {
                 ServerLogger.LogDebug("Updating max clients to {MaxPlayers}", maxPlayers);
             }

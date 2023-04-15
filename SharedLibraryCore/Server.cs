@@ -172,7 +172,10 @@ namespace SharedLibraryCore
         /// <returns></returns>
         public List<EFClient> GetClientsAsList()
         {
-            return Clients.FindAll(x => x != null && x.NetworkId != 0);
+            lock (Clients)
+            {
+                return Clients.FindAll(client => client is not null && client.NetworkId != 0);
+            }
         }
 
         /// <summary>

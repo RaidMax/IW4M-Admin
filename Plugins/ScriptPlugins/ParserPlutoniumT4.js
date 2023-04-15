@@ -2,8 +2,8 @@
 var eventParser;
 
 var plugin = {
-    author: 'RaidMax, Chase',
-    version: 0.4,
+    author: 'RaidMax, Chase, Future',
+    version: 0.5,
     name: 'Plutonium T4 MP Parser',
     isParser: true,
 
@@ -14,9 +14,9 @@ var plugin = {
         rconParser = manager.GenerateDynamicRConParser(this.name);
         eventParser = manager.GenerateDynamicEventParser(this.name);
         
-        rconParser.Configuration.CommandPrefixes.Kick         = 'clientkick {0}';
-        rconParser.Configuration.CommandPrefixes.Ban          = 'clientkick {0}';
-        rconParser.Configuration.CommandPrefixes.TempBan      = 'clientkick {0}';
+        rconParser.Configuration.CommandPrefixes.Kick         = 'clientkick {0} "{1}"';
+        rconParser.Configuration.CommandPrefixes.Ban          = 'clientkick {0} "{1}"';
+        rconParser.Configuration.CommandPrefixes.TempBan      = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
         rconParser.Configuration.GuidNumberStyle              = 7; // Integer
         rconParser.Configuration.DefaultRConPort              = 28960;

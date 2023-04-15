@@ -291,6 +291,15 @@ public class ScriptPluginV2 : IPluginV2
         _scriptPluginConfigurationWrapper =
             new ScriptPluginConfigurationWrapper(_fileName.Split(Path.DirectorySeparatorChar).Last(), ScriptEngine,
                 _configHandler);
+
+        _scriptPluginConfigurationWrapper.ConfigurationUpdated += (configValue, callbackAction) =>
+        {
+            WrapJavaScriptErrorHandling(() =>
+            {
+                callbackAction.DynamicInvoke(JsValue.Undefined, new[] { configValue });
+                return Task.CompletedTask;
+            }, _logger, _fileName, _onProcessingScript);
+        };
     }
 
     private void UnregisterScriptEntities(IManager manager)

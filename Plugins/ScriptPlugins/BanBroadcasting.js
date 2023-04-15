@@ -7,15 +7,16 @@ const init = (registerNotify, serviceResolver, config) => {
 
 const plugin = {
     author: 'Amos, RaidMax',
-    version: '2.0',
+    version: '2.1',
     name: 'Broadcast Bans',
     config: null,
     logger: null,
     translations: null,
     manager: null,
+    enableBroadcastBans: false,
 
     onClientPenalty: function (penaltyEvent) {
-        if (!this.enableBroadcastBans || penaltyEvent.penalty.type !== 5) {
+        if (!this.enableBroadcastBans || penaltyEvent.penalty.type !== 'Ban') {
             return;
         }
 
@@ -43,7 +44,10 @@ const plugin = {
     onLoad: function (serviceResolver, config) {
         this.config = config;
         this.config.setName(this.name);
-        this.enableBroadcastBans = this.config.getValue('EnableBroadcastBans');
+        this.enableBroadcastBans = this.config.getValue('EnableBroadcastBans', newConfig => {
+            plugin.logger.logInformation('{Name} config reloaded. Enabled={Enabled}', plugin.name, newConfig);
+            plugin.enableBroadcastBans = newConfig;
+        });
 
         this.manager = serviceResolver.resolveService('IManager');
         this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
@@ -54,7 +58,7 @@ const plugin = {
             this.config.setValue('EnableBroadcastBans', this.enableBroadcastBans);
         }
 
-        this.logger.logInformation('{Name} {Version} by {Author} loaded. Enabled={enabled}', this.name, this.version,
+        this.logger.logInformation('{Name} {Version} by {Author} loaded. Enabled={Enabled}', this.name, this.version,
             this.author, this.enableBroadcastBans);
     }
 };

@@ -2,23 +2,24 @@ let vpnExceptionIds = [];
 const vpnAllowListKey = 'Webfront::Nav::Admin::VPNAllowList';
 const vpnWhitelistKey = 'Webfront::Profile::VPNWhitelist';
 
-const init = (registerNotify, serviceResolver, config, pluginHelper) => {
+const init = (registerNotify, serviceResolver, configWrapper, pluginHelper) => {
     registerNotify('IManagementEventSubscriptions.ClientStateAuthorized', (authorizedEvent, token) => plugin.onClientAuthorized(authorizedEvent, token));
 
-    plugin.onLoad(serviceResolver, config, pluginHelper);
+    plugin.onLoad(serviceResolver, configWrapper, pluginHelper);
     return plugin;
 };
 
 const plugin = {
     author: 'RaidMax',
-    version: '2.0',
+    version: '2.1',
     name: 'VPN Detection Plugin',
     manager: null,
-    config: null,
+    configWrapper: null,
     logger: null,
     serviceResolver: null,
     translations: null,
     pluginHelper: null,
+    enabled: true,
 
     commands: [{
         name: 'whitelistvpn',
@@ -32,7 +33,7 @@ const plugin = {
         }],
         execute: (gameEvent) => {
             vpnExceptionIds.push(gameEvent.Target.ClientId);
-            plugin.config.setValue('vpnExceptionIds', vpnExceptionIds);
+            plugin.configWrapper.setValue('vpnExceptionIds', vpnExceptionIds);
 
             gameEvent.origin.tell(`Successfully whitelisted ${gameEvent.target.name}`);
         }
@@ -49,7 +50,7 @@ const plugin = {
             }],
             execute: (gameEvent) => {
                 vpnExceptionIds = vpnExceptionIds.filter(exception => parseInt(exception) !== parseInt(gameEvent.Target.ClientId));
-                plugin.config.setValue('vpnExceptionIds', vpnExceptionIds);
+                plugin.configWrapper.setValue('vpnExceptionIds', vpnExceptionIds);
 
                 gameEvent.origin.tell(`Successfully disallowed ${gameEvent.target.name} from connecting with VPN`);
             }
@@ -148,30 +149,45 @@ const plugin = {
     ],
 
     onClientAuthorized: async function (authorizeEvent, token) {
-        if (authorizeEvent.client.isBot) {
+        if (authorizeEvent.client.isBot || !this.enabled) {
             return;
         }
         await this.checkForVpn(authorizeEvent.client, token);
     },
 
-    onLoad: function (serviceResolver, config, pluginHelper) {
+    onLoad: function (serviceResolver, configWrapper, pluginHelper) {
         this.serviceResolver = serviceResolver;
-        this.config = config;
+        this.configWrapper = configWrapper;
         this.pluginHelper = pluginHelper;
         this.manager = this.serviceResolver.resolveService('IManager');
         this.logger = this.serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
         this.translations = this.serviceResolver.resolveService('ITranslationLookup');
 
-        this.config.setName(this.name); // use legacy key
-        this.config.getValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(parseInt(element)));
+        this.configWrapper.setName(this.name); // use legacy key
+        this.configWrapper.getValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(parseInt(element)));
         this.logger.logInformation(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
+        
+        this.enabled = this.configWrapper.getValue('enabled', newValue => {
+            if (newValue) {
+                plugin.logger.logInformation('{Name} configuration updated. Enabled={Enabled}', newValue);
+                plugin.enabled = newValue;
+            }
+        });
+        
+        if (this.enabled === undefined) {
+            this.configWrapper.setValue('enabled', true);
+            this.enabled = true;
+        }
 
         this.interactionRegistration = this.serviceResolver.resolveService('IInteractionRegistration');
         this.interactionRegistration.unregisterInteraction(vpnWhitelistKey);
         this.interactionRegistration.unregisterInteraction(vpnAllowListKey);
+
+        this.logger.logInformation('{Name} {Version} by {Author} loaded. Enabled={Enabled}', this.name, this.version,
+            this.author, this.enabled);
     },
 
-    checkForVpn: async function (origin, token) {
+    checkForVpn: async function (origin, _) {
         let exempt = false;
         // prevent players that are exempt from being kicked
         vpnExceptionIds.forEach(function (id) {

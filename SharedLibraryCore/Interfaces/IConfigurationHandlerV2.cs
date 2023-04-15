@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace SharedLibraryCore.Interfaces;
 
@@ -7,4 +8,5 @@ public interface IConfigurationHandlerV2<TConfigurationType> where TConfiguratio
     Task<TConfigurationType> Get(string configurationName, TConfigurationType defaultConfiguration = null);
     Task Set(TConfigurationType configuration);
     Task Set();
+    event Action<TConfigurationType> Updated;
 }

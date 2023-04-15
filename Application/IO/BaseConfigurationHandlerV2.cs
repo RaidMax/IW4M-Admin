@@ -118,6 +118,8 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
         }
     }
 
+    public event Action<TConfigurationType> Updated;
+
     private async Task InternalSet(TConfigurationType configuration, bool awaitSemaphore)
     {
         try
@@ -163,6 +165,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             else
             {
                 CopyUpdatedProperties(readConfiguration);
+                Updated?.Invoke(readConfiguration);
             }
         }
         catch (Exception ex)

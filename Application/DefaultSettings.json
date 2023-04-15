@@ -844,7 +844,23 @@
         {
           "Alias": "Upheaval",
           "Name": "mp_suburban"
-        }
+        },
+        {
+          "Alias": "Nacht Der Untoten",
+          "Name": "nazi_zombie_prototype"
+        },
+        {
+          "Alias": "Verrückt",
+          "Name": "nazi_zombie_asylum"
+        },
+        {
+          "Alias": "Shi No Numa",
+          "Name": "nazi_zombie_sumpf"
+        },
+        {
+          "Alias": "Der Riese",
+          "Name": "nazi_zombie_factory"
+        }	      
       ]
     },
     {

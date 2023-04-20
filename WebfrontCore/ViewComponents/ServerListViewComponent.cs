@@ -10,7 +10,6 @@ using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using static SharedLibraryCore.Server;
 
 namespace WebfrontCore.ViewComponents
 {
@@ -28,19 +27,20 @@ namespace WebfrontCore.ViewComponents
             _defaultSettings = defaultSettings;
         }
 
-        public IViewComponentResult Invoke(Game? game)
+        public IViewComponentResult Invoke(Reference.Game? game)
         {
             if (game.HasValue)
             {
-                ViewBag.Maps = _defaultSettings.Maps.FirstOrDefault(map => map.Game == game)?.Maps.ToList() ??
-                               new List<Map>();
+                ViewBag.Maps = _defaultSettings.Maps?.FirstOrDefault(map => map.Game == (Server.Game)game)?.Maps
+                                   ?.ToList() ?? new List<Map>();
             }
             else
             {
-                ViewBag.Maps = _defaultSettings.Maps.SelectMany(maps => maps.Maps).ToList();
+                ViewBag.Maps = _defaultSettings.Maps?.SelectMany(maps => maps.Maps).ToList();
             }
 
-            var servers = Program.Manager.GetServers().Where(server => !game.HasValue || server.GameName == game);
+            var servers = Program.Manager.GetServers()
+                .Where(server => game is null || server.GameName == (Server.Game)game);
 
             var serverInfo = new List<ServerInfo>();
 

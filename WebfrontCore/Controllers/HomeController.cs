@@ -7,8 +7,8 @@ using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
 using Microsoft.Extensions.Logging;
-using static SharedLibraryCore.Server;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace WebfrontCore.Controllers
@@ -27,26 +27,31 @@ namespace WebfrontCore.Controllers
             _serverDataViewer = serverDataViewer;
         }
 
-        public async Task<IActionResult> Index(Game? game = null, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Index(Reference.Game? game = null,
+            CancellationToken cancellationToken = default)
         {
             ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_HOME"];
             ViewBag.Title = Localization["WEBFRONT_HOME_TITLE"];
             ViewBag.Keywords = Localization["WEBFRONT_KEWORDS_HOME"];
 
-            var servers = Manager.GetServers().Where(_server => !game.HasValue || _server.GameName == game);
-            var (clientCount, time) = await _serverDataViewer.MaxConcurrentClientsAsync(token: cancellationToken);
-            var (count, recentCount) = await _serverDataViewer.ClientCountsAsync(token: cancellationToken);
+            var servers = Manager.GetServers().Where(server => game is null || server.GameName == (Server.Game?)game)
+                .ToList();
+            var (clientCount, time) =
+                await _serverDataViewer.MaxConcurrentClientsAsync(gameCode: game, token: cancellationToken);
+            var (count, recentCount) =
+                await _serverDataViewer.ClientCountsAsync(gameCode: game, token: cancellationToken);
 
-            var model = new IW4MAdminInfo()
+            var model = new IW4MAdminInfo
             {
-                TotalAvailableClientSlots = servers.Sum(_server => _server.MaxClients),
-                TotalOccupiedClientSlots = servers.SelectMany(_server => _server.GetClientsAsList()).Count(),
+                TotalAvailableClientSlots = servers.Sum(server => server.MaxClients),
+                TotalOccupiedClientSlots = servers.SelectMany(server => server.GetClientsAsList()).Count(),
                 TotalClientCount = count,
                 RecentClientCount = recentCount,
                 MaxConcurrentClients = clientCount ?? 0,
                 MaxConcurrentClientsTime = time ?? DateTime.UtcNow,
                 Game = game,
-                ActiveServerGames = Manager.GetServers().Select(_server => _server.GameName).Distinct().ToArray()
+                ActiveServerGames = Manager.GetServers().Select(server => (Reference.Game)server.GameName).Distinct()
+                    .ToArray()
             };
 
             return View(model);

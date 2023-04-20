@@ -1,5 +1,5 @@
 ﻿using System;
-using static SharedLibraryCore.Server;
+using Data.Models;
 
 namespace SharedLibraryCore.Dtos
 {
@@ -15,11 +15,11 @@ namespace SharedLibraryCore.Dtos
         /// <summary>
         ///     specifies the game name filter
         /// </summary>
-        public Game? Game { get; set; }
+        public Reference.Game? Game { get; set; }
 
         /// <summary>
         ///     collection of unique game names being monitored
         /// </summary>
-        public Game[] ActiveServerGames { get; set; }
+        public Reference.Game[] ActiveServerGames { get; set; }
     }
 }

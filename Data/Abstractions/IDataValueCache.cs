@@ -11,10 +11,11 @@ namespace Data.Abstractions
         void SetCacheItem(Func<DbSet<TEntityType>, CancellationToken, Task<TReturnType>> itemGetter, string keyName,
             TimeSpan? expirationTime = null, bool autoRefresh = false);
 
-        void SetCacheItem(Func<DbSet<TEntityType>, CancellationToken, Task<TReturnType>> itemGetter, string keyName,
+        void SetCacheItem(Func<DbSet<TEntityType>, IEnumerable<object>, CancellationToken, Task<TReturnType>> itemGetter, string keyName,
             IEnumerable<object> ids = null, TimeSpan? expirationTime = null, bool autoRefresh = false);
 
         Task<TReturnType> GetCacheItem(string keyName, CancellationToken token = default);
-        Task<TReturnType> GetCacheItem(string keyName, object id = null, CancellationToken token = default);
+        
+        Task<TReturnType> GetCacheItem(string keyName, IEnumerable<object> ids = null, CancellationToken token = default);
     }
 }

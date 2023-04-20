@@ -78,7 +78,7 @@ public interface IGameServerEventSubscriptions
         return coreEvent switch
         {
             MonitorStartEvent monitoringStartEvent => MonitoringStarted?.InvokeAsync(monitoringStartEvent, token) ?? Task.CompletedTask,
-            MonitorStopEvent monitorStopEvent => MonitoringStopped?.InvokeAsync(monitorStopEvent, token) ?? Task.CompletedTask,
+            MonitorStopEvent monitorStopEvent => MonitoringStopped?.InvokeAsync(monitorStopEvent, CancellationToken.None) ?? Task.CompletedTask,
             ConnectionInterruptEvent connectionInterruptEvent => ConnectionInterrupted?.InvokeAsync(connectionInterruptEvent, token) ?? Task.CompletedTask,
             ConnectionRestoreEvent connectionRestoreEvent => ConnectionRestored?.InvokeAsync(connectionRestoreEvent, token) ?? Task.CompletedTask,
             ClientDataUpdateEvent clientDataUpdateEvent => ClientDataUpdated?.InvokeAsync(clientDataUpdateEvent, token) ?? Task.CompletedTask,

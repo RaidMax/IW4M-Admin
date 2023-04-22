@@ -125,7 +125,7 @@ namespace Integrations.Cod
                 }
                 catch (OperationCanceledException)
                 {
-                    _log.LogDebug("Waiting for flood protect did not complete before timeout timeout {Count}",
+                    _log.LogDebug("Waiting for flood protect did not complete before timeout {Count}",
                         connectionState.OnComplete.CurrentCount);
                     throw new RConException("Timed out waiting for flood protect to expire", true);
                 }
@@ -375,8 +375,18 @@ namespace Integrations.Cod
         private async Task ReceiveAndStoreSocketData(Socket rconSocket, CancellationToken token,
             ConnectionState connectionState)
         {
-            var result = await rconSocket.ReceiveFromAsync(connectionState.ReceiveBuffer,
-                SocketFlags.None, Endpoint, token);
+            SocketReceiveFromResult result;
+            try
+            {
+                result = await rconSocket.ReceiveFromAsync(connectionState.ReceiveBuffer,
+                    SocketFlags.None, Endpoint, token);
+            }
+            // windows quirk that occurs when remote server returns ICMP port unreachable
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                await Task.Delay(Timeout.Infinite, token);
+                return;
+            }
 
             if (result.ReceivedBytes == 0)
             {

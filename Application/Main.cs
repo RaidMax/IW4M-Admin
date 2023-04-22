@@ -38,6 +38,7 @@ using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Client;
+using Microsoft.Extensions.Hosting;
 using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
@@ -125,8 +126,7 @@ namespace IW4MAdmin.Application
 
                 await _serverManager.Init();
 
-                _applicationTask = Task.WhenAll(RunApplicationTasksAsync(logger, _serviceProvider),
-                    _serverManager.Start());
+                _applicationTask = RunApplicationTasksAsync(logger, _serverManager, _serviceProvider);
                 
                 await _applicationTask;
                 logger.LogInformation("Shutdown completed successfully");
@@ -185,14 +185,49 @@ namespace IW4MAdmin.Application
         /// runs the core application tasks
         /// </summary>
         /// <returns></returns>
-        private static Task RunApplicationTasksAsync(ILogger logger, IServiceProvider serviceProvider)
+        private static Task RunApplicationTasksAsync(ILogger logger, ApplicationManager applicationManager,
+            IServiceProvider serviceProvider)
         {
-            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
-                ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken)
-                : Task.CompletedTask;
-
             var collectionService = serviceProvider.GetRequiredService<IServerDataCollector>();
             var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
+            var masterCommunicator = serviceProvider.GetRequiredService<IMasterCommunication>();
+            var webfrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
+            using var onWebfrontErrored = new ManualResetEventSlim();
+            
+            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
+                ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken).ContinueWith(continuation =>
+                {
+                    if (!continuation.IsFaulted)
+                    {
+                        return;
+                    }
+
+                    logger.LogCritical("Unable to start webfront task. {Message}",
+                        continuation.Exception?.InnerException?.Message);
+
+                    logger.LogDebug(continuation.Exception, "Unable to start webfront task");
+                    
+                    onWebfrontErrored.Set();
+                    
+                })
+                : Task.CompletedTask;
+
+            if (_serverManager.GetApplicationSettings().Configuration().EnableWebFront)
+            {
+                try
+                {
+                    onWebfrontErrored.Wait(webfrontLifetime.ApplicationStarted);
+                }
+                catch
+                {
+                    // ignored when webfront successfully starts
+                }
+
+                if (onWebfrontErrored.IsSet)
+                {
+                    return Task.CompletedTask;
+                }
+            }
 
             // we want to run this one on a manual thread instead of letting the thread pool handle it,
             // because we can't exit early from waiting on console input, and it prevents us from restarting
@@ -203,10 +238,10 @@ namespace IW4MAdmin.Application
 
             var tasks = new[]
             {
+                applicationManager.Start(),
                 versionChecker.CheckVersion(),
                 webfrontTask,
-                serviceProvider.GetRequiredService<IMasterCommunication>()
-                    .RunUploadStatus(_serverManager.CancellationToken),
+                masterCommunicator.RunUploadStatus(_serverManager.CancellationToken),
                 collectionService.BeginCollectionAsync(cancellationToken: _serverManager.CancellationToken)
             };
 

@@ -53,6 +53,7 @@ namespace IW4MAdmin
         private readonly CommandConfiguration _commandConfiguration;
         private EFServer _cachedDatabaseServer;
         private readonly StatManager _statManager;
+        private readonly ApplicationConfiguration _appConfig;
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
@@ -77,6 +78,7 @@ namespace IW4MAdmin
             _serverCache = serverCache;
             _commandConfiguration = commandConfiguration;
             _statManager = serviceProvider.GetRequiredService<StatManager>();
+            _appConfig =  serviceProvider.GetService<ApplicationConfiguration>();
             
             IGameServerEventSubscriptions.MonitoringStarted += async (gameEvent, token) =>
             {
@@ -1269,15 +1271,13 @@ namespace IW4MAdmin
 
         private void RunServerCollection()
         {
-            var appConfig = _serviceProvider.GetService<ApplicationConfiguration>();
-           
-            if (DateTime.Now - _lastPlayerCount < appConfig?.ServerDataCollectionInterval)
+            if (DateTime.Now - _lastPlayerCount < _appConfig?.ServerDataCollectionInterval)
             {
                 return;
             }
 
-            var maxItems = Math.Ceiling(appConfig.MaxClientHistoryTime.TotalMinutes /
-                                        appConfig.ServerDataCollectionInterval.TotalMinutes);
+            var maxItems = Math.Ceiling(_appConfig!.MaxClientHistoryTime.TotalMinutes /
+                                        _appConfig.ServerDataCollectionInterval.TotalMinutes);
                     
             while (ClientHistory.ClientCounts.Count > maxItems) 
             {

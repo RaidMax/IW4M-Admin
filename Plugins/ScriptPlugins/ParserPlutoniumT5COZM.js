@@ -3,7 +3,7 @@ var eventParser;
 
 var plugin = {
     author: 'RaidMax, SwordSWD',
-    version: 0.2,
+    version: 0.1,
     name: 'Plutonium T5 CO-OP/Zombies Parser',
     isParser: true,
 

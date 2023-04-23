@@ -311,6 +311,10 @@
         {
           "Name": "tdm",
           "Alias": "Team Deathmatch"
+        },
+        {
+	  "Name": "zom",
+          "Alias": "Zombies"
         }
       ]
     },
@@ -1231,6 +1235,9 @@
           "Alias": "Zoo",
           "Name": "mp_zoo"
         }
+          "Alias": "Der Riese",
+          "Name": "zombie_cod5_factory"
+        }	      
       ]
     },
     {

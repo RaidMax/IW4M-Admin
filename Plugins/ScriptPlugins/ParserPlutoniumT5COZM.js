@@ -22,9 +22,9 @@ var plugin = {
         rconParser.Configuration.GuidNumberStyle = 7; // Integer
         rconParser.Configuration.DefaultRConPort = 3074;
         rconParser.Configuration.CanGenerateLogPath = false;
-        rconParser.Configuration.CommandPrefixes.Kick         = 'clientkick {0}';
-        rconParser.Configuration.CommandPrefixes.Ban          = 'clientkick {0}';
-        rconParser.Configuration.CommandPrefixes.TempBan      = 'clientkick {0}';
+        rconParser.Configuration.CommandPrefixes.Kick         = 'clientkick {0} "{1}"';
+        rconParser.Configuration.CommandPrefixes.Ban          = 'clientkick {0} "{1}"';
+        rconParser.Configuration.CommandPrefixes.TempBan      = 'clientkick {0} "{1}"';
         rconParser.Configuration.CommandPrefixes.RConGetInfo  = undefined;
 
         rconParser.Configuration.OverrideCommandTimeouts.Clear();

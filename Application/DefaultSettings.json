@@ -1234,7 +1234,40 @@
         {
           "Alias": "Zoo",
           "Name": "mp_zoo"
-        }
+        },
+        {
+          "Alias": "Kino der Toten",
+          "Name": "zombie_theater"
+        },
+        {
+          "Alias": "Five",
+          "Name": "zombie_pentagon"
+        },
+        {
+          "Alias": "Ascension",
+          "Name": "zombie_cosmodrome"
+        },
+        {
+          "Alias": "Call of the Dead",
+          "Name":  "zombie_coast"
+        },
+        {
+          "Alias": "Moon", 
+          "Name":  "zombie_paris",
+        },
+        {
+          "Alias": "Nacht Der Untoten",
+          "Name": "zombie_cod5_prototype"
+        },
+        {
+          "Alias": "Verrückt",
+          "Name": "zombie_cod5_asylum"
+        },
+        {
+          "Alias": "Shi No Numa",
+          "Name": "zombie_cod5_sumpf"
+        },
+        {
           "Alias": "Der Riese",
           "Name": "zombie_cod5_factory"
         }	      

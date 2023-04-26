@@ -62,6 +62,12 @@ OnPlayerConnect()
     {
         level waittill( level.eventTypes.connect, player );
         
+        if ( scripts\_integration_base::_IsBot( player ) ) 
+        {
+            // we don't want to track bots
+            continue;
+        }
+        
         player thread OnPlayerJoinedTeam();
         player thread OnPlayerJoinedSpectators();
         player thread PlayerTrackingOnInterval();

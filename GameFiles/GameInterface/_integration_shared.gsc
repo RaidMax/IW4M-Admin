@@ -43,18 +43,13 @@ Setup()
     
     level.iw4madminIntegrationDefaultPerformance = 200;
     
+    level notify( level.notifyTypes.sharedFunctionsInitialized );
+    level waittill( level.notifyTypes.gameFunctionsInitialized );
+    
     if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
     {
         return;
     }
-
-    if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 )
-    {
-        return;
-    }
-    
-    level notify( level.notifyTypes.sharedFunctionsInitialized );
-    level waittill( level.notifyTypes.gameFunctionsInitialized );
     
     level thread OnPlayerConnect();
 }
@@ -71,6 +66,11 @@ OnPlayerConnect()
         player thread OnPlayerJoinedSpectators();
         player thread PlayerTrackingOnInterval();
 
+        if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 || !IsDefined( [[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) ) 
+        {
+            continue;
+        }
+        
         if ( ![[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) 
         {
             continue;

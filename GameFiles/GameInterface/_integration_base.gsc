@@ -17,17 +17,17 @@ Setup()
     level.eventBus.timeoutKey   = "timeout";
     level.eventBus.timeout      = 30;
     
-    level.commonFunctions              = spawnstruct();
-    level.commonFunctions.setDvar      = "SetDvarIfUninitialized";
-    level.commonFunctions.isBot        = "IsBot";
-    level.commonFunctions.getXuid      = "GetXuid";
-    level.commonFunctions.getPlayerFromClientNum = "GetPlayerFromClientNum";
+    level.commonFunctions                           = spawnstruct();
+    level.commonFunctions.setDvar                   = "SetDvarIfUninitialized";
+    level.commonFunctions.isBot                     = "IsBot";
+    level.commonFunctions.getXuid                   = "GetXuid";
+    level.commonFunctions.getPlayerFromClientNum    = "GetPlayerFromClientNum";
 
     level.commonKeys = spawnstruct();
     
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
-    level.notifyTypes.sharedFunctionsInitialized          = "SharedFunctionsInitialized";
+    level.notifyTypes.sharedFunctionsInitialized        = "SharedFunctionsInitialized";
     level.notifyTypes.integrationBootstrapInitialized   = "IntegrationBootstrapInitialized";
     
     level.clientDataKey = "clientData";
@@ -52,7 +52,6 @@ Setup()
     level.clientCommandRusAsTarget = [];
     level.logger = spawnstruct();
     level.overrideMethods = [];
-    level.overrideMethods["GetPlayerFromClientNum"] = ::GetPlayerFromClientNum;
 
     level.iw4madminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
     InitializeLogger();
@@ -104,9 +103,6 @@ OnPlayerConnect()
         }
         
         player thread OnPlayerSpawned();
-        player thread OnPlayerJoinedTeam();
-        player thread OnPlayerJoinedSpectators();
-        player thread PlayerTrackingOnInterval();
     }
 }
 
@@ -118,30 +114,6 @@ OnPlayerSpawned()
     {
         self waittill( "spawned_player" );
         self PlayerSpawnEvents();
-    }
-}
-
-OnPlayerJoinedTeam()
-{
-    self endon( "disconnect" );
-
-    for( ;; )
-    {
-        self waittill( "joined_team" );
-        // join spec and join team occur at the same moment - out of order logging would be problematic
-        wait( 0.25 ); 
-        LogPrint( GenerateJoinTeamString( false ) );
-    }
-}
-
-OnPlayerJoinedSpectators()
-{
-    self endon( "disconnect" );
-
-    for( ;; )
-    {
-        self waittill( "joined_spectators" );
-        LogPrint( GenerateJoinTeamString( true ) );
     }
 }
 
@@ -187,20 +159,6 @@ PlayerSpawnEvents()
     }
     
     self RequestClientBasicData();
-}
-
-PlayerTrackingOnInterval() 
-{
-    self endon( "disconnect" );
-
-    for ( ;; )
-    {
-        wait ( 120 );
-        if ( IsAlive( self ) )
-        {
-            self SaveTrackingMetrics();
-        }
-    }
 }
 
 MonitorClientEvents()
@@ -346,37 +304,6 @@ DecrementClientMeta( metaKey, decrementValue, clientId )
     SetClientMeta( metaKey, decrementValue, clientId, "decrement" );
 }
 
-GenerateJoinTeamString( isSpectator ) 
-{
-    team = self.team;
-
-    if ( IsDefined( self.joining_team ) )
-    {
-        team = self.joining_team;
-    }
-    else
-    {
-        if ( isSpectator || !IsDefined( team ) ) 
-        {
-            team = "spectator";
-        }
-    }
-
-    guid = self [[level.overrideMethods[level.commonFunctions.getXuid]]]();
-
-    if ( guid == "0" )
-    {
-        guid = self.guid;
-    }
-
-    if ( !IsDefined( guid ) || guid == "0" )
-    {
-        guid = "undefined";
-    }
-
-    return "JT;" + guid + ";" + self getEntityNumber() + ";" + team + ";" + self.name + "\n";
-}
-
 SetClientMeta( metaKey, metaValue, clientId, direction )
 {
     data = "key=" + metaKey + "|value=" + metaValue;
@@ -400,39 +327,6 @@ SetClientMeta( metaKey, metaValue, clientId, direction )
 
     setClientMetaEvent = BuildEventRequest( true, level.eventTypes.setClientDataRequested, "Meta", clientNumber, data );
     level thread QueueEvent( setClientMetaEvent, level.eventTypes.setClientDataRequested, self );
-}
-
-SaveTrackingMetrics()
-{
-    if ( !IsDefined( self.persistentClientId ) )
-    {
-        return;
-    }
-
-    LogDebug( "Saving tracking metrics for " + self.persistentClientId );
-    
-    if ( !IsDefined( self.lastShotCount ) )
-    {
-        self.lastShotCount = 0;
-    }
-
-    currentShotCount = self [[level.overrideMethods["GetTotalShotsFired"]]]();
-    change = currentShotCount - self.lastShotCount;
-    self.lastShotCount = currentShotCount;
-
-    LogDebug( "Total Shots Fired increased by " + change );
-
-    if ( !IsDefined( change ) )
-    {
-        change = 0;
-    }
-    
-    if ( change == 0 )
-    {
-        return;
-    }
-
-    IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
 }
 
 BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data ) 
@@ -608,24 +502,6 @@ NotifyClientEvent( eventInfo )
     
     client.event = event;
     level notify( level.eventTypes.localClientEvent, client );
-}
-
-GetPlayerFromClientNum( clientNum )
-{
-    if ( clientNum < 0 )
-    {
-        return undefined;
-    }
-    
-    for ( i = 0; i < level.players.size; i++ )
-    {
-        if ( level.players[i] getEntityNumber() == clientNum )
-        {
-            return level.players[i];
-        }
-    }
-    
-    return undefined;
 }
 
 AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )

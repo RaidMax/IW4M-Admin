@@ -54,6 +54,7 @@ Setup()
     }
     
     level notify( level.notifyTypes.sharedFunctionsInitialized );
+    level waittill( level.notifyTypes.gameFunctionsInitialized );
     
     level thread OnPlayerConnect();
 }

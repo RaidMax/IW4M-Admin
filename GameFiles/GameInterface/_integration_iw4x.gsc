@@ -31,7 +31,7 @@ Setup()
     
     RegisterClientCommands();
     
-    _SetDvarIfUninitialized("sv_iw4madmin_autobalance",0);
+    _SetDvarIfUninitialized( "sv_iw4madmin_autobalance", 0 );
     
     level notify( level.notifyTypes.gameFunctionsInitialized );
     

@@ -21,7 +21,7 @@ Setup()
     level.commonFunctions.setDvar      = "SetDvarIfUninitialized";
     level.commonFunctions.isBot        = "IsBot";
     level.commonFunctions.getXuid      = "GetXuid";
-    level.commonFunctions.GetPlayerFromClientNum = "GetPlayerFromClientNum";
+    level.commonFunctions.getPlayerFromClientNum = "GetPlayerFromClientNum";
 
     level.commonKeys = spawnstruct();
     
@@ -566,8 +566,8 @@ NotifyClientEventTimeout( eventType )
 
 NotifyClientEvent( eventInfo )
 {
-    origin = [[level.overrideMethods[level.commonFunctions.GetPlayerFromClientNum]]]( int( eventInfo[3] ) );
-    target = [[level.overrideMethods[level.commonFunctions.GetPlayerFromClientNum]]]( int( eventInfo[4] ) );
+    origin = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[3] ) );
+    target = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[4] ) );
     
     event = spawnstruct();
     event.type = eventInfo[1];

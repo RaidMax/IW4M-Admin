@@ -27,6 +27,7 @@ Setup()
     
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
+    level.notifyTypes.sharedFunctionsInitialized          = "SharedFunctionsInitialized";
     level.notifyTypes.integrationBootstrapInitialized   = "IntegrationBootstrapInitialized";
     
     level.clientDataKey = "clientData";

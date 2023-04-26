@@ -10,7 +10,7 @@ Setup()
     level endon( "game_ended" );
     
     // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "IntegrationBootstrapInitialized" );
+    level waittill( "SharedFunctionsInitialized" );
     level.eventBus.gamename = "T5";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );

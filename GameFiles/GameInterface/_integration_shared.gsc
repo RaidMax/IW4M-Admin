@@ -8,6 +8,9 @@ Setup()
 {
     level endon( "game_ended" );
     
+    // it's possible that the notify type has not been defined yet so we have to hard code it 
+    level waittill( "IntegrationBootstrapInitialized" );
+    
     level.commonFunctions.changeTeam                        = "ChangeTeam";
     level.commonFunctions.getTeamCounts                     = "GetTeamCounts";
     level.commonFunctions.getMaxClients                     = "GetMaxClients";
@@ -48,6 +51,8 @@ Setup()
     {
         return;
     }
+    
+    level notify( level.notifyTypes.sharedFunctionsInitialized );
     
     level thread OnPlayerConnect();
 }

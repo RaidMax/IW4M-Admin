@@ -581,7 +581,7 @@ namespace IW4MAdmin.Application.EventParsers
             var message = new string(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
                 .Where(c => !char.IsControl(c)).ToArray());
 
-            if (message[0] == '/')
+            if (message.StartsWith("/"))
             {
                 message = message[1..];
             }

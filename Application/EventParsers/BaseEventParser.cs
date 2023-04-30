@@ -578,11 +578,15 @@ namespace IW4MAdmin.Application.EventParsers
                 return null;
             }
 
-            var message = matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
-                .Replace(Configuration.LocalizeText, "")
-                .Trim();
+            var message = new string(matchResult.Values[Configuration.Say.GroupMapping[ParserRegex.GroupType.Message]]
+                .Where(c => !char.IsControl(c)).ToArray());
 
-            if (message.Length <= 0)
+            if (message[0] == '/')
+            {
+                message = message.Substring(1);
+            }
+
+            if (String.IsNullOrEmpty(message))
             {
                 return null;
             }

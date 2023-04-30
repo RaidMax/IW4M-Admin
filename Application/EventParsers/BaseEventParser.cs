@@ -583,7 +583,7 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (message[0] == '/')
             {
-                message = message.Substring(1);
+                message = message[1..];
             }
 
             if (String.IsNullOrEmpty(message))

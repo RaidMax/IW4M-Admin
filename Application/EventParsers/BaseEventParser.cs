@@ -141,7 +141,7 @@ namespace IW4MAdmin.Application.EventParsers
 
             if (timeMatch.Success)
             {
-                if (timeMatch.Values[0].Contains(":"))
+                if (timeMatch.Values[0].Contains(':'))
                 {
                     gameTime = timeMatch
                         .Values
@@ -179,6 +179,16 @@ namespace IW4MAdmin.Application.EventParsers
                     return ParseMatchEndEvent(logLine, gameTime);
                 case GameEvent.EventType.MapChange:
                     return ParseMatchStartEvent(logLine, gameTime);
+            }
+            
+            if (logLine.StartsWith("GSE;"))
+            {
+                return new GameScriptEvent
+                {
+                    ScriptData = logLine,
+                    GameTime = gameTime,
+                    Source = GameEvent.EventSource.Log
+                };
             }
 
             if (eventKey is null || !_customEventRegistrations.ContainsKey(eventKey))

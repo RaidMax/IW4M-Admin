@@ -3,6 +3,7 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,12 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteDatabaseContext))]
-    partial class SqliteDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20230502032705_AddZombieStatsInitial")]
+    partial class AddZombieStatsInitial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
@@ -85,12 +87,6 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<int>("TotalConnectionTime")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("TwoFactorBackupCodes")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TwoFactorSecret")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("ClientId");
 
@@ -414,6 +410,8 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("ClientHitStatisticId");
 
+                    b.HasIndex("ClientId");
+
                     b.HasIndex("HitLocationId");
 
                     b.HasIndex("MeansOfDeathId");
@@ -423,8 +421,6 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("WeaponAttachmentComboId");
 
                     b.HasIndex("WeaponId");
-
-                    b.HasIndex("ClientId", "ServerId");
 
                     b.ToTable("EFClientHitStatistics", (string)null);
                 });
@@ -1020,54 +1016,6 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("EFPenaltyIdentifiers", (string)null);
                 });
 
-            modelBuilder.Entity("Data.Models.Misc.EFAnnouncement", b =>
-                {
-                    b.Property<int>("AnnouncementId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(4096)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CreatedByClientId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("EndAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsGlobalNotice")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("StartAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("AnnouncementId");
-
-                    b.HasIndex("CreatedByClientId");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("IsGlobalNotice");
-
-                    b.ToTable("EFAnnouncement", (string)null);
-                });
-
             modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
                 {
                     b.Property<int>("InboxMessageId")
@@ -1162,8 +1110,6 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ServerSnapshotId");
-
-                    b.HasIndex("CapturedAt");
 
                     b.HasIndex("MapId");
 
@@ -1780,17 +1726,6 @@ namespace Data.Migrations.Sqlite
                         .IsRequired();
 
                     b.Navigation("Penalty");
-                });
-
-            modelBuilder.Entity("Data.Models.Misc.EFAnnouncement", b =>
-                {
-                    b.HasOne("Data.Models.Client.EFClient", "CreatedByClient")
-                        .WithMany()
-                        .HasForeignKey("CreatedByClientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedByClient");
                 });
 
             modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>

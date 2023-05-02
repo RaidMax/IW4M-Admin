@@ -9,6 +9,7 @@ using Data.Models.Client.Stats;
 using Data.Models.Client.Stats.Reference;
 using Data.Models.Misc;
 using Data.Models.Server;
+using Data.Models.Zombie;
 
 namespace Data.Context
 {
@@ -48,6 +49,15 @@ namespace Data.Context
         public DbSet<EFClientConnectionHistory> ConnectionHistory { get; set; }
 
         #endregion
+        
+        #region Zombie
+        
+        public DbSet<ZombieMatch> ZombieMatches { get; set; }
+        public DbSet<ZombieMatchClientStat> ZombieMatchClientStats { get; set; }
+        public DbSet<ZombieRoundClientStat> ZombieRoundClientStats { get; set; }
+        public DbSet<ZombieAggregateClientStat> ZombieClientStatAggregates { get; set; }
+        
+        #endregion
 
         private void SetAuditColumns()
         {
@@ -60,10 +70,6 @@ namespace Data.Context
             {
                 throw new InvalidOperationException();
             }
-        }
-
-        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
-        {
         }
 
         protected DatabaseContext(DbContextOptions options) : base(options)
@@ -163,6 +169,12 @@ namespace Data.Context
             modelBuilder.Entity<EFPenaltyIdentifier>().ToTable("EFPenaltyIdentifiers");
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
+            
+            modelBuilder.Entity(typeof(ZombieMatch)).ToTable($"EF{nameof(ZombieMatch)}");
+            modelBuilder.Entity(typeof(ZombieMatchClientStat)).ToTable($"EF{nameof(ZombieMatchClientStat)}");
+            modelBuilder.Entity(typeof(ZombieRoundClientStat)).ToTable($"EF{nameof(ZombieRoundClientStat)}");
+            modelBuilder.Entity(typeof(ZombieAggregateClientStat)).ToTable($"EF{nameof(ZombieAggregateClientStat)}");
+            modelBuilder.Entity(typeof(ZombieClientStat)).ToTable($"EF{nameof(ZombieClientStat)}");
 
             Models.Configuration.StatsModelConfiguration.Configure(modelBuilder);
 

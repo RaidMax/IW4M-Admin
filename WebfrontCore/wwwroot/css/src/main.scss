@@ -361,7 +361,7 @@ table {
   background-color: var(--lm-base-body-bg-color);
   padding: 0.5rem;
   height: 90%;
-  overflow: scroll;
+  overflow-y: scroll;
 }
 
 .dark-mode .on-this-page-nav {

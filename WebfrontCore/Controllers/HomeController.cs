@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
@@ -18,13 +19,17 @@ namespace WebfrontCore.Controllers
         private readonly ITranslationLookup _translationLookup;
         private readonly ILogger _logger;
         private readonly IServerDataViewer _serverDataViewer;
+        private readonly ILookup<Type, string> _pluginTypeNames;
 
         public HomeController(ILogger<HomeController> logger, IManager manager, ITranslationLookup translationLookup,
-            IServerDataViewer serverDataViewer) : base(manager)
+            IServerDataViewer serverDataViewer, IEnumerable<IPlugin> v1Plugins, IEnumerable<IPluginV2> v2Plugins) : base(manager)
         {
             _logger = logger;
             _translationLookup = translationLookup;
             _serverDataViewer = serverDataViewer;
+            _pluginTypeNames = v1Plugins.Select(plugin => (plugin.GetType(), plugin.Name))
+                .Concat(v2Plugins.Select(plugin => (plugin.GetType(), plugin.Name)))
+                .ToLookup(selector => selector.Item1, selector => selector.Name);
         }
 
         public async Task<IActionResult> Index(Reference.Game? game = null,
@@ -96,9 +101,9 @@ namespace WebfrontCore.Controllers
                     }
 
                     var pluginType = command.GetType().Assembly.GetTypes()
-                        .FirstOrDefault(type => typeof(IPlugin).IsAssignableFrom(type));
-                    return Manager.Plugins.FirstOrDefault(plugin => plugin.GetType() == pluginType)?.Name ??
-                           _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"];
+                        .FirstOrDefault(type => typeof(IPlugin).IsAssignableFrom(type) || typeof(IPluginV2).IsAssignableFrom(type));
+
+                    return _pluginTypeNames[pluginType].FirstOrDefault() ?? _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"];
                 })
                 .Select(group => (group.Key, group.AsEnumerable()));
 

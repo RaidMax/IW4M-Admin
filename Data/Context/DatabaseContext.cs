@@ -56,7 +56,8 @@ namespace Data.Context
         public DbSet<ZombieMatchClientStat> ZombieMatchClientStats { get; set; }
         public DbSet<ZombieRoundClientStat> ZombieRoundClientStats { get; set; }
         public DbSet<ZombieAggregateClientStat> ZombieClientStatAggregates { get; set; }
-        
+        public DbSet<ZombieClientStatRecord> ZombieClientStatRecords { get; set; }
+
         #endregion
 
         private void SetAuditColumns()
@@ -175,6 +176,7 @@ namespace Data.Context
             modelBuilder.Entity(typeof(ZombieRoundClientStat)).ToTable($"EF{nameof(ZombieRoundClientStat)}");
             modelBuilder.Entity(typeof(ZombieAggregateClientStat)).ToTable($"EF{nameof(ZombieAggregateClientStat)}");
             modelBuilder.Entity(typeof(ZombieClientStat)).ToTable($"EF{nameof(ZombieClientStat)}");
+            modelBuilder.Entity(typeof(ZombieClientStatRecord)).ToTable($"EF{nameof(ZombieClientStatRecord)}");
 
             Models.Configuration.StatsModelConfiguration.Configure(modelBuilder);
 

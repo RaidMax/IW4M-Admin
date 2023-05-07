@@ -15,6 +15,7 @@ namespace Data.Models.Server
         public Reference.Game? GameName { get; set; }
         public string HostName { get; set; }
         public bool IsPasswordProtected { get; set; }
+        public string PerformanceBucket { get; set; }
         public long Id => ServerId;
         public string Value => EndPoint;
     }

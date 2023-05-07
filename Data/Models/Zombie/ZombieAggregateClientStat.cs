@@ -1,4 +1,6 @@
-﻿namespace Data.Models.Zombie;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Data.Models.Zombie;
 
 public class ZombieAggregateClientStat : ZombieClientStat
 {
@@ -20,8 +22,23 @@ public class ZombieAggregateClientStat : ZombieClientStat
     public int HighestRound { get; set; }
     public int TotalRoundsPlayed { get; set; }
     public int TotalMatchesPlayed { get; set; }
+    public int TotalMatchesCompleted { get; set; }
 
     #endregion
-    
-    public double RankingMetric { get; set; }
+
+    [NotMapped] 
+    public static readonly string[] RecordsKeys = 
+    {
+        nameof(AverageKillsPerDown),
+        nameof(AverageDowns),
+        nameof(AverageRevives),
+        nameof(HeadshotPercentage),
+        nameof(AlivePercentage),
+        nameof(AverageMelees),
+        nameof(AverageRoundReached),
+        nameof(AveragePoints),
+        nameof(HighestRound),
+        nameof(TotalRoundsPlayed),
+        nameof(TotalMatchesPlayed)
+    };
 }

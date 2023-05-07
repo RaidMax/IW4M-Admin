@@ -5,7 +5,7 @@ using Data.Models.Client;
 
 namespace Data.Models.Zombie;
 
-public abstract class ZombieClientStat
+public abstract class ZombieClientStat : DatedRecord
 {
     [Key]
     public long ZombieClientStatId { get; set; }
@@ -27,8 +27,8 @@ public abstract class ZombieClientStat
     public int Melees { get; set; }
     public int Downs { get; set; }
     public int Revives { get; set; }
-    public int PointsEarned { get; set; }
-    public int PointsSpent { get; set; }
+    public long PointsEarned { get; set; }
+    public long PointsSpent { get; set; }
     public int PerksConsumed { get; set; }
     public int PowerupsGrabbed { get; set; }
 }

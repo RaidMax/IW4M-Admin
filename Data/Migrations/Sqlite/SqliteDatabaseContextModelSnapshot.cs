@@ -444,6 +444,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("Newest")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("PerformanceBucket")
+                        .HasColumnType("TEXT");
+
                     b.Property<double?>("PerformanceMetric")
                         .HasColumnType("REAL");
 
@@ -1126,6 +1129,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("IsPasswordProtected")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("PerformanceBucket")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Port")
                         .HasColumnType("INTEGER");
 
@@ -1226,6 +1232,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("ClientId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("DamageDealt")
                         .HasColumnType("INTEGER");
 
@@ -1253,10 +1262,10 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("PerksConsumed")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("PointsEarned")
+                    b.Property<long>("PointsEarned")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("PointsSpent")
+                    b.Property<long>("PointsSpent")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("PowerupsGrabbed")
@@ -1264,6 +1273,9 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<int>("Revives")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ZombieClientStatId");
 
@@ -1274,11 +1286,56 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("EFZombieClientStat", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
+                {
+                    b.Property<int>("ZombieClientStatRecordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("RoundId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ZombieClientStatRecordId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("RoundId");
+
+                    b.ToTable("EFZombieClientStatRecord", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
                 {
                     b.Property<int>("ZombieMatchId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClientsCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("EFClientClientId")
                         .HasColumnType("INTEGER");
@@ -1294,6 +1351,9 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ZombieMatchId");
 
@@ -1340,8 +1400,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("HighestRound")
                         .HasColumnType("INTEGER");
 
-                    b.Property<double>("RankingMetric")
-                        .HasColumnType("REAL");
+                    b.Property<int>("TotalMatchesCompleted")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("TotalMatchesPlayed")
                         .HasColumnType("INTEGER");
@@ -1863,6 +1923,21 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Client");
 
                     b.Navigation("Match");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieRoundClientStat", "Round")
+                        .WithMany()
+                        .HasForeignKey("RoundId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Round");
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>

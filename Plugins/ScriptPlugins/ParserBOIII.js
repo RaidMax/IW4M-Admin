@@ -43,7 +43,7 @@ var plugin = {
         eventParser.Version = '[local] ship win64 CODBUILD8-764 (3421987) Mon Dec 16 10:44:20 2019 10d27bef';
         eventParser.GameName = 8; // BO3
         eventParser.Configuration.GameDirectory = 'usermaps';
-        eventParser.Configuration.Say.Pattern = '^(chat|chatteam);(?:[0-9]+);([0-9]+);([0-9]+);(.+);(.*)$';
+        eventParser.Configuration.Say.Pattern = '^(chat|chatteam);(?:[0-9]+);([a-f0-9]+);([0-9]+);(.+);(.*)$';
     },
 
     onUnloadAsync: function() {},

@@ -54,6 +54,7 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SERVER_CUSTOM_HOSTNAME")]
         [ConfigurationOptional]
         public string CustomHostname { get; set; }
+        public string PerformanceBucket { get; set; }
 
         public IBaseConfiguration Generate()
         {

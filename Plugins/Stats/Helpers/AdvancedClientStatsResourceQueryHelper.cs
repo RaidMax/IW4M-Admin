@@ -145,11 +145,12 @@ namespace Stats.Helpers
             };
         }
 
-        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, double? zScore = null,
+        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, TimeSpan expiration, double? zScore = null,
             long? serverId = null)
         {
-            return (stats) => (serverId == null || stats.ServerId == serverId) &&
-                              stats.UpdatedAt >= Extensions.FifteenDaysAgo() &&
+            var oldestStat = DateTimeOffset.UtcNow.Subtract(expiration);
+            return stats => (serverId == null || stats.ServerId == serverId) &&
+                              stats.UpdatedAt >= oldestStat &&
                               stats.Client.Level != EFClient.Permission.Banned &&
                               stats.TimePlayed >= minPlayTime
                               && (zScore == null || stats.ZScore > zScore);

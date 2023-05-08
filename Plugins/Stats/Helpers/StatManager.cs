@@ -1181,93 +1181,122 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             await using var context = _contextFactory.CreateContext();
             var minPlayTime = _config.TopPlayersMinPlayTime;
+            var oldestStat = DateTimeOffset.UtcNow - Extensions.FifteenDaysAgo();
+            
+            var performanceBucket =
+                (await _serverCache.FirstAsync(server => server.Id == serverId)).PerformanceBucket;
+
+            if (!string.IsNullOrEmpty(performanceBucket))
+            {
+                var bucketConfig = _config.PerformanceBuckets.FirstOrDefault(cfg => cfg.Name == performanceBucket) ??
+                                   new PerformanceBucketConfiguration();
+
+                minPlayTime = (int)bucketConfig.ClientMinPlayTime.TotalSeconds;
+                oldestStat = bucketConfig.RankingExpiration;
+            }
 
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
-                .Where(stats => stats.UpdatedAt >= Extensions.FifteenDaysAgo())
+                .Where(stats => stats.UpdatedAt >= DateTimeOffset.UtcNow - oldestStat)
                 .Where(stats => stats.TimePlayed >= minPlayTime)
                 .ToListAsync();
 
             if (clientStats.TimePlayed >= minPlayTime)
             {
-                clientStats.ZScore = await _serverDistributionCalculator.GetZScoreForServer(serverId,
-                    clientStats.Performance);
-
-                var serverRanking = await context.Set<EFClientStatistics>()
-                    .Where(stats => stats.ClientId != clientStats.ClientId)
-                    .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(
-                        _config.TopPlayersMinPlayTime, clientStats.ZScore, serverId))
-                    .CountAsync();
-
-                var serverRankingSnapshot = new EFClientRankingHistory
-                {
-                    ClientId = clientId,
-                    ServerId = serverId,
-                    ZScore = clientStats.ZScore,
-                    Ranking = serverRanking,
-                    PerformanceMetric = clientStats.Performance,
-                    Newest = true
-                };
-
-                context.Add(serverRankingSnapshot);
-                await PruneOldRankings(context, clientId, serverId);
-                await context.SaveChangesAsync();
-
+                await UpdateForServer(clientId, clientStats, context, minPlayTime, oldestStat, serverId);
                 performances.Add(clientStats);
             }
 
             if (performances.Any(performance => performance.TimePlayed >= minPlayTime))
             {
-                var aggregateZScore =
-                    performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
-
-                int? aggregateRanking = await context.Set<EFClientStatistics>()
-                    .Where(stat => stat.ClientId != clientId)
-                    .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime))
-                    .GroupBy(stat => stat.ClientId)
-                    .Where(group =>
-                        group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
-                        aggregateZScore)
-                    .Select(c => c.Key)
-                    .CountAsync();
-
-                var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore);
-
-                if (newPerformanceMetric == null)
-                {
-                    _log.LogWarning("Could not determine performance metric for {Client} {AggregateZScore}",
-                        clientStats.Client?.ToString(), aggregateZScore);
-                    return;
-                }
-
-                var aggregateRankingSnapshot = new EFClientRankingHistory
-                {
-                    ClientId = clientId,
-                    ZScore = aggregateZScore,
-                    Ranking = aggregateRanking,
-                    PerformanceMetric = newPerformanceMetric,
-                    Newest = true,
-                };
-
-                context.Add(aggregateRankingSnapshot);
-
-                await PruneOldRankings(context, clientId);
-                await context.SaveChangesAsync();
+                await UpdateAggregateForServerOrBucket(clientId, clientStats, context, performances, minPlayTime,
+                    oldestStat, performanceBucket);
             }
         }
 
-        private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null)
+        private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context, List<EFClientStatistics> performances,
+            int minPlayTime, TimeSpan oldestStat, string performanceBucket)
+        {
+            var aggregateZScore =
+                performances.Where(performance => performance.Server.PerformanceBucket == performanceBucket)
+                    .WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
+
+            int? aggregateRanking = await context.Set<EFClientStatistics>()
+                .Where(stat => stat.ClientId != clientId)
+                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime, oldestStat))
+                .GroupBy(stat => stat.ClientId)
+                .Where(group =>
+                    group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
+                    aggregateZScore)
+                .Select(c => c.Key)
+                .CountAsync();
+
+            var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore, performanceBucket);
+
+            if (newPerformanceMetric == null)
+            {
+                _log.LogWarning("Could not determine performance metric for {Client} {AggregateZScore}",
+                    clientStats.Client?.ToString(), aggregateZScore);
+                return;
+            }
+
+            var aggregateRankingSnapshot = new EFClientRankingHistory
+            {
+                ClientId = clientId,
+                ZScore = aggregateZScore,
+                Ranking = aggregateRanking,
+                PerformanceMetric = newPerformanceMetric,
+                PerformanceBucket = performanceBucket,
+                Newest = true,
+            };
+
+            context.Add(aggregateRankingSnapshot);
+
+            await PruneOldRankings(context, clientId);
+            await context.SaveChangesAsync();
+        }
+
+        private async Task UpdateForServer(int clientId, EFClientStatistics clientStats, DatabaseContext context,
+            int minPlayTime, TimeSpan oldestStat, long? serverId = null)
+        {
+            clientStats.ZScore =
+                await _serverDistributionCalculator.GetZScoreForServerOrBucket(clientStats.Performance, serverId);
+
+            var serverRanking = await context.Set<EFClientStatistics>()
+                .Where(stats => stats.ClientId != clientStats.ClientId)
+                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime, oldestStat,
+                    clientStats.ZScore, serverId))
+                .CountAsync();
+
+            var serverRankingSnapshot = new EFClientRankingHistory
+            {
+                ClientId = clientId,
+                ServerId = serverId,
+                ZScore = clientStats.ZScore,
+                Ranking = serverRanking,
+                PerformanceMetric = clientStats.Performance,
+                Newest = true
+            };
+
+            context.Add(serverRankingSnapshot);
+            await PruneOldRankings(context, clientId, serverId);
+            await context.SaveChangesAsync();
+        }
+
+        private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null, string performanceBucket = null)
         {
             var totalRankingEntries = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
+                .Where(r => r.PerformanceBucket == performanceBucket)
                 .CountAsync();
 
             var mostRecent = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
+                .Where(r => r.PerformanceBucket == performanceBucket)
                 .FirstOrDefaultAsync(r => r.Newest);
 
             if (mostRecent != null)
@@ -1283,6 +1312,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var lastRating = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == clientId)
                     .Where(r => r.ServerId == serverId)
+                    .Where(r => r.PerformanceBucket == performanceBucket)
                     .OrderBy(r => r.CreatedDateTime)
                     .FirstOrDefaultAsync();
 
@@ -1409,7 +1439,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
-            clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
+            var skillFunction = client.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("SkillFunction");
+
+            clientStats.Skill =
+                skillFunction?.Invoke(client, clientStats) ?? Math.Round(clientStats.SPM * KDRWeight, 3);
 
             // fixme: how does this happen?
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
@@ -1420,7 +1453,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         killSPM = killSpm, KDRWeight, totalPlayTime, SPMAgainstPlayWeight, clientStats, scoreDifference
                     });
                 clientStats.SPM = 0;
-                clientStats.Skill = 0;
+                if (skillFunction is null)
+                {
+                    clientStats.Skill = 0;
+                }
             }
 
             clientStats.LastStatCalculation = DateTime.UtcNow;

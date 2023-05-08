@@ -381,11 +381,12 @@ namespace Stats.Helpers
                 : $"{proj.WeaponName}{string.Join("_", proj.Attachment1Name, proj.Attachment2Name, proj.Attachment3Name)}";
         }
 
-        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, double? zScore = null,
+        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, TimeSpan expiration, double? zScore = null,
             long? serverId = null)
         {
+            var oldestStat = DateTimeOffset.UtcNow.Subtract(expiration);
             return stats => (serverId == null || stats.ServerId == serverId) &&
-                            stats.UpdatedAt >= Extensions.FifteenDaysAgo() &&
+                            stats.UpdatedAt >= oldestStat &&
                             stats.Client.Level != EFClient.Permission.Banned &&
                             stats.TimePlayed >= minPlayTime
                             && (zScore == null || stats.ZScore > zScore);

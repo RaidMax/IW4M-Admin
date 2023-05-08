@@ -7,10 +7,9 @@ using Data.Abstractions;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats;
-using IW4MAdmin.Plugins.Stats.Config;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
-using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Configuration;
 using Stats.Client.Abstractions;
 using Stats.Config;
 using Stats.Helpers;
@@ -21,76 +20,119 @@ namespace Stats.Client
     {
         private readonly IDatabaseContextFactory _contextFactory;
 
-        private readonly IDataValueCache<EFClientStatistics, Dictionary<long, Extensions.LogParams>>
+        private readonly IDataValueCache<EFClientStatistics, Dictionary<string, Extensions.LogParams>>
             _distributionCache;
 
-        private readonly IDataValueCache<EFClientStatistics, double>
-            _maxZScoreCache;
+        private readonly IDataValueCache<EFClientStatistics, double> _maxZScoreCache;
 
-        private readonly IConfigurationHandler<StatsConfiguration> _configurationHandler;
-        private readonly List<long> _serverIds = new List<long>();
+        private readonly StatsConfiguration _configuration;
+        private readonly ApplicationConfiguration _appConfig;
+        private readonly List<long> _serverIds = new();
 
         private const string DistributionCacheKey = nameof(DistributionCacheKey);
         private const string MaxZScoreCacheKey = nameof(MaxZScoreCacheKey);
 
         public ServerDistributionCalculator(IDatabaseContextFactory contextFactory,
-            IDataValueCache<EFClientStatistics, Dictionary<long, Extensions.LogParams>> distributionCache,
+            IDataValueCache<EFClientStatistics, Dictionary<string, Extensions.LogParams>> distributionCache,
             IDataValueCache<EFClientStatistics, double> maxZScoreCache,
-            IConfigurationHandlerFactory configFactory)
+            StatsConfiguration config, ApplicationConfiguration appConfig)
         {
             _contextFactory = contextFactory;
             _distributionCache = distributionCache;
             _maxZScoreCache = maxZScoreCache;
-            _configurationHandler = configFactory.GetConfigurationHandler<StatsConfiguration>("StatsPluginSettings");
+            _configuration = config;
+            _appConfig = appConfig;
         }
 
         public async Task Initialize()
         {
             await LoadServers();
-            _distributionCache.SetCacheItem((async (set, token) =>
+            
+            _distributionCache.SetCacheItem(async (set, token) =>
             {
-                await _configurationHandler.BuildAsync();
-                var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
-
-                var distributions = new Dictionary<long, Extensions.LogParams>();
+                var validPlayTime = _configuration.TopPlayersMinPlayTime;
+                var distributions = new Dictionary<string, Extensions.LogParams>();
 
                 await LoadServers();
 
+                var iqPerformances = set
+                    .Where(s => s.Skill > 0)
+                    .Where(s => s.EloRating > 0)
+                    .Where(s => s.Client.Level != EFClient.Permission.Banned);
+
                 foreach (var serverId in _serverIds)
                 {
-                    var performance = await set
-                        .Where(s => s.ServerId == serverId)
-                        .Where(s => s.Skill > 0)
-                        .Where(s => s.EloRating > 0)
-                        .Where(s => s.Client.Level != EFClient.Permission.Banned)
+                    var performances = await iqPerformances.Where(s => s.ServerId == serverId)
                         .Where(s => s.TimePlayed >= validPlayTime)
                         .Where(s => s.UpdatedAt >= Extensions.FifteenDaysAgo())
-                        .Select(s => s.EloRating * 1 / 3.0 + s.Skill * 2 / 3.0).ToListAsync();
-                    var distributionParams = performance.GenerateDistributionParameters();
-                    distributions.Add(serverId, distributionParams);
+                        .Select(s => s.EloRating * 1 / 3.0 + s.Skill * 2 / 3.0)
+                        .ToListAsync(token);
+                    var distributionParams = performances.GenerateDistributionParameters();
+                    distributions.Add(serverId.ToString(), distributionParams);
+                }
+
+                foreach (var server in _appConfig.Servers)
+                {
+                    if (string.IsNullOrWhiteSpace(server.PerformanceBucket))
+                    {
+                        continue;
+                    }
+
+                    var bucketConfig =
+                        _configuration.PerformanceBuckets.FirstOrDefault(bucket =>
+                            bucket.Name == server.PerformanceBucket) ?? new PerformanceBucketConfiguration();
+
+                    var oldestPerf = DateTimeOffset.UtcNow - bucketConfig.RankingExpiration;
+                    var performances = await iqPerformances
+                        .Where(perf => perf.Server.PerformanceBucket == server.PerformanceBucket)
+                        .Where(perf => perf.TimePlayed >= bucketConfig.ClientMinPlayTime.TotalSeconds)
+                        .Where(perf => perf.UpdatedAt >= oldestPerf)
+                        .Select(s => s.EloRating * 1 / 3.0 + s.Skill * 2 / 3.0)
+                        .ToListAsync(token);
+                    var distributionParams = performances.GenerateDistributionParameters();
+                    distributions.Add(server.PerformanceBucket, distributionParams);
                 }
 
                 return distributions;
-            }), DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(1));
+            }, DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(1));
 
-            _maxZScoreCache.SetCacheItem(async (set, token) =>
+            foreach (var server in _appConfig.Servers)
             {
-                await _configurationHandler.BuildAsync();
-                var validPlayTime = _configurationHandler.Configuration()?.TopPlayersMinPlayTime ?? 3600 * 3;
+                _maxZScoreCache.SetCacheItem(async (set, ids, token) =>
+                    {
+                        var validPlayTime = _configuration.TopPlayersMinPlayTime;
+                        var oldestStat = TimeSpan.FromSeconds(_configuration.TopPlayersMinPlayTime);
+                        var performanceBucket = (string)ids.FirstOrDefault();
 
-                var zScore = await set
-                    .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(validPlayTime))
-                    .Where(s => s.Skill > 0)
-                    .Where(s => s.EloRating > 0)
-                    .GroupBy(stat => stat.ClientId)
-                    .Select(group =>
-                        group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed))
-                    .MaxAsync(avgZScore => (double?) avgZScore, token);
-                return zScore ?? 0;
-            }, MaxZScoreCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30));
+                        if (!string.IsNullOrEmpty(performanceBucket))
+                        {
+                            var bucketConfig =
+                                _configuration.PerformanceBuckets.FirstOrDefault(cfg =>
+                                    cfg.Name == performanceBucket) ?? new PerformanceBucketConfiguration();
+
+                            validPlayTime = (int)bucketConfig.ClientMinPlayTime.TotalSeconds;
+                            oldestStat = bucketConfig.RankingExpiration;
+                        }
+
+                        var zScore = await set
+                            .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(validPlayTime, oldestStat))
+                            .Where(s => s.Skill > 0)
+                            .Where(s => s.EloRating > 0)
+                            .Where(stat =>
+                                performanceBucket == null || performanceBucket == stat.Server.PerformanceBucket)
+                            .GroupBy(stat => stat.ClientId)
+                            .Select(group =>
+                                group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed))
+                            .MaxAsync(avgZScore => (double?)avgZScore, token);
+
+                        return zScore ?? 0;
+                    }, MaxZScoreCacheKey, new[] { server.PerformanceBucket },
+                    Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30));
+
+                await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new[] { server.PerformanceBucket });
+            }
 
             await _distributionCache.GetCacheItem(DistributionCacheKey, new CancellationToken());
-            await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new CancellationToken());
 
             /*foreach (var serverId in _serverIds)
             {
@@ -131,16 +173,28 @@ namespace Stats.Client
             }
         }
 
-        public async Task<double> GetZScoreForServer(long serverId, double value)
+        public async Task<double> GetZScoreForServerOrBucket(double value, long? serverId = null,
+            string performanceBucket = null)
         {
-            var serverParams = await _distributionCache.GetCacheItem(DistributionCacheKey, new CancellationToken());
-            if (!serverParams.ContainsKey(serverId))
+            if (serverId is null && performanceBucket is null)
             {
                 return 0.0;
             }
 
-            var sdParams = serverParams[serverId];
-            if (sdParams.Sigma == 0)
+            var serverParams = await _distributionCache.GetCacheItem(DistributionCacheKey, new CancellationToken());
+            Extensions.LogParams sdParams = null;
+            
+            if (serverId is not null && serverParams.TryGetValue(serverId.ToString(), out var sdParams1))
+            {
+                sdParams = sdParams1;
+            }
+
+            else if (performanceBucket is not null && serverParams.TryGetValue(performanceBucket, out var sdParams2))
+            {
+                sdParams = sdParams2;
+            }
+
+            if (sdParams is null || sdParams.Sigma == 0)
             {
                 return 0.0;
             }
@@ -149,9 +203,9 @@ namespace Stats.Client
             return zScore;
         }
 
-        public async Task<double?> GetRatingForZScore(double? value)
+        public async Task<double?> GetRatingForZScore(double? value, string performanceBucket)
         {
-            var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new CancellationToken());
+            var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new [] { performanceBucket });
             return maxZScore == 0 ? null : value.GetRatingForZScore(maxZScore);
         }
     }

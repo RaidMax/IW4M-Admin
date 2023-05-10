@@ -112,6 +112,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pluto IW5", "Pluto IW5", "{
 		GameFiles\AntiCheat\IW5\README.MD = GameFiles\AntiCheat\IW5\README.MD
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZombieStats", "Plugins\ZombieStats\ZombieStats.csproj", "{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -440,6 +442,30 @@ Global
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Release|x86.Build.0 = Release|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|x64.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Debug|x86.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|Any CPU.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|Mixed Platforms.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|x64.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|x64.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|x86.ActiveCfg = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Prerelease|x86.Build.0 = Debug|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|x64.ActiveCfg = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|x64.Build.0 = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|x86.ActiveCfg = Release|Any CPU
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -461,6 +487,7 @@ Global
 		{3EA564BD-3AC6-479B-96B6-CB059DCD0C77} = {AB83BAC0-C539-424A-BF00-78487C10753C}
 		{866F453D-BC89-457F-8B55-485494759B31} = {AB83BAC0-C539-424A-BF00-78487C10753C}
 		{603725A4-BC0B-423B-955B-762C89E1C4C2} = {AB83BAC0-C539-424A-BF00-78487C10753C}
+		{3D92B950-6C9D-4B6D-B01B-F7AEC91787BD} = {26E8B310-269E-46D4-A612-24601F16065F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84F8F8E0-1F73-41E0-BD8D-BB6676E2EE87}

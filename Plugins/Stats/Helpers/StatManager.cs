@@ -1195,11 +1195,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 oldestStat = bucketConfig.RankingExpiration;
             }
 
+            var oldestStateDate = DateTime.UtcNow - oldestStat;
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
-                .Where(stats => stats.UpdatedAt >= DateTimeOffset.UtcNow - oldestStat)
+                .Where(stats => stats.UpdatedAt >= oldestStateDate)
                 .Where(stats => stats.TimePlayed >= minPlayTime)
                 .ToListAsync();
 

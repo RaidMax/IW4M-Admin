@@ -148,7 +148,7 @@ namespace Stats.Helpers
         public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, TimeSpan expiration, double? zScore = null,
             long? serverId = null)
         {
-            var oldestStat = DateTimeOffset.UtcNow.Subtract(expiration);
+            var oldestStat = DateTime.UtcNow.Subtract(expiration);
             return stats => (serverId == null || stats.ServerId == serverId) &&
                               stats.UpdatedAt >= oldestStat &&
                               stats.Client.Level != EFClient.Permission.Banned &&

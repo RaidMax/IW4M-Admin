@@ -181,7 +181,7 @@ public class HitCalculator : IClientStatisticCalculator
 
         foreach (var hitInfo in new[] {attackerHitInfo, victimHitInfo})
         {
-            if (hitInfo.MeansOfDeath == null || hitInfo.Location == null || hitInfo.Weapon == null)
+            if (hitInfo.MeansOfDeath == null || hitInfo.Location == null || hitInfo.Weapon == null || hitInfo.EntityId == 0)
             {
                 _logger.LogDebug("Skipping hit because it does not contain the required data");
                 continue;

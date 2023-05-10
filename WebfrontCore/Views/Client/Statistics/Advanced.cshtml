@@ -16,7 +16,7 @@
     ViewBag.Description = Model.ClientName.StripColors();
 
     const string headshotKey = "MOD_HEAD_SHOT";
-    const string headshotKey2 = "headshot";
+    const string headshotKey2 = "head";
     const string meleeKey = "MOD_MELEE";
 
     var suicideKeys = new[] { "MOD_SUICIDE", "MOD_FALLING" };
@@ -137,7 +137,7 @@
         : null;
 
     var headShots = allPerServer.Any()
-        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey || hit.HitLocation?.Name == headshotKey2).Sum(hit => hit.HitCount)
+        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey || (hit.HitLocation?.Name?.StartsWith(headshotKey2) ?? false)).Sum(hit => hit.HitCount)
         : (int?)null; // want to default to -- in ui instead of 0
 
     var meleeKills = allPerServer.Any()

@@ -178,7 +178,7 @@ namespace SharedLibraryCore
             ViewBag.ReportCount = Manager.GetServers().Sum(server =>
                 server.Reports.Count(report => DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)));
             ViewBag.PermissionsSet = PermissionsSet;
-            ViewBag.Alerts = AlertManager.RetrieveAlerts(Client).ToList();
+            ViewBag.Alerts = AlertManager.RetrieveAlerts(Client);
 
             base.OnActionExecuting(context);
         }

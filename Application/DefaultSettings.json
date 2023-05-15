@@ -1253,7 +1253,7 @@
         },
         {
           "Alias": "Moon", 
-          "Name":  "zombie_paris"
+          "Name":  "zombie_moon"
         },
         {
           "Alias": "Nacht Der Untoten",
@@ -1755,7 +1755,7 @@
           "Name": "zm_theater"
         },
 	{
-          "Alias": "Moom",
+          "Alias": "Moon",
           "Name": "zm_moon"
         },	
 	{

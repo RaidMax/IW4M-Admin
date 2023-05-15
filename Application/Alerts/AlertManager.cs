@@ -55,7 +55,7 @@ public class AlertManager : IAlertManager
                 alerts = alerts.Concat(_states[client.ClientId].AsReadOnly());
             }
 
-            return alerts.OrderByDescending(alert => alert.OccuredAt);
+            return alerts.OrderByDescending(alert => alert.OccuredAt).ToList();
         }
         finally
         {

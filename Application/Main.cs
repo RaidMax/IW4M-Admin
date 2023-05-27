@@ -68,7 +68,7 @@ namespace IW4MAdmin.Application
                 var overrides = new[] { nameof(SharedLibraryCore), nameof(Stats) };
                 if (!overrides.Contains(libraryName))
                 {
-                    return AppDomain.CurrentDomain.GetAssemblies().First(asm => asm.FullName == eventArgs.Name);
+                    return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(asm => asm.FullName == eventArgs.Name);
                 }
                 // added to be a bit more permissive with plugin references
                 return AppDomain.CurrentDomain.GetAssemblies()

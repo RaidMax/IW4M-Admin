@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -17,7 +18,10 @@ namespace IW4MAdmin.Application.Extensions
 {
     public static class StartupExtensions
     {
-        private static ILogger _defaultLogger = null;
+        private static ILogger _defaultLogger;
+        private static readonly LoggingLevelSwitch LevelSwitch = new();
+        private static readonly LoggingLevelSwitch MicrosoftLevelSwitch = new();
+        private static readonly LoggingLevelSwitch SystemLevelSwitch = new();
 
         public static IServiceCollection AddBaseLogger(this IServiceCollection services,
             ApplicationConfiguration appConfig)
@@ -29,21 +33,37 @@ namespace IW4MAdmin.Application.Extensions
                     .Build();
 
                 var loggerConfig = new LoggerConfiguration()
-                    .ReadFrom.Configuration(configuration)
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
+                    .ReadFrom.Configuration(configuration);
+
+                LevelSwitch.MinimumLevel = Enum.Parse<LogEventLevel>(configuration["Serilog:MinimumLevel:Default"]);
+                MicrosoftLevelSwitch.MinimumLevel = Enum.Parse<LogEventLevel>(configuration["Serilog:MinimumLevel:Override:Microsoft"]);
+                SystemLevelSwitch.MinimumLevel = Enum.Parse<LogEventLevel>(configuration["Serilog:MinimumLevel:Override:System"]);
+
+                loggerConfig = loggerConfig.MinimumLevel.ControlledBy(LevelSwitch);
+                loggerConfig = loggerConfig.MinimumLevel.Override("Microsoft", MicrosoftLevelSwitch)
+                    .MinimumLevel.Override("System", SystemLevelSwitch);
 
                 if (Utilities.IsDevelopment)
                 {
                     loggerConfig = loggerConfig.WriteTo.Console(
                             outputTemplate:
-                            "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                        .MinimumLevel.Debug();
+                            "[{Timestamp:HH:mm:ss} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                        ; //.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                    //.MinimumLevel.Debug();
                 }
 
                 _defaultLogger = loggerConfig.CreateLogger();
             }
 
+            services.AddSingleton((string context) =>
+            {
+                return context.ToLower() switch
+                {
+                    "microsoft" => MicrosoftLevelSwitch,
+                    "system" => SystemLevelSwitch,
+                    _ => LevelSwitch
+                };
+            });
             services.AddLogging(builder => builder.AddSerilog(_defaultLogger, dispose: true));
             services.AddSingleton(new LoggerFactory()
                 .AddSerilog(_defaultLogger, true));

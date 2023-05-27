@@ -1145,7 +1145,7 @@ namespace SharedLibraryCore
         /// </summary>
         /// <returns></returns>
         public static bool IsDevelopment =>
-            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" || AppContext.TryGetSwitch("IsDevelop", out _);
 
         /// <summary>
         ///     replaces any directory separator chars with the platform specific character

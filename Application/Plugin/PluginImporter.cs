@@ -20,12 +20,20 @@ namespace IW4MAdmin.Application.Plugin
     public class PluginImporter : IPluginImporter
     {
         private IEnumerable<PluginSubscriptionContent> _pluginSubscription;
-        private static readonly string PluginDir = "Plugins";
+        private const string PluginDir = "Plugins";
         private const string PluginV2Match = "^ *((?:var|const|let) +init)|function init";
         private readonly ILogger _logger;
         private readonly IRemoteAssemblyHandler _remoteAssemblyHandler;
         private readonly IMasterApi _masterApi;
         private readonly ApplicationConfiguration _appConfig;
+
+        private static readonly Type[] FilterTypes =
+        {
+            typeof(IPlugin),
+            typeof(IPluginV2),
+            typeof(Command),
+            typeof(IBaseConfiguration)
+        };
 
         public PluginImporter(ILogger<PluginImporter> logger, ApplicationConfiguration appConfig, IMasterApi masterApi,
             IRemoteAssemblyHandler remoteAssemblyHandler)
@@ -77,73 +85,79 @@ namespace IW4MAdmin.Application.Plugin
         public (IEnumerable<Type>, IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
         {
             var pluginDir = $"{Utilities.OperatingDirectory}{PluginDir}{Path.DirectorySeparatorChar}";
-            var pluginTypes = Enumerable.Empty<Type>();
-            var commandTypes = Enumerable.Empty<Type>();
-            var configurationTypes = Enumerable.Empty<Type>();
+            var pluginTypes = new List<Type>();
+            var commandTypes = new List<Type>();
+            var configurationTypes = new List<Type>();
 
-            if (Directory.Exists(pluginDir))
+            if (!Directory.Exists(pluginDir))
             {
-                var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
-                _logger.LogDebug("Discovered {Count} potential plugin assemblies", dllFileNames.Length);
+                return (pluginTypes, commandTypes, configurationTypes);
+            }
 
-                if (dllFileNames.Length > 0)
+            var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
+            _logger.LogDebug("Discovered {Count} potential plugin assemblies", dllFileNames.Length);
+
+            if (!dllFileNames.Any())
+            {
+                return (pluginTypes, commandTypes, configurationTypes);
+            }
+
+            // we only want to load the most recent assembly in case of duplicates
+            var assemblies = dllFileNames.Select(Assembly.LoadFrom)
+                .Union(GetRemoteAssemblies())
+                .GroupBy(assembly => assembly.FullName).Select(assembly =>
+                    assembly.OrderByDescending(asm => asm.GetName().Version).First());
+
+            var eligibleAssemblyTypes = assemblies
+                .SelectMany(asm =>
                 {
-                    // we only want to load the most recent assembly in case of duplicates
-                    var assemblies = dllFileNames.Select(name => Assembly.LoadFrom(name))
-                        .Union(GetRemoteAssemblies())
-                        .GroupBy(assembly => assembly.FullName).Select(assembly => assembly.OrderByDescending(asm => asm.GetName().Version).First());
+                    try
+                    {
+                        return asm.GetTypes();
+                    }
+                    catch
+                    {
+                        return Enumerable.Empty<Type>();
+                    }
+                }).Where(type =>
+                    FilterTypes.Any(filterType => type.GetInterface(filterType.Name, false) != null) ||
+                    (type.IsClass && FilterTypes.Contains(type.BaseType)));
+            
+            foreach (var assemblyType in eligibleAssemblyTypes)
+            {
+                var isPlugin =
+                    (assemblyType.GetInterface(nameof(IPlugin), false) ??
+                     assemblyType.GetInterface(nameof(IPluginV2), false)) != null &&
+                    (!assemblyType.Namespace?.StartsWith(nameof(SharedLibraryCore)) ?? false);
 
-                    pluginTypes = assemblies
-                        .SelectMany(asm =>
-                        {
-                            try
-                            {
-                                return asm.GetTypes();
-                            }
-                            catch
-                            {
-                                return Enumerable.Empty<Type>();
-                            }
-                        })
-                        .Where(assemblyType => (assemblyType.GetInterface(nameof(IPlugin), false) ?? assemblyType.GetInterface(nameof(IPluginV2), false)) != null)
-                        .Where(assemblyType => !assemblyType.Namespace?.StartsWith(nameof(SharedLibraryCore)) ?? false);
+                if (isPlugin)
+                {
+                    pluginTypes.Add(assemblyType);
+                    continue;
+                }
 
-                    _logger.LogDebug("Discovered {count} plugin implementations", pluginTypes.Count());
+                var isCommand = assemblyType.IsClass && assemblyType.BaseType == typeof(Command) &&
+                                (!assemblyType.Namespace?.StartsWith(nameof(SharedLibraryCore)) ?? false);
 
-                    commandTypes = assemblies
-                        .SelectMany(asm =>{
-                            try
-                            {
-                                return asm.GetTypes();
-                            }
-                            catch
-                            {
-                                return Enumerable.Empty<Type>();
-                            }
-                        })
-                        .Where(assemblyType => assemblyType.IsClass && assemblyType.BaseType == typeof(Command))
-                        .Where(assemblyType => !assemblyType.Namespace?.StartsWith(nameof(SharedLibraryCore)) ?? false);
+                if (isCommand)
+                {
+                    commandTypes.Add(assemblyType);
+                    continue;
+                }
 
-                    _logger.LogDebug("Discovered {Count} plugin commands", commandTypes.Count());
+                var isConfiguration = assemblyType.IsClass &&
+                                      assemblyType.GetInterface(nameof(IBaseConfiguration), false) != null &&
+                                      (!assemblyType.Namespace?.StartsWith(nameof(SharedLibraryCore)) ?? false);
 
-                    configurationTypes = assemblies
-                        .SelectMany(asm => {
-                            try
-                            {
-                                return asm.GetTypes();
-                            }
-                            catch
-                            {
-                                return Enumerable.Empty<Type>();
-                            }
-                        })
-                        .Where(asmType =>
-                            asmType.IsClass && asmType.GetInterface(nameof(IBaseConfiguration), false) != null)
-                        .Where(assemblyType => !assemblyType.Namespace?.StartsWith(nameof(SharedLibraryCore)) ?? false);
-
-                    _logger.LogDebug("Discovered {Count} configuration implementations", configurationTypes.Count());
+                if (isConfiguration)
+                {
+                    configurationTypes.Add(assemblyType);
                 }
             }
+
+            _logger.LogDebug("Discovered {Count} plugin implementations", pluginTypes.Count);
+            _logger.LogDebug("Discovered {Count} plugin commands", pluginTypes.Count);
+            _logger.LogDebug("Discovered {Count} configuration implementations", pluginTypes.Count);
 
             return (pluginTypes, commandTypes, configurationTypes);
         }
@@ -152,10 +166,11 @@ namespace IW4MAdmin.Application.Plugin
         {
             try
             {
-                if (_pluginSubscription == null)
-                    _pluginSubscription = _masterApi.GetPluginSubscription(Guid.Parse(_appConfig.Id), _appConfig.SubscriptionId).Result;
+                _pluginSubscription ??= _masterApi
+                    .GetPluginSubscription(Guid.Parse(_appConfig.Id), _appConfig.SubscriptionId).Result;
 
-                return _remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription.Where(sub => sub.Type == PluginType.Binary).Select(sub => sub.Content).ToArray());
+                return _remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription
+                    .Where(sub => sub.Type == PluginType.Binary).Select(sub => sub.Content).ToArray());
             }
 
             catch (Exception ex)
@@ -169,9 +184,11 @@ namespace IW4MAdmin.Application.Plugin
         {
             try
             {
-                _pluginSubscription ??= _masterApi.GetPluginSubscription(Guid.Parse(_appConfig.Id), _appConfig.SubscriptionId).Result;
+                _pluginSubscription ??= _masterApi
+                    .GetPluginSubscription(Guid.Parse(_appConfig.Id), _appConfig.SubscriptionId).Result;
 
-                return _remoteAssemblyHandler.DecryptScripts(_pluginSubscription.Where(sub => sub.Type == PluginType.Script).Select(sub => sub.Content).ToArray());
+                return _remoteAssemblyHandler.DecryptScripts(_pluginSubscription
+                    .Where(sub => sub.Type == PluginType.Script).Select(sub => sub.Content).ToArray());
             }
 
             catch (Exception ex)

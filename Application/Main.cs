@@ -61,6 +61,19 @@ namespace IW4MAdmin.Application
         public static async Task Main(string[] args)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
+            {
+                var libraryName = eventArgs.Name.Split(",").First();
+
+                var overrides = new[] { nameof(SharedLibraryCore), nameof(Stats) };
+                if (!overrides.Contains(libraryName))
+                {
+                    return AppDomain.CurrentDomain.GetAssemblies().First(asm => asm.FullName == eventArgs.Name);
+                }
+                // added to be a bit more permissive with plugin references
+                return AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(asm => asm.FullName?.StartsWith(libraryName) ?? false);
+            }; 
 
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -413,9 +426,9 @@ namespace IW4MAdmin.Application
             commandConfigHandler.BuildAsync().GetAwaiter().GetResult();
             
             var appConfig = appConfigHandler.Configuration();
-            var masterUri = Utilities.IsDevelopment
+            var masterUri = /*Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
-                : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
+                : appConfig?.MasterUrl ?? */new ApplicationConfiguration().MasterUrl;
             var httpClient = new HttpClient
             {
                 BaseAddress = masterUri,

@@ -540,7 +540,7 @@ namespace IW4MAdmin
 
                     E.Target.SetLevel(Permission.User, E.Origin);
                     await Manager.GetPenaltyService().RemoveActivePenalties(E.Target.AliasLinkId, E.Target.NetworkId,
-                        E.Target.GameName, E.Target.CurrentAlias?.IPAddress);
+                        E.Target.GameName, E.Target.CurrentAlias?.IPAddress, new[] {EFPenalty.PenaltyType.Flag});
                     await Manager.GetPenaltyService().Create(unflagPenalty);
                     
                     Manager.QueueEvent(new ClientPenaltyRevokeEvent

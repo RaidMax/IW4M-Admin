@@ -18,7 +18,7 @@ Setup()
     level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
     level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
     level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
-    level.overrideMethods[level.commonFunctions.getXuid] = ::_GetXUID;
+    level.overrideMethods["GetPlayerFromClientNum"] = ::_GetPlayerFromClientNum;
     
     RegisterClientCommands();
     
@@ -92,12 +92,18 @@ WaitForClientEvents()
 
 GetTotalShotsFired()
 {
-    return maps\mp\gametypes\_persistence::statGet( "total_shots" );
+    return 0; //ZM has no shot tracking. TODO: add tracking function for event weapon_fired
 }
 
 _SetDvarIfUninitialized(dvar, value)
 {
-    maps\mp\_utility::set_dvar_if_unset(dvar, value);
+	if (GetDvar(dvar)=="" )
+	{
+		SetDvar(dvar, value);
+		return value;
+	}
+	
+	return GetDvar(dvar);
 }
 
 _waittill_notify_or_timeout( msg, timer )
@@ -131,9 +137,25 @@ God()
     }
 }
 
-_GetXUID()
+_GetPlayerFromClientNum( clientNum )
 {
-    return self GetXUID();
+    if ( clientNum < 0 )
+    {
+        return undefined;
+    }
+    
+    players = GetPlayers("all");
+    
+    for ( i = 0; i < players.size; i++ )
+    {
+    scripts\_integration_base::LogDebug(i+"/"+players.size+ "=" + players[i].name);
+        if ( players[i] getEntityNumber() == clientNum )
+        {
+            return players[i];
+        }
+    }
+    
+    return undefined;
 }
 
 //////////////////////////////////
@@ -449,7 +471,8 @@ HideImpl( event, data )
 
 AlertImpl( event, data )
 {
-    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
+    //self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
+    self IPrintLnBold(data["message"]);
 
     return "Sent alert to " + self.name; 
 }

@@ -8,6 +8,9 @@ Setup()
 {
     level endon( "game_ended" );
     
+    // it's possible that the notify type has not been defined yet so we have to hard code it 
+    level waittill( "IntegrationBootstrapInitialized" );
+    
     level.commonFunctions.changeTeam                        = "ChangeTeam";
     level.commonFunctions.getTeamCounts                     = "GetTeamCounts";
     level.commonFunctions.getMaxClients                     = "GetMaxClients";
@@ -25,6 +28,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.getClientKillStreak]               = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = scripts\_integration_base::NotImplementedFunction;
+    level.overrideMethods["GetPlayerFromClientNum"]                                = ::GetPlayerFromClientNum;
     
     // these can be overridden per game if needed
     level.commonKeys.team1         = "allies"; 
@@ -39,12 +43,10 @@ Setup()
     
     level.iw4madminIntegrationDefaultPerformance = 200;
     
+    level notify( level.notifyTypes.sharedFunctionsInitialized );
+    level waittill( level.notifyTypes.gameFunctionsInitialized );
+    
     if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
-    {
-        return;
-    }
-
-    if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 )
     {
         return;
     }
@@ -59,7 +61,22 @@ OnPlayerConnect()
     for ( ;; )
     {
         level waittill( level.eventTypes.connect, player );
+        
+        if ( scripts\_integration_base::_IsBot( player ) ) 
+        {
+            // we don't want to track bots
+            continue;
+        }
+        
+        player thread OnPlayerJoinedTeam();
+        player thread OnPlayerJoinedSpectators();
+        player thread PlayerTrackingOnInterval();
 
+        if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 || !IsDefined( [[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) ) 
+        {
+            continue;
+        }
+        
         if ( ![[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) 
         {
             continue;
@@ -448,4 +465,124 @@ GetClientPerformanceOrDefault()
     }
 
     return performance;
+}
+
+GetPlayerFromClientNum( clientNum )
+{
+    if ( clientNum < 0 )
+    {
+        return undefined;
+    }
+    
+    for ( i = 0; i < level.players.size; i++ )
+    {
+        if ( level.players[i] getEntityNumber() == clientNum )
+        {
+            return level.players[i];
+        }
+    }
+    
+    return undefined;
+}
+
+OnPlayerJoinedTeam()
+{
+    self endon( "disconnect" );
+
+    for( ;; )
+    {
+        self waittill( "joined_team" );
+        // join spec and join team occur at the same moment - out of order logging would be problematic
+        wait( 0.25 ); 
+        LogPrint( GenerateJoinTeamString( false ) );
+    }
+}
+
+OnPlayerJoinedSpectators()
+{
+    self endon( "disconnect" );
+
+    for( ;; )
+    {
+        self waittill( "joined_spectators" );
+        LogPrint( GenerateJoinTeamString( true ) );
+    }
+}
+
+GenerateJoinTeamString( isSpectator ) 
+{
+    team = self.team;
+
+    if ( IsDefined( self.joining_team ) )
+    {
+        team = self.joining_team;
+    }
+    else
+    {
+        if ( isSpectator || !IsDefined( team ) ) 
+        {
+            team = "spectator";
+        }
+    }
+
+    guid = self [[level.overrideMethods[level.commonFunctions.getXuid]]]();
+
+    if ( guid == "0" )
+    {
+        guid = self.guid;
+    }
+
+    if ( !IsDefined( guid ) || guid == "0" )
+    {
+        guid = "undefined";
+    }
+
+    return "JT;" + guid + ";" + self getEntityNumber() + ";" + team + ";" + self.name + "\n";
+}
+
+PlayerTrackingOnInterval() 
+{
+    self endon( "disconnect" );
+
+    for ( ;; )
+    {
+        wait ( 120 );
+        if ( IsAlive( self ) )
+        {
+            self SaveTrackingMetrics();
+        }
+    }
+}
+
+SaveTrackingMetrics()
+{
+    if ( !IsDefined( self.persistentClientId ) )
+    {
+        return;
+    }
+
+    scripts\_integration_base::LogDebug( "Saving tracking metrics for " + self.persistentClientId );
+    
+    if ( !IsDefined( self.lastShotCount ) )
+    {
+        self.lastShotCount = 0;
+    }
+
+    currentShotCount = self [[level.overrideMethods["GetTotalShotsFired"]]]();
+    change = currentShotCount - self.lastShotCount;
+    self.lastShotCount = currentShotCount;
+
+    scripts\_integration_base::LogDebug( "Total Shots Fired increased by " + change );
+
+    if ( !IsDefined( change ) )
+    {
+        change = 0;
+    }
+    
+    if ( change == 0 )
+    {
+        return;
+    }
+
+    scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
 }

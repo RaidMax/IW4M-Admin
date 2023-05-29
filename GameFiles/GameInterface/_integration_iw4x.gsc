@@ -2,8 +2,6 @@
 
 Init()
 {
-    level.eventBus.gamename = "IW4";
-
     thread Setup();
 }
 
@@ -12,13 +10,15 @@ Setup()
     level endon( "game_ended" );
     
     // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "IntegrationBootstrapInitialized" );
+    level waittill( "SharedFunctionsInitialized" );
+    level.eventBus.gamename = "IW4";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
     level.overrideMethods["GetTotalShotsFired"]                                    = ::GetTotalShotsFired;
     level.overrideMethods[level.commonFunctions.setDvar]                           = ::_SetDvarIfUninitialized;
     level.overrideMethods[level.commonFunctions.isBot]                             = ::IsTestClient;
+    level.overrideMethods[level.commonFunctions.getXuid]                           = ::_GetXUID;
     level.overrideMethods["waittill_notify_or_timeout"]                            = ::_waittill_notify_or_timeout;
     level.overrideMethods[level.commonFunctions.changeTeam]                        = ::ChangeTeam;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = ::CountPlayers;
@@ -30,6 +30,8 @@ Setup()
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = ::WaitTillAnyTimeout;
     
     RegisterClientCommands();
+    
+    _SetDvarIfUninitialized( "sv_iw4madmin_autobalance", 0 );
     
     level notify( level.notifyTypes.gameFunctionsInitialized );
     
@@ -197,6 +199,11 @@ _waittill_notify_or_timeout( _notify, timeout )
 Log2Console( logLevel, message ) 
 {
     PrintConsole( "[" + logLevel + "] " + message + "\n" );
+}
+
+_GetXUID()
+{
+    return self GetXUID();
 }
 
 //////////////////////////////////

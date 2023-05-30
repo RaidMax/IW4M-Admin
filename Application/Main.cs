@@ -58,7 +58,7 @@ namespace IW4MAdmin.Application
         /// entrypoint of the application
         /// </summary>
         /// <returns></returns>
-        public static async Task Main(string[] args)
+        public static async Task Main(bool noConfirm = false, int? maxConcurrentRequests = 25, int? requestQueueLimit = 25)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
             AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
@@ -73,7 +73,15 @@ namespace IW4MAdmin.Application
                 // added to be a bit more permissive with plugin references
                 return AppDomain.CurrentDomain.GetAssemblies()
                     .FirstOrDefault(asm => asm.FullName?.StartsWith(libraryName) ?? false);
-            }; 
+            };
+
+            if (noConfirm)
+            {
+                AppContext.SetSwitch("NoConfirmPrompt", true);
+            }
+
+            Environment.SetEnvironmentVariable("MaxConcurrentRequests", (maxConcurrentRequests * Environment.ProcessorCount).ToString());
+            Environment.SetEnvironmentVariable("RequestQueueLimit", requestQueueLimit.ToString());
 
             Console.OutputEncoding = Encoding.UTF8;
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -86,7 +94,7 @@ namespace IW4MAdmin.Application
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
 
-            await LaunchAsync(args);
+            await LaunchAsync();
         }
 
         /// <summary>
@@ -112,13 +120,13 @@ namespace IW4MAdmin.Application
         /// task that initializes application and starts the application monitoring and runtime tasks
         /// </summary>
         /// <returns></returns>
-        private static async Task LaunchAsync(string[] args)
+        private static async Task LaunchAsync()
         {
             restart:
             ITranslationLookup translationLookup = null;
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
-            logger.LogInformation("Begin IW4MAdmin startup. Version is {Version} {@Args}", Version, args);
+            logger.LogInformation("Begin IW4MAdmin startup. Version is {Version}", Version);
             
             try
             {
@@ -426,9 +434,9 @@ namespace IW4MAdmin.Application
             commandConfigHandler.BuildAsync().GetAwaiter().GetResult();
             
             var appConfig = appConfigHandler.Configuration();
-            var masterUri = /*Utilities.IsDevelopment
+            var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
-                : appConfig?.MasterUrl ?? */new ApplicationConfiguration().MasterUrl;
+                : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
             var httpClient = new HttpClient
             {
                 BaseAddress = masterUri,

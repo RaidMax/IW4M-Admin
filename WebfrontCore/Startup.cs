@@ -4,7 +4,6 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -24,9 +23,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Helpers;
-using IW4MAdmin.Plugins.Stats.Helpers;
-using Stats.Client.Abstractions;
-using Stats.Config;
 using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 using WebfrontCore.QueryHelpers;
@@ -49,6 +45,12 @@ namespace WebfrontCore
                         .AllowAnyMethod()
                         .AllowAnyHeader();
                     });
+            });
+            
+            services.AddStackPolicy(options =>
+            {
+                options.MaxConcurrentRequests = int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
+                options.RequestQueueLimit = int.Parse(Environment.GetEnvironmentVariable("RequestQueueLimit") ?? "1");
             });
 
             IEnumerable<Assembly> pluginAssemblies()
@@ -132,6 +134,7 @@ namespace WebfrontCore
                 app.UseMiddleware<IPWhitelist>(serviceProvider.GetService<ILogger<IPWhitelist>>(), serviceProvider.GetRequiredService<ApplicationConfiguration>().WebfrontConnectionWhitelist);
             }
 
+            app.UseConcurrencyLimiter();
             app.UseStaticFiles();
             app.UseAuthentication();
             app.UseCors("AllowAll");

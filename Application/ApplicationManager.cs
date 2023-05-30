@@ -581,9 +581,9 @@ namespace IW4MAdmin.Application
                 throw lastException;
             }
 
-            if (successServers != config.Servers.Length)
+            if (successServers != config.Servers.Length && !AppContext.TryGetSwitch("NoConfirmPrompt", out _))
             {
-                if (!Utilities.PromptBool(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_START_WITH_ERRORS"]))
+                if (!Utilities.CurrentLocalization.LocalizationIndex["MANAGER_START_WITH_ERRORS"].PromptBool())
                 {
                     throw lastException;
                 }

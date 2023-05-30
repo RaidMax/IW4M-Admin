@@ -14,8 +14,8 @@ public class ScriptPluginHelper
 {
     private readonly IManager _manager;
     private readonly ScriptPluginV2 _scriptPlugin;
-    private readonly SemaphoreSlim _onRequestRunning = new(1, 5);
-    private const int RequestTimeout = 500;
+    private readonly SemaphoreSlim _onRequestRunning = new(1, 1);
+    private const int RequestTimeout = 5000;
 
     public ScriptPluginHelper(IManager manager, ScriptPluginV2 scriptPlugin)
     {

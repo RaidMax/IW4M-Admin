@@ -27,25 +27,25 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
     let lastMap = '';
 
     playerHistory.forEach((elem, i) => {
-        if (elem.map !== lastMap) {
+        if (elem.ma !== lastMap) {
             mapChange.push(i);
-            lastMap = elem.map;
+            lastMap = elem;
         }
 
         if (elem.connectionInterrupted) {
             offlineTime.push({
                 clientCount: maxClients,
-                timeString: elem.timeString
+                timeString: elem.ts
             });
 
             onlineTime.push({
                 clientCount: 0,
-                timeString: elem.timeString
+                timeString: elem.ts
             })
         } else {
             offlineTime.push({
                 clientCount: 0,
-                timeString: elem.timeString
+                timeString: elem.ts
             });
 
             onlineTime.push(elem)
@@ -60,9 +60,9 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
     return new Chart(document.getElementById(`server_history_canvas_${i}`), {
         type: 'line',
         data: {
-            labels: playerHistory.map(history => history.timeString),
+            labels: playerHistory.map(history => history.ts),
             datasets: [{
-                data: onlineTime.map(history => history.clientCount),
+                data: onlineTime.map(history => history.cc),
                 backgroundColor: fillColor,
                 borderColor: primaryColor,
                 borderWidth: 2,
@@ -70,7 +70,7 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
                 hoverBorderWidth: 2
             },
                 {
-                    data: offlineTime.map(history => history.clientCount),
+                    data: offlineTime.map(history => history.cc),
                     backgroundColor: createDiagonalPattern(offlineFillColor),
                     borderColor: offlineFillColor,
                     borderWidth: 2,
@@ -88,7 +88,7 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
                 callbacks: {
                     // todo: localization at some point
                     title: context => moment(context[0].label).local().calendar(),
-                    label: context => context.datasetIndex !== 1 ? `${context.value} ${_localization['WEBFRONT_SCRIPT_SERVER_PLAYERS']} | ${playerHistory[context.index].mapAlias}` : context.value === '0' ? '' : _localization['WEBFRONT_SCRIPT_SERVER_UNREACHABLE'],
+                    label: context => context.datasetIndex !== 1 ? `${context.value} ${_localization['WEBFRONT_SCRIPT_SERVER_PLAYERS']} | ${playerHistory[context.index].ma}` : context.value === '0' ? '' : _localization['WEBFRONT_SCRIPT_SERVER_UNREACHABLE'],
                 },
                 mode: 'nearest',
                 intersect: false,
@@ -153,13 +153,14 @@ $(document).ready(function () {
         $(this).parent().parent().find('.server-header-ip-address').show();
     });
 
-    $('.server-history-row').each(function (index, element) {
-        let clientHistory = $(this).data('clienthistory-ex');
+    $('.server-history-row').each(async function (index, element) {
         const serverId = $(this).data('serverid');
+        const serverEp = $(this).data('server-endpoint');
         setInterval(() => refreshClientActivity(serverId), 2000 + (index * 100));
         let maxClients = parseInt($('#server_header_' + serverId + ' .server-maxclients').text());
         let width = $('.server-header').first().width();
-        getPlayerHistoryChart(clientHistory, serverId, width, maxClients);
+        const clientHistory = await fetch(`/api/server/${serverEp}/history`);
+        getPlayerHistoryChart(await clientHistory.json(), serverId, width, maxClients);
     });
 
     $('.moment-date').each((index, element) => {

@@ -82,8 +82,7 @@
     }
 
     <div class="server-history">
-        <div class="server-history-row m-auto bg-dark-dm bg-light-lm rounded-bottom" style="position:relative; width: 100%" id="server_history_@Model.ID" data-serverid="@Model.ID"
-             data-clienthistory='@Html.Raw(Json.Serialize(Model.ClientHistory))'
+        <div class="server-history-row m-auto bg-dark-dm bg-light-lm rounded-bottom" style="position:relative; width: 100%" id="server_history_@Model.ID" data-serverid="@Model.ID" data-server-endpoint="@Model.Endpoint"
              data-clienthistory-ex='@Html.Raw(Json.Serialize(Model.ClientHistory.ClientCounts))'
              data-online="@Model.Online">
             <canvas id="server_history_canvas_@Model.ID" class="rounded-bottom" height="100"></canvas>

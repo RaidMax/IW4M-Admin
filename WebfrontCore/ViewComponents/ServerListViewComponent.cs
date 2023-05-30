@@ -1,29 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using System.Linq;
-using System.Threading;
 using Data.Models;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore.ViewComponents
 {
     public class ServerListViewComponent : ViewComponent
     {
-        private readonly IServerDataViewer _serverDataViewer;
-        private readonly ApplicationConfiguration _appConfig;
         private readonly DefaultSettings _defaultSettings;
 
-        public ServerListViewComponent(IServerDataViewer serverDataViewer,
-            ApplicationConfiguration applicationConfiguration, DefaultSettings defaultSettings)
+        public ServerListViewComponent(DefaultSettings defaultSettings)
         {
-            _serverDataViewer = serverDataViewer;
-            _appConfig = applicationConfiguration;
             _defaultSettings = defaultSettings;
         }
 
@@ -46,25 +38,6 @@ namespace WebfrontCore.ViewComponents
 
             foreach (var server in servers)
             {
-                var serverId = server.GetIdForServer().Result;
-                var clientHistory = _serverDataViewer.ClientHistoryAsync(_appConfig.MaxClientHistoryTime,
-                                            CancellationToken.None).Result?
-                                        .FirstOrDefault(history => history.ServerId == serverId) ??
-                                    new ClientHistoryInfo
-                                    {
-                                        ServerId = serverId,
-                                        ClientCounts = new List<ClientCountSnapshot>()
-                                    };
-
-                var counts = clientHistory.ClientCounts?.AsEnumerable() ?? Enumerable.Empty<ClientCountSnapshot>();
-
-                if (server.ClientHistory.ClientCounts.Any())
-                {
-                    counts = counts.Union(server.ClientHistory.ClientCounts.Where(history =>
-                            history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
-                        .Where(history => history.Time >= DateTime.UtcNow - _appConfig.MaxClientHistoryTime);
-                }
-
                 serverInfo.Add(new ServerInfo
                 {
                     Name = server.Hostname,
@@ -76,11 +49,7 @@ namespace WebfrontCore.ViewComponents
                     MaxClients = server.MaxClients,
                     PrivateClientSlots = server.PrivateClientSlots,
                     GameType = server.GametypeName,
-                    ClientHistory = new ClientHistoryInfo
-                    {
-                        ServerId = server.EndPoint,
-                        ClientCounts = counts.ToList()
-                    },
+                    ClientHistory = new ClientHistoryInfo(),
                     Players = server.GetClientsAsList()
                         .Select(client => new PlayerInfo
                         {

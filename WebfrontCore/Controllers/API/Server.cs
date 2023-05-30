@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Controllers.API.Models;
 
@@ -12,9 +16,14 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     public class Server : BaseController
     {
-        
-        public Server(IManager manager) : base(manager)
+        private readonly IServerDataViewer _serverDataViewer;
+        private readonly ApplicationConfiguration _applicationConfiguration;
+
+        public Server(IManager manager, IServerDataViewer serverDataViewer,
+            ApplicationConfiguration applicationConfiguration) : base(manager)
         {
+            _serverDataViewer = serverDataViewer;
+            _applicationConfiguration = applicationConfiguration;
         }
         
         [HttpGet]
@@ -109,6 +118,49 @@ namespace WebfrontCore.Controllers.API
                 ExecutionTimeMs = Math.Round((DateTime.Now - start).TotalMilliseconds, 0),
                 completedEvent.Output
             });
+        }
+
+        [HttpGet("{id}/history")]
+        public async Task<IActionResult> GetClientHistory(string id)
+        {
+            var foundServer = Manager.GetServers().FirstOrDefault(server => server.Id == id);
+            
+            if (foundServer == null)
+            {
+                return new NotFoundResult();
+            }
+            
+            var clientHistory = (await _serverDataViewer.ClientHistoryAsync(_applicationConfiguration.MaxClientHistoryTime,
+                                        CancellationToken.None))?
+                                    .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
+                                new ClientHistoryInfo
+                                {
+                                    ServerId = foundServer.LegacyDatabaseId,
+                                    ClientCounts = new List<ClientCountSnapshot>()
+                                };
+            
+            var counts = clientHistory.ClientCounts?.AsEnumerable() ?? Enumerable.Empty<ClientCountSnapshot>();
+
+            if (foundServer.ClientHistory.ClientCounts.Any())
+            {
+                counts = counts.Union(foundServer.ClientHistory.ClientCounts.Where(history =>
+                        history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
+                    .Where(history => history.Time >= DateTime.UtcNow - _applicationConfiguration.MaxClientHistoryTime);
+            }
+
+            if (ViewBag.Maps?.Count == 0)
+            {
+                return Json(counts.ToList());
+            }
+
+            var clientCountSnapshots = counts.ToList();
+            foreach (var count in clientCountSnapshots)
+            {
+                count.MapAlias = foundServer.Maps.FirstOrDefault(map => map.Name == count.Map)?.Alias ??
+                                 count.Map;
+            }
+
+            return Json(clientCountSnapshots);
         }
     }
 }

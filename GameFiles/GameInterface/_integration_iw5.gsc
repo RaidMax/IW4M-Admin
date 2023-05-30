@@ -2,8 +2,6 @@
 
 Init()
 {
-    level.eventBus.gamename = "IW5";
-
     thread Setup();
 }
 
@@ -12,16 +10,20 @@ Setup()
     level endon( "game_ended" );
     
     // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "IntegrationBootstrapInitialized" );
+    level waittill( "SharedFunctionsInitialized" );
+    level.eventBus.gamename = "IW5";
     
-    scripts\mp\_integration_base::RegisterLogger( ::Log2Console );
+    scripts\_integration_base::RegisterLogger( ::Log2Console );
     
     level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
     level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
     level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
     level.overrideMethods[level.commonFunctions.isBot] = ::IsTestClient;
+    level.overrideMethods[level.commonFunctions.getXuid] = ::_GetXUID;
     
     RegisterClientCommands();
+    
+    _SetDvarIfUninitialized( "sv_iw4madmin_autobalance", 0 );
     
     level notify( level.notifyTypes.gameFunctionsInitialized );
     
@@ -54,17 +56,17 @@ OnPlayerConnect()
 
 RegisterClientCommands() 
 {
-    scripts\mp\_integration_base::AddClientCommand( "GiveWeapon",     true,  ::GiveWeaponImpl );
-    scripts\mp\_integration_base::AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
-    scripts\mp\_integration_base::AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
-    scripts\mp\_integration_base::AddClientCommand( "Hide",           false, ::HideImpl );
-    scripts\mp\_integration_base::AddClientCommand( "Alert",          true,  ::AlertImpl );
-    scripts\mp\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
-    scripts\mp\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
-    scripts\mp\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
-    scripts\mp\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
-    scripts\mp\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
-    scripts\mp\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
+    scripts\_integration_base::AddClientCommand( "GiveWeapon",     true,  ::GiveWeaponImpl );
+    scripts\_integration_base::AddClientCommand( "TakeWeapons",    true,  ::TakeWeaponsImpl );
+    scripts\_integration_base::AddClientCommand( "SwitchTeams",    true,  ::TeamSwitchImpl );
+    scripts\_integration_base::AddClientCommand( "Hide",           false, ::HideImpl );
+    scripts\_integration_base::AddClientCommand( "Alert",          true,  ::AlertImpl );
+    scripts\_integration_base::AddClientCommand( "Goto",           false, ::GotoImpl );
+    scripts\_integration_base::AddClientCommand( "Kill",           true,  ::KillImpl );
+    scripts\_integration_base::AddClientCommand( "SetSpectator",   true,  ::SetSpectatorImpl );
+    scripts\_integration_base::AddClientCommand( "LockControls",   true,  ::LockControlsImpl ); 
+    scripts\_integration_base::AddClientCommand( "PlayerToMe",     true,  ::PlayerToMeImpl );
+    scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
 }
 
 WaitForClientEvents()
@@ -73,13 +75,13 @@ WaitForClientEvents()
     
     // example of requesting a meta value
     lastServerMetaKey = "LastServerPlayed";
-    // self scripts\mp\_integration_base::RequestClientMeta( lastServerMetaKey );
+    // self scripts\_integration_base::RequestClientMeta( lastServerMetaKey );
 
     for ( ;; )
     {
         self waittill( level.eventTypes.localClientEvent, event );
 
-	    scripts\mp\_integration_base::LogDebug( "Received client event " + event.type );
+	    scripts\_integration_base::LogDebug( "Received client event " + event.type );
         
         if ( event.type == level.eventTypes.clientDataReceived && event.data[0] == lastServerMetaKey )
         {
@@ -109,6 +111,11 @@ Log2Console( logLevel, message )
     Print( "[" + logLevel + "] " + message + "\n" );
 }
 
+_GetXUID()
+{
+    return self GetXUID();
+}
+
 //////////////////////////////////
 // GUID helpers
 /////////////////////////////////
@@ -126,14 +133,14 @@ SetPersistentData()
     {
         // give IW4MAdmin time to collect IP
         wait( 15 );
-        scripts\mp\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
-        scripts\mp\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
+        scripts\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
+        scripts\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
         return;
     }
     
     guid = self SplitGuid();
     
-    scripts\mp\_integration_base::LogDebug( "Persisting client guid " + guidHigh + "," + guidLow );
+    scripts\_integration_base::LogDebug( "Persisting client guid " + guidHigh + "," + guidLow );
     
     self SetPlayerData( "bests", "none", guid["high"] );
     self SetPlayerData( "awards", "none", guid["low"] );

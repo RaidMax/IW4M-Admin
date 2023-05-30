@@ -385,7 +385,7 @@ const commands = [{
             required: true
         }
     ],
-    supportedGames: ['IW4', 'IW5', 'T5'],
+    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
     execute: (gameEvent) => {
         if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
             return;
@@ -405,7 +405,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -423,7 +423,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -441,7 +441,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -471,7 +471,7 @@ const commands = [{
         permission: 'SeniorAdmin',
         targetRequired: false,
         arguments: [],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -494,7 +494,7 @@ const commands = [{
                 required: true
             }
         ],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -515,7 +515,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -533,7 +533,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -560,7 +560,7 @@ const commands = [{
                 required: true
             }
         ],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -584,7 +584,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;
@@ -602,7 +602,7 @@ const commands = [{
             name: 'player',
             required: true
         }],
-        supportedGames: ['IW4', 'IW5', 'T5'],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
         execute: (gameEvent) => {
             if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                 return;

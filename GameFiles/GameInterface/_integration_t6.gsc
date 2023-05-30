@@ -1,4 +1,5 @@
 #include common_scripts\utility;
+#include maps\mp\_utility;
 
 Init()
 {
@@ -11,7 +12,7 @@ Setup()
     
     // it's possible that the notify type has not been defined yet so we have to hard code it 
     level waittill( "SharedFunctionsInitialized" );
-    level.eventBus.gamename = "T5";
+    level.eventBus.gamename = "T6";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
@@ -92,7 +93,7 @@ WaitForClientEvents()
 
 GetTotalShotsFired()
 {
-    return maps\mp\gametypes\_persistence::statGet( "total_shots" );
+    return self.pers[ "total_shots" ];
 }
 
 _SetDvarIfUninitialized(dvar, value)
@@ -278,6 +279,12 @@ GiveWeaponImpl( event, data )
         return self.name + "^7 is not alive";
     }
     
+    if ( isDefined( level.player_too_many_weapons_monitor ) && level.player_too_many_weapons_monitor )
+    {
+        level.player_too_many_weapons_monitor = false;
+        self notify( "stop_player_too_many_weapons_monitor" );
+    }
+    
     self IPrintLnBold( "You have been given a new weapon" );
     self GiveWeapon( data["weaponName"] );
     self SwitchToWeapon( data["weaponName"] );
@@ -402,7 +409,7 @@ NoClipImpl( event, data )
 
     self IPrintLnBold( "NoClip enabled" );*/
 
-    scripts\_integration_base::LogWarning( "NoClip is not supported on T5!" );
+    scripts\_integration_base::LogWarning( "NoClip is not supported on T6!" );
 
 }
 
@@ -449,7 +456,16 @@ HideImpl( event, data )
 
 AlertImpl( event, data )
 {
-    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
+    /*if ( !sessionmodeiszombiesgame() )
+	{*/
+		self thread oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
+	/*}
+    else
+    {
+        self IPrintLnBold( data["alertType"] );
+        self IPrintLnBold( data["message"] );
+    }*/
+    
 
     return "Sent alert to " + self.name; 
 }
@@ -466,7 +482,7 @@ GotoImpl( event, data )
     }
 }
 
-GotoCoordImpl( data )
+GotoCoordImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
@@ -527,3 +543,29 @@ SetSpectatorImpl( event, data )
     
     return self.name + " has been moved to spectator";
 }
+
+
+//////////////////////////////////
+// T6 specific functions
+/////////////////////////////////
+
+/*
+1:1 the same on MP and ZM but in different includes. Since we probably want to be able to send Alerts on non teambased wagermatechs use our own copy.
+*/
+oldnotifymessage( titletext, notifytext, iconname, glowcolor, sound, duration )
+{
+	/*if ( level.wagermatch && !level.teambased )
+	{
+		return;
+	}*/
+	notifydata = spawnstruct();
+	notifydata.titletext = titletext;
+	notifydata.notifytext = notifytext;
+	notifydata.iconname = iconname;
+	notifydata.sound = sound;
+	notifydata.duration = duration;
+	self.startmessagenotifyqueue[ self.startmessagenotifyqueue.size ] = notifydata;
+	self notify( "received award" );
+}
+
+

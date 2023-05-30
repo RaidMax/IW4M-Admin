@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Middleware;
 
 namespace WebfrontCore
 {
@@ -24,11 +23,6 @@ namespace WebfrontCore
 
         public static Task GetWebHostTask(CancellationToken cancellationToken)
         {
-            var config = _webHost.Services.GetRequiredService<ApplicationConfiguration>();
-            Manager.MiddlewareActionHandler.Register(null,
-                new CustomCssAccentMiddlewareAction("#007ACC", "#fd7e14", config.WebfrontPrimaryColor,
-                    config.WebfrontSecondaryColor), "custom_css_accent");
-            
             return _webHost?.RunAsync(cancellationToken);
         }
         
@@ -41,7 +35,12 @@ namespace WebfrontCore
                 .UseContentRoot(SharedLibraryCore.Utilities.OperatingDirectory)
 #endif
                 .UseUrls(bindUrl)
-                .UseKestrel()
+                .UseKestrel(cfg =>
+                {
+                    cfg.Limits.MaxConcurrentConnections =
+                        int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
+                    cfg.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
+                })
                 .ConfigureServices(registerDependenciesAction)
                 .UseStartup<Startup>()
                 .Build();

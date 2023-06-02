@@ -298,7 +298,7 @@ GotoImpl( event, data )
     }
     else
     {
-        return self GotoCoordImpl( data );
+        return self GotoCoordImpl( event, data );
     }
 }
 

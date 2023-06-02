@@ -302,7 +302,7 @@ GotoImpl( event, data )
     }
 }
 
-GotoCoordImpl( event, data )
+GotoCoordImpl( data )
 {
     if ( !IsAlive( self ) )
     {

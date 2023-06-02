@@ -12,7 +12,7 @@ OnPlayerConnect()
     for ( ;; )
     {
         level waittill( "connecting", player );
-        player thread DisplaypopupsWaiter()();
+        player thread DisplaypopupsWaiter();
     }
 }
 

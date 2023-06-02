@@ -7,7 +7,7 @@ Init()
 
 Setup()
 {
-    level endon( "game_ended" );
+    level endon( "end_game" );
     waittillframeend;
     
     level waittill( level.notifyTypes.sharedFunctionsInitialized );

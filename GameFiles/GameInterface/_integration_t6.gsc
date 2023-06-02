@@ -298,11 +298,11 @@ GotoImpl( event, data )
     }
     else
     {
-        return self GotoCoordImpl( event, data );
+        return self GotoCoordImpl( data );
     }
 }
 
-GotoCoordImpl( event, data )
+GotoCoordImpl( data )
 {
     if ( !IsAlive( self ) )
     {

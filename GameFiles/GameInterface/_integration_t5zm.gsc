@@ -8,9 +8,11 @@ Init()
 Setup()
 {
     level endon( "game_ended" );
+    waittillframeend;
     
     level waittill( level.notifyTypes.sharedFunctionsInitialized );
     level.eventBus.gamename = "T5";
+    level.eventTypes.gameEnd = "end_game";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     

@@ -10,7 +10,7 @@ Setup()
     level endon( "game_ended" );
     waittillframeend;
     
-    level waittill( level.notifyTypes.sharedFunctionsInitialized  );
+    level waittill( level.notifyTypes.sharedFunctionsInitialized );
     level.eventBus.gamename = "IW4";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );

@@ -71,7 +71,7 @@ Setup()
     _SetDvarIfUninitialized( level.commonKeys.enabled, 1 );
     _SetDvarIfUninitialized( "sv_iw4madmin_integration_debug", 0 );
     
-    if ( GetDvarInt( level.commonKeys.enabled) != 1 )
+    if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }

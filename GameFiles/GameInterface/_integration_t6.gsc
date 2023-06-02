@@ -9,10 +9,16 @@ Init()
 Setup()
 {
     level endon( "game_ended" );
+    level endon( "end_game" );
     waittillframeend;
     
     level waittill( level.notifyTypes.sharedFunctionsInitialized );
     level.eventBus.gamename = "T6";
+
+    if ( sessionmodeiszombiesgame() )
+    {
+        level.eventTypes.gameEnd = "end_game";
+    }
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     

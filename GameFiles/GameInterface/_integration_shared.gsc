@@ -230,7 +230,7 @@ OnPlayerJoinedTeam()
         if ( newTeam != level.commonKeys.team1 && newTeam != level.commonKeys.team2 )
         {
             OnTeamSizeChanged();
-            scripts\_integration_base::LogDebug( "not force balancing " + self.name + " because they switched to spec"  );
+            scripts\_integration_base::LogDebug( "not force balancing " + self.name + " because they switched to spec" );
             continue;
         }
         

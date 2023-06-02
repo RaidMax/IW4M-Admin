@@ -1,4 +1,3 @@
-
 Init()
 {
     thread Setup();
@@ -6,10 +5,10 @@ Init()
 
 Setup()
 {
+    wait ( 0.05 );
     level endon( "game_ended" );
     
-    // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "IntegrationBootstrapInitialized" );
+    level waittill( level.notifyTypes.integrationBootstrapInitialized );
     
     level.commonFunctions.changeTeam                        = "ChangeTeam";
     level.commonFunctions.getTeamCounts                     = "GetTeamCounts";
@@ -18,7 +17,10 @@ Setup()
     level.commonFunctions.getClientTeam                     = "GetClientTeam";
     level.commonFunctions.getClientKillStreak               = "GetClientKillStreak";
     level.commonFunctions.backupRestoreClientKillStreakData = "BackupRestoreClientKillStreakData";
+    level.commonFunctions.getTotalShotsFired                = "GetTotalShotsFired"; 
     level.commonFunctions.waitTillAnyTimeout                = "WaitTillAnyTimeout";
+    level.commonFunctions.isBot                             = "IsBot";
+    level.commonFunctions.getXuid                           = "GetXuid";
     
     level.overrideMethods[level.commonFunctions.changeTeam]                        = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = scripts\_integration_base::NotImplementedFunction;
@@ -28,16 +30,19 @@ Setup()
     level.overrideMethods[level.commonFunctions.getClientKillStreak]               = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = scripts\_integration_base::NotImplementedFunction;
-    level.overrideMethods["GetPlayerFromClientNum"]                                = ::GetPlayerFromClientNum;
+    level.overrideMethods[level.commonFunctions.getXuid]                           = scripts\_integration_base::NotImplementedFunction;
+    level.overrideMethods[level.commonFunctions.isBot]                             = scripts\_integration_base::NotImplementedFunction;
     
     // these can be overridden per game if needed
     level.commonKeys.team1         = "allies"; 
     level.commonKeys.team2         = "axis";
     level.commonKeys.teamSpectator = "spectator";
+    level.commonKeys.autoBalance   = "sv_iw4madmin_autobalance";
     
     level.eventTypes.connect     = "connected";
     level.eventTypes.disconnect  = "disconnect";
     level.eventTypes.joinTeam    = "joined_team";
+    level.eventTypes.joinSpec    = "joined_spectators";
     level.eventTypes.spawned	 = "spawned_player";
     level.eventTypes.gameEnd     = "game_ended";
     
@@ -45,13 +50,20 @@ Setup()
     
     level notify( level.notifyTypes.sharedFunctionsInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
-    
-    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
+
+    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.autoBalance, 0 ); 
+
+    if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }
     
-    level thread OnPlayerConnect();
+    thread OnPlayerConnect();
+}
+
+_IsBot( player )
+{
+    return [[level.overrideMethods[level.commonFunctions.isBot]]]( player );
 }
 
 OnPlayerConnect()
@@ -62,17 +74,23 @@ OnPlayerConnect()
     {
         level waittill( level.eventTypes.connect, player );
         
-        if ( scripts\_integration_base::_IsBot( player ) ) 
+        if ( _IsBot( player ) ) 
         {
             // we don't want to track bots
             continue;
         }
+
+        if ( !IsDefined( player.pers[level.clientDataKey] ) )
+        {
+            player.pers[level.clientDataKey] = spawnstruct();
+        }
         
+        player thread OnPlayerSpawned();
         player thread OnPlayerJoinedTeam();
         player thread OnPlayerJoinedSpectators();
         player thread PlayerTrackingOnInterval();
 
-        if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 || !IsDefined( [[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) ) 
+        if ( GetDvarInt( level.commonKeys.autoBalance ) != 1 || !IsDefined( [[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) ) 
         {
             continue;
         }
@@ -85,13 +103,91 @@ OnPlayerConnect()
         teamToJoin = player GetTeamToJoin();
         player [[level.overrideMethods[level.commonFunctions.changeTeam]]]( teamToJoin );
         
-        player thread OnClientFirstSpawn();
-        player thread OnClientJoinedTeam();
-        player thread OnClientDisconnect();
+        player thread OnPlayerFirstSpawn();
+        player thread OnPlayerDisconnect();
     }
 }
 
-OnClientDisconnect()
+PlayerSpawnEvents() 
+{
+    self endon( level.eventTypes.disconnect );
+
+    clientData = self.pers[level.clientDataKey];
+    
+    // this gives IW4MAdmin some time to register the player before making the request;
+    // although probably not necessary some users might have a slow database or poll rate
+    wait ( 2 );
+
+    if ( IsDefined( clientData.state ) && clientData.state == "complete" ) 
+    {
+        return;
+    }
+    
+    self scripts\_integration_base::RequestClientBasicData();
+
+    self waittill( level.eventTypes.clientDataReceived, clientEvent );
+
+    if ( clientData.permissionLevel == "User" || clientData.permissionLevel == "Flagged" ) 
+    {
+        return;
+    } 
+
+    self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
+    wait( 2.0 );
+    self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection );
+}
+
+
+PlayerTrackingOnInterval() 
+{
+    self endon( level.eventTypes.disconnect );
+
+    for ( ;; )
+    {
+        wait ( 120 );
+        if ( IsAlive( self ) )
+        {
+            self SaveTrackingMetrics();
+        }
+    }
+}
+
+SaveTrackingMetrics()
+{
+    if ( !IsDefined( self.persistentClientId ) )
+    {
+        return;
+    }
+
+    scripts\_integration_base::LogDebug( "Saving tracking metrics for " + self.persistentClientId );
+    
+    if ( !IsDefined( self.lastShotCount ) )
+    {
+        self.lastShotCount = 0;
+    }
+
+    currentShotCount = self [[level.overrideMethods["GetTotalShotsFired"]]]();
+    change = currentShotCount - self.lastShotCount;
+    self.lastShotCount = currentShotCount;
+
+    scripts\_integration_base::LogDebug( "Total Shots Fired increased by " + change );
+
+    if ( !IsDefined( change ) )
+    {
+        change = 0;
+    }
+    
+    if ( change == 0 )
+    {
+        return;
+    }
+
+    scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
+}
+
+// #region team balance
+
+OnPlayerDisconnect()
 {
     level endon( level.eventTypes.gameEnd );
     self endon( "disconnect_logic_end" );
@@ -106,13 +202,21 @@ OnClientDisconnect()
     }
 }
 
-OnClientJoinedTeam()
+OnPlayerJoinedTeam()
 {
     self endon( level.eventTypes.disconnect );
 
     for( ;; )
     {
         self waittill( level.eventTypes.joinTeam );
+
+        wait( 0.25 ); 
+        LogPrint( GenerateJoinTeamString( false ) );
+
+        if ( GetDvarInt( level.commonKeys.autoBalance ) != 1 )
+        {
+            continue;
+        }
 
         if ( IsDefined( self.wasAutoBalanced ) && self.wasAutoBalanced )
         {
@@ -141,12 +245,34 @@ OnClientJoinedTeam()
     }
 }
 
-OnClientFirstSpawn()
+OnPlayerSpawned()
+{
+    self endon( level.eventTypes.disconnect );
+
+    for ( ;; )
+    {
+        self waittill( level.eventTypes.spawned );
+        self thread PlayerSpawnEvents();
+    }
+}
+
+OnPlayerJoinedSpectators()
+{
+    self endon( level.eventTypes.disconnect );
+
+    for( ;; )
+    {
+        self waittill( level.eventTypes.joinSpec );
+        LogPrint( GenerateJoinTeamString( true ) );
+    }
+}
+
+OnPlayerFirstSpawn()
 {
     self endon( level.eventTypes.disconnect );
     timeoutResult = self [[level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]]]( 30, level.eventTypes.spawned );
 
-    if ( timeoutResult != "timeout" )
+    if ( timeoutResult != level.eventBus.timeoutKey )
     {
        return;
     }
@@ -467,48 +593,6 @@ GetClientPerformanceOrDefault()
     return performance;
 }
 
-GetPlayerFromClientNum( clientNum )
-{
-    if ( clientNum < 0 )
-    {
-        return undefined;
-    }
-    
-    for ( i = 0; i < level.players.size; i++ )
-    {
-        if ( level.players[i] getEntityNumber() == clientNum )
-        {
-            return level.players[i];
-        }
-    }
-    
-    return undefined;
-}
-
-OnPlayerJoinedTeam()
-{
-    self endon( "disconnect" );
-
-    for( ;; )
-    {
-        self waittill( "joined_team" );
-        // join spec and join team occur at the same moment - out of order logging would be problematic
-        wait( 0.25 ); 
-        LogPrint( GenerateJoinTeamString( false ) );
-    }
-}
-
-OnPlayerJoinedSpectators()
-{
-    self endon( "disconnect" );
-
-    for( ;; )
-    {
-        self waittill( "joined_spectators" );
-        LogPrint( GenerateJoinTeamString( true ) );
-    }
-}
-
 GenerateJoinTeamString( isSpectator ) 
 {
     team = self.team;
@@ -540,49 +624,4 @@ GenerateJoinTeamString( isSpectator )
     return "JT;" + guid + ";" + self getEntityNumber() + ";" + team + ";" + self.name + "\n";
 }
 
-PlayerTrackingOnInterval() 
-{
-    self endon( "disconnect" );
-
-    for ( ;; )
-    {
-        wait ( 120 );
-        if ( IsAlive( self ) )
-        {
-            self SaveTrackingMetrics();
-        }
-    }
-}
-
-SaveTrackingMetrics()
-{
-    if ( !IsDefined( self.persistentClientId ) )
-    {
-        return;
-    }
-
-    scripts\_integration_base::LogDebug( "Saving tracking metrics for " + self.persistentClientId );
-    
-    if ( !IsDefined( self.lastShotCount ) )
-    {
-        self.lastShotCount = 0;
-    }
-
-    currentShotCount = self [[level.overrideMethods["GetTotalShotsFired"]]]();
-    change = currentShotCount - self.lastShotCount;
-    self.lastShotCount = currentShotCount;
-
-    scripts\_integration_base::LogDebug( "Total Shots Fired increased by " + change );
-
-    if ( !IsDefined( change ) )
-    {
-        change = 0;
-    }
-    
-    if ( change == 0 )
-    {
-        return;
-    }
-
-    scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
-}
+// #end region

@@ -9,48 +9,21 @@ Setup()
 {
     level endon( "game_ended" );
     
-    // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "SharedFunctionsInitialized" );
+    level waittill( level.notifyTypes.sharedFunctionsInitialized );
     level.eventBus.gamename = "T5";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
-    level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
-    level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
-    level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
-    level.overrideMethods["GetPlayerFromClientNum"] = ::_GetPlayerFromClientNum;
+    level.overrideMethods[level.commonFunctions.getTotalShotsFired]      = ::GetTotalShotsFired;
+    level.overrideMethods[level.commonFunctions.setDvar]                 = ::SetDvarIfUninitializedWrapper;
+    level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout] = ::WaitillNotifyOrTimeoutWrapper;
+    level.overrideMethods[level.commonFunctions.isBot]                   = ::IsBotWrapper;
+    level.overrideMethods[level.commonFunctions.getXuid]                 = ::GetXuidWrapper;
+    level.overrideMethods[level.commonFunction.getPlayerFromClientNum]   = ::_GetPlayerFromClientNum;
     
     RegisterClientCommands();
     
-    _SetDvarIfUninitialized( "sv_iw4madmin_autobalance", 0 );
-    
     level notify( level.notifyTypes.gameFunctionsInitialized );
-    
-    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
-    {
-        return;
-    }
-    
-    level thread OnPlayerConnect();
-}
-
-OnPlayerConnect()
-{
-    level endon ( "game_ended" );
-
-    for ( ;; )
-    {
-        level waittill( "connected", player );
-        
-        if ( scripts\_integration_base::_IsBot( player ) ) 
-        {
-            // we don't want to track bots
-            continue;    
-        }
-        
-        //player thread SetPersistentData();
-        player thread WaitForClientEvents();
-    }
 }
 
 RegisterClientCommands() 
@@ -68,45 +41,23 @@ RegisterClientCommands()
     scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
 }
 
-WaitForClientEvents()
-{
-    self endon( "disconnect" );
-    
-    // example of requesting a meta value
-    lastServerMetaKey = "LastServerPlayed";
-    // self scripts\_integration_base::RequestClientMeta( lastServerMetaKey );
-
-    for ( ;; )
-    {
-        self waittill( level.eventTypes.localClientEvent, event );
-
-	    scripts\_integration_base::LogDebug( "Received client event " + event.type );
-        
-        if ( event.type == level.eventTypes.clientDataReceived && event.data[0] == lastServerMetaKey )
-        {
-            clientData = self.pers[level.clientDataKey];
-            lastServerPlayed = clientData.meta[lastServerMetaKey];
-        }
-    }
-}
-
 GetTotalShotsFired()
 {
     return 0; //ZM has no shot tracking. TODO: add tracking function for event weapon_fired
 }
 
-_SetDvarIfUninitialized(dvar, value)
+SetDvarIfUninitializedWrapper( dvar, value )
 {
-	if (GetDvar(dvar)=="" )
+	if ( GetDvar( dvar ) == "" )
 	{
-		SetDvar(dvar, value);
+		SetDvar( dvar, value );
 		return value;
 	}
 	
-	return GetDvar(dvar);
+	return GetDvar( dvar );
 }
 
-_waittill_notify_or_timeout( msg, timer )
+WaitillNotifyOrTimeoutWrapper( msg, timer )
 {
 	self endon( msg );
 	wait( timer );
@@ -119,7 +70,6 @@ Log2Console( logLevel, message )
 
 God()
 {
-
     if ( !IsDefined( self.godmode ) )
     {
         self.godmode = false;
@@ -137,6 +87,16 @@ God()
     }
 }
 
+IsBotWrapper( client )
+{
+    return ( IsDefined ( client.pers["isBot"] ) && client.pers["isBot"] != 0 );
+}
+
+GetXuidWrapper()
+{
+    return self GetXUID();
+}
+
 _GetPlayerFromClientNum( clientNum )
 {
     if ( clientNum < 0 )
@@ -148,7 +108,8 @@ _GetPlayerFromClientNum( clientNum )
     
     for ( i = 0; i < players.size; i++ )
     {
-    scripts\_integration_base::LogDebug(i+"/"+players.size+ "=" + players[i].name);
+        scripts\_integration_base::LogDebug( i+"/"+players.size+ "=" + players[i].name );
+
         if ( players[i] getEntityNumber() == clientNum )
         {
             return players[i];
@@ -157,137 +118,6 @@ _GetPlayerFromClientNum( clientNum )
     
     return undefined;
 }
-
-//////////////////////////////////
-// GUID helpers
-/////////////////////////////////
-
-/*SetPersistentData() 
-{
-    self endon( "disconnect" );
-    
-    guidHigh = self GetPlayerData( "bests", "none" ); 
-    guidLow = self GetPlayerData( "awards", "none" );
-    persistentGuid = guidHigh + "," + guidLow;
-    guidIsStored = guidHigh != 0 && guidLow != 0;
-     
-    if ( guidIsStored )
-    {
-        // give IW4MAdmin time to collect IP
-        wait( 15 );
-        scripts\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
-        scripts\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
-        return;
-    }
-    
-    guid = self SplitGuid();
-    
-    scripts\_integration_base::LogDebug( "Persisting client guid " + guidHigh + "," + guidLow );
-    
-    self SetPlayerData( "bests", "none", guid["high"] );
-    self SetPlayerData( "awards", "none", guid["low"] );
-}
-
-SplitGuid()
-{
-    guid = self GetGuid();
-    
-    if ( isDefined( self.guid ) )
-    {
-        guid = self.guid;
-    }
-    
-    firstPart = 0;
-    secondPart = 0;
-    stringLength = 17;
-    firstPartExp = 0;
-    secondPartExp = 0;
-    
-    for ( i = stringLength - 1; i > 0; i-- )
-    {
-        char = GetSubStr( guid, i - 1, i );
-        if ( char == "" ) 
-        {
-            char = "0";
-        }
-        
-        if ( i > stringLength / 2 )
-        {
-            value = GetIntForHexChar( char );
-            power = Pow( 16, secondPartExp );
-            secondPart = secondPart + ( value * power );
-            secondPartExp++;
-        }   
-        else
-        {
-            value = GetIntForHexChar( char );
-            power = Pow( 16, firstPartExp );
-            firstPart = firstPart + ( value * power );
-            firstPartExp++;
-        }
-    }
-    
-    split = [];
-    split["low"] = int( secondPart );
-    split["high"] = int( firstPart );
-
-    return split;
-}
-
-Pow( num, exponent )
-{
-    result = 1;
-    while( exponent != 0 )
-    {
-        result = result * num;
-        exponent--;
-    }
-    
-    return result;
-}
-
-GetIntForHexChar( char )
-{
-    char = ToLower( char );
-    // generated by co-pilot because I can't be bothered to make it more "elegant"
-    switch( char )
-    {
-        case "0":
-            return 0;
-        case "1":
-            return 1;
-        case "2":
-            return 2;
-        case "3":
-            return 3;
-        case "4":
-            return 4;
-        case "5":
-            return 5;
-        case "6":
-            return 6;
-        case "7":
-            return 7;
-        case "8":
-            return 8;
-        case "9":
-            return 9;
-        case "a":
-            return 10;
-        case "b":
-            return 11;
-        case "c":
-            return 12;
-        case "d":
-            return 13;
-        case "e":
-            return 14;
-        case "f":
-            return 15;
-        default:
-            return 0;
-    }
-}*/
 
 //////////////////////////////////
 // Command Implementations
@@ -472,7 +302,7 @@ HideImpl( event, data )
 AlertImpl( event, data )
 {
     //self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "mpl_sab_ui_suitcasebomb_timer", 7.5 );
-    self IPrintLnBold(data["message"]);
+    self IPrintLnBold( data["message"] );
 
     return "Sent alert to " + self.name; 
 }

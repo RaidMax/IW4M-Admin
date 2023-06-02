@@ -8,18 +8,17 @@ Init()
 Setup()
 {
     level endon( "game_ended" );
+    waittillframeend;
     
-    // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "SharedFunctionsInitialized" );
+    level waittill( level.notifyTypes.sharedFunctionsInitialized  );
     level.eventBus.gamename = "IW4";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
-    level.overrideMethods["GetTotalShotsFired"]                                    = ::GetTotalShotsFired;
-    level.overrideMethods[level.commonFunctions.setDvar]                           = ::_SetDvarIfUninitialized;
-    level.overrideMethods[level.commonFunctions.isBot]                             = ::IsTestClient;
-    level.overrideMethods[level.commonFunctions.getXuid]                           = ::_GetXUID;
-    level.overrideMethods["waittill_notify_or_timeout"]                            = ::_waittill_notify_or_timeout;
+    level.overrideMethods[level.commonFunctions.getTotalShotsFired]                = ::GetTotalShotsFired;
+    level.overrideMethods[level.commonFunctions.setDvar]                           = ::SetDvarIfUninitializedWrapper;
+    level.overrideMethods[level.commonFunctions.isBot]                             = ::IsBotWrapper;
+    level.overrideMethods[level.commonFunctions.getXuid]                           = ::GetXuidWrapper;
     level.overrideMethods[level.commonFunctions.changeTeam]                        = ::ChangeTeam;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = ::CountPlayers;
     level.overrideMethods[level.commonFunctions.getMaxClients]                     = ::GetMaxClients;
@@ -28,19 +27,18 @@ Setup()
     level.overrideMethods[level.commonFunctions.getClientKillStreak]               = ::GetClientKillStreak;
     level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = ::BackupRestoreClientKillStreakData;
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = ::WaitTillAnyTimeout;
+    level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]           = ::WaitillNotifyOrTimeoutWrapper;
     
     RegisterClientCommands();
     
-    _SetDvarIfUninitialized( "sv_iw4madmin_autobalance", 0 );
-    
     level notify( level.notifyTypes.gameFunctionsInitialized );
     
-    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
+    if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }
     
-    level thread OnPlayerConnect();
+    thread OnPlayerConnect();
 }
 
 OnPlayerConnect()
@@ -51,7 +49,7 @@ OnPlayerConnect()
     {
         level waittill( "connected", player );
         
-        if ( player call [[ level.overrideMethods[ level.commonFunctions.isBot ] ]]() ) 
+        if ( player IsTestClient() ) 
         {
             // we don't want to track bots
             continue;    
@@ -186,12 +184,7 @@ GetTotalShotsFired()
     return maps\mp\_utility::getPlayerStat( "mostshotsfired" );
 }
 
-_SetDvarIfUninitialized( dvar, value )
-{
-    SetDvarIfUninitialized( dvar, value );
-}
-
-_waittill_notify_or_timeout( _notify, timeout )
+WaitillNotifyOrTimeoutWrapper( _notify, timeout )
 {
     common_scripts\utility::waittill_notify_or_timeout( _notify, timeout );
 }
@@ -201,9 +194,19 @@ Log2Console( logLevel, message )
     PrintConsole( "[" + logLevel + "] " + message + "\n" );
 }
 
-_GetXUID()
+SetDvarIfUninitializedWrapper( dvar, value )
+{
+    SetDvarIfUninitialized( dvar, value );
+}
+
+GetXuidWrapper()
 {
     return self GetXUID();
+}
+
+IsBotWrapper( client )
+{
+    return client IsTestClient(); 
 }
 
 //////////////////////////////////
@@ -519,11 +522,7 @@ HideImpl()
 
 AlertImpl( event, data )
 {
-    if ( level.eventBus.gamename == "IW4" ) 
-    {
-        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
-    }
-
+    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], "compass_waypoint_target", ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
     return "Sent alert to " + self.name; 
 }
 

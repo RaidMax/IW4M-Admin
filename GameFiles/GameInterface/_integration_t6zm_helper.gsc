@@ -12,11 +12,11 @@ OnPlayerConnect()
     for ( ;; )
     {
         level waittill( "connecting", player );
-        player thread DisplaypopupsWaiter();
+        player thread DisplayPopupsWaiter();
     }
 }
 
-DisplaypopupsWaiter()
+DisplayPopupsWaiter()
 {
     self endon( "disconnect" );
     self.ranknotifyqueue = [];

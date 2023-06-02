@@ -347,7 +347,7 @@ QueueEvent( request, eventType, notifyEntity )
         timedOut = "unset";
     }
    
-    if ( timedOut == "set")
+    if ( timedOut == "set" )
     {
         LogDebug( "Timed out waiting for response..." );
         
@@ -527,8 +527,8 @@ OnExecuteCommand( event )
 
 OnSetClientDataCompleted( event )
 {
-    // IW4MAdmin let us know it persisted (success or fail)
-    LogDebug( "Set Client Data -> subtype = " + CoerceUndefined( event.subType ) + ", status = " + CoerceUndefined( event.data["status"] ) );
+    data = ParseDataString( event.data );
+    LogDebug( "Set Client Data -> subtype = " + CoerceUndefined( event.subType ) + ", status = " + CoerceUndefined( data["status"] ) );
 }
 
 CoerceUndefined( object )

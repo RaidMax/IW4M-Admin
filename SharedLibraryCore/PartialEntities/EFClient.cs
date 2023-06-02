@@ -118,6 +118,9 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped] public string TeamName { get; set; }
 
         [NotMapped]
+        public string TimeSinceLastConnectionString => (DateTime.UtcNow - LastConnection).HumanizeForCurrentCulture();
+
+        [NotMapped]
         // this is kinda dirty, but I need localizable level names
         public ClientPermission ClientPermission => new ClientPermission
         {

@@ -134,7 +134,7 @@ PlayerSpawnEvents()
 
     self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
     wait( 2.0 );
-    self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection );
+    self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection + " ago" );
 }
 
 
@@ -467,7 +467,7 @@ GetClosestPerformanceClientForTeam( sourceTeam, excluded )
 
         else if ( candidateValue < closest )
         {
-            scripts\_integration_base::LogDebug( candidateValue + " is the new best value ");
+            scripts\_integration_base::LogDebug( candidateValue + " is the new best value " );
             choice = players[i];
             closest = candidateValue;
         }

@@ -208,7 +208,7 @@ const plugin = {
                     data = {
                         level: client.level,
                         clientId: client.clientId,
-                        lastConnection: client.lastConnection,
+                        lastConnection: client.timeSinceLastConnectionString,
                         tag: tagMeta?.value ?? '',
                         performance: clientStats?.performance ?? 200.0
                     };

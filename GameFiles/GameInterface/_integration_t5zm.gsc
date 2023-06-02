@@ -106,7 +106,7 @@ _GetPlayerFromClientNum( clientNum )
         return undefined;
     }
     
-    players = GetPlayers("all");
+    players = GetPlayers( "all" );
     
     for ( i = 0; i < players.size; i++ )
     {

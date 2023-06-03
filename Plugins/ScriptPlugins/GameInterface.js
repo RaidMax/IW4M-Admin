@@ -3,33 +3,38 @@ const inDvar = 'sv_iw4madmin_in';
 const outDvar = 'sv_iw4madmin_out';
 const integrationEnabledDvar = 'sv_iw4madmin_integration_enabled';
 const pollingRate = 300;
+const groupSeparatorChar = '\x1d';
+const recordSeparatorChar = '\x1e';
+const unitSeparatorChar = '\x1f';
 
-const init = (registerNotify, serviceResolver, config) => {
+const init = (registerNotify, serviceResolver, config, scriptHelper) => {
     registerNotify('IManagementEventSubscriptions.ClientStateInitialized', (clientEvent, _) => plugin.onClientEnteredMatch(clientEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueReceived', (serverValueEvent, _) => plugin.onServerValueReceived(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueSetCompleted', (serverValueEvent, _) => plugin.onServerValueSetCompleted(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.MonitoringStarted', (monitorStartEvent, _) => plugin.onServerMonitoringStart(monitorStartEvent));
     registerNotify('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => plugin.onPenalty(penaltyEvent));
 
-    plugin.onLoad(serviceResolver, config);
+    plugin.onLoad(serviceResolver, config, scriptHelper);
     return plugin;
 };
 
 const plugin = {
     author: 'RaidMax',
-    version: '2.0',
+    version: '2.1',
     name: 'Game Interface',
     serviceResolver: null,
     eventManager: null,
     logger: null,
     commands: null,
+    scriptHelper: null,
 
-    onLoad: function (serviceResolver, config) {
+    onLoad: function (serviceResolver, config, scriptHelper) {
         this.serviceResolver = serviceResolver;
         this.eventManager = serviceResolver.resolveService('IManager');
         this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
         this.commands = commands;
         this.config = config;
+        this.scriptHelper = scriptHelper;
     },
 
     onClientEnteredMatch: function (clientEvent) {
@@ -95,6 +100,10 @@ const plugin = {
         this.logger.logDebug('loop complete');
         // loop restarts
         this.requestGetDvar(inDvar, serverValueEvent.server);
+    },
+    
+    onServerMonitoringStart: function (monitorStartEvent) {
+        this.initializeServer(monitorStartEvent.server);
     },
 
     initializeServer: function (server) {
@@ -287,17 +296,48 @@ const plugin = {
             }
         }
 
+        if (event.eventType === 'UrlRequested') {
+            const urlRequest = this.parseUrlRequest(event);
+
+            this.logger.logDebug('Making gamescript web request {@Request}', urlRequest);
+
+            this.scriptHelper.requestUrl(urlRequest, response => {
+                this.logger.logDebug('Got response for gamescript web request - {Response}', response);
+
+                const max = 10;
+                this.logger.logDebug(`response length ${response.length}`);
+                let chunks = chunkString(response.replace(/"/gm, '\\"').replace(/[\n|\t]/gm, ''), 800);
+                if (chunks.length > max)
+                {
+                    this.logger.logWarning(`Response chunks greater than max (${max}). Data truncated!`);
+                    chunks = chunks.slice(0, max);
+                }
+                this.logger.logDebug(`chunk size ${chunks.length}`);
+                
+                for (let i = 0; i < chunks.length; i++) {
+                    this.sendEventMessage(server, false, 'UrlRequestCompleted', null, null,
+                        null, { entity: event.data.entity, remaining: chunks.length - (i + 1), response: chunks[i]});
+                }
+            });
+        }
+
         tokenSource.dispose();
         return messageQueued;
     },
 
     sendEventMessage: function (server, responseExpected, event, subtype, origin, target, data) {
         let targetClientNumber = -1;
+        let originClientNumber = -1;
+
         if (target != null) {
-            targetClientNumber = target.ClientNumber;
+            targetClientNumber = target.clientNumber;
         }
 
-        const output = `${responseExpected ? '1' : '0'};${event};${subtype};${origin.ClientNumber};${targetClientNumber};${buildDataString(data)}`;
+        if (origin != null) {
+            originClientNumber = origin.clientNumber
+        }
+
+        const output = `${responseExpected ? '1' : '0'}${groupSeparatorChar}${event}${groupSeparatorChar}${subtype}${groupSeparatorChar}${originClientNumber}${groupSeparatorChar}${targetClientNumber}${groupSeparatorChar}${buildDataString(data)}`;
         this.logger.logDebug('Queuing output for server {output}', output);
 
         servers[server.id].commandQueue.push(output);
@@ -365,8 +405,35 @@ const plugin = {
         }
     },
 
-    onServerMonitoringStart: function (monitorStartEvent) {
-        this.initializeServer(monitorStartEvent.server);
+    parseUrlRequest: function(event) {
+        const url = event.data?.url;
+
+        if (url === undefined) {
+            this.logger.logWarning('No url provided for gamescript web request - {Event}', event);
+            return;
+        }
+
+        const body = event.data?.body;
+        const method = event.data?.method || 'GET';
+        const contentType = event.data?.contentType || 'text/plain';
+        const headers = event.data?.headers;
+
+        const dictionary = System.Collections.Generic.Dictionary(System.String, System.String);
+        const headerDict = new dictionary();
+
+        if (headers) {
+            const eachHeader = headers.split(',');
+
+            for (let eachKeyValue of eachHeader) {
+                const keyValueSplit = eachKeyValue.split(':');
+                if (keyValueSplit.length === 2) {
+                    headerDict.add(keyValueSplit[0], keyValueSplit[1]);
+                }
+            }
+        }
+
+        const script = importNamespace('IW4MAdmin.Application.Plugin.Script');
+        return new script.ScriptPluginWebRequest(url, body, method, contentType, headerDict);
     }
 };
 
@@ -634,7 +701,7 @@ const parseEvent = (input) => {
         return {};
     }
 
-    const eventInfo = input.split(';');
+    const eventInfo = input.split(groupSeparatorChar);
 
     return {
         eventType: eventInfo[1],
@@ -652,7 +719,7 @@ const buildDataString = data => {
     let formattedData = '';
 
     for (let [key, value] of Object.entries(data)) {
-        formattedData += `${key}=${value}|`;
+        formattedData += `${key}${unitSeparatorChar}${value}${recordSeparatorChar}`;
     }
 
     return formattedData.slice(0, -1);
@@ -664,11 +731,11 @@ const parseDataString = data => {
     }
 
     const dict = {};
-    const split = data.split('|');
+    const split = data.split(recordSeparatorChar);
 
     for (let i = 0; i < split.length; i++) {
         const segment = split[i];
-        const keyValue = segment.split('=');
+        const keyValue = segment.split(unitSeparatorChar);
         if (keyValue.length !== 2) {
             continue;
         }
@@ -689,3 +756,12 @@ const validateEnabled = (server, origin) => {
 const isEmpty = (value) => {
     return value == null || false || value === '' || value === 'null';
 };
+
+const chunkString = (str, chunkSize) => {
+    const result = [];
+    for (let i = 0; i < str.length; i += chunkSize) {
+        result.push(str.slice(i, i + chunkSize));
+    }
+
+    return result;
+}

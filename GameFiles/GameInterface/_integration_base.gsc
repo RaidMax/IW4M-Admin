@@ -37,7 +37,7 @@ Setup()
     level.clientDataKey = "clientData";
 
     level.eventTypes                            = spawnstruct();
-    level.eventTypes.localClientEvent           = "client_event";
+    level.eventTypes.eventAvailable             = "EventAvailable";
     level.eventTypes.clientDataReceived         = "ClientDataReceived";
     level.eventTypes.clientDataRequested        = "ClientDataRequested";
     level.eventTypes.setClientDataRequested     = "SetClientDataRequested";
@@ -70,6 +70,9 @@ Setup()
     _SetDvarIfUninitialized( level.eventBus.outVar, "" );
     _SetDvarIfUninitialized( level.commonKeys.enabled, 1 );
     _SetDvarIfUninitialized( "sv_iw4madmin_integration_debug", 0 );
+    _SetDvarIfUninitialized( "GroupSeparatorChar", "" );
+    _SetDvarIfUninitialized( "RecordSeparatorChar", "" );
+    _SetDvarIfUninitialized( "UnitSeparatorChar", "" );
     
     if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
@@ -77,35 +80,44 @@ Setup()
     }
     
     // start long running tasks
-    thread MonitorClientEvents();
+    thread MonitorEvents();
     thread MonitorBus();
 }
 
-//////////////////////////////////
-// Client Methods
-//////////////////////////////////
-
-MonitorClientEvents()
+MonitorEvents()
 {
     level endon( level.eventTypes.gameEnd );
 
     for ( ;; ) 
     {
-        level waittill( level.eventTypes.localClientEvent, client );
+        level waittill( level.eventTypes.eventAvailable, event );
  
-        LogDebug( "Processing Event " + client.event.type + "-" + client.event.subtype );
+        LogDebug( "Processing Event " + event.type + "-" + event.subtype );
         
-        eventHandler = level.eventCallbacks[client.event.type];
+        eventHandler = level.eventCallbacks[event.type];
 
         if ( IsDefined( eventHandler ) )
         {
-            client [[eventHandler]]( client.event );
-            LogDebug( "notify client for " + client.event.type );
-            client notify( level.eventTypes.localClientEvent, client.event );
-            client notify( client.event.type, client.event );
+            if ( IsDefined( event.entity ) )
+            {
+                event.entity [[eventHandler]]( event );
+            }
+            else
+            {
+                [[eventHandler]]( event );
+            }
         }
-        
-        client.eventData = [];
+
+        if ( IsDefined( event.entity ) )
+        {
+            LogDebug( "Notify client for " + event.type );
+            event.entity notify( event.type, event );
+        }
+        else
+        {
+            LogDebug( "Notify level for " + event.type );
+            level notify( event.type, event );
+        }
     }
 }
 
@@ -163,7 +175,7 @@ _Log( LogLevel, message )
 {
     for( i = 0; i < level.logger._logger.size; i++ )
     {
-        [[level.logger._logger[i]]]( LogLevel, message );
+        [[level.logger._logger[i]]]( LogLevel, GetSubStr( message, 0, 1000 ) );
     }
 }
 
@@ -246,18 +258,20 @@ DecrementClientMeta( metaKey, decrementValue, clientId )
 
 SetClientMeta( metaKey, metaValue, clientId, direction )
 {
-    data = "key=" + metaKey + "|value=" + metaValue;
+    data = [];
+    data["key"] = metaKey;
+    data["value"] = metaValue;
     clientNumber = -1;
 
     if ( IsDefined ( clientId ) )
     {
-        data = data + "|clientId=" + clientId;
+        data["clientId"] = clientId;
         clientNumber = -1;
     }
 
     if ( IsDefined( direction ) )
     {
-        data = data + "|direction=" + direction;
+        data["direction"] = direction;
     }
 
     if ( IsPlayer( self ) )
@@ -292,9 +306,12 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
     {
         request = "1";
     }
-  
-    request = request + ";" + eventType + ";" + eventSubtype + ";" + entOrId + ";" + data;
-    return request;
+
+    data = BuildDataString( data );
+    groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
+    request = request + groupSeparator + eventType + groupSeparator + eventSubtype + groupSeparator + entOrId + groupSeparator + data;
+    
+eturn request;
 }
 
 MonitorBus()
@@ -319,7 +336,8 @@ MonitorBus()
         }
         LogDebug( "-> " + eventString );
         
-        NotifyClientEvent( strtok( eventString, ";" ) );
+        groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
+        NotifyEvent( strtok( eventString, groupSeparator ) );
         
         SetDvar( level.eventBus.outVar, "" );
     }
@@ -361,7 +379,7 @@ QueueEvent( request, eventType, notifyEntity )
         return;
     }
     
-    LogDebug("<- " + request );
+    LogDebug( "<- " + request );
     
     SetDvar( level.eventBus.inVar, request );
 }
@@ -374,13 +392,13 @@ ParseDataString( data )
         return [];
     }
     
-    dataParts = strtok( data, "|" );
+    dataParts = strtok( data, GetSubStr( GetDvar( "RecordSeparatorChar" ), 0, 1 ) );
     dict = [];
     
     for ( i = 0; i < dataParts.size; i++ )
     {
         part = dataParts[i];
-        splitPart = strtok( part, "=" );
+        splitPart = strtok( part, GetSubStr( GetDvar( "UnitSeparatorChar" ), 0, 1 ) );
         key = splitPart[0];
         value = splitPart[1];
         dict[key] = value;
@@ -388,6 +406,26 @@ ParseDataString( data )
     }
     
     return dict;
+}
+
+BuildDataString( data )
+{
+    if ( IsString( data ) )
+    {
+        return data;
+    }
+
+    dataString = "";
+    keys = GetArrayKeys( data );
+    unitSeparator = GetSubStr( GetDvar( "UnitSeparatorChar" ), 0, 1 );
+    recordSeparator = GetSubStr( GetDvar( "RecordSeparatorChar" ), 0, 1 );
+
+    for ( i = 0; i < keys.size; i++ )
+    {
+        dataString = dataString + keys[i] + unitSeparator + data[keys[i]] + recordSeparator;
+    }
+
+    return dataString;
 }
 
 NotifyClientEventTimeout( eventType ) 
@@ -399,7 +437,7 @@ NotifyClientEventTimeout( eventType )
     }
 }
 
-NotifyClientEvent( eventInfo )
+NotifyEvent( eventInfo )
 {
     origin = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[3] ) );
     target = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[4] ) );
@@ -407,14 +445,9 @@ NotifyClientEvent( eventInfo )
     event = spawnstruct();
     event.type = eventInfo[1];
     event.subtype = eventInfo[2];
-    event.data = eventInfo[5];
+    event.data = ParseDataString( eventInfo[5] );
     event.origin = origin;
     event.target = target;
-    
-    if ( IsDefined( event.data ) )
-    {
-        LogDebug( "NotifyClientEvent->" + event.data );
-    }
     
     if ( int( eventInfo[3] ) != -1 && !IsDefined( origin ) )
     {
@@ -425,23 +458,15 @@ NotifyClientEvent( eventInfo )
         LogDebug( "target is null but the slot id is " + int( eventInfo[4] ) );
     }
 
-    if ( IsDefined( target ) )
+    client = event.origin;
+
+    if ( !IsDefined( client ) )
     {
         client = event.target;
     }
-    else if ( IsDefined( origin ) )
-    {
-        client = event.origin;
-    }
-    else
-    {
-        LogDebug( "Neither origin or target are set but we are a Client Event, aborting" );
-        
-        return;
-    }
-    
-    client.event = event;
-    level notify( level.eventTypes.localClientEvent, client );
+
+    event.entity = client;
+    level notify( level.eventTypes.eventAvailable, event );
 }
 
 AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
@@ -461,7 +486,6 @@ AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
 
 OnClientDataReceived( event )
 {
-    event.data = ParseDataString( event.data );
     clientData = self.pers[level.clientDataKey];
 
     if ( event.subtype == "Fail" ) 
@@ -497,7 +521,7 @@ OnClientDataReceived( event )
 
 OnExecuteCommand( event ) 
 {
-    data = ParseDataString( event.data );
+    data = event.data;
     response = "";
     
     command = level.clientCommandCallbacks[event.subtype];
@@ -527,8 +551,7 @@ OnExecuteCommand( event )
 
 OnSetClientDataCompleted( event )
 {
-    data = ParseDataString( event.data );
-    LogDebug( "Set Client Data -> subtype = " + CoerceUndefined( event.subType ) + ", status = " + CoerceUndefined( data["status"] ) );
+    LogDebug( "Set Client Data -> subtype = " + CoerceUndefined( event.subType ) + ", status = " + CoerceUndefined( event.data["status"] ) );
 }
 
 CoerceUndefined( object )

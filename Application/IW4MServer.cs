@@ -377,7 +377,6 @@ namespace IW4MAdmin
                     if (E.Origin.State != ClientState.Connected)
                     {
                         E.Origin.State = ClientState.Connected;
-                        E.Origin.LastConnection = DateTime.UtcNow;
                         E.Origin.Connections += 1;
 
                         ChatHistory.Add(new ChatInfo()

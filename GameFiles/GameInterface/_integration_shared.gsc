@@ -45,8 +45,14 @@ Setup()
     level.eventTypes.joinSpec    = "joined_spectators";
     level.eventTypes.spawned	 = "spawned_player";
     level.eventTypes.gameEnd     = "game_ended";
+
+    level.eventTypes.urlRequested        = "UrlRequested";
+    level.eventTypes.urlRequestCompleted = "UrlRequestCompleted";
+
+    level.eventCallbacks[level.eventTypes.urlRequestCompleted] = ::OnUrlRequestCompletedCallback;
     
     level.iw4madminIntegrationDefaultPerformance = 200;
+    level.notifyEntities = [];
     
     level notify( level.notifyTypes.sharedFunctionsInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
@@ -184,6 +190,135 @@ SaveTrackingMetrics()
 
     scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
 }
+
+// #region web requests
+
+RequestUrlObject( request )
+{
+    return RequestUrl( request.url, request.method, request.body, request.headers, request );
+}
+
+RequestUrl( url, method, body, headers, webNotify )
+{
+    if ( !IsDefined( webNotify ) )
+    {
+        webNotify = SpawnStruct();
+        webNotify.url = url;
+        webNotify.method = method;
+        webNotify.body = body;
+        webNotify.headers = headers;
+    }
+
+    webNotify.index = GetNextNotifyEntity();
+
+    scripts\_integration_base::LogDebug( "next notify index is " + webNotify.index );
+    level.notifyEntities[webNotify.index] = webNotify;
+
+    data = [];
+    data["url"] = webNotify.url;
+    data["entity"] = webNotify.index;
+
+    if ( IsDefined( method ) )
+    {
+        data["method"] = method;
+    }
+
+    if ( IsDefined( body ) )
+    {
+        data["body"] = body;
+    }
+
+    if ( IsDefined( headers ) )
+    {
+        headerString = "";
+
+        keys = GetArrayKeys( headers );
+        for ( i = 0; i < keys.size; i++ )
+        {
+            headerString = headerString + keys[i] + ":" + headers[keys[i]] + ",";
+        }
+
+        data["headers"] = headerString;
+    }
+
+    webNotifyEvent = scripts\_integration_base::BuildEventRequest( true, level.eventTypes.urlRequested, "", webNotify.index, data );
+    thread scripts\_integration_base::QueueEvent( webNotifyEvent, level.eventTypes.urlRequested, webNotify );
+    webNotify thread WaitForUrlRequestComplete();
+
+    return webNotify;
+}
+
+WaitForUrlRequestComplete()
+{
+    level endon( level.eventTypes.gameEnd );
+
+    timeoutResult = self [[level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]]]( 30, level.eventTypes.urlRequestCompleted );
+
+    if ( timeoutResult == level.eventBus.timeoutKey )
+    {
+        scripts\_integration_base::LogWarning( "Request to " + self.url  + " timed out" );
+        self notify ( level.eventTypes.urlRequestCompleted, "error" );
+    }
+
+    scripts\_integration_base::LogDebug( "Request to " + self.url  + " completed" );
+
+    //self delete();
+    level.notifyEntities[self.index] = undefined;
+}
+
+OnUrlRequestCompletedCallback( event )
+{
+    if ( !IsDefined( event ) || !IsDefined( event.data ) )
+    {
+        scripts\_integration_base::LogWarning( "Incomplete data for url request callback. [1]" );
+        return;
+    }
+
+    notifyEnt = event.data["entity"];
+    response = event.data["response"];
+
+    if ( !IsDefined( notifyEnt ) || !IsDefined( response ) )
+    {
+        scripts\_integration_base::LogWarning( "Incomplete data for url request callback. [2] " + scripts\_integration_base::CoerceUndefined( notifyEnt ) + " , " +  scripts\_integration_base::CoerceUndefined( response ) );
+        return;
+    }
+
+    webNotify = level.notifyEntities[int( notifyEnt )];
+    
+    if ( !IsDefined( webNotify.response ) )
+    {
+        webNotify.response = response;
+    }
+    else
+    {
+        webNotify.response = webNotify.response + response;
+    }
+
+    if ( int( event.data["remaining"] ) != 0 ) 
+    {
+        scripts\_integration_base::LogDebug( "Additional data available for url request " + notifyEnt + " (" + event.data["remaining"] + " chunks remaining)" );
+        return;
+    }
+
+    scripts\_integration_base::LogDebug( "Notifying " + notifyEnt + " that url request completed"  );
+    webNotify notify( level.eventTypes.urlRequestCompleted, webNotify.response );
+}
+
+GetNextNotifyEntity()
+{
+    max = level.notifyEntities.size + 1;
+
+    for ( i = 0; i < max; i++ )
+    {
+        if ( !IsDefined( level.notifyEntities[i] ) )
+        {
+            return i;
+        }
+    }
+}
+
+
+// #end region
 
 // #region team balance
 

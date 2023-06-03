@@ -85,7 +85,7 @@ WaitForClientEvents()
 
     for ( ;; )
     {
-        self waittill( level.eventTypes.localClientEvent, event );
+        self waittill( level.eventTypes.eventAvailable, event );
 
 	    scripts\_integration_base::LogDebug( "Received client event " + event.type );
         

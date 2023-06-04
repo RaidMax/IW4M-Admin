@@ -76,6 +76,11 @@ public class ScriptPluginHelper
         });
     }
 
+    public void RegisterDynamicCommand(JsValue command)
+    {
+        _scriptPlugin.RegisterDynamicCommand(command.ToObject());
+    }
+
     private object RequestInternal(ScriptPluginWebRequest request)
     {
         var entered = false;

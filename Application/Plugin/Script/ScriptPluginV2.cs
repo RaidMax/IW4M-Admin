@@ -47,6 +47,7 @@ public class ScriptPluginV2 : IPluginV2
     private readonly List<string> _registeredCommandNames = new();
     private readonly List<string> _registeredInteractions = new();
     private readonly Dictionary<MethodInfo, List<object>> _registeredEvents = new();
+    private IManager _manager;
     private bool _firstInitialization = true;
 
     private record ScriptPluginDetails(string Name, string Author, string Version,
@@ -112,8 +113,15 @@ public class ScriptPluginV2 : IPluginV2
         }, _logger, _fileName, _onProcessingScript);
     }
 
+    public void RegisterDynamicCommand(object command)
+    {
+        var parsedCommand = ParseScriptCommandDetails(command);
+        RegisterCommand(_manager, parsedCommand.First());
+    }
+
     private async Task OnLoad(IManager manager, CancellationToken token)
     {
+        _manager = manager;
         var entered = false;
         try
         {
@@ -253,8 +261,12 @@ public class ScriptPluginV2 : IPluginV2
             command.Permission, command.TargetRequired,
             command.Arguments, Execute, command.SupportedGames);
 
+        manager.RemoveCommandByName(scriptCommand.Name);
         manager.AddAdditionalCommand(scriptCommand);
-        _registeredCommandNames.Add(scriptCommand.Name);
+        if (!_registeredCommandNames.Contains(scriptCommand.Name))
+        {
+            _registeredCommandNames.Add(scriptCommand.Name);
+        }
     }
 
     private void ResetEngineState()
@@ -481,6 +493,33 @@ public class ScriptPluginV2 : IPluginV2
 
     private static ScriptPluginDetails AsScriptPluginInstance(dynamic source)
     {
+        var commandDetails = ParseScriptCommandDetails(source);
+
+        var interactionDetails = Array.Empty<ScriptPluginInteractionDetails>();
+        if (HasProperty(source, "interactions") && source.interactions is dynamic[])
+        {
+            interactionDetails = ((dynamic[])source.interactions).Select(interaction =>
+            {
+                var name = HasProperty(interaction, "name") && interaction.name is string
+                    ? (string)interaction.name
+                    : string.Empty;
+                var action = HasProperty(interaction, "action") && interaction.action is Delegate
+                    ? (Delegate)interaction.action
+                    : null;
+
+                return new ScriptPluginInteractionDetails(name, action);
+            }).ToArray();
+        }
+
+        var name = HasProperty(source, "name") && source.name is string ? (string)source.name : string.Empty;
+        var author = HasProperty(source, "author") && source.author is string ? (string)source.author : string.Empty;
+        var version = HasProperty(source, "version") && source.version is string ? (string)source.author : string.Empty;
+
+        return new ScriptPluginDetails(name, author, version, commandDetails, interactionDetails);
+    }
+
+    private static ScriptPluginCommandDetails[] ParseScriptCommandDetails(dynamic source)
+    {
         var commandDetails = Array.Empty<ScriptPluginCommandDetails>();
         if (HasProperty(source, "commands") && source.commands is dynamic[])
         {
@@ -513,7 +552,7 @@ public class ScriptPluginV2 : IPluginV2
                                        (bool)command.targetRequired;
                 var supportedGames =
                     HasProperty(command, "supportedGames") && command.supportedGames is IEnumerable<object>
-                        ? ((IEnumerable<object>)command.supportedGames).Where(game => game?.ToString() is not null)
+                        ? ((IEnumerable<object>)command.supportedGames).Where(game => !string.IsNullOrEmpty(game?.ToString()))
                         .Select(game =>
                             Enum.Parse<Reference.Game>(game.ToString()!))
                         : Array.Empty<Reference.Game>();
@@ -523,31 +562,10 @@ public class ScriptPluginV2 : IPluginV2
 
                 return new ScriptPluginCommandDetails(name, description, alias, permission, isTargetRequired,
                     commandArgs, supportedGames, execute);
-
             }).ToArray();
         }
 
-        var interactionDetails = Array.Empty<ScriptPluginInteractionDetails>();
-        if (HasProperty(source, "interactions") && source.interactions is dynamic[])
-        {
-            interactionDetails = ((dynamic[])source.interactions).Select(interaction =>
-            {
-                var name = HasProperty(interaction, "name") && interaction.name is string
-                    ? (string)interaction.name
-                    : string.Empty;
-                var action = HasProperty(interaction, "action") && interaction.action is Delegate
-                    ? (Delegate)interaction.action
-                    : null;
-
-                return new ScriptPluginInteractionDetails(name, action);
-            }).ToArray();
-        }
-
-        var name = HasProperty(source, "name") && source.name is string ? (string)source.name : string.Empty;
-        var author = HasProperty(source, "author") && source.author is string ? (string)source.author : string.Empty;
-        var version = HasProperty(source, "version") && source.version is string ? (string)source.author : string.Empty;
-
-        return new ScriptPluginDetails(name, author, version, commandDetails, interactionDetails);
+        return commandDetails;
     }
 
     private static bool HasProperty(dynamic source, string name)

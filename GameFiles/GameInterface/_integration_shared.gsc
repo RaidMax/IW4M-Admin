@@ -46,8 +46,9 @@ Setup()
     level.eventTypes.spawned	 = "spawned_player";
     level.eventTypes.gameEnd     = "game_ended";
 
-    level.eventTypes.urlRequested        = "UrlRequested";
-    level.eventTypes.urlRequestCompleted = "UrlRequestCompleted";
+    level.eventTypes.urlRequested             = "UrlRequested";
+    level.eventTypes.urlRequestCompleted      = "UrlRequestCompleted";
+    level.eventTypes.registerCommandRequested = "RegisterCommandRequested";
 
     level.eventCallbacks[level.eventTypes.urlRequestCompleted] = ::OnUrlRequestCompletedCallback;
     
@@ -191,6 +192,78 @@ SaveTrackingMetrics()
     scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
 }
 
+// #region register script command
+
+RegisterScriptCommandObject( command )
+{
+    RegisterScriptCommand( command.eventKey, command.name, command.alias, command.description, command.minPermission, command.supportedGames, command.requiresTarget, command.handler );
+}
+
+RegisterScriptCommand( eventKey, name, alias, description, minPermission, supportedGames, requiresTarget, handler )
+{
+    if ( !IsDefined( eventKey ) )
+    {
+        scripts\_integration_base::LogError( "eventKey must be provided for script command" );
+        return;
+    }
+
+    data = [];
+
+    data["eventKey"] = eventKey;
+
+    if ( IsDefined( name ) )
+    {
+        data["name"] = name;
+    }
+    else
+    {
+        scripts\_integration_base::LogError( "name must be provided for script command" );
+        return;
+    }
+
+    if ( IsDefined( alias ) )
+    {
+        data["alias"] = alias;
+    }
+
+    if ( IsDefined( description ) )
+    {
+        data["description"] = description;
+    }
+
+    if ( IsDefined( minPermission ) )
+    {
+        data["minPermission"] = minPermission;
+    }
+    
+    if ( IsDefined( supportedGames ) )
+    {
+        data["supportedGames"] = supportedGames;
+    }
+
+    data["requiresTarget"] = false;
+
+    if ( IsDefined( requiresTarget ) )
+    {
+        data["requiresTarget"] = requiresTarget;
+    }
+
+    if ( IsDefined( handler ) )
+    {
+        level.clientCommandCallbacks[eventKey + "Execute"] = handler;
+        level.clientCommandRusAsTarget[eventKey + "Execute"] = data["requiresTarget"];
+    }
+    else
+    {
+        scripts\_integration_base::LogWarning( "handler not defined for script command " + name );
+    }
+
+    commandRegisterRequest = scripts\_integration_base::BuildEventRequest( false, level.eventTypes.registerCommandRequested, "", undefined, data );
+    thread scripts\_integration_base::QueueEvent( commandRegisterRequest, level.eventTypes.registerCommandRequested, undefined );
+}
+
+// #end region
+
 // #region web requests
 
 RequestUrlObject( request )
@@ -262,7 +335,6 @@ WaitForUrlRequestComplete()
 
     scripts\_integration_base::LogDebug( "Request to " + self.url  + " completed" );
 
-    //self delete();
     level.notifyEntities[self.index] = undefined;
 }
 
@@ -315,6 +387,8 @@ GetNextNotifyEntity()
             return i;
         }
     }
+
+    return max;
 }
 
 

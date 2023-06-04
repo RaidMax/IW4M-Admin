@@ -320,6 +320,10 @@ const plugin = {
                 }
             });
         }
+        
+        if (event.eventType === 'RegisterCommandRequested') {
+            this.registerDynamicCommand(event);
+        }
 
         tokenSource.dispose();
         return messageQueued;
@@ -434,6 +438,30 @@ const plugin = {
 
         const script = importNamespace('IW4MAdmin.Application.Plugin.Script');
         return new script.ScriptPluginWebRequest(url, body, method, contentType, headerDict);
+    },
+    
+    registerDynamicCommand: function(event) {
+        const commandWrapper = {
+            commands: [{
+                name: event.data['name'] || 'DEFAULT',
+                description: event.data['description'] || 'DEFAULT',
+                alias: event.data['alias'] || 'DEFAULT',
+                permission: event.data['minPermission'] || 'DEFAULT',
+                targetRequired: (event.data['targetRequired'] || '0') === '1',
+                supportedGames: (event.data['supportedGames'] || '').split(','),
+
+                execute: (gameEvent) => {
+                    if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                        return;
+                    }
+                    sendScriptCommand(gameEvent.owner, `${event.data['eventKey']}Execute`, gameEvent.origin, gameEvent.target, {
+                        args: gameEvent.data
+                    });
+                }
+            }]
+        }
+        
+        this.scriptHelper.registerDynamicCommand(commandWrapper);
     }
 };
 

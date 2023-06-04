@@ -295,6 +295,11 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
         eventSubtype = "None";
     }
 
+    if ( !IsDefined( entOrId ) )
+    {
+        entOrId = "-1";
+    }
+
     if ( IsPlayer( entOrId ) )
     {
         entOrId = entOrId getEntityNumber();
@@ -311,7 +316,7 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
     groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
     request = request + groupSeparator + eventType + groupSeparator + eventSubtype + groupSeparator + entOrId + groupSeparator + data;
     
-eturn request;
+    return request;
 }
 
 MonitorBus()
@@ -535,7 +540,14 @@ OnExecuteCommand( event )
     
     if ( IsDefined( command ) ) 
     {
-        response = executionContextEntity [[command]]( event, data );
+        if ( IsDefined( executionContextEntity ) )
+        {
+            response = executionContextEntity [[command]]( event, data );
+        }
+        else
+        {
+            [[command]]( event );
+        }
     }
     else
     {

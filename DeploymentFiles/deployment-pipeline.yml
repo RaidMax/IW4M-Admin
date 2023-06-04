@@ -35,7 +35,7 @@ jobs:
     
     - task: PowerShell@2
       displayName: 'Setup Pre-Release configuration'
-      condition: eq(variables['Build.SourceBranch'], 'refs/heads/release/pre')
+      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
       inputs:
         targetType: 'inline'
         script: |
@@ -120,7 +120,9 @@ jobs:
         script: 'wget https://raidmax.org/downloads/dos2unix.exe'
         failOnStderr: true
         workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+        
   - job: Transform
+    dependsOn: Build
     steps:
       - task: CmdLine@2
         displayName: 'Convert Linux start script line endings'
@@ -160,7 +162,9 @@ jobs:
          script: 'echo d | xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
          workingDirectory: '$(Build.Repository.LocalPath)'
          failOnStderr: true
+         
   - job: Artifact
+    dependsOn: Transform
     steps:
       - task: ArchiveFiles@2
         displayName: 'Generate final zip file'
@@ -184,6 +188,7 @@ jobs:
           publishLocation: 'pipeline'
 
   - job: Publish
+    dependsOn: Artifact
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/develop'))
     steps:
     - task: FtpUpload@2

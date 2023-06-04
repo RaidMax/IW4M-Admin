@@ -27,6 +27,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout] = ::WaitillNotifyOrTimeoutWrapper;
     level.overrideMethods[level.commonFunctions.isBot]                   = ::IsBotWrapper;
     level.overrideMethods[level.commonFunctions.getXuid]                 = ::GetXuidWrapper;
+    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]       = common_scripts\utility::waittill_any_timeout;
     
     RegisterClientCommands();
         

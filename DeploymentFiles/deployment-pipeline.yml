@@ -6,6 +6,7 @@ trigger:
     include:
     - release/pre
     - master
+    - develop
 
 pr: none
 
@@ -20,227 +21,234 @@ variables:
   buildConfiguration: Stable
   isPreRelease: false
 
-steps:
-- task: UseDotNet@2
-  displayName: 'Install .NET Core 6 SDK'
-  inputs:
-    packageType: 'sdk'
-    version: '6.0.x'
-    includePreviewVersions: true
-
-- task: NuGetToolInstaller@1
-
-- task: PowerShell@2
-  displayName: 'Setup Pre-Release configuration'
-  condition: eq(variables['Build.SourceBranch'], 'refs/heads/release/pre')
-  inputs:
-    targetType: 'inline'
-    script: |
-            echo '##vso[task.setvariable variable=releaseType]prerelease'
-            echo '##vso[task.setvariable variable=buildConfiguration]Prerelease'
-            echo '##vso[task.setvariable variable=isPreRelease]true'
-    failOnStderr: true
-  
-- task: NuGetCommand@2
-  displayName: 'Restore nuget packages'
-  inputs:
-    restoreSolution: '$(solution)'
-
-- task: PowerShell@2
-  displayName: 'Preload external resources'
-  inputs:
-    targetType: 'inline'
-    script: |
-            Write-Host 'Build Configuration is $(buildConfiguration), Release Type is $(releaseType)'
-            md -Force lib\open-iconic\font\css
-            wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap-override.scss
-            cd lib\open-iconic\font\css
-            (Get-Content open-iconic-bootstrap-override.scss).replace('../fonts/', '/font/') | Set-Content open-iconic-bootstrap-override.scss
-    failOnStderr: true
-    workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
-
-- task: VSBuild@1
-  displayName: 'Build projects'
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-      
-- task: PowerShell@2
-  displayName: 'Bundle JS Files'
-  inputs:
-    targetType: 'inline'
-    script: |
-      Write-Host 'Getting dotnet bundle'
-      wget http://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip -o $(Build.Repository.LocalPath)\dotnet-bundle.zip
-      Write-Host 'Unzipping download'
-      Expand-Archive -LiteralPath $(Build.Repository.LocalPath)\dotnet-bundle.zip -DestinationPath $(Build.Repository.LocalPath)
-      Write-Host 'Executing dotnet-bundle'
-      $(Build.Repository.LocalPath)\dotnet-bundle.exe clean $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
-      $(Build.Repository.LocalPath)\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
-    failOnStderr: true
-    workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore'
-
-- task: DotNetCoreCLI@2
-  displayName: 'Publish projects'
-  inputs:
-    command: 'publish'
-    publishWebProjects: false
-    projects: |
-      **/WebfrontCore.csproj
-      **/Application.csproj
-    arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(Build.BuildNumber)'
-    zipAfterPublish: false
-    modifyOutputPath: false
+jobs:
+  - job: Build
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core 6 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '6.0.x'
+        includePreviewVersions: true
     
-- task: PowerShell@2
-  displayName: 'Run publish script 1'
-  inputs:
-    filePath: 'DeploymentFiles/PostPublish.ps1'
-    arguments: '$(outputFolder)'
-    failOnStderr: true
-    workingDirectory: '$(Build.Repository.LocalPath)'
-
-- task: BatchScript@1
-  displayName: 'Run publish script 2'
-  inputs:
-    filename: 'Application\BuildScripts\PostPublish.bat'
-    workingFolder: '$(Build.Repository.LocalPath)'
-    arguments: '$(outputFolder) $(Build.Repository.LocalPath)'
-    failOnStandardError: true
-
-- task: PowerShell@2
-  displayName: 'Download dos2unix for line endings'
-  inputs:
-    targetType: 'inline'
-    script: 'wget https://raidmax.org/downloads/dos2unix.exe'
-    failOnStderr: true
-    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
-
-- task: CmdLine@2
-  displayName: 'Convert Linux start script line endings'
-  inputs:
-    script: |
-      echo changing to encoding for linux start script
-      dos2unix $(outputFolder)\StartIW4MAdmin.sh
-      dos2unix $(outputFolder)\UpdateIW4MAdmin.sh
-      echo creating website version filename
-      @echo IW4MAdmin-$(Build.BuildNumber) > $(Build.ArtifactStagingDirectory)\version_$(releaseType).txt
-    workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
-
-- task: CopyFiles@2
-  displayName: 'Move script plugins into publish directory'
-  inputs:
-    SourceFolder: '$(Build.Repository.LocalPath)\Plugins\ScriptPlugins'
-    Contents: '*.js'
-    TargetFolder: '$(outputFolder)\Plugins'
-
-- task: CopyFiles@2
-  displayName: 'Move binary plugins into publish directory'
-  inputs:
-    SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\'
-    Contents: '*.dll'
-    TargetFolder: '$(outputFolder)\Plugins'
-
-- task: CmdLine@2
-  displayName: 'Move webfront resources into publish directory'
-  inputs:
-   script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
-   workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
-   failOnStderr: true
-
-- task: CmdLine@2
-  displayName: 'Move gamescript files into publish directory'
-  inputs:
-   script: 'echo d | xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
-   workingDirectory: '$(Build.Repository.LocalPath)'
-   failOnStderr: true
-
-- task: ArchiveFiles@2
-  displayName: 'Generate final zip file'
-  inputs:
-    rootFolderOrFile: '$(outputFolder)'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
-    replaceExistingArchive: true
-
-- task: PublishPipelineArtifact@1
-  inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
-    artifact: 'IW4MAdmin-$(Build.BuildNumber).zip'
-
-- task: FtpUpload@2
-  displayName: 'Upload zip file to website'
-  inputs:
-    credentialsOption: 'inputs'
-    serverUrl: '$(FTPUrl)'
-    username: '$(FTPUsername)'
-    password: '$(FTPPassword)'
-    rootDirectory: '$(Build.ArtifactStagingDirectory)'
-    filePatterns: '*.zip'
-    remoteDirectory: 'IW4MAdmin/Download'
-    clean: false
-    cleanContents: false
-    preservePaths: false
-    trustSSL: false
-
-- task: FtpUpload@2
-  displayName: 'Upload version info to website'
-  inputs:
-    credentialsOption: 'inputs'
-    serverUrl: '$(FTPUrl)'
-    username: '$(FTPUsername)'
-    password: '$(FTPPassword)'
-    rootDirectory: '$(Build.ArtifactStagingDirectory)'
-    filePatterns: 'version_$(releaseType).txt'
-    remoteDirectory: 'IW4MAdmin'
-    clean: false
-    cleanContents: false
-    preservePaths: false
-    trustSSL: false
-
-- task: GitHubRelease@1
-  displayName: 'Make GitHub release'
-  inputs:
-    gitHubConnection: 'github.com_RaidMax'
-    repositoryName: 'RaidMax/IW4M-Admin'
-    action: 'create'
-    target: '$(Build.SourceVersion)'
-    tagSource: 'userSpecifiedTag'
-    tag: '$(Build.BuildNumber)-$(releaseType)'
-    title: 'IW4MAdmin $(Build.BuildNumber) ($(releaseType))'
-    assets: '$(Build.ArtifactStagingDirectory)/*.zip'
-    isPreRelease: $(isPreRelease)
-    releaseNotesSource: 'inline'
-    releaseNotesInline: 'todo'
-    changeLogCompareToRelease: 'lastNonDraftRelease'
-    changeLogType: 'commitBased'
-
-- task: PowerShell@2
-  displayName: 'Update master version'
-  inputs:
-    targetType: 'inline'
-    script: |
-      $payload = @{
-          'current-version-$(releaseType)' = '$(Build.BuildNumber)'
-          'jwt-secret' = '$(JWTSecret)'
-      } | ConvertTo-Json
-              
+    - task: NuGetToolInstaller@1
+    
+    - task: PowerShell@2
+      displayName: 'Setup Pre-Release configuration'
+      condition: eq(variables['Build.SourceBranch'], 'refs/heads/release/pre')
+      inputs:
+        targetType: 'inline'
+        script: |
+                echo '##vso[task.setvariable variable=releaseType]prerelease'
+                echo '##vso[task.setvariable variable=buildConfiguration]Prerelease'
+                echo '##vso[task.setvariable variable=isPreRelease]true'
+        failOnStderr: true
       
-      $params = @{
-          Uri         = 'http://api.raidmax.org:5000/version'
-          Method      = 'POST'
-          Body        = $payload
-          ContentType = 'application/json'
-      }
+    - task: NuGetCommand@2
+      displayName: 'Restore nuget packages'
+      inputs:
+        restoreSolution: '$(solution)'
+    
+    - task: PowerShell@2
+      displayName: 'Preload external resources'
+      inputs:
+        targetType: 'inline'
+        script: |
+                Write-Host 'Build Configuration is $(buildConfiguration), Release Type is $(releaseType)'
+                md -Force lib\open-iconic\font\css
+                wget https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss -o lib\open-iconic\font\css\open-iconic-bootstrap-override.scss
+                cd lib\open-iconic\font\css
+                (Get-Content open-iconic-bootstrap-override.scss).replace('../fonts/', '/font/') | Set-Content open-iconic-bootstrap-override.scss
+        failOnStderr: true
+        workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore\wwwroot'
+    
+    - task: VSBuild@1
+      displayName: 'Build projects'
+      inputs:
+        solution: '$(solution)'
+        msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber)'
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
+          
+    - task: PowerShell@2
+      displayName: 'Bundle JS Files'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host 'Getting dotnet bundle'
+          wget http://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip -o $(Build.Repository.LocalPath)\dotnet-bundle.zip
+          Write-Host 'Unzipping download'
+          Expand-Archive -LiteralPath $(Build.Repository.LocalPath)\dotnet-bundle.zip -DestinationPath $(Build.Repository.LocalPath)
+          Write-Host 'Executing dotnet-bundle'
+          $(Build.Repository.LocalPath)\dotnet-bundle.exe clean $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
+          $(Build.Repository.LocalPath)\dotnet-bundle.exe $(Build.Repository.LocalPath)\WebfrontCore\bundleconfig.json
+        failOnStderr: true
+        workingDirectory: '$(Build.Repository.LocalPath)\WebfrontCore'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish projects'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: |
+          **/WebfrontCore.csproj
+          **/Application.csproj
+        arguments: '-c $(buildConfiguration) -o $(outputFolder) /p:Version=$(Build.BuildNumber)'
+        zipAfterPublish: false
+        modifyOutputPath: false
+        
+    - task: PowerShell@2
+      displayName: 'Run publish script 1'
+      inputs:
+        filePath: 'DeploymentFiles/PostPublish.ps1'
+        arguments: '$(outputFolder)'
+        failOnStderr: true
+        workingDirectory: '$(Build.Repository.LocalPath)'
+    
+    - task: BatchScript@1
+      displayName: 'Run publish script 2'
+      inputs:
+        filename: 'Application\BuildScripts\PostPublish.bat'
+        workingFolder: '$(Build.Repository.LocalPath)'
+        arguments: '$(outputFolder) $(Build.Repository.LocalPath)'
+        failOnStandardError: true
+    
+    - task: PowerShell@2
+      displayName: 'Download dos2unix for line endings'
+      inputs:
+        targetType: 'inline'
+        script: 'wget https://raidmax.org/downloads/dos2unix.exe'
+        failOnStderr: true
+        workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
+  - job: Transform
+    steps:
+      - task: CmdLine@2
+        displayName: 'Convert Linux start script line endings'
+        inputs:
+          script: |
+            echo changing to encoding for linux start script
+            dos2unix $(outputFolder)\StartIW4MAdmin.sh
+            dos2unix $(outputFolder)\UpdateIW4MAdmin.sh
+            echo creating website version filename
+            @echo IW4MAdmin-$(Build.BuildNumber) > $(Build.ArtifactStagingDirectory)\version_$(releaseType).txt
+          workingDirectory: '$(Build.Repository.LocalPath)\Application\BuildScripts'
       
-      Invoke-RestMethod @params
+      - task: CopyFiles@2
+        displayName: 'Move script plugins into publish directory'
+        inputs:
+          SourceFolder: '$(Build.Repository.LocalPath)\Plugins\ScriptPlugins'
+          Contents: '*.js'
+          TargetFolder: '$(outputFolder)\Plugins'
+      
+      - task: CopyFiles@2
+        displayName: 'Move binary plugins into publish directory'
+        inputs:
+          SourceFolder: '$(Build.Repository.LocalPath)\BUILD\Plugins\'
+          Contents: '*.dll'
+          TargetFolder: '$(outputFolder)\Plugins'
+      
+      - task: CmdLine@2
+        displayName: 'Move webfront resources into publish directory'
+        inputs:
+         script: 'xcopy /s /y /f wwwroot $(outputFolder)\wwwroot'
+         workingDirectory: '$(Build.Repository.LocalPath)\BUILD\Plugins'
+         failOnStderr: true
+      
+      - task: CmdLine@2
+        displayName: 'Move gamescript files into publish directory'
+        inputs:
+         script: 'echo d | xcopy /s /y /f GameFiles $(outputFolder)\GameFiles'
+         workingDirectory: '$(Build.Repository.LocalPath)'
+         failOnStderr: true
+  - job: Artifact
+    steps:
+      - task: ArchiveFiles@2
+        displayName: 'Generate final zip file'
+        inputs:
+          rootFolderOrFile: '$(outputFolder)'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
+          replaceExistingArchive: true
+      
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/IW4MAdmin-$(Build.BuildNumber).zip'
+          artifact: 'IW4MAdmin-$(Build.BuildNumber).zip'
+          
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish artifact for analysis'
+        inputs:
+          targetPath: '$(outputFolder)'
+          artifact: 'IW4MAdmin.$(buildConfiguration)'
+          publishLocation: 'pipeline'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish artifact for analysis'
-  inputs:
-    targetPath: '$(outputFolder)'
-    artifact: 'IW4MAdmin.$(buildConfiguration)'
-    publishLocation: 'pipeline'
+  - job: Publish
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    steps:
+    - task: FtpUpload@2
+      displayName: 'Upload zip file to website'
+      inputs:
+        credentialsOption: 'inputs'
+        serverUrl: '$(FTPUrl)'
+        username: '$(FTPUsername)'
+        password: '$(FTPPassword)'
+        rootDirectory: '$(Build.ArtifactStagingDirectory)'
+        filePatterns: '*.zip'
+        remoteDirectory: 'IW4MAdmin/Download'
+        clean: false
+        cleanContents: false
+        preservePaths: false
+        trustSSL: false
+    
+    - task: FtpUpload@2
+      displayName: 'Upload version info to website'
+      inputs:
+        credentialsOption: 'inputs'
+        serverUrl: '$(FTPUrl)'
+        username: '$(FTPUsername)'
+        password: '$(FTPPassword)'
+        rootDirectory: '$(Build.ArtifactStagingDirectory)'
+        filePatterns: 'version_$(releaseType).txt'
+        remoteDirectory: 'IW4MAdmin'
+        clean: false
+        cleanContents: false
+        preservePaths: false
+        trustSSL: false
+    
+    - task: GitHubRelease@1
+      displayName: 'Make GitHub release'
+      inputs:
+        gitHubConnection: 'github.com_RaidMax'
+        repositoryName: 'RaidMax/IW4M-Admin'
+        action: 'create'
+        target: '$(Build.SourceVersion)'
+        tagSource: 'userSpecifiedTag'
+        tag: '$(Build.BuildNumber)-$(releaseType)'
+        title: 'IW4MAdmin $(Build.BuildNumber) ($(releaseType))'
+        assets: '$(Build.ArtifactStagingDirectory)/*.zip'
+        isPreRelease: $(isPreRelease)
+        releaseNotesSource: 'inline'
+        releaseNotesInline: 'todo'
+        changeLogCompareToRelease: 'lastNonDraftRelease'
+        changeLogType: 'commitBased'
+    
+    - task: PowerShell@2
+      displayName: 'Update master version'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $payload = @{
+              'current-version-$(releaseType)' = '$(Build.BuildNumber)'
+              'jwt-secret' = '$(JWTSecret)'
+          } | ConvertTo-Json
+                  
+          
+          $params = @{
+              Uri         = 'http://api.raidmax.org:5000/version'
+              Method      = 'POST'
+              Body        = $payload
+              ContentType = 'application/json'
+          }
+          
+          Invoke-RestMethod @params

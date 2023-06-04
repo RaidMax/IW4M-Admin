@@ -22,7 +22,7 @@ variables:
   isPreRelease: false
 
 jobs:
-  - job: Build & Deploy
+  - job: Build_Deploy
     steps:
     - task: UseDotNet@2
       displayName: 'Install .NET Core 6 SDK'

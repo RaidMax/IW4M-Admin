@@ -100,11 +100,11 @@ MonitorEvents()
         {
             if ( IsDefined( event.entity ) )
             {
-                event.entity thread [[eventHandler]]( event );
+                event.entity [[eventHandler]]( event );
             }
             else
             {
-                thread [[eventHandler]]( event );
+                [[eventHandler]]( event );
             }
         }
 

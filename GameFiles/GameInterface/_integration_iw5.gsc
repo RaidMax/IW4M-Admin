@@ -20,7 +20,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]    = ::WaitillNotifyOrTimeoutWrapper;
     level.overrideMethods[level.commonFunctions.isBot]                      = ::IsBotWrapper;
     level.overrideMethods[level.commonFunctions.getXuid]                    = ::GetXuidWrapper;
-    
+    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]      = ::WaitTillAnyTimeout;
     RegisterClientCommands();
     
     level notify( level.notifyTypes.gameFunctionsInitialized );
@@ -69,6 +69,11 @@ IsBotWrapper( client )
 GetXuidWrapper()
 {
     return self GetXUID();
+}
+
+WaitTillAnyTimeout( timeOut, string1, string2, string3, string4, string5 )
+{
+    return common_scripts\utility::waittill_any_timeout( timeOut, string1, string2, string3, string4, string5 );
 }
 
 //////////////////////////////////

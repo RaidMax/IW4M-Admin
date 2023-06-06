@@ -21,13 +21,29 @@ Setup()
     level.commonFunctions.setDvar                   = "SetDvarIfUninitialized";
     level.commonFunctions.getPlayerFromClientNum    = "GetPlayerFromClientNum";
     level.commonFunctions.waittillNotifyOrTimeout   = "WaittillNotifyOrTimeout";
+    level.commonFunctions.getInboundData            = "GetInboundData";
+    level.commonFunctions.getOutboundData           = "GetOutboundData";
+    level.commonFunctions.setInboundData            = "SetInboundData";
+    level.commonFunctions.setOutboundData           = "SetOutboundData";
 
     level.overrideMethods = [];
     level.overrideMethods[level.commonFunctions.setDvar]                = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.getPlayerFromClientNum] = ::_GetPlayerFromClientNum;
+    level.overrideMethods[level.commonFunctions.getInboundData]  = ::_GetInboundData;
+    level.overrideMethods[level.commonFunctions.getOutboundData] = ::_GetOutboundData;
+    level.overrideMethods[level.commonFunctions.setInboundData]  = ::_SetInboundData;
+    level.overrideMethods[level.commonFunctions.setOutboundData] = ::_SetOutboundData;
+
+    level.busMethods = [];
+    level.busMethods[level.commonFunctions.getInboundData]  = ::_GetInboundData;
+    level.busMethods[level.commonFunctions.getOutboundData] = ::_GetOutboundData;
+    level.busMethods[level.commonFunctions.setInboundData]  = ::_SetInboundData;
+    level.busMethods[level.commonFunctions.setOutboundData] = ::_SetOutboundData;
 
     level.commonKeys = spawnstruct();
     level.commonKeys.enabled = "sv_iw4madmin_integration_enabled";
+    level.commonKeys.busMode = "sv_iw4madmin_integration_busmode";
+    level.commonKeys.busDir  = "sv_iw4madmin_integration_busdir";
     
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
@@ -69,6 +85,8 @@ Setup()
     _SetDvarIfUninitialized( level.eventBus.inVar, "" );
     _SetDvarIfUninitialized( level.eventBus.outVar, "" );
     _SetDvarIfUninitialized( level.commonKeys.enabled, 1 );
+    _SetDvarIfUninitialized( level.commonKeys.busMode, "rcon" );
+    _SetDvarIfUninitialized( level.commonKeys.busdir, "" );
     _SetDvarIfUninitialized( "sv_iw4madmin_integration_debug", 0 );
     _SetDvarIfUninitialized( "GroupSeparatorChar", "" );
     _SetDvarIfUninitialized( "RecordSeparatorChar", "" );
@@ -155,6 +173,26 @@ _GetPlayerFromClientNum( clientNum )
     }
     
     return undefined;
+}
+
+_GetInboundData()
+{
+    return GetDvar( level.eventBus.inVar );
+}
+
+_GetOutboundData()
+{
+    return GetDvar( level.eventBus.outVar );
+}
+
+_SetInboundData( data )
+{
+    return SetDvar( level.eventBus.inVar, data );
+}
+
+_SetOutboundData( data )
+{
+    return SetDvar( level.eventBus.outVar, data );
 }
 
 // Not every game can output to console or even game log.
@@ -322,29 +360,35 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
 MonitorBus()
 {
     level endon( level.eventTypes.gameEnd );
+    
+    [[level.overrideMethods[level.commonFunctions.SetInboundData]]]( "" );
+    [[level.overrideMethods[level.commonFunctions.SetOutboundData]]]( "" );
 
     for( ;; )
     {
         wait ( 0.1 );
         
         // check to see if IW4MAdmin is ready to receive more data
-        if ( getDvar( level.eventBus.inVar ) == "" ) 
+        inVal = [[level.busMethods[level.commonFunctions.getInboundData]]]();
+
+        if ( !IsDefined( inVal ) || inVal == "" )
         {
             level notify( "bus_ready" );
         }
         
-        eventString = getDvar( level.eventBus.outVar );
+        eventString = [[level.busMethods[level.commonFunctions.getOutboundData]]]();
         
-        if ( eventString == "" ) 
+        if ( !IsDefined( eventString ) || eventString == "" ) 
         {
             continue;
         }
+
         LogDebug( "-> " + eventString );
         
         groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
         NotifyEvent( strtok( eventString, groupSeparator ) );
         
-        SetDvar( level.eventBus.outVar, "" );
+        [[level.busMethods[level.commonFunctions.SetOutboundData]]]( "" );
     }
 }
 
@@ -356,11 +400,11 @@ QueueEvent( request, eventType, notifyEntity )
     maxWait = level.eventBus.timeout * 1000; // 30 seconds
     timedOut = "";
    
-    while ( GetDvar( level.eventBus.inVar ) != "" && ( GetTime() - start ) < maxWait )
+    while ( [[level.busMethods[level.commonFunctions.getInboundData]]]() != "" && ( GetTime() - start ) < maxWait )
     {
         level [[level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]]]( "bus_ready", 1 );
         
-        if ( GetDvar( level.eventBus.inVar ) != "" )
+        if ( [[level.busMethods[level.commonFunctions.getInboundData]]]() != "" )
         {
             LogDebug( "A request is already in progress..." );
             timedOut = "set";
@@ -379,14 +423,14 @@ QueueEvent( request, eventType, notifyEntity )
             notifyEntity NotifyClientEventTimeout( eventType );
         }
         
-        SetDvar( level.eventBus.inVar, "" );
+        [[level.busMethods[level.commonFunctions.SetInboundData]]]( "" );
 
         return;
     }
     
     LogDebug( "<- " + request );
     
-    SetDvar( level.eventBus.inVar, request );
+    [[level.busMethods[level.commonFunctions.setInboundData]]]( request );
 }
 
 ParseDataString( data ) 

@@ -81,5 +81,8 @@ AffirmationCommandCallback( event, _ )
     // horrible json parsing.. but it's just an example
     parsedResponse = strtok( response, "\"" );
 
-    self IPrintLnBold ( "^5" + parsedResponse[parsedResponse.size - 2] );
+    if ( IsPlayer( self ) )
+    {
+        self IPrintLnBold ( "^5" + parsedResponse[parsedResponse.size - 2] );
+    }
 }

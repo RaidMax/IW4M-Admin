@@ -67,7 +67,7 @@ public class ScriptPluginHelper
             try
             {
                 await Task.Delay(delayMs, _manager.CancellationToken);
-                _scriptPlugin.ExecuteWithErrorHandling(_ => callback.DynamicInvoke(JsValue.Undefined));
+                _scriptPlugin.ExecuteWithErrorHandling(_ => callback.DynamicInvoke(JsValue.Undefined, new[] { JsValue.Undefined }));
             }
             catch
             {

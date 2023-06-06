@@ -7,6 +7,9 @@ const groupSeparatorChar = '\x1d';
 const recordSeparatorChar = '\x1e';
 const unitSeparatorChar = '\x1f';
 
+let busMode = 'rcon';
+let busDir = '';
+
 const init = (registerNotify, serviceResolver, config, scriptHelper) => {
     registerNotify('IManagementEventSubscriptions.ClientStateInitialized', (clientEvent, _) => plugin.onClientEnteredMatch(clientEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueReceived', (serverValueEvent, _) => plugin.onServerValueReceived(serverValueEvent));
@@ -70,6 +73,9 @@ const plugin = {
     },
 
     onServerValueSetCompleted: async function (serverValueEvent) {
+        this.logger.logDebug('Set {dvarName}={dvarValue} success={success} from {server}', serverValueEvent.valueName,
+            serverValueEvent.value, serverValueEvent.success, serverValueEvent.server.id);
+        
         if (serverValueEvent.valueName !== inDvar && serverValueEvent.valueName !== outDvar) {
             this.logger.logDebug('Ignoring set complete of {name}', serverValueEvent.valueName);
             return;
@@ -132,7 +138,8 @@ const plugin = {
         serverState.enabled = true;
         serverState.running = true;
         serverState.initializationInProgress = false;
-        
+
+        this.sendEventMessage(responseEvent.server, true, 'GetBusModeRequested', null, null, null, {});
         this.sendEventMessage(responseEvent.server, true, 'GetCommandsRequested', null, null, null, {});
         this.requestGetDvar(inDvar, responseEvent.server);
     },
@@ -189,8 +196,8 @@ const plugin = {
         let messageQueued = false;
         const event = parseEvent(input);
 
-        this.logger.logDebug('Processing input... {eventType} {subType} {data} {clientNumber}', event.eventType,
-            event.subType, event.data.toString(), event.clientNumber);
+        this.logger.logDebug('Processing input... {eventType} {subType} {@data} {clientNumber}', event.eventType,
+            event.subType, event.data, event.clientNumber);
 
         const metaService = this.serviceResolver.ResolveService('IMetaServiceV2');
         const threading = importNamespace('System.Threading');
@@ -305,8 +312,7 @@ const plugin = {
             this.scriptHelper.requestUrl(urlRequest, response => {
                 this.logger.logDebug('Got response for gamescript web request - {Response}', response);
 
-                if ( typeof response !== 'string' && !(response instanceof String) )
-                {
+                if (typeof response !== 'string' && !(response instanceof String)) {
                     response = JSON.stringify(response);
                 }
                 
@@ -315,14 +321,12 @@ const plugin = {
                 
                 let quoteReplace = '\\"';
                 // todo: may be more than just T6
-                if (server.gameCode === 'T6')
-                {
+                if (server.gameCode === 'T6') {
                     quoteReplace = '\\\\"';
                 }
                 
                 let chunks = chunkString(response.replace(/"/gm, quoteReplace).replace(/[\n|\t]/gm, ''), 800);
-                if (chunks.length > max)
-                {
+                if (chunks.length > max) {
                     this.logger.logWarning(`Response chunks greater than max (${max}). Data truncated!`);
                     chunks = chunks.slice(0, max);
                 }
@@ -337,6 +341,14 @@ const plugin = {
         
         if (event.eventType === 'RegisterCommandRequested') {
             this.registerDynamicCommand(event);
+        }
+        
+        if (event.eventType === 'GetBusModeRequested') {
+            if (event.data?.directory && event.data?.mode) {
+                busMode = event.data.mode;
+                busDir = event.data.directory;
+                this.logger.logDebug('Setting bus mode to {mode} {dir}', busMode, busDir);
+            }
         }
 
         tokenSource.dispose();
@@ -363,6 +375,37 @@ const plugin = {
 
     requestGetDvar: function (dvarName, server) {
         const serverState = servers[server.id];
+
+        if (dvarName !== integrationEnabledDvar && busMode === 'file') {
+            this.scriptHelper.requestNotifyAfterDelay(250, () => {
+                const io = importNamespace('System.IO');
+                serverState.outQueue.push({});
+                try {
+                    const content = io.File.ReadAllText(`${busDir}/${dvarName}`);
+                    plugin.onServerValueReceived({
+                        server: server,
+                        source: server,
+                        success: true,
+                        response: {
+                            name: dvarName,
+                            value: content
+                        }
+                    });
+                } catch (e) {
+                    plugin.logger.logError('Could not get bus data {exception}', e.toString());
+                    plugin.onServerValueReceived({
+                        server: server,
+                        success: false,
+                        response: {
+                            name: dvarName
+                        }
+                    });
+                }
+            });
+            
+            return;
+        }
+        
         const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
         const requestEvent = new serverEvents.ServerValueRequestEvent(dvarName, server);
         requestEvent.delayMs = pollingRate;
@@ -393,6 +436,35 @@ const plugin = {
 
     requestSetDvar: function (dvarName, dvarValue, server) {
         const serverState = servers[server.id];
+        
+        if ( busMode === 'file' ) {
+            this.scriptHelper.requestNotifyAfterDelay(250, async () => {
+                const io = importNamespace('System.IO');
+                try {
+                    const path = `${busDir}/${dvarName}`;
+                    plugin.logger.logDebug('writing {value} to {file}', dvarValue, path);
+                    io.File.WriteAllText(path, dvarValue);
+                    serverState.outQueue.push({});
+                    await plugin.onServerValueSetCompleted({
+                        server: server,
+                        source: server,
+                        success: true,
+                        value: dvarValue,
+                        valueName: dvarName,
+                    });
+                } catch (e) {
+                    plugin.logger.logError('Could not set bus data {exception}', e.toString());
+                    await plugin.onServerValueSetCompleted({
+                        server: server,
+                        success: false,
+                        valueName: dvarName,
+                        value: dvarValue
+                    });
+                }
+            })
+            
+            return;
+        }
 
         const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
         const requestEvent = new serverEvents.ServerValueSetRequestEvent(dvarName, dvarValue, server);

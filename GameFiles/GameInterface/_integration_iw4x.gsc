@@ -28,7 +28,12 @@ Setup()
     level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = ::BackupRestoreClientKillStreakData;
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = ::WaitTillAnyTimeout;
     level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]           = ::WaitillNotifyOrTimeoutWrapper;
-    
+
+    level.overrideMethods[level.commonFunctions.getInboundData]  = ::GetInboundData;
+    level.overrideMethods[level.commonFunctions.getOutboundData] = ::GetOutboundData;
+    level.overrideMethods[level.commonFunctions.setInboundData]  = ::SetInboundData;
+    level.overrideMethods[level.commonFunctions.setOutboundData] = ::SetOutboundData;
+
     RegisterClientCommands();
     
     level notify( level.notifyTypes.gameFunctionsInitialized );
@@ -95,6 +100,26 @@ WaitForClientEvents()
             lastServerPlayed = clientData.meta[lastServerMetaKey];
         }
     }
+}
+
+GetInboundData()
+{
+    return FileRead( level.eventBus.inVar);
+}
+
+GetOutboundData()
+{
+    return FileRead( level.eventBus.outVar );
+}
+
+SetInboundData( data )
+{
+    FileWrite( level.eventBus.inVar, data, "write" );
+}
+
+SetOutboundData( data )
+{
+    FileWrite(level.eventBus.outVar, data, "write" );
 }
 
 GetMaxClients()

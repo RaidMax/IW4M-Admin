@@ -50,9 +50,11 @@ Setup()
     level.eventTypes.urlRequestCompleted      = "UrlRequestCompleted";
     level.eventTypes.registerCommandRequested = "RegisterCommandRequested";
     level.eventTypes.getCommandsRequested     = "GetCommandsRequested";
+    level.eventTypes.getBusModeRequested      = "GetBusModeRequested";
 
-    level.eventCallbacks[level.eventTypes.urlRequestCompleted] = ::OnUrlRequestCompletedCallback;
-    level.eventCallbacks[level.eventTypes.getCommandsRequested]  = ::OnCommandsRequestedCallback;
+    level.eventCallbacks[level.eventTypes.urlRequestCompleted]  = ::OnUrlRequestCompletedCallback;
+    level.eventCallbacks[level.eventTypes.getCommandsRequested] = ::OnCommandsRequestedCallback;
+    level.eventCallbacks[level.eventTypes.getBusModeRequested]  = ::OnBusModeRequestedCallback;
     
     level.iw4madminIntegrationDefaultPerformance = 200;
     level.notifyEntities = [];
@@ -193,6 +195,28 @@ SaveTrackingMetrics()
     }
 
     scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
+}
+
+OnBusModeRequestedCallback( event )
+{
+    data = [];
+    data["mode"] = GetDvar( level.commonKeys.busMode );
+    data["directory"] = GetDvar( level.commonKeys.busDir );
+
+    scripts\_integration_base::LogDebug( "Bus mode requested" );
+
+    busModeRequest = scripts\_integration_base::BuildEventRequest( false, level.eventTypes.getBusModeRequested, "", undefined, data );
+    scripts\_integration_base::QueueEvent( busModeRequest, level.eventTypes.getBusModeRequested, undefined );
+
+    scripts\_integration_base::LogDebug( "Bus mode updated" );
+
+    if ( GetDvar( level.commonKeys.busMode ) == "file" || GetDvar( level.commonKeys.busDir ) != "" )
+    {
+        level.busMethods[level.commonFunctions.getInboundData]  = level.overrideMethods[level.commonFunctions.getInboundData]; 
+        level.busMethods[level.commonFunctions.getOutboundData] = level.overrideMethods[level.commonFunctions.getOutboundData];
+        level.busMethods[level.commonFunctions.setInboundData]  = level.overrideMethods[level.commonFunctions.setInboundData]; 
+        level.busMethods[level.commonFunctions.setOutboundData] = level.overrideMethods[level.commonFunctions.setOutboundData];
+    }
 }
 
 // #region register script command

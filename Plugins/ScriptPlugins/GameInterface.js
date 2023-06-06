@@ -92,9 +92,7 @@ const plugin = {
             const input = serverState.inQueue.shift();
 
             // if we queued an event then the next loop will be at the value set complete
-            if (await this.processEventMessage(input, serverValueEvent.server)) {
-                // return;
-            }
+            await this.processEventMessage(input, serverValueEvent.server);
         }
 
         this.logger.logDebug('loop complete');
@@ -134,7 +132,8 @@ const plugin = {
         serverState.enabled = true;
         serverState.running = true;
         serverState.initializationInProgress = false;
-
+        
+        this.sendEventMessage(responseEvent.server, true, 'GetCommandsRequested', null, null, null, {});
         this.requestGetDvar(inDvar, responseEvent.server);
     },
 
@@ -145,7 +144,9 @@ const plugin = {
         const serverState = servers[responseEvent.server.id];
         serverState.outQueue.shift();
 
-        if (responseEvent.server.connectedClients.count === 0) {
+        const utilities = importNamespace('SharedLibraryCore.Utilities');
+
+        if (responseEvent.server.connectedClients.count === 0 && !utilities.isDevelopment) {
             // no clients connected so we don't need to query
             serverState.running = false;
             return;
@@ -304,9 +305,22 @@ const plugin = {
             this.scriptHelper.requestUrl(urlRequest, response => {
                 this.logger.logDebug('Got response for gamescript web request - {Response}', response);
 
+                if ( typeof response !== 'string' && !(response instanceof String) )
+                {
+                    response = JSON.stringify(response);
+                }
+                
                 const max = 10;
                 this.logger.logDebug(`response length ${response.length}`);
-                let chunks = chunkString(response.replace(/"/gm, '\\"').replace(/[\n|\t]/gm, ''), 800);
+                
+                let quoteReplace = '\\"';
+                // todo: may be more than just T6
+                if (server.gameCode === 'T6')
+                {
+                    quoteReplace = '\\\\"';
+                }
+                
+                let chunks = chunkString(response.replace(/"/gm, quoteReplace).replace(/[\n|\t]/gm, ''), 800);
                 if (chunks.length > max)
                 {
                     this.logger.logWarning(`Response chunks greater than max (${max}). Data truncated!`);
@@ -454,9 +468,15 @@ const plugin = {
                     if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
                         return;
                     }
-                    sendScriptCommand(gameEvent.owner, `${event.data['eventKey']}Execute`, gameEvent.origin, gameEvent.target, {
-                        args: gameEvent.data
-                    });
+                    
+                    if (gameEvent.data === '--reload')
+                    {
+                        this.sendEventMessage(gameEvent.owner, true, 'GetCommandsRequested', null, null, null, { name: gameEvent.extra.name });
+                    } else {
+                        sendScriptCommand(gameEvent.owner, `${event.data['eventKey']}Execute`, gameEvent.origin, gameEvent.target, {
+                            args: gameEvent.data
+                        });
+                    }
                 }
             }]
         }

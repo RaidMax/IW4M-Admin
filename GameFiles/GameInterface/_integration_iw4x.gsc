@@ -52,9 +52,9 @@ OnPlayerConnect()
         if ( player IsTestClient() ) 
         {
             // we don't want to track bots
-            continue;    
+            continue;
         }
-        
+
         player thread SetPersistentData();
         player thread WaitForClientEvents();
     }

@@ -542,11 +542,11 @@ OnExecuteCommand( event )
     {
         if ( IsDefined( executionContextEntity ) )
         {
-            response = executionContextEntity [[command]]( event, data );
+            response = executionContextEntity thread [[command]]( event, data );
         }
         else
         {
-            [[command]]( event );
+            thread [[command]]( event );
         }
     }
     else

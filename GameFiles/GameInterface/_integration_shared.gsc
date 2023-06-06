@@ -49,11 +49,14 @@ Setup()
     level.eventTypes.urlRequested             = "UrlRequested";
     level.eventTypes.urlRequestCompleted      = "UrlRequestCompleted";
     level.eventTypes.registerCommandRequested = "RegisterCommandRequested";
+    level.eventTypes.getCommandsRequested     = "GetCommandsRequested";
 
     level.eventCallbacks[level.eventTypes.urlRequestCompleted] = ::OnUrlRequestCompletedCallback;
+    level.eventCallbacks[level.eventTypes.getCommandsRequested]  = ::OnCommandsRequestedCallback;
     
     level.iw4madminIntegrationDefaultPerformance = 200;
     level.notifyEntities = [];
+    level.customCommands = [];
     
     level notify( level.notifyTypes.sharedFunctionsInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
@@ -194,6 +197,32 @@ SaveTrackingMetrics()
 
 // #region register script command
 
+OnCommandsRequestedCallback( event )
+{
+    scripts\_integration_base::LogDebug( "Get commands requested" );
+    thread SendCommands( event.data["name"] );
+}
+
+SendCommands( commandName )
+{
+    level endon( level.eventTypes.gameEnd );
+
+    for ( i = 0; i < level.customCommands.size; i++ )
+    {
+        data = level.customCommands[i];
+
+        if ( IsDefined( commandName ) && commandName != data["name"] )
+        {
+            continue;        
+        }
+
+        scripts\_integration_base::LogDebug( "Sending custom command " + ( i + 1 ) + "/" + level.customCommands.size + ": " + data["name"] );
+        commandRegisterRequest = scripts\_integration_base::BuildEventRequest( false, level.eventTypes.registerCommandRequested, "", undefined, data );
+        // not threading here as there might be a lot of commands to register
+        scripts\_integration_base::QueueEvent( commandRegisterRequest, level.eventTypes.registerCommandRequested, undefined );
+    }
+}
+
 RegisterScriptCommandObject( command )
 {
     RegisterScriptCommand( command.eventKey, command.name, command.alias, command.description, command.minPermission, command.supportedGames, command.requiresTarget, command.handler );
@@ -258,8 +287,7 @@ RegisterScriptCommand( eventKey, name, alias, description, minPermission, suppor
         scripts\_integration_base::LogWarning( "handler not defined for script command " + name );
     }
 
-    commandRegisterRequest = scripts\_integration_base::BuildEventRequest( false, level.eventTypes.registerCommandRequested, "", undefined, data );
-    thread scripts\_integration_base::QueueEvent( commandRegisterRequest, level.eventTypes.registerCommandRequested, undefined );
+    level.customCommands[level.customCommands.size] = data;
 }
 
 // #end region
@@ -390,7 +418,6 @@ GetNextNotifyEntity()
 
     return max;
 }
-
 
 // #end region
 

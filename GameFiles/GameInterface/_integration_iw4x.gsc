@@ -102,24 +102,24 @@ WaitForClientEvents()
     }
 }
 
-GetInboundData()
+GetInboundData( location )
 {
-    return FileRead( level.eventBus.inVar);
+    return FileRead( location );
 }
 
-GetOutboundData()
+GetOutboundData( location )
 {
-    return FileRead( level.eventBus.outVar );
+    return FileRead( location );
 }
 
-SetInboundData( data )
+SetInboundData( location, data )
 {
-    FileWrite( level.eventBus.inVar, data, "write" );
+    FileWrite( location, data, "write" );
 }
 
-SetOutboundData( data )
+SetOutboundData( location, data )
 {
-    FileWrite(level.eventBus.outVar, data, "write" );
+    FileWrite( location, data, "write" );
 }
 
 GetMaxClients()

@@ -41,9 +41,11 @@ Setup()
     level.busMethods[level.commonFunctions.setOutboundData] = ::_SetOutboundData;
 
     level.commonKeys = spawnstruct();
-    level.commonKeys.enabled = "sv_iw4madmin_integration_enabled";
-    level.commonKeys.busMode = "sv_iw4madmin_integration_busmode";
-    level.commonKeys.busDir  = "sv_iw4madmin_integration_busdir";
+    level.commonKeys.enabled  = "sv_iw4madmin_integration_enabled";
+    level.commonKeys.busMode  = "sv_iw4madmin_integration_busmode";
+    level.commonKeys.busDir   = "sv_iw4madmin_integration_busdir";
+    level.eventBus.inLocation = "";
+    level.eventBus.outLocation = "";
     
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
@@ -175,22 +177,22 @@ _GetPlayerFromClientNum( clientNum )
     return undefined;
 }
 
-_GetInboundData()
+_GetInboundData( location )
 {
     return GetDvar( level.eventBus.inVar );
 }
 
-_GetOutboundData()
+_GetOutboundData( location )
 {
     return GetDvar( level.eventBus.outVar );
 }
 
-_SetInboundData( data )
+_SetInboundData( location, data )
 {
     return SetDvar( level.eventBus.inVar, data );
 }
 
-_SetOutboundData( data )
+_SetOutboundData( location, data )
 {
     return SetDvar( level.eventBus.outVar, data );
 }
@@ -361,22 +363,25 @@ MonitorBus()
 {
     level endon( level.eventTypes.gameEnd );
     
-    [[level.overrideMethods[level.commonFunctions.SetInboundData]]]( "" );
-    [[level.overrideMethods[level.commonFunctions.SetOutboundData]]]( "" );
+    level.eventBus.inLocation = level.eventBus.inVar + "_" + GetDvar( "net_port" );
+    level.eventBus.outLocation = level.eventBus.outVar + "_" + GetDvar( "net_port" );
+
+    [[level.overrideMethods[level.commonFunctions.SetInboundData]]]( level.eventBus.inLocation, "" );
+    [[level.overrideMethods[level.commonFunctions.SetOutboundData]]]( level.eventBus.outLocation, "" );
 
     for( ;; )
     {
         wait ( 0.1 );
         
         // check to see if IW4MAdmin is ready to receive more data
-        inVal = [[level.busMethods[level.commonFunctions.getInboundData]]]();
+        inVal = [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation );
 
         if ( !IsDefined( inVal ) || inVal == "" )
         {
             level notify( "bus_ready" );
         }
         
-        eventString = [[level.busMethods[level.commonFunctions.getOutboundData]]]();
+        eventString = [[level.busMethods[level.commonFunctions.getOutboundData]]]( level.eventBus.outLocation );
         
         if ( !IsDefined( eventString ) || eventString == "" ) 
         {
@@ -388,7 +393,7 @@ MonitorBus()
         groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
         NotifyEvent( strtok( eventString, groupSeparator ) );
         
-        [[level.busMethods[level.commonFunctions.SetOutboundData]]]( "" );
+        [[level.busMethods[level.commonFunctions.SetOutboundData]]]( level.eventBus.outLocation, "" );
     }
 }
 
@@ -400,11 +405,11 @@ QueueEvent( request, eventType, notifyEntity )
     maxWait = level.eventBus.timeout * 1000; // 30 seconds
     timedOut = "";
    
-    while ( [[level.busMethods[level.commonFunctions.getInboundData]]]() != "" && ( GetTime() - start ) < maxWait )
+    while ( [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation ) != "" && ( GetTime() - start ) < maxWait )
     {
         level [[level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]]]( "bus_ready", 1 );
         
-        if ( [[level.busMethods[level.commonFunctions.getInboundData]]]() != "" )
+        if ( [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation ) != "" )
         {
             LogDebug( "A request is already in progress..." );
             timedOut = "set";
@@ -423,14 +428,14 @@ QueueEvent( request, eventType, notifyEntity )
             notifyEntity NotifyClientEventTimeout( eventType );
         }
         
-        [[level.busMethods[level.commonFunctions.SetInboundData]]]( "" );
+        [[level.busMethods[level.commonFunctions.SetInboundData]]]( level.eventBus.inLocation, "" );
 
         return;
     }
     
     LogDebug( "<- " + request );
     
-    [[level.busMethods[level.commonFunctions.setInboundData]]]( request );
+    [[level.busMethods[level.commonFunctions.setInboundData]]]( level.eventBus.inLocation, request );
 }
 
 ParseDataString( data ) 

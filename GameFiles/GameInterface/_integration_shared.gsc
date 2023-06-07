@@ -202,6 +202,8 @@ OnBusModeRequestedCallback( event )
     data = [];
     data["mode"] = GetDvar( level.commonKeys.busMode );
     data["directory"] = GetDvar( level.commonKeys.busDir );
+    data["inLocation"] = level.eventBus.inLocation;
+    data["outLocation"] = level.eventBus.outLocation;
 
     scripts\_integration_base::LogDebug( "Bus mode requested" );
 

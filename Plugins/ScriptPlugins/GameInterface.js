@@ -1,8 +1,7 @@
 ﻿const servers = {};
-const inDvar = 'sv_iw4madmin_in';
-const outDvar = 'sv_iw4madmin_out';
+let inDvar = 'sv_iw4madmin_in';
+let outDvar = 'sv_iw4madmin_out';
 const integrationEnabledDvar = 'sv_iw4madmin_integration_enabled';
-const pollingRate = 300;
 const groupSeparatorChar = '\x1d';
 const recordSeparatorChar = '\x1e';
 const unitSeparatorChar = '\x1f';
@@ -15,6 +14,7 @@ const init = (registerNotify, serviceResolver, config, scriptHelper) => {
     registerNotify('IGameServerEventSubscriptions.ServerValueReceived', (serverValueEvent, _) => plugin.onServerValueReceived(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueSetCompleted', (serverValueEvent, _) => plugin.onServerValueSetCompleted(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.MonitoringStarted', (monitorStartEvent, _) => plugin.onServerMonitoringStart(monitorStartEvent));
+    registerNotify('IGameEventSubscriptions.MatchStarted', (matchStartEvent, _) => plugin.onMatchStart(matchStartEvent));
     registerNotify('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => plugin.onPenalty(penaltyEvent));
 
     plugin.onLoad(serviceResolver, config, scriptHelper);
@@ -30,14 +30,31 @@ const plugin = {
     logger: null,
     commands: null,
     scriptHelper: null,
+    configWrapper: null,
+    config: {
+        pollingRate: 300
+    },
 
-    onLoad: function (serviceResolver, config, scriptHelper) {
+    onLoad: function (serviceResolver, configWrapper, scriptHelper) {
         this.serviceResolver = serviceResolver;
         this.eventManager = serviceResolver.resolveService('IManager');
         this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
         this.commands = commands;
-        this.config = config;
+        this.configWrapper = configWrapper;
         this.scriptHelper = scriptHelper;
+
+        const storedConfig = this.configWrapper.getValue('config', newConfig => {
+            if (newConfig) {
+                plugin.logger.logInformation('{Name} config reloaded.', plugin.name);
+                plugin.config = newConfig;
+            }
+        });
+
+        if (storedConfig != null) {
+            this.config = storedConfig
+        } else {
+            this.configWrapper.setValue('config', this.config);
+        }
     },
 
     onClientEnteredMatch: function (clientEvent) {
@@ -110,6 +127,11 @@ const plugin = {
         this.initializeServer(monitorStartEvent.server);
     },
 
+    onMatchStart: function (matchStartEvent) {
+        busMode = 'rcon';
+        this.sendEventMessage(matchStartEvent.server, true, 'GetBusModeRequested', null, null, null, {});
+    },
+
     initializeServer: function (server) {
         servers[server.id] = {
             enabled: false,
@@ -138,6 +160,9 @@ const plugin = {
         serverState.enabled = true;
         serverState.running = true;
         serverState.initializationInProgress = false;
+        
+        // todo: this might not work for all games
+        responseEvent.server.rconParser.configuration.floodProtectInterval = 150;
 
         this.sendEventMessage(responseEvent.server, true, 'GetBusModeRequested', null, null, null, {});
         this.sendEventMessage(responseEvent.server, true, 'GetCommandsRequested', null, null, null, {});
@@ -346,7 +371,11 @@ const plugin = {
         if (event.eventType === 'GetBusModeRequested') {
             if (event.data?.directory && event.data?.mode) {
                 busMode = event.data.mode;
-                busDir = event.data.directory;
+                busDir = event.data.directory.replace('\'', '').replace('"', '');
+                if (event.data?.inLocation && event.data?.outLocation) {
+                    inDvar = event.data?.inLocation;
+                    outDvar = event.data?.outLocation;
+                }
                 this.logger.logDebug('Setting bus mode to {mode} {dir}', busMode, busDir);
             }
         }
@@ -408,7 +437,7 @@ const plugin = {
         
         const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
         const requestEvent = new serverEvents.ServerValueRequestEvent(dvarName, server);
-        requestEvent.delayMs = pollingRate;
+        requestEvent.delayMs = this.config.pollingRate;
         requestEvent.timeoutMs = 2000;
         requestEvent.source = this.name;
 
@@ -418,7 +447,7 @@ const plugin = {
             const diff = new Date().getTime() - end.getTime();
 
             if (diff < extraDelay) {
-                requestEvent.delayMs = (extraDelay - diff) + pollingRate;
+                requestEvent.delayMs = (extraDelay - diff) + this.config.pollingRate;
                 this.logger.logDebug('Increasing delay time to {Delay}ms due to recent map change', requestEvent.delayMs);
             }
         }
@@ -468,7 +497,7 @@ const plugin = {
 
         const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
         const requestEvent = new serverEvents.ServerValueSetRequestEvent(dvarName, dvarValue, server);
-        requestEvent.delayMs = pollingRate;
+        requestEvent.delayMs = this.config.pollingRate;
         requestEvent.timeoutMs = 2000;
         requestEvent.source = this.name;
 
@@ -478,7 +507,7 @@ const plugin = {
             const diff = new Date().getTime() - end.getTime();
 
             if (diff < extraDelay) {
-                requestEvent.delayMs = (extraDelay - diff) + pollingRate;
+                requestEvent.delayMs = (extraDelay - diff) + this.config.pollingRate;
                 this.logger.logDebug('Increasing delay time to {Delay}ms due to recent map change', requestEvent.delayMs);
             }
         }

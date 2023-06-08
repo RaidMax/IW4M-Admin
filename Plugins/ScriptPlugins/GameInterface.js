@@ -1,11 +1,13 @@
 ﻿const servers = {};
-let inDvar = 'sv_iw4madmin_in';
-let outDvar = 'sv_iw4madmin_out';
+const inDvar = 'sv_iw4madmin_in';
+const outDvar = 'sv_iw4madmin_out';
 const integrationEnabledDvar = 'sv_iw4madmin_integration_enabled';
 const groupSeparatorChar = '\x1d';
 const recordSeparatorChar = '\x1e';
 const unitSeparatorChar = '\x1f';
 
+let busFileIn = '';
+let busFileOut = '';
 let busMode = 'rcon';
 let busDir = '';
 
@@ -373,8 +375,8 @@ const plugin = {
                 busMode = event.data.mode;
                 busDir = event.data.directory.replace('\'', '').replace('"', '');
                 if (event.data?.inLocation && event.data?.outLocation) {
-                    inDvar = event.data?.inLocation;
-                    outDvar = event.data?.outLocation;
+                    busFileIn = event.data?.inLocation;
+                    busFileOut = event.data?.outLocation;
                 }
                 this.logger.logDebug('Setting bus mode to {mode} {dir}', busMode, busDir);
             }
@@ -410,7 +412,7 @@ const plugin = {
                 const io = importNamespace('System.IO');
                 serverState.outQueue.push({});
                 try {
-                    const content = io.File.ReadAllText(`${busDir}/${dvarName}`);
+                    const content = io.File.ReadAllText(`${busDir}/${fileForDvar(dvarName)}`);
                     plugin.onServerValueReceived({
                         server: server,
                         source: server,
@@ -470,7 +472,7 @@ const plugin = {
             this.scriptHelper.requestNotifyAfterDelay(250, async () => {
                 const io = importNamespace('System.IO');
                 try {
-                    const path = `${busDir}/${dvarName}`;
+                    const path = `${busDir}/${fileForDvar(dvarName)}`;
                     plugin.logger.logDebug('writing {value} to {file}', dvarValue, path);
                     io.File.WriteAllText(path, dvarValue);
                     serverState.outQueue.push({});
@@ -570,8 +572,7 @@ const plugin = {
                         return;
                     }
                     
-                    if (gameEvent.data === '--reload')
-                    {
+                    if (gameEvent.data === '--reload' && gameEvent.origin.level === 'Owner') {
                         this.sendEventMessage(gameEvent.owner, true, 'GetCommandsRequested', null, null, null, { name: gameEvent.extra.name });
                     } else {
                         sendScriptCommand(gameEvent.owner, `${event.data['eventKey']}Execute`, gameEvent.origin, gameEvent.target, {
@@ -913,4 +914,12 @@ const chunkString = (str, chunkSize) => {
     }
 
     return result;
+}
+
+const fileForDvar = (dvar) => {
+    if (dvar === inDvar) {
+        return busFileIn;
+    }
+    
+    return busFileOut;
 }

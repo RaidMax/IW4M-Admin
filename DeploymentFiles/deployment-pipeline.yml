@@ -227,7 +227,7 @@ jobs:
         assets: '$(Build.ArtifactStagingDirectory)/*.zip'
         isPreRelease: $(isPreRelease)
         releaseNotesSource: 'inline'
-        releaseNotesInline: 'todo'
+        releaseNotesInline: 'Automated rolling release - changelog below. [Updating Instructions](https://github.com/RaidMax/IW4M-Admin/wiki/Getting-Started#updating)'
         changeLogCompareToRelease: 'lastNonDraftRelease'
         changeLogType: 'commitBased'
     

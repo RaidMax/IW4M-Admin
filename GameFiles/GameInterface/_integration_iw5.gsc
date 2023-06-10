@@ -8,50 +8,22 @@ Init()
 Setup()
 {
     level endon( "game_ended" );
+    waittillframeend;
     
-    // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "SharedFunctionsInitialized" );
+    level waittill( level.notifyTypes.sharedFunctionsInitialized );
     level.eventBus.gamename = "IW5";
     
     scripts\_integration_base::RegisterLogger( ::Log2Console );
     
-    level.overrideMethods["GetTotalShotsFired"] = ::GetTotalShotsFired;
-    level.overrideMethods["SetDvarIfUninitialized"] = ::_SetDvarIfUninitialized;
-    level.overrideMethods["waittill_notify_or_timeout"] = ::_waittill_notify_or_timeout;
-    level.overrideMethods[level.commonFunctions.isBot] = ::IsTestClient;
-    level.overrideMethods[level.commonFunctions.getXuid] = ::_GetXUID;
-    
+    level.overrideMethods[level.commonFunctions.getTotalShotsFired]         = ::GetTotalShotsFired;
+    level.overrideMethods[level.commonFunctions.setDvar]                    = ::SetDvarIfUninitializedWrapper;
+    level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]    = ::WaitillNotifyOrTimeoutWrapper;
+    level.overrideMethods[level.commonFunctions.isBot]                      = ::IsBotWrapper;
+    level.overrideMethods[level.commonFunctions.getXuid]                    = ::GetXuidWrapper;
+    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]      = ::WaitTillAnyTimeout;
     RegisterClientCommands();
     
-    _SetDvarIfUninitialized( "sv_iw4madmin_autobalance", 0 );
-    
     level notify( level.notifyTypes.gameFunctionsInitialized );
-    
-    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
-    {
-        return;
-    }
-    
-    level thread OnPlayerConnect();
-}
-
-OnPlayerConnect()
-{
-    level endon ( "game_ended" );
-
-    for ( ;; )
-    {
-        level waittill( "connected", player );
-        
-        if ( player call [[ level.overrideMethods[ level.commonFunctions.isBot ] ]]() ) 
-        {
-            // we don't want to track bots
-            continue;    
-        }
-        
-        player thread SetPersistentData();
-        player thread WaitForClientEvents();
-    }
 }
 
 RegisterClientCommands() 
@@ -69,39 +41,17 @@ RegisterClientCommands()
     scripts\_integration_base::AddClientCommand( "NoClip",         false, ::NoClipImpl );
 }
 
-WaitForClientEvents()
-{
-    self endon( "disconnect" );
-    
-    // example of requesting a meta value
-    lastServerMetaKey = "LastServerPlayed";
-    // self scripts\_integration_base::RequestClientMeta( lastServerMetaKey );
-
-    for ( ;; )
-    {
-        self waittill( level.eventTypes.localClientEvent, event );
-
-	    scripts\_integration_base::LogDebug( "Received client event " + event.type );
-        
-        if ( event.type == level.eventTypes.clientDataReceived && event.data[0] == lastServerMetaKey )
-        {
-            clientData = self.pers[level.clientDataKey];
-            lastServerPlayed = clientData.meta[lastServerMetaKey];
-        }
-    }
-}
-
 GetTotalShotsFired()
 {
     return maps\mp\_utility::getPlayerStat( "mostshotsfired" );
 }
 
-_SetDvarIfUninitialized( dvar, value )
+SetDvarIfUninitializedWrapper( dvar, value )
 {
     SetDvarIfUninitialized( dvar, value );
 }
 
-_waittill_notify_or_timeout( _notify, timeout )
+WaitillNotifyOrTimeoutWrapper( _notify, timeout )
 {
     common_scripts\utility::waittill_notify_or_timeout( _notify, timeout );
 }
@@ -111,140 +61,19 @@ Log2Console( logLevel, message )
     Print( "[" + logLevel + "] " + message + "\n" );
 }
 
-_GetXUID()
+IsBotWrapper( client )
+{
+    return client IsTestClient(); 
+}
+
+GetXuidWrapper()
 {
     return self GetXUID();
 }
 
-//////////////////////////////////
-// GUID helpers
-/////////////////////////////////
-
-SetPersistentData() 
+WaitTillAnyTimeout( timeOut, string1, string2, string3, string4, string5 )
 {
-    self endon( "disconnect" );
-    
-    guidHigh = self GetPlayerData( "bests", "none" ); 
-    guidLow = self GetPlayerData( "awards", "none" );
-    persistentGuid = guidHigh + "," + guidLow;
-    guidIsStored = guidHigh != 0 && guidLow != 0;
-     
-    if ( guidIsStored )
-    {
-        // give IW4MAdmin time to collect IP
-        wait( 15 );
-        scripts\_integration_base::LogDebug( "Uploading persistent guid " + persistentGuid );
-        scripts\_integration_base::SetClientMeta( "PersistentClientGuid", persistentGuid );
-        return;
-    }
-    
-    guid = self SplitGuid();
-    
-    scripts\_integration_base::LogDebug( "Persisting client guid " + guidHigh + "," + guidLow );
-    
-    self SetPlayerData( "bests", "none", guid["high"] );
-    self SetPlayerData( "awards", "none", guid["low"] );
-}
-
-SplitGuid()
-{
-    guid = self GetGuid();
-    
-    if ( isDefined( self.guid ) )
-    {
-        guid = self.guid;
-    }
-    
-    firstPart = 0;
-    secondPart = 0;
-    stringLength = 17;
-    firstPartExp = 0;
-    secondPartExp = 0;
-    
-    for ( i = stringLength - 1; i > 0; i-- )
-    {
-        char = GetSubStr( guid, i - 1, i );
-        if ( char == "" ) 
-        {
-            char = "0";
-        }
-        
-        if ( i > stringLength / 2 )
-        {
-            value = GetIntForHexChar( char );
-            power = Pow( 16, secondPartExp );
-            secondPart = secondPart + ( value * power );
-            secondPartExp++;
-        }   
-        else
-        {
-            value = GetIntForHexChar( char );
-            power = Pow( 16, firstPartExp );
-            firstPart = firstPart + ( value * power );
-            firstPartExp++;
-        }
-    }
-    
-    split = [];
-    split["low"] = int( secondPart );
-    split["high"] = int( firstPart );
-
-    return split;
-}
-
-Pow( num, exponent )
-{
-    result = 1;
-    while( exponent != 0 )
-    {
-        result = result * num;
-        exponent--;
-    }
-    
-    return result;
-}
-
-GetIntForHexChar( char )
-{
-    char = ToLower( char );
-    // generated by co-pilot because I can't be bothered to make it more "elegant"
-    switch( char )
-    {
-        case "0":
-            return 0;
-        case "1":
-            return 1;
-        case "2":
-            return 2;
-        case "3":
-            return 3;
-        case "4":
-            return 4;
-        case "5":
-            return 5;
-        case "6":
-            return 6;
-        case "7":
-            return 7;
-        case "8":
-            return 8;
-        case "9":
-            return 9;
-        case "a":
-            return 10;
-        case "b":
-            return 11;
-        case "c":
-            return 12;
-        case "d":
-            return 13;
-        case "e":
-            return 14;
-        case "f":
-            return 15;
-        default:
-            return 0;
-    }
+    return common_scripts\utility::waittill_any_timeout( timeOut, string1, string2, string3, string4, string5 );
 }
 
 //////////////////////////////////
@@ -427,10 +256,7 @@ HideImpl()
 
 AlertImpl( event, data )
 {
-    if ( level.eventBus.gamename == "IW5" ) {
-        self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
-    }
-
+    self thread maps\mp\gametypes\_hud_message::oldNotifyMessage( data["alertType"], data["message"], undefined, ( 1, 0, 0 ), "ui_mp_nukebomb_timer", 7.5 );
     return "Sent alert to " + self.name; 
 }
 

@@ -2,34 +2,61 @@
 const inDvar = 'sv_iw4madmin_in';
 const outDvar = 'sv_iw4madmin_out';
 const integrationEnabledDvar = 'sv_iw4madmin_integration_enabled';
-const pollingRate = 300;
+const groupSeparatorChar = '\x1d';
+const recordSeparatorChar = '\x1e';
+const unitSeparatorChar = '\x1f';
 
-const init = (registerNotify, serviceResolver, config) => {
+let busFileIn = '';
+let busFileOut = '';
+let busMode = 'rcon';
+let busDir = '';
+
+const init = (registerNotify, serviceResolver, config, scriptHelper) => {
     registerNotify('IManagementEventSubscriptions.ClientStateInitialized', (clientEvent, _) => plugin.onClientEnteredMatch(clientEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueReceived', (serverValueEvent, _) => plugin.onServerValueReceived(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueSetCompleted', (serverValueEvent, _) => plugin.onServerValueSetCompleted(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.MonitoringStarted', (monitorStartEvent, _) => plugin.onServerMonitoringStart(monitorStartEvent));
+    registerNotify('IGameEventSubscriptions.MatchStarted', (matchStartEvent, _) => plugin.onMatchStart(matchStartEvent));
     registerNotify('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => plugin.onPenalty(penaltyEvent));
 
-    plugin.onLoad(serviceResolver, config);
+    plugin.onLoad(serviceResolver, config, scriptHelper);
     return plugin;
 };
 
 const plugin = {
     author: 'RaidMax',
-    version: '2.0',
+    version: '2.1',
     name: 'Game Interface',
     serviceResolver: null,
     eventManager: null,
     logger: null,
     commands: null,
+    scriptHelper: null,
+    configWrapper: null,
+    config: {
+        pollingRate: 300
+    },
 
-    onLoad: function (serviceResolver, config) {
+    onLoad: function (serviceResolver, configWrapper, scriptHelper) {
         this.serviceResolver = serviceResolver;
         this.eventManager = serviceResolver.resolveService('IManager');
         this.logger = serviceResolver.resolveService('ILogger', ['ScriptPluginV2']);
         this.commands = commands;
-        this.config = config;
+        this.configWrapper = configWrapper;
+        this.scriptHelper = scriptHelper;
+
+        const storedConfig = this.configWrapper.getValue('config', newConfig => {
+            if (newConfig) {
+                plugin.logger.logInformation('{Name} config reloaded.', plugin.name);
+                plugin.config = newConfig;
+            }
+        });
+
+        if (storedConfig != null) {
+            this.config = storedConfig
+        } else {
+            this.configWrapper.setValue('config', this.config);
+        }
     },
 
     onClientEnteredMatch: function (clientEvent) {
@@ -65,6 +92,9 @@ const plugin = {
     },
 
     onServerValueSetCompleted: async function (serverValueEvent) {
+        this.logger.logDebug('Set {dvarName}={dvarValue} success={success} from {server}', serverValueEvent.valueName,
+            serverValueEvent.value, serverValueEvent.success, serverValueEvent.server.id);
+        
         if (serverValueEvent.valueName !== inDvar && serverValueEvent.valueName !== outDvar) {
             this.logger.logDebug('Ignoring set complete of {name}', serverValueEvent.valueName);
             return;
@@ -87,14 +117,21 @@ const plugin = {
             const input = serverState.inQueue.shift();
 
             // if we queued an event then the next loop will be at the value set complete
-            if (await this.processEventMessage(input, serverValueEvent.server)) {
-                // return;
-            }
+            await this.processEventMessage(input, serverValueEvent.server);
         }
 
         this.logger.logDebug('loop complete');
         // loop restarts
         this.requestGetDvar(inDvar, serverValueEvent.server);
+    },
+    
+    onServerMonitoringStart: function (monitorStartEvent) {
+        this.initializeServer(monitorStartEvent.server);
+    },
+
+    onMatchStart: function (matchStartEvent) {
+        busMode = 'rcon';
+        this.sendEventMessage(matchStartEvent.server, true, 'GetBusModeRequested', null, null, null, {});
     },
 
     initializeServer: function (server) {
@@ -125,7 +162,12 @@ const plugin = {
         serverState.enabled = true;
         serverState.running = true;
         serverState.initializationInProgress = false;
+        
+        // todo: this might not work for all games
+        responseEvent.server.rconParser.configuration.floodProtectInterval = 150;
 
+        this.sendEventMessage(responseEvent.server, true, 'GetBusModeRequested', null, null, null, {});
+        this.sendEventMessage(responseEvent.server, true, 'GetCommandsRequested', null, null, null, {});
         this.requestGetDvar(inDvar, responseEvent.server);
     },
 
@@ -136,7 +178,9 @@ const plugin = {
         const serverState = servers[responseEvent.server.id];
         serverState.outQueue.shift();
 
-        if (responseEvent.server.connectedClients.count === 0) {
+        const utilities = importNamespace('SharedLibraryCore.Utilities');
+
+        if (responseEvent.server.connectedClients.count === 0 && !utilities.isDevelopment) {
             // no clients connected so we don't need to query
             serverState.running = false;
             return;
@@ -179,8 +223,8 @@ const plugin = {
         let messageQueued = false;
         const event = parseEvent(input);
 
-        this.logger.logDebug('Processing input... {eventType} {subType} {data} {clientNumber}', event.eventType,
-            event.subType, event.data.toString(), event.clientNumber);
+        this.logger.logDebug('Processing input... {eventType} {subType} {@data} {clientNumber}', event.eventType,
+            event.subType, event.data, event.clientNumber);
 
         const metaService = this.serviceResolver.ResolveService('IMetaServiceV2');
         const threading = importNamespace('System.Threading');
@@ -208,7 +252,7 @@ const plugin = {
                     data = {
                         level: client.level,
                         clientId: client.clientId,
-                        lastConnection: client.lastConnection,
+                        lastConnection: client.timeSinceLastConnectionString,
                         tag: tagMeta?.value ?? '',
                         performance: clientStats?.performance ?? 200.0
                     };
@@ -287,17 +331,74 @@ const plugin = {
             }
         }
 
+        if (event.eventType === 'UrlRequested') {
+            const urlRequest = this.parseUrlRequest(event);
+
+            this.logger.logDebug('Making gamescript web request {@Request}', urlRequest);
+
+            this.scriptHelper.requestUrl(urlRequest, response => {
+                this.logger.logDebug('Got response for gamescript web request - {Response}', response);
+
+                if (typeof response !== 'string' && !(response instanceof String)) {
+                    response = JSON.stringify(response);
+                }
+                
+                const max = 10;
+                this.logger.logDebug(`response length ${response.length}`);
+                
+                let quoteReplace = '\\"';
+                // todo: may be more than just T6
+                if (server.gameCode === 'T6') {
+                    quoteReplace = '\\\\"';
+                }
+                
+                let chunks = chunkString(response.replace(/"/gm, quoteReplace).replace(/[\n|\t]/gm, ''), 800);
+                if (chunks.length > max) {
+                    this.logger.logWarning(`Response chunks greater than max (${max}). Data truncated!`);
+                    chunks = chunks.slice(0, max);
+                }
+                this.logger.logDebug(`chunk size ${chunks.length}`);
+                
+                for (let i = 0; i < chunks.length; i++) {
+                    this.sendEventMessage(server, false, 'UrlRequestCompleted', null, null,
+                        null, { entity: event.data.entity, remaining: chunks.length - (i + 1), response: chunks[i]});
+                }
+            });
+        }
+        
+        if (event.eventType === 'RegisterCommandRequested') {
+            this.registerDynamicCommand(event);
+        }
+        
+        if (event.eventType === 'GetBusModeRequested') {
+            if (event.data?.directory && event.data?.mode) {
+                busMode = event.data.mode;
+                busDir = event.data.directory.replace('\'', '').replace('"', '');
+                if (event.data?.inLocation && event.data?.outLocation) {
+                    busFileIn = event.data?.inLocation;
+                    busFileOut = event.data?.outLocation;
+                }
+                this.logger.logDebug('Setting bus mode to {mode} {dir}', busMode, busDir);
+            }
+        }
+
         tokenSource.dispose();
         return messageQueued;
     },
 
     sendEventMessage: function (server, responseExpected, event, subtype, origin, target, data) {
         let targetClientNumber = -1;
+        let originClientNumber = -1;
+
         if (target != null) {
-            targetClientNumber = target.ClientNumber;
+            targetClientNumber = target.clientNumber;
         }
 
-        const output = `${responseExpected ? '1' : '0'};${event};${subtype};${origin.ClientNumber};${targetClientNumber};${buildDataString(data)}`;
+        if (origin != null) {
+            originClientNumber = origin.clientNumber
+        }
+
+        const output = `${responseExpected ? '1' : '0'}${groupSeparatorChar}${event}${groupSeparatorChar}${subtype}${groupSeparatorChar}${originClientNumber}${groupSeparatorChar}${targetClientNumber}${groupSeparatorChar}${buildDataString(data)}`;
         this.logger.logDebug('Queuing output for server {output}', output);
 
         servers[server.id].commandQueue.push(output);
@@ -305,9 +406,40 @@ const plugin = {
 
     requestGetDvar: function (dvarName, server) {
         const serverState = servers[server.id];
+
+        if (dvarName !== integrationEnabledDvar && busMode === 'file') {
+            this.scriptHelper.requestNotifyAfterDelay(250, () => {
+                const io = importNamespace('System.IO');
+                serverState.outQueue.push({});
+                try {
+                    const content = io.File.ReadAllText(`${busDir}/${fileForDvar(dvarName)}`);
+                    plugin.onServerValueReceived({
+                        server: server,
+                        source: server,
+                        success: true,
+                        response: {
+                            name: dvarName,
+                            value: content
+                        }
+                    });
+                } catch (e) {
+                    plugin.logger.logError('Could not get bus data {exception}', e.toString());
+                    plugin.onServerValueReceived({
+                        server: server,
+                        success: false,
+                        response: {
+                            name: dvarName
+                        }
+                    });
+                }
+            });
+            
+            return;
+        }
+        
         const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
         const requestEvent = new serverEvents.ServerValueRequestEvent(dvarName, server);
-        requestEvent.delayMs = pollingRate;
+        requestEvent.delayMs = this.config.pollingRate;
         requestEvent.timeoutMs = 2000;
         requestEvent.source = this.name;
 
@@ -317,7 +449,7 @@ const plugin = {
             const diff = new Date().getTime() - end.getTime();
 
             if (diff < extraDelay) {
-                requestEvent.delayMs = (extraDelay - diff) + pollingRate;
+                requestEvent.delayMs = (extraDelay - diff) + this.config.pollingRate;
                 this.logger.logDebug('Increasing delay time to {Delay}ms due to recent map change', requestEvent.delayMs);
             }
         }
@@ -335,10 +467,39 @@ const plugin = {
 
     requestSetDvar: function (dvarName, dvarValue, server) {
         const serverState = servers[server.id];
+        
+        if ( busMode === 'file' ) {
+            this.scriptHelper.requestNotifyAfterDelay(250, async () => {
+                const io = importNamespace('System.IO');
+                try {
+                    const path = `${busDir}/${fileForDvar(dvarName)}`;
+                    plugin.logger.logDebug('writing {value} to {file}', dvarValue, path);
+                    io.File.WriteAllText(path, dvarValue);
+                    serverState.outQueue.push({});
+                    await plugin.onServerValueSetCompleted({
+                        server: server,
+                        source: server,
+                        success: true,
+                        value: dvarValue,
+                        valueName: dvarName,
+                    });
+                } catch (e) {
+                    plugin.logger.logError('Could not set bus data {exception}', e.toString());
+                    await plugin.onServerValueSetCompleted({
+                        server: server,
+                        success: false,
+                        valueName: dvarName,
+                        value: dvarValue
+                    });
+                }
+            })
+            
+            return;
+        }
 
         const serverEvents = importNamespace('SharedLibraryCore.Events.Server');
         const requestEvent = new serverEvents.ServerValueSetRequestEvent(dvarName, dvarValue, server);
-        requestEvent.delayMs = pollingRate;
+        requestEvent.delayMs = this.config.pollingRate;
         requestEvent.timeoutMs = 2000;
         requestEvent.source = this.name;
 
@@ -348,7 +509,7 @@ const plugin = {
             const diff = new Date().getTime() - end.getTime();
 
             if (diff < extraDelay) {
-                requestEvent.delayMs = (extraDelay - diff) + pollingRate;
+                requestEvent.delayMs = (extraDelay - diff) + this.config.pollingRate;
                 this.logger.logDebug('Increasing delay time to {Delay}ms due to recent map change', requestEvent.delayMs);
             }
         }
@@ -365,8 +526,64 @@ const plugin = {
         }
     },
 
-    onServerMonitoringStart: function (monitorStartEvent) {
-        this.initializeServer(monitorStartEvent.server);
+    parseUrlRequest: function(event) {
+        const url = event.data?.url;
+
+        if (url === undefined) {
+            this.logger.logWarning('No url provided for gamescript web request - {Event}', event);
+            return;
+        }
+
+        const body = event.data?.body;
+        const method = event.data?.method || 'GET';
+        const contentType = event.data?.contentType || 'text/plain';
+        const headers = event.data?.headers;
+
+        const dictionary = System.Collections.Generic.Dictionary(System.String, System.String);
+        const headerDict = new dictionary();
+
+        if (headers) {
+            const eachHeader = headers.split(',');
+
+            for (let eachKeyValue of eachHeader) {
+                const keyValueSplit = eachKeyValue.split(':');
+                if (keyValueSplit.length === 2) {
+                    headerDict.add(keyValueSplit[0], keyValueSplit[1]);
+                }
+            }
+        }
+
+        const script = importNamespace('IW4MAdmin.Application.Plugin.Script');
+        return new script.ScriptPluginWebRequest(url, body, method, contentType, headerDict);
+    },
+    
+    registerDynamicCommand: function(event) {
+        const commandWrapper = {
+            commands: [{
+                name: event.data['name'] || 'DEFAULT',
+                description: event.data['description'] || 'DEFAULT',
+                alias: event.data['alias'] || 'DEFAULT',
+                permission: event.data['minPermission'] || 'DEFAULT',
+                targetRequired: (event.data['targetRequired'] || '0') === '1',
+                supportedGames: (event.data['supportedGames'] || '').split(','),
+
+                execute: (gameEvent) => {
+                    if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                        return;
+                    }
+                    
+                    if (gameEvent.data === '--reload' && gameEvent.origin.level === 'Owner') {
+                        this.sendEventMessage(gameEvent.owner, true, 'GetCommandsRequested', null, null, null, { name: gameEvent.extra.name });
+                    } else {
+                        sendScriptCommand(gameEvent.owner, `${event.data['eventKey']}Execute`, gameEvent.origin, gameEvent.target, {
+                            args: gameEvent.data
+                        });
+                    }
+                }
+            }]
+        }
+        
+        this.scriptHelper.registerDynamicCommand(commandWrapper);
     }
 };
 
@@ -634,7 +851,7 @@ const parseEvent = (input) => {
         return {};
     }
 
-    const eventInfo = input.split(';');
+    const eventInfo = input.split(groupSeparatorChar);
 
     return {
         eventType: eventInfo[1],
@@ -652,7 +869,7 @@ const buildDataString = data => {
     let formattedData = '';
 
     for (let [key, value] of Object.entries(data)) {
-        formattedData += `${key}=${value}|`;
+        formattedData += `${key}${unitSeparatorChar}${value}${recordSeparatorChar}`;
     }
 
     return formattedData.slice(0, -1);
@@ -664,11 +881,11 @@ const parseDataString = data => {
     }
 
     const dict = {};
-    const split = data.split('|');
+    const split = data.split(recordSeparatorChar);
 
     for (let i = 0; i < split.length; i++) {
         const segment = split[i];
-        const keyValue = segment.split('=');
+        const keyValue = segment.split(unitSeparatorChar);
         if (keyValue.length !== 2) {
             continue;
         }
@@ -689,3 +906,20 @@ const validateEnabled = (server, origin) => {
 const isEmpty = (value) => {
     return value == null || false || value === '' || value === 'null';
 };
+
+const chunkString = (str, chunkSize) => {
+    const result = [];
+    for (let i = 0; i < str.length; i += chunkSize) {
+        result.push(str.slice(i, i + chunkSize));
+    }
+
+    return result;
+}
+
+const fileForDvar = (dvar) => {
+    if (dvar === inDvar) {
+        return busFileIn;
+    }
+    
+    return busFileOut;
+}

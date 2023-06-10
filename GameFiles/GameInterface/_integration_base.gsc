@@ -19,11 +19,33 @@ Setup()
     
     level.commonFunctions                           = spawnstruct();
     level.commonFunctions.setDvar                   = "SetDvarIfUninitialized";
-    level.commonFunctions.isBot                     = "IsBot";
-    level.commonFunctions.getXuid                   = "GetXuid";
     level.commonFunctions.getPlayerFromClientNum    = "GetPlayerFromClientNum";
+    level.commonFunctions.waittillNotifyOrTimeout   = "WaittillNotifyOrTimeout";
+    level.commonFunctions.getInboundData            = "GetInboundData";
+    level.commonFunctions.getOutboundData           = "GetOutboundData";
+    level.commonFunctions.setInboundData            = "SetInboundData";
+    level.commonFunctions.setOutboundData           = "SetOutboundData";
+
+    level.overrideMethods = [];
+    level.overrideMethods[level.commonFunctions.setDvar]                = scripts\_integration_base::NotImplementedFunction;
+    level.overrideMethods[level.commonFunctions.getPlayerFromClientNum] = ::_GetPlayerFromClientNum;
+    level.overrideMethods[level.commonFunctions.getInboundData]  = ::_GetInboundData;
+    level.overrideMethods[level.commonFunctions.getOutboundData] = ::_GetOutboundData;
+    level.overrideMethods[level.commonFunctions.setInboundData]  = ::_SetInboundData;
+    level.overrideMethods[level.commonFunctions.setOutboundData] = ::_SetOutboundData;
+
+    level.busMethods = [];
+    level.busMethods[level.commonFunctions.getInboundData]  = ::_GetInboundData;
+    level.busMethods[level.commonFunctions.getOutboundData] = ::_GetOutboundData;
+    level.busMethods[level.commonFunctions.setInboundData]  = ::_SetInboundData;
+    level.busMethods[level.commonFunctions.setOutboundData] = ::_SetOutboundData;
 
     level.commonKeys = spawnstruct();
+    level.commonKeys.enabled  = "sv_iw4madmin_integration_enabled";
+    level.commonKeys.busMode  = "sv_iw4madmin_integration_busmode";
+    level.commonKeys.busDir   = "sv_iw4madmin_integration_busdir";
+    level.eventBus.inLocation = "";
+    level.eventBus.outLocation = "";
     
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
@@ -33,7 +55,7 @@ Setup()
     level.clientDataKey = "clientData";
 
     level.eventTypes                            = spawnstruct();
-    level.eventTypes.localClientEvent           = "client_event";
+    level.eventTypes.eventAvailable             = "EventAvailable";
     level.eventTypes.clientDataReceived         = "ClientDataReceived";
     level.eventTypes.clientDataRequested        = "ClientDataRequested";
     level.eventTypes.setClientDataRequested     = "SetClientDataRequested";
@@ -51,12 +73,11 @@ Setup()
     level.clientCommandCallbacks = [];
     level.clientCommandRusAsTarget = [];
     level.logger = spawnstruct();
-    level.overrideMethods = [];
 
     level.iw4madminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
     InitializeLogger();
     
-    wait ( 0.05 ); // needed to give script engine time to propagate notifies
+    wait ( 0.05 * 2 ); // needed to give script engine time to propagate notifies
     
     level notify( level.notifyTypes.integrationBootstrapInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
@@ -65,122 +86,58 @@ Setup()
     
     _SetDvarIfUninitialized( level.eventBus.inVar, "" );
     _SetDvarIfUninitialized( level.eventBus.outVar, "" );
-    _SetDvarIfUninitialized( "sv_iw4madmin_integration_enabled", 1 );
+    _SetDvarIfUninitialized( level.commonKeys.enabled, 1 );
+    _SetDvarIfUninitialized( level.commonKeys.busMode, "rcon" );
+    _SetDvarIfUninitialized( level.commonKeys.busdir, "" );
     _SetDvarIfUninitialized( "sv_iw4madmin_integration_debug", 0 );
+    _SetDvarIfUninitialized( "GroupSeparatorChar", "" );
+    _SetDvarIfUninitialized( "RecordSeparatorChar", "" );
+    _SetDvarIfUninitialized( "UnitSeparatorChar", "" );
     
-    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
+    if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }
     
     // start long running tasks
-    level thread MonitorClientEvents();
-    level thread MonitorBus();
-    level thread OnPlayerConnect();
+    thread MonitorEvents();
+    thread MonitorBus();
 }
 
-//////////////////////////////////
-// Client Methods
-//////////////////////////////////
-
-OnPlayerConnect()
+MonitorEvents()
 {
-    level endon ( "game_ended" );
-    
-    for ( ;; )
-    {
-        level waittill( "connected", player );
-        
-        if ( _IsBot( player ) ) 
-        {
-            // we don't want to track bots
-            continue;    
-        }
-        
-        if ( !IsDefined( player.pers[level.clientDataKey] ) )
-        {
-            player.pers[level.clientDataKey] = spawnstruct();
-        }
-        
-        player thread OnPlayerSpawned();
-    }
-}
-
-OnPlayerSpawned()
-{
-    self endon( "disconnect" );
-
-    for ( ;; )
-    {
-        self waittill( "spawned_player" );
-        self PlayerSpawnEvents();
-    }
-}
-
-OnGameEnded() 
-{
-    for ( ;; )
-    {
-        level waittill( "game_ended" );
-        // note: you can run data code here but it's possible for 
-        // data to get truncated, so we will try a timer based approach for now
-    }
-}
-
-DisplayWelcomeData()
-{
-    self endon( "disconnect" );
-
-    clientData = self.pers[level.clientDataKey];
-    
-    if ( clientData.permissionLevel == "User" || clientData.permissionLevel == "Flagged" ) 
-    {
-        return;
-    } 
-    
-    self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
-    wait( 2.0 );
-    self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection );
-}
-
-PlayerSpawnEvents() 
-{
-    self endon( "disconnect" );
-
-    clientData = self.pers[level.clientDataKey];
-    
-    // this gives IW4MAdmin some time to register the player before making the request;
-    // although probably not necessary some users might have a slow database or poll rate
-    wait ( 2 );
-
-    if ( IsDefined( clientData.state ) && clientData.state == "complete" ) 
-    {
-        return;
-    }
-    
-    self RequestClientBasicData();
-}
-
-MonitorClientEvents()
-{
-    level endon( "game_ended" );
+    level endon( level.eventTypes.gameEnd );
 
     for ( ;; ) 
     {
-        level waittill( level.eventTypes.localClientEvent, client );
+        level waittill( level.eventTypes.eventAvailable, event );
  
-        LogDebug( "Processing Event " + client.event.type + "-" + client.event.subtype );
+        LogDebug( "Processing Event " + event.type + "-" + event.subtype );
         
-        eventHandler = level.eventCallbacks[client.event.type];
+        eventHandler = level.eventCallbacks[event.type];
 
         if ( IsDefined( eventHandler ) )
         {
-            client [[eventHandler]]( client.event );
-            LogDebug( "notify client for " + client.event.type );
-            client notify( level.eventTypes.localClientEvent, client.event );
+            if ( IsDefined( event.entity ) )
+            {
+                event.entity [[eventHandler]]( event );
+            }
+            else
+            {
+                [[eventHandler]]( event );
+            }
         }
-        
-        client.eventData = [];
+
+        if ( IsDefined( event.entity ) )
+        {
+            LogDebug( "Notify client for " + event.type );
+            event.entity notify( event.type, event );
+        }
+        else
+        {
+            LogDebug( "Notify level for " + event.type );
+            level notify( event.type, event );
+        }
     }
 }
 
@@ -188,11 +145,13 @@ MonitorClientEvents()
 // Helper Methods
 //////////////////////////////////
 
-_IsBot( entity )
+NotImplementedFunction( a, b, c, d, e, f ) 
 {
-    // there already is a cgame function exists as "IsBot", for IW4, but unsure what all titles have it defined,
-    // so we are defining it here
-    return IsDefined( entity.pers["isBot"] ) && entity.pers["isBot"];
+    LogWarning( "Function not implemented" );
+    if ( IsDefined ( a ) )
+    {
+        LogWarning( a );
+    }
 }
 
 _SetDvarIfUninitialized( dvarName, dvarValue )
@@ -200,9 +159,42 @@ _SetDvarIfUninitialized( dvarName, dvarValue )
     [[level.overrideMethods[level.commonFunctions.setDvar]]]( dvarName, dvarValue );
 }
 
-NotImplementedFunction( a, b, c, d, e, f ) 
+_GetPlayerFromClientNum( clientNum )
 {
-    LogWarning( "Function not implemented" );
+    if ( clientNum < 0 )
+    {
+        return undefined;
+    }
+    
+    for ( i = 0; i < level.players.size; i++ )
+    {
+        if ( level.players[i] getEntityNumber() == clientNum )
+        {
+            return level.players[i];
+        }
+    }
+    
+    return undefined;
+}
+
+_GetInboundData( location )
+{
+    return GetDvar( level.eventBus.inVar );
+}
+
+_GetOutboundData( location )
+{
+    return GetDvar( level.eventBus.outVar );
+}
+
+_SetInboundData( location, data )
+{
+    return SetDvar( level.eventBus.inVar, data );
+}
+
+_SetOutboundData( location, data )
+{
+    return SetDvar( level.eventBus.outVar, data );
 }
 
 // Not every game can output to console or even game log.
@@ -223,7 +215,7 @@ _Log( LogLevel, message )
 {
     for( i = 0; i < level.logger._logger.size; i++ )
     {
-        [[level.logger._logger[i]]]( LogLevel, message );
+        [[level.logger._logger[i]]]( LogLevel, GetSubStr( message, 0, 1000 ) );
     }
 }
 
@@ -285,13 +277,13 @@ RegisterLogger( logger )
 RequestClientMeta( metaKey )
 {
     getClientMetaEvent = BuildEventRequest( true, level.eventTypes.clientDataRequested, "Meta", self, metaKey );
-    level thread QueueEvent( getClientMetaEvent, level.eventTypes.clientDataRequested, self );
+    thread QueueEvent( getClientMetaEvent, level.eventTypes.clientDataRequested, self );
 }
 
 RequestClientBasicData()
 {
     getClientDataEvent = BuildEventRequest( true, level.eventTypes.clientDataRequested, "None", self, "" );
-    level thread QueueEvent( getClientDataEvent, level.eventTypes.clientDataRequested, self );
+    thread QueueEvent( getClientDataEvent, level.eventTypes.clientDataRequested, self );
 }
 
 IncrementClientMeta( metaKey, incrementValue, clientId )
@@ -306,18 +298,20 @@ DecrementClientMeta( metaKey, decrementValue, clientId )
 
 SetClientMeta( metaKey, metaValue, clientId, direction )
 {
-    data = "key=" + metaKey + "|value=" + metaValue;
+    data = [];
+    data["key"] = metaKey;
+    data["value"] = metaValue;
     clientNumber = -1;
 
     if ( IsDefined ( clientId ) )
     {
-        data = data + "|clientId=" + clientId;
+        data["clientId"] = clientId;
         clientNumber = -1;
     }
 
     if ( IsDefined( direction ) )
     {
-        data = data + "|direction=" + direction;
+        data["direction"] = direction;
     }
 
     if ( IsPlayer( self ) )
@@ -326,7 +320,7 @@ SetClientMeta( metaKey, metaValue, clientId, direction )
     }
 
     setClientMetaEvent = BuildEventRequest( true, level.eventTypes.setClientDataRequested, "Meta", clientNumber, data );
-    level thread QueueEvent( setClientMetaEvent, level.eventTypes.setClientDataRequested, self );
+    thread QueueEvent( setClientMetaEvent, level.eventTypes.setClientDataRequested, self );
 }
 
 BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data ) 
@@ -341,6 +335,11 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
         eventSubtype = "None";
     }
 
+    if ( !IsDefined( entOrId ) )
+    {
+        entOrId = "-1";
+    }
+
     if ( IsPlayer( entOrId ) )
     {
         entOrId = entOrId getEntityNumber();
@@ -352,52 +351,65 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
     {
         request = "1";
     }
-  
-    request = request + ";" + eventType + ";" + eventSubtype + ";" + entOrId + ";" + data;
+
+    data = BuildDataString( data );
+    groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
+    request = request + groupSeparator + eventType + groupSeparator + eventSubtype + groupSeparator + entOrId + groupSeparator + data;
+    
     return request;
 }
 
 MonitorBus()
 {
-    level endon( "game_ended" );
+    level endon( level.eventTypes.gameEnd );
+    
+    level.eventBus.inLocation = level.eventBus.inVar + "_" + GetDvar( "net_port" );
+    level.eventBus.outLocation = level.eventBus.outVar + "_" + GetDvar( "net_port" );
+
+    [[level.overrideMethods[level.commonFunctions.SetInboundData]]]( level.eventBus.inLocation, "" );
+    [[level.overrideMethods[level.commonFunctions.SetOutboundData]]]( level.eventBus.outLocation, "" );
 
     for( ;; )
     {
         wait ( 0.1 );
         
         // check to see if IW4MAdmin is ready to receive more data
-        if ( getDvar( level.eventBus.inVar ) == "" ) 
+        inVal = [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation );
+
+        if ( !IsDefined( inVal ) || inVal == "" )
         {
             level notify( "bus_ready" );
         }
         
-        eventString = getDvar( level.eventBus.outVar );
+        eventString = [[level.busMethods[level.commonFunctions.getOutboundData]]]( level.eventBus.outLocation );
         
-        if ( eventString == "" ) 
+        if ( !IsDefined( eventString ) || eventString == "" ) 
         {
             continue;
         }
+
         LogDebug( "-> " + eventString );
         
-        NotifyClientEvent( strtok( eventString, ";" ) );
+        groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
+        NotifyEvent( strtok( eventString, groupSeparator ) );
         
-        SetDvar( level.eventBus.outVar, "" );
+        [[level.busMethods[level.commonFunctions.SetOutboundData]]]( level.eventBus.outLocation, "" );
     }
 }
 
 QueueEvent( request, eventType, notifyEntity ) 
 {
-    level endon( "game_ended" );
+    level endon( level.eventTypes.gameEnd );
 
     start = GetTime();
     maxWait = level.eventBus.timeout * 1000; // 30 seconds
     timedOut = "";
    
-    while ( GetDvar( level.eventBus.inVar ) != "" && ( GetTime() - start ) < maxWait )
+    while ( [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation ) != "" && ( GetTime() - start ) < maxWait )
     {
-        level [[level.overrideMethods["waittill_notify_or_timeout"]]]( "bus_ready", 1 );
+        level [[level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]]]( "bus_ready", 1 );
         
-        if ( GetDvar( level.eventBus.inVar ) != "" )
+        if ( [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation ) != "" )
         {
             LogDebug( "A request is already in progress..." );
             timedOut = "set";
@@ -407,7 +419,7 @@ QueueEvent( request, eventType, notifyEntity )
         timedOut = "unset";
     }
    
-    if ( timedOut == "set")
+    if ( timedOut == "set" )
     {
         LogDebug( "Timed out waiting for response..." );
         
@@ -416,14 +428,14 @@ QueueEvent( request, eventType, notifyEntity )
             notifyEntity NotifyClientEventTimeout( eventType );
         }
         
-        SetDvar( level.eventBus.inVar, "" );
+        [[level.busMethods[level.commonFunctions.SetInboundData]]]( level.eventBus.inLocation, "" );
 
         return;
     }
     
-    LogDebug("<- " + request );
+    LogDebug( "<- " + request );
     
-    SetDvar( level.eventBus.inVar, request );
+    [[level.busMethods[level.commonFunctions.setInboundData]]]( level.eventBus.inLocation, request );
 }
 
 ParseDataString( data ) 
@@ -434,13 +446,13 @@ ParseDataString( data )
         return [];
     }
     
-    dataParts = strtok( data, "|" );
+    dataParts = strtok( data, GetSubStr( GetDvar( "RecordSeparatorChar" ), 0, 1 ) );
     dict = [];
     
     for ( i = 0; i < dataParts.size; i++ )
     {
         part = dataParts[i];
-        splitPart = strtok( part, "=" );
+        splitPart = strtok( part, GetSubStr( GetDvar( "UnitSeparatorChar" ), 0, 1 ) );
         key = splitPart[0];
         value = splitPart[1];
         dict[key] = value;
@@ -448,6 +460,26 @@ ParseDataString( data )
     }
     
     return dict;
+}
+
+BuildDataString( data )
+{
+    if ( IsString( data ) )
+    {
+        return data;
+    }
+
+    dataString = "";
+    keys = GetArrayKeys( data );
+    unitSeparator = GetSubStr( GetDvar( "UnitSeparatorChar" ), 0, 1 );
+    recordSeparator = GetSubStr( GetDvar( "RecordSeparatorChar" ), 0, 1 );
+
+    for ( i = 0; i < keys.size; i++ )
+    {
+        dataString = dataString + keys[i] + unitSeparator + data[keys[i]] + recordSeparator;
+    }
+
+    return dataString;
 }
 
 NotifyClientEventTimeout( eventType ) 
@@ -459,7 +491,7 @@ NotifyClientEventTimeout( eventType )
     }
 }
 
-NotifyClientEvent( eventInfo )
+NotifyEvent( eventInfo )
 {
     origin = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[3] ) );
     target = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[4] ) );
@@ -467,14 +499,9 @@ NotifyClientEvent( eventInfo )
     event = spawnstruct();
     event.type = eventInfo[1];
     event.subtype = eventInfo[2];
-    event.data = eventInfo[5];
+    event.data = ParseDataString( eventInfo[5] );
     event.origin = origin;
     event.target = target;
-    
-    if ( IsDefined( event.data ) )
-    {
-        LogDebug( "NotifyClientEvent->" + event.data );
-    }
     
     if ( int( eventInfo[3] ) != -1 && !IsDefined( origin ) )
     {
@@ -485,23 +512,15 @@ NotifyClientEvent( eventInfo )
         LogDebug( "target is null but the slot id is " + int( eventInfo[4] ) );
     }
 
-    if ( IsDefined( target ) )
+    client = event.origin;
+
+    if ( !IsDefined( client ) )
     {
         client = event.target;
     }
-    else if ( IsDefined( origin ) )
-    {
-        client = event.origin;
-    }
-    else
-    {
-        LogDebug( "Neither origin or target are set but we are a Client Event, aborting" );
-        
-        return;
-    }
-    
-    client.event = event;
-    level notify( level.eventTypes.localClientEvent, client );
+
+    event.entity = client;
+    level notify( level.eventTypes.eventAvailable, event );
 }
 
 AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
@@ -521,7 +540,6 @@ AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
 
 OnClientDataReceived( event )
 {
-    event.data = ParseDataString( event.data );
     clientData = self.pers[level.clientDataKey];
 
     if ( event.subtype == "Fail" ) 
@@ -541,7 +559,7 @@ OnClientDataReceived( event )
         metaKey = event.data[0];
         clientData.meta[metaKey] = event.data[metaKey];
 
- 	    LogDebug( "Meta Key=" + metaKey + ", Meta Value=" + event.data[metaKey] );
+ 	    LogDebug( "Meta Key=" + CoerceUndefined( metaKey ) + ", Meta Value=" + CoerceUndefined( event.data[metaKey] ) );
         
         return;
     }
@@ -553,13 +571,11 @@ OnClientDataReceived( event )
     clientData.performance = event.data["performance"];
     clientData.state = "complete";
     self.persistentClientId = event.data["clientId"];
-
-    self thread DisplayWelcomeData();
 }
 
 OnExecuteCommand( event ) 
 {
-    data = ParseDataString( event.data );
+    data = event.data;
     response = "";
     
     command = level.clientCommandCallbacks[event.subtype];
@@ -573,7 +589,14 @@ OnExecuteCommand( event )
     
     if ( IsDefined( command ) ) 
     {
-        response = executionContextEntity [[command]]( event, data );
+        if ( IsDefined( executionContextEntity ) )
+        {
+            response = executionContextEntity thread [[command]]( event, data );
+        }
+        else
+        {
+            thread [[command]]( event );
+        }
     }
     else
     {
@@ -589,6 +612,15 @@ OnExecuteCommand( event )
 
 OnSetClientDataCompleted( event )
 {
-    // IW4MAdmin let us know it persisted (success or fail)
-    LogDebug( "Set Client Data -> subtype = " + event.subType + " status = " + event.data["status"] );
+    LogDebug( "Set Client Data -> subtype = " + CoerceUndefined( event.subType ) + ", status = " + CoerceUndefined( event.data["status"] ) );
+}
+
+CoerceUndefined( object )
+{
+    if ( !IsDefined( object ) )
+    {
+        return "undefined";
+    }
+
+    return object;
 }

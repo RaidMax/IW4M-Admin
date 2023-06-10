@@ -156,8 +156,8 @@ namespace IW4MAdmin.Application.Plugin
             }
 
             _logger.LogDebug("Discovered {Count} plugin implementations", pluginTypes.Count);
-            _logger.LogDebug("Discovered {Count} plugin commands", pluginTypes.Count);
-            _logger.LogDebug("Discovered {Count} configuration implementations", pluginTypes.Count);
+            _logger.LogDebug("Discovered {Count} plugin command implementations", commandTypes.Count);
+            _logger.LogDebug("Discovered {Count} plugin configuration implementations", configurationTypes.Count);
 
             return (pluginTypes, commandTypes, configurationTypes);
         }

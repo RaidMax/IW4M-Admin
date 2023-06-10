@@ -1,45 +1,48 @@
-init()
+Init()
 {
-
     level.startmessagedefaultduration = 2;
     level.regulargamemessages = spawnstruct();
     level.regulargamemessages.waittime = 6;
 
-
-    level thread onplayerconnect();
+    thread OnPlayerConnect();
 }
 
-onplayerconnect()
+OnPlayerConnect()
 {
     for ( ;; )
     {
         level waittill( "connecting", player );
-        player thread displaypopupswaiter();
+        player thread DisplayPopupsWaiter();
     }
 }
 
-displaypopupswaiter()
+DisplayPopupsWaiter()
 {
     self endon( "disconnect" );
     self.ranknotifyqueue = [];
-    if ( !isDefined( self.pers[ "challengeNotifyQueue" ] ) )
+
+    if ( !IsDefined( self.pers[ "challengeNotifyQueue" ] ) )
     {
         self.pers[ "challengeNotifyQueue" ] = [];
     }
-    if ( !isDefined( self.pers[ "contractNotifyQueue" ] ) )
+    if ( !IsDefined( self.pers[ "contractNotifyQueue" ] ) )
     {
         self.pers[ "contractNotifyQueue" ] = [];
     }
+
     self.messagenotifyqueue = [];
     self.startmessagenotifyqueue = [];
     self.wagernotifyqueue = [];
+
     while ( !level.gameended )
     {
         if ( self.startmessagenotifyqueue.size == 0 && self.messagenotifyqueue.size == 0 )
         {
             self waittill( "received award" );
         }
+
         waittillframeend;
+
         if ( level.gameended )
         {
             return;
@@ -50,7 +53,7 @@ displaypopupswaiter()
             {
                 nextnotifydata = self.startmessagenotifyqueue[ 0 ];
                 arrayremoveindex( self.startmessagenotifyqueue, 0, 0 );
-                if ( isDefined( nextnotifydata.duration ) )
+                if ( IsDefined( nextnotifydata.duration ) )
                 {
                     duration = nextnotifydata.duration;
                 }
@@ -58,15 +61,18 @@ displaypopupswaiter()
                 {
                     duration = level.startmessagedefaultduration;
                 }
+
                 self maps\mp\gametypes_zm\_hud_message::shownotifymessage( nextnotifydata, duration );
-                wait duration;
+                wait ( duration );
+
                 continue;
             }
             else if ( self.messagenotifyqueue.size > 0 )
             {
                 nextnotifydata = self.messagenotifyqueue[ 0 ];
                 arrayremoveindex( self.messagenotifyqueue, 0, 0 );
-                if ( isDefined( nextnotifydata.duration ) )
+
+                if ( IsDefined( nextnotifydata.duration ) )
                 {
                     duration = nextnotifydata.duration;
                 }
@@ -74,12 +80,13 @@ displaypopupswaiter()
                 {
                     duration = level.regulargamemessages.waittime;
                 }
+
                 self maps\mp\gametypes_zm\_hud_message::shownotifymessage( nextnotifydata, duration );
                 continue;
             }
             else
             {
-                wait 1;
+                wait ( 1 );
             }
         }
     }

@@ -1,4 +1,3 @@
-
 Init()
 {
     thread Setup();
@@ -6,10 +5,10 @@ Init()
 
 Setup()
 {
+    wait ( 0.05 );
     level endon( "game_ended" );
     
-    // it's possible that the notify type has not been defined yet so we have to hard code it 
-    level waittill( "IntegrationBootstrapInitialized" );
+    level waittill( level.notifyTypes.integrationBootstrapInitialized );
     
     level.commonFunctions.changeTeam                        = "ChangeTeam";
     level.commonFunctions.getTeamCounts                     = "GetTeamCounts";
@@ -18,7 +17,10 @@ Setup()
     level.commonFunctions.getClientTeam                     = "GetClientTeam";
     level.commonFunctions.getClientKillStreak               = "GetClientKillStreak";
     level.commonFunctions.backupRestoreClientKillStreakData = "BackupRestoreClientKillStreakData";
+    level.commonFunctions.getTotalShotsFired                = "GetTotalShotsFired"; 
     level.commonFunctions.waitTillAnyTimeout                = "WaitTillAnyTimeout";
+    level.commonFunctions.isBot                             = "IsBot";
+    level.commonFunctions.getXuid                           = "GetXuid";
     
     level.overrideMethods[level.commonFunctions.changeTeam]                        = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.getTeamCounts]                     = scripts\_integration_base::NotImplementedFunction;
@@ -28,30 +30,52 @@ Setup()
     level.overrideMethods[level.commonFunctions.getClientKillStreak]               = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.backupRestoreClientKillStreakData] = scripts\_integration_base::NotImplementedFunction;
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]                = scripts\_integration_base::NotImplementedFunction;
-    level.overrideMethods["GetPlayerFromClientNum"]                                = ::GetPlayerFromClientNum;
+    level.overrideMethods[level.commonFunctions.getXuid]                           = scripts\_integration_base::NotImplementedFunction;
+    level.overrideMethods[level.commonFunctions.isBot]                             = scripts\_integration_base::NotImplementedFunction;
     
     // these can be overridden per game if needed
     level.commonKeys.team1         = "allies"; 
     level.commonKeys.team2         = "axis";
     level.commonKeys.teamSpectator = "spectator";
+    level.commonKeys.autoBalance   = "sv_iw4madmin_autobalance";
     
     level.eventTypes.connect     = "connected";
     level.eventTypes.disconnect  = "disconnect";
     level.eventTypes.joinTeam    = "joined_team";
+    level.eventTypes.joinSpec    = "joined_spectators";
     level.eventTypes.spawned	 = "spawned_player";
     level.eventTypes.gameEnd     = "game_ended";
+
+    level.eventTypes.urlRequested             = "UrlRequested";
+    level.eventTypes.urlRequestCompleted      = "UrlRequestCompleted";
+    level.eventTypes.registerCommandRequested = "RegisterCommandRequested";
+    level.eventTypes.getCommandsRequested     = "GetCommandsRequested";
+    level.eventTypes.getBusModeRequested      = "GetBusModeRequested";
+
+    level.eventCallbacks[level.eventTypes.urlRequestCompleted]  = ::OnUrlRequestCompletedCallback;
+    level.eventCallbacks[level.eventTypes.getCommandsRequested] = ::OnCommandsRequestedCallback;
+    level.eventCallbacks[level.eventTypes.getBusModeRequested]  = ::OnBusModeRequestedCallback;
     
     level.iw4madminIntegrationDefaultPerformance = 200;
+    level.notifyEntities = [];
+    level.customCommands = [];
     
     level notify( level.notifyTypes.sharedFunctionsInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
-    
-    if ( GetDvarInt( "sv_iw4madmin_integration_enabled" ) != 1 )
+
+    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.autoBalance, 0 ); 
+
+    if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }
     
-    level thread OnPlayerConnect();
+    thread OnPlayerConnect();
+}
+
+_IsBot( player )
+{
+    return [[level.overrideMethods[level.commonFunctions.isBot]]]( player );
 }
 
 OnPlayerConnect()
@@ -62,17 +86,23 @@ OnPlayerConnect()
     {
         level waittill( level.eventTypes.connect, player );
         
-        if ( scripts\_integration_base::_IsBot( player ) ) 
+        if ( _IsBot( player ) ) 
         {
             // we don't want to track bots
             continue;
         }
+
+        if ( !IsDefined( player.pers[level.clientDataKey] ) )
+        {
+            player.pers[level.clientDataKey] = spawnstruct();
+        }
         
+        player thread OnPlayerSpawned();
         player thread OnPlayerJoinedTeam();
         player thread OnPlayerJoinedSpectators();
         player thread PlayerTrackingOnInterval();
 
-        if ( GetDvarInt( "sv_iw4madmin_autobalance" ) != 1 || !IsDefined( [[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) ) 
+        if ( GetDvarInt( level.commonKeys.autoBalance ) != 1 || !IsDefined( [[level.overrideMethods[level.commonFunctions.getTeamBased]]]() ) ) 
         {
             continue;
         }
@@ -85,13 +115,341 @@ OnPlayerConnect()
         teamToJoin = player GetTeamToJoin();
         player [[level.overrideMethods[level.commonFunctions.changeTeam]]]( teamToJoin );
         
-        player thread OnClientFirstSpawn();
-        player thread OnClientJoinedTeam();
-        player thread OnClientDisconnect();
+        player thread OnPlayerFirstSpawn();
+        player thread OnPlayerDisconnect();
     }
 }
 
-OnClientDisconnect()
+PlayerSpawnEvents() 
+{
+    self endon( level.eventTypes.disconnect );
+
+    clientData = self.pers[level.clientDataKey];
+    
+    // this gives IW4MAdmin some time to register the player before making the request;
+    // although probably not necessary some users might have a slow database or poll rate
+    wait ( 2 );
+
+    if ( IsDefined( clientData.state ) && clientData.state == "complete" ) 
+    {
+        return;
+    }
+    
+    self scripts\_integration_base::RequestClientBasicData();
+
+    self waittill( level.eventTypes.clientDataReceived, clientEvent );
+
+    if ( clientData.permissionLevel == "User" || clientData.permissionLevel == "Flagged" ) 
+    {
+        return;
+    } 
+
+    self IPrintLnBold( "Welcome, your level is ^5" + clientData.permissionLevel );
+    wait( 2.0 );
+    self IPrintLnBold( "You were last seen ^5" + clientData.lastConnection + " ago" );
+}
+
+
+PlayerTrackingOnInterval() 
+{
+    self endon( level.eventTypes.disconnect );
+
+    for ( ;; )
+    {
+        wait ( 120 );
+        if ( IsAlive( self ) )
+        {
+            self SaveTrackingMetrics();
+        }
+    }
+}
+
+SaveTrackingMetrics()
+{
+    if ( !IsDefined( self.persistentClientId ) )
+    {
+        return;
+    }
+
+    scripts\_integration_base::LogDebug( "Saving tracking metrics for " + self.persistentClientId );
+    
+    if ( !IsDefined( self.lastShotCount ) )
+    {
+        self.lastShotCount = 0;
+    }
+
+    currentShotCount = self [[level.overrideMethods["GetTotalShotsFired"]]]();
+    change = currentShotCount - self.lastShotCount;
+    self.lastShotCount = currentShotCount;
+
+    scripts\_integration_base::LogDebug( "Total Shots Fired increased by " + change );
+
+    if ( !IsDefined( change ) )
+    {
+        change = 0;
+    }
+    
+    if ( change == 0 )
+    {
+        return;
+    }
+
+    scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
+}
+
+OnBusModeRequestedCallback( event )
+{
+    data = [];
+    data["mode"] = GetDvar( level.commonKeys.busMode );
+    data["directory"] = GetDvar( level.commonKeys.busDir );
+    data["inLocation"] = level.eventBus.inLocation;
+    data["outLocation"] = level.eventBus.outLocation;
+
+    scripts\_integration_base::LogDebug( "Bus mode requested" );
+
+    busModeRequest = scripts\_integration_base::BuildEventRequest( false, level.eventTypes.getBusModeRequested, "", undefined, data );
+    scripts\_integration_base::QueueEvent( busModeRequest, level.eventTypes.getBusModeRequested, undefined );
+
+    scripts\_integration_base::LogDebug( "Bus mode updated" );
+
+    if ( GetDvar( level.commonKeys.busMode ) == "file" || GetDvar( level.commonKeys.busDir ) != "" )
+    {
+        level.busMethods[level.commonFunctions.getInboundData]  = level.overrideMethods[level.commonFunctions.getInboundData]; 
+        level.busMethods[level.commonFunctions.getOutboundData] = level.overrideMethods[level.commonFunctions.getOutboundData];
+        level.busMethods[level.commonFunctions.setInboundData]  = level.overrideMethods[level.commonFunctions.setInboundData]; 
+        level.busMethods[level.commonFunctions.setOutboundData] = level.overrideMethods[level.commonFunctions.setOutboundData];
+    }
+}
+
+// #region register script command
+
+OnCommandsRequestedCallback( event )
+{
+    scripts\_integration_base::LogDebug( "Get commands requested" );
+    thread SendCommands( event.data["name"] );
+}
+
+SendCommands( commandName )
+{
+    level endon( level.eventTypes.gameEnd );
+
+    for ( i = 0; i < level.customCommands.size; i++ )
+    {
+        data = level.customCommands[i];
+
+        if ( IsDefined( commandName ) && commandName != data["name"] )
+        {
+            continue;        
+        }
+
+        scripts\_integration_base::LogDebug( "Sending custom command " + ( i + 1 ) + "/" + level.customCommands.size + ": " + data["name"] );
+        commandRegisterRequest = scripts\_integration_base::BuildEventRequest( false, level.eventTypes.registerCommandRequested, "", undefined, data );
+        // not threading here as there might be a lot of commands to register
+        scripts\_integration_base::QueueEvent( commandRegisterRequest, level.eventTypes.registerCommandRequested, undefined );
+    }
+}
+
+RegisterScriptCommandObject( command )
+{
+    RegisterScriptCommand( command.eventKey, command.name, command.alias, command.description, command.minPermission, command.supportedGames, command.requiresTarget, command.handler );
+}
+
+RegisterScriptCommand( eventKey, name, alias, description, minPermission, supportedGames, requiresTarget, handler )
+{
+    if ( !IsDefined( eventKey ) )
+    {
+        scripts\_integration_base::LogError( "eventKey must be provided for script command" );
+        return;
+    }
+
+    data = [];
+
+    data["eventKey"] = eventKey;
+
+    if ( IsDefined( name ) )
+    {
+        data["name"] = name;
+    }
+    else
+    {
+        scripts\_integration_base::LogError( "name must be provided for script command" );
+        return;
+    }
+
+    if ( IsDefined( alias ) )
+    {
+        data["alias"] = alias;
+    }
+
+    if ( IsDefined( description ) )
+    {
+        data["description"] = description;
+    }
+
+    if ( IsDefined( minPermission ) )
+    {
+        data["minPermission"] = minPermission;
+    }
+    
+    if ( IsDefined( supportedGames ) )
+    {
+        data["supportedGames"] = supportedGames;
+    }
+
+    data["requiresTarget"] = false;
+
+    if ( IsDefined( requiresTarget ) )
+    {
+        data["requiresTarget"] = requiresTarget;
+    }
+
+    if ( IsDefined( handler ) )
+    {
+        level.clientCommandCallbacks[eventKey + "Execute"] = handler;
+        level.clientCommandRusAsTarget[eventKey + "Execute"] = data["requiresTarget"];
+    }
+    else
+    {
+        scripts\_integration_base::LogWarning( "handler not defined for script command " + name );
+    }
+
+    level.customCommands[level.customCommands.size] = data;
+}
+
+// #end region
+
+// #region web requests
+
+RequestUrlObject( request )
+{
+    return RequestUrl( request.url, request.method, request.body, request.headers, request );
+}
+
+RequestUrl( url, method, body, headers, webNotify )
+{
+    if ( !IsDefined( webNotify ) )
+    {
+        webNotify = SpawnStruct();
+        webNotify.url = url;
+        webNotify.method = method;
+        webNotify.body = body;
+        webNotify.headers = headers;
+    }
+
+    webNotify.index = GetNextNotifyEntity();
+
+    scripts\_integration_base::LogDebug( "next notify index is " + webNotify.index );
+    level.notifyEntities[webNotify.index] = webNotify;
+
+    data = [];
+    data["url"] = webNotify.url;
+    data["entity"] = webNotify.index;
+
+    if ( IsDefined( method ) )
+    {
+        data["method"] = method;
+    }
+
+    if ( IsDefined( body ) )
+    {
+        data["body"] = body;
+    }
+
+    if ( IsDefined( headers ) )
+    {
+        headerString = "";
+
+        keys = GetArrayKeys( headers );
+        for ( i = 0; i < keys.size; i++ )
+        {
+            headerString = headerString + keys[i] + ":" + headers[keys[i]] + ",";
+        }
+
+        data["headers"] = headerString;
+    }
+
+    webNotifyEvent = scripts\_integration_base::BuildEventRequest( true, level.eventTypes.urlRequested, "", webNotify.index, data );
+    thread scripts\_integration_base::QueueEvent( webNotifyEvent, level.eventTypes.urlRequested, webNotify );
+    webNotify thread WaitForUrlRequestComplete();
+
+    return webNotify;
+}
+
+WaitForUrlRequestComplete()
+{
+    level endon( level.eventTypes.gameEnd );
+
+    timeoutResult = self [[level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]]]( 30, level.eventTypes.urlRequestCompleted );
+
+    if ( timeoutResult == level.eventBus.timeoutKey )
+    {
+        scripts\_integration_base::LogWarning( "Request to " + self.url  + " timed out" );
+        self notify ( level.eventTypes.urlRequestCompleted, "error" );
+    }
+
+    scripts\_integration_base::LogDebug( "Request to " + self.url  + " completed" );
+
+    level.notifyEntities[self.index] = undefined;
+}
+
+OnUrlRequestCompletedCallback( event )
+{
+    if ( !IsDefined( event ) || !IsDefined( event.data ) )
+    {
+        scripts\_integration_base::LogWarning( "Incomplete data for url request callback. [1]" );
+        return;
+    }
+
+    notifyEnt = event.data["entity"];
+    response = event.data["response"];
+
+    if ( !IsDefined( notifyEnt ) || !IsDefined( response ) )
+    {
+        scripts\_integration_base::LogWarning( "Incomplete data for url request callback. [2] " + scripts\_integration_base::CoerceUndefined( notifyEnt ) + " , " +  scripts\_integration_base::CoerceUndefined( response ) );
+        return;
+    }
+
+    webNotify = level.notifyEntities[int( notifyEnt )];
+    
+    if ( !IsDefined( webNotify.response ) )
+    {
+        webNotify.response = response;
+    }
+    else
+    {
+        webNotify.response = webNotify.response + response;
+    }
+
+    if ( int( event.data["remaining"] ) != 0 ) 
+    {
+        scripts\_integration_base::LogDebug( "Additional data available for url request " + notifyEnt + " (" + event.data["remaining"] + " chunks remaining)" );
+        return;
+    }
+
+    scripts\_integration_base::LogDebug( "Notifying " + notifyEnt + " that url request completed"  );
+    webNotify notify( level.eventTypes.urlRequestCompleted, webNotify.response );
+}
+
+GetNextNotifyEntity()
+{
+    max = level.notifyEntities.size + 1;
+
+    for ( i = 0; i < max; i++ )
+    {
+        if ( !IsDefined( level.notifyEntities[i] ) )
+        {
+            return i;
+        }
+    }
+
+    return max;
+}
+
+// #end region
+
+// #region team balance
+
+OnPlayerDisconnect()
 {
     level endon( level.eventTypes.gameEnd );
     self endon( "disconnect_logic_end" );
@@ -106,13 +464,21 @@ OnClientDisconnect()
     }
 }
 
-OnClientJoinedTeam()
+OnPlayerJoinedTeam()
 {
     self endon( level.eventTypes.disconnect );
 
     for( ;; )
     {
         self waittill( level.eventTypes.joinTeam );
+
+        wait( 0.25 ); 
+        LogPrint( GenerateJoinTeamString( false ) );
+
+        if ( GetDvarInt( level.commonKeys.autoBalance ) != 1 )
+        {
+            continue;
+        }
 
         if ( IsDefined( self.wasAutoBalanced ) && self.wasAutoBalanced )
         {
@@ -126,7 +492,7 @@ OnClientJoinedTeam()
         if ( newTeam != level.commonKeys.team1 && newTeam != level.commonKeys.team2 )
         {
             OnTeamSizeChanged();
-            scripts\_integration_base::LogDebug( "not force balancing " + self.name + " because they switched to spec"  );
+            scripts\_integration_base::LogDebug( "not force balancing " + self.name + " because they switched to spec" );
             continue;
         }
         
@@ -141,12 +507,34 @@ OnClientJoinedTeam()
     }
 }
 
-OnClientFirstSpawn()
+OnPlayerSpawned()
+{
+    self endon( level.eventTypes.disconnect );
+
+    for ( ;; )
+    {
+        self waittill( level.eventTypes.spawned );
+        self thread PlayerSpawnEvents();
+    }
+}
+
+OnPlayerJoinedSpectators()
+{
+    self endon( level.eventTypes.disconnect );
+
+    for( ;; )
+    {
+        self waittill( level.eventTypes.joinSpec );
+        LogPrint( GenerateJoinTeamString( true ) );
+    }
+}
+
+OnPlayerFirstSpawn()
 {
     self endon( level.eventTypes.disconnect );
     timeoutResult = self [[level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]]]( 30, level.eventTypes.spawned );
 
-    if ( timeoutResult != "timeout" )
+    if ( timeoutResult != level.eventBus.timeoutKey )
     {
        return;
     }
@@ -341,7 +729,7 @@ GetClosestPerformanceClientForTeam( sourceTeam, excluded )
 
         else if ( candidateValue < closest )
         {
-            scripts\_integration_base::LogDebug( candidateValue + " is the new best value ");
+            scripts\_integration_base::LogDebug( candidateValue + " is the new best value " );
             choice = players[i];
             closest = candidateValue;
         }
@@ -467,48 +855,6 @@ GetClientPerformanceOrDefault()
     return performance;
 }
 
-GetPlayerFromClientNum( clientNum )
-{
-    if ( clientNum < 0 )
-    {
-        return undefined;
-    }
-    
-    for ( i = 0; i < level.players.size; i++ )
-    {
-        if ( level.players[i] getEntityNumber() == clientNum )
-        {
-            return level.players[i];
-        }
-    }
-    
-    return undefined;
-}
-
-OnPlayerJoinedTeam()
-{
-    self endon( "disconnect" );
-
-    for( ;; )
-    {
-        self waittill( "joined_team" );
-        // join spec and join team occur at the same moment - out of order logging would be problematic
-        wait( 0.25 ); 
-        LogPrint( GenerateJoinTeamString( false ) );
-    }
-}
-
-OnPlayerJoinedSpectators()
-{
-    self endon( "disconnect" );
-
-    for( ;; )
-    {
-        self waittill( "joined_spectators" );
-        LogPrint( GenerateJoinTeamString( true ) );
-    }
-}
-
 GenerateJoinTeamString( isSpectator ) 
 {
     team = self.team;
@@ -540,49 +886,4 @@ GenerateJoinTeamString( isSpectator )
     return "JT;" + guid + ";" + self getEntityNumber() + ";" + team + ";" + self.name + "\n";
 }
 
-PlayerTrackingOnInterval() 
-{
-    self endon( "disconnect" );
-
-    for ( ;; )
-    {
-        wait ( 120 );
-        if ( IsAlive( self ) )
-        {
-            self SaveTrackingMetrics();
-        }
-    }
-}
-
-SaveTrackingMetrics()
-{
-    if ( !IsDefined( self.persistentClientId ) )
-    {
-        return;
-    }
-
-    scripts\_integration_base::LogDebug( "Saving tracking metrics for " + self.persistentClientId );
-    
-    if ( !IsDefined( self.lastShotCount ) )
-    {
-        self.lastShotCount = 0;
-    }
-
-    currentShotCount = self [[level.overrideMethods["GetTotalShotsFired"]]]();
-    change = currentShotCount - self.lastShotCount;
-    self.lastShotCount = currentShotCount;
-
-    scripts\_integration_base::LogDebug( "Total Shots Fired increased by " + change );
-
-    if ( !IsDefined( change ) )
-    {
-        change = 0;
-    }
-    
-    if ( change == 0 )
-    {
-        return;
-    }
-
-    scripts\_integration_base::IncrementClientMeta( "TotalShotsFired", change, self.persistentClientId );
-}
+// #end region

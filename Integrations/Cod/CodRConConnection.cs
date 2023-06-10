@@ -147,6 +147,18 @@ namespace Integrations.Cod
             {
                 var convertedRConPassword = ConvertEncoding(RConPassword);
                 var convertedParameters = ConvertEncoding(parameters);
+                byte SafeConversion(char c)
+                {
+                    try
+                    {
+                        return Convert.ToByte(c);
+                    }
+
+                    catch
+                    {
+                        return (byte)'.';
+                    }
+                };
 
                 switch (type)
                 {
@@ -154,30 +166,30 @@ namespace Integrations.Cod
                         waitForResponse = true;
                         payload = string
                             .Format(_config.CommandPrefixes.RConGetDvar, convertedRConPassword,
-                                convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                                convertedParameters + '\0').Select(SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.SET_DVAR:
                         payload = string
                             .Format(_config.CommandPrefixes.RConSetDvar, convertedRConPassword,
-                                convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                                convertedParameters + '\0').Select(SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND:
                         payload = string
                             .Format(_config.CommandPrefixes.RConCommand, convertedRConPassword,
-                                convertedParameters + '\0').Select(Convert.ToByte).ToArray();
+                                convertedParameters + '\0').Select(SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_STATUS:
                         waitForResponse = true;
-                        payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(Convert.ToByte).ToArray();
+                        payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_INFO:
                         waitForResponse = true;
-                        payload = (_config.CommandPrefixes.RConGetInfo + '\0').Select(Convert.ToByte).ToArray();
+                        payload = (_config.CommandPrefixes.RConGetInfo + '\0').Select(SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND_STATUS:
                         waitForResponse = true;
                         payload = string.Format(_config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0")
-                            .Select(Convert.ToByte).ToArray();
+                            .Select(SafeConversion).ToArray();
                         break;
                 }
             }

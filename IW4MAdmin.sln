@@ -87,6 +87,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameInterface", "GameInterf
 		GameFiles\GameInterface\_integration_t6.gsc = GameFiles\GameInterface\_integration_t6.gsc
 		GameFiles\GameInterface\_integration_t6zm_helper.gsc = GameFiles\GameInterface\_integration_t6zm_helper.gsc
 		GameFiles\GameInterface\example_module.gsc = GameFiles\GameInterface\example_module.gsc
+		GameFiles\GameInterface\_integration_t6_file_bus.gsc = GameFiles\GameInterface\_integration_t6_file_bus.gsc
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AntiCheat", "AntiCheat", "{AB83BAC0-C539-424A-BF00-78487C10753C}"

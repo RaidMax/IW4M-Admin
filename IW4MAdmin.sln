@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29009.5
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{26E8B310-269E-46D4-A612-24601F16065F}"
 EndProject
@@ -9,9 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		DeploymentFiles\deployment-pipeline.yml = DeploymentFiles\deployment-pipeline.yml
 		DeploymentFiles\PostPublish.ps1 = DeploymentFiles\PostPublish.ps1
 		README.md = README.md
-		version.txt = version.txt
 		DeploymentFiles\UpdateIW4MAdmin.ps1 = DeploymentFiles\UpdateIW4MAdmin.ps1
 		DeploymentFiles\UpdateIW4MAdmin.sh = DeploymentFiles\UpdateIW4MAdmin.sh
+		version.txt = version.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLibraryCore", "SharedLibraryCore\SharedLibraryCore.csproj", "{AA0541A2-8D51-4AD9-B0AC-3D1F5B162481}"
@@ -31,28 +31,28 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlugins", "{3F9ACC27-26DB-49FA-BCD2-50C54A49C9FA}"
 	ProjectSection(SolutionItems) = preProject
 		Plugins\ScriptPlugins\ActionOnReport.js = Plugins\ScriptPlugins\ActionOnReport.js
+		Plugins\ScriptPlugins\BanBroadcasting.js = Plugins\ScriptPlugins\BanBroadcasting.js
+		Plugins\ScriptPlugins\GameInterface.js = Plugins\ScriptPlugins\GameInterface.js
+		Plugins\ScriptPlugins\ParserBOIII.js = Plugins\ScriptPlugins\ParserBOIII.js
 		Plugins\ScriptPlugins\ParserCoD4x.js = Plugins\ScriptPlugins\ParserCoD4x.js
+		Plugins\ScriptPlugins\ParserCSGO.js = Plugins\ScriptPlugins\ParserCSGO.js
+		Plugins\ScriptPlugins\ParserCSGOSM.js = Plugins\ScriptPlugins\ParserCSGOSM.js
+		Plugins\ScriptPlugins\ParserH1MOD.js = Plugins\ScriptPlugins\ParserH1MOD.js
 		Plugins\ScriptPlugins\ParserIW4x.js = Plugins\ScriptPlugins\ParserIW4x.js
 		Plugins\ScriptPlugins\ParserIW6x.js = Plugins\ScriptPlugins\ParserIW6x.js
 		Plugins\ScriptPlugins\ParserPIW5.js = Plugins\ScriptPlugins\ParserPIW5.js
+		Plugins\ScriptPlugins\ParserPlutoniumT4.js = Plugins\ScriptPlugins\ParserPlutoniumT4.js
+		Plugins\ScriptPlugins\ParserPlutoniumT4COZM.js = Plugins\ScriptPlugins\ParserPlutoniumT4COZM.js
+		Plugins\ScriptPlugins\ParserPlutoniumT5.js = Plugins\ScriptPlugins\ParserPlutoniumT5.js
 		Plugins\ScriptPlugins\ParserPT6.js = Plugins\ScriptPlugins\ParserPT6.js
 		Plugins\ScriptPlugins\ParserRektT5M.js = Plugins\ScriptPlugins\ParserRektT5M.js
+		Plugins\ScriptPlugins\ParserS1x.js = Plugins\ScriptPlugins\ParserS1x.js
 		Plugins\ScriptPlugins\ParserT4.js = Plugins\ScriptPlugins\ParserT4.js
 		Plugins\ScriptPlugins\ParserT7.js = Plugins\ScriptPlugins\ParserT7.js
 		Plugins\ScriptPlugins\ParserTeknoMW3.js = Plugins\ScriptPlugins\ParserTeknoMW3.js
-		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js
-		Plugins\ScriptPlugins\ParserPlutoniumT4.js = Plugins\ScriptPlugins\ParserPlutoniumT4.js
-		Plugins\ScriptPlugins\ParserS1x.js = Plugins\ScriptPlugins\ParserS1x.js
-		Plugins\ScriptPlugins\ParserCSGO.js = Plugins\ScriptPlugins\ParserCSGO.js
-		Plugins\ScriptPlugins\ParserCSGOSM.js = Plugins\ScriptPlugins\ParserCSGOSM.js
-		Plugins\ScriptPlugins\ParserPlutoniumT4COZM.js = Plugins\ScriptPlugins\ParserPlutoniumT4COZM.js
-		Plugins\ScriptPlugins\GameInterface.js = Plugins\ScriptPlugins\GameInterface.js
-		Plugins\ScriptPlugins\SubnetBan.js = Plugins\ScriptPlugins\SubnetBan.js
-		Plugins\ScriptPlugins\BanBroadcasting.js = Plugins\ScriptPlugins\BanBroadcasting.js
-		Plugins\ScriptPlugins\ParserH1MOD.js = Plugins\ScriptPlugins\ParserH1MOD.js
-		Plugins\ScriptPlugins\ParserPlutoniumT5.js = Plugins\ScriptPlugins\ParserPlutoniumT5.js
 		Plugins\ScriptPlugins\ServerBanner.js = Plugins\ScriptPlugins\ServerBanner.js
-		Plugins\ScriptPlugins\ParserBOIII.js = Plugins\ScriptPlugins\ParserBOIII.js
+		Plugins\ScriptPlugins\SubnetBan.js = Plugins\ScriptPlugins\SubnetBan.js
+		Plugins\ScriptPlugins\VPNDetection.js = Plugins\ScriptPlugins\VPNDetection.js
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomessageFeed", "Plugins\AutomessageFeed\AutomessageFeed.csproj", "{F5815359-CFC7-44B4-9A3B-C04BACAD5836}"
@@ -61,15 +61,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LiveRadar", "Plugins\LiveRa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3065279E-17F0-4CE0-AF5B-014E04263D77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "Data\Data.csproj", "{81689023-E55E-48ED-B7A8-53F4E21BBF2D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data", "Data\Data.csproj", "{81689023-E55E-48ED-B7A8-53F4E21BBF2D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integrations", "Integrations", "{A2AE33B4-0830-426A-9E11-951DAB12BE5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrations.Cod", "Integrations\Cod\Integrations.Cod.csproj", "{A9348433-58C1-4B9C-8BB7-088B02529D9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrations.Cod", "Integrations\Cod\Integrations.Cod.csproj", "{A9348433-58C1-4B9C-8BB7-088B02529D9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrations.Source", "Integrations\Source\Integrations.Source.csproj", "{9512295B-3045-40E0-9B7E-2409F2173E9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Integrations.Source", "Integrations\Source\Integrations.Source.csproj", "{9512295B-3045-40E0-9B7E-2409F2173E9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mute", "Plugins\Mute\Mute.csproj", "{259824F3-D860-4233-91D6-FF73D4DD8B18}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mute", "Plugins\Mute\Mute.csproj", "{259824F3-D860-4233-91D6-FF73D4DD8B18}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameFiles", "GameFiles", "{6CBF412C-EFEE-45F7-80FD-AC402C22CDB9}"
 	ProjectSection(SolutionItems) = preProject
@@ -78,6 +78,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameFiles", "GameFiles", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameInterface", "GameInterface", "{5C2BE2A8-EA1D-424F-88E1-7FC33EEC2E55}"
 	ProjectSection(SolutionItems) = preProject
+		GameFiles\GameInterface\example_module.gsc = GameFiles\GameInterface\example_module.gsc
 		GameFiles\GameInterface\_integration_base.gsc = GameFiles\GameInterface\_integration_base.gsc
 		GameFiles\GameInterface\_integration_iw4x.gsc = GameFiles\GameInterface\_integration_iw4x.gsc
 		GameFiles\GameInterface\_integration_iw5.gsc = GameFiles\GameInterface\_integration_iw5.gsc
@@ -86,7 +87,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameInterface", "GameInterf
 		GameFiles\GameInterface\_integration_t5zm.gsc = GameFiles\GameInterface\_integration_t5zm.gsc
 		GameFiles\GameInterface\_integration_t6.gsc = GameFiles\GameInterface\_integration_t6.gsc
 		GameFiles\GameInterface\_integration_t6zm_helper.gsc = GameFiles\GameInterface\_integration_t6zm_helper.gsc
-		GameFiles\GameInterface\example_module.gsc = GameFiles\GameInterface\example_module.gsc
+		_integration_t6_filesystem_bus.gsc = _integration_t6_filesystem_bus.gsc
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AntiCheat", "AntiCheat", "{AB83BAC0-C539-424A-BF00-78487C10753C}"
@@ -98,15 +99,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IW4x", "IW4x", "{3EA564BD-3
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pluto T6", "Pluto T6", "{866F453D-BC89-457F-8B55-485494759B31}"
 	ProjectSection(SolutionItems) = preProject
+		GameFiles\AntiCheat\PT6\README.MD = GameFiles\AntiCheat\PT6\README.MD
 		GameFiles\AntiCheat\PT6\storage\t6\scripts\mp\_customcallbacks.gsc = GameFiles\AntiCheat\PT6\storage\t6\scripts\mp\_customcallbacks.gsc
 		GameFiles\AntiCheat\PT6\storage\t6\scripts\mp\_customcallbacks.gsc.src = GameFiles\AntiCheat\PT6\storage\t6\scripts\mp\_customcallbacks.gsc.src
-		GameFiles\AntiCheat\PT6\README.MD = GameFiles\AntiCheat\PT6\README.MD
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pluto IW5", "Pluto IW5", "{603725A4-BC0B-423B-955B-762C89E1C4C2}"
 	ProjectSection(SolutionItems) = preProject
-		GameFiles\AntiCheat\IW5\storage\iw5\scripts\_customcallbacks.gsc = GameFiles\AntiCheat\IW5\storage\iw5\scripts\_customcallbacks.gsc
 		GameFiles\AntiCheat\IW5\README.MD = GameFiles\AntiCheat\IW5\README.MD
+		GameFiles\AntiCheat\IW5\storage\iw5\scripts\_customcallbacks.gsc = GameFiles\AntiCheat\IW5\storage\iw5\scripts\_customcallbacks.gsc
 	EndProjectSection
 EndProject
 Global
@@ -349,6 +350,8 @@ Global
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Debug|x64.Build.0 = Debug|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Debug|x86.Build.0 = Debug|Any CPU
+		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
+		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|Mixed Platforms.Build.0 = Debug|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|x64.ActiveCfg = Debug|Any CPU
@@ -363,8 +366,6 @@ Global
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Release|x64.Build.0 = Release|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Release|x86.ActiveCfg = Release|Any CPU
 		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Release|x86.Build.0 = Release|Any CPU
-		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
-		{81689023-E55E-48ED-B7A8-53F4E21BBF2D}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -373,6 +374,8 @@ Global
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Debug|x64.Build.0 = Debug|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Debug|x86.Build.0 = Debug|Any CPU
+		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
+		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|Mixed Platforms.Build.0 = Debug|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|x64.ActiveCfg = Debug|Any CPU
@@ -387,8 +390,6 @@ Global
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Release|x64.Build.0 = Release|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Release|x86.ActiveCfg = Release|Any CPU
 		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Release|x86.Build.0 = Release|Any CPU
-		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
-		{A9348433-58C1-4B9C-8BB7-088B02529D9D}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -397,6 +398,8 @@ Global
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Debug|x64.Build.0 = Debug|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Debug|x86.Build.0 = Debug|Any CPU
+		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
+		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|Mixed Platforms.Build.0 = Debug|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|x64.ActiveCfg = Debug|Any CPU
@@ -411,8 +414,6 @@ Global
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Release|x64.Build.0 = Release|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Release|x86.ActiveCfg = Release|Any CPU
 		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Release|x86.Build.0 = Release|Any CPU
-		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
-		{9512295B-3045-40E0-9B7E-2409F2173E9D}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -421,6 +422,8 @@ Global
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Debug|x64.Build.0 = Debug|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Debug|x86.Build.0 = Debug|Any CPU
+		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
+		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Mixed Platforms.Build.0 = Debug|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|x64.ActiveCfg = Debug|Any CPU
@@ -435,8 +438,6 @@ Global
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Release|x64.Build.0 = Release|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Release|x86.ActiveCfg = Release|Any CPU
 		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Release|x86.Build.0 = Release|Any CPU
-		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
-		{259824F3-D860-4233-91D6-FF73D4DD8B18}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

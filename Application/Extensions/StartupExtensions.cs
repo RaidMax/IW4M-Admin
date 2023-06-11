@@ -48,8 +48,8 @@ namespace IW4MAdmin.Application.Extensions
                     loggerConfig = loggerConfig.WriteTo.Console(
                             outputTemplate:
                             "[{Timestamp:HH:mm:ss} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                        ; //.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                    //.MinimumLevel.Debug();
+                            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                            .MinimumLevel.Debug();
                 }
 
                 _defaultLogger = loggerConfig.CreateLogger();

@@ -104,7 +104,7 @@ namespace Integrations.Source
                 }
 
                 var split = response.TrimEnd('\n').Split('\n');
-                return split.Take(split.Length - 1).ToArray();
+                return split.Take(Math.Max(1, split.Length - 1)).ToArray();
             }
 
             catch (TaskCanceledException)

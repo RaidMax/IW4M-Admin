@@ -212,7 +212,7 @@ OnBusModeRequestedCallback( event )
 
     scripts\_integration_base::LogDebug( "Bus mode updated" );
 
-    if ( GetDvar( level.commonKeys.busMode ) == "file" || GetDvar( level.commonKeys.busDir ) != "" )
+    if ( GetDvar( level.commonKeys.busMode ) == "file" && GetDvar( level.commonKeys.busDir ) != "" )
     {
         level.busMethods[level.commonFunctions.getInboundData]  = level.overrideMethods[level.commonFunctions.getInboundData]; 
         level.busMethods[level.commonFunctions.getOutboundData] = level.overrideMethods[level.commonFunctions.getOutboundData];

@@ -49,25 +49,25 @@ Setup()
 	level.overrideMethods[level.commonFunctions.getOutboundData] = ::GetOutboundData;
 	level.overrideMethods[level.commonFunctions.setInboundData]  = ::SetInboundData;
 	level.overrideMethods[level.commonFunctions.setOutboundData] = ::SetOutboundData;
-	scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.busdir, GetDvar("fs_homepath") );
+	scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.busdir, GetDvar( "fs_homepath" ) );
 }
 
-GetInboundData(location)
-{
-	return readFile( location);
-}
-
-GetOutboundData(location)
+GetInboundData( location )
 {
 	return readFile( location );
 }
 
-SetInboundData(location, data )
+GetOutboundData( location )
+{
+	return readFile( location );
+}
+
+SetInboundData( location, data )
 {
 	writeFile( location, data );
 }
 
-SetOutboundData(location, data )
+SetOutboundData( location, data )
 {
-	writeFile(location, data );
+	writeFile( location, data );
 }

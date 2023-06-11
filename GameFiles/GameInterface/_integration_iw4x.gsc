@@ -37,6 +37,8 @@ Setup()
     RegisterClientCommands();
     
     level notify( level.notifyTypes.gameFunctionsInitialized );
+
+    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.busdir, GetDvar( "fs_homepath" ) + "userraw/" + "scriptdata" );
     
     if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {

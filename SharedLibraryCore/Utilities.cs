@@ -195,7 +195,7 @@ namespace SharedLibraryCore
             }
 
             var output = str;
-            var colorCodeMatches = Regex.Matches(output, @"\(Color::(.{1,16})\)",
+            var colorCodeMatches = Regex.Matches(output, @"\(Color::(\w{1,16})\)",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
             foreach (var match in colorCodeMatches.Where(m => m.Success))
             {

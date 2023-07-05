@@ -853,7 +853,8 @@ namespace Data.Migrations.Postgresql
 
                     b.Property<string>("SearchableIPAddress")
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
 
                     b.Property<string>("SearchableName")
@@ -1162,6 +1163,8 @@ namespace Data.Migrations.Postgresql
                         .HasColumnType("bigint");
 
                     b.HasKey("ServerSnapshotId");
+
+                    b.HasIndex("CapturedAt");
 
                     b.HasIndex("MapId");
 

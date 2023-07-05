@@ -153,6 +153,8 @@ namespace Data.Context
 
             modelBuilder.Entity<EFClientConnectionHistory>(ent => ent.HasIndex(history => history.CreatedDateTime));
 
+            modelBuilder.Entity<EFServerSnapshot>(ent => ent.HasIndex(snapshot => snapshot.CapturedAt));
+
             // force full name for database conversion
             modelBuilder.Entity<EFClient>().ToTable("EFClients");
             modelBuilder.Entity<EFAlias>().ToTable("EFAlias");

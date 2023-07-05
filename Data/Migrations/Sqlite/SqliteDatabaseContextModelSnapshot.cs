@@ -812,6 +812,7 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<string>("SearchableIPAddress")
                         .ValueGeneratedOnAddOrUpdate()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT")
                         .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
 
@@ -1107,6 +1108,8 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ServerSnapshotId");
+
+                    b.HasIndex("CapturedAt");
 
                     b.HasIndex("MapId");
 

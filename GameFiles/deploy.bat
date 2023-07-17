@@ -4,6 +4,7 @@ ECHO "Pluto IW5"
 xcopy /y .\GameInterface\_integration_base.gsc "%LOCALAPPDATA%\Plutonium\storage\iw5\scripts"
 xcopy /y .\GameInterface\_integration_shared.gsc "%LOCALAPPDATA%\Plutonium\storage\iw5\scripts"
 xcopy /y .\GameInterface\_integration_iw5.gsc "%LOCALAPPDATA%\Plutonium\storage\iw5\scripts"
+xcopy /y .\GameInterface\_integration_utility.gsh "%LOCALAPPDATA%\Plutonium\storage\iw5\scripts"
 xcopy /y .\AntiCheat\IW5\storage\iw5\scripts\_customcallbacks.gsc "%LOCALAPPDATA%\Plutonium\storage\iw5\scripts\mp"
 
 ECHO "Pluto T5"

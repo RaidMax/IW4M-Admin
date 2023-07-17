@@ -1,5 +1,7 @@
 #include common_scripts\utility;
 
+#inline scripts\_integration_utility;
+
 Init()
 {
     thread Setup();
@@ -9,12 +11,12 @@ Setup()
 {
     level endon( "game_ended" );
     waittillframeend;
-    
+
     level waittill( level.notifyTypes.sharedFunctionsInitialized );
     level.eventBus.gamename = "IW5";
-    
+
     scripts\_integration_base::RegisterLogger( ::Log2Console );
-    
+
     level.overrideMethods[level.commonFunctions.getTotalShotsFired]         = ::GetTotalShotsFired;
     level.overrideMethods[level.commonFunctions.setDvar]                    = ::SetDvarIfUninitializedWrapper;
     level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]    = ::WaitillNotifyOrTimeoutWrapper;
@@ -22,7 +24,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.getXuid]                    = ::GetXuidWrapper;
     level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]      = ::WaitTillAnyTimeout;
     RegisterClientCommands();
-    
+
     level notify( level.notifyTypes.gameFunctionsInitialized );
 }
 
@@ -82,45 +84,36 @@ WaitTillAnyTimeout( timeOut, string1, string2, string3, string4, string5 )
 
 GiveWeaponImpl( event, data )
 {
-    if ( !IsAlive( self ) )
-    {
-        return self.name + "^7 is not alive";
-    }
-    
+    _IS_ALIVE( self );
+
     self IPrintLnBold( "You have been given a new weapon" );
     self GiveWeapon( data["weaponName"] );
     self SwitchToWeapon( data["weaponName"] );
-    
+
     return self.name + "^7 has been given ^5" + data["weaponName"]; 
 }
 
 TakeWeaponsImpl()
 {
-    if ( !IsAlive( self ) )
-    {
-        return self.name + "^7 is not alive";
-    }
-    
+    _IS_ALIVE( self );
+
     self TakeAllWeapons();
     self IPrintLnBold( "All your weapons have been taken" );
-    
+
     return "Took weapons from " + self.name;
 }
 
 TeamSwitchImpl()
 {
-    if ( !IsAlive( self ) )
-    {
-        return self + "^7 is not alive";
-    }
-    
+    _IS_ALIVE( self );
+
     team = level.allies;
-    
+
     if ( self.team == "allies" ) 
     {
         team = level.axis;
     }
-    
+
     self IPrintLnBold( "You are being team switched" );
     wait( 2 );
     self [[team]]();
@@ -130,10 +123,7 @@ TeamSwitchImpl()
 
 LockControlsImpl()
 {
-    if ( !IsAlive( self ) )
-    {
-        return self.name + "^7 is not alive";
-    }
+    _IS_ALIVE( self );
 
     if ( !IsDefined ( self.isControlLocked ) )
     {
@@ -149,11 +139,11 @@ LockControlsImpl()
         info = [];
         info[ "alertType" ] = "Alert!";
         info[ "message" ] = "You have been frozen!";
-        
+
         self AlertImpl( undefined, info );
 
         self.isControlLocked = true;
-        
+
         return self.name + "\'s controls are locked";
     }
     else
@@ -170,11 +160,8 @@ LockControlsImpl()
 
 NoClipImpl()
 {
-    if ( !IsAlive( self ) )
-    {
-        self IPrintLnBold( "You are not alive" );
-    }
-    
+    _IS_ALIVE( self );
+
     if ( !IsDefined ( self.isNoClipped ) )
     {
         self.isNoClipped = false;
@@ -184,29 +171,29 @@ NoClipImpl()
     {
         SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 1 );
-        
+
         self God();
         self Noclip();
         self Hide();
         SetDvar( "sv_cheats", 0 );
-        
+
         self.isNoClipped = true;
-        
+
         self IPrintLnBold( "NoClip enabled" );
     }
     else
     {
         SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 0 );
-        
+
         self God();
         self Noclip();
         self Hide();
-        
+
         SetDvar( "sv_cheats", 0 );
-        
+
         self.isNoClipped = false;
-        
+
         self IPrintLnBold( "NoClip disabled" );
     }
 
@@ -215,12 +202,8 @@ NoClipImpl()
 
 HideImpl()
 {
-    if ( !IsAlive( self ) )
-    {
-        self IPrintLnBold( "You are not alive" );
-        return;
-    }
-    
+    _IS_ALIVE( self );
+
     if ( !IsDefined ( self.isHidden ) )
     {
         self.isHidden = false;
@@ -230,26 +213,26 @@ HideImpl()
     {
         SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 1 );
-        
+
         self God();
         self Hide();
         SetDvar( "sv_cheats", 0 );
-        
+
         self.isHidden = true;
-        
+
         self IPrintLnBold( "Hide enabled" );
     }
     else
     {
         SetDvar( "sv_cheats", 1 );
         self SetClientDvar( "cg_thirdperson", 0 );
-        
+
         self God();
         self Show();
         SetDvar( "sv_cheats", 0 );
-        
+
         self.isHidden = false;
-        
+
         self IPrintLnBold( "Hide disabled" );
     }
 }
@@ -274,6 +257,8 @@ GotoImpl( event, data )
 
 GotoCoordImpl( data )
 {
+    _VERIFY( self, "player entity is not defined" );
+
     if ( !IsAlive( self ) )
     {
         self IPrintLnBold( "You are not alive" );
@@ -287,6 +272,8 @@ GotoCoordImpl( data )
 
 GotoPlayerImpl( target )
 {
+    _VERIFY( target, "player entity is not defined" );
+
     if ( !IsAlive( target ) )
     {
         self IPrintLnBold( target.name + " is not alive" );
@@ -299,10 +286,7 @@ GotoPlayerImpl( target )
 
 PlayerToMeImpl( event )
 {
-    if ( !IsAlive( self ) )
-    {
-        return self.name + " is not alive";
-    }
+    _IS_ALIVE( self );
 
     self SetOrigin( event.origin GetOrigin() );
     return "Moved here " + self.name;    
@@ -310,10 +294,7 @@ PlayerToMeImpl( event )
 
 KillImpl()
 {
-    if ( !IsAlive( self ) )
-    {
-        return self.name + " is not alive";
-    }
+    _IS_ALIVE( self );
 
     self Suicide();
     self IPrintLnBold( "You were killed by " + self.name );
@@ -323,13 +304,15 @@ KillImpl()
 
 SetSpectatorImpl()
 {
+    _VERIFY( self, "player entity is not defined" );
+
     if ( self.pers["team"] == "spectator" ) 
     {
         return self.name + " is already spectating";
     }
-    
+
     self [[level.spectator]]();
     self IPrintLnBold( "You have been moved to spectator" );
-    
+
     return self.name + " has been moved to spectator";
 }

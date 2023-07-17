@@ -160,7 +160,7 @@ LockControlsImpl()
 
 NoClipImpl()
 {
-    _VERIFY( self, "player entity is not defined" );
+    _VERIFY_PLAYER_ENT( self );
 
     if ( !IsAlive( self ) )
     {
@@ -207,7 +207,7 @@ NoClipImpl()
 
 HideImpl()
 {
-    _VERIFY( self, "player entity is not defined" );
+    _VERIFY_PLAYER_ENT( self );
 
     if ( !IsAlive( self ) )
     {
@@ -267,7 +267,7 @@ GotoImpl( event, data )
 
 GotoCoordImpl( data )
 {
-    _VERIFY( self, "player entity is not defined" );
+    _VERIFY_PLAYER_ENT( self );
 
     if ( !IsAlive( self ) )
     {
@@ -282,7 +282,7 @@ GotoCoordImpl( data )
 
 GotoPlayerImpl( target )
 {
-    _VERIFY( target, "player entity is not defined" );
+    _VERIFY_PLAYER_ENT( self );
 
     if ( !IsAlive( target ) )
     {
@@ -314,7 +314,7 @@ KillImpl()
 
 SetSpectatorImpl()
 {
-    _VERIFY( self, "player entity is not defined" );
+    _VERIFY_PLAYER_ENT( self );
 
     if ( self.pers["team"] == "spectator" ) 
     {

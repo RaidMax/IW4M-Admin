@@ -34,3 +34,7 @@
     { \
         return ent.name + "^7 is not alive"; \
     }
+
+// This function should be used to verify if a player entity is defined
+#define _VERIFY_PLAYER_ENT( ent ) \
+    _VERIFY( ent, "player entity is not defined" )

@@ -8,7 +8,7 @@ Init()
 Setup()
 {
     level endon( "game_ended" );
-    
+
     // setup default vars
     level.eventBus              = spawnstruct();
     level.eventBus.inVar        = "sv_iw4madmin_in";
@@ -16,7 +16,7 @@ Setup()
     level.eventBus.failKey      = "fail";
     level.eventBus.timeoutKey   = "timeout";
     level.eventBus.timeout      = 30;
-    
+
     level.commonFunctions                           = spawnstruct();
     level.commonFunctions.setDvar                   = "SetDvarIfUninitialized";
     level.commonFunctions.getPlayerFromClientNum    = "GetPlayerFromClientNum";
@@ -46,12 +46,12 @@ Setup()
     level.commonKeys.busDir   = "sv_iw4madmin_integration_busdir";
     level.eventBus.inLocation = "";
     level.eventBus.outLocation = "";
-    
+
     level.notifyTypes                                   = spawnstruct();
     level.notifyTypes.gameFunctionsInitialized          = "GameFunctionsInitialized";
     level.notifyTypes.sharedFunctionsInitialized        = "SharedFunctionsInitialized";
     level.notifyTypes.integrationBootstrapInitialized   = "IntegrationBootstrapInitialized";
-    
+
     level.clientDataKey = "clientData";
 
     level.eventTypes                            = spawnstruct();
@@ -61,9 +61,9 @@ Setup()
     level.eventTypes.setClientDataRequested     = "SetClientDataRequested";
     level.eventTypes.setClientDataCompleted     = "SetClientDataCompleted";
     level.eventTypes.executeCommandRequested    = "ExecuteCommandRequested";
-    
+
     level.iw4madminIntegrationDebug = 0;
-    
+
     // map the event type to the handler
     level.eventCallbacks = [];
     level.eventCallbacks[level.eventTypes.clientDataReceived]       = ::OnClientDataReceived;
@@ -76,14 +76,14 @@ Setup()
 
     level.iw4madminIntegrationDebug = GetDvarInt( "sv_iw4madmin_integration_debug" );
     InitializeLogger();
-    
+
     wait ( 0.05 * 2 ); // needed to give script engine time to propagate notifies
-    
+
     level notify( level.notifyTypes.integrationBootstrapInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
-    
+
     LogDebug( "Integration received notify that game functions are initialized" );
-    
+
     _SetDvarIfUninitialized( level.eventBus.inVar, "" );
     _SetDvarIfUninitialized( level.eventBus.outVar, "" );
     _SetDvarIfUninitialized( level.commonKeys.enabled, 1 );
@@ -93,12 +93,12 @@ Setup()
     _SetDvarIfUninitialized( "GroupSeparatorChar", "" );
     _SetDvarIfUninitialized( "RecordSeparatorChar", "" );
     _SetDvarIfUninitialized( "UnitSeparatorChar", "" );
-    
+
     if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }
-    
+
     // start long running tasks
     thread MonitorEvents();
     thread MonitorBus();
@@ -113,7 +113,7 @@ MonitorEvents()
         level waittill( level.eventTypes.eventAvailable, event );
  
         LogDebug( "Processing Event " + event.type + "-" + event.subtype );
-        
+
         eventHandler = level.eventCallbacks[event.type];
 
         if ( IsDefined( eventHandler ) )
@@ -161,11 +161,13 @@ _SetDvarIfUninitialized( dvarName, dvarValue )
 
 _GetPlayerFromClientNum( clientNum )
 {
+    assertEx( clientNum >= 0, "clientNum cannot be negative" );
+
     if ( clientNum < 0 )
     {
         return undefined;
     }
-    
+
     for ( i = 0; i < level.players.size; i++ )
     {
         if ( level.players[i] getEntityNumber() == clientNum )
@@ -329,7 +331,7 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
     {
         data = "";
     }
-    
+
     if ( !IsDefined( eventSubtype ) )
     {
         eventSubtype = "None";
@@ -344,9 +346,9 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
     {
         entOrId = entOrId getEntityNumber();
     }
-    
+
     request = "0";
-    
+
     if ( responseExpected ) 
     {
         request = "1";
@@ -355,14 +357,14 @@ BuildEventRequest( responseExpected, eventType, eventSubtype, entOrId, data )
     data = BuildDataString( data );
     groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
     request = request + groupSeparator + eventType + groupSeparator + eventSubtype + groupSeparator + entOrId + groupSeparator + data;
-    
+
     return request;
 }
 
 MonitorBus()
 {
     level endon( level.eventTypes.gameEnd );
-    
+
     level.eventBus.inLocation = level.eventBus.inVar + "_" + GetDvar( "net_port" );
     level.eventBus.outLocation = level.eventBus.outVar + "_" + GetDvar( "net_port" );
 
@@ -372,7 +374,7 @@ MonitorBus()
     for( ;; )
     {
         wait ( 0.1 );
-        
+
         // check to see if IW4MAdmin is ready to receive more data
         inVal = [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation );
 
@@ -380,19 +382,19 @@ MonitorBus()
         {
             level notify( "bus_ready" );
         }
-        
+
         eventString = [[level.busMethods[level.commonFunctions.getOutboundData]]]( level.eventBus.outLocation );
-        
+
         if ( !IsDefined( eventString ) || eventString == "" ) 
         {
             continue;
         }
 
         LogDebug( "-> " + eventString );
-        
+
         groupSeparator = GetSubStr( GetDvar( "GroupSeparatorChar" ), 0, 1 );
         NotifyEvent( strtok( eventString, groupSeparator ) );
-        
+
         [[level.busMethods[level.commonFunctions.SetOutboundData]]]( level.eventBus.outLocation, "" );
     }
 }
@@ -404,7 +406,7 @@ QueueEvent( request, eventType, notifyEntity )
     start = GetTime();
     maxWait = level.eventBus.timeout * 1000; // 30 seconds
     timedOut = "";
-   
+
     while ( [[level.busMethods[level.commonFunctions.getInboundData]]]( level.eventBus.inLocation ) != "" && ( GetTime() - start ) < maxWait )
     {
         level [[level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]]]( "bus_ready", 1 );
@@ -415,10 +417,10 @@ QueueEvent( request, eventType, notifyEntity )
             timedOut = "set";
             continue;
         }
-        
+
         timedOut = "unset";
     }
-   
+
     if ( timedOut == "set" )
     {
         LogDebug( "Timed out waiting for response..." );
@@ -432,9 +434,9 @@ QueueEvent( request, eventType, notifyEntity )
 
         return;
     }
-    
+
     LogDebug( "<- " + request );
-    
+
     [[level.busMethods[level.commonFunctions.setInboundData]]]( level.eventBus.inLocation, request );
 }
 
@@ -445,10 +447,10 @@ ParseDataString( data )
         LogDebug( "No data to parse" );
         return [];
     }
-    
+
     dataParts = strtok( data, GetSubStr( GetDvar( "RecordSeparatorChar" ), 0, 1 ) );
     dict = [];
-    
+
     for ( i = 0; i < dataParts.size; i++ )
     {
         part = dataParts[i];
@@ -458,7 +460,7 @@ ParseDataString( data )
         dict[key] = value;
         dict[i] = key;
     }
-    
+
     return dict;
 }
 
@@ -495,14 +497,14 @@ NotifyEvent( eventInfo )
 {
     origin = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[3] ) );
     target = [[level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]]]( int( eventInfo[4] ) );
-    
+
     event = spawnstruct();
     event.type = eventInfo[1];
     event.subtype = eventInfo[2];
     event.data = ParseDataString( eventInfo[5] );
     event.origin = origin;
     event.target = target;
-    
+
     if ( int( eventInfo[3] ) != -1 && !IsDefined( origin ) )
     {
         LogDebug( "origin is null but the slot id is " + int( eventInfo[3] ) );
@@ -529,7 +531,7 @@ AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
     {
         return;
     }
-    
+
     level.clientCommandCallbacks[commandName] = callback;
     level.clientCommandRusAsTarget[commandName] = shouldRunAsTarget == true; //might speed up things later in case someone gives us a string or number instead of a boolean
 }
@@ -540,6 +542,7 @@ AddClientCommand( commandName, shouldRunAsTarget, callback, shouldOverwrite )
 
 OnClientDataReceived( event )
 {
+    assertEx( isDefined( self ), "player entity is not defined");
     clientData = self.pers[level.clientDataKey];
 
     if ( event.subtype == "Fail" ) 
@@ -555,15 +558,15 @@ OnClientDataReceived( event )
         {
             clientData.meta = [];
         }
-        
+
         metaKey = event.data[0];
         clientData.meta[metaKey] = event.data[metaKey];
 
  	    LogDebug( "Meta Key=" + CoerceUndefined( metaKey ) + ", Meta Value=" + CoerceUndefined( event.data[metaKey] ) );
-        
+
         return;
     }
-    
+
     clientData.permissionLevel = event.data["level"];
     clientData.clientId = event.data["clientId"];
     clientData.lastConnection = event.data["lastConnection"];
@@ -577,7 +580,7 @@ OnExecuteCommand( event )
 {
     data = event.data;
     response = "";
-    
+
     command = level.clientCommandCallbacks[event.subtype];
     runAsTarget = level.clientCommandRusAsTarget[event.subtype];
     executionContextEntity = event.origin;
@@ -586,7 +589,7 @@ OnExecuteCommand( event )
     {
         executionContextEntity = event.target;
     }
-    
+
     if ( IsDefined( command ) ) 
     {
         if ( IsDefined( executionContextEntity ) )
@@ -602,7 +605,7 @@ OnExecuteCommand( event )
     {
         LogDebug( "Unknown Client command->" +  event.subtype );
     }
-    
+
     // send back the response to the origin, but only if they're not the target
     if ( IsDefined( response ) && response != "" && IsPlayer( event.origin ) && event.origin != event.target ) 
     {

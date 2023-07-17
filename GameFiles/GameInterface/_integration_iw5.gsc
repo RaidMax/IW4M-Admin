@@ -160,7 +160,12 @@ LockControlsImpl()
 
 NoClipImpl()
 {
-    _IS_ALIVE( self );
+    _VERIFY( self, "player entity is not defined" );
+
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+    }
 
     if ( !IsDefined ( self.isNoClipped ) )
     {
@@ -202,7 +207,12 @@ NoClipImpl()
 
 HideImpl()
 {
-    _IS_ALIVE( self );
+    _VERIFY( self, "player entity is not defined" );
+
+    if ( !IsAlive( self ) )
+    {
+        self IPrintLnBold( "You are not alive" );
+    }
 
     if ( !IsDefined ( self.isHidden ) )
     {

@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Integrations.Cod.SecureRcon;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using SharedLibraryCore;
@@ -24,6 +25,7 @@ namespace Integrations.Cod
     public class CodRConConnection : IRConConnection
     {
         private static readonly ConcurrentDictionary<EndPoint, ConnectionState> ActiveQueries = new();
+        private const string PkPattern = "-----BEGIN PRIVATE KEY-----";
         public IPEndPoint Endpoint { get; }
         public string RConPassword { get; }
 
@@ -147,49 +149,33 @@ namespace Integrations.Cod
             {
                 var convertedRConPassword = ConvertEncoding(RConPassword);
                 var convertedParameters = ConvertEncoding(parameters);
-                byte SafeConversion(char c)
-                {
-                    try
-                    {
-                        return Convert.ToByte(c);
-                    }
-
-                    catch
-                    {
-                        return (byte)'.';
-                    }
-                };
 
                 switch (type)
                 {
                     case StaticHelpers.QueryType.GET_DVAR:
                         waitForResponse = true;
-                        payload = string
-                            .Format(_config.CommandPrefixes.RConGetDvar, convertedRConPassword,
-                                convertedParameters + '\0').Select(SafeConversion).ToArray();
+                        payload = BuildPayload(_config.CommandPrefixes.RConGetDvar, convertedRConPassword,
+                            convertedParameters);
                         break;
                     case StaticHelpers.QueryType.SET_DVAR:
-                        payload = string
-                            .Format(_config.CommandPrefixes.RConSetDvar, convertedRConPassword,
-                                convertedParameters + '\0').Select(SafeConversion).ToArray();
+                        payload = BuildPayload(_config.CommandPrefixes.RConSetDvar, convertedRConPassword,
+                            convertedParameters);
                         break;
                     case StaticHelpers.QueryType.COMMAND:
-                        payload = string
-                            .Format(_config.CommandPrefixes.RConCommand, convertedRConPassword,
-                                convertedParameters + '\0').Select(SafeConversion).ToArray();
+                        payload = BuildPayload(_config.CommandPrefixes.RConCommand, convertedRConPassword,
+                            convertedParameters);
                         break;
                     case StaticHelpers.QueryType.GET_STATUS:
                         waitForResponse = true;
-                        payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(SafeConversion).ToArray();
+                        payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(Helpers.SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_INFO:
                         waitForResponse = true;
-                        payload = (_config.CommandPrefixes.RConGetInfo + '\0').Select(SafeConversion).ToArray();
+                        payload = (_config.CommandPrefixes.RConGetInfo + '\0').Select(Helpers.SafeConversion).ToArray();
                         break;
                     case StaticHelpers.QueryType.COMMAND_STATUS:
                         waitForResponse = true;
-                        payload = string.Format(_config.CommandPrefixes.RConCommand, convertedRConPassword, "status\0")
-                            .Select(SafeConversion).ToArray();
+                        payload = BuildPayload(_config.CommandPrefixes.RConCommand, convertedRConPassword, "status");
                         break;
                 }
             }
@@ -332,6 +318,27 @@ namespace Integrations.Cod
             var validatedResponse = ValidateResponse(type, responseString);
 
             return validatedResponse;
+        }
+
+        private byte[] BuildPayload(string queryTemplate, string convertedRConPassword, string convertedParameters)
+        {
+            byte[] payload;
+            if (!RConPassword.StartsWith(PkPattern))
+            {
+                payload = string
+                    .Format(queryTemplate, convertedRConPassword,
+                        convertedParameters + '\0').Select(Helpers.SafeConversion).ToArray();
+            }
+            else
+            {
+                var textContent = string
+                    .Format(queryTemplate, "", convertedParameters)
+                    .Replace("rcon", "rconSafe ")
+                    .Replace("  ", "").Split(" ");
+                payload = Helpers.BuildSafeRconPayload(textContent[0], textContent[1], RConPassword);
+            }
+
+            return payload;
         }
 
         private async Task<byte[][]> SendPayloadAsync(Socket rconSocket, byte[] payload, bool waitForResponse,
@@ -480,7 +487,7 @@ namespace Integrations.Cod
 
             return string.Join("", splitStatusStrings);
         }
-        
+
         /// <summary>
         /// Recombines multiple game messages into one
         /// </summary>
@@ -513,7 +520,7 @@ namespace Integrations.Cod
         {
             return connectionState.ReceivedBytes.ToArray();
         }
-        
+
         #endregion
     }
 }

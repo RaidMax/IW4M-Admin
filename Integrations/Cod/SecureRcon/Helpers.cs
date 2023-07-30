@@ -17,7 +17,7 @@ public static class Helpers
     
     private static byte[] SignData(byte[] data, string privateKey)
     {
-        using var rsa = new RSACryptoServiceProvider(512);
+        using var rsa = new RSACryptoServiceProvider();
         rsa.ImportFromPem(privateKey);
         var rsaFormatter = new RSAPKCS1SignatureFormatter(rsa);
         rsaFormatter.SetHashAlgorithm("SHA512");

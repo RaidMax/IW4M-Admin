@@ -129,7 +129,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
                 await _onIo.WaitAsync();
             }
 
-            await using var fileStream = File.OpenWrite(_path);
+            await using var fileStream = File.Create(_path);
             await JsonSerializer.SerializeAsync(fileStream, configuration, _serializerOptions);
             await fileStream.DisposeAsync();
             _configurationInstance = configuration;

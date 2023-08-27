@@ -179,6 +179,7 @@ namespace SharedLibraryCore
                 server.Reports.Count(report => DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)));
             ViewBag.PermissionsSet = PermissionsSet;
             ViewBag.Alerts = AlertManager.RetrieveAlerts(Client);
+            ViewBag.Manager = Manager;
 
             base.OnActionExecuting(context);
         }

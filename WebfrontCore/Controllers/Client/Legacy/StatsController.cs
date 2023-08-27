@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Data.Abstractions;
 using Stats.Config;
+using WebfrontCore.QueryHelpers.Models;
 
 namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
 {
@@ -121,7 +122,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         }
 
         [HttpGet("Message/Find")]
-        public async Task<IActionResult> FindMessage([FromQuery] string query)
+        public async Task<IActionResult> FindMessage([FromQuery] ChatResourceRequest query)
         {
             ViewBag.Localization = _translationLookup;
             ViewBag.EnableColorCodes = _manager.GetApplicationSettings().Configuration().EnableColorCodes;
@@ -130,26 +131,8 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
             ViewBag.Title = _translationLookup["WEBFRONT_STATS_MESSAGES_TITLE"];
             ViewBag.Error = null;
             ViewBag.IsFluid = true;
-            ChatSearchQuery searchRequest = null;
-
-            try
-            {
-                searchRequest = query.ParseSearchInfo(int.MaxValue, 0);
-            }
-
-            catch (ArgumentException e)
-            {
-                _logger.LogWarning(e, "Could not parse chat message search query {query}", query);
-                ViewBag.Error = e;
-            }
-
-            catch (FormatException e)
-            {
-                _logger.LogWarning(e, "Could not parse chat message search query filter format {query}", query);
-                ViewBag.Error = e;
-            }
-
-            var result = searchRequest != null ? await _chatResourceQueryHelper.QueryResource(searchRequest) : null;
+        
+            var result = query != null ? await _chatResourceQueryHelper.QueryResource(query) : null;
             return View("~/Views/Client/Message/Find.cshtml", result);
         }
 

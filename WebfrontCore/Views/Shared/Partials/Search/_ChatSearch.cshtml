@@ -1,0 +1,86 @@
+@using WebfrontCore.QueryHelpers.Models
+@using SharedLibraryCore.Interfaces
+@using System.Globalization
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model string
+@{
+    var existingChatFilter = ViewBag.Query as ChatResourceRequest;
+    var manager = ViewBag.Manager as IManager;
+}
+
+<div id="chatSearchWrapper@(Model)" data-has-data="@(existingChatFilter?.HasData ?? false)" >
+    <div class="form-group">
+        <label for="messageContains@(Model)">@ViewBag.Localization["WEBFRONT_ACTION_LABEL_MESSAGE"]</label>
+        <div class="d-flex">
+            <input type="text" class="form-control" name="messageContains" id="messageContains@(Model)}"
+                   placeholder="Contains" value="@existingChatFilter?.MessageContains"/>
+            <div class="custom-control ml-10 align-self-center">
+                <div class="custom-switch">
+                    @if (existingChatFilter?.IsExactMatch ?? false)
+                    {
+                        <input type="checkbox" id="isExactMatch@(Model)" name="isExactMatch" value="true"
+                               checked="checked">
+                    }
+                    else
+                    {
+                        <input type="checkbox" id="isExactMatch@(Model)" name="isExactMatch" value="true">
+                    }
+
+                    <label for="isExactMatch@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"]</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="serverId@(Model)" class="w-quarter">@ViewBag.Localization["WEBFRONT_BAN_MGMT_FORM_ID"]</label>
+        <label for="clientId@(Model)" class="">@ViewBag.Localization["WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER"]</label>
+
+        <div class="d-flex">
+            <input type="text" class="form-control w-quarter" name="clientId" id="clientId@(Model)}"
+                   placeholder="Id" value="@existingChatFilter?.ClientId"/>
+            <select class="form-control w-three-quarter ml-10" id="serverId@(Model)" name="serverId">
+                <option value="">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"]</option>
+                @foreach (var server in manager!.GetServers())
+                {
+                    <option value="@server.Id" selected="@(server.Id == existingChatFilter?.ServerId)">
+                        [@server.GameName.ToString()] @server.ServerName
+                    </option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="sentAfter@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_AFTER"]</label>
+        @{
+            var afterDate = existingChatFilter?.SentAfterDateTime ?? DateTime.UtcNow.AddHours(-1);
+        }
+        <div class="d-flex">
+            <input type="text" class="form-control date-picker-input w-half" name="sentAfter"
+                   id="sentAfter@(Model)" data-date="@afterDate.ToString("s", CultureInfo.InvariantCulture)"
+                   value="@afterDate.ToString("s", CultureInfo.InvariantCulture)"/>
+            <input type="time" class="form-control w-half ml-10" name="sentAfterTime"
+                   id="sentAfterTime@(Model)"
+                   value="@afterDate.ToString("HH:mm")"/>
+
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="sentAfter@(Model)">@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_BEFORE"]</label>
+        @{
+            var beforeDate = existingChatFilter?.SentBeforeDateTime ?? DateTime.UtcNow;
+        }
+        <div class="d-flex">
+            <input type="text" class="form-control date-picker-input w-half" name="sentBefore"
+                   id="sentBefore@(Model)" data-date="@beforeDate.ToString("s", CultureInfo.InvariantCulture)"
+                   value="@beforeDate.ToString("s", CultureInfo.InvariantCulture)"/>
+            <input type="time" class="form-control w-half ml-10" name="sentBeforeTime"
+                   id="sentBeforeTime@(Model)"
+                   value="@beforeDate.ToString("HH:mm")"/>
+        </div>
+    </div>
+
+    <input type="submit" class="btn btn-primary" value="@ViewBag.Localization["WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"]"/>
+</div>

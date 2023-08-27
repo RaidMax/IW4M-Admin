@@ -16,4 +16,7 @@ public class ClientResourceRequest : ClientPaginationRequest
     public EFClient.Permission? ClientLevel { get; set; }
     public Reference.Game? GameName { get; set; }
     public bool IncludeGeolocationData { get; set; } = true;
+
+    public bool HasData => !string.IsNullOrEmpty(ClientName) || !string.IsNullOrEmpty(ClientIp) ||
+                           !string.IsNullOrEmpty(ClientGuid) || ClientLevel is not null || GameName is not null;
 }

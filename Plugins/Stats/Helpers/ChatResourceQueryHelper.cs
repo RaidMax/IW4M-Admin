@@ -53,11 +53,11 @@ namespace Stats.Helpers
             }
 
             var iqMessages = context.Set<EFClientMessage>()
-                .Where(message => message.TimeSent < query.SentBefore);
+                .Where(message => message.TimeSent < query.SentBeforeDateTime);
 
-            if (query.SentAfter is not null)
+            if (query.SentAfterDateTime is not null)
             {
-                iqMessages = iqMessages.Where(message => message.TimeSent >= query.SentAfter);
+                iqMessages = iqMessages.Where(message => message.TimeSent >= query.SentAfterDateTime);
             }
 
             if (query.ClientId is not null)
@@ -72,7 +72,10 @@ namespace Stats.Helpers
 
             if (!string.IsNullOrEmpty(query.MessageContains))
             {
-                iqMessages = iqMessages.Where(message => EF.Functions.Like(message.Message.ToLower(), $"%{query.MessageContains.ToLower()}%"));
+                iqMessages = query.IsExactMatch
+                    ? iqMessages.Where(message => message.Message.ToLower() == query.MessageContains.ToLower())
+                    : iqMessages.Where(message =>
+                        EF.Functions.Like(message.Message.ToLower(), $"%{query.MessageContains.ToLower()}%"));
             }
 
             var iqResponse = iqMessages

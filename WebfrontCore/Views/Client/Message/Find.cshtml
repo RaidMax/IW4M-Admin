@@ -26,14 +26,14 @@ else
         </tbody>
     </table>
 
-    <div id="loaderLoad" class="mt-10 m-auto text-center d-none d-lg-block">
+    <div id="loaderLoad" class="mt-10 m-auto text-center">
         <i class="loader-load-more oi oi-chevron-bottom"></i>
     </div>
 
     @section scripts {
         <script>
         $(document).ready(function () {
-            initLoader('/Message/FindNext?query=@ViewBag.Query', '#message_table_body', @Model.RetrievedResultCount, @ViewBag.QueryLimit);
+            initLoader(`/Message/FindNext${window.location.search}`, '#message_table_body', @Model.RetrievedResultCount, 30);
         });
         </script>
     }

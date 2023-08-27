@@ -137,29 +137,9 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
         }
 
         [HttpGet("Message/FindNext")]
-        public async Task<IActionResult> FindNextMessages([FromQuery] string query, [FromQuery] int count,
-            [FromQuery] int offset)
+        public async Task<IActionResult> FindNextMessages(ChatResourceRequest query)
         {
-            ChatSearchQuery searchRequest;
-
-            try
-            {
-                searchRequest = query.ParseSearchInfo(count, offset);
-            }
-
-            catch (ArgumentException e)
-            {
-                _logger.LogWarning(e, "Could not parse chat message search query {query}", query);
-                throw;
-            }
-
-            catch (FormatException e)
-            {
-                _logger.LogWarning(e, "Could not parse chat message search query filter format {query}", query);
-                throw;
-            }
-
-            var result = await _chatResourceQueryHelper.QueryResource(searchRequest);
+            var result = await _chatResourceQueryHelper.QueryResource(query);
             return PartialView("~/Views/Client/Message/_Item.cshtml", result.Results);
         }
 

@@ -44,7 +44,7 @@
                 @foreach (var server in manager!.GetServers())
                 {
                     <option value="@server.Id" selected="@(server.Id == existingChatFilter?.ServerId)">
-                        [@server.GameName.ToString()] @server.ServerName
+                        [@server.GameName.ToString()] @server.ServerName.StripColors()
                     </option>
                 }
             </select>
@@ -62,6 +62,7 @@
                    value="@afterDate.ToString("s", CultureInfo.InvariantCulture)"/>
             <input type="time" class="form-control w-half ml-10" name="sentAfterTime"
                    id="sentAfterTime@(Model)"
+                   style="color-scheme: dark;"
                    value="@afterDate.ToString("HH:mm")"/>
 
         </div>
@@ -78,6 +79,7 @@
                    value="@beforeDate.ToString("s", CultureInfo.InvariantCulture)"/>
             <input type="time" class="form-control w-half ml-10" name="sentBeforeTime"
                    id="sentBeforeTime@(Model)"
+                   style="color-scheme: dark;"
                    value="@beforeDate.ToString("HH:mm")"/>
         </div>
     </div>

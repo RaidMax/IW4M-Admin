@@ -304,7 +304,7 @@ namespace IW4MAdmin.Application.RConParsers
                     {
                         networkIdString = match.Values[Configuration.Status.GroupMapping[ParserRegex.GroupType.RConNetworkId]];
 
-                        networkId = networkIdString.IsBotGuid() || (ip == null && ping == 999) ?
+                        networkId = networkIdString.IsBotGuid() || (ip == null && ping is 999 or 0) ?
                             name.GenerateGuidFromString() :
                             networkIdString.ConvertGuidToLong(Configuration.GuidNumberStyle);
                     }

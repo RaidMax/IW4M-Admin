@@ -28,18 +28,19 @@ namespace Stats.Dtos
         /// <summary>
         /// The time associated with SentAfter date
         /// </summary>
-        public string SentAfterTime { get; set; } = "00:00";
+        public string SentAfterTime { get; set; }
 
-        public DateTime? SentAfterDateTime => SentAfter?.Add(TimeSpan.Parse(SentAfterTime));
+        public DateTime? SentAfterDateTime => SentAfter?.Add(string.IsNullOrEmpty(SentAfterTime) ? TimeSpan.Zero : TimeSpan.Parse(SentAfterTime));
 
         /// <summary>
         /// only look for messages sent before this date0
         /// </summary>
         public DateTime SentBefore { get; set; } = DateTime.UtcNow.Date;
 
-        public string SentBeforeTime { get; set; } = DateTime.UtcNow.ToString("HH:mm");
+        public string SentBeforeTime { get; set; }
 
-        public DateTime? SentBeforeDateTime => SentBefore.Add(TimeSpan.Parse(SentBeforeTime));
+        public DateTime? SentBeforeDateTime =>
+            SentBefore.Add(string.IsNullOrEmpty(SentBeforeTime) ? TimeSpan.Zero : TimeSpan.Parse(SentBeforeTime));
         
         public bool IsExactMatch { get; set; }
         

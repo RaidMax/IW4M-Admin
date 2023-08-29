@@ -469,6 +469,8 @@ public class Plugin : IPluginV2
                 ClientId = request.ClientId,
                 Before = request.Before,
                 SentBefore = request.Before ?? DateTime.UtcNow,
+                SentAfter = request.After,
+                After = request.After,
                 Count = request.Count,
                 IsProfileMeta = true
             };

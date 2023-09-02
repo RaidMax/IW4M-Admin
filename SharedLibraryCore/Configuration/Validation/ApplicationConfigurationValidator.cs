@@ -67,7 +67,7 @@ namespace SharedLibraryCore.Configuration.Validation
 
             RuleFor(_app => _app.MasterUrl)
                 .NotNull()
-                .Must(_url => _url != null && _url.Scheme == Uri.UriSchemeHttp);
+                .Must(_url => _url != null && (_url.Scheme == Uri.UriSchemeHttp || _url.Scheme == Uri.UriSchemeHttps));
 
             RuleFor(_app => _app.CommandPrefix)
                 .NotEmpty();

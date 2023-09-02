@@ -1252,6 +1252,10 @@
           "Name":  "zombie_coast"
         },
         {
+          "Alias": "Shangri-La",
+          "Name":  "zombie_temple"
+        },
+        {
           "Alias": "Moon", 
           "Name":  "zombie_moon"
         },

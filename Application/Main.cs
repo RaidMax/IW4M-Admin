@@ -432,7 +432,12 @@ namespace IW4MAdmin.Application
             appConfigHandler.BuildAsync().GetAwaiter().GetResult();
             var commandConfigHandler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
             commandConfigHandler.BuildAsync().GetAwaiter().GetResult();
-            
+
+            if (appConfigHandler.Configuration()?.MasterUrl == new Uri("http://api.raidmax.org:5000"))
+            {
+                appConfigHandler.Configuration().MasterUrl = new ApplicationConfiguration().MasterUrl;
+            }
+
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")

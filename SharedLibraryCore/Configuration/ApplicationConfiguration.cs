@@ -206,7 +206,7 @@ namespace SharedLibraryCore.Configuration
             : ManualWebfrontUrl;
 
         [ConfigurationIgnore] public bool IgnoreServerConnectionLost { get; set; }
-        [ConfigurationIgnore] public Uri MasterUrl { get; set; } = new("http://api.raidmax.org:5000");
+        [ConfigurationIgnore] public Uri MasterUrl { get; set; } = new("https://master.iw4.zip");
 
         public IBaseConfiguration Generate()
         {

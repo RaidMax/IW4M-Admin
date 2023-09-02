@@ -22,10 +22,10 @@ const plugin = {
         rconParser.Configuration.MapStatus.AddMapping(111, 1);
         
         rconParser.Configuration.HostnameStatus.Pattern = '^hostname: +(.+)$';
-        rconParser.Configuration.MapStatus.AddMapping(113, 1);
+        rconParser.Configuration.HostnameStatus.AddMapping(113, 1);
 
         rconParser.Configuration.MaxPlayersStatus.Pattern = '^players *: +\\d+ humans, \\d+ bots \\((\\d+).+';
-        rconParser.Configuration.MapStatus.AddMapping(114, 1);
+        rconParser.Configuration.MaxPlayersStatus.AddMapping(114, 1);
 
         rconParser.Configuration.Dvar.Pattern = '^"(.+)" = "(.+)" (?:\\( def. "(.*)" \\))?(?: |\\w)+- (.+)$';
         rconParser.Configuration.Dvar.AddMapping(106, 1);

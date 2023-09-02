@@ -194,10 +194,14 @@ namespace IW4MAdmin.Application.RConParsers
             foreach (var line in response)
             {
                 var regex = Regex.Match(line, parserRegex.Pattern);
-                if (regex.Success && parserRegex.GroupMapping.ContainsKey(groupType))
+                
+                if (!regex.Success || !parserRegex.GroupMapping.ContainsKey(groupType))
                 {
-                    value = regex.Groups[parserRegex.GroupMapping[groupType]].ToString();
+                    continue;
                 }
+
+                value = regex.Groups[parserRegex.GroupMapping[groupType]].ToString();
+                break;
             }
 
             if (value == null)

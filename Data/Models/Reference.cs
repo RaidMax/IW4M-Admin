@@ -16,7 +16,8 @@
             T7 = 8,
             SHG1 = 9,
             CSGO = 10,
-            H1 = 11
+            H1 = 11,
+            LFD2 = 12,
         }
         
         public enum ConnectionType

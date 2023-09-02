@@ -4,7 +4,7 @@ let eventParser;
 const plugin = {
     author: 'RaidMax',
     version: 0.1,
-    name: 'LFD2 (SourceMod) Parser',
+    name: 'L4D2 (SourceMod) Parser',
     engine: 'Source',
     isParser: true,
 
@@ -120,10 +120,10 @@ const plugin = {
 
         eventParser.Configuration.Time.Pattern = '^L [01]\\d/[0-3]\\d/\\d+ - [0-2]\\d:[0-5]\\d:[0-5]\\d:';
 
-        rconParser.Version      = 'LFD2SM';
-        rconParser.GameName     = 10; // LFD2
-        eventParser.Version     = 'LFD2SM';
-        eventParser.GameName    = 10; // LFD2
+        rconParser.Version      = 'L4D2SM';
+        rconParser.GameName     = 12; // L4D2
+        eventParser.Version     = 'L4D2SM';
+        eventParser.GameName    = 12; // L4D2
         eventParser.URLProtocolFormat = 'steam://connect/{{ip}}:{{port}}';
     },
 

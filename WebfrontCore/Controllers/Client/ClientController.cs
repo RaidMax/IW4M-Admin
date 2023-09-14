@@ -249,7 +249,8 @@ namespace WebfrontCore.Controllers
         {
             ViewBag.Title = Localization["WEBFRONT_SEARCH_RESULTS_TITLE"];
             ViewBag.ClientResourceRequest = request;
-            
+
+            request.RequesterPermission = Client.Level;
             var response = await _clientResourceHelper.QueryResource(request);
             return request.Offset > 0
                 ? PartialView("Find/_AdvancedFindList", response.Results)

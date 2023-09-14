@@ -8,9 +8,11 @@ using Data.Abstractions;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Permissions;
 using WebfrontCore.QueryHelpers.Models;
 using EFClient = Data.Models.Client.EFClient;
 
@@ -18,6 +20,7 @@ namespace IW4MAdmin.Application.QueryHelpers;
 
 public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>
 {
+    public ApplicationConfiguration _appConfig { get; }
     private readonly IDatabaseContextFactory _contextFactory;
     private readonly IGeoLocationService _geoLocationService;
 
@@ -27,8 +30,10 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
         public EFAlias Alias { get; set; }
     }
 
-    public ClientResourceQueryHelper(IDatabaseContextFactory contextFactory, IGeoLocationService geoLocationService)
+    public ClientResourceQueryHelper(IDatabaseContextFactory contextFactory, IGeoLocationService geoLocationService,
+        ApplicationConfiguration appConfig)
     {
+        _appConfig = appConfig;
         _contextFactory = contextFactory;
         _geoLocationService = geoLocationService;
     }
@@ -75,7 +80,9 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
 
         if (!string.IsNullOrWhiteSpace(query.ClientIp))
         {
-            clientAliases = SearchByIp(query, clientAliases);
+            clientAliases = SearchByIp(query, clientAliases,
+                _appConfig.HasPermission(query.RequesterPermission, WebfrontEntity.ClientIPAddress,
+                    WebfrontPermission.Read));
         }
 
         var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection });
@@ -203,7 +210,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
     }
 
     private static IQueryable<ClientAlias> SearchByIp(ClientResourceRequest query,
-        IQueryable<ClientAlias> clientAliases)
+        IQueryable<ClientAlias> clientAliases, bool canSearchIP)
     {
         var ipString = query.ClientIp.Trim();
         var ipAddress = ipString.ConvertToIP();
@@ -213,7 +220,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
             clientAliases = clientAliases.Where(clientAlias =>
                 clientAlias.Alias.IPAddress != null && clientAlias.Alias.IPAddress == ipAddress);
         }
-        else
+        else if(canSearchIP)
         {
             clientAliases = clientAliases.Where(clientAlias =>
                 EF.Functions.Like(clientAlias.Alias.SearchableIPAddress, $"{ipString}%"));

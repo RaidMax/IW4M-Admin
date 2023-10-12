@@ -137,6 +137,8 @@ waitForFrameThread()
 
 waitForAdditionalAngles( logString, beforeFrameCount, afterFrameCount )
 {
+	self endon( "disconnect" );
+
 	currentIndex = self.currentAnglePosition;
 	wait( 0.05 * afterFrameCount );
 	

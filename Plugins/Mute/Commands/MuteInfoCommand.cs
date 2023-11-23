@@ -11,8 +11,8 @@ public class MuteInfoCommand : Command
 {
     private readonly MuteManager _muteManager;
 
-    public MuteInfoCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager) : base(config,
-        translationLookup)
+    public MuteInfoCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager,
+        MuteConfiguration muteConfiguration) : base(config, translationLookup)
     {
         _muteManager = muteManager;
         Name = "muteinfo";
@@ -20,7 +20,7 @@ public class MuteInfoCommand : Command
         Alias = "mi";
         Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
-        SupportedGames = Plugin.SupportedGames;
+        SupportedGames = muteConfiguration.GameCommands.Select(x => x.GameName).ToArray();
         Arguments = new[]
         {
             new CommandArgument

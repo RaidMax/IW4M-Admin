@@ -12,8 +12,8 @@ public class TempMuteCommand : Command
     private readonly MuteManager _muteManager;
     private const string TempBanRegex = @"([0-9]+\w+)\ (.+)";
 
-    public TempMuteCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager) : base(config,
-        translationLookup)
+    public TempMuteCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager,
+        MuteConfiguration muteConfiguration) : base(config, translationLookup)
     {
         _muteManager = muteManager;
         Name = "tempmute";
@@ -21,7 +21,7 @@ public class TempMuteCommand : Command
         Alias = "tm";
         Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
-        SupportedGames = Plugin.SupportedGames;
+        SupportedGames = muteConfiguration.GameCommands.Select(x => x.GameName).ToArray();
         Arguments = new[]
         {
             new CommandArgument
@@ -49,7 +49,7 @@ public class TempMuteCommand : Command
             gameEvent.Origin.Tell(_translationLookup["COMMANDS_DENY_SELF_TARGET"]);
             return;
         }
-        
+
         var match = Regex.Match(gameEvent.Data, TempBanRegex);
         if (match.Success)
         {

@@ -14,17 +14,19 @@ public class MuteManager
 {
     private readonly IMetaServiceV2 _metaService;
     private readonly ITranslationLookup _translationLookup;
+    private readonly MuteConfiguration _config;
     private readonly ILogger _logger;
     private readonly IDatabaseContextFactory _databaseContextFactory;
     private readonly SemaphoreSlim _onMuteAction = new(1, 1);
 
-    public MuteManager(ILogger<MuteManager> logger, IDatabaseContextFactory databaseContextFactory,
-        IMetaServiceV2 metaService, ITranslationLookup translationLookup)
+    public MuteManager(ILogger<MuteManager> logger, IDatabaseContextFactory databaseContextFactory, IMetaServiceV2 metaService,
+        ITranslationLookup translationLookup, MuteConfiguration config)
     {
         _logger = logger;
         _databaseContextFactory = databaseContextFactory;
         _metaService = metaService;
         _translationLookup = translationLookup;
+        _config = config;
     }
 
     public static bool IsExpiredMute(MuteStateMeta muteStateMeta) =>
@@ -131,8 +133,11 @@ public class MuteManager
     {
         var newPenalty = new EFPenalty
         {
-            Type = muteState is MuteState.Unmuted ? EFPenalty.PenaltyType.Unmute :
-                dateTime is null ? EFPenalty.PenaltyType.Mute : EFPenalty.PenaltyType.TempMute,
+            Type = muteState is MuteState.Unmuted
+                ? EFPenalty.PenaltyType.Unmute
+                : dateTime is null
+                    ? EFPenalty.PenaltyType.Mute
+                    : EFPenalty.PenaltyType.TempMute,
             Expires = muteState is MuteState.Unmuted ? DateTime.UtcNow : dateTime,
             Offender = target,
             Offense = reason,
@@ -148,10 +153,9 @@ public class MuteManager
     {
         await using var context = _databaseContextFactory.CreateContext();
         var mutePenalties = await context.Penalties
-            .Where(penalty => penalty.OffenderId == client.ClientId &&
-                              (penalty.Type == EFPenalty.PenaltyType.Mute ||
-                               penalty.Type == EFPenalty.PenaltyType.TempMute) &&
-                              (penalty.Expires == null || penalty.Expires > DateTime.UtcNow))
+            .Where(penalty => penalty.OffenderId == client.ClientId)
+            .Where(penalty => penalty.Type == EFPenalty.PenaltyType.Mute || penalty.Type == EFPenalty.PenaltyType.TempMute)
+            .Where(penalty => penalty.Expires == null || penalty.Expires > DateTime.UtcNow)
             .ToListAsync();
 
         foreach (var mutePenalty in mutePenalties)
@@ -162,26 +166,27 @@ public class MuteManager
         await context.SaveChangesAsync();
     }
 
-    public static async Task PerformGameCommand(Server server, EFClient? client, MuteStateMeta muteStateMeta)
+    public async Task PerformGameCommand(Server server, EFClient? client, MuteStateMeta muteStateMeta)
     {
         if (client is null || !client.IsIngame) return;
 
         switch (muteStateMeta.MuteState)
         {
             case MuteState.Muted:
-                await server.ExecuteCommandAsync($"muteClient {client.ClientNumber}");
+                var muteCommand = _config.GetCommand(server.GameName, MuteAction.Mute);
+                await server.ExecuteCommandAsync($"{muteCommand} {client.ClientNumber}");
                 muteStateMeta.CommandExecuted = true;
                 break;
             case MuteState.Unmuted:
-                await server.ExecuteCommandAsync($"unmute {client.ClientNumber}");
+                var unmuteCommand = _config.GetCommand(server.GameName, MuteAction.Unmute);
+                await server.ExecuteCommandAsync($"{unmuteCommand} {client.ClientNumber}");
                 muteStateMeta.CommandExecuted = true;
                 break;
         }
     }
 
     private async Task<MuteState?> ReadPersistentDataV1(EFClient client) => TryParse<MuteState>(
-        (await _metaService.GetPersistentMeta(Plugin.MuteKey, client.ClientId))?.Value,
-        out var muteState)
+        (await _metaService.GetPersistentMeta(Plugin.MuteKey, client.ClientId))?.Value, out var muteState)
         ? muteState
         : null;
 

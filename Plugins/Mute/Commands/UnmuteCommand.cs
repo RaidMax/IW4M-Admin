@@ -10,8 +10,8 @@ public class UnmuteCommand : Command
 {
     private readonly MuteManager _muteManager;
 
-    public UnmuteCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager) : base(config,
-        translationLookup)
+    public UnmuteCommand(CommandConfiguration config, ITranslationLookup translationLookup, MuteManager muteManager,
+        MuteConfiguration muteConfiguration) : base(config, translationLookup)
     {
         _muteManager = muteManager;
         Name = "unmute";
@@ -19,7 +19,7 @@ public class UnmuteCommand : Command
         Alias = "um";
         Permission = EFClient.Permission.Moderator;
         RequiresTarget = true;
-        SupportedGames = Plugin.SupportedGames;
+        SupportedGames = muteConfiguration.GameCommands.Select(x => x.GameName).ToArray();
         Arguments = new[]
         {
             new CommandArgument

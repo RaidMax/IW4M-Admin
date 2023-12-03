@@ -162,6 +162,26 @@ public class MuteManager
         await context.SaveChangesAsync();
     }
 
+    public static string GetMuteCommand(Server server)
+    {
+        return "muteClient";
+    }
+
+    public static string GetUnmuteCommand(Server server)
+    {
+        switch (server.GameName)
+        {
+            case Server.Game.IW4:
+                return "unmute";
+            case Server.Game.IW5:
+            case Server.Game.T6:
+                return "unmuteClient";
+            default:
+                // Throw?
+                return "";
+        }
+    }
+
     public static async Task PerformGameCommand(Server server, EFClient? client, MuteStateMeta muteStateMeta)
     {
         if (client is null || !client.IsIngame) return;
@@ -169,11 +189,13 @@ public class MuteManager
         switch (muteStateMeta.MuteState)
         {
             case MuteState.Muted:
-                await server.ExecuteCommandAsync($"muteClient {client.ClientNumber}");
+                var command = GetMuteCommand(server);
+                await server.ExecuteCommandAsync($"{command} {client.ClientNumber}");
                 muteStateMeta.CommandExecuted = true;
                 break;
             case MuteState.Unmuted:
-                await server.ExecuteCommandAsync($"unmute {client.ClientNumber}");
+                var command = GetUnmuteCommand(server);
+                await server.ExecuteCommandAsync($"{command} {client.ClientNumber}");
                 muteStateMeta.CommandExecuted = true;
                 break;
         }

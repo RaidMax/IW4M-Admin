@@ -21,7 +21,7 @@ public class Plugin : IPluginV2
 
     public const string MuteKey = "IW4MMute";
     public static IManager Manager { get; private set; } = null!;
-    public static readonly Server.Game[] SupportedGames = {Server.Game.IW4};
+    public static readonly Server.Game[] SupportedGames = {Server.Game.IW4, Server.Game.IW5};
     private static readonly string[] DisabledCommands = {nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"};
     private readonly IInteractionRegistration _interactionRegistration;
     private readonly IRemoteCommandService _remoteCommandService;

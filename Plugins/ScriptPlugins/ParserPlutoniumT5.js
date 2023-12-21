@@ -13,6 +13,7 @@ var plugin = {
     onLoadAsync: function (manager) {
         rconParser = manager.GenerateDynamicRConParser(this.name);
         eventParser = manager.GenerateDynamicEventParser(this.name);
+        eventParser.Configuration.GameDirectory = '';
 
         rconParser.Configuration.DefaultInstallationDirectoryHint = '{LocalAppData}/Plutonium/storage/t5';
         rconParser.Configuration.CommandPrefixes.RConResponse = '\xff\xff\xff\xffprint\n';
@@ -21,6 +22,7 @@ var plugin = {
         rconParser.Configuration.CommandPrefixes.RConGetInfo = undefined;
         rconParser.Configuration.GuidNumberStyle = 7; // Integer
         rconParser.Configuration.DefaultRConPort = 3074;
+        rconParser.Configuration.OverrideDvarNameMapping.Add('fs_homepath', 'fs_basegame');
         rconParser.Configuration.CanGenerateLogPath = false;
 
         rconParser.Configuration.OverrideCommandTimeouts.Clear();

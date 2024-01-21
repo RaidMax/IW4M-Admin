@@ -8,6 +8,7 @@
         <OutputType>Library</OutputType>
         <Configurations>Debug;Release;Prerelease</Configurations>
         <Platforms>AnyCPU</Platforms>
+        <RootNamespace>IW4MAdmin.Plugins.Mute</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

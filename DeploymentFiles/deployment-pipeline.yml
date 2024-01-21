@@ -181,6 +181,13 @@ jobs:
         artifact: 'IW4MAdmin.$(buildConfiguration)'
         publishLocation: 'pipeline'
 
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish nuget package artifact'
+      inputs:
+        targetPath: '$(Build.Repository.LocalPath)/SharedLibaryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
+        artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
+        publishLocation: 'pipeline'
+
     - task: FtpUpload@2
       condition: ne(variables['Build.SourceBranch'], 'refs/heads/develop')
       displayName: 'Upload zip file to website'

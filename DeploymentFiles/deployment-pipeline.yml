@@ -1,4 +1,4 @@
-name: '$(Date:yyyy.MM.dd)$(Rev:.r)'
+name: '$(Date:yyyy.M.d)$(Rev:.r)'
 
 trigger:
   batch: true
@@ -184,7 +184,7 @@ jobs:
     - task: PublishPipelineArtifact@1
       displayName: 'Publish nuget package artifact'
       inputs:
-        targetPath: '$(Build.Repository.LocalPath)/SharedLibraryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Date:yyyyMd).$(Rev:r).nupkg'
+        targetPath: '$(Build.Repository.LocalPath)/SharedLibraryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
         artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
         publishLocation: 'pipeline'
 

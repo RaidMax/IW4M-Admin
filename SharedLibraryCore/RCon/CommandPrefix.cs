@@ -16,5 +16,7 @@
         public string RConGetInfo { get; set; }
         public string RConResponse { get; set; }
         public string RconGetInfoResponseHeader { get; set; }
+        public string Mute { get; set; }
+        public string Unmute { get; set; }
     }
 }

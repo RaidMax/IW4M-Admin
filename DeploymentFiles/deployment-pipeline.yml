@@ -66,7 +66,7 @@ jobs:
       displayName: 'Build projects'
       inputs:
         solution: '$(solution)'
-        msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber)'
+        msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber) /t:Pack /p:PackageVersion=$(Build.BuildNumber)'
         platform: '$(buildPlatform)'
         configuration: '$(buildConfiguration)'
           
@@ -184,7 +184,7 @@ jobs:
     - task: PublishPipelineArtifact@1
       displayName: 'Publish nuget package artifact'
       inputs:
-        targetPath: '$(Build.Repository.LocalPath)/SharedLibaryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
+        targetPath: '$(Build.Repository.LocalPath)/SharedLibraryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
         artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
         publishLocation: 'pipeline'
 

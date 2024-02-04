@@ -26,7 +26,7 @@ jobs:
 
       - task: PowerShell@2
         displayName: 'Setup Build configuration'
-        condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+        condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/chore/nuget-pipeline'))
         inputs:
           targetType: 'inline'
           script: |
@@ -54,7 +54,6 @@ jobs:
         inputs:
           command: 'pack'
           packagesToPack: '**/SharedLibraryCore.csproj'
-          nobuild: true
           versioningScheme: 'byBuildNumber'
           
       - task: PublishPipelineArtifact@1

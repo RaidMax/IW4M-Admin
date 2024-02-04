@@ -57,6 +57,6 @@ jobs:
       - task: PublishPipelineArtifact@1
         displayName: 'Publish nuget package artifact'
         inputs:
-          targetPath: 'D:\a\1\s\RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
+          targetPath: 'D:\a\1\a\RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
           artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
           publishLocation: 'pipeline'

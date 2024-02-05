@@ -54,9 +54,10 @@
     </ItemGroup>
 
    <ItemGroup>
-        <ProjectReference Include="..\Data\Data.csproj">
-
-        </ProjectReference>
+       <ProjectReference Include="..\Data\Data.csproj">
+           <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+           <IncludeAssets>Data.dll</IncludeAssets>
+       </ProjectReference>
     </ItemGroup>
 
     <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

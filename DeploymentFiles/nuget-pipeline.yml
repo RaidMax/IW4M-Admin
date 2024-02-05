@@ -1,0 +1,55 @@
+name: '$(Date:yyyy.M.d)$(Rev:.r)'
+
+pr: none
+
+pool:
+  vmImage: 'windows-2022'
+
+variables:
+  buildPlatform: 'Any CPU'
+  outputFolder: '$(Build.ArtifactStagingDirectory)\Publish\$(buildConfiguration)'
+  releaseType: verified
+  buildConfiguration: Stable
+  isPreRelease: false
+
+jobs:
+  - job: Build_Pack
+    steps:
+      - task: PowerShell@2
+        displayName: 'Setup Build configuration'
+        condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/chore/nuget-pipeline'))
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo '##vso[task.setvariable variable=releaseType]prerelease'
+            echo '##vso[task.setvariable variable=buildConfiguration]Prerelease'
+            echo '##vso[task.setvariable variable=isPreRelease]true'
+          failOnStderr: true
+          
+      - task: DotNetCoreCLI@2
+        displayName: 'Build Data'
+        inputs:
+          command: 'build'
+          projects: '**/Data.csproj'
+          arguments: '-c $(buildConfiguration)'
+          
+      - task: DotNetCoreCLI@2
+        displayName: 'Build SLC'
+        inputs:
+          command: 'build'
+          projects: '**/SharedLibraryCore.csproj'
+          arguments: '-c $(buildConfiguration) /p:Version=$(Build.BuildNumber)'
+          
+      - task: DotNetCoreCLI@2
+        displayName: 'Pack SLC'
+        inputs:
+          command: 'pack'
+          packagesToPack: '**/SharedLibraryCore.csproj'
+          versioningScheme: 'byBuildNumber'
+          
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish nuget package artifact'
+        inputs:
+          targetPath: 'D:\a\1\a\RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
+          artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
+          publishLocation: 'pipeline'

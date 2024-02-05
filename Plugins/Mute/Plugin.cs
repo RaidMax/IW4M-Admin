@@ -21,7 +21,7 @@ public class Plugin : IPluginV2
 
     public const string MuteKey = "IW4MMute";
     public static IManager Manager { get; private set; } = null!;
-    public static Server.Game[] SupportedGames { get; } = [Server.Game.IW4];
+    public static Server.Game[] SupportedGames { get; private set; } = Array.Empty<Server.Game>();
     private static readonly string[] DisabledCommands = [nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"];
     private readonly IInteractionRegistration _interactionRegistration;
     private readonly IRemoteCommandService _remoteCommandService;
@@ -39,7 +39,10 @@ public class Plugin : IPluginV2
         IManagementEventSubscriptions.Unload += OnUnload;
 
         IManagementEventSubscriptions.ClientStateInitialized += OnClientStateInitialized;
+
         IGameServerEventSubscriptions.ClientDataUpdated += OnClientDataUpdated;
+        IGameServerEventSubscriptions.MonitoringStarted += OnServerMonitoredStarted;
+
         IGameEventSubscriptions.ClientMessaged += OnClientMessaged;
     }
 
@@ -318,5 +321,30 @@ public class Plugin : IPluginV2
                 return string.Join(".", commandResponse.Select(result => result.Response));
             }
         };
+    }
+
+    private Task OnServerMonitoredStarted(MonitorStartEvent serverEvent, CancellationToken token)
+    {
+        var game = (Server.Game)serverEvent.Server.GameCode;
+
+        lock (SupportedGames)
+        {
+            if (SupportedGames.Contains(game))
+            {
+                return Task.CompletedTask;
+            }
+
+            var server = Manager.GetServers().FirstOrDefault(x => x == serverEvent.Server);
+            var commandIsEmpty = string.IsNullOrWhiteSpace(server?.RconParser.Configuration.CommandPrefixes.Mute);
+
+            if (commandIsEmpty)
+            {
+                return Task.CompletedTask;
+            }
+
+            SupportedGames = SupportedGames.Append(game).ToArray();
+        }
+
+        return Task.CompletedTask;
     }
 }

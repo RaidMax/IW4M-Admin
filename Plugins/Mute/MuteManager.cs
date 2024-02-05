@@ -131,8 +131,11 @@ public class MuteManager
     {
         var newPenalty = new EFPenalty
         {
-            Type = muteState is MuteState.Unmuted ? EFPenalty.PenaltyType.Unmute :
-                dateTime is null ? EFPenalty.PenaltyType.Mute : EFPenalty.PenaltyType.TempMute,
+            Type = muteState is MuteState.Unmuted
+                ? EFPenalty.PenaltyType.Unmute
+                : dateTime is null
+                    ? EFPenalty.PenaltyType.Mute
+                    : EFPenalty.PenaltyType.TempMute,
             Expires = muteState is MuteState.Unmuted ? DateTime.UtcNow : dateTime,
             Offender = target,
             Offense = reason,
@@ -148,10 +151,9 @@ public class MuteManager
     {
         await using var context = _databaseContextFactory.CreateContext();
         var mutePenalties = await context.Penalties
-            .Where(penalty => penalty.OffenderId == client.ClientId &&
-                              (penalty.Type == EFPenalty.PenaltyType.Mute ||
-                               penalty.Type == EFPenalty.PenaltyType.TempMute) &&
-                              (penalty.Expires == null || penalty.Expires > DateTime.UtcNow))
+            .Where(penalty => penalty.OffenderId == client.ClientId)
+            .Where(penalty => penalty.Type == EFPenalty.PenaltyType.Mute || penalty.Type == EFPenalty.PenaltyType.TempMute)
+            .Where(penalty => penalty.Expires == null || penalty.Expires > DateTime.UtcNow)
             .ToListAsync();
 
         foreach (var mutePenalty in mutePenalties)
@@ -169,19 +171,20 @@ public class MuteManager
         switch (muteStateMeta.MuteState)
         {
             case MuteState.Muted:
-                await server.ExecuteCommandAsync($"muteClient {client.ClientNumber}");
+                var muteCommand = string.Format(server.RconParser.Configuration.CommandPrefixes.Mute, client.ClientNumber);
+                await server.ExecuteCommandAsync(muteCommand);
                 muteStateMeta.CommandExecuted = true;
                 break;
             case MuteState.Unmuted:
-                await server.ExecuteCommandAsync($"unmute {client.ClientNumber}");
+                var unMuteCommand = string.Format(server.RconParser.Configuration.CommandPrefixes.Unmute, client.ClientNumber);
+                await server.ExecuteCommandAsync(unMuteCommand);
                 muteStateMeta.CommandExecuted = true;
                 break;
         }
     }
 
     private async Task<MuteState?> ReadPersistentDataV1(EFClient client) => TryParse<MuteState>(
-        (await _metaService.GetPersistentMeta(Plugin.MuteKey, client.ClientId))?.Value,
-        out var muteState)
+        (await _metaService.GetPersistentMeta(Plugin.MuteKey, client.ClientId))?.Value, out var muteState)
         ? muteState
         : null;
 

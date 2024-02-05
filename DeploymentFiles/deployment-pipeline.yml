@@ -7,6 +7,10 @@ trigger:
     - release/pre
     - master
     - develop
+  paths:
+    exclude: 
+      - '**/*.yml'
+      - '*.yml'
 
 pr: none
 

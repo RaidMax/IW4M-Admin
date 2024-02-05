@@ -94,6 +94,15 @@ namespace IW4MAdmin.Application
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
 
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("!!!! IMPORTANT !!!!");
+            Console.WriteLine("The next update of IW4MAdmin will require .NET 8.");
+            Console.WriteLine("This is a breaking change!");
+            Console.WriteLine(
+                "Please update the ASP.NET Core Runtime: https://dotnet.microsoft.com/en-us/download/dotnet/8.0");
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!");
+            Console.ForegroundColor = ConsoleColor.Gray;
+
             await LaunchAsync();
         }
 

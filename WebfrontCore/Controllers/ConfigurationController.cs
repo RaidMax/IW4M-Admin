@@ -10,10 +10,9 @@ using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers
@@ -92,15 +91,15 @@ namespace WebfrontCore.Controllers
 
             try
             {
-                var file = JObject.Parse(content);
+                var jsonDocument = JsonDocument.Parse(content);
             }
-            catch (JsonReaderException ex)
+            catch (JsonException ex)
             {
                 return BadRequest($"{fileName}: {ex.Message}");
             }
 
-            var path = System.IO.Path.Join(Utilities.OperatingDirectory, "Configuration",
-                fileName.Replace($"{System.IO.Path.DirectorySeparatorChar}", ""));
+            var path = Path.Join(Utilities.OperatingDirectory, "Configuration",
+                fileName.Replace($"{Path.DirectorySeparatorChar}", ""));
 
             // todo: move into a service at some point
             if (!System.IO.File.Exists(path))

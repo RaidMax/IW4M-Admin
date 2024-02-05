@@ -1,5 +1,4 @@
 ﻿using IW4MAdmin.Plugins.Stats.Cheat;
-using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
@@ -8,6 +7,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -21,8 +21,6 @@ using Data.Models.Server;
 using Humanizer.Localisation;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
-using MySqlConnector;
-using Npgsql;
 using Stats.Client.Abstractions;
 using Stats.Config;
 using Stats.Helpers;
@@ -177,7 +175,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     })
                     .Take(60)
                     .ToListAsync();
-                
+
                 if (rankingsDict.ContainsKey(clientId))
                 {
                     rankingsDict[clientId] = rankingsDict[clientId].Concat(eachRank).Distinct()
@@ -224,7 +222,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     RatingChange = (rankingsDict[s.ClientId].Last().Ranking -
                                     rankingsDict[s.ClientId].First().Ranking) ?? 0,
                     PerformanceHistory = rankingsDict[s.ClientId].Select(ranking => new PerformanceHistory
-                            { Performance = ranking.PerformanceMetric ?? 0, OccurredAt = ranking.CreatedDateTime })
+                            {Performance = ranking.PerformanceMetric ?? 0, OccurredAt = ranking.CreatedDateTime})
                         .ToList(),
                     TimePlayed = Math.Round(s.TotalTimePlayed / 3600.0, 1).ToString("#,##0"),
                     TimePlayedValue = TimeSpan.FromSeconds(s.TotalTimePlayed),
@@ -287,7 +285,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Select(grp => new
                 {
                     grp.Key,
-                    Ratings = grp.Select(r => new { r.Performance, r.Ranking, r.When })
+                    Ratings = grp.Select(r => new {r.Performance, r.Ranking, r.When})
                 });
 
             var iqStatsInfo = (from stat in context.Set<EFClientStatistics>()
@@ -325,7 +323,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                    ratingInfo.First(r => r.Key == s.ClientId).Ratings.Last().Ranking,
                     PerformanceHistory = ratingInfo.First(r => r.Key == s.ClientId).Ratings.Count() > 1
                         ? ratingInfo.First(r => r.Key == s.ClientId).Ratings.OrderBy(r => r.When)
-                            .Select(r => new PerformanceHistory { Performance = r.Performance, OccurredAt = r.When })
+                            .Select(r => new PerformanceHistory {Performance = r.Performance, OccurredAt = r.When})
                             .ToList()
                         : new List<PerformanceHistory>
                         {
@@ -487,10 +485,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return clientStats;
             }
 
-            catch (DbUpdateException updateException) when (
-                updateException.InnerException is PostgresException { SqlState: "23503" }
-                || updateException.InnerException is SqliteException { SqliteErrorCode: 787 }
-                || updateException.InnerException is MySqlException { SqlState: "23503" })
+            catch (DbUpdateException updateException) when (updateException.InnerException is DbException {SqlState: "23503"}
+                                                                or SqliteException {SqliteErrorCode: 787})
             {
                 _log.LogWarning("Trying to add {Client} to stats before they have been added to the database",
                     pl.ToString());

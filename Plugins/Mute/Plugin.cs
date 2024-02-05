@@ -21,8 +21,8 @@ public class Plugin : IPluginV2
 
     public const string MuteKey = "IW4MMute";
     public static IManager Manager { get; private set; } = null!;
-    public static readonly Server.Game[] SupportedGames = {Server.Game.IW4};
-    private static readonly string[] DisabledCommands = {nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"};
+    public static Server.Game[] SupportedGames { get; } = [Server.Game.IW4];
+    private static readonly string[] DisabledCommands = [nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"];
     private readonly IInteractionRegistration _interactionRegistration;
     private readonly IRemoteCommandService _remoteCommandService;
     private readonly MuteManager _muteManager;
@@ -34,10 +34,10 @@ public class Plugin : IPluginV2
         _interactionRegistration = interactionRegistration;
         _remoteCommandService = remoteCommandService;
         _muteManager = muteManager;
-        
+
         IManagementEventSubscriptions.Load += OnLoad;
         IManagementEventSubscriptions.Unload += OnUnload;
-        
+
         IManagementEventSubscriptions.ClientStateInitialized += OnClientStateInitialized;
         IGameServerEventSubscriptions.ClientDataUpdated += OnClientDataUpdated;
         IGameEventSubscriptions.ClientMessaged += OnClientMessaged;
@@ -61,7 +61,7 @@ public class Plugin : IPluginV2
 
             var muteMeta = Task.Run(() => _muteManager.GetCurrentMuteState(gameEvent.Origin), cancellationToken)
                 .GetAwaiter().GetResult();
-            
+
             if (muteMeta.MuteState is not MuteState.Muted)
             {
                 return true;
@@ -91,7 +91,7 @@ public class Plugin : IPluginV2
         });
         return Task.CompletedTask;
     }
-    
+
     private Task OnUnload(IManager manager, CancellationToken token)
     {
         _interactionRegistration.UnregisterInteraction(MuteInteraction);
@@ -152,21 +152,21 @@ public class Plugin : IPluginV2
         {
             return;
         }
-        
+
         var muteMetaJoin = await _muteManager.GetCurrentMuteState(state.Client);
 
         switch (muteMetaJoin)
         {
-            case { MuteState: MuteState.Muted }:
+            case {MuteState: MuteState.Muted}:
                 // Let the client know when their mute expires.
                 state.Client.Tell(Utilities.CurrentLocalization
                     .LocalizationIndex["PLUGINS_MUTE_REMAINING_TIME"].FormatExt(
-                        muteMetaJoin is { Expiration: not null }
+                        muteMetaJoin is {Expiration: not null}
                             ? muteMetaJoin.Expiration.Value.HumanizeForCurrentCulture()
                             : Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_MUTE_NEVER"],
                         muteMetaJoin.Reason));
                 break;
-            case { MuteState: MuteState.Unmuting }:
+            case {MuteState: MuteState.Unmuting}:
                 // Handle unmute of unmuted players.
                 await _muteManager.Unmute(state.Client.CurrentServer, Utilities.IW4MAdminClient(), state.Client,
                     muteMetaJoin.Reason ?? string.Empty);

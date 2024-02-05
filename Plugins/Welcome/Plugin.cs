@@ -6,8 +6,8 @@ using SharedLibraryCore.Database.Models;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
-using Newtonsoft.Json.Linq;
 using Humanizer;
 using Data.Abstractions;
 using Data.Models;
@@ -108,8 +108,9 @@ public class Plugin : IPluginV2
             var response =
                 await wc.GetStringAsync(new Uri(
                     $"http://ip-api.com/json/{ip}?lang={Utilities.CurrentLocalization.LocalizationName.Split("-").First().ToLower()}"));
-            var responseObj = JObject.Parse(response);
-            response = responseObj["country"]?.ToString();
+
+            var json = JsonDocument.Parse(response);
+            response = json.RootElement.TryGetProperty("country", out var countryElement) ? countryElement.GetString() : null;
 
             return string.IsNullOrEmpty(response)
                 ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]

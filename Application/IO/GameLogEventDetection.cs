@@ -82,7 +82,7 @@ namespace IW4MAdmin.Application.IO
                     {
                         if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != Utilities.WORLD_ID)
                         {
-                            gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);;
+                            gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
                         }
 
                         if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)

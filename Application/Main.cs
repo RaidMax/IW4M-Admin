@@ -262,7 +262,7 @@ namespace IW4MAdmin.Application
                 applicationManager.Start(),
                 versionChecker.CheckVersion(),
                 webfrontTask,
-                masterCommunicator.RunUploadStatus(_serverManager.CancellationToken),
+                //masterCommunicator.RunUploadStatus(_serverManager.CancellationToken),
                 collectionService.BeginCollectionAsync(cancellationToken: _serverManager.CancellationToken)
             };
 

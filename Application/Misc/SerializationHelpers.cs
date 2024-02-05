@@ -1,150 +1,255 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SharedLibraryCore;
+﻿using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using System;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Data.Models;
 using static SharedLibraryCore.Database.Models.EFClient;
 using static SharedLibraryCore.GameEvent;
 
-namespace IW4MAdmin.Application.Misc
+namespace IW4MAdmin.Application.Misc;
+
+public class IPAddressConverter : JsonConverter<IPAddress>
 {
-    class IPAddressConverter : JsonConverter
+    public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        public override bool CanConvert(Type objectType)
-        {
-            return (objectType == typeof(IPAddress));
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            writer.WriteValue(value.ToString());
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            return IPAddress.Parse((string)reader.Value);
-        }
+        var ipAddressString = reader.GetString();
+        return IPAddress.Parse(ipAddressString);
     }
 
-    class IPEndPointConverter : JsonConverter
+    public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options)
     {
-        public override bool CanConvert(Type objectType)
-        {
-            return (objectType == typeof(IPEndPoint));
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            IPEndPoint ep = (IPEndPoint)value;
-            JObject jo = new JObject();
-            jo.Add("Address", JToken.FromObject(ep.Address, serializer));
-            jo.Add("Port", ep.Port);
-            jo.WriteTo(writer);
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            JObject jo = JObject.Load(reader);
-            IPAddress address = jo["Address"].ToObject<IPAddress>(serializer);
-            int port = (int)jo["Port"];
-            return new IPEndPoint(address, port);
-        }
+        writer.WriteStringValue(value.ToString());
     }
+}
 
-    class ClientEntityConverter : JsonConverter
+public class IPEndPointConverter : JsonConverter<IPEndPoint>
+{
+    public override IPEndPoint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        public override bool CanConvert(Type objectType) => objectType == typeof(EFClient);
+        IPAddress address = null;
+        var port = 0;
 
-        public override object ReadJson(JsonReader reader, Type objectType,object existingValue, JsonSerializer serializer)
+        while (reader.Read())
         {
-            if (reader.Value == null)
+            if (reader.TokenType == JsonTokenType.PropertyName)
             {
-                return null;
+                var propertyName = reader.GetString();
+                reader.Read();
+                switch (propertyName)
+                {
+                    case "Address":
+                        var addressString = reader.GetString();
+                        address = IPAddress.Parse(addressString);
+                        break;
+                    case "Port":
+                        port = reader.GetInt32();
+                        break;
+                }
             }
 
-            var jsonObject = JObject.Load(reader);
-
-            return new EFClient
+            if (reader.TokenType == JsonTokenType.EndObject)
             {
-                NetworkId = (long)jsonObject["NetworkId"],
-                ClientNumber = (int)jsonObject["ClientNumber"],
-                State = Enum.Parse<ClientState>(jsonObject["state"].ToString()),
-                CurrentAlias = new EFAlias()
-                {
-                    IPAddress = (int?)jsonObject["IPAddress"],
-                    Name = jsonObject["Name"].ToString()
-                }
-            };
+                break;
+            }
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            var client = value as EFClient;
-            var jsonObject = new JObject
-            {
-                { "NetworkId", client.NetworkId },
-                { "ClientNumber", client.ClientNumber },
-                { "IPAddress", client.CurrentAlias?.IPAddress },
-                { "Name", client.CurrentAlias?.Name },
-                { "State", (int)client.State }
-            };
-
-            jsonObject.WriteTo(writer);
-        }
+        return new IPEndPoint(address, port);
     }
 
-    class GameEventConverter : JsonConverter
+    public override void Write(Utf8JsonWriter writer, IPEndPoint value, JsonSerializerOptions options)
     {
-        public override bool CanConvert(Type objectType) =>objectType == typeof(GameEvent);
+        writer.WriteStartObject();
+        writer.WriteString("Address", value.Address.ToString());
+        writer.WriteNumber("Port", value.Port);
+        writer.WriteEndObject();
+    }
+}
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+public class ClientEntityConverter : JsonConverter<EFClient>
+{
+    public override EFClient Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
         {
-            var jsonObject = JObject.Load(reader);
-
-            return new GameEvent
-            {
-                Type = Enum.Parse<EventType>(jsonObject["Type"].ToString()),
-                Subtype = jsonObject["Subtype"]?.ToString(),
-                Source = Enum.Parse<EventSource>(jsonObject["Source"].ToString()),
-                RequiredEntity = Enum.Parse<EventRequiredEntity>(jsonObject["RequiredEntity"].ToString()),
-                Data = jsonObject["Data"].ToString(),
-                Message = jsonObject["Message"].ToString(),
-                GameTime = (int?)jsonObject["GameTime"],
-                Origin = jsonObject["Origin"]?.ToObject<EFClient>(serializer),
-                Target = jsonObject["Target"]?.ToObject<EFClient>(serializer),
-                ImpersonationOrigin = jsonObject["ImpersonationOrigin"]?.ToObject<EFClient>(serializer),
-                IsRemote = (bool)jsonObject["IsRemote"],
-                Extra = null, // fix
-                Time = (DateTime)jsonObject["Time"],
-                IsBlocking = (bool)jsonObject["IsBlocking"]
-            };
+            return null;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        long networkId = default;
+        int clientNumber = default;
+        ClientState state = default;
+        var currentAlias = new EFAlias();
+        int? ipAddress = null;
+        string name = null;
+
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
         {
-            var gameEvent = value as GameEvent;
-
-            var jsonObject = new JObject
+            if (reader.TokenType == JsonTokenType.PropertyName)
             {
-                { "Type", (int)gameEvent.Type },
-                { "Subtype", gameEvent.Subtype },
-                { "Source", (int)gameEvent.Source },
-                { "RequiredEntity", (int)gameEvent.RequiredEntity },
-                { "Data", gameEvent.Data },
-                { "Message", gameEvent.Message },
-                { "GameTime", gameEvent.GameTime },
-                { "Origin", gameEvent.Origin != null ? JToken.FromObject(gameEvent.Origin, serializer) : null },
-                { "Target", gameEvent.Target != null ? JToken.FromObject(gameEvent.Target, serializer) : null },
-                { "ImpersonationOrigin", gameEvent.ImpersonationOrigin != null ? JToken.FromObject(gameEvent.ImpersonationOrigin, serializer) : null},
-                { "IsRemote", gameEvent.IsRemote },
-                { "Extra", gameEvent.Extra?.ToString() },
-                { "Time", gameEvent.Time },
-                { "IsBlocking", gameEvent.IsBlocking }
-            };
-
-            jsonObject.WriteTo(writer);
+                var propertyName = reader.GetString();
+                reader.Read(); // Advance to the value.
+                switch (propertyName)
+                {
+                    case "NetworkId":
+                        networkId = reader.GetInt64();
+                        break;
+                    case "ClientNumber":
+                        clientNumber = reader.GetInt32();
+                        break;
+                    case "State":
+                        state = (ClientState)reader.GetInt32();
+                        break;
+                    case "IPAddress":
+                        ipAddress = reader.TokenType != JsonTokenType.Null ? reader.GetInt32() : null;
+                        break;
+                    case "Name":
+                        name = reader.GetString();
+                        break;
+                }
+            }
         }
+
+        currentAlias.IPAddress = ipAddress;
+        currentAlias.Name = name;
+
+        return new EFClient
+        {
+            NetworkId = networkId,
+            ClientNumber = clientNumber,
+            State = state,
+            CurrentAlias = currentAlias
+        };
+    }
+
+    public override void Write(Utf8JsonWriter writer, EFClient value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        writer.WriteNumber("NetworkId", value.NetworkId);
+        writer.WriteNumber("ClientNumber", value.ClientNumber);
+        writer.WriteString("State", value.State.ToString());
+
+        if (value.CurrentAlias != null)
+        {
+            writer.WriteNumber("IPAddress", value.CurrentAlias.IPAddress ?? 0);
+            writer.WriteString("Name", value.CurrentAlias.Name);
+        }
+        else
+        {
+            writer.WriteNull("IPAddress");
+            writer.WriteNull("Name");
+        }
+
+        writer.WriteEndObject();
+    }
+}
+
+public class GameEventConverter : JsonConverter<GameEvent>
+{
+    public override GameEvent Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+        {
+            return null;
+        }
+
+        var gameEvent = new GameEvent();
+        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+        {
+            if (reader.TokenType == JsonTokenType.PropertyName)
+            {
+                var propertyName = reader.GetString();
+                reader.Read();
+                switch (propertyName)
+                {
+                    case "Type":
+                        gameEvent.Type = (EventType)reader.GetInt32();
+                        break;
+                    case "Subtype":
+                        gameEvent.Subtype = reader.GetString();
+                        break;
+                    case "Source":
+                        gameEvent.Source = (EventSource)reader.GetInt32();
+                        break;
+                    case "RequiredEntity":
+                        gameEvent.RequiredEntity = (EventRequiredEntity)reader.GetInt32();
+                        break;
+                    case "Data":
+                        gameEvent.Data = reader.GetString();
+                        break;
+                    case "Message":
+                        gameEvent.Message = reader.GetString();
+                        break;
+                    case "GameTime":
+                        gameEvent.GameTime = reader.TokenType != JsonTokenType.Null ? reader.GetInt32() : null;
+                        break;
+                    case "Origin":
+                        gameEvent.Origin = JsonSerializer.Deserialize<EFClient>(ref reader, options);
+                        break;
+                    case "Target":
+                        gameEvent.Target = JsonSerializer.Deserialize<EFClient>(ref reader, options);
+                        break;
+                    case "ImpersonationOrigin":
+                        gameEvent.ImpersonationOrigin = JsonSerializer.Deserialize<EFClient>(ref reader, options);
+                        break;
+                    case "IsRemote":
+                        gameEvent.IsRemote = reader.GetBoolean();
+                        break;
+                    case "Time":
+                        gameEvent.Time = reader.GetDateTime();
+                        break;
+                    case "IsBlocking":
+                        gameEvent.IsBlocking = reader.GetBoolean();
+                        break;
+                }
+            }
+        }
+
+        return gameEvent;
+    }
+
+    public override void Write(Utf8JsonWriter writer, GameEvent value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        writer.WriteNumber("Type", (int)value.Type);
+        writer.WriteString("Subtype", value.Subtype);
+        writer.WriteNumber("Source", (int)value.Source);
+        writer.WriteNumber("RequiredEntity", (int)value.RequiredEntity);
+        writer.WriteString("Data", value.Data);
+        writer.WriteString("Message", value.Message);
+        if (value.GameTime.HasValue)
+        {
+            writer.WriteNumber("GameTime", value.GameTime.Value);
+        }
+        else
+        {
+            writer.WriteNull("GameTime");
+        }
+
+        if (value.Origin != null)
+        {
+            writer.WritePropertyName("Origin");
+            JsonSerializer.Serialize(writer, value.Origin, options);
+        }
+
+        if (value.Target != null)
+        {
+            writer.WritePropertyName("Target");
+            JsonSerializer.Serialize(writer, value.Target, options);
+        }
+
+        if (value.ImpersonationOrigin != null)
+        {
+            writer.WritePropertyName("ImpersonationOrigin");
+            JsonSerializer.Serialize(writer, value.ImpersonationOrigin, options);
+        }
+
+        writer.WriteBoolean("IsRemote", value.IsRemote);
+        writer.WriteString("Time", value.Time.ToString("o"));
+        writer.WriteBoolean("IsBlocking", value.IsBlocking);
+
+        writer.WriteEndObject();
     }
 }

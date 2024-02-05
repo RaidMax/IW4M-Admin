@@ -23,6 +23,7 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using Reference = Data.Models.Reference;
 
 namespace IW4MAdmin.Application.Plugin.Script
 {

@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Data.Models.Misc;
-using Newtonsoft.Json;
 using SharedLibraryCore.Configuration.Attributes;
 using SharedLibraryCore.Interfaces;
 using static Data.Models.Client.EFClient;

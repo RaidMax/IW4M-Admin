@@ -41,6 +41,7 @@ namespace SharedLibraryCore.Interfaces
         ILogger GetLogger(long serverId);
 
         IList<Server> GetServers();
+        List<Server> Servers { get; }
         IList<IManagerCommand> GetCommands();
         IList<MessageToken> GetMessageTokens();
         IList<EFClient> GetActiveClients();

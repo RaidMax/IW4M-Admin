@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using SharedLibraryCore.Helpers;
 
 namespace IW4MAdmin.Application.API.Master
@@ -12,32 +12,32 @@ namespace IW4MAdmin.Application.API.Master
         /// <summary>
         /// Unique ID of the instance
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
         /// <summary>
         /// Indicates how long the instance has been running
         /// </summary>
-        [JsonProperty("uptime")]
+        [JsonPropertyName("uptime")]
         public int Uptime { get; set; }
 
         /// <summary>
         /// Specifies the version of the instance
         /// </summary>
-        [JsonProperty("version")]
+        [JsonPropertyName("version")]
         [JsonConverter(typeof(BuildNumberJsonConverter))]
         public BuildNumber Version { get; set; }
 
         /// <summary>
         /// List of servers the instance is monitoring
         /// </summary>
-        [JsonProperty("servers")]
+        [JsonPropertyName("servers")]
         public List<ApiServer> Servers { get; set; }
         
         /// <summary>
         /// Url IW4MAdmin is listening on
         /// </summary>
-        [JsonProperty("webfront_url")]
+        [JsonPropertyName("webfront_url")]
         public string WebfrontUrl { get; set; }
     }
 }

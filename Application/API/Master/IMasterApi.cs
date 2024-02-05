@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using IW4MAdmin.Application.Plugin;
-using Newtonsoft.Json;
 using RestEase;
 using SharedLibraryCore.Helpers;
 
@@ -10,30 +10,30 @@ namespace IW4MAdmin.Application.API.Master
 {
     public class AuthenticationId
     {
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
     }
 
     public class TokenId
     {
-        [JsonProperty("access_token")]
+        [JsonPropertyName("access_token")]
         public string AccessToken { get; set; }
     }
 
     public class VersionInfo
     {
-        [JsonProperty("current-version-stable")]
+        [JsonPropertyName("current-version-stable")]
         [JsonConverter(typeof(BuildNumberJsonConverter))]
         public BuildNumber CurrentVersionStable { get; set; }
 
-        [JsonProperty("current-version-prerelease")]
+        [JsonPropertyName("current-version-prerelease")]
         [JsonConverter(typeof(BuildNumberJsonConverter))]
         public BuildNumber CurrentVersionPrerelease { get; set; }
     }
 
     public class ResultMessage
     {
-        [JsonProperty("message")]
+        [JsonPropertyName("message")]
         public string Message { get; set; }
     }
 

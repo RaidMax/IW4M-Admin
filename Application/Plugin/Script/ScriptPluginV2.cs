@@ -26,6 +26,7 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Interfaces.Events;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using JavascriptEngine = Jint.Engine;
+using Reference = Data.Models.Reference;
 
 namespace IW4MAdmin.Application.Plugin.Script;
 

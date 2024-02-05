@@ -15,18 +15,9 @@ variables:
 jobs:
   - job: Build_Pack
     steps:
-      - task: UseDotNet@2
-        displayName: 'Install .NET Core 6 SDK'
-        inputs:
-          packageType: 'sdk'
-          version: '6.0.x'
-          includePreviewVersions: true
-
-      - task: NuGetToolInstaller@1
-
       - task: PowerShell@2
         displayName: 'Setup Build configuration'
-        condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+        condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/chore/nuget-pipeline'))
         inputs:
           targetType: 'inline'
           script: |
@@ -54,12 +45,11 @@ jobs:
         inputs:
           command: 'pack'
           packagesToPack: '**/SharedLibraryCore.csproj'
-          nobuild: true
           versioningScheme: 'byBuildNumber'
           
       - task: PublishPipelineArtifact@1
         displayName: 'Publish nuget package artifact'
         inputs:
-          targetPath: '$(Build.Repository.LocalPath)/SharedLibraryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
+          targetPath: 'D:\a\1\a\RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
           artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
           publishLocation: 'pipeline'

@@ -54,8 +54,11 @@
         <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Data\Data.csproj" />
+   <ItemGroup>
+        <ProjectReference Include="..\Data\Data.csproj">
+                <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+                <IncludeAssets>Data.dll</IncludeAssets>
+        </ProjectReference>
     </ItemGroup>
 
     <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
@@ -65,7 +68,7 @@
     <PropertyGroup>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
     </PropertyGroup>
-    <Target DependsOnTargets="BuildOnlySettings;ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
         <ItemGroup>
             <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
         </ItemGroup>

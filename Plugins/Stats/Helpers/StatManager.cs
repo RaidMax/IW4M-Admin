@@ -1,5 +1,4 @@
 ﻿using IW4MAdmin.Plugins.Stats.Cheat;
-using IW4MAdmin.Plugins.Stats.Config;
 using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
@@ -8,6 +7,7 @@ using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -21,8 +21,6 @@ using Data.Models.Server;
 using Humanizer.Localisation;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
-using MySqlConnector;
-using Npgsql;
 using Stats.Client.Abstractions;
 using Stats.Config;
 using Stats.Helpers;
@@ -488,9 +486,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             catch (DbUpdateException updateException) when (
-                updateException.InnerException is PostgresException { SqlState: "23503" }
-                || updateException.InnerException is SqliteException { SqliteErrorCode: 787 }
-                || updateException.InnerException is MySqlException { SqlState: "23503" })
+                updateException.InnerException is DbException { SqlState: "23503" } or SqliteException { SqliteErrorCode: 787 })
             {
                 _log.LogWarning("Trying to add {Client} to stats before they have been added to the database",
                     pl.ToString());

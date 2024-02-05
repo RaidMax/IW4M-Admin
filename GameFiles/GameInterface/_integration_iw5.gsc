@@ -193,7 +193,7 @@ NoClipImpl()
 
         self God();
         self Noclip();
-        self Hide();
+        self Show();
 
         SetDvar( "sv_cheats", 0 );
 

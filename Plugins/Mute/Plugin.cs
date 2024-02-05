@@ -21,7 +21,7 @@ public class Plugin : IPluginV2
 
     public const string MuteKey = "IW4MMute";
     public static IManager Manager { get; private set; } = null!;
-    public static readonly Server.Game[] SupportedGames = {Server.Game.IW4};
+    public static Server.Game[] SupportedGames { get; private set; } = Array.Empty<Server.Game>();
     private static readonly string[] DisabledCommands = {nameof(PrivateMessageAdminsCommand), "PrivateMessageCommand"};
     private readonly IInteractionRegistration _interactionRegistration;
     private readonly IRemoteCommandService _remoteCommandService;
@@ -34,12 +34,14 @@ public class Plugin : IPluginV2
         _interactionRegistration = interactionRegistration;
         _remoteCommandService = remoteCommandService;
         _muteManager = muteManager;
-        
+
         IManagementEventSubscriptions.Load += OnLoad;
         IManagementEventSubscriptions.Unload += OnUnload;
-        
         IManagementEventSubscriptions.ClientStateInitialized += OnClientStateInitialized;
+
         IGameServerEventSubscriptions.ClientDataUpdated += OnClientDataUpdated;
+        IGameServerEventSubscriptions.MonitoringStarted += OnServerMonitoredStarted;
+
         IGameEventSubscriptions.ClientMessaged += OnClientMessaged;
     }
 
@@ -61,7 +63,7 @@ public class Plugin : IPluginV2
 
             var muteMeta = Task.Run(() => _muteManager.GetCurrentMuteState(gameEvent.Origin), cancellationToken)
                 .GetAwaiter().GetResult();
-            
+
             if (muteMeta.MuteState is not MuteState.Muted)
             {
                 return true;
@@ -91,7 +93,7 @@ public class Plugin : IPluginV2
         });
         return Task.CompletedTask;
     }
-    
+
     private Task OnUnload(IManager manager, CancellationToken token)
     {
         _interactionRegistration.UnregisterInteraction(MuteInteraction);
@@ -152,21 +154,21 @@ public class Plugin : IPluginV2
         {
             return;
         }
-        
+
         var muteMetaJoin = await _muteManager.GetCurrentMuteState(state.Client);
 
         switch (muteMetaJoin)
         {
-            case { MuteState: MuteState.Muted }:
+            case {MuteState: MuteState.Muted}:
                 // Let the client know when their mute expires.
                 state.Client.Tell(Utilities.CurrentLocalization
                     .LocalizationIndex["PLUGINS_MUTE_REMAINING_TIME"].FormatExt(
-                        muteMetaJoin is { Expiration: not null }
+                        muteMetaJoin is {Expiration: not null}
                             ? muteMetaJoin.Expiration.Value.HumanizeForCurrentCulture()
                             : Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_MUTE_NEVER"],
                         muteMetaJoin.Reason));
                 break;
-            case { MuteState: MuteState.Unmuting }:
+            case {MuteState: MuteState.Unmuting}:
                 // Handle unmute of unmuted players.
                 await _muteManager.Unmute(state.Client.CurrentServer, Utilities.IW4MAdminClient(), state.Client,
                     muteMetaJoin.Reason ?? string.Empty);
@@ -318,5 +320,30 @@ public class Plugin : IPluginV2
                 return string.Join(".", commandResponse.Select(result => result.Response));
             }
         };
+    }
+
+    private Task OnServerMonitoredStarted(MonitorStartEvent serverEvent, CancellationToken token)
+    {
+        var game = (Server.Game)serverEvent.Server.GameCode;
+
+        lock (SupportedGames)
+        {
+            if (SupportedGames.Contains(game))
+            {
+                return Task.CompletedTask;
+            }
+
+            var server = Manager.GetServers().FirstOrDefault(x => x == serverEvent.Server);
+            var commandIsEmpty = string.IsNullOrWhiteSpace(server?.RconParser.Configuration.CommandPrefixes.Mute);
+
+            if (commandIsEmpty)
+            {
+                return Task.CompletedTask;
+            }
+
+            SupportedGames = SupportedGames.Append(game).ToArray();
+        }
+
+        return Task.CompletedTask;
     }
 }

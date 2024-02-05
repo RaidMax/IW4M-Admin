@@ -1,4 +1,4 @@
-name: '$(Date:yyyy.MM.dd)$(Rev:.r)'
+name: '$(Date:yyyy.M.d)$(Rev:.r)'
 
 trigger:
   batch: true
@@ -7,6 +7,10 @@ trigger:
     - release/pre
     - master
     - develop
+  paths:
+    exclude: 
+      - '**/*.yml'
+      - '*.yml'
 
 pr: none
 
@@ -66,7 +70,7 @@ jobs:
       displayName: 'Build projects'
       inputs:
         solution: '$(solution)'
-        msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber)'
+        msbuildArgs: '/p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)" /p:Version=$(Build.BuildNumber) /p:PackageVersion=$(Build.BuildNumber)'
         platform: '$(buildPlatform)'
         configuration: '$(buildConfiguration)'
           
@@ -179,6 +183,13 @@ jobs:
       inputs:
         targetPath: '$(outputFolder)'
         artifact: 'IW4MAdmin.$(buildConfiguration)'
+        publishLocation: 'pipeline'
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish nuget package artifact'
+      inputs:
+        targetPath: '$(Build.Repository.LocalPath)/SharedLibraryCore/bin/$(buildConfiguration)/RaidMax.IW4MAdmin.SharedLibraryCore.$(Build.BuildNumber).nupkg'
+        artifact: 'SharedLibraryCore.$(Build.BuildNumber).nupkg'
         publishLocation: 'pipeline'
 
     - task: FtpUpload@2

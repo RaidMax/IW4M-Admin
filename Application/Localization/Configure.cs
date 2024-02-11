@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -59,11 +60,11 @@ namespace IW4MAdmin.Application.Localization
 
             var localizationDict = new Dictionary<string, string>();
 
-            foreach (string filePath in localizationFiles)
+            foreach (var filePath in localizationFiles)
             {
                 var localizationContents = File.ReadAllText(filePath, Encoding.UTF8);
-                var eachLocalizationFile = Newtonsoft.Json.JsonConvert.DeserializeObject<SharedLibraryCore.Localization.Layout>(localizationContents);
-                if (eachLocalizationFile == null)
+                var eachLocalizationFile = JsonSerializer.Deserialize<SharedLibraryCore.Localization.Layout>(localizationContents);
+                if (eachLocalizationFile is null)
                 {
                     continue;
                 }
@@ -72,7 +73,7 @@ namespace IW4MAdmin.Application.Localization
                 {
                     if (!localizationDict.TryAdd(item.Key, item.Value))
                     {
-                        logger.LogError("Could not add locale string {key} to localization", item.Key);
+                        logger.LogError("Could not add locale string {Key} to localization", item.Key);
                     }
                 }
             }

@@ -3,77 +3,68 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using IW4MAdmin.Application.Plugin;
-using RestEase;
+using Refit;
 using SharedLibraryCore.Helpers;
 
-namespace IW4MAdmin.Application.API.Master
+namespace IW4MAdmin.Application.API.Master;
+
+public class AuthenticationId
 {
-    public class AuthenticationId
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
-    }
+    [JsonPropertyName("id")] public string Id { get; set; }
+}
 
-    public class TokenId
-    {
-        [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
-    }
+public class TokenId
+{
+    [JsonPropertyName("access_token")] public string AccessToken { get; set; }
+}
 
-    public class VersionInfo
-    {
-        [JsonPropertyName("current-version-stable")]
-        [JsonConverter(typeof(BuildNumberJsonConverter))]
-        public BuildNumber CurrentVersionStable { get; set; }
+public class VersionInfo
+{
+    [JsonPropertyName("current-version-stable")]
+    [JsonConverter(typeof(BuildNumberJsonConverter))]
+    public BuildNumber CurrentVersionStable { get; set; }
 
-        [JsonPropertyName("current-version-prerelease")]
-        [JsonConverter(typeof(BuildNumberJsonConverter))]
-        public BuildNumber CurrentVersionPrerelease { get; set; }
-    }
+    [JsonPropertyName("current-version-prerelease")]
+    [JsonConverter(typeof(BuildNumberJsonConverter))]
+    public BuildNumber CurrentVersionPrerelease { get; set; }
+}
 
-    public class ResultMessage
-    {
-        [JsonPropertyName("message")]
-        public string Message { get; set; }
-    }
+public class ResultMessage
+{
+    [JsonPropertyName("message")] public string Message { get; set; }
+}
 
-    public class PluginSubscriptionContent
-    {
-        public string Content { get; set; }
-        public PluginType Type { get; set; }
-    }
+public class PluginSubscriptionContent
+{
+    public string Content { get; set; }
+    public PluginType Type { get; set; }
+}
 
+/// <summary>
+/// Defines the capabilities of the master API
+/// </summary>
+[Headers("User-Agent: IW4MAdmin-RestEase")]
+public interface IMasterApi
+{
+    [Post("/authenticate")]
+    Task<TokenId> Authenticate([Body] AuthenticationId Id);
 
-    /// <summary>
-    /// Defines the capabilities of the master API
-    /// </summary>
-    [Header("User-Agent", "IW4MAdmin-RestEase")]
-    public interface IMasterApi
-    {
-        [Header("Authorization")]
-        string AuthorizationToken { get; set; }
+    [Post("/instance/")]
+    Task<IApiResponse<ResultMessage>> AddInstance([Body] ApiInstance instance, [Header("Authorization")] string authorization);
 
-        [Post("authenticate")]
-        Task<TokenId> Authenticate([Body] AuthenticationId Id);
+    [Put("/instance/{id}")]
+    Task<IApiResponse<ResultMessage>> UpdateInstance(string id, [Body] ApiInstance instance, [Header("Authorization")] string authorization);
 
-        [Post("instance/")]
-        [AllowAnyStatusCode]
-        Task<Response<ResultMessage>> AddInstance([Body] ApiInstance instance);
+    [Get("/version/{apiVersion}")]
+    Task<VersionInfo> GetVersion(int apiVersion);
 
-        [Put("instance/{id}")]
-        [AllowAnyStatusCode]
-        Task<Response<ResultMessage>> UpdateInstance([Path] string id, [Body] ApiInstance instance);
+    [Get("/localization")]
+    Task<List<SharedLibraryCore.Localization.Layout>> GetLocalization();
 
-        [Get("version/{apiVersion}")]
-        Task<VersionInfo> GetVersion([Path] int apiVersion);
+    [Get("/localization/{languageTag}")]
+    Task<SharedLibraryCore.Localization.Layout> GetLocalization(string languageTag);
 
-        [Get("localization")]
-        Task<List<SharedLibraryCore.Localization.Layout>> GetLocalization();
-
-        [Get("localization/{languageTag}")]
-        Task<SharedLibraryCore.Localization.Layout> GetLocalization([Path("languageTag")] string languageTag);
-
-        [Get("plugin_subscriptions")]
-        Task<IEnumerable<PluginSubscriptionContent>> GetPluginSubscription([Query("instance_id")] Guid instanceId, [Query("subscription_id")] string subscription_id);
-    }
+    [Get("/plugin_subscriptions")]
+    Task<IEnumerable<PluginSubscriptionContent>> GetPluginSubscription([Query("instance_id")] Guid instanceId,
+        [Query("subscription_id")] string subscription_id);
 }

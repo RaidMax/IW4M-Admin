@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+using System.Text.Json.Serialization;
 using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Localization
@@ -7,6 +8,8 @@ namespace SharedLibraryCore.Localization
     public class Layout
     {
         private string localizationName;
+
+        public Layout() { }
 
         public Layout(Dictionary<string, string> set)
         {
@@ -27,7 +30,7 @@ namespace SharedLibraryCore.Localization
         }
 
         public TranslationLookup LocalizationIndex { get; set; }
-        public CultureInfo Culture { get; private set; }
+        [JsonIgnore] public CultureInfo Culture { get; private set; }
     }
 
     public class TranslationLookup : ITranslationLookup

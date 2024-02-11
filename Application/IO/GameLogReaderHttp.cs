@@ -1,5 +1,4 @@
 ﻿using IW4MAdmin.Application.API.GameLogServer;
-using RestEase;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System;
@@ -7,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Refit;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.IO
@@ -25,7 +25,7 @@ namespace IW4MAdmin.Application.IO
         public GameLogReaderHttp(Uri[] gameLogServerUris, IEventParser parser, ILogger<GameLogReaderHttp> logger)
         {
             _eventParser = parser;
-            _logServerApi = RestClient.For<IGameLogServer>(gameLogServerUris[0].ToString());
+            _logServerApi = RestService.For<IGameLogServer>(gameLogServerUris[0].ToString());
             _safeLogPath = gameLogServerUris[1].LocalPath.ToBase64UrlSafeString();
             _logger = logger;
         }

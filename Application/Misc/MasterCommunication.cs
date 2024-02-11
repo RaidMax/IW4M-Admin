@@ -1,5 +1,4 @@
 ﻿using IW4MAdmin.Application.API.Master;
-using RestEase;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Helpers;
@@ -9,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Refit;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc
@@ -28,6 +28,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly int _apiVersion = 1;
         private bool _firstHeartBeat = true;
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
+        private string _authorizationToken;
 
         public MasterCommunication(ILogger<MasterCommunication> logger, ApplicationConfiguration appConfig, ITranslationLookup translationLookup, IMasterApi apiInstance, IManager manager)
         {
@@ -128,7 +129,7 @@ namespace IW4MAdmin.Application.Misc
                     Id = _appConfig.Id
                 });
 
-                _apiInstance.AuthorizationToken = $"Bearer {token.AccessToken}";
+                _authorizationToken = $"Bearer {token.AccessToken}";
             }
 
             var instance = new ApiInstance
@@ -153,22 +154,22 @@ namespace IW4MAdmin.Application.Misc
                 WebfrontUrl = _appConfig.WebfrontUrl
             };
 
-            Response<ResultMessage> response;
+            IApiResponse<ResultMessage> response;
 
             if (_firstHeartBeat)
             {
-                response = await _apiInstance.AddInstance(instance);
+                response = await _apiInstance.AddInstance(instance, _authorizationToken);
             }
 
             else
             {
-                response = await _apiInstance.UpdateInstance(instance.Id, instance);
+                response = await _apiInstance.UpdateInstance(instance.Id, instance, _authorizationToken);
                 _firstHeartBeat = false;
             }
 
-            if (response.ResponseMessage.StatusCode != System.Net.HttpStatusCode.OK)
+            if (response.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                _logger.LogWarning("Non success response code from master is {StatusCode}, message is {Message}", response.ResponseMessage.StatusCode, response.StringContent);
+                _logger.LogWarning("Non success response code from master is {StatusCode}, message is {Message}", response.StatusCode, response.Error?.Content);
             }
         }
     }

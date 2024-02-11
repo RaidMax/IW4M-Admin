@@ -5,7 +5,6 @@ using IW4MAdmin.Application.Meta;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
-using RestEase;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
@@ -39,6 +38,7 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Client;
 using Microsoft.Extensions.Hosting;
+using Refit;
 using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
@@ -447,7 +447,7 @@ namespace IW4MAdmin.Application
                 BaseAddress = masterUri,
                 Timeout = TimeSpan.FromSeconds(15)
             };
-            var masterRestClient = RestClient.For<IMasterApi>(httpClient);
+            var masterRestClient = RestService.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
             
             if (appConfig == null)
@@ -460,10 +460,7 @@ namespace IW4MAdmin.Application
             // register override level names
             foreach (var (key, value) in appConfig.OverridePermissionLevelNames)
             {
-                if (!Utilities.PermissionLevelOverrides.ContainsKey(key))
-                {
-                    Utilities.PermissionLevelOverrides.Add(key, value);
-                }
+                Utilities.PermissionLevelOverrides.TryAdd(key, value);
             }
 
             // build the dependency list

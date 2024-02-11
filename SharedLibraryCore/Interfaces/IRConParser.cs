@@ -15,35 +15,35 @@ namespace SharedLibraryCore.Interfaces
         /// <summary>
         ///     stores the game/client specific version (usually the value of the "version" DVAR)
         /// </summary>
-        string Version { get; }
+        string Version { get; set; }
 
         /// <summary>
         ///     specifies the game name (usually the internal studio iteration ie: IW4, T5 etc...)
         /// </summary>
-        Game GameName { get; }
+        Game GameName { get; set; }
 
         /// <summary>
         ///     indicates if the game supports generating a log path from DVAR retrieval
         ///     of fs_game, fs_basepath, g_log
         /// </summary>
-        bool CanGenerateLogPath { get; }
+        bool CanGenerateLogPath { get; set; }
 
         /// <summary>
         ///     specifies the name of the parser
         /// </summary>
-        string Name { get; }
+        string Name { get; set; }
 
         /// <summary>
         ///     specifies the type of rcon engine
         ///     eg: COD, Source
         /// </summary>
-        string RConEngine { get; }
+        string RConEngine { get; set; }
 
         /// <summary>
         ///     indicates that the game does not log to the mods folder (when mod is loaded),
         ///     but rather always to the fs_basegame directory
         /// </summary>
-        bool IsOneLog { get; }
+        bool IsOneLog { get; set; }
 
         /// <summary>
         ///     retrieves the value of a given DVAR
@@ -54,7 +54,8 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="fallbackValue">default value to return if dvar retrieval fails</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default, CancellationToken token = default);
+        Task<Dvar<T>> GetDvarAsync<T>(IRConConnection connection, string dvarName, T fallbackValue = default,
+            CancellationToken token = default);
 
         /// <summary>
         ///     set value of DVAR by name
@@ -65,7 +66,7 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="token"></param>
         /// <returns></returns>
         Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default);
-  
+
         /// <summary>
         ///     executes a console command on the server
         /// </summary>

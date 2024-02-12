@@ -442,7 +442,7 @@ namespace IW4MAdmin.Application
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
-            var httpClient = new HttpClient
+            var httpClient = new HttpClient(new HttpClientHandler {AllowAutoRedirect = true})
             {
                 BaseAddress = masterUri,
                 Timeout = TimeSpan.FromSeconds(15)

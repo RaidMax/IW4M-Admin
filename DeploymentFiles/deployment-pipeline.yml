@@ -31,7 +31,7 @@ jobs:
     
     - task: PowerShell@2
       displayName: 'Setup Pre-Release configuration'
-      condition: or(ne(variables['Build.SourceBranch'], 'refs/heads/release/master'))
+      condition: ne(variables['Build.SourceBranch'], 'refs/heads/release/master')
       inputs:
         targetType: 'inline'
         script: |

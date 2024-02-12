@@ -142,6 +142,9 @@ namespace IW4MAdmin.Application
         public IEnumerable<IPlugin> Plugins { get; }
         public IInteractionRegistration InteractionRegistration { get; }
 
+        public IList<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>> CustomStatsMetrics { get; } =
+            new List<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>>();
+
         public async Task ExecuteEvent(GameEvent newEvent)
         {
             ProcessingEvents.TryAdd(newEvent.IncrementalId, newEvent);

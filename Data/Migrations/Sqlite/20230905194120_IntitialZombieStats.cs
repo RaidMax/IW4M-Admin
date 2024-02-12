@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Data.Migrations.Sqlite
 {
-    public partial class AddZombieStatsInitial : Migration
+    public partial class IntitialZombieStats : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -66,7 +66,7 @@ namespace Data.Migrations.Sqlite
                     ClientId = table.Column<int>(type: "INTEGER", nullable: false),
                     Kills = table.Column<int>(type: "INTEGER", nullable: false),
                     Deaths = table.Column<int>(type: "INTEGER", nullable: false),
-                    DamageDealt = table.Column<int>(type: "INTEGER", nullable: false),
+                    DamageDealt = table.Column<long>(type: "INTEGER", nullable: false),
                     DamageReceived = table.Column<int>(type: "INTEGER", nullable: false),
                     Headshots = table.Column<int>(type: "INTEGER", nullable: false),
                     Melees = table.Column<int>(type: "INTEGER", nullable: false),
@@ -101,6 +101,7 @@ namespace Data.Migrations.Sqlite
                 {
                     ZombieClientStatId = table.Column<long>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    ServerId = table.Column<long>(type: "INTEGER", nullable: true),
                     AverageKillsPerDown = table.Column<double>(type: "REAL", nullable: false),
                     AverageDowns = table.Column<double>(type: "REAL", nullable: false),
                     AverageRevives = table.Column<double>(type: "REAL", nullable: false),
@@ -112,17 +113,16 @@ namespace Data.Migrations.Sqlite
                     HighestRound = table.Column<int>(type: "INTEGER", nullable: false),
                     TotalRoundsPlayed = table.Column<int>(type: "INTEGER", nullable: false),
                     TotalMatchesPlayed = table.Column<int>(type: "INTEGER", nullable: false),
-                    TotalMatchesCompleted = table.Column<int>(type: "INTEGER", nullable: false),
-                    EFClientClientId = table.Column<int>(type: "INTEGER", nullable: true)
+                    TotalMatchesCompleted = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFZombieAggregateClientStat", x => x.ZombieClientStatId);
                     table.ForeignKey(
-                        name: "FK_EFZombieAggregateClientStat_EFClients_EFClientClientId",
-                        column: x => x.EFClientClientId,
-                        principalTable: "EFClients",
-                        principalColumn: "ClientId");
+                        name: "FK_EFZombieAggregateClientStat_EFServers_ServerId",
+                        column: x => x.ServerId,
+                        principalTable: "EFServers",
+                        principalColumn: "ServerId");
                     table.ForeignKey(
                         name: "FK_EFZombieAggregateClientStat_EFZombieClientStat_ZombieClientStatId",
                         column: x => x.ZombieClientStatId,
@@ -136,17 +136,11 @@ namespace Data.Migrations.Sqlite
                 columns: table => new
                 {
                     ZombieClientStatId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    EFClientClientId = table.Column<int>(type: "INTEGER", nullable: true)
+                        .Annotation("Sqlite:Autoincrement", true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFZombieMatchClientStat", x => x.ZombieClientStatId);
-                    table.ForeignKey(
-                        name: "FK_EFZombieMatchClientStat_EFClients_EFClientClientId",
-                        column: x => x.EFClientClientId,
-                        principalTable: "EFClients",
-                        principalColumn: "ClientId");
                     table.ForeignKey(
                         name: "FK_EFZombieMatchClientStat_EFZombieClientStat_ZombieClientStatId",
                         column: x => x.ZombieClientStatId,
@@ -166,17 +160,11 @@ namespace Data.Migrations.Sqlite
                     Duration = table.Column<TimeSpan>(type: "TEXT", nullable: true),
                     TimeAlive = table.Column<TimeSpan>(type: "TEXT", nullable: true),
                     RoundNumber = table.Column<int>(type: "INTEGER", nullable: false),
-                    Points = table.Column<int>(type: "INTEGER", nullable: false),
-                    EFClientClientId = table.Column<int>(type: "INTEGER", nullable: true)
+                    Points = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFZombieRoundClientStat", x => x.ZombieClientStatId);
-                    table.ForeignKey(
-                        name: "FK_EFZombieRoundClientStat_EFClients_EFClientClientId",
-                        column: x => x.EFClientClientId,
-                        principalTable: "EFClients",
-                        principalColumn: "ClientId");
                     table.ForeignKey(
                         name: "FK_EFZombieRoundClientStat_EFZombieClientStat_ZombieClientStatId",
                         column: x => x.ZombieClientStatId,
@@ -215,9 +203,9 @@ namespace Data.Migrations.Sqlite
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_EFZombieAggregateClientStat_EFClientClientId",
+                name: "IX_EFZombieAggregateClientStat_ServerId",
                 table: "EFZombieAggregateClientStat",
-                column: "EFClientClientId");
+                column: "ServerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EFZombieClientStat_ClientId",
@@ -253,16 +241,6 @@ namespace Data.Migrations.Sqlite
                 name: "IX_EFZombieMatch_ServerId",
                 table: "EFZombieMatch",
                 column: "ServerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EFZombieMatchClientStat_EFClientClientId",
-                table: "EFZombieMatchClientStat",
-                column: "EFClientClientId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EFZombieRoundClientStat_EFClientClientId",
-                table: "EFZombieRoundClientStat",
-                column: "EFClientClientId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

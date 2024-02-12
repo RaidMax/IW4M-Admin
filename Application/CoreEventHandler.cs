@@ -45,15 +45,13 @@ namespace IW4MAdmin.Application
 
         public void StartProcessing(CancellationToken token)
         {
-            _cancellationToken = token;
-
-            while (!_cancellationToken.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
                 _onEventReady.Reset();
                 
                 try
                 {
-                    _onProcessingEvents.Wait(_cancellationToken);
+                    _onProcessingEvents.Wait(token);
 
                     if (!_runningEventTasks.TryDequeue(out var coreEvent))
                     {
@@ -62,7 +60,7 @@ namespace IW4MAdmin.Application
                             _onProcessingEvents.Release(1);
                         }
                         
-                        _onEventReady.Wait(_cancellationToken);
+                        _onEventReady.Wait(token);
                         continue;
                     }
                     

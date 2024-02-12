@@ -511,7 +511,7 @@ namespace SharedLibraryCore
 
         public static TimeSpan ParseTimespan(this string input)
         {
-            var expressionMatch = Regex.Match(input, @"^([0-9]{1,5})(\p{L}+)");
+            var expressionMatch = Regex.Match(input, @"([0-9]+)(\w+)");
 
             if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
             {
@@ -590,8 +590,8 @@ namespace SharedLibraryCore
             Permission permissionLevel, TEntity entity,
             TPermission permission) where TEntity : Enum where TPermission : Enum
         {
-            return appConfig.Webfront.PermissionSets.ContainsKey(permissionLevel.ToString()) &&
-                   HasPermission(appConfig.Webfront.PermissionSets[permissionLevel.ToString()], entity, permission);
+            return appConfig.PermissionSets.ContainsKey(permissionLevel.ToString()) &&
+                   HasPermission(appConfig.PermissionSets[permissionLevel.ToString()], entity, permission);
         }
 
         /// <summary>

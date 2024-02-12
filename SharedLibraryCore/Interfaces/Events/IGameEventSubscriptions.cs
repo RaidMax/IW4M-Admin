@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript.Zombie;
 
 namespace SharedLibraryCore.Interfaces.Events;
 
@@ -21,6 +22,12 @@ public interface IGameEventSubscriptions
     /// <value><see cref="MatchEndEvent"/></value>
     /// </summary>
     static event Func<MatchEndEvent, CancellationToken, Task> MatchEnded;
+
+    /// <summary>
+    /// Raised when game log prints round ended
+    /// <remarks>typically only triggered when using a script integration</remarks>
+    /// </summary>
+    static event Func<RoundEndEvent, CancellationToken, Task> RoundEnded;
 
     /// <summary>
     /// Raised when game log printed that client has entered the match
@@ -92,6 +99,7 @@ public interface IGameEventSubscriptions
         {
             MatchStartEvent matchStartEvent => MatchStarted?.InvokeAsync(matchStartEvent, token) ?? Task.CompletedTask,
             MatchEndEvent matchEndEvent => MatchEnded?.InvokeAsync(matchEndEvent, token) ?? Task.CompletedTask,
+            RoundEndEvent roundEndEvent => RoundEnded?.InvokeAsync(roundEndEvent, token) ?? Task.CompletedTask,
             ClientEnterMatchEvent clientEnterMatchEvent => ClientEnteredMatch?.InvokeAsync(clientEnterMatchEvent, token) ?? Task.CompletedTask,
             ClientExitMatchEvent clientExitMatchEvent => ClientExitedMatch?.InvokeAsync(clientExitMatchEvent, token) ?? Task.CompletedTask,
             ClientJoinTeamEvent clientJoinTeamEvent => ClientJoinedTeam?.InvokeAsync(clientJoinTeamEvent, token) ?? Task.CompletedTask,

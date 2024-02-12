@@ -17,7 +17,7 @@ namespace Data.Migrations.Postgresql
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.1")
+                .HasAnnotation("ProductVersion", "8.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -458,6 +458,9 @@ namespace Data.Migrations.Postgresql
 
                     b.Property<bool>("Newest")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("PerformanceBucket")
+                        .HasColumnType("text");
 
                     b.Property<double?>("PerformanceMetric")
                         .HasColumnType("double precision");
@@ -1125,6 +1128,9 @@ namespace Data.Migrations.Postgresql
                     b.Property<bool>("IsPasswordProtected")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PerformanceBucket")
+                        .HasColumnType("text");
+
                     b.Property<int>("Port")
                         .HasColumnType("integer");
 
@@ -1220,6 +1226,278 @@ namespace Data.Migrations.Postgresql
                     b.HasKey("Vector3Id");
 
                     b.ToTable("Vector3", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStat", b =>
+                {
+                    b.Property<long>("ZombieClientStatId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieClientStatId"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("DamageDealt")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("DamageReceived")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Deaths")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Downs")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HeadshotKills")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Headshots")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Kills")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Melees")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PerksConsumed")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("PointsEarned")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PointsSpent")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("PowerupsGrabbed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Revives")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ZombieClientStatId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("MatchId");
+
+                    b.ToTable("EFZombieClientStat", (string)null);
+
+                    b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
+                {
+                    b.Property<int>("ZombieClientStatRecordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ZombieClientStatRecordId"));
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long?>("RoundId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("ZombieClientStatRecordId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("RoundId");
+
+                    b.ToTable("EFZombieClientStatRecord", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieEventLog", b =>
+                {
+                    b.Property<long>("ZombieEventLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieEventLogId"));
+
+                    b.Property<int?>("AssociatedClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EventType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("NumericalValue")
+                        .HasColumnType("double precision");
+
+                    b.Property<int?>("SourceClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TextualValue")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ZombieEventLogId");
+
+                    b.HasIndex("AssociatedClientId");
+
+                    b.HasIndex("MatchId");
+
+                    b.HasIndex("SourceClientId");
+
+                    b.ToTable("EFZombieEvents", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
+                {
+                    b.Property<int>("ZombieMatchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ZombieMatchId"));
+
+                    b.Property<int>("ClientsCompleted")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("MapId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("MatchEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("MatchStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ZombieMatchId");
+
+                    b.HasIndex("MapId");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("EFZombieMatch", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
+                {
+                    b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<double>("AlivePercentage")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("AverageDowns")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("AverageKillsPerDown")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("AverageMelees")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("AveragePoints")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("AverageRevives")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("AverageRoundReached")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("HeadshotPercentage")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("HighestRound")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("TotalMatchesCompleted")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalMatchesPlayed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalRoundsPlayed")
+                        .HasColumnType("integer");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("EFZombieAggregateClientStat", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatchClientStat", b =>
+                {
+                    b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.ToTable("EFZombieMatchClientStat", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
+                {
+                    b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<TimeSpan?>("Duration")
+                        .HasColumnType("interval");
+
+                    b.Property<DateTimeOffset?>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<TimeSpan?>("TimeAlive")
+                        .HasColumnType("interval");
+
+                    b.ToTable("EFZombieRoundClientStat", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
@@ -1663,6 +1941,107 @@ namespace Data.Migrations.Postgresql
                     b.Navigation("Server");
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany("ZombieClientStats")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Zombie.ZombieMatch", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Match");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieRoundClientStat", "Round")
+                        .WithMany()
+                        .HasForeignKey("RoundId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Round");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieEventLog", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "AssociatedClient")
+                        .WithMany()
+                        .HasForeignKey("AssociatedClientId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieMatch", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId");
+
+                    b.HasOne("Data.Models.Client.EFClient", "SourceClient")
+                        .WithMany()
+                        .HasForeignKey("SourceClientId");
+
+                    b.Navigation("AssociatedClient");
+
+                    b.Navigation("Match");
+
+                    b.Navigation("SourceClient");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
+                        .WithMany()
+                        .HasForeignKey("MapId");
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
+
+                    b.Navigation("Map");
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
+                        .WithOne()
+                        .HasForeignKey("Data.Models.Zombie.ZombieAggregateClientStat", "ZombieClientStatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatchClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
+                        .WithOne()
+                        .HasForeignKey("Data.Models.Zombie.ZombieMatchClientStat", "ZombieClientStatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
+                        .WithOne()
+                        .HasForeignKey("Data.Models.Zombie.ZombieRoundClientStat", "ZombieClientStatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Data.Models.Client.EFClient", b =>
                 {
                     b.Navigation("AdministeredPenalties");
@@ -1670,6 +2049,8 @@ namespace Data.Migrations.Postgresql
                     b.Navigation("Meta");
 
                     b.Navigation("ReceivedPenalties");
+
+                    b.Navigation("ZombieClientStats");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFACSnapshot", b =>

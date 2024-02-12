@@ -46,7 +46,7 @@ namespace SharedLibraryCore
         public static Encoding EncodingType;
         public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
 
-        public static TimeSpan DefaultCommandTimeout { get; set; } = new(0, 0, /*Utilities.IsDevelopment ? 360 : */25);
+        public static TimeSpan DefaultCommandTimeout { get; set; } = new(0, 0, Utilities.IsDevelopment ? 360 : 25);
         public static char[] DirectorySeparatorChars = { '\\', '/' };
         public static char CommandPrefix { get; set; } = '!';
 
@@ -1217,6 +1217,16 @@ namespace SharedLibraryCore
         }
 
         public static string ToNumericalString(this int value)
+        {
+            return ToNumericalString((long)value);
+        }
+        
+        public static string ToNumericalString(this long? value)
+        {
+            return value?.ToNumericalString();
+        }
+
+        public static string ToNumericalString(this long value)
         {
             return value.ToString("#,##0", CurrentLocalization.Culture);
         }

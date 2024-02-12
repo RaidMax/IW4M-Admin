@@ -9,7 +9,9 @@ public abstract class ZombieClientStat : DatedRecord
 {
     [Key]
     public long ZombieClientStatId { get; set; }
-    
+
+    [NotMapped] public override long Id => ZombieClientStatId;
+
     public int? MatchId { get; set; }
     
     [ForeignKey(nameof(MatchId))]
@@ -17,13 +19,14 @@ public abstract class ZombieClientStat : DatedRecord
     
     public int ClientId { get; set; }
     [ForeignKey(nameof(ClientId))] 
-    public virtual EFClient? Client { get; set; }
+    public virtual EFClient Client { get; set; }
 
     public int Kills { get; set; }
     public int Deaths { get; set; }
-    public int DamageDealt { get; set; }
+    public long DamageDealt { get; set; }
     public int DamageReceived { get; set; }
     public int Headshots { get; set; }
+    public int HeadshotKills { get; set; }
     public int Melees { get; set; }
     public int Downs { get; set; }
     public int Revives { get; set; }

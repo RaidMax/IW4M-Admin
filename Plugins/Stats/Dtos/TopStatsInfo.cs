@@ -1,7 +1,7 @@
 ﻿using SharedLibraryCore.Dtos;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using Data.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Web.Dtos
 {
@@ -22,6 +22,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Dtos
         public List<PerformanceHistory> PerformanceHistory { get; set; }
         public double? ZScore { get; set; }
         public long? ServerId { get; set; }
+        public List<EFMeta> Metrics { get; } = new();
     }
 
     public class PerformanceHistory

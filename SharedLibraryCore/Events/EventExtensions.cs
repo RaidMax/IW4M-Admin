@@ -24,8 +24,16 @@ public static class EventExtensions
     {
         if (token == CancellationToken.None)
         {
-            // special case to allow tasks like request after delay to run longer
-            await handler(eventArgType, token);
+            try
+            {
+                // special case to allow tasks like request after delay to run longer
+                await handler(eventArgType, token);
+            }
+            catch (Exception ex)
+            {
+                // todo: static logger
+                Console.WriteLine("InvokeAsync: " + ex);
+            }
         }
 
         using var timeoutToken = new CancellationTokenSource(Utilities.DefaultCommandTimeout);
@@ -36,9 +44,10 @@ public static class EventExtensions
         {
             await handler(eventArgType, tokenSource.Token);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignored
+            // todo: static logger
+            Console.WriteLine("InvokeAsync: " + ex);
         }
     }
 }

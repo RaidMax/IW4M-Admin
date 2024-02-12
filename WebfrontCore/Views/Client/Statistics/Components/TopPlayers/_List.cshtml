@@ -67,21 +67,13 @@
             </div>
 
             <div class="d-flex flex-column font-size-12 text-right text-md-left">
-                <div>
-                    <span class="text-primary">@stat.Kills.ToNumericalString()</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KILLS"]</span>
-                </div>
-                <div>
-                    <span class="text-primary">@stat.Deaths.ToNumericalString()</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_DEATHS"]</span><br/>
-                </div>
-                <div>
-                    <span class="text-primary">@stat.KDR</span><span class="text-muted"> @loc["PLUGINS_STATS_TEXT_KDR"]</span>
-                </div>
-                <div>
-                    <span class="text-primary">@stat.TimePlayedValue.HumanizeForCurrentCulture() </span><span class="text-muted">@loc["WEBFRONT_PROFILE_PLAYER"]</span>
-                </div>
-                <div>
-                    <span class="text-primary"> @stat.LastSeenValue.HumanizeForCurrentCulture() </span><span class="text-muted">@loc["WEBFRONT_PROFILE_LSEEN"]</span>
-                </div>
+                @foreach (var meta in stat.Metrics)
+                {
+                    <div>
+                        <span class="text-primary">@meta.Value</span>
+                        <span class="text-muted">@meta.Key</span>
+                    </div>
+                }
             </div>
         </div>
         <div class="w-full w-md-half client-rating-graph pt-10 pb-10">

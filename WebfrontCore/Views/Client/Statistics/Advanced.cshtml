@@ -31,9 +31,15 @@
         }
         var rebuiltName = stat.RebuildWeaponName();
         var name = config.GetStringForGame(rebuiltName, stat.Weapon?.Game);
-        return !rebuiltName.Equals(name, StringComparison.InvariantCultureIgnoreCase)
-            ? name
-            : config.GetStringForGame(stat.Weapon.Name, stat.Weapon.Game);
+
+        if (!rebuiltName.Equals(name))
+        {
+            return name;
+        }
+        
+        rebuiltName = config.GetStringForGame(stat.Weapon?.Name, stat.Weapon.Game);
+
+        return rebuiltName.Equals(name) ? name.Transform(To.TitleCase) : rebuiltName;
     }
 
     string GetWeaponAttachmentName(EFWeaponAttachmentCombo attachment)
@@ -230,7 +236,11 @@
             Name = ViewBag.Localization["WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"] as string,
             Value = activeTime?.HumanizeForCurrentCulture()
         }
-    };
+    }.Concat(Model.CustomMetrics.Select(metric => new
+    {
+        Name = metric.Key,
+        metric.Value
+    }));
 }
 
 <div class="content row mt-20">
@@ -362,7 +372,7 @@
                 }).WithRows(weapons, weapon => new[]
                 {
                     GetWeaponNameForHit(weapon),
-                    GetWeaponAttachmentName(weapon.WeaponAttachmentCombo) ?? "--",
+                    GetWeaponAttachmentName(weapon.WeaponAttachmentCombo) ?? "-",
                     weapon.KillCount.ToNumericalString(),
                     weapon.HitCount.ToNumericalString(),
                     weapon.DamageInflicted.ToNumericalString(),

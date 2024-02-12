@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -48,6 +50,11 @@ namespace WebfrontCore.Controllers
                 matchedServerId = server.LegacyDatabaseId;
             }
 
+            foreach (var statMetricFunc in Manager.CustomStatsMetrics)
+            {
+                await statMetricFunc(new Dictionary<int, List<EFMeta>> { { id, hitInfo.CustomMetrics } }, matchedServerId, null, false);
+            }
+            
             hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
 
             return View("~/Views/Client/Statistics/Advanced.cshtml", hitInfo);

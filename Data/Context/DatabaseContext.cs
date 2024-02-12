@@ -57,6 +57,7 @@ namespace Data.Context
         public DbSet<ZombieRoundClientStat> ZombieRoundClientStats { get; set; }
         public DbSet<ZombieAggregateClientStat> ZombieClientStatAggregates { get; set; }
         public DbSet<ZombieClientStatRecord> ZombieClientStatRecords { get; set; }
+        public DbSet<ZombieEventLog> ZombieEvents { get; set; }
 
         #endregion
 
@@ -102,6 +103,19 @@ namespace Data.Context
                     client.NetworkId,
                     client.GameName
                 });
+                
+
+               /* entity.HasMany(prop => prop.ZombieMatchClientStats)
+                    .WithOne(prop => prop.Client)
+                    .HasForeignKey(prop => prop.ClientId);
+                
+                entity.HasMany(prop => prop.ZombieRoundClientStats)
+                    .WithOne(prop => prop.Client)
+                    .HasForeignKey(prop => prop.ClientId);
+                
+                entity.HasMany(prop => prop.ZombieAggregateClientStats)
+                    .WithOne(prop => prop.Client)
+                    .HasForeignKey(prop => prop.ClientId);*/
             });
 
             modelBuilder.Entity<EFPenalty>(entity =>
@@ -171,12 +185,34 @@ namespace Data.Context
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
             
-            modelBuilder.Entity(typeof(ZombieMatch)).ToTable($"EF{nameof(ZombieMatch)}");
-            modelBuilder.Entity(typeof(ZombieMatchClientStat)).ToTable($"EF{nameof(ZombieMatchClientStat)}");
-            modelBuilder.Entity(typeof(ZombieRoundClientStat)).ToTable($"EF{nameof(ZombieRoundClientStat)}");
-            modelBuilder.Entity(typeof(ZombieAggregateClientStat)).ToTable($"EF{nameof(ZombieAggregateClientStat)}");
-            modelBuilder.Entity(typeof(ZombieClientStat)).ToTable($"EF{nameof(ZombieClientStat)}");
-            modelBuilder.Entity(typeof(ZombieClientStatRecord)).ToTable($"EF{nameof(ZombieClientStatRecord)}");
+            modelBuilder.Entity<ZombieMatch>().ToTable($"EF{nameof(ZombieMatch)}");
+            
+            modelBuilder.Entity<ZombieClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieClientStat)}");
+                ent.HasOne(prop => prop.Client)
+                    .WithMany(prop => prop.ZombieClientStats)
+                    .HasForeignKey(prop => prop.ClientId);
+            });
+
+            modelBuilder.Entity<ZombieMatchClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieMatchClientStat)}");
+            });
+
+            modelBuilder.Entity<ZombieRoundClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieRoundClientStat)}");
+            });
+
+            modelBuilder.Entity<ZombieAggregateClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieAggregateClientStat)}");
+            });
+
+            modelBuilder.Entity<ZombieEventLog>().ToTable($"EF{nameof(ZombieEvents)}");
+ 
+            modelBuilder.Entity<ZombieClientStatRecord>().ToTable($"EF{nameof(ZombieClientStatRecord)}");
 
             Models.Configuration.StatsModelConfiguration.Configure(modelBuilder);
 

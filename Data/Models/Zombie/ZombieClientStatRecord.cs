@@ -15,6 +15,9 @@ public class ZombieClientStatRecord : DatedRecord
 {
     [Key]
     public int ZombieClientStatRecordId { get; set; }
+
+    [NotMapped] public override long Id => ZombieClientStatRecordId;
+    
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;

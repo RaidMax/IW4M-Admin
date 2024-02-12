@@ -15,11 +15,11 @@ namespace SharedLibraryCore.Configuration
 
             if (!ContainsKey(game.Value))
             {
-                return key.Transform(To.TitleCase);
+                return key;
             }
 
             var strings = this[game.Value];
-            return !strings.ContainsKey(key) ? key.Transform(To.TitleCase) : strings[key];
+            return !strings.TryGetValue(key, out var value) ? key : value;
         }
     }
 }

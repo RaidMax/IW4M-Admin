@@ -2,6 +2,8 @@
     [string]$OutputDir = $(throw "-OutputDir is required.")
 )
 
+New-Item -ItemType Directory -Force -Path $OutputDir
+
 $localizations = @("en-US", "ru-RU", "es-EC", "pt-BR", "de-DE")
 foreach($localization in $localizations)
 {

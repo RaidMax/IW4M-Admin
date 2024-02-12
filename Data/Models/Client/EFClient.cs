@@ -84,10 +84,6 @@ namespace Data.Models.Client
         public virtual ICollection<EFMeta> Meta { get; set; }        
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }
-        public virtual ICollection<ZombieAggregateClientStat> ZombieAggregateClientStats { get; set; }
         public virtual ICollection<ZombieClientStat> ZombieClientStats { get; set; }
-        public virtual ICollection<ZombieMatch> ZombieMatches { get; set; }
-        public virtual ICollection<ZombieMatchClientStat> ZombieMatchClientStats { get; set; }
-        public virtual ICollection<ZombieRoundClientStat> ZombieRoundClientStats { get; set; }
     }
 }

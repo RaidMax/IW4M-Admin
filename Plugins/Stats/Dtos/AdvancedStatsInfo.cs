@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using SharedLibraryCore.Dtos;
@@ -25,5 +26,6 @@ namespace Stats.Dtos
         public List<EFClientHitStatistic> ByAttachmentCombo { get; set; }
         public List<EFClientRankingHistory> Ratings { get; set; }
         public List<EFClientStatistics> LegacyStats { get; set; }
+        public List<EFMeta> CustomMetrics { get; set; } = new();
     }
 }

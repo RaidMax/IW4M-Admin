@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Data.Models;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
@@ -113,5 +114,6 @@ namespace SharedLibraryCore.Interfaces
 
         IAlertManager AlertManager { get; }
         IInteractionRegistration InteractionRegistration { get; }
+        IList<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>> CustomStatsMetrics { get; }
     }
 }

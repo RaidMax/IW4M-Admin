@@ -3,6 +3,7 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,12 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteDatabaseContext))]
-    partial class SqliteDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20230906230124_AddZombieStatsEventLog")]
+    partial class AddZombieStatsEventLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.1");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
@@ -1193,9 +1195,6 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("Downs")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("HeadshotKills")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Headshots")
                         .HasColumnType("INTEGER");
 
@@ -1233,8 +1232,6 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("MatchId");
 
                     b.ToTable("EFZombieClientStat", (string)null);
-
-                    b.UseTptMappingStrategy();
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>

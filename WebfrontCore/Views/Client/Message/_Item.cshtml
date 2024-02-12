@@ -21,7 +21,7 @@
             }
         </td>
         <td colspan="20%" class="text-break">
-            <color-code value="@(message.ServerName ?? "--")"></color-code>
+            <color-code value="@(message.ServerName ?? "-")"></color-code>
         </td>
         <td colspan="15%" class="text-right text-break">
             @message.When.ToStandardFormat()
@@ -51,7 +51,7 @@
                 }
             </div>
             <div>
-                <color-code value="@(message.ServerName ?? "--")"></color-code>
+                <color-code value="@(message.ServerName ?? "-")"></color-code>
             </div>
             <div>@message.When.ToStandardFormat()</div>
         </td>

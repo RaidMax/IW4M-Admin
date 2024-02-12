@@ -110,25 +110,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return 0;
         }
 
-        public Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(int? clientId = null,
-            long? serverId = null)
+        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime, long? serverId = null)
         {
-            return (ranking) => ranking.ServerId == serverId
-                                && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
-                                && ranking.CreatedDateTime >= Extensions.FifteenDaysAgo()
-                                && ranking.ZScore != null
-                                && ranking.PerformanceMetric != null
-                                && ranking.Newest
-                                && ranking.Client.TotalConnectionTime >=
-                                _config.TopPlayersMinPlayTime;
+            var oldestDate = DateTime.UtcNow - oldestStat;
+            return ranking => ranking.ServerId == serverId
+                              && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
+                              && ranking.CreatedDateTime >= oldestDate
+                              && ranking.ZScore != null
+                              && ranking.PerformanceMetric != null
+                              && ranking.Newest
+                              && ranking.Client.TotalConnectionTime >= (int)minPlayTime.TotalSeconds;
         }
 
         public async Task<int> GetTotalRankedPlayers(long serverId)
         {
+            var bucketConfig = await GetBucketConfig(serverId);
+
             await using var context = _contextFactory.CreateContext(enableTracking: false);
 
             return await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(serverId: serverId))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId))
                 .CountAsync();
         }
 
@@ -143,12 +144,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             public DateTime CreatedDateTime { get; set; }
         }
 
-        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null)
+        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null, string performanceBucket = null)
         {
-            await using var context = _contextFactory.CreateContext(false);
+            var bucketConfig = await GetBucketConfig(serverId);
 
+            await using var context = _contextFactory.CreateContext(false);
             var clientIdsList = await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(serverId: serverId))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
                 .Select(ranking => ranking.ClientId)
                 .Skip(start)
@@ -233,7 +235,75 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .OrderBy(r => r.Ranking)
                 .ToList();
 
+            foreach (var topStatsInfo in finished)
+            {
+                topStatsInfo.Metrics.AddRange(new EFMeta[]
+                {
+                    new()
+                    {
+                        Extra = "Kills",
+                        Value = topStatsInfo.Kills.ToNumericalString(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]
+                    },
+                    new()
+                    {
+                        Extra = "Deaths",
+                        Value = topStatsInfo.Deaths.ToNumericalString(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"]
+                    },
+                    new()
+                    {
+                        Extra = "KDR",
+                        Value = topStatsInfo.KDR.ToNumericalString(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]
+                    },
+                    new()
+                    {
+                        Extra = "TimePlayed",
+                        Value = topStatsInfo.TimePlayedValue.HumanizeForCurrentCulture(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]
+                    },
+                    new()
+                    {
+                        Extra = "LastSeen",
+                        Value = topStatsInfo.LastSeenValue.HumanizeForCurrentCulture(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"]
+                    }
+                });
+            }
+            
+            foreach (var customMetricFunc in Plugin.ServerManager.CustomStatsMetrics)
+            {
+                await customMetricFunc(finished.ToDictionary(kvp => kvp.ClientId, kvp => kvp.Metrics), serverId,
+                    performanceBucket, true);
+            }
+
             return finished;
+        }
+
+        private async Task<PerformanceBucketConfiguration> GetBucketConfig(long? serverId)
+        {
+            var defaultConfig = new PerformanceBucketConfiguration
+            {
+                ClientMinPlayTime = TimeSpan.FromSeconds(_config.TopPlayersMinPlayTime),
+                RankingExpiration = DateTime.UtcNow - Extensions.FifteenDaysAgo()
+            };
+
+            if (serverId is null)
+            {
+                return defaultConfig;
+            }
+
+            var performanceBucket =
+                (await _serverCache.FirstAsync(server => server.Id == serverId)).PerformanceBucket;
+
+            if (string.IsNullOrEmpty(performanceBucket))
+            {
+                return defaultConfig;
+            }
+
+            return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Name == performanceBucket) ??
+                   defaultConfig;
         }
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null)
@@ -1179,54 +1249,41 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task UpdateHistoricalRanking(int clientId, EFClientStatistics clientStats, long serverId)
         {
-            await using var context = _contextFactory.CreateContext();
-            var minPlayTime = _config.TopPlayersMinPlayTime;
-            var oldestStat = DateTimeOffset.UtcNow - Extensions.FifteenDaysAgo();
+            var bucketConfig = await GetBucketConfig(serverId);
             
-            var performanceBucket =
-                (await _serverCache.FirstAsync(server => server.Id == serverId)).PerformanceBucket;
-
-            if (!string.IsNullOrEmpty(performanceBucket))
-            {
-                var bucketConfig = _config.PerformanceBuckets.FirstOrDefault(cfg => cfg.Name == performanceBucket) ??
-                                   new PerformanceBucketConfiguration();
-
-                minPlayTime = (int)bucketConfig.ClientMinPlayTime.TotalSeconds;
-                oldestStat = bucketConfig.RankingExpiration;
-            }
-
-            var oldestStateDate = DateTime.UtcNow - oldestStat;
+            await using var context = _contextFactory.CreateContext();
+            var oldestStateDate = DateTime.UtcNow - bucketConfig.RankingExpiration;
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
+                .Include(stat => stat.Server)
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
                 .Where(stats => stats.UpdatedAt >= oldestStateDate)
-                .Where(stats => stats.TimePlayed >= minPlayTime)
+                .Where(stats => stats.TimePlayed >= (int)bucketConfig.ClientMinPlayTime.TotalSeconds)
                 .ToListAsync();
 
-            if (clientStats.TimePlayed >= minPlayTime)
+            if (clientStats.TimePlayed >= bucketConfig.ClientMinPlayTime.TotalSeconds)
             {
-                await UpdateForServer(clientId, clientStats, context, minPlayTime, oldestStat, serverId);
+                await UpdateForServer(clientId, clientStats, context, (int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration, serverId);
+                clientStats.Server = await _serverCache.FirstAsync(server => server.Id == serverId);
                 performances.Add(clientStats);
             }
 
-            if (performances.Any(performance => performance.TimePlayed >= minPlayTime))
+            if (performances.Any(performance => performance.TimePlayed >= (int)bucketConfig.ClientMinPlayTime.TotalSeconds))
             {
-                await UpdateAggregateForServerOrBucket(clientId, clientStats, context, performances, minPlayTime,
-                    oldestStat, performanceBucket);
+                await UpdateAggregateForServerOrBucket(clientId, clientStats, context, performances, bucketConfig);
             }
         }
 
-        private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context, List<EFClientStatistics> performances,
-            int minPlayTime, TimeSpan oldestStat, string performanceBucket)
+        private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context, List<EFClientStatistics> performances, PerformanceBucketConfiguration bucketConfig)
         {
             var aggregateZScore =
-                performances.Where(performance => performance.Server.PerformanceBucket == performanceBucket)
-                    .WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
+                performances.Where(performance =>  performance.Server.PerformanceBucket == bucketConfig.Name)
+                    .WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), (int)bucketConfig.ClientMinPlayTime.TotalSeconds);
 
             int? aggregateRanking = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId != clientId)
-                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime, oldestStat))
+                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration))
                 .GroupBy(stat => stat.ClientId)
                 .Where(group =>
                     group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
@@ -1234,7 +1291,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Select(c => c.Key)
                 .CountAsync();
 
-            var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore, performanceBucket);
+            var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore, bucketConfig.Name);
 
             if (newPerformanceMetric == null)
             {
@@ -1249,13 +1306,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 ZScore = aggregateZScore,
                 Ranking = aggregateRanking,
                 PerformanceMetric = newPerformanceMetric,
-                PerformanceBucket = performanceBucket,
+                PerformanceBucket = bucketConfig.Name,
                 Newest = true,
             };
 
             context.Add(aggregateRankingSnapshot);
 
-            await PruneOldRankings(context, clientId);
+            await PruneOldRankings(context, clientId, performanceBucket: bucketConfig.Name);
             await context.SaveChangesAsync();
         }
 
@@ -1364,6 +1421,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             attackerStats.EloRating = Math.Max(0, Math.Round(attackerStats.EloRating, 2));
             victimStats.EloRating = Math.Max(0, Math.Round(victimStats.EloRating, 2));
 
+            var attackerEloRatingFunc =
+                attacker.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("EloRatingFunction");
+
+            attackerStats.EloRating =
+                attackerEloRatingFunc?.Invoke(attacker, attackerStats) ?? attackerStats.EloRating;
+            
+            var victimEloRatingFunc =
+                victim.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("EloRatingFunction");
+
+            victimStats.EloRating =
+                attackerEloRatingFunc?.Invoke(victim, victimStats) ?? victimStats.EloRating;
+
             // update after calculation
             attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
             victimStats.TimePlayed += (int)(DateTime.UtcNow - victimStats.LastActive).TotalSeconds;
@@ -1428,7 +1497,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 ? (int)(DateTime.UtcNow - clientStats.LastActive).TotalSeconds
                 : clientStats.TimePlayed + (int)(DateTime.UtcNow - clientStats.LastActive).TotalSeconds;
 
-            double SPMAgainstPlayWeight = timeSinceLastCalc / Math.Min(600, (totalPlayTime / 60.0));
+            double SPMAgainstPlayWeight = totalPlayTime == 0 ? killSpm : timeSinceLastCalc / Math.Min(600, (totalPlayTime / 60.0));
 
             // calculate the new weight against average times the weight against play time
             clientStats.SPM = (killSpm * SPMAgainstPlayWeight) + (clientStats.SPM * (1 - SPMAgainstPlayWeight));
@@ -1446,7 +1515,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 skillFunction?.Invoke(client, clientStats) ?? Math.Round(clientStats.SPM * KDRWeight, 3);
 
             // fixme: how does this happen?
-            if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill))
+            if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill) || double.IsInfinity(clientStats.Skill))
             {
                 _log.LogWarning("clientStats SPM/Skill NaN {@killInfo}",
                     new

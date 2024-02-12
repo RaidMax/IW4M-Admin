@@ -117,6 +117,7 @@ public class Plugin : IPluginV2
             }
         };
         IGameEventSubscriptions.MatchEnded += OnMatchEvent;
+        IGameEventSubscriptions.RoundEnded += (roundEndedEvent, token) => _statManager.Sync(roundEndedEvent.Server, token);
         IGameEventSubscriptions.MatchStarted += OnMatchEvent;
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
         IGameEventSubscriptions.ClientKilled += OnClientKilled;

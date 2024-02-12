@@ -132,6 +132,9 @@ namespace IW4MAdmin.Application
         public IEnumerable<IPlugin> Plugins { get; }
         public IInteractionRegistration InteractionRegistration { get; }
 
+        public IList<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>> CustomStatsMetrics { get; } =
+            new List<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>>();
+
         public async Task ExecuteEvent(GameEvent newEvent)
         {
             ProcessingEvents.TryAdd(newEvent.IncrementalId, newEvent);
@@ -245,7 +248,13 @@ namespace IW4MAdmin.Application
             {
                 var thisIndex = index;
                 Interlocked.Increment(ref index);
-                return ProcessUpdateHandler(server, thisIndex);
+                return ProcessUpdateHandler(server, thisIndex).ContinueWith(result =>
+                {
+                    if (result.IsFaulted)
+                    {
+                        _logger.LogError(result.Exception, "Encountered unexpected error processing updates");
+                    }
+                }, CancellationToken);
             }));
         }
 
@@ -593,19 +602,22 @@ namespace IW4MAdmin.Application
         public async Task Start()
         {
             _eventHandlerTokenSource = new CancellationTokenSource();
-            
-            var eventHandlerThread = new Thread(() =>
+
+            var eventHandlerTask = Task.Run(() =>
             {
                 _coreEventHandler.StartProcessing(_eventHandlerTokenSource.Token);
-            })
-            {
-                Name = nameof(CoreEventHandler)
-            };
+            }, _eventHandlerTokenSource.Token);
 
-            eventHandlerThread.Start();
             await UpdateServerStates();
             _eventHandlerTokenSource.Cancel();
-            eventHandlerThread.Join();
+
+            try
+            {
+                await eventHandlerTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         public async Task Stop()

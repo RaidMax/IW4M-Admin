@@ -57,7 +57,7 @@ namespace Stats.Client
 
                 var iqPerformances = set
                     .Where(s => s.Skill > 0)
-                    .Where(s => s.EloRating > 0)
+                    .Where(s => s.EloRating >= 0)
                     .Where(s => s.Client.Level != EFClient.Permission.Banned);
 
                 foreach (var serverId in _serverIds)
@@ -71,30 +71,33 @@ namespace Stats.Client
                     distributions.Add(serverId.ToString(), distributionParams);
                 }
 
-                foreach (var server in _appConfig.Servers)
+                foreach (var performanceBucketGroup in _appConfig.Servers.GroupBy(server => server.PerformanceBucket))
                 {
-                    if (string.IsNullOrWhiteSpace(server.PerformanceBucket))
+                    if (string.IsNullOrWhiteSpace(performanceBucketGroup.Key))
                     {
                         continue;
                     }
 
+                    var performanceBucket = performanceBucketGroup.Key;
+
                     var bucketConfig =
                         _configuration.PerformanceBuckets.FirstOrDefault(bucket =>
-                            bucket.Name == server.PerformanceBucket) ?? new PerformanceBucketConfiguration();
+                            bucket.Name == performanceBucket) ?? new PerformanceBucketConfiguration();
 
-                    var oldestPerf = DateTimeOffset.UtcNow - bucketConfig.RankingExpiration;
+                    var oldestPerf = DateTime.UtcNow - bucketConfig.RankingExpiration;
                     var performances = await iqPerformances
-                        .Where(perf => perf.Server.PerformanceBucket == server.PerformanceBucket)
+                        .Where(perf => perf.Server.PerformanceBucket == performanceBucket)
                         .Where(perf => perf.TimePlayed >= bucketConfig.ClientMinPlayTime.TotalSeconds)
                         .Where(perf => perf.UpdatedAt >= oldestPerf)
+                        .Where(perf => perf.Skill < 999999)
                         .Select(s => s.EloRating * 1 / 3.0 + s.Skill * 2 / 3.0)
                         .ToListAsync(token);
                     var distributionParams = performances.GenerateDistributionParameters();
-                    distributions.Add(server.PerformanceBucket, distributionParams);
+                    distributions.Add(performanceBucket, distributionParams);
                 }
 
                 return distributions;
-            }, DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(1));
+            }, DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromHours(1));
 
             foreach (var server in _appConfig.Servers)
             {
@@ -117,7 +120,7 @@ namespace Stats.Client
                         var zScore = await set
                             .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(validPlayTime, oldestStat))
                             .Where(s => s.Skill > 0)
-                            .Where(s => s.EloRating > 0)
+                            .Where(s => s.EloRating >= 1)
                             .Where(stat =>
                                 performanceBucket == null || performanceBucket == stat.Server.PerformanceBucket)
                             .GroupBy(stat => stat.ClientId)
@@ -127,7 +130,7 @@ namespace Stats.Client
 
                         return zScore ?? 0;
                     }, MaxZScoreCacheKey, new[] { server.PerformanceBucket },
-                    Utilities.IsDevelopment ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(30));
+                    Utilities.IsDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(30));
 
                 await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new[] { server.PerformanceBucket });
             }
@@ -198,6 +201,8 @@ namespace Stats.Client
             {
                 return 0.0;
             }
+
+            value = Math.Max(1, value);
 
             var zScore = (Math.Log(value) - sdParams.Mean) / sdParams.Sigma;
             return zScore;

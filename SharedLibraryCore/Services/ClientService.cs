@@ -40,7 +40,8 @@ namespace SharedLibraryCore.Services
                         AliasLink = client.AliasLink,
                         Password = client.Password,
                         PasswordSalt = client.PasswordSalt,
-                        GameName = client.GameName
+                        GameName = client.GameName,
+                        CurrentAliasId = client.CurrentAliasId
                     })
                     .FirstOrDefault(client => client.NetworkId == networkId && client.GameName == game)
             );
@@ -595,7 +596,6 @@ namespace SharedLibraryCore.Services
 
             entity.CurrentAlias = newAlias;
             await context.SaveChangesAsync();
-            entity.CurrentAliasId = newAlias.AliasId;
         }
 
         /// <summary>

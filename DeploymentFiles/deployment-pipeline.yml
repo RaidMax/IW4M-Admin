@@ -28,18 +28,10 @@ variables:
 jobs:
   - job: Build_Deploy
     steps:
-    - task: UseDotNet@2
-      displayName: 'Install .NET Core 6 SDK'
-      inputs:
-        packageType: 'sdk'
-        version: '6.0.x'
-        includePreviewVersions: true
-    
-    - task: NuGetToolInstaller@1
     
     - task: PowerShell@2
       displayName: 'Setup Pre-Release configuration'
-      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+      condition: or(ne(variables['Build.SourceBranch'], 'refs/heads/release/master'))
       inputs:
         targetType: 'inline'
         script: |
@@ -193,7 +185,7 @@ jobs:
         publishLocation: 'pipeline'
 
     - task: FtpUpload@2
-      condition: ne(variables['Build.SourceBranch'], 'refs/heads/develop')
+      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'),eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       displayName: 'Upload zip file to website'
       inputs:
         credentialsOption: 'inputs'
@@ -209,7 +201,7 @@ jobs:
         trustSSL: false
     
     - task: FtpUpload@2
-      condition: ne(variables['Build.SourceBranch'], 'refs/heads/develop')
+      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'),eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       displayName: 'Upload version info to website'
       inputs:
         credentialsOption: 'inputs'
@@ -225,7 +217,7 @@ jobs:
         trustSSL: false
     
     - task: GitHubRelease@1
-      condition: ne(variables['Build.SourceBranch'], 'refs/heads/develop')
+      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'),eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       displayName: 'Make GitHub release'
       inputs:
         gitHubConnection: 'github.com_RaidMax'
@@ -243,7 +235,7 @@ jobs:
         changeLogType: 'commitBased'
     
     - task: PowerShell@2
-      condition: ne(variables['Build.SourceBranch'], 'refs/heads/develop')
+      condition: or(eq(variables['Build.SourceBranch'], 'refs/heads/release/pre'),eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       displayName: 'Update master version'
       inputs:
         targetType: 'inline'

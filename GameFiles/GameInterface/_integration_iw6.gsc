@@ -17,7 +17,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout]    = ::WaitillNotifyOrTimeoutWrapper;
     level.overrideMethods[level.commonFunctions.isBot]                      = ::IsBotWrapper;
     level.overrideMethods[level.commonFunctions.getXuid]                    = ::GetXuidWrapper;
-    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]      = ::WaitTillAnyTimeout;
+    level.overrideMethods[level.commonFunctions.waitTillAnyTimeout]         = ::WaitTillAnyTimeout;
 
     level notify( level.notifyTypes.gameFunctionsInitialized );
 }

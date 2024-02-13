@@ -864,7 +864,7 @@ namespace SharedLibraryCore
            return await ExecuteCommandAsync(server, commandName, default);
         }
 
-        public static async Task<IStatusResponse> GetStatusAsync(this Server server, CancellationToken token)
+        public static async Task<IStatusResponse?> GetStatusAsync(this Server server, CancellationToken token)
         {
             try
             {

@@ -93,7 +93,7 @@ namespace SharedLibraryCore.Configuration
         public bool EnableCustomLocale { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
-        public string CustomLocale { get; set; }
+        public string? CustomLocale { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_COMMAND_PREFIX")]
         public string CommandPrefix { get; set; } = "!";
@@ -106,13 +106,13 @@ namespace SharedLibraryCore.Configuration
 
         [ConfigurationOptional]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CONNECTION_STRING")]
-        public string ConnectionString { get; set; }
+        public string? ConnectionString { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_RCON_POLLRATE")]
         public int RConPollRate { get; set; } = 8000;
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
-        public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
+        public TimeSpan MaximumTempBanTime { get; set; } = new(24 * 30, 0, 0);
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
         public bool EnableColorCodes { get; set; }
@@ -170,7 +170,7 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY")]
         public bool EnablePrivilegedUserPrivacy { get; set; }
 
-        [ConfigurationIgnore] public bool EnableImplicitAccountLinking { get; set; } = false;
+        [ConfigurationIgnore] public bool EnableImplicitAccountLinking { get; set; }
         [ConfigurationIgnore] public TimeSpan RecentAliasIpLinkTimeLimit { get; set; } = TimeSpan.FromDays(7);
 
         [ConfigurationIgnore] public TimeSpan MaxClientHistoryTime { get; set; } = TimeSpan.FromHours(12);
@@ -189,20 +189,20 @@ namespace SharedLibraryCore.Configuration
 
         [ConfigurationIgnore] public int MinimumNameLength { get; set; } = 3;
         [ConfigurationIgnore] public string Id { get; set; }
-        [ConfigurationIgnore] public string SubscriptionId { get; set; }
+        [ConfigurationIgnore] public string? SubscriptionId { get; set; }
 
         [Obsolete("Moved to DefaultSettings")]
         [ConfigurationIgnore]
-        public MapConfiguration[] Maps { get; set; }
+        public MapConfiguration[]? Maps { get; set; }
 
         [Obsolete("Moved to DefaultSettings")]
         [ConfigurationIgnore]
-        public QuickMessageConfiguration[] QuickMessages { get; set; }
+        public QuickMessageConfiguration[]? QuickMessages { get; set; }
 
         [ConfigurationIgnore]
         [JsonIgnore]
         public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl)
-            ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1")
+            ? WebfrontBindUrl.Replace("0.0.0.0", "127.0.0.1")
             : ManualWebfrontUrl;
 
         [ConfigurationIgnore] public bool IgnoreServerConnectionLost { get; set; }
@@ -229,9 +229,6 @@ namespace SharedLibraryCore.Configuration
             return this;
         }
 
-        public string Name()
-        {
-            return "ApplicationConfiguration";
-        }
+        public string Name() => "ApplicationConfiguration";
     }
 }

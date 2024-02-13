@@ -6,6 +6,8 @@
     <Platforms>AnyCPU</Platforms>
     <Title>RaidMax.IW4MAdmin.Data</Title>
     <Version>1.0.0.0</Version>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
   </PropertyGroup>
   
   <ItemGroup>

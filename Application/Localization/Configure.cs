@@ -15,11 +15,11 @@ namespace IW4MAdmin.Application.Localization
 {
     public static class Configure
     {
-        public static ITranslationLookup Initialize(ILogger logger, IMasterApi apiInstance, ApplicationConfiguration applicationConfiguration)
+        public static ITranslationLookup Initialize(ILogger logger, IMasterApi apiInstance, ApplicationConfiguration? applicationConfiguration)
         {
             var useLocalTranslation = applicationConfiguration?.UseLocalTranslations ?? true;
             var customLocale = applicationConfiguration?.EnableCustomLocale ?? false
-                ? (applicationConfiguration.CustomLocale ?? "en-US")
+                ? applicationConfiguration.CustomLocale ?? "en-US"
                 : "en-US";
             var currentLocale = string.IsNullOrEmpty(customLocale) ? CultureInfo.CurrentCulture.Name : customLocale;
             var localizationFiles = Directory.GetFiles(Path.Join(Utilities.OperatingDirectory, "Localization"), $"*.{currentLocale}.json");

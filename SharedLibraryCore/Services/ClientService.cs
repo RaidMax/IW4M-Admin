@@ -21,10 +21,10 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace SharedLibraryCore.Services
 {
-    public class ClientService : IEntityService<EFClient>, IResourceQueryHelper<FindClientRequest, FindClientResult>
+    public partial class ClientService : IEntityService<EFClient>, IResourceQueryHelper<FindClientRequest, FindClientResult>
     {
-        private static readonly Func<DatabaseContext, long, Reference.Game, Task<EFClient>> GetUniqueQuery =
-            EF.CompileAsyncQuery((DatabaseContext context, long networkId, Reference.Game game) =>
+        private static readonly Func<DatabaseContext, long, Reference.Game?, Task<EFClient?>> GetUniqueQuery =
+            EF.CompileAsyncQuery((DatabaseContext context, long networkId, Reference.Game? game) =>
                 context.Clients
                     .Select(client => new EFClient
                     {
@@ -69,7 +69,7 @@ namespace SharedLibraryCore.Services
             }
 
             await using var context = _contextFactory.CreateContext();
-            using (LogContext.PushProperty("Server", entity?.CurrentServer?.ToString()))
+            using (LogContext.PushProperty("Server", entity.CurrentServer?.ToString()))
             {
                 int? linkId = null;
                 int? aliasId = null;
@@ -77,22 +77,21 @@ namespace SharedLibraryCore.Services
                 if (entity.IPAddress != null)
                 {
                     var existingAliases = await context.Aliases
-                        .Select(_alias => new { _alias.AliasId, _alias.LinkId, _alias.IPAddress, _alias.Name })
-                        .Where(_alias => _alias.IPAddress == entity.IPAddress)
+                        .Select(alias => new {alias.AliasId, alias.LinkId, alias.IPAddress, alias.Name})
+                        .Where(alias => alias.IPAddress == entity.IPAddress)
                         .ToListAsync();
 
                     if (existingAliases.Count > 0)
                     {
-                        linkId = existingAliases.OrderBy(_alias => _alias.LinkId).First().LinkId;
+                        linkId = existingAliases.OrderBy(alias => alias.LinkId).First().LinkId;
 
-                        _logger.LogDebug("[create] client with new GUID {entity} has existing link {linkId}",
-                            entity.ToString(), linkId);
+                        _logger.LogDebug("[create] client with new GUID {Entity} has existing link {LinkId}", entity.ToString(), linkId);
 
-                        var existingExactAlias = existingAliases.FirstOrDefault(_alias => _alias.Name == entity.Name);
+                        var existingExactAlias = existingAliases.FirstOrDefault(alias => alias.Name == entity.Name);
 
                         if (existingExactAlias != null)
                         {
-                            _logger.LogDebug("[create] client with new GUID {entity} has existing alias {aliasId}",
+                            _logger.LogDebug("[create] client with new GUID {Entity} has existing alias {AliasId}",
                                 entity.ToString(), existingExactAlias.AliasId);
                             aliasId = existingExactAlias.AliasId;
                         }
@@ -108,22 +107,22 @@ namespace SharedLibraryCore.Services
                     GameName = (Reference.Game)entity.CurrentServer.GameName
                 };
 
-                _logger.LogDebug("[create] adding {entity} to context", entity.ToString());
+                _logger.LogDebug("[create] adding {Entity} to context", entity.ToString());
 
 
                 // they're just using a new GUID
                 if (aliasId.HasValue)
                 {
-                    _logger.LogDebug("[create] setting {entity}'s alias id and linkid to ({aliasId}, {linkId})",
+                    _logger.LogDebug("[create] setting {Entity}'s alias id and LinkId to ({AliasId}, {LinkId})",
                         entity.ToString(), aliasId, linkId);
                     client.CurrentAliasId = aliasId.Value;
-                    client.AliasLinkId = linkId.Value;
+                    client.AliasLinkId = linkId!.Value;
                 }
 
                 // link was found but they don't have an exact alias
                 else if (!aliasId.HasValue && linkId.HasValue)
                 {
-                    _logger.LogDebug("[create] setting {entity}'s linkid to {linkId}, but creating new alias",
+                    _logger.LogDebug("[create] setting {Entity}'s LinkId to {LinkId}, but creating new alias",
                         entity.ToString(), linkId);
                     client.AliasLinkId = linkId.Value;
                     client.CurrentAlias = new EFAlias
@@ -139,7 +138,7 @@ namespace SharedLibraryCore.Services
                 // brand new players (supposedly)
                 else
                 {
-                    _logger.LogDebug("[create] creating new Link and Alias for {entity}", entity.ToString());
+                    _logger.LogDebug("[create] creating new Link and Alias for {Entity}", entity.ToString());
                     var link = new EFAliasLink();
                     var alias = new EFAlias
                     {
@@ -171,39 +170,39 @@ namespace SharedLibraryCore.Services
             throw new NotImplementedException();
         }
 
-        public async Task<EFClient> Get(int entityId)
+        public async Task<EFClient?> Get(int entityId)
         {
             await using var context = _contextFactory.CreateContext(false);
 
             var client = await context.Clients
-                .Select(_client => new EFClient
+                .Select(efClient => new EFClient
                 {
-                    ClientId = _client.ClientId,
-                    GameName = _client.GameName,
-                    AliasLinkId = _client.AliasLinkId,
-                    Level = _client.Level,
-                    Connections = _client.Connections,
-                    FirstConnection = _client.FirstConnection,
-                    LastConnection = _client.LastConnection,
-                    Masked = _client.Masked,
-                    NetworkId = _client.NetworkId,
+                    ClientId = efClient.ClientId,
+                    GameName = efClient.GameName,
+                    AliasLinkId = efClient.AliasLinkId,
+                    Level = efClient.Level,
+                    Connections = efClient.Connections,
+                    FirstConnection = efClient.FirstConnection,
+                    LastConnection = efClient.LastConnection,
+                    Masked = efClient.Masked,
+                    NetworkId = efClient.NetworkId,
                     CurrentAlias = new EFAlias
                     {
-                        Name = _client.CurrentAlias.Name,
-                        IPAddress = _client.CurrentAlias.IPAddress
+                        Name = efClient.CurrentAlias.Name,
+                        IPAddress = efClient.CurrentAlias.IPAddress
                     },
-                    TotalConnectionTime = _client.TotalConnectionTime,
+                    TotalConnectionTime = efClient.TotalConnectionTime,
                     AliasLink = new EFAliasLink
                     {
-                        AliasLinkId = _client.AliasLinkId,
-                        Children = _client.AliasLink.Children
+                        AliasLinkId = efClient.AliasLinkId,
+                        Children = efClient.AliasLink.Children
                     },
                     LinkedAccounts = new Dictionary<int, long>()
                     {
-                        {_client.ClientId, _client.NetworkId}   
+                        {efClient.ClientId, efClient.NetworkId}
                     }
                 })
-                .FirstOrDefaultAsync(_client => _client.ClientId == entityId);
+                .FirstOrDefaultAsync(efClient => efClient.ClientId == entityId);
 
             if (client == null)
             {
@@ -218,11 +217,11 @@ namespace SharedLibraryCore.Services
             var foundClient = new
             {
                 Client = client,
-                LinkedAccounts = await context.Clients.Where(_client => _client.AliasLinkId == client.AliasLinkId)
-                    .Select(_linkedClient => new
+                LinkedAccounts = await context.Clients.Where(efClient => efClient.AliasLinkId == client.AliasLinkId)
+                    .Select(linkedClient => new
                     {
-                        _linkedClient.ClientId,
-                        _linkedClient.NetworkId
+                        linkedClient.ClientId,
+                        linkedClient.NetworkId
                     })
                     .ToListAsync()
             };
@@ -231,23 +230,24 @@ namespace SharedLibraryCore.Services
             // todo: find out the best way to do this
             // I'm doing this here because I don't know the best way to have multiple awaits in the query
             foreach (var linked in foundClient.LinkedAccounts)
+            {
                 foundClient.Client.LinkedAccounts.Add(linked.ClientId, linked.NetworkId);
+            }
 
             return foundClient.Client;
         }
 
-        public virtual async Task<EFClient> GetUnique(long entityAttribute, object altKey = null)
+        public virtual async Task<EFClient?> GetUnique(long entityAttribute, object? altKey = null)
         {
             await using var context = _contextFactory.CreateContext(false);
-            return await GetUniqueQuery(context, entityAttribute, (Reference.Game)altKey);
+            return await GetUniqueQuery(context, entityAttribute, (Reference.Game?)altKey);
         }
 
-        public async Task<EFClient> Update(EFClient temporalClient)
+        public async Task<EFClient?> Update(EFClient temporalClient)
         {
             if (temporalClient.ClientId < 1)
             {
-                _logger.LogDebug(
-                    "[update] {client} needs to be updated but they do not have a valid client id, ignoring..",
+                _logger.LogDebug("[update] {Client} needs to be updated but they do not have a valid client id, ignoring..",
                     temporalClient.ToString());
                 // note: we never do anything with the result of this so we can safely return null
                 return null;
@@ -306,43 +306,36 @@ namespace SharedLibraryCore.Services
             var result = new ResourceQueryHelperResult<FindClientResult>();
             await using var context = _contextFactory.CreateContext(false);
 
-            IQueryable<Data.Models.Client.EFClient> iqClients = null;
+            IQueryable<Data.Models.Client.EFClient>? iqClients = null;
 
             if (!string.IsNullOrEmpty(query.Xuid))
             {
                 var networkId = query.Xuid.ConvertGuidToLong(NumberStyles.HexNumber);
-                iqClients = context.Clients.Where(_client => _client.NetworkId == networkId);
+                iqClients = context.Clients.Where(client => client.NetworkId == networkId);
             }
-
             else if (!string.IsNullOrEmpty(query.Name))
             {
                 iqClients = context.Clients
-                    .Where(_client =>
-                        EF.Functions.Like(_client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"));
+                    .Where(client =>
+                        EF.Functions.Like(client.CurrentAlias.Name.ToLower(), $"%{query.Name.ToLower()}%"));
             }
 
-            if (query.Direction == SortDirection.Ascending)
-            {
-                iqClients = iqClients.OrderBy(_client => _client.LastConnection);
-            }
+            iqClients = query.Direction == SortDirection.Ascending
+                ? iqClients?.OrderBy(client => client.LastConnection)
+                : iqClients?.OrderByDescending(client => client.LastConnection);
 
-            else
-            {
-                iqClients = iqClients.OrderByDescending(_client => _client.LastConnection);
-            }
-
-            var queryResults = await iqClients
-                .Select(_client => new FindClientResult
+            var queryResults = await (iqClients?
+                .Select(client => new FindClientResult
                 {
-                    ClientId = _client.ClientId,
-                    Xuid = _client.NetworkId.ToString("X"),
-                    Name = _client.CurrentAlias.Name
+                    ClientId = client.ClientId,
+                    Xuid = client.NetworkId.ToString("X"),
+                    Name = client.CurrentAlias.Name
                 })
                 .Skip(query.Offset)
                 .Take(query.Count)
-                .ToListAsync();
+                .ToListAsync() ?? Task.FromResult(new List<FindClientResult>()));
 
-            result.TotalResultCount = await iqClients.CountAsync();
+            result.TotalResultCount = await (iqClients?.CountAsync() ?? Task.FromResult(0));
             result.Results = queryResults;
             result.RetrievedResultCount = queryResults.Count;
 
@@ -355,7 +348,7 @@ namespace SharedLibraryCore.Services
             using (LogContext.PushProperty("Server", entity.CurrentServer?.ToString()))
             {
                 var existingAlias = await context.Aliases
-                    .Select(alias => new { alias.AliasId, alias.LinkId, alias.IPAddress, alias.Name })
+                    .Select(alias => new {alias.AliasId, alias.LinkId, alias.IPAddress, alias.Name})
                     .Where(alias => alias.IPAddress != null && alias.IPAddress == entity.IPAddress &&
                                     alias.Name == entity.Name)
                     .FirstOrDefaultAsync();
@@ -366,7 +359,7 @@ namespace SharedLibraryCore.Services
                     FirstConnection = DateTime.UtcNow,
                     LastConnection = DateTime.UtcNow,
                     NetworkId = entity.NetworkId,
-                    GameName = (Reference.Game)entity.CurrentServer.GameName
+                    GameName = (Reference.Game)(entity.CurrentServer?.GameName ?? Server.Game.UKN)
                 };
 
                 if (existingAlias == null)
@@ -388,8 +381,7 @@ namespace SharedLibraryCore.Services
 
                 else
                 {
-                    _logger.LogDebug(
-                        "[{Method}] associating new GUID {Guid} with new exact alias match with linkId {LinkId} for {Entity}",
+                    _logger.LogDebug("[{Method}] associating new GUID {Guid} with new exact alias match with linkId {LinkId} for {Entity}",
                         nameof(HandleNewCreate), entity.GuidString, existingAlias.LinkId, entity.ToString());
 
                     var alias = new EFAlias
@@ -410,8 +402,8 @@ namespace SharedLibraryCore.Services
             }
         }
 
-        private async Task UpdateAlias(string originalName, int? ip, Data.Models.Client.EFClient entity,
-            DatabaseContext context)
+        [Obsolete("Use UpdateAliasNew instead")]
+        private async Task UpdateAlias(string originalName, int? ip, Data.Models.Client.EFClient entity, DatabaseContext context)
         {
             {
                 var name = originalName.CapClientName(EFAlias.MAX_NAME_LENGTH);
@@ -575,8 +567,7 @@ namespace SharedLibraryCore.Services
                 entity.CurrentAlias = existingExactAlias;
                 entity.CurrentAliasId = existingExactAlias.AliasId;
                 await context.SaveChangesAsync();
-                _logger.LogDebug(
-                    "[{Method}] client {Client} already has an existing exact alias, so we are not making changes",
+                _logger.LogDebug("[{Method}] client {Client} already has an existing exact alias, so we are not making changes",
                     nameof(UpdateAliasNew), entity.ToString());
                 return;
             }
@@ -654,9 +645,9 @@ namespace SharedLibraryCore.Services
         {
             await using var context = _contextFactory.CreateContext(false);
             return await context.Penalties
-                .Where(_penalty => _penalty.Active)
-                .Where(_penalty => _penalty.OffenderId == clientId)
-                .Where(_penalty => _penalty.Type == EFPenalty.PenaltyType.Report)
+                .Where(penalty => penalty.Active)
+                .Where(penalty => penalty.OffenderId == clientId)
+                .Where(penalty => penalty.Type == EFPenalty.PenaltyType.Report)
                 .CountAsync();
         }
 
@@ -671,17 +662,17 @@ namespace SharedLibraryCore.Services
 
             var now = DateTime.UtcNow;
             var hasExistingAutoFlag = await context.Penalties
-                .Where(_penalty => _penalty.Active)
-                .Where(_penalty => _penalty.OffenderId == clientId)
-                .Where(_penalty => _penalty.Type == EFPenalty.PenaltyType.Flag)
-                .Where(_penalty => _penalty.PunisherId == 1)
-                .Where(_penalty => _penalty.Expires == null || _penalty.Expires > now)
+                .Where(penalty => penalty.Active)
+                .Where(penalty => penalty.OffenderId == clientId)
+                .Where(penalty => penalty.Type == EFPenalty.PenaltyType.Flag)
+                .Where(penalty => penalty.PunisherId == 1)
+                .Where(penalty => penalty.Expires == null || penalty.Expires > now)
                 .AnyAsync();
 
             var hasUnflag = await context.Penalties
-                .Where(_penalty => _penalty.Active)
-                .Where(_penalty => _penalty.OffenderId == clientId)
-                .Where(_penalty => _penalty.Type == EFPenalty.PenaltyType.Unflag)
+                .Where(penalty => penalty.Active)
+                .Where(penalty => penalty.OffenderId == clientId)
+                .Where(penalty => penalty.Type == EFPenalty.PenaltyType.Unflag)
                 .AnyAsync();
 
             return !hasExistingAutoFlag && !hasUnflag;
@@ -695,18 +686,18 @@ namespace SharedLibraryCore.Services
         public async Task UnlinkClient(int clientId)
         {
             await using var ctx = _contextFactory.CreateContext();
-            var newLink = new EFAliasLink { Active = true };
+            var newLink = new EFAliasLink {Active = true};
             ctx.AliasLinks.Add(newLink);
             await ctx.SaveChangesAsync();
 
-            var client = await ctx.Clients.Include(_client => _client.CurrentAlias)
-                .FirstAsync(_client => _client.ClientId == clientId);
+            var client = await ctx.Clients.Include(efClient => efClient.CurrentAlias)
+                .FirstAsync(efClient => efClient.ClientId == clientId);
             client.AliasLinkId = newLink.AliasLinkId;
             client.Level = Permission.User;
 
-            await ctx.Aliases.Where(_alias =>
-                    _alias.IPAddress == client.CurrentAlias.IPAddress && _alias.IPAddress != null)
-                .ForEachAsync(_alias => _alias.LinkId = newLink.AliasLinkId);
+            await ctx.Aliases.Where(alias =>
+                    alias.IPAddress == client.CurrentAlias.IPAddress && alias.IPAddress != null)
+                .ForEachAsync(alias => alias.LinkId = newLink.AliasLinkId);
 
             if (!_appConfig.EnableImplicitAccountLinking)
             {
@@ -755,7 +746,7 @@ namespace SharedLibraryCore.Services
         {
             await using var context = _contextFactory.CreateContext(false);
             return await context.Clients
-                .CountAsync(_client => _client.Level == Permission.Owner);
+                .CountAsync(client => client.Level == Permission.Owner);
         }
 
         public async Task<EFClient> GetClientForLogin(int clientId)
@@ -778,7 +769,7 @@ namespace SharedLibraryCore.Services
                 .FirstAsync(client => client.ClientId == clientId);
         }
 
-        public async Task<List<EFClient>> GetPrivilegedClients(bool includeName = true)
+        public async Task<List<EFClient>> GetPrivilegedClients()
         {
             await using var context = _contextFactory.CreateContext(false);
 
@@ -802,7 +793,7 @@ namespace SharedLibraryCore.Services
             return await iqClients.ToListAsync();
         }
 
-        public async Task<IList<PlayerInfo>> FindClientsByIdentifier(string identifier)
+        public async Task<IList<PlayerInfo>> FindClientsByIdentifier(string? identifier)
         {
             var trimmedIdentifier = identifier?.Trim();
             if (trimmedIdentifier == null || trimmedIdentifier.Length < _appConfig.MinimumNameLength)
@@ -823,37 +814,34 @@ namespace SharedLibraryCore.Services
 
             var ipAddress = trimmedIdentifier.ConvertToIP();
 
-            var iqLinkIds = context.Aliases.Where(_alias => _alias.Active);
+            var iqLinkIds = context.Aliases.Where(alias => alias.Active);
 
             // we want to query for the IP Address
             if (ipAddress != null && trimmedIdentifier.Split('.').Length == 3)
             {
-                iqLinkIds = iqLinkIds.Where(_alias => _alias.IPAddress == ipAddress);
+                iqLinkIds = iqLinkIds.Where(alias => alias.IPAddress == ipAddress);
             }
-
-            // want to find them by name (wildcard)
-            else
+            else // want to find them by name (wildcard)
             {
-                iqLinkIds = iqLinkIds.Where(_alias => EF.Functions.Like(_alias.SearchableName ?? _alias.Name.ToLower(),
-                    $"%{trimmedIdentifier.ToLower()}%") || EF.Functions.Like(_alias.SearchableIPAddress, $"{trimmedIdentifier}%"));
+                iqLinkIds = iqLinkIds.Where(alias => EF.Functions.Like(alias.SearchableName ?? alias.Name.ToLower(),
+                    $"%{trimmedIdentifier.ToLower()}%") || EF.Functions.Like(alias.SearchableIPAddress, $"{trimmedIdentifier}%"));
             }
 
             var linkIds = await iqLinkIds
-                .Select(_alias => _alias.LinkId)
+                .Select(alias => alias.LinkId)
                 .ToListAsync();
 
             // get all the clients that match the alias link or the network id
             var iqClients = context.Clients
-                .Where(_client => _client.Active);
+                .Where(client => client.Active);
 
-            var match = Regex.Match(trimmedIdentifier ?? "", "\"(.+)\"");
+            var match = IsExactRegex().Match(trimmedIdentifier);
 
             if (match.Success)
             {
                 iqClients = iqClients.Where(client =>
                     client.CurrentAlias.SearchableName.ToLower().Equals(match.Groups[1].ToString().ToLower()));
             }
-
             else
             {
                 iqClients = iqClients.Where(client => networkId == client.NetworkId || linkIds.Contains(client.AliasLinkId));
@@ -892,8 +880,7 @@ namespace SharedLibraryCore.Services
         public async Task<int> GetTotalClientsAsync()
         {
             await using var context = _contextFactory.CreateContext(false);
-            return await context.Clients
-                .CountAsync();
+            return await context.Clients.CountAsync();
         }
 
         /// <summary>
@@ -904,7 +891,7 @@ namespace SharedLibraryCore.Services
         {
             await using var context = _contextFactory.CreateContext(false);
             var startOfPeriod = DateTime.UtcNow.AddHours(-24);
-            var iqQuery = context.Clients.Where(_client => _client.LastConnection >= startOfPeriod);
+            var iqQuery = context.Clients.Where(efClient => efClient.LastConnection >= startOfPeriod);
 
             return await iqQuery.CountAsync();
         }
@@ -941,13 +928,16 @@ namespace SharedLibraryCore.Services
             return clientList;
         }
 
-        public async Task<string> GetClientNameById(int clientId)
+        public async Task<string?> GetClientNameById(int clientId)
         {
             await using var context = _contextFactory.CreateContext();
-            var match = await context.Clients.Select(client => new { client.CurrentAlias.Name, client.ClientId })
+            var match = await context.Clients.Select(client => new {client.CurrentAlias.Name, client.ClientId})
                 .FirstOrDefaultAsync(client => client.ClientId == clientId);
             return match?.Name;
         }
+
+        [GeneratedRegex("\"(.+)\"")]
+        private static partial Regex IsExactRegex();
 
         #endregion
     }

@@ -42,7 +42,7 @@ namespace SharedLibraryCore
         // only here for performance
         private readonly bool CustomSayEnabled;
         protected readonly string CustomSayName;
-        protected readonly DefaultSettings DefaultSettings;
+        private readonly DefaultSettings _defaultSettings;
         protected readonly ILogger ServerLogger;
         protected List<string> BroadcastMessages;
         protected int ConnectionErrors;
@@ -82,7 +82,7 @@ namespace SharedLibraryCore
             this.gameLogReaderFactory = gameLogReaderFactory;
             RConConnectionFactory = rconConnectionFactory;
             ServerLogger = logger;
-            DefaultSettings = serviceProvider.GetRequiredService<DefaultSettings>();
+            _defaultSettings = serviceProvider.GetRequiredService<DefaultSettings>();
             InitializeTokens();
             InitializeAutoMessages();
         }
@@ -120,7 +120,7 @@ namespace SharedLibraryCore
         public string Website { get; protected set; }
         public string Gametype { get; set; }
 
-        public string GametypeName => DefaultSettings.Gametypes?.FirstOrDefault(gt => gt.Game == GameName)?.Gametypes
+        public string GametypeName => _defaultSettings.Gametypes?.FirstOrDefault(gt => gt.Game == GameName)?.Gametypes
             ?.FirstOrDefault(gt => gt.Name == Gametype)?.Alias ?? Gametype;
 
         public string GamePassword { get; protected set; }
@@ -232,11 +232,11 @@ namespace SharedLibraryCore
         /// <summary>
         ///     Process any server event
         /// </summary>
-        /// <param name="E">Event</param>
+        /// <param name="gameEvent">Event</param>
         /// <returns>True on sucess</returns>
-        protected abstract Task<bool> ProcessEvent(GameEvent E);
+        protected abstract Task<bool> ProcessEvent(GameEvent gameEvent);
 
-        public abstract Task ExecuteEvent(GameEvent E);
+        public abstract Task ExecuteEvent(GameEvent gameEvent);
 
         /// <summary>
         ///     Send a message to all players

@@ -28,19 +28,20 @@ using EFClient = SharedLibraryCore.Database.Models.EFClient;
 
 namespace IW4MAdmin.Plugins.Stats;
 
+// TODO: Kills aren't being tracked properly
+
 public class Plugin : IPluginV2
 {
     public string Name => "Simple Stats";
     public string Version => Utilities.GetVersionAsString();
     public string Author => "RaidMax";
 
-    public static IManager ServerManager;
+    public static IManager? ServerManager;
 
     private readonly IDatabaseContextFactory _databaseContextFactory;
     private readonly ITranslationLookup _translationLookup;
     private readonly IMetaServiceV2 _metaService;
     private readonly IResourceQueryHelper<ChatSearchQuery, MessageResponse> _chatQueryHelper;
-    private readonly ILogger<Plugin> _logger;
     private readonly List<IClientStatisticCalculator> _statCalculators;
     private readonly IServerDistributionCalculator _serverDistributionCalculator;
     private readonly IServerDataViewer _serverDataViewer;
@@ -64,7 +65,6 @@ public class Plugin : IPluginV2
         _translationLookup = translationLookup;
         _metaService = metaService;
         _chatQueryHelper = chatQueryHelper;
-        _logger = logger;
         _statCalculators = statCalculators.ToList();
         _serverDistributionCalculator = serverDistributionCalculator;
         _serverDataViewer = serverDataViewer;
@@ -97,7 +97,7 @@ public class Plugin : IPluginV2
 
                 if (clientEvent.Client.ClientId == 0)
                 {
-                    _logger.LogWarning("No client id for {Client}, so we are not doing any stat calculation",
+                    logger.LogWarning("No client id for {Client}, so we are not doing any stat calculation",
                         clientEvent.Client.ToString());
                     return;
                 }
@@ -237,13 +237,10 @@ public class Plugin : IPluginV2
         // register the topstats page
         // todo:generate the URL/Location instead of hardcoding
         manager.GetPageList()
-            .Pages.Add(
-                Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"],
-                "/Stats/TopPlayers");
+            .Pages.Add(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"], "/Stats/TopPlayers");
 
         // meta data info
-        async Task<IEnumerable<InformationResponse>> GetStats(ClientPaginationRequest request,
-            CancellationToken token = default)
+        async Task<IEnumerable<InformationResponse>> GetStats(ClientPaginationRequest request, CancellationToken token = default)
         {
             await using var ctx = _databaseContextFactory.CreateContext(enableTracking: false);
             IList<EFClientStatistics> clientStats = await ctx.Set<EFClientStatistics>()
@@ -261,7 +258,7 @@ public class Plugin : IPluginV2
 
             return new List<InformationResponse>
             {
-                new InformationResponse
+                new()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
                     Value = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING_FORMAT"]
@@ -278,7 +275,7 @@ public class Plugin : IPluginV2
                     Order = 0,
                     Type = MetaType.Information
                 },
-                new InformationResponse
+                new()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"],
                     Value = kills.ToString("#,##0",
@@ -287,7 +284,7 @@ public class Plugin : IPluginV2
                     Order = 1,
                     Type = MetaType.Information
                 },
-                new InformationResponse
+                new()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"],
                     Value = deaths.ToString("#,##0",
@@ -296,7 +293,7 @@ public class Plugin : IPluginV2
                     Order = 2,
                     Type = MetaType.Information
                 },
-                new InformationResponse
+                new()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"],
                     Value = kdr.ToString(
@@ -305,7 +302,7 @@ public class Plugin : IPluginV2
                     Order = 3,
                     Type = MetaType.Information
                 },
-                new InformationResponse
+                new()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PERFORMANCE"],
                     Value = performance.ToString("#,##0",
@@ -314,7 +311,7 @@ public class Plugin : IPluginV2
                     Order = 4,
                     Type = MetaType.Information
                 },
-                new InformationResponse
+                new()
                 {
                     Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_META_SPM"],
                     Value = spm.ToString(
@@ -326,8 +323,7 @@ public class Plugin : IPluginV2
             };
         }
 
-        async Task<IEnumerable<InformationResponse>> GetAnticheatInfo(ClientPaginationRequest request,
-            CancellationToken token = default)
+        async Task<IEnumerable<InformationResponse>> GetAnticheatInfo(ClientPaginationRequest request, CancellationToken token = default)
         {
             await using var context = _databaseContextFactory.CreateContext(enableTracking: false);
             IList<EFClientStatistics> clientStats = await context.Set<EFClientStatistics>()
@@ -360,34 +356,34 @@ public class Plugin : IPluginV2
                                                c.HitLocations.Where(hl => hl.Location != (int)IW4Info.HitLocation.none)
                                                    .Sum(f => f.HitCount))) * 100.0, 0);
 
-                chestAbdomenRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs =>
-                                                    cs.HitLocations.First(hl =>
-                                                        hl.Location == (int)IW4Info.HitLocation.torso_upper).HitCount) /
-                                                (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs =>
-                                                    cs.HitLocations.First(hl =>
-                                                            hl.Location == (int)IW4Info.HitLocation.torso_lower)
-                                                        .HitCount)) * 100.0, 0);
+                chestAbdomenRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs =>
+                        cs.HitLocations.First(hl =>
+                            hl.Location == (int)IW4Info.HitLocation.torso_upper).HitCount) /
+                    (double)clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs =>
+                        cs.HitLocations.First(hl =>
+                                hl.Location == (int)IW4Info.HitLocation.torso_lower)
+                            .HitCount) * 100.0, 0);
 
-                headRatio = Math.Round((clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs =>
-                                            cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.head)
-                                                .HitCount) /
-                                        (double)clientStats.Where(c => c.HitLocations.Count > 0)
-                                            .Sum(c => c.HitLocations
-                                                .Where(hl => hl.Location != (int)IW4Info.HitLocation.none)
-                                                .Sum(f => f.HitCount))) * 100.0, 0);
+                headRatio = Math.Round(clientStats.Where(c => c.HitLocations.Count > 0).Sum(cs =>
+                        cs.HitLocations.First(hl => hl.Location == (int)IW4Info.HitLocation.head)
+                            .HitCount) /
+                    (double)clientStats.Where(c => c.HitLocations.Count > 0)
+                        .Sum(c => c.HitLocations
+                            .Where(hl => hl.Location != (int)IW4Info.HitLocation.none)
+                            .Sum(f => f.HitCount)) * 100.0, 0);
 
-                var validOffsets = clientStats.Where(c => c.HitLocations.Count(hl => hl.HitCount > 0) > 0)
+                var validOffsets = clientStats.Where(c => c.HitLocations.Any(hl => hl.HitCount > 0))
                     .SelectMany(hl => hl.HitLocations).ToList();
                 hitOffsetAverage = validOffsets.Sum(o => o.HitCount * o.HitOffsetAverage) /
                                    (double)validOffsets.Sum(o => o.HitCount);
-                averageSnapValue = clientStats.Any(_stats => _stats.AverageSnapValue > 0)
-                    ? clientStats.Where(_stats => _stats.AverageSnapValue > 0).Average(_stat => _stat.AverageSnapValue)
+                averageSnapValue = clientStats.Any(stats => stats.AverageSnapValue > 0)
+                    ? clientStats.Where(stats => stats.AverageSnapValue > 0).Average(stat => stat.AverageSnapValue)
                     : 0;
             }
 
             return new List<InformationResponse>
             {
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 1",
                     Value = chestRatio.ToString(
@@ -397,7 +393,7 @@ public class Plugin : IPluginV2
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM1"],
                     IsSensitive = true
                 },
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 2",
                     Value = abdomenRatio.ToString(
@@ -407,7 +403,7 @@ public class Plugin : IPluginV2
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM2"],
                     IsSensitive = true
                 },
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 3",
                     Value = chestAbdomenRatio.ToString(
@@ -417,7 +413,7 @@ public class Plugin : IPluginV2
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM3"],
                     IsSensitive = true
                 },
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 4",
                     Value = headRatio.ToString(
@@ -427,7 +423,7 @@ public class Plugin : IPluginV2
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM4"],
                     IsSensitive = true
                 },
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 5",
                     // todo: make sure this is wrapped somewhere else
@@ -438,7 +434,7 @@ public class Plugin : IPluginV2
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM5"],
                     IsSensitive = true
                 },
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 6",
                     Value = Math.Round(maxStrain, 3)
@@ -448,7 +444,7 @@ public class Plugin : IPluginV2
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM6"],
                     IsSensitive = true
                 },
-                new InformationResponse()
+                new()
                 {
                     Key = $"{Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_AC_METRIC"]} 7",
                     Value = Math.Round(averageSnapValue, 3)
@@ -461,69 +457,13 @@ public class Plugin : IPluginV2
             };
         }
 
-        async Task<IEnumerable<MessageResponse>> GetMessages(ClientPaginationRequest request,
-            CancellationToken token = default)
-        {
-            var query = new ChatSearchQuery
-            {
-                ClientId = request.ClientId,
-                Before = request.Before,
-                SentBefore = request.Before ?? DateTime.UtcNow,
-                SentAfter = request.After,
-                After = request.After,
-                Count = request.Count,
-                IsProfileMeta = true
-            };
-
-            return (await _chatQueryHelper.QueryResource(query)).Results;
-        }
-
         if (_statsConfig.AnticheatConfiguration.Enable)
         {
-            _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information,
-                GetAnticheatInfo);
+            _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, GetAnticheatInfo);
         }
 
         _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, GetStats);
         _metaService.AddRuntimeMeta<ClientPaginationRequest, MessageResponse>(MetaType.ChatMessage, GetMessages);
-
-        async Task<string> TotalKills(Server server)
-        {
-            await using var context = _databaseContextFactory.CreateContext(false);
-            var kills = await context.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalKills);
-            return kills.ToString("#,##0",
-                new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
-        }
-
-        async Task<string> TotalPlayTime(Server server)
-        {
-            await using var context = _databaseContextFactory.CreateContext(false);
-            var playTime = await context.Set<EFServerStatistics>().Where(s => s.Active).SumAsync(s => s.TotalPlayTime);
-            return (playTime / 3600.0).ToString("#,##0",
-                new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
-        }
-
-        async Task<string> TopStats(Server s)
-        {
-            // todo: this needs to needs to be updated when we DI the lookup
-            return string.Join(Environment.NewLine,
-                await Commands.TopStats.GetTopStats(s, Utilities.CurrentLocalization.LocalizationIndex, _statManager));
-        }
-
-        async Task<string> MostPlayed(Server s)
-        {
-            // todo: this needs to needs to be updated when we DI the lookup
-            return string.Join(Environment.NewLine,
-                await Commands.MostPlayedCommand.GetMostPlayed(s, Utilities.CurrentLocalization.LocalizationIndex,
-                    _databaseContextFactory));
-        }
-
-        async Task<string> MostKills(IGameServer gameServer)
-        {
-            return string.Join(Environment.NewLine,
-                await Commands.MostKillsCommand.GetMostKills(gameServer.LegacyDatabaseId, _statsConfig,
-                    _databaseContextFactory, _translationLookup));
-        }
 
         manager.GetMessageTokens().Add(new MessageToken("TOTALKILLS", TotalKills));
         manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYTIME", TotalPlayTime));
@@ -541,6 +481,63 @@ public class Plugin : IPluginV2
 
         ServerManager = manager;
         await _serverDistributionCalculator.Initialize();
+        return;
+
+        async Task<IEnumerable<MessageResponse>> GetMessages(ClientPaginationRequest request, CancellationToken messagesToken = default)
+        {
+            var query = new ChatSearchQuery
+            {
+                ClientId = request.ClientId,
+                Before = request.Before,
+                SentBefore = request.Before ?? DateTime.UtcNow,
+                SentAfter = request.After,
+                After = request.After,
+                Count = request.Count,
+                IsProfileMeta = true
+            };
+
+            return (await _chatQueryHelper.QueryResource(query)).Results;
+        }
+
+        async Task<string> MostKills(IGameServer gameServer)
+        {
+            return string.Join(Environment.NewLine,
+                await Commands.MostKillsCommand.GetMostKills(gameServer.LegacyDatabaseId, _statsConfig,
+                    _databaseContextFactory, _translationLookup));
+        }
+
+        async Task<string> MostPlayed(Server server)
+        {
+            // todo: this needs to needs to be updated when we DI the lookup
+            return string.Join(Environment.NewLine,
+                await Commands.MostPlayedCommand.GetMostPlayed(server, Utilities.CurrentLocalization.LocalizationIndex,
+                    _databaseContextFactory));
+        }
+
+        async Task<string> TotalPlayTime(Server server)
+        {
+            await using var context = _databaseContextFactory.CreateContext(false);
+            var playTime = await context.Set<EFServerStatistics>().Where(s => s.Active)
+                .SumAsync(s => s.TotalPlayTime, cancellationToken: token);
+            return (playTime / 3600.0).ToString("#,##0",
+                new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
+        }
+
+        async Task<string> TopStats(Server server)
+        {
+            // todo: this needs to needs to be updated when we DI the lookup
+            return string.Join(Environment.NewLine,
+                await Commands.TopStats.GetTopStats(server, Utilities.CurrentLocalization.LocalizationIndex, _statManager));
+        }
+
+        async Task<string> TotalKills(Server server)
+        {
+            await using var context = _databaseContextFactory.CreateContext(false);
+            var kills = await context.Set<EFServerStatistics>().Where(s => s.Active)
+                .SumAsync(s => s.TotalKills, cancellationToken: token);
+            return kills.ToString("#,##0",
+                new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName));
+        }
     }
 
     /// <summary>

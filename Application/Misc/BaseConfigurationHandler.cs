@@ -17,7 +17,7 @@ namespace IW4MAdmin.Application.Misc
     /// <typeparam name="T">base configuration type</typeparam>
     public class BaseConfigurationHandler<T> : IConfigurationHandler<T> where T : IBaseConfiguration
     {
-        private T _configuration;
+        private T? _configuration;
         private readonly SemaphoreSlim _onSaving;
         private readonly JsonSerializerOptions _serializerOptions;
 
@@ -52,7 +52,6 @@ namespace IW4MAdmin.Application.Misc
                 await _onSaving.WaitAsync();
                 await using var fileStream = File.OpenRead(FileName);
                 _configuration = await JsonSerializer.DeserializeAsync<T>(fileStream, _serializerOptions);
-                await fileStream.DisposeAsync();
             }
 
             catch (FileNotFoundException)
@@ -64,7 +63,7 @@ namespace IW4MAdmin.Application.Misc
             {
                 throw new ConfigurationException("Could not load configuration")
                 {
-                    Errors = new[] { e.Message },
+                    Errors = [e.Message],
                     ConfigurationFileName = FileName
                 };
             }
@@ -85,7 +84,6 @@ namespace IW4MAdmin.Application.Misc
 
                 await using var fileStream = File.Create(FileName);
                 await JsonSerializer.SerializeAsync(fileStream, _configuration, _serializerOptions);
-                await fileStream.DisposeAsync();
             }
 
             finally
@@ -97,7 +95,7 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public T Configuration()
+        public T? Configuration()
         {
             return _configuration;
         }

@@ -22,6 +22,8 @@
     <OutputType>Library</OutputType>
     <StartupObject />
     <Configurations>Debug;Release;Prerelease</Configurations>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -68,8 +68,7 @@ namespace WebfrontCore.Controllers
             var persistentMeta = await Task.WhenAll(persistentMetaTask);
             var tag = persistentMeta[0];
             var gravatar = persistentMeta[1];
-            var note = await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", client.ClientId,
-                token);
+            var note = await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", client.ClientId, token);
 
             if (tag?.Value != null)
             {
@@ -154,7 +153,7 @@ namespace WebfrontCore.Controllers
             {
                 ClientId = client.ClientId,
                 Before = DateTime.UtcNow
-            }, MetaType.Information);
+            }, MetaType.Information, token);
 
             if (gravatar != null)
             {

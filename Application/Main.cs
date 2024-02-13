@@ -61,15 +61,16 @@ namespace IW4MAdmin.Application
         public static async Task Main(bool noConfirm = false, int? maxConcurrentRequests = 25, int? requestQueueLimit = 25)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
+            AppDomain.CurrentDomain.AssemblyResolve += (_, eventArgs) =>
             {
                 var libraryName = eventArgs.Name.Split(",").First();
 
-                var overrides = new[] { nameof(SharedLibraryCore), nameof(Stats) };
+                var overrides = new[] {nameof(SharedLibraryCore), nameof(Stats)};
                 if (!overrides.Contains(libraryName))
                 {
                     return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(asm => asm.FullName == eventArgs.Name);
                 }
+
                 // added to be a bit more permissive with plugin references
                 return AppDomain.CurrentDomain.GetAssemblies()
                     .FirstOrDefault(asm => asm.FullName?.StartsWith(libraryName) ?? false);
@@ -127,28 +128,28 @@ namespace IW4MAdmin.Application
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
             logger.LogInformation("Begin IW4MAdmin startup. Version is {Version}", Version);
-            
+
             try
             {
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
-                
+
                 logger.LogDebug("Configuring services...");
 
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
                 _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
                     (configHandler.Configuration() ?? new ApplicationConfiguration()).WebfrontBindUrl);
-              
+
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
 
                 await _serverManager.Init();
 
                 _applicationTask = RunApplicationTasksAsync(logger, _serverManager, _serviceProvider);
-                
+
                 await _applicationTask;
                 logger.LogInformation("Shutdown completed successfully");
             }
@@ -180,17 +181,12 @@ namespace IW4MAdmin.Application
                         Console.WriteLine(error);
                     }
                 }
-
                 else
                 {
                     Console.WriteLine(e.Message);
                 }
 
-                if (_serverManager is not null)
-                {
-                    await _serverManager?.Stop();
-                }
-
+                await _serverManager.Stop();
                 Console.WriteLine(exitMessage);
                 await Console.In.ReadAsync(new char[1], 0, 1);
                 return;
@@ -212,10 +208,10 @@ namespace IW4MAdmin.Application
             var collectionService = serviceProvider.GetRequiredService<IServerDataCollector>();
             var versionChecker = serviceProvider.GetRequiredService<IMasterCommunication>();
             var masterCommunicator = serviceProvider.GetRequiredService<IMasterCommunication>();
-            var webfrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
-            using var onWebfrontErrored = new ManualResetEventSlim();
-            
-            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
+            var webFrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
+            using var onWebFrontErrored = new ManualResetEventSlim();
+
+            var webFrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
                 ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken).ContinueWith(continuation =>
                 {
                     if (!continuation.IsFaulted)
@@ -223,13 +219,13 @@ namespace IW4MAdmin.Application
                         return;
                     }
 
-                    logger.LogCritical("Unable to start webfront task. {Message}",
+                    logger.LogCritical("Unable to start web front task. {Message}",
                         continuation.Exception?.InnerException?.Message);
 
-                    logger.LogDebug(continuation.Exception, "Unable to start webfront task");
-                    
-                    onWebfrontErrored.Set();
-                    
+                    logger.LogDebug(continuation.Exception, "Unable to start web front task");
+
+                    // ReSharper disable once AccessToDisposedClosure
+                    onWebFrontErrored.Set();
                 })
                 : Task.CompletedTask;
 
@@ -237,22 +233,18 @@ namespace IW4MAdmin.Application
             {
                 try
                 {
-                    onWebfrontErrored.Wait(webfrontLifetime.ApplicationStarted);
+                    onWebFrontErrored.Wait(webFrontLifetime.ApplicationStarted);
                 }
                 catch
                 {
-                    // ignored when webfront successfully starts
+                    // ignored when web front successfully starts
                 }
 
-                if (onWebfrontErrored.IsSet)
+                if (onWebFrontErrored.IsSet)
                 {
                     return Task.CompletedTask;
                 }
             }
-
-            // we want to run this one on a manual thread instead of letting the thread pool handle it,
-            // because we can't exit early from waiting on console input, and it prevents us from restarting
-            async void ReadInput() => await ReadConsoleInput(logger);
 
             var inputThread = new Thread(ReadInput);
             inputThread.Start();
@@ -261,15 +253,19 @@ namespace IW4MAdmin.Application
             {
                 applicationManager.Start(),
                 versionChecker.CheckVersion(),
-                webfrontTask,
+                webFrontTask,
                 masterCommunicator.RunUploadStatus(_serverManager.CancellationToken),
                 collectionService.BeginCollectionAsync(cancellationToken: _serverManager.CancellationToken)
             };
 
-            logger.LogDebug("Starting webfront and input tasks");
+            logger.LogDebug("Starting web front and input tasks");
             return Task.WhenAll(tasks);
+
+            // we want to run this one on a manual thread instead of letting the thread pool handle it,
+            // because we can't exit early from waiting on console input, and it prevents us from restarting
+            async void ReadInput() => await ReadConsoleInput(logger);
         }
-        
+
         /// <summary>
         /// reads input from the console and executes entered commands on the default server
         /// </summary>
@@ -293,7 +289,7 @@ namespace IW4MAdmin.Application
                         await Task.Delay(1000);
                         continue;
                     }
-                    
+
                     var lastCommand = await Console.In.ReadLineAsync();
 
                     if (lastCommand == null)
@@ -301,7 +297,7 @@ namespace IW4MAdmin.Application
                         continue;
                     }
 
-                    if (!lastCommand.Any())
+                    if (lastCommand.Length is 0)
                     {
                         continue;
                     }
@@ -321,11 +317,11 @@ namespace IW4MAdmin.Application
             }
             catch (OperationCanceledException)
             {
+                // ignored
             }
         }
 
-        private static IServiceCollection HandlePluginRegistration(ApplicationConfiguration appConfig,
-            IServiceCollection serviceCollection,
+        private static void HandlePluginRegistration(ApplicationConfiguration appConfig, IServiceCollection serviceCollection,
             IMasterApi masterApi)
         {
             var defaultLogger = BuildDefaultLogger<Program>(appConfig);
@@ -344,8 +340,9 @@ namespace IW4MAdmin.Application
 
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
-                .Concat(typeof(Program).Assembly.GetTypes().Where(type => type.Namespace?.StartsWith("IW4MAdmin.Application.Commands") ?? false))
-                .Where(command => command.BaseType == typeof(Command)))
+                         .Concat(typeof(Program).Assembly.GetTypes()
+                             .Where(type => type.Namespace?.StartsWith("IW4MAdmin.Application.Commands") ?? false))
+                         .Where(command => command.BaseType == typeof(Command)))
             {
                 defaultLogger.LogDebug("Registered native command type {Name}", commandType.Name);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
@@ -353,18 +350,17 @@ namespace IW4MAdmin.Application
 
             // register the plugin implementations
             var (plugins, commands, configurations) = pluginImporter.DiscoverAssemblyPluginImplementations();
-            foreach (var pluginType in plugins)
+            var pluginTypes = plugins.ToList();
+            foreach (var pluginType in pluginTypes)
             {
                 var isV2 = pluginType.GetInterface(nameof(IPluginV2), false) != null;
-
                 defaultLogger.LogDebug("Registering plugin type {Name}", pluginType.FullName);
-
                 serviceCollection.AddSingleton(!isV2 ? typeof(IPlugin) : typeof(IPluginV2), pluginType);
 
                 try
                 {
                     var registrationMethod = pluginType.GetMethod(nameof(IPluginV2.RegisterDependencies));
-                    registrationMethod?.Invoke(null, new object[] { serviceCollection });
+                    registrationMethod?.Invoke(null, [serviceCollection]);
                 }
                 catch (Exception ex)
                 {
@@ -382,12 +378,20 @@ namespace IW4MAdmin.Application
             foreach (var configurationType in configurations)
             {
                 defaultLogger.LogDebug("Registered plugin config type {Name}", configurationType.Name);
-                var configInstance = (IBaseConfiguration) Activator.CreateInstance(configurationType);
+
+                if (Activator.CreateInstance(configurationType) is not IBaseConfiguration configInstance)
+                {
+                    continue;
+                }
+
                 var handlerType = typeof(BaseConfigurationHandler<>).MakeGenericType(configurationType);
                 var handlerInstance = Activator.CreateInstance(handlerType, configInstance.Name());
                 var genericInterfaceType = typeof(IConfigurationHandler<>).MakeGenericType(configurationType);
-                
-                serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
+
+                if (handlerInstance is not null)
+                {
+                    serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
+                }
             }
 
             var scriptPlugins = pluginImporter.DiscoverScriptPlugins();
@@ -401,18 +405,17 @@ namespace IW4MAdmin.Application
 
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
-                .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
-                .Union(plugins.SelectMany(asm => asm.Assembly.GetTypes())
-                    .Distinct()
-                    .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
+                         .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
+                         .Union(pluginTypes.SelectMany(asm => asm.Assembly.GetTypes())
+                             .Distinct()
+                             .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
             {
-                var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
-                serviceCollection.AddSingleton(instance);
+                if (Activator.CreateInstance(assemblyType) is IRegisterEvent instance)
+                {
+                    serviceCollection.AddSingleton(instance);
+                }
             }
-
-            return serviceCollection;
         }
-
 
         /// <summary>
         /// Configures the dependency injection services
@@ -426,22 +429,23 @@ namespace IW4MAdmin.Application
                 .AddConfiguration<DefaultSettings>()
                 .AddConfiguration<CommandConfiguration>()
                 .AddConfiguration<StatsConfiguration>("StatsPluginSettings");
-            
+
             // for legacy purposes. update at some point
             var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             appConfigHandler.BuildAsync().GetAwaiter().GetResult();
             var commandConfigHandler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
             commandConfigHandler.BuildAsync().GetAwaiter().GetResult();
-
-            if (appConfigHandler.Configuration()?.MasterUrl == new Uri("http://api.raidmax.org:5000"))
+            
+            var appConfig = appConfigHandler.Configuration();
+            if (appConfig?.MasterUrl == new Uri("http://api.raidmax.org:5000"))
             {
-                appConfigHandler.Configuration().MasterUrl = new ApplicationConfiguration().MasterUrl;
+                appConfig.MasterUrl = new ApplicationConfiguration().MasterUrl;
             }
 
-            var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
+            
             var httpClient = new HttpClient(new HttpClientHandler {AllowAutoRedirect = true})
             {
                 BaseAddress = masterUri,
@@ -449,10 +453,10 @@ namespace IW4MAdmin.Application
             };
             var masterRestClient = RestService.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
-            
-            if (appConfig == null)
+
+            if (appConfig is null)
             {
-                appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
+                appConfig = (ApplicationConfiguration)new ApplicationConfiguration().Generate();
                 appConfigHandler.Set(appConfig);
                 appConfigHandler.Save().GetAwaiter().GetResult();
             }
@@ -466,7 +470,7 @@ namespace IW4MAdmin.Application
             // build the dependency list
             serviceCollection
                 .AddBaseLogger(appConfig)
-                .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
+                .AddSingleton((IConfigurationHandler<ApplicationConfiguration>)appConfigHandler)
                 .AddSingleton<IConfigurationHandler<CommandConfiguration>>(commandConfigHandler)
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
@@ -499,7 +503,8 @@ namespace IW4MAdmin.Application
                     UpdatedAliasResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>, ConnectionsResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>, PermissionLevelChangedResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>,
+                    PermissionLevelChangedResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>, ClientResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
@@ -529,7 +534,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
-           
+
             serviceCollection.AddSingleton<ICoreEventHandler, CoreEventHandler>();
             serviceCollection.AddSource();
             HandlePluginRegistration(appConfig, serviceCollection, masterRestClient);

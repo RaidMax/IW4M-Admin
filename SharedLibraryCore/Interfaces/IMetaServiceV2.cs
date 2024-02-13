@@ -89,7 +89,7 @@ public interface IMetaServiceV2
     /// <param name="token"></param>
     /// <typeparam name="T">object type to deserialize into</typeparam>
     /// <returns></returns>
-    Task<T> GetPersistentMetaValue<T>(string metaKey, int clientId, CancellationToken token = default)
+    Task<T?> GetPersistentMetaValue<T>(string metaKey, int clientId, CancellationToken token = default)
         where T : class;
 
     /// <summary>

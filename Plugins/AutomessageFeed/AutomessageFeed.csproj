@@ -6,6 +6,9 @@
     <LangVersion>Latest</LangVersion>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <RootNamespace>IW4MAdmin.Plugins.AutomessageFeed</RootNamespace>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

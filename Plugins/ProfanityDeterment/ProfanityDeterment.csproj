@@ -13,6 +13,9 @@
     <Copyright>2018</Copyright>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <LangVersion>Latest</LangVersion>
+    <RootNamespace>IW4MAdmin.Plugins.ProfanityDeterment</RootNamespace>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

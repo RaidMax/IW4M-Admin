@@ -25,12 +25,12 @@ namespace IW4MAdmin.Application
         private int _activeTasks;
 
         private static readonly GameEvent.EventType[] OverrideEvents =
-        {
+        [
             GameEvent.EventType.Connect,
             GameEvent.EventType.Disconnect,
             GameEvent.EventType.Quit,
             GameEvent.EventType.Stop
-        };
+        ];
 
         public CoreEventHandler(ILogger<CoreEventHandler> logger)
         {
@@ -50,7 +50,7 @@ namespace IW4MAdmin.Application
             while (!_cancellationToken.IsCancellationRequested)
             {
                 _onEventReady.Reset();
-                
+
                 try
                 {
                     _onProcessingEvents.Wait(_cancellationToken);
@@ -61,11 +61,11 @@ namespace IW4MAdmin.Application
                         {
                             _onProcessingEvents.Release(1);
                         }
-                        
+
                         _onEventReady.Wait(_cancellationToken);
                         continue;
                     }
-                    
+
                     _logger.LogDebug("Start processing event {Name} {SemaphoreCount} - {QueuedTasks}",
                         coreEvent.Item2.GetType().Name, _onProcessingEvents.CurrentCount, _runningEventTasks.Count);
 
@@ -74,7 +74,7 @@ namespace IW4MAdmin.Application
                         Interlocked.Increment(ref _activeTasks);
                         _logger.LogDebug("[Start] Active Tasks = {TaskCount}", _activeTasks);
                         return HandleEventTaskExecute(coreEvent);
-                    });
+                    }, token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -106,8 +106,7 @@ namespace IW4MAdmin.Application
             {
                 if (_onProcessingEvents.CurrentCount < MaxCurrentEvents)
                 {
-                    _logger.LogDebug("Freeing up event semaphore for next event {SemaphoreCount}",
-                        _onProcessingEvents.CurrentCount);
+                    _logger.LogDebug("Freeing up event semaphore for next event {SemaphoreCount}", _onProcessingEvents.CurrentCount);
                     _onProcessingEvents.Release(1);
                 }
 
@@ -138,7 +137,7 @@ namespace IW4MAdmin.Application
                 await IGameEventSubscriptions.InvokeEventAsync(coreEvent, manager.CancellationToken);
                 return;
             }
-            
+
             _logger.LogDebug("Skipping event as we're shutting down {EventId}", gameEvent.IncrementalId);
         }
     }

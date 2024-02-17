@@ -44,6 +44,7 @@ namespace Stats.Dtos
         public List<WeaponStats> TopWeapons { get; set; } = [];
         public List<HitLocationStats> TopHitLocations { get; set; } = [];
         public List<PerformanceHistory> PerformanceHistory { get; set; } = [];
+        public string? PerformanceBucket { get; set; }
     }
 
     /// <summary>

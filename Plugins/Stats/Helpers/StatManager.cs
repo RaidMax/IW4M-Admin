@@ -75,18 +75,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// gets a ranking across all servers for given client id
         /// </summary>
         /// <param name="clientId">client id of the player</param>
+        /// <param name="serverId"></param>
+        /// <param name="performanceBucket"></param>
         /// <returns></returns>
-        public async Task<int> GetClientOverallRanking(int clientId, long? serverId = null)
+        public async Task<int> GetClientOverallRanking(int clientId, long? serverId = null, string performanceBucket = null)
         {
             await using var context = _contextFactory.CreateContext(enableTracking: false);
 
             if (_config.EnableAdvancedMetrics)
             {
+                var bucketConfig = await GetBucketConfig(null, performanceBucket);
+                
                 var clientRanking = await context.Set<EFClientRankingHistory>()
+                    .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId, performanceBucket))
                     .Where(r => r.ClientId == clientId)
-                    .Where(r => r.ServerId == serverId)
                     .Where(r => r.Newest)
                     .FirstOrDefaultAsync();
+                    
                 return clientRanking?.Ranking + 1 ?? 0;
             }
 
@@ -110,7 +115,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return 0;
         }
 
-        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime, long? serverId = null)
+        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime, long? serverId = null, string performanceBucket = null)
         {
             var oldestDate = DateTime.UtcNow - oldestStat;
             return ranking => ranking.ServerId == serverId
@@ -119,12 +124,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                               && ranking.ZScore != null
                               && ranking.PerformanceMetric != null
                               && ranking.Newest
+                              && ranking.PerformanceBucket == performanceBucket
                               && ranking.Client.TotalConnectionTime >= (int)minPlayTime.TotalSeconds;
         }
 
-        public async Task<int> GetTotalRankedPlayers(long serverId)
+        public async Task<int> GetTotalRankedPlayers(long? serverId = null, string performanceBucket = null)
         {
-            var bucketConfig = await GetBucketConfig(serverId);
+            var bucketConfig = await GetBucketConfig(serverId, performanceBucket);
 
             await using var context = _contextFactory.CreateContext(enableTracking: false);
 
@@ -150,62 +156,41 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             await using var context = _contextFactory.CreateContext(false);
             var clientIdsList = await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId, performanceBucket))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
                 .Select(ranking => ranking.ClientId)
                 .Skip(start)
                 .Take(count)
                 .ToListAsync();
 
-            // Fetch rankings without joins - much faster, less data transfer
-            var allRankings = await context.Set<EFClientRankingHistory>()
-                .Where(ranking => clientIdsList.Contains(ranking.ClientId))
-                .Where(ranking => ranking.ServerId == serverId)
-                .OrderByDescending(ranking => ranking.CreatedDateTime)
-                .Select(ranking => new
-                {
-                    ranking.ClientId,
-                    ranking.PerformanceMetric,
-                    ranking.ZScore,
-                    ranking.Ranking,
-                    ranking.CreatedDateTime
-                })
-                .ToListAsync();
+            var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
 
-            // Limit to 60 most recent per client in memory
-            var limitedRankings = allRankings
-                .GroupBy(r => r.ClientId)
-                .SelectMany(g => g.OrderByDescending(r => r.CreatedDateTime).Take(60))
-                .ToList();
+            foreach (var clientId in clientIdsList)
+            {
+                var eachRank = await context.Set<EFClientRankingHistory>()
+                    .Where(ranking => ranking.ClientId == clientId)
+                    .Where(ranking => ranking.ServerId == serverId)
+                    .Where(ranking => ranking.PerformanceBucket == performanceBucket)
+                    .OrderByDescending(ranking => ranking.CreatedDateTime)
+                    .Select(ranking => new RankingSnapshot
+                    {
+                        ClientId = ranking.ClientId,
+                        Name = ranking.Client.CurrentAlias.Name,
+                        LastConnection = ranking.Client.LastConnection,
+                        PerformanceMetric = ranking.PerformanceMetric,
+                        ZScore = ranking.ZScore,
+                        Ranking = ranking.Ranking,
+                        CreatedDateTime = ranking.CreatedDateTime
+                    })
+                    .Take(60)
+                    .ToListAsync();
 
-            // Fetch client info separately (only 50 rows instead of thousands)
-            var clientInfo = await context.Set<Data.Models.Client.EFClient>()
-                .Where(c => clientIdsList.Contains(c.ClientId))
-                .Select(c => new
+                if (!rankingsDict.TryAdd(clientId, eachRank))
                 {
-                    c.ClientId,
-                    Name = c.CurrentAlias.Name,
-                    c.LastConnection
-                })
-                .ToDictionaryAsync(c => c.ClientId);
-
-            // Combine the data
-            var rankingsDict = limitedRankings
-                .Select(r => new RankingSnapshot
-                {
-                    ClientId = r.ClientId,
-                    Name = clientInfo[r.ClientId].Name,
-                    LastConnection = clientInfo[r.ClientId].LastConnection,
-                    PerformanceMetric = r.PerformanceMetric,
-                    ZScore = r.ZScore,
-                    Ranking = r.Ranking,
-                    CreatedDateTime = r.CreatedDateTime
-                })
-                .GroupBy(r => r.ClientId)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(r => r.CreatedDateTime).ToList()
-                );
+                    rankingsDict[clientId] = rankingsDict[clientId].Concat(eachRank).Distinct()
+                        .OrderByDescending(ranking => ranking.CreatedDateTime).ToList();
+                }
+            }
 
             var statsInfo = await context.Set<EFClientStatistics>()
                 .Where(stat => clientIdsList.Contains(stat.ClientId))
@@ -300,7 +285,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return finished;
         }
 
-        private async Task<PerformanceBucketConfiguration> GetBucketConfig(long? serverId)
+        public async Task<PerformanceBucketConfiguration> GetBucketConfig(long? serverId = null,
+            string bucketName = null)
         {
             var defaultConfig = new PerformanceBucketConfiguration
             {
@@ -308,9 +294,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 RankingExpiration = DateTime.UtcNow - Extensions.FifteenDaysAgo()
             };
 
-            if (serverId is null)
+            if (serverId is null && bucketName is null)
             {
                 return defaultConfig;
+            }
+
+            if (bucketName is not null)
+            {
+                return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Name == bucketName) ??
+                       defaultConfig;
             }
 
             var performanceBucket =
@@ -325,11 +317,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                    defaultConfig;
         }
 
-        public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null)
+        public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null, string performanceBucket = null)
         {
             if (_config.EnableAdvancedMetrics)
             {
-                return await GetNewTopStats(start, count, serverId);
+                return await GetNewTopStats(start, count, serverId, performanceBucket);
             }
 
             await using var context = _contextFactory.CreateContext(enableTracking: false);
@@ -1026,7 +1018,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.LastScore = estimatedVictimScore;
 
             // show encouragement/discouragement
-            var streakMessage = attackerStats.ClientId != victimStats.ClientId
+            var streakMessage = attacker.CurrentServer.IsZombieServer() ? string.Empty : attackerStats.ClientId != victimStats.ClientId
                 ? StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak, _config)
                 : StreakMessage.MessageOnStreak(-1, -1, _config);
 
@@ -1277,6 +1269,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Include(stat => stat.Server)
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
+                .Where(stat => stat.Server.PerformanceBucket == bucketConfig.Name)
                 .Where(stats => stats.UpdatedAt >= oldestStateDate)
                 .Where(stats => stats.TimePlayed >= (int)bucketConfig.ClientMinPlayTime.TotalSeconds)
                 .ToListAsync();
@@ -1297,11 +1290,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context, List<EFClientStatistics> performances, PerformanceBucketConfiguration bucketConfig)
         {
             var aggregateZScore =
-                performances.Where(performance =>  performance.Server.PerformanceBucket == bucketConfig.Name)
-                    .WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), (int)bucketConfig.ClientMinPlayTime.TotalSeconds);
+                performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), (int)bucketConfig.ClientMinPlayTime.TotalSeconds);
 
             int? aggregateRanking = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId != clientId)
+                .Where(stat => bucketConfig.Name == stat.Server.PerformanceBucket)
                 .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration))
                 .GroupBy(stat => stat.ClientId)
                 .Where(group =>

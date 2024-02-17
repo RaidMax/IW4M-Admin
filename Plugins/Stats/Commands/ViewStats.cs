@@ -9,16 +9,17 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Commands;
+using Stats.Dtos;
 
 namespace IW4MAdmin.Plugins.Stats.Commands
 {
     public class ViewStatsCommand : Command
     {
         private readonly IDatabaseContextFactory _contextFactory;
-        private readonly StatManager _statManager;
+        private readonly IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> _queryHelper;
 
         public ViewStatsCommand(CommandConfiguration config, ITranslationLookup translationLookup,
-            IDatabaseContextFactory contextFactory, StatManager statManager) : base(config, translationLookup)
+            IDatabaseContextFactory contextFactory, IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> queryHelper) : base(config, translationLookup)
         {
             Name = "stats";
             Description = translationLookup["PLUGINS_STATS_COMMANDS_VIEW_DESC"];
@@ -35,7 +36,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             };
             
             _contextFactory = contextFactory;
-            _statManager = statManager;
+            _queryHelper = queryHelper;
         }
 
         public override async Task ExecuteAsync(GameEvent gameEvent)
@@ -54,15 +55,19 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             }
 
             var serverId = (gameEvent.Owner as IGameServer).LegacyDatabaseId;
-            var totalRankedPlayers = await _statManager.GetTotalRankedPlayers(serverId);
 
             // getting stats for a particular client
             if (gameEvent.Target != null)
             {
-                var performanceRanking = await _statManager.GetClientOverallRanking(gameEvent.Target.ClientId, serverId);
-                var performanceRankingString = performanceRanking == 0
+                var performanceRanking = (await _queryHelper.QueryResource(new ClientRankingInfoRequest
+                {
+                    ClientId = gameEvent.Target.ClientId,
+                    ServerEndpoint = gameEvent.Owner.Id
+                })).Results.First();
+               
+                var performanceRankingString = performanceRanking.CurrentRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
-                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking}/{totalRankedPlayers}";
+                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking.CurrentRanking}/{performanceRanking.TotalRankedClients}";
 
                 // target is currently connected so we want their cached stats if they exist
                 if (gameEvent.Owner.GetClientsAsList().Any(client => client.Equals(gameEvent.Target)))
@@ -88,10 +93,15 @@ namespace IW4MAdmin.Plugins.Stats.Commands
             // getting self stats
             else
             {
-                var performanceRanking = await _statManager.GetClientOverallRanking(gameEvent.Origin.ClientId, serverId);
-                var performanceRankingString = performanceRanking == 0
+                var performanceRanking = (await _queryHelper.QueryResource(new ClientRankingInfoRequest
+                {
+                    ClientId = gameEvent.Origin.ClientId,
+                    ServerEndpoint = gameEvent.Owner.Id
+                })).Results.First();
+                
+                var performanceRankingString = performanceRanking.CurrentRanking == 0
                     ? _translationLookup["WEBFRONT_STATS_INDEX_UNRANKED"]
-                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking}/{totalRankedPlayers}";
+                    : $"{_translationLookup["WEBFRONT_STATS_INDEX_RANKED"]} (Color::Accent)#{performanceRanking.CurrentRanking}/{performanceRanking.TotalRankedClients}";
 
                 // check if current client is connected to the server
                 if (gameEvent.Owner.GetClientsAsList().Any(client => client.Equals(gameEvent.Origin)))

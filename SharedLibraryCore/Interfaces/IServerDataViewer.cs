@@ -45,8 +45,9 @@ namespace SharedLibraryCore.Interfaces
         ///     Retrieves the number of ranked clients for given server id
         /// </summary>
         /// <param name="serverId">ServerId to query on</param>
+        /// <param name="performanceBucket"></param>
         /// <param name="token">CancellationToken</param>
         /// <returns></returns>
-        Task<int> RankedClientsCountAsync(long? serverId = null, CancellationToken token = default);
+        Task<int> RankedClientsCountAsync(long? serverId = null, string performanceBucket = null, CancellationToken token = default);
     }
 }

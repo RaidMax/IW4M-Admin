@@ -31,5 +31,10 @@ namespace SharedLibraryCore.Interfaces
         ///     active clients
         /// </summary>
         EFClient[] Clients { get; }
+        
+        /// <summary>
+        ///     raw text data from the game server
+        /// </summary>
+        string[] RawResponse { get; }
     }
 }

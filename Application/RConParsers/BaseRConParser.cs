@@ -175,6 +175,7 @@ namespace IW4MAdmin.Application.RConParsers
             
             return new StatusResponse
             {
+                RawResponse = response,
                 Clients = ClientsFromStatus(response).ToArray(),
                 Map = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusMap, Configuration.MapStatus),
                 GameType = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusGametype, Configuration.GametypeStatus),

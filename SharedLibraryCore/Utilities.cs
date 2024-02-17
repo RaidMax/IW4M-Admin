@@ -868,7 +868,14 @@ namespace SharedLibraryCore
         {
             try
             {
-                return await server.RconParser.GetStatusAsync(server.RemoteConnection, token);
+                var response = await server.RconParser.GetStatusAsync(server.RemoteConnection, token);
+                
+                server.Manager.QueueEvent(new ServerStatusReceiveEvent
+                {
+                    Response = response
+                });
+                
+                return response;
             }
 
             catch (TaskCanceledException)

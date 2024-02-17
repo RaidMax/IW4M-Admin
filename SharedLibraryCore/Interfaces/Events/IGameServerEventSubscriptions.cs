@@ -73,6 +73,11 @@ public interface IGameServerEventSubscriptions
     /// </summary>
     static event Func<ServerValueSetCompleteEvent, CancellationToken, Task> ServerValueSetCompleted;
 
+    /// <summary>
+    /// Raised when a server's status response is received
+    /// </summary>
+    static event Func<ServerStatusReceiveEvent, CancellationToken, Task> ServerStatusReceived;
+
     static Task InvokeEventAsync(CoreEvent coreEvent, CancellationToken token)
     {
         return coreEvent switch
@@ -88,6 +93,7 @@ public interface IGameServerEventSubscriptions
             ServerValueReceiveEvent serverValueReceiveEvent => ServerValueReceived?.InvokeAsync(serverValueReceiveEvent, token) ?? Task.CompletedTask,
             ServerValueSetRequestEvent serverValueSetRequestEvent => ServerValueSetRequested?.InvokeAsync(serverValueSetRequestEvent, token) ?? Task.CompletedTask,
             ServerValueSetCompleteEvent serverValueSetCompleteEvent => ServerValueSetCompleted?.InvokeAsync(serverValueSetCompleteEvent, token) ?? Task.CompletedTask,
+            ServerStatusReceiveEvent serverStatusReceiveEvent => ServerStatusReceived?.InvokeAsync(serverStatusReceiveEvent, token) ?? Task.CompletedTask,
             _ => Task.CompletedTask
         };
     }

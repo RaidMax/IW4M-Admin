@@ -219,9 +219,11 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="server"></param>
         /// <returns></returns>
-        public static bool IsZombieServer(this Server server)
+        public static bool IsZombieServer(this Server server) => (server as IGameServer).IsZombieServer();
+
+        public static bool IsZombieServer(this IGameServer server)
         {
-            return new[] { Game.T4, Game.T5, Game.T6 }.Contains(server.GameName) &&
+            return new[] { Reference.Game.T4, Reference.Game.T5, Reference.Game.T6 }.Contains(server.GameCode) &&
                    ZmGameTypes.Contains(server.Gametype.ToLower());
         }
 

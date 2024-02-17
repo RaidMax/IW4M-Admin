@@ -102,6 +102,7 @@ namespace WebfrontCore
             services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
             services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>, AdvancedClientStatsResourceQueryHelper>();
+            services.AddSingleton<IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo>, AdvancedClientStatsResourceQueryHelper>();
             services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
             services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
         }

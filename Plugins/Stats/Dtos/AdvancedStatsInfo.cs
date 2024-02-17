@@ -27,5 +27,6 @@ namespace Stats.Dtos
         public List<EFClientRankingHistory> Ratings { get; set; }
         public List<EFClientStatistics> LegacyStats { get; set; }
         public List<EFMeta> CustomMetrics { get; set; } = new();
+        public string PerformanceBucket { get; set; }
     }
 }

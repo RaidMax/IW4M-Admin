@@ -54,8 +54,6 @@ namespace WebfrontCore.Controllers
             {
                 await statMetricFunc(new Dictionary<int, List<EFMeta>> { { id, hitInfo.CustomMetrics } }, matchedServerId, null, false);
             }
-            
-            hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
 
             return View("~/Views/Client/Statistics/Advanced.cshtml", hitInfo);
         }

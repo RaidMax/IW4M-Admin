@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript.Zombie;
 using SharedLibraryCore.Events.Management;
 using Stats.Client.Abstractions;
 using Stats.Client.Game;
@@ -106,6 +107,39 @@ public class HitCalculator : IClientStatisticCalculator
             }
 
             clientStateInitializeEvent.Client.SetAdditionalProperty(SessionScores, new List<(int, DateTime)>());
+            return;
+        }
+
+        if (coreEvent is RoundEndEvent roundEndEvent)
+        {
+            foreach (var client in roundEndEvent.Server.ConnectedClients)
+            {
+                if (!_clientHitStatistics.TryGetValue(client.ClientId, out var state))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await state.OnTransaction.WaitAsync();
+                    await UpdateClientStatistics(client.ClientId, state);
+                }
+
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not handle round end calculations for client {Client}",
+                        client.ToString());
+                }
+
+                finally
+                {
+                    if (state.OnTransaction.CurrentCount == 0)
+                    {
+                        state.OnTransaction.Release();
+                    }
+                }
+            }
+
             return;
         }
 

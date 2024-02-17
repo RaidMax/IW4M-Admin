@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace SharedLibraryCore.Events;
 
@@ -31,8 +32,7 @@ public static class EventExtensions
             }
             catch (Exception ex)
             {
-                // todo: static logger
-                Console.WriteLine("InvokeAsync: " + ex);
+                Log.Error(ex, "InvokeAsync for event type {EventType} failed. Cancellation Token is None", typeof(TEventType).Name);
             }
         }
 
@@ -46,8 +46,8 @@ public static class EventExtensions
         }
         catch (Exception ex)
         {
-            // todo: static logger
-            Console.WriteLine("InvokeAsync: " + ex);
+            Log.Error(ex, "InvokeAsync for event type {EventType} failed. IsCancellationRequested is {TokenStatus}",
+                typeof(TEventType).Name, tokenSource.Token.IsCancellationRequested);
         }
     }
 }

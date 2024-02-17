@@ -7,40 +7,35 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Stats.Helpers
 {
-    public class AdvancedClientStatsResourceQueryHelper : IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>
+    public class AdvancedClientStatsResourceQueryHelper(
+        ILogger<AdvancedClientStatsResourceQueryHelper> logger,
+        IDatabaseContextFactory contextFactory,
+        IServerDataViewer serverDataViewer,
+        StatManager statManager
+    )
+        : IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
+            IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo>
     {
-        private readonly IDatabaseContextFactory _contextFactory;
-        private readonly ILogger _logger;
-        private readonly IManager _manager;
-
-        public AdvancedClientStatsResourceQueryHelper(ILogger<AdvancedClientStatsResourceQueryHelper> logger,
-            IDatabaseContextFactory contextFactory, IManager manager)
-        {
-            _contextFactory = contextFactory;
-            _logger = logger;
-            _manager = manager;
-        }
-
         public async Task<ResourceQueryHelperResult<AdvancedStatsInfo>> QueryResource(StatsInfoRequest query)
         {
-            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = contextFactory.CreateContext(enableTracking: false);
 
             long? serverId = null;
 
             if (!string.IsNullOrEmpty(query.ServerEndpoint))
             {
                 serverId = (await context.Servers
-                        .Select(server => new {server.EndPoint, server.Id})
+                        .Select(server => new { server.EndPoint, server.Id })
                         .FirstOrDefaultAsync(server => server.EndPoint == query.ServerEndpoint))
                     ?.Id;
             }
@@ -77,9 +72,17 @@ namespace Stats.Helpers
                 .Where(r => r.ClientId == clientInfo.ClientId)
                 .Where(r => r.ServerId == serverId)
                 .Where(r => r.Ranking != null)
+                .Where(r => r.PerformanceBucket == query.PerformanceBucket)
                 .OrderByDescending(r => r.CreatedDateTime)
                 .Take(250)
                 .ToListAsync();
+
+            var rankingInfo = (await QueryResource(new ClientRankingInfoRequest
+            {
+                ClientId = query.ClientId,
+                ServerEndpoint = query.ServerEndpoint,
+                PerformanceBucket = query.PerformanceBucket
+            })).Results.First();
 
             var mostRecentRanking = ratings.FirstOrDefault(ranking => ranking.Newest);
             var ranking = mostRecentRanking?.Ranking + 1;
@@ -90,7 +93,9 @@ namespace Stats.Helpers
                 .Where(stat => serverId == null || stat.ServerId == serverId)
                 .ToListAsync();
 
-            if (mostRecentRanking != null && mostRecentRanking.CreatedDateTime < Extensions.FifteenDaysAgo())
+            var bucketConfig = await statManager.GetBucketConfig(serverId);
+            
+            if (mostRecentRanking != null && mostRecentRanking.CreatedDateTime < DateTime.UtcNow - bucketConfig.RankingExpiration)
             {
                 ranking = 0;
             }
@@ -100,7 +105,7 @@ namespace Stats.Helpers
                 ranking = null;
             }
 
-            var hitInfo = new AdvancedStatsInfo()
+            var hitInfo = new AdvancedStatsInfo
             {
                 ServerId = serverId,
                 Performance = mostRecentRanking?.PerformanceMetric,
@@ -111,9 +116,12 @@ namespace Stats.Helpers
                 Level = clientInfo.Level,
                 Rating = mostRecentRanking?.PerformanceMetric,
                 All = hitStats,
-                Servers = _manager.GetServers()
+                Servers = Plugin.ServerManager.GetServers()
                     .Select(server => new ServerInfo
-                        {Name = server.Hostname, IPAddress = server.ListenAddress, Port = server.ListenPort, Game = (Reference.Game)server.GameName})
+                    {
+                        Name = server.Hostname, IPAddress = server.ListenAddress, Port = server.ListenPort,
+                        Game = (Reference.Game)server.GameName
+                    })
                     .Where(server => server.Game == clientInfo.GameName)
                     .ToList(),
                 Aggregate = hitStats.FirstOrDefault(hit =>
@@ -136,24 +144,82 @@ namespace Stats.Helpers
                 Ratings = ratings,
                 LegacyStats = legacyStats,
                 Ranking = ranking,
+                TotalRankedClients = rankingInfo.TotalRankedClients,
+                PerformanceBucket = rankingInfo.PerformanceBucket
             };
 
-            // todo: when nothign found
-            return new ResourceQueryHelperResult<AdvancedStatsInfo>()
+            return new ResourceQueryHelperResult<AdvancedStatsInfo>
             {
-                Results = new[] {hitInfo}
+                Results = new[] { hitInfo }
             };
         }
 
-        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, TimeSpan expiration, double? zScore = null,
+        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, TimeSpan expiration,
+            double? zScore = null,
             long? serverId = null)
         {
             var oldestStat = DateTime.UtcNow.Subtract(expiration);
             return stats => (serverId == null || stats.ServerId == serverId) &&
-                              stats.UpdatedAt >= oldestStat &&
-                              stats.Client.Level != EFClient.Permission.Banned &&
-                              stats.TimePlayed >= minPlayTime
-                              && (zScore == null || stats.ZScore > zScore);
+                            stats.UpdatedAt >= oldestStat &&
+                            stats.Client.Level != EFClient.Permission.Banned &&
+                            stats.TimePlayed >= minPlayTime
+                            && (zScore == null || stats.ZScore > zScore);
+        }
+
+        public async Task<ResourceQueryHelperResult<ClientRankingInfo>> QueryResource(ClientRankingInfoRequest query)
+        {
+            await using var context = contextFactory.CreateContext(enableTracking: false);
+
+            long? serverId = null;
+
+            if (!string.IsNullOrEmpty(query.ServerEndpoint))
+            {
+                serverId = Plugin.ServerManager.Servers.FirstOrDefault(server => server.Id == query.ServerEndpoint)
+                    ?.LegacyDatabaseId;
+            }
+
+            var currentRanking = 0;
+            int totalRankedClients;
+            string performanceBucket;
+
+            if (string.IsNullOrEmpty(query.PerformanceBucket) && serverId is null)
+            {
+                var maxPerformance = await context.Set<EFClientRankingHistory>()
+                    .Where(r => r.ClientId == query.ClientId)
+                    .Where(r => r.Ranking != null)
+                    .Where(r => r.ServerId == serverId)
+                    .Where(rating => rating.Newest)
+                    .GroupBy(rating => rating.PerformanceBucket)
+                    .Select(grp => new { grp.Key, PerformanceMetric = grp.Max(rating => rating.Ranking) })
+                    .Where(grp => grp.PerformanceMetric != null)
+                    .FirstOrDefaultAsync();
+
+                if (maxPerformance is null)
+                {
+                    currentRanking = 0;
+                    totalRankedClients = 0;
+                    performanceBucket = null;
+                }
+                else
+                {
+                    currentRanking =
+                        await statManager.GetClientOverallRanking(query.ClientId!.Value, null, maxPerformance.Key);
+                    totalRankedClients = await serverDataViewer.RankedClientsCountAsync(null, maxPerformance.Key);
+                    performanceBucket = maxPerformance.Key;
+                }
+            }
+            else
+            {
+                performanceBucket = query.PerformanceBucket;
+                currentRanking =
+                    await statManager.GetClientOverallRanking(query.ClientId!.Value, serverId, performanceBucket);
+                totalRankedClients = await serverDataViewer.RankedClientsCountAsync(serverId, performanceBucket);
+            }
+
+            return new ResourceQueryHelperResult<ClientRankingInfo>
+            {
+                Results = [new ClientRankingInfo(currentRanking, totalRankedClients, performanceBucket)]
+            };
         }
     }
 }

@@ -8,6 +8,7 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Server;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
@@ -25,19 +26,21 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
         private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
         private readonly IDataValueCache<EFClientRankingHistory, int> _rankedClientsCache;
+        private readonly StatManager _statManager;
 
         private readonly TimeSpan? _cacheTimeSpan =
             Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?) TimeSpan.FromMinutes(10);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
-            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache)
+            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache, StatManager statManager)
         {
             _logger = logger;
             _snapshotCache = snapshotCache;
             _serverStatsCache = serverStatsCache;
             _clientHistoryCache = clientHistoryCache;
             _rankedClientsCache = rankedClientsCache;
+            _statManager = statManager;
         }
 
         public async Task<(int?, DateTime?)> 
@@ -185,30 +188,31 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public async Task<int> RankedClientsCountAsync(long? serverId = null, CancellationToken token = default)
+        public async Task<int> RankedClientsCountAsync(long? serverId = null, string performanceBucket = null, CancellationToken token = default)
         {
             _rankedClientsCache.SetCacheItem((set, ids, cancellationToken) =>
             {
                 long? id = null;
+                string bucket = null;
                 
                 if (ids.Any())
                 {
                     id = (long?)ids.First();
                 }
-                
-                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
-                return set
-                    .Where(rating => rating.Newest)
-                    .Where(rating => rating.ServerId == id)
-                    .Where(rating => rating.CreatedDateTime >= fifteenDaysAgo)
-                    .Where(rating => rating.Client.Level != EFClient.Permission.Banned)
-                    .Where(rating => rating.Ranking != null)
-                    .CountAsync(cancellationToken);
-            }, nameof(_rankedClientsCache), new object[] { serverId }, _cacheTimeSpan);
+
+                if (ids.Count() == 2)
+                {
+                    bucket = (string)ids.Last();
+                }
+
+                return _statManager.GetBucketConfig(serverId)
+                    .ContinueWith(result => _statManager.GetTotalRankedPlayers(id, bucket), cancellationToken).Result;
+
+            }, nameof(_rankedClientsCache), new object[] { serverId, performanceBucket }, _cacheTimeSpan);
             
             try
             {
-                return await _rankedClientsCache.GetCacheItem(nameof(_rankedClientsCache), new object[] { serverId }, token);
+                return await _rankedClientsCache.GetCacheItem(nameof(_rankedClientsCache), new object[] { serverId, performanceBucket }, token);
             }
             catch (Exception ex)
             {

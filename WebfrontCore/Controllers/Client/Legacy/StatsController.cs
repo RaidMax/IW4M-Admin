@@ -1,25 +1,24 @@
-﻿using IW4MAdmin.Plugins.Stats;
-using IW4MAdmin.Plugins.Stats.Helpers;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SharedLibraryCore;
-using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Dtos.Meta.Responses;
-using SharedLibraryCore.Interfaces;
-using Stats.Dtos;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Data.Abstractions;
+using IW4MAdmin.Plugins.Stats.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
+using SharedLibraryCore.Interfaces;
 using Stats.Config;
+using Stats.Dtos;
 using WebfrontCore.QueryHelpers.Models;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
+namespace WebfrontCore.Controllers.Client.Legacy
 {
     public class StatsController : BaseController
     {
@@ -62,7 +61,7 @@ namespace IW4MAdmin.Plugins.Web.StatsWeb.Controllers
                 matchedServerId = server.LegacyDatabaseId;
             }
             
-            ViewBag.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
+            ViewBag.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, null, token);
             ViewBag.ServerId = matchedServerId;
 
             return View("~/Views/Client/Statistics/Index.cshtml", _manager.GetServers()

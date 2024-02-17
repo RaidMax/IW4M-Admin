@@ -46,6 +46,7 @@ public class Plugin : IPluginV2
     private readonly IServerDataViewer _serverDataViewer;
     private readonly StatsConfiguration _statsConfig;
     private readonly StatManager _statManager;
+    private readonly IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> _queryHelper;
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
@@ -57,8 +58,9 @@ public class Plugin : IPluginV2
         ITranslationLookup translationLookup, IMetaServiceV2 metaService,
         IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper,
         IEnumerable<IClientStatisticCalculator> statCalculators,
-        IServerDistributionCalculator serverDistributionCalculator, IServerDataViewer serverDataViewer,
-        StatsConfiguration statsConfig, StatManager statManager)
+        IServerDistributionCalculator serverDistributionCalculator, 
+        StatsConfiguration statsConfig, StatManager statManager, 
+        IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> queryHelper)
     {
         _databaseContextFactory = databaseContextFactory;
         _translationLookup = translationLookup;
@@ -70,6 +72,7 @@ public class Plugin : IPluginV2
         _serverDataViewer = serverDataViewer;
         _statsConfig = statsConfig;
         _statManager = statManager;
+        _queryHelper = queryHelper;
 
         IGameServerEventSubscriptions.MonitoringStopped +=
             async (monitorEvent, token) => await _statManager.Sync(monitorEvent.Server, token);
@@ -117,13 +120,23 @@ public class Plugin : IPluginV2
             }
         };
         IGameEventSubscriptions.MatchEnded += OnMatchEvent;
-        IGameEventSubscriptions.RoundEnded += (roundEndedEvent, token) => _statManager.Sync(roundEndedEvent.Server, token);
+        IGameEventSubscriptions.RoundEnded += OnRoundEnded;
         IGameEventSubscriptions.MatchStarted += OnMatchEvent;
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
         IGameEventSubscriptions.ClientKilled += OnClientKilled;
         IGameEventSubscriptions.ClientDamaged += OnClientDamaged;
         IManagementEventSubscriptions.ClientCommandExecuted += OnClientCommandExecute;
         IManagementEventSubscriptions.Load += OnLoad;
+    }
+
+    private async Task OnRoundEnded(RoundEndEvent roundEndedEvent, CancellationToken token)
+    {
+        await _statManager.Sync(roundEndedEvent.Server, token);
+
+        foreach (var calculator in _statCalculators)
+        {
+            await calculator.CalculateForEvent(roundEndedEvent);
+        }
     }
 
     private async Task OnClientKilled(ClientKillEvent killEvent, CancellationToken token)
@@ -258,7 +271,10 @@ public class Plugin : IPluginV2
             var performance =
                 Math.Round(validPerformanceValues.Sum(c => c.Performance * c.TimePlayed / performancePlayTime), 2);
             var spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Count(c => c.SPM > 0), 1);
-            var overallRanking = await _statManager.GetClientOverallRanking(request.ClientId);
+            var ranking = (await _queryHelper.QueryResource(new ClientRankingInfoRequest
+            {
+                ClientId = request.ClientId,
+            })).Results.First();
 
             return new List<InformationResponse>
             {
@@ -267,12 +283,12 @@ public class Plugin : IPluginV2
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
                     Value = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING_FORMAT"]
                         .FormatExt(
-                            (overallRanking == 0
+                            (ranking.CurrentRanking == 0
                                 ? "--"
-                                : overallRanking.ToString("#,##0",
+                                : ranking.CurrentRanking.ToString("#,##0",
                                     new System.Globalization.CultureInfo(Utilities.CurrentLocalization
                                         .LocalizationName))),
-                            (await _serverDataViewer.RankedClientsCountAsync(token: token)).ToString("#,##0",
+                            ranking.TotalRankedClients.ToString("#,##0",
                                 new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))
                         ),
                     Column = 0,

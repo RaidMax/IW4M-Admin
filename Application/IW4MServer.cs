@@ -25,6 +25,7 @@ using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 using Data.Models;
 using Data.Models.Server;
+using Humanizer;
 using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Commands;
 using IW4MAdmin.Application.Plugin.Script;
@@ -193,18 +194,54 @@ namespace IW4MAdmin
                     Command command = null;
                     if (E.Type == GameEvent.EventType.Command)
                     {
+                        if (E.Origin is not null)
+                        {
+                            var canExecute = true;
+
+                            if (E.Origin.CommandExecutionAttempts > 0)
+                            {
+                                var remainingTimeout =
+                                    E.Origin.LastCommandExecutionAttempt +
+                                    Utilities.GetExponentialBackoffDelay(E.Origin.CommandExecutionAttempts) -
+                                    DateTimeOffset.UtcNow;
+
+                                if (remainingTimeout.TotalSeconds > 0)
+                                {
+                                    if (E.Origin.CommandExecutionAttempts < 2 ||
+                                        E.Origin.CommandExecutionAttempts % 5 == 0)
+                                    {
+                                        E.Origin.Tell(_translationLookup["COMMANDS_BACKOFF_MESSAGE"]
+                                            .FormatExt(remainingTimeout.Humanize()));
+                                    }
+
+                                    canExecute = false;
+                                }
+                                else
+                                {
+                                    E.Origin.CommandExecutionAttempts = 0;
+                                }
+                            }
+
+                            E.Origin.LastCommandExecutionAttempt = DateTimeOffset.UtcNow;
+                            E.Origin.CommandExecutionAttempts++;
+
+                            if (!canExecute)
+                            {
+                                return;
+                            }
+                        }
+
                         try
                         {
                             command = await SharedLibraryCore.Commands.CommandProcessing.ValidateCommand(E, Manager.GetApplicationSettings().Configuration(), _commandConfiguration);
                         }
-
                         catch (CommandException e)
                         {
                             ServerLogger.LogWarning(e, "Error validating command from event {@Event}", 
                                 new { E.Type, E.Data, E.Message, E.Subtype, E.IsRemote, E.CorrelationId });
                             E.FailReason = GameEvent.EventFailReason.Invalid;
                         }
-
+                        
                         if (command != null)
                         {
                             E.Extra = command;

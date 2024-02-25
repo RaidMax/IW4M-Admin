@@ -120,6 +120,11 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped]
         public string TimeSinceLastConnectionString => (DateTime.UtcNow - LastConnection).HumanizeForCurrentCulture();
 
+        public DateTimeOffset LastCommandExecutionAttempt { get; set; } = DateTimeOffset.MinValue;
+        
+        [NotMapped]
+        public int CommandExecutionAttempts { get; set; }
+
         [NotMapped]
         // this is kinda dirty, but I need localizable level names
         public ClientPermission ClientPermission => new ClientPermission

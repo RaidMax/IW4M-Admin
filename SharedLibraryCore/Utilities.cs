@@ -1339,6 +1339,14 @@ namespace SharedLibraryCore
 
             return serviceCollection;
         }
+        
+        public static TimeSpan GetExponentialBackoffDelay(int retryCount, int staticDelay = 5)
+        {
+            var maxTimeout = TimeSpan.FromMinutes(2.1);
+            const double factor = 2.0;
+            var delay = Math.Min(staticDelay + Math.Pow(factor, retryCount - 1), maxTimeout.TotalSeconds);
+            return TimeSpan.FromSeconds(delay);
+        }
 
         public static void ExecuteAfterDelay(TimeSpan duration, Func<CancellationToken, Task> action, CancellationToken token = default) =>
             ExecuteAfterDelay((int)duration.TotalMilliseconds, action, token);

@@ -298,7 +298,7 @@ const plugin = {
                                 const parsedValue = parseInt(event.data['value']);
                                 const key = event.data['key'].toString();
                                 if (!isNaN(parsedValue)) {
-                                    event.data['direction'] = 'increment' ?
+                                    event.data['direction'] == 'increment' ?
                                         (await metaService.incrementPersistentMeta(key, parsedValue, clientId, token)).result :
                                         (await metaService.decrementPersistentMeta(key, parsedValue, clientId, token)).result;
                                 }

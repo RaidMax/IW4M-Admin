@@ -50,7 +50,11 @@ namespace SharedLibraryCore.Dtos
             }
         }
         public Reference.Game Game { get; set; }
+<<<<<<< HEAD
         public double? RconRoundTripMs { get; set; }
         public double? GameLogPipelineMs { get; set; }
+=======
+        public string PerformanceBucket { get; set; }
+>>>>>>> 79bd6ca8 (zombie stats code)
     }
 }

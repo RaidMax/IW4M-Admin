@@ -1,4 +1,4 @@
-﻿namespace SharedLibraryCore.Events.Game.GameScript.Zombie;
+﻿namespace SharedLibraryCore.Events.Game.GameScript;
 
 public class RoundEndEvent : GameEventV2
 {

@@ -71,8 +71,12 @@ namespace IW4MAdmin.Application
         /// entrypoint of the application
         /// </summary>
         /// <returns></returns>
+<<<<<<< HEAD
         public static async Task Main(bool noConfirm = false, int? maxConcurrentRequests = 25,
             int? requestQueueLimit = 25)
+=======
+        public static async Task Main(bool noConfirm = false, int? maxConcurrentRequests = 40, int? requestQueueLimit = 40)
+>>>>>>> 79bd6ca8 (zombie stats code)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
             Directory.SetCurrentDirectory(Utilities.OperatingDirectory);

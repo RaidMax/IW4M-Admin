@@ -18,8 +18,11 @@ using Data.Models.Server;
 using Microsoft.Extensions.Logging;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Events;
+using IW4MAdmin.Plugins.Stats.TalkerPoC;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript;
+using SharedLibraryCore.Events.Game.GameScript.Zombie;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces.Events;
 using Stats.Client.Abstractions;
@@ -43,10 +46,11 @@ public class Plugin : IPluginV2
     private readonly ILogger<Plugin> _logger;
     private readonly List<IClientStatisticCalculator> _statCalculators;
     private readonly IServerDistributionCalculator _serverDistributionCalculator;
-    private readonly IServerDataViewer _serverDataViewer;
     private readonly StatsConfiguration _statsConfig;
     private readonly StatManager _statManager;
     private readonly IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> _queryHelper;
+    private readonly CodResponseService responsePoc = new("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");
+    private IStatusResponse lastResponse;
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
@@ -69,7 +73,6 @@ public class Plugin : IPluginV2
         _logger = logger;
         _statCalculators = statCalculators.ToList();
         _serverDistributionCalculator = serverDistributionCalculator;
-        _serverDataViewer = serverDataViewer;
         _statsConfig = statsConfig;
         _statManager = statManager;
         _queryHelper = queryHelper;
@@ -118,6 +121,10 @@ public class Plugin : IPluginV2
                 await _statManager.AddMessageAsync(messageEvent.Client.ClientId,
                     messageEvent.Server.LegacyDatabaseId, true, messageEvent.Message, token);
             }
+
+           // var response = await responsePoc.GetResponse("mistralai/mixtral-8x7b-instruct", messageEvent.Message, messageEvent.Owner, lastResponse);
+           // Console.WriteLine(response);
+            //messageEvent.Owner.Broadcast("^2" + response);
         };
         IGameEventSubscriptions.MatchEnded += OnMatchEvent;
         IGameEventSubscriptions.RoundEnded += OnRoundEnded;
@@ -125,6 +132,11 @@ public class Plugin : IPluginV2
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
         IGameEventSubscriptions.ClientKilled += OnClientKilled;
         IGameEventSubscriptions.ClientDamaged += OnClientDamaged;
+        IGameServerEventSubscriptions.ServerStatusReceived += (@event, @_) =>
+        {
+            lastResponse = @event.Response;
+            return Task.CompletedTask;
+        };
         IManagementEventSubscriptions.ClientCommandExecuted += OnClientCommandExecute;
         IManagementEventSubscriptions.Load += OnLoad;
     }

@@ -25,6 +25,9 @@ namespace Data.Models.Client.Stats
         public int? Ranking { get; set; }
         public double? ZScore { get; set; }
         public double? PerformanceMetric { get; set; }
-        public string PerformanceBucket { get; set; }
+        
+        public int? PerformanceBucketId { get; set; }
+        [ForeignKey(nameof(PerformanceBucketId))]
+        public EFPerformanceBucket PerformanceBucket { get; set; }
     }
 }

@@ -60,9 +60,14 @@ namespace Stats.Helpers
                 return new ResourceQueryHelperResult<AdvancedStatsInfo>();
             }
 
-            var hitStats = await context.Set<EFClientHitStatistic>()
-                .Where(stat => stat.ClientId == query.ClientId)
-                .Where(stat => stat.ServerId == serverId)
+            var iqHitStats = context.Set<EFClientHitStatistic>()
+                .Where(stat => stat.ClientId == query.ClientId);
+
+            iqHitStats = !string.IsNullOrEmpty(query.PerformanceBucket)
+                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket == query.PerformanceBucket)
+                : iqHitStats.Where(stat => stat.ServerId == serverId);
+
+            var hitStats = await iqHitStats
                 .Select(stat => new HitStatProjection
                 {
                     HitLocationId = stat.HitLocationId,

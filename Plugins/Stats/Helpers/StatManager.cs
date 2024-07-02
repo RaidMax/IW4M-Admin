@@ -135,7 +135,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             await using var context = _contextFactory.CreateContext(enableTracking: false);
 
             return await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId, performanceBucket))
                 .CountAsync();
         }
 
@@ -1292,7 +1292,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var aggregateZScore =
                 performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), (int)bucketConfig.ClientMinPlayTime.TotalSeconds);
 
-            int? aggregateRanking = await context.Set<EFClientStatistics>()
+            var aggregateRanking = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId != clientId)
                 .Where(stat => bucketConfig.Name == stat.Server.PerformanceBucket)
                 .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration))

@@ -1509,7 +1509,7 @@ namespace IW4MAdmin
             MaxClients = maxplayers;
             FSGame = game.Value;
             Gametype = gametype;
-            IP = ip.Value is "localhost" or "0.0.0.0" ? ServerConfig.IPAddress : ip.Value ?? ServerConfig.IPAddress;
+            IP = ServerConfig.IPAddress;
             GamePassword = gamePassword.Value;
             PrivateClientSlots = privateClients.Value;
             

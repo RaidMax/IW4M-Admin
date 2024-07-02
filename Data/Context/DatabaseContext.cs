@@ -38,6 +38,9 @@ namespace Data.Context
         public DbSet<EFClientHitStatistic> HitStatistics { get; set; }
         public DbSet<EFWeapon> Weapons { get; set; }
         public DbSet<EFWeaponAttachment> WeaponAttachments { get; set; }
+        
+        public DbSet<EFClientStatTag> ClientStatTags { get; set; }
+        public DbSet<EFClientStatTagValue> ClientStatTagValues { get; set; }
         public DbSet<EFMap> Maps { get; set; }
         
         #endregion
@@ -59,7 +62,7 @@ namespace Data.Context
         public DbSet<ZombieAggregateClientStat> ZombieClientStatAggregates { get; set; }
         public DbSet<ZombieClientStatRecord> ZombieClientStatRecords { get; set; }
         public DbSet<ZombieEventLog> ZombieEvents { get; set; }
-
+        
         #endregion
 
         private void SetAuditColumns()
@@ -104,19 +107,6 @@ namespace Data.Context
                     client.NetworkId,
                     client.GameName
                 });
-                
-
-               /* entity.HasMany(prop => prop.ZombieMatchClientStats)
-                    .WithOne(prop => prop.Client)
-                    .HasForeignKey(prop => prop.ClientId);
-                
-                entity.HasMany(prop => prop.ZombieRoundClientStats)
-                    .WithOne(prop => prop.Client)
-                    .HasForeignKey(prop => prop.ClientId);
-                
-                entity.HasMany(prop => prop.ZombieAggregateClientStats)
-                    .WithOne(prop => prop.Client)
-                    .HasForeignKey(prop => prop.ClientId);*/
             });
 
             modelBuilder.Entity<EFPenalty>(entity =>
@@ -197,11 +187,11 @@ namespace Data.Context
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
             
-            modelBuilder.Entity<ZombieMatch>().ToTable($"EF{nameof(ZombieMatch)}");
+            modelBuilder.Entity<ZombieMatch>().ToTable($"EF{nameof(ZombieMatches)}");
             
             modelBuilder.Entity<ZombieClientStat>(ent =>
             {
-                ent.ToTable($"EF{nameof(ZombieClientStat)}");
+                ent.ToTable($"EF{nameof(ZombieClientStat)}s");
                 ent.HasOne(prop => prop.Client)
                     .WithMany(prop => prop.ZombieClientStats)
                     .HasForeignKey(prop => prop.ClientId);
@@ -209,23 +199,39 @@ namespace Data.Context
 
             modelBuilder.Entity<ZombieMatchClientStat>(ent =>
             {
-                ent.ToTable($"EF{nameof(ZombieMatchClientStat)}");
+                ent.ToTable($"EF{nameof(ZombieMatchClientStats)}");
             });
 
             modelBuilder.Entity<ZombieRoundClientStat>(ent =>
             {
-                ent.ToTable($"EF{nameof(ZombieRoundClientStat)}");
+                ent.ToTable($"EF{nameof(ZombieRoundClientStats)}");
             });
 
             modelBuilder.Entity<ZombieAggregateClientStat>(ent =>
             {
-                ent.ToTable($"EF{nameof(ZombieAggregateClientStat)}");
+                ent.ToTable($"EF{nameof(ZombieClientStatAggregates)}");
             });
 
-            modelBuilder.Entity<ZombieEventLog>().ToTable($"EF{nameof(ZombieEvents)}");
- 
-            modelBuilder.Entity<ZombieClientStatRecord>().ToTable($"EF{nameof(ZombieClientStatRecord)}");
+            modelBuilder.Entity<ZombieEventLog>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieEvents)}");
+            });
 
+            modelBuilder.Entity<ZombieClientStatRecord>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieClientStatRecords)}");
+            });
+
+            modelBuilder.Entity<EFClientStatTag>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ClientStatTags)}");
+            });
+
+            modelBuilder.Entity<EFClientStatTagValue>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ClientStatTagValues)}");
+            });
+            
             Models.Configuration.StatsModelConfiguration.Configure(modelBuilder);
 
             base.OnModelCreating(modelBuilder);

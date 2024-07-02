@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript;
 using SharedLibraryCore.Events.Game.GameScript.Zombie;
 
 namespace SharedLibraryCore.Interfaces.Events;

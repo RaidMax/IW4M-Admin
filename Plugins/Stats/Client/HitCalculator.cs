@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript;
 using SharedLibraryCore.Events.Game.GameScript.Zombie;
 using SharedLibraryCore.Events.Management;
 using Stats.Client.Abstractions;
@@ -438,7 +439,11 @@ public class HitCalculator : IClientStatisticCalculator
         }
     }
 
+<<<<<<< HEAD
     private Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null,
+=======
+    private async Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null, string performanceBucket = null,
+>>>>>>> 79bd6ca8 (zombie stats code)
         int? hitLocationId = null, int? weaponId = null, int? attachmentComboId = null,
         int? meansOfDeathId = null)
     {
@@ -453,14 +458,14 @@ public class HitCalculator : IClientStatisticCalculator
                                    && hit.WeaponId == weaponId
                                    && hit.WeaponAttachmentComboId == attachmentComboId
                                    && hit.MeansOfDeathId == meansOfDeathId
-                                   && hit.ServerId == serverId);
+                                   && (performanceBucket is not null && performanceBucket == hit.Server.PerformanceBucket || (performanceBucket is null && hit.ServerId == serverId)));
 
         if (hitStat != null)
         {
             return Task.FromResult(hitStat);
         }
 
-        hitStat = new EFClientHitStatistic()
+        hitStat = new EFClientHitStatistic
         {
             ClientId = clientId,
             ServerId = serverId,
@@ -476,7 +481,7 @@ public class HitCalculator : IClientStatisticCalculator
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not add {statsName} for {id}", nameof(EFClientHitStatistic),
+            _logger.LogError(ex, "Could not add {StatsName} for {Id}", nameof(EFClientHitStatistic),
                 clientId);
             state.Hits.Remove(hitStat);
         }

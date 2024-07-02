@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>RaidMax.IW4MAdmin.Application</PackageId>
-    <Version>2020.0.0.0</Version>
+    <Version>2024.0.0.0</Version>
     <Authors>RaidMax</Authors>
     <Company>Forever None</Company>
     <Product>IW4MAdmin</Product>

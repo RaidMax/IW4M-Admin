@@ -1386,16 +1386,21 @@ namespace SharedLibraryCore
                 IGameEventSubscriptions.ClientMessaged += OnResponse;
                 await client.TellAsync([prompt], token);
 
-                var tokenSource = new CancellationTokenSource(DefaultCommandTimeout);
+                using var tokenSource = new CancellationTokenSource(DefaultCommandTimeout);
                 using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(tokenSource.Token, token);
 
                 clientResponse.Wait(linkedTokenSource.Token);
 
                 return response;
             }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
             finally
             {
                 IGameEventSubscriptions.ClientMessaged -= OnResponse;
+                clientResponse.Dispose();
             }
 
             async Task OnResponse(ClientMessageEvent messageEvent, CancellationToken cancellationToken)
@@ -1409,6 +1414,7 @@ namespace SharedLibraryCore
 
                 if (await validator(response))
                 {
+                    // ReSharper disable once AccessToDisposedClosure
                     clientResponse.Set();
                 }
                 else

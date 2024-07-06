@@ -19,10 +19,12 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
+using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Interfaces.Events;
 using SharedLibraryCore.Localization;
 using SharedLibraryCore.RCon;
 using static System.Threading.Tasks.Task;
@@ -1372,5 +1374,48 @@ namespace SharedLibraryCore
 
         public static void ExecuteAfterDelay(this Func<CancellationToken, Task> action, int delayMs,
             CancellationToken token = default) => ExecuteAfterDelay(delayMs, action, token);
+
+        public static async Task<string> PromptClientInput(this EFClient client, string prompt, Func<string, Task<bool>> validator,
+            CancellationToken token = default)
+        {
+            var clientResponse = new ManualResetEventSlim(false);
+            string response = null;
+
+            try
+            {
+                IGameEventSubscriptions.ClientMessaged += OnResponse;
+                await client.TellAsync([prompt], token);
+
+                var tokenSource = new CancellationTokenSource(DefaultCommandTimeout);
+                using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(tokenSource.Token, token);
+
+                clientResponse.Wait(linkedTokenSource.Token);
+
+                return response;
+            }
+            finally
+            {
+                IGameEventSubscriptions.ClientMessaged -= OnResponse;
+            }
+
+            async Task OnResponse(ClientMessageEvent messageEvent, CancellationToken cancellationToken)
+            {
+                if (!messageEvent.Origin.ClientId.Equals(client.ClientId) || cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                response = messageEvent.Message;
+
+                if (await validator(response))
+                {
+                    clientResponse.Set();
+                }
+                else
+                {
+                    await client.TellAsync([prompt], cancellationToken);
+                }
+            }
+        }
     }
 }

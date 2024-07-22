@@ -112,11 +112,13 @@ namespace IW4MAdmin.Application.Meta
                 return metaList;
             }
 
-            metaList.Add(new InformationResponse()
+            var friendlyTime = TimeSpan.FromHours(client.TotalConnectionTime / 3600.0);
+            metaList.Add(new InformationResponse
             {
                 ClientId = client.ClientId,
                 Key = _transLookup["WEBFRONT_PROFILE_META_PLAY_TIME"],
-                Value = TimeSpan.FromHours(client.TotalConnectionTime / 3600.0).HumanizeForCurrentCulture(),
+                Value = friendlyTime.HumanizeForCurrentCulture(),
+                ToolTipText = $"{friendlyTime.TotalHours:N1} hour(s)",
                 ShouldDisplay = true,
                 Order = 8,
                 Type = MetaType.Information

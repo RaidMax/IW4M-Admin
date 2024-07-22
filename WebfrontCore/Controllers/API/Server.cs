@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,18 +13,13 @@ namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class Server : BaseController
+    public class Server(
+        IManager manager,
+        IServerDataViewer serverDataViewer,
+        ApplicationConfiguration applicationConfiguration,
+        IRemoteCommandService remoteCommandService)
+        : BaseController(manager)
     {
-        private readonly IServerDataViewer _serverDataViewer;
-        private readonly ApplicationConfiguration _applicationConfiguration;
-
-        public Server(IManager manager, IServerDataViewer serverDataViewer,
-            ApplicationConfiguration applicationConfiguration) : base(manager)
-        {
-            _serverDataViewer = serverDataViewer;
-            _applicationConfiguration = applicationConfiguration;
-        }
-        
         [HttpGet]
         public IActionResult Index()
         {
@@ -41,8 +35,8 @@ namespace WebfrontCore.Controllers.API
                 server.CurrentMap,
                 currentGameType = new
                 {
-                  type = server.Gametype,
-                  name = server.GametypeName
+                    type = server.Gametype,
+                    name = server.GametypeName
                 },
                 Parser = server.RconParser.Name,
             }));
@@ -52,12 +46,12 @@ namespace WebfrontCore.Controllers.API
         public IActionResult GetServerById(string id)
         {
             var foundServer = Manager.GetServers().FirstOrDefault(server => server.EndPoint == long.Parse(id));
-            
+
             if (foundServer == null)
             {
                 return new NotFoundResult();
             }
-            
+
             return new JsonResult(new
             {
                 Id = foundServer.EndPoint,
@@ -84,7 +78,7 @@ namespace WebfrontCore.Controllers.API
             {
                 return Unauthorized();
             }
-            
+
             var foundServer = Manager.GetServers().FirstOrDefault(server => server.EndPoint == long.Parse(id));
 
             if (foundServer == null)
@@ -94,29 +88,20 @@ namespace WebfrontCore.Controllers.API
 
             if (string.IsNullOrEmpty(commandRequest.Command))
             {
-                return new BadRequestObjectResult("Command cannot be empty");                
+                return new BadRequestObjectResult("Command cannot be empty");
             }
 
-            var start = DateTime.Now;
+            var start = TimeProvider.System.GetLocalNow();
             Client.CurrentServer = foundServer;
-            
-            var commandEvent = new GameEvent
-            {
-                Type = GameEvent.EventType.Command,
-                Owner = foundServer,
-                Origin = Client,
-                Data = commandRequest.Command,
-                Extra = commandRequest.Command,
-                IsRemote = true
-            };
 
-            Manager.AddEvent(commandEvent);
-            var completedEvent = await commandEvent.WaitAsync(Utilities.DefaultCommandTimeout, foundServer.Manager.CancellationToken);
-            
+            var completedResult =
+                await remoteCommandService.ExecuteWithResult(Client.ClientId, null, commandRequest.Command, null, foundServer);
+
             return new JsonResult(new
             {
-                ExecutionTimeMs = Math.Round((DateTime.Now - start).TotalMilliseconds, 0),
-                completedEvent.Output
+                ExecutionTimeMs = Math.Round((TimeProvider.System.GetLocalNow() - start).TotalMilliseconds, 0),
+                Output = completedResult.Item2.Where(x => !string.IsNullOrWhiteSpace(x.Response))
+                    .Select(x => x.Response.Trim())
             });
         }
 
@@ -124,31 +109,31 @@ namespace WebfrontCore.Controllers.API
         public async Task<IActionResult> GetClientHistory(string id)
         {
             var foundServer = Manager.GetServers().FirstOrDefault(server => server.Id == id);
-            
-            if (foundServer == null)
+
+            if (foundServer is null)
             {
                 return new NotFoundResult();
             }
-            
-            var clientHistory = (await _serverDataViewer.ClientHistoryAsync(_applicationConfiguration.MaxClientHistoryTime,
-                                        CancellationToken.None))?
-                                    .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
-                                new ClientHistoryInfo
-                                {
-                                    ServerId = foundServer.LegacyDatabaseId,
-                                    ClientCounts = new List<ClientCountSnapshot>()
-                                };
-            
-            var counts = clientHistory.ClientCounts?.AsEnumerable() ?? Enumerable.Empty<ClientCountSnapshot>();
 
-            if (foundServer.ClientHistory.ClientCounts.Any())
+            var clientHistory =
+                (await serverDataViewer.ClientHistoryAsync(applicationConfiguration.MaxClientHistoryTime, CancellationToken.None))?
+                .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
+                new ClientHistoryInfo
+                {
+                    ServerId = foundServer.LegacyDatabaseId,
+                    ClientCounts = []
+                };
+
+            var counts = clientHistory.ClientCounts?.AsEnumerable() ?? [];
+
+            if (foundServer.ClientHistory.ClientCounts.Count is not 0)
             {
                 counts = counts.Union(foundServer.ClientHistory.ClientCounts.Where(history =>
                         history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
-                    .Where(history => history.Time >= DateTime.UtcNow - _applicationConfiguration.MaxClientHistoryTime);
+                    .Where(history => history.Time >= DateTime.UtcNow - applicationConfiguration.MaxClientHistoryTime);
             }
 
-            if (ViewBag.Maps?.Count == 0)
+            if (ViewBag.Maps?.Count is 0)
             {
                 return Json(counts.ToList());
             }

@@ -48,12 +48,11 @@ namespace IW4MAdmin.Application.Commands
                 return;
             }
 
-            foreach (var client in players)
-            {
-                gameEvent.Origin.Tell(_translationLookup["COMMANDS_FIND_FORMAT_V2"].FormatExt(client.Name,
-                    client.ClientId, Utilities.ConvertLevelToColor((EFClient.Permission) client.LevelInt, client.Level),
-                    client.IPAddress, (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture()));
-            }
+            var messages = players.Select(client => _translationLookup["COMMANDS_FIND_FORMAT_V2"].FormatExt(client.Name,
+                client.ClientId, Utilities.ConvertLevelToColor((EFClient.Permission)client.LevelInt, client.Level),
+                client.IPAddress, (TimeProvider.System.GetUtcNow() - client.LastConnection).HumanizeForCurrentCulture()));
+
+            await gameEvent.Origin.TellAsync(messages);
         }
     }
 }

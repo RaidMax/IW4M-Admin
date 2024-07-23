@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Humanizer.Localisation;
 using Microsoft.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -118,7 +119,7 @@ namespace IW4MAdmin.Application.Meta
                 ClientId = client.ClientId,
                 Key = _transLookup["WEBFRONT_PROFILE_META_PLAY_TIME"],
                 Value = friendlyTime.HumanizeForCurrentCulture(),
-                ToolTipText = $"{friendlyTime.TotalHours:N1} hour(s)",
+                ToolTipText = friendlyTime.HumanizeForCurrentCulture(maxUnit: TimeUnit.Hour),
                 ShouldDisplay = true,
                 Order = 8,
                 Type = MetaType.Information

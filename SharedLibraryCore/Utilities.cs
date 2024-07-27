@@ -1375,7 +1375,7 @@ namespace SharedLibraryCore
         public static void ExecuteAfterDelay(this Func<CancellationToken, Task> action, int delayMs,
             CancellationToken token = default) => ExecuteAfterDelay(delayMs, action, token);
 
-        public static async Task<string> PromptClientInput(this EFClient client, string prompt, Func<string, Task<bool>> validator,
+        public static async Task<string> PromptClientInput(this EFClient client, string[] prompt, Func<string, Task<bool>> validator,
             CancellationToken token = default)
         {
             var clientResponse = new ManualResetEventSlim(false);
@@ -1384,7 +1384,7 @@ namespace SharedLibraryCore
             try
             {
                 IGameEventSubscriptions.ClientMessaged += OnResponse;
-                await client.TellAsync([prompt], token);
+                await client.TellAsync(prompt, token);
 
                 using var tokenSource = new CancellationTokenSource(DefaultCommandTimeout);
                 using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(tokenSource.Token, token);
@@ -1419,7 +1419,7 @@ namespace SharedLibraryCore
                 }
                 else
                 {
-                    await client.TellAsync([prompt], cancellationToken);
+                    await client.TellAsync(prompt, cancellationToken);
                 }
             }
         }

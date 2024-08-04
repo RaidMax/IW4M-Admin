@@ -1375,27 +1375,31 @@ namespace SharedLibraryCore
         public static void ExecuteAfterDelay(this Func<CancellationToken, Task> action, int delayMs,
             CancellationToken token = default) => ExecuteAfterDelay(delayMs, action, token);
 
-        public static async Task<string> PromptClientInput(this EFClient client, string[] prompt, Func<string, Task<bool>> validator,
-            CancellationToken token = default)
+        public static async Task<ParsedInputResult<TResult>> PromptClientInput<TResult>(this EFClient client, string[] prompts,
+            Func<string, Task<ParsedInputResult<TResult>>> parser, string tokenExpiredMessage, CancellationToken token = default)
         {
             var clientResponse = new ManualResetEventSlim(false);
-            string response = null;
+            ParsedInputResult<TResult>? response = null;
 
             try
             {
                 IGameEventSubscriptions.ClientMessaged += OnResponse;
-                await client.TellAsync(prompt, token);
+                await client.TellAsync(prompts, token);
 
                 using var tokenSource = new CancellationTokenSource(DefaultCommandTimeout);
                 using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(tokenSource.Token, token);
 
-                clientResponse.Wait(linkedTokenSource.Token);
+                try
+                {
+                    clientResponse.Wait(linkedTokenSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    await client.TellAsync([tokenExpiredMessage], token);
+                    return new ParsedInputResult<TResult> { ErrorMessages = [tokenExpiredMessage] };
+                }
 
                 return response;
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
             }
             finally
             {
@@ -1410,16 +1414,17 @@ namespace SharedLibraryCore
                     return;
                 }
 
-                response = messageEvent.Message;
+                response = await parser(messageEvent.Message);
+                response.RawInput = messageEvent.Message;
 
-                if (await validator(response))
+                if (response.ErrorMessages.Count is 0)
                 {
                     // ReSharper disable once AccessToDisposedClosure
                     clientResponse.Set();
                 }
                 else
                 {
-                    await client.TellAsync(prompt, cancellationToken);
+                    await client.TellAsync(response.ErrorMessages.Concat(prompts), cancellationToken);
                 }
             }
         }

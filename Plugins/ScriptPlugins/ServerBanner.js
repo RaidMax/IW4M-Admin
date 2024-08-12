@@ -124,6 +124,9 @@ const plugin = {
                     'csgo': {
                         right: colorLeft
                     },
+                    'h2m': {
+                        right: colorLeft
+                    },
                 };
 
                 const servers = plugin.manager.servers;

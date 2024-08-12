@@ -614,10 +614,10 @@
         }
       ]
     },
-{
+    {
       "Game": "H1",
       "Gametypes": [
-	{
+        {
           "Name": "conf",
           "Alias": "Kill Confirmed"
         },
@@ -637,11 +637,11 @@
           "Name": "dom",
           "Alias": "Domination"
         },
-	{
+        {
           "Name": "gun",
           "Alias": "Gun Game"
         },
-	{
+        {
           "Name": "hp",
           "Alias": "Hardpoint"
         },
@@ -662,7 +662,56 @@
           "Alias": "Team Deathmatch"
         }
       ]
-}
+    },
+    {
+      "Game": "H2M",
+      "Gametypes": [
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "dd",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "hp",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Headquarters"
+        },
+        {
+          "Name": "sab",
+          "Alias": "Sabotage"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search & Destroy"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        }
+      ]
+    }
   ],
   "Maps": [
     {
@@ -864,7 +913,7 @@
         {
           "Alias": "Der Riese",
           "Name": "nazi_zombie_factory"
-        }	      
+        }
       ]
     },
     {
@@ -1106,7 +1155,7 @@
           "Alias": "Seatown",
           "Name": "mp_seatown"
         },
-	{
+        {
           "Alias": "Mission",
           "Name": "mp_bravo"
         },
@@ -1125,7 +1174,7 @@
         {
           "Alias": "Lockdown",
           "Name": "mp_alpha"
-        }	      
+        }
       ]
     },
     {
@@ -1249,15 +1298,15 @@
         },
         {
           "Alias": "Call of the Dead",
-          "Name":  "zombie_coast"
+          "Name": "zombie_coast"
         },
         {
           "Alias": "Shangri-La",
-          "Name":  "zombie_temple"
+          "Name": "zombie_temple"
         },
         {
-          "Alias": "Moon", 
-          "Name":  "zombie_moon"
+          "Alias": "Moon",
+          "Name": "zombie_moon"
         },
         {
           "Alias": "Nacht Der Untoten",
@@ -1274,7 +1323,7 @@
         {
           "Alias": "Der Riese",
           "Name": "zombie_cod5_factory"
-        }	      
+        }
       ]
     },
     {
@@ -1722,67 +1771,67 @@
           "Alias": "Outlaw",
           "Name": "mp_western"
         },
-	{
+        {
           "Alias": "Fringe Night",
           "Name": "mp_veiled_heyday"
         },
-	{
+        {
           "Alias": "Redwood Snow",
           "Name": "mp_redwood_ice"
         },
-	{
+        {
           "Alias": "Shadows of Evil",
           "Name": "zm_zod"
         },
-	{
+        {
           "Alias": "Der Eisendrache",
           "Name": "zm_castle"
         },
-	{
+        {
           "Alias": "Zetsubou No Shima",
           "Name": "zm_island"
         },
-	{
+        {
           "Alias": "Gorod Krovi",
           "Name": "zm_stalingrad"
         },
-	{
+        {
           "Alias": "Revelations",
           "Name": "zm_genesis"
         },
-	{
+        {
           "Alias": "Ascension",
           "Name": "zm_cosmodrome"
         },
-	{
+        {
           "Alias": "Kino der Toten",
           "Name": "zm_theater"
         },
-	{
+        {
           "Alias": "Moon",
           "Name": "zm_moon"
-        },	
-	{
+        },
+        {
           "Alias": "Nacht der Untoten",
           "Name": "zm_prototype"
         },
-	{
+        {
           "Alias": "Origins",
           "Name": "zm_tomb"
         },
-	{
+        {
           "Alias": "Shangri-La",
           "Name": "zm_temple"
-        },	
-	{
+        },
+        {
           "Alias": "Shi No Numa",
           "Name": "zm_sumpf"
         },
-	{
+        {
           "Alias": "The Giant",
           "Name": "zm_factory"
         },
-	{
+        {
           "Alias": "Verrückt",
           "Name": "zm_asylum"
         }
@@ -2158,7 +2207,228 @@
           "Name": "mp_bog_summer"
         }
       ]
-    },  
+    },
+    {
+      "Game": "H2M",
+      "Maps": [
+        {
+          "Alias": "Ambush",
+          "Name": "mp_convoy"
+        },
+        {
+          "Alias": "Backlot",
+          "Name": "mp_backlot"
+        },
+        {
+          "Alias": "Bloc",
+          "Name": "mp_bloc"
+        },
+        {
+          "Alias": "Bog",
+          "Name": "mp_bog"
+        },
+        {
+          "Alias": "Countdown",
+          "Name": "mp_countdown"
+        },
+        {
+          "Alias": "Crash",
+          "Name": "mp_crash"
+        },
+        {
+          "Alias": "Crossfire",
+          "Name": "mp_crossfire"
+        },
+        {
+          "Alias": "District",
+          "Name": "mp_citystreets"
+        },
+        {
+          "Alias": "Downpour",
+          "Name": "mp_farm"
+        },
+        {
+          "Alias": "Overgrown",
+          "Name": "mp_overgrown"
+        },
+        {
+          "Alias": "Pipeline",
+          "Name": "mp_pipeline"
+        },
+        {
+          "Alias": "Shipment",
+          "Name": "mp_shipment"
+        },
+        {
+          "Alias": "Showdown",
+          "Name": "mp_showdown"
+        },
+        {
+          "Alias": "Strike",
+          "Name": "mp_strike"
+        },
+        {
+          "Alias": "Vacant",
+          "Name": "mp_vacant"
+        },
+        {
+          "Alias": "Wet Work",
+          "Name": "mp_cargoship"
+        },
+        {
+          "Alias": "Winter Crash",
+          "Name": "mp_crash_snow"
+        },
+        {
+          "Alias": "Broadcast",
+          "Name": "mp_broadcast"
+        },
+        {
+          "Alias": "Creek",
+          "Name": "mp_creek"
+        },
+        {
+          "Alias": "Chinatown",
+          "Name": "mp_carentan"
+        },
+        {
+          "Alias": "Killhouse",
+          "Name": "mp_killhouse"
+        },
+        {
+          "Alias": "Day Break",
+          "Name": "mp_farm_spring"
+        },
+        {
+          "Alias": "Beach Bog",
+          "Name": "mp_bog_summer"
+        },
+        {
+          "Alias": "Airport",
+          "Name": "airport"
+        },
+        {
+          "Alias": "Blizzard",
+          "Name": "cliffhanger"
+        },
+        {
+          "Alias": "Contingency",
+          "Name": "contingency"
+        },
+        {
+          "Alias": "DC Burning",
+          "Name": "dcburning"
+        },
+        {
+          "Alias": "Dumpsite",
+          "Name": "boneyard"
+        },
+        {
+          "Alias": "Gulag",
+          "Name": "gulag"
+        },
+        {
+          "Alias": "Oilrig",
+          "Name": "oilrig"
+        },
+        {
+          "Alias": "Safehouse",
+          "Name": "estate"
+        },
+        {
+          "Alias": "Whiskey Hotel",
+          "Name": "dc_whitehouse"
+        },
+        {
+          "Alias": "Afghan",
+          "Name": "mp_afghan"
+        },
+        {
+          "Alias": "Bailout",
+          "Name": "mp_complex"
+        },
+        {
+          "Alias": "Carnival",
+          "Name": "mp_abandon"
+        },
+        {
+          "Alias": "Derail",
+          "Name": "mp_derail"
+        },
+        {
+          "Alias": "Estate",
+          "Name": "mp_estate"
+        },
+        {
+          "Alias": "Favela",
+          "Name": "mp_favela"
+        },
+        {
+          "Alias": "Fuel",
+          "Name": "mp_fuel2"
+        },
+        {
+          "Alias": "Highrise",
+          "Name": "mp_highrise"
+        },
+        {
+          "Alias": "Invasion",
+          "Name": "mp_invasion"
+        },
+        {
+          "Alias": "Karachi",
+          "Name": "mp_checkpoint"
+        },
+        {
+          "Alias": "Quarry",
+          "Name": "mp_quarry"
+        },
+        {
+          "Alias": "Rundown",
+          "Name": "mp_rundown"
+        },
+        {
+          "Alias": "Rust",
+          "Name": "mp_rust"
+        },
+        {
+          "Alias": "Salvage",
+          "Name": "mp_compact"
+        },
+        {
+          "Alias": "Scrapyard",
+          "Name": "mp_boneyard"
+        },
+        {
+          "Alias": "Skidrow",
+          "Name": "mp_nightshift"
+        },
+        {
+          "Alias": "Storm",
+          "Name": "mp_storm"
+        },
+        {
+          "Alias": "Sub Base",
+          "Name": "mp_subbase"
+        },
+        {
+          "Alias": "Terminal",
+          "Name": "mp_terminal"
+        },
+        {
+          "Alias": "Trailer Park",
+          "Name": "mp_trailerpark"
+        },
+        {
+          "Alias": "Underpass",
+          "Name": "mp_underpass"
+        },
+        {
+          "Alias": "Wasteland",
+          "Name": "mp_brecourt"
+        }
+      ]
+    },
     {
       "Game": "CSGO",
       "Maps": [

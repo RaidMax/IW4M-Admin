@@ -18,6 +18,7 @@
             CSGO = 10,
             H1 = 11,
             L4D2 = 12,
+            H2M = 13
         }
         
         public enum ConnectionType

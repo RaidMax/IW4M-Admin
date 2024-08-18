@@ -82,17 +82,6 @@ namespace WebfrontCore
             var mvcBuilder = services.AddMvc(options => options.SuppressAsyncSuffixInActionNames = false);
             services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 
-#if DEBUG
-            {
-                mvcBuilder = mvcBuilder.AddRazorRuntimeCompilation();
-                services.Configure<RazorViewEngineOptions>(_options =>
-                {
-                    _options.ViewLocationFormats.Add(@"/Views/Plugins/{1}/{0}" + RazorViewEngine.ViewExtension);
-                    _options.ViewLocationFormats.Add("/Views/Plugins/Stats/Advanced.cshtml");
-                });
-            }
-#endif
-
             foreach (var asm in pluginAssemblies())
             {
                 mvcBuilder.AddApplicationPart(asm);

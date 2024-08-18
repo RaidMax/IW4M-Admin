@@ -20,9 +20,30 @@ if [ ! -f "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconi
     sed -i 's#../fonts/#/font/#g' "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss"
 fi
 
-echo compiling scss files
+echo "checking for Excubo.WebCompiler..."
 
-dotnet tool install Excubo.WebCompiler --global
+toolExists=$(dotnet tool list -g | grep "Excubo.WebCompiler")
+
+if [[ ! -z "$toolExists" ]]; then
+  installedVersion=$(echo "$toolExists" | grep -oE "Excubo.WebCompiler\s+(\d+\.\d+\.\d+)" | grep -oE "\d+\.\d+\.\d+")
+  latestVersion=$(curl -s "https://api.nuget.org/v3-flatcontainer/excubo.webcompiler/index.json" | jq -r '.versions | last')
+
+  echo "installed version: $installedVersion"
+  echo "latest version: $latestVersion"
+
+  if [[ "$latestVersion" != "$installedVersion" && "$(printf '%s\n%s' "$installedVersion" "$latestVersion" | sort -V | head -n 1)" == "$installedVersion" ]]; then
+    echo "updating Excubo.WebCompiler to version $latestVersion..."
+    dotnet tool update Excubo.WebCompiler --global || echo "failed to update Excubo.WebCompiler. Using existing version."
+  else
+    echo "Excubo.WebCompiler is already up-to-date."
+  fi
+else
+  echo "installing Excubo.WebCompiler..."
+  dotnet tool install Excubo.WebCompiler --global
+fi
+
+echo "compiling scss files"
+
 webcompiler -r "$SolutionDir/WebfrontCore/wwwroot/css/src" -o "$SolutionDir/WebfrontCore/wwwroot/css/" -m disable -z disable
 webcompiler "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss" -o "$SolutionDir/WebfrontCore/wwwroot/css/" -m disable -z disable
 

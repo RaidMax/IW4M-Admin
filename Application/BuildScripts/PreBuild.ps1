@@ -16,9 +16,35 @@ if (-not (Test-Path "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/
     (Get-Content "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss") -replace '../fonts/', '/font/' | Set-Content "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss"
 }
 
+Write-Output "checking for Excubo.WebCompiler..."
+
+$toolExists = dotnet tool list -g | Where-Object { $_ -match "Excubo.WebCompiler" }
+
+if ($toolExists) {
+  $installedVersion = ($toolExists | Select-String -Pattern "Excubo.WebCompiler\s+(\d+\.\d+\.\d+)" -AllMatches).Matches.Groups[1].Value
+  $latestVersion = (Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/excubo.webcompiler/index.json" | ConvertFrom-Json).versions | Select-Object -Last 1
+
+  Write-Output "installed version: $installedVersion"
+  Write-Output "latest version: $latestVersion"
+
+  if ([version]$latestVersion -gt [version]$installedVersion) {
+    Write-Output "updating Excubo.WebCompiler to version $latestVersion..."
+    try {
+      dotnet tool update Excubo.WebCompiler --global
+    }
+    catch {
+      Write-Output "failed to update Excubo.WebCompiler. Using existing version."
+    }
+  } else {
+    Write-Output "Excubo.WebCompiler is already up-to-date."
+  }
+} else {
+  Write-Output "installing Excubo.WebCompiler..."
+  dotnet tool install Excubo.WebCompiler --global
+}
+
 Write-Output "compiling scss files"
 
-dotnet tool install Excubo.WebCompiler --global
 webcompiler -r "$SolutionDir/WebfrontCore/wwwroot/css/src" -o WebfrontCore/wwwroot/css/ -m disable -z disable
 webcompiler "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss" -o "$SolutionDir/WebfrontCore/wwwroot/css/" -m disable -z disable
 

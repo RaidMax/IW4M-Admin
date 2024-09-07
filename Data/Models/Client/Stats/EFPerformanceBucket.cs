@@ -4,12 +4,17 @@ namespace Data.Models.Client.Stats;
 
 public class EFPerformanceBucket
 {
-    [Key]
-    public int PerformanceBucketId { get; set; }
-    
+    [Key] public int PerformanceBucketId { get; set; }
+
+    /// <summary>
+    /// Identifier for Bucket
+    /// </summary>
     [MaxLength(256)]
-    public string BucketCode { get; set; }
-    
+    public string Code { get; set; }
+
+    /// <summary>
+    /// Friendly name for Bucket
+    /// </summary>
     [MaxLength(256)]
-    public string BucketName { get; set; }
+    public string Name { get; set; }
 }

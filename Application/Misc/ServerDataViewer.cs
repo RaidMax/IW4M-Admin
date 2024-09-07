@@ -29,11 +29,12 @@ namespace IW4MAdmin.Application.Misc
         private readonly StatManager _statManager;
 
         private readonly TimeSpan? _cacheTimeSpan =
-            Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?) TimeSpan.FromMinutes(10);
+            Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?)TimeSpan.FromMinutes(10);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
-            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache, StatManager statManager)
+            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache,
+            IDataValueCache<EFClientRankingHistory, int> rankedClientsCache, StatManager statManager)
         {
             _logger = logger;
             _snapshotCache = snapshotCache;
@@ -43,16 +44,17 @@ namespace IW4MAdmin.Application.Misc
             _statManager = statManager;
         }
 
-        public async Task<(int?, DateTime?)> 
+        public async Task<(int?, DateTime?)>
             MaxConcurrentClientsAsync(long? serverId = null, Reference.Game? gameCode = null, TimeSpan? overPeriod = null,
-            CancellationToken token = default)
+                CancellationToken token = default)
         {
-            _snapshotCache.SetCacheItem(async (snapshots, ids, cancellationToken) =>
+            _snapshotCache.SetCacheItem(async (snapshots, idsList, cancellationToken) =>
             {
                 Reference.Game? game = null;
                 long? id = null;
 
-                if (ids.Any())
+                var ids = idsList.ToList();
+                if (ids.Count is not 0)
                 {
                     game = (Reference.Game?)ids.First();
                     id = (long?)ids.Last();
@@ -102,12 +104,11 @@ namespace IW4MAdmin.Application.Misc
                 _logger.LogDebug("Max concurrent clients since {Start} is {Clients}", oldestEntry, maxClients);
 
                 return (maxClients, maxClientsTime);
-            }, nameof(MaxConcurrentClientsAsync), new object[] { gameCode, serverId }, _cacheTimeSpan, true);
+            }, nameof(MaxConcurrentClientsAsync), [gameCode, serverId], _cacheTimeSpan, true);
 
             try
             {
-                return await _snapshotCache.GetCacheItem(nameof(MaxConcurrentClientsAsync),
-                    new object[] { gameCode, serverId }, token);
+                return await _snapshotCache.GetCacheItem(nameof(MaxConcurrentClientsAsync), [gameCode, serverId], token);
             }
             catch (Exception ex)
             {
@@ -116,22 +117,24 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public async Task<(int, int)> ClientCountsAsync(TimeSpan? overPeriod = null, Reference.Game? gameCode = null, CancellationToken token = default)
+        public async Task<(int, int)> ClientCountsAsync(TimeSpan? overPeriod = null, Reference.Game? gameCode = null,
+            CancellationToken token = default)
         {
             _serverStatsCache.SetCacheItem(async (set, ids, cancellationToken) =>
             {
                 Reference.Game? game = null;
-                
+
                 if (ids.Any())
                 {
                     game = (Reference.Game?)ids.First();
                 }
-                
+
                 var count = await set.CountAsync(item => game == null || item.GameName == game,
                     cancellationToken);
                 var startOfPeriod =
                     DateTime.UtcNow.AddHours(-overPeriod?.TotalHours ?? -24);
-                var recentCount = await set.CountAsync(client => (game == null || client.GameName == game) && client.LastConnection >= startOfPeriod,
+                var recentCount = await set.CountAsync(
+                    client => (game == null || client.GameName == game) && client.LastConnection >= startOfPeriod,
                     cancellationToken);
 
                 return (count, recentCount);
@@ -173,7 +176,10 @@ namespace IW4MAdmin.Application.Misc
                 {
                     ServerId = byServer.Key,
                     ClientCounts = byServer.Select(snapshot => new ClientCountSnapshot
-                        { Time = snapshot.CapturedAt, ClientCount = snapshot.ClientCount, ConnectionInterrupted = snapshot.ConnectionInterrupted ?? false, Map = snapshot.MapName}).ToList()
+                    {
+                        Time = snapshot.CapturedAt, ClientCount = snapshot.ClientCount,
+                        ConnectionInterrupted = snapshot.ConnectionInterrupted ?? false, Map = snapshot.MapName
+                    }).ToList()
                 }).ToList();
             }, nameof(_clientHistoryCache), TimeSpan.MaxValue);
 
@@ -184,35 +190,36 @@ namespace IW4MAdmin.Application.Misc
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(ClientHistoryAsync));
-                return Enumerable.Empty<ClientHistoryInfo>();
+                return [];
             }
         }
 
-        public async Task<int> RankedClientsCountAsync(long? serverId = null, string performanceBucket = null, CancellationToken token = default)
+        public async Task<int> RankedClientsCountAsync(long? serverId = null, string performanceBucketCode = null,
+            CancellationToken token = default)
         {
-            _rankedClientsCache.SetCacheItem((set, ids, cancellationToken) =>
+            _rankedClientsCache.SetCacheItem((set, idsList, cancellationToken) =>
             {
                 long? id = null;
                 string bucket = null;
-                
-                if (ids.Any())
+
+                var ids = idsList.ToList();
+                if (ids.Count is not 0)
                 {
                     id = (long?)ids.First();
                 }
 
-                if (ids.Count() == 2)
+                if (ids.Count is 2)
                 {
                     bucket = (string)ids.Last();
                 }
 
                 return _statManager.GetBucketConfig(serverId)
                     .ContinueWith(result => _statManager.GetTotalRankedPlayers(id, bucket), cancellationToken).Result;
+            }, nameof(_rankedClientsCache), [serverId, performanceBucketCode], _cacheTimeSpan);
 
-            }, nameof(_rankedClientsCache), new object[] { serverId, performanceBucket }, _cacheTimeSpan);
-            
             try
             {
-                return await _rankedClientsCache.GetCacheItem(nameof(_rankedClientsCache), new object[] { serverId, performanceBucket }, token);
+                return await _rankedClientsCache.GetCacheItem(nameof(_rankedClientsCache), [serverId, performanceBucketCode], token);
             }
             catch (Exception ex)
             {

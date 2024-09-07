@@ -63,7 +63,7 @@ namespace Stats.Client
                 { 
                     var bucketConfig =
                         _configuration.PerformanceBuckets.FirstOrDefault(bucket =>
-                            bucket.Name == performanceBucket) ?? new PerformanceBucketConfiguration();
+                            bucket.Code == performanceBucket) ?? new PerformanceBucketConfiguration();
 
                     var oldestPerf = DateTime.UtcNow - bucketConfig.RankingExpiration;
                     var performances = await iqPerformances.Where(s => s.ServerId == serverId)
@@ -76,42 +76,43 @@ namespace Stats.Client
                     distributions.Add(serverId.ToString(), distributionParams);
                 }
 
-                foreach (var performanceBucketGroup in _appConfig.Servers.Select(server => server.PerformanceBucket).Distinct())
+                foreach (var performanceBucket in _appConfig.Servers.Select(server => server.PerformanceBucketCode).Distinct())
                 {
-                    var performanceBucket = performanceBucketGroup ?? "null";
+                    // TODO: ?
+                    var performanceBucketCode = performanceBucket ?? "null";
 
                     var bucketConfig =
                         _configuration.PerformanceBuckets.FirstOrDefault(bucket =>
-                            bucket.Name == performanceBucket) ?? new PerformanceBucketConfiguration();
+                            bucket.Code == performanceBucketCode) ?? new PerformanceBucketConfiguration();
 
                     var oldestPerf = DateTime.UtcNow - bucketConfig.RankingExpiration;
                     var performances = await iqPerformances
-                        .Where(perf => perf.Server.PerformanceBucket == performanceBucket)
+                        .Where(perf => perf.Server.PerformanceBucket.Code == performanceBucketCode)
                         .Where(perf => perf.TimePlayed >= bucketConfig.ClientMinPlayTime.TotalSeconds)
                         .Where(perf => perf.UpdatedAt >= oldestPerf)
                         .Where(perf => perf.Skill < 999999)
                         .Select(s => s.EloRating * 1 / 3.0 + s.Skill * 2 / 3.0)
                         .ToListAsync(token);
                     var distributionParams = performances.GenerateDistributionParameters();
-                    distributions.Add(performanceBucket, distributionParams);
+                    distributions.Add(performanceBucketCode, distributionParams);
                 }
 
                 return distributions;
             }, DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromHours(1));
 
-            foreach (var performanceBucket in _appConfig.Servers.Select(s => s.PerformanceBucket).Distinct())
+            foreach (var performanceBucket in _appConfig.Servers.Select(s => s.PerformanceBucketCode).Distinct())
             {
                 _maxZScoreCache.SetCacheItem(async (set, ids, token) =>
                     {
                         var validPlayTime = _configuration.TopPlayersMinPlayTime;
                         var oldestStat = DateTime.UtcNow - Extensions.FifteenDaysAgo();
-                        var perfBucket = (string)ids.FirstOrDefault();
+                        var localPerformanceBucket = (string)ids.FirstOrDefault();
 
-                        if (!string.IsNullOrEmpty(perfBucket))
+                        if (!string.IsNullOrEmpty(localPerformanceBucket))
                         {
                             var bucketConfig =
                                 _configuration.PerformanceBuckets.FirstOrDefault(cfg =>
-                                    cfg.Name == perfBucket) ?? new PerformanceBucketConfiguration();
+                                    cfg.Code == localPerformanceBucket) ?? new PerformanceBucketConfiguration();
 
                             validPlayTime = (int)bucketConfig.ClientMinPlayTime.TotalSeconds;
                             oldestStat = bucketConfig.RankingExpiration;
@@ -121,7 +122,7 @@ namespace Stats.Client
                             .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(validPlayTime, oldestStat))
                             .Where(s => s.Skill > 0)
                             .Where(s => s.EloRating >= 0)
-                            .Where(stat => perfBucket == stat.Server.PerformanceBucket)
+                            .Where(stat => localPerformanceBucket == stat.Server.PerformanceBucket.Code)
                             .GroupBy(stat => stat.ClientId)
                             .Select(group =>
                                 group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed))
@@ -170,7 +171,7 @@ namespace Stats.Client
                 await using var context = _contextFactory.CreateContext(false);
                 _serverIds.AddRange(await context.Servers
                     .Where(s => s.EndPoint != null && s.HostName != null)
-                    .Select(s => new Tuple<long, string>(s.ServerId, s.PerformanceBucket))
+                    .Select(s => new Tuple<long, string>(s.ServerId, s.PerformanceBucket.Code))
                     .ToListAsync());
             }
         }

@@ -938,9 +938,9 @@ namespace IW4MAdmin
                 context.Entry(gameServer).Property(property => property.HostName).IsModified = true;
             }
 
-            if (gameServer.PerformanceBucket != PerformanceBucket)
+            if (gameServer.PerformanceBucket.Code != PerformanceCode)
             {
-                gameServer.PerformanceBucket = PerformanceBucket;
+                gameServer.PerformanceBucket.Code = PerformanceCode;
                 context.Entry(gameServer).Property(property => property.PerformanceBucket).IsModified = true;
             }
 

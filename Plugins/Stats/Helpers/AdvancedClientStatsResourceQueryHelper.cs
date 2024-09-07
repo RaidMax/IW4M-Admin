@@ -63,8 +63,8 @@ namespace Stats.Helpers
             var iqHitStats = context.Set<EFClientHitStatistic>()
                 .Where(stat => stat.ClientId == query.ClientId);
 
-            iqHitStats = !string.IsNullOrEmpty(query.PerformanceBucket)
-                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket == query.PerformanceBucket)
+            iqHitStats = !string.IsNullOrEmpty(query.PerformanceBucketCode)
+                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket.Code == query.PerformanceBucketCode)
                 : iqHitStats.Where(stat => stat.ServerId == serverId);
 
             var hitStats = await iqHitStats
@@ -103,7 +103,7 @@ namespace Stats.Helpers
                 .Where(r => r.ClientId == clientInfo.ClientId)
                 .Where(r => r.ServerId == serverId)
                 .Where(r => r.Ranking != null)
-                .Where(r => r.PerformanceBucket == query.PerformanceBucket)
+                .Where(r => r.PerformanceBucket.Code == query.PerformanceBucketCode)
                 .OrderByDescending(r => r.CreatedDateTime)
                 .Take(100)
                 .Select(r => new { r.Newest, r.PerformanceMetric, r.ZScore, r.CreatedDateTime, r.Ranking })
@@ -119,7 +119,7 @@ namespace Stats.Helpers
             {
                 ClientId = query.ClientId,
                 ServerEndpoint = query.ServerEndpoint,
-                PerformanceBucket = query.PerformanceBucket
+                PerformanceBucketCode = query.PerformanceBucketCode
             })).Results.First();
 
             var mostRecentRanking = ratings.FirstOrDefault(ranking => ranking.Newest);
@@ -427,9 +427,9 @@ namespace Stats.Helpers
 
             var currentRanking = 0;
             int totalRankedClients;
-            string performanceBucket;
+            string performanceBucketCode;
 
-            if (string.IsNullOrEmpty(query.PerformanceBucket) && serverId is null)
+            if (string.IsNullOrEmpty(query.PerformanceBucketCode) && serverId is null)
             {
                 var maxPerformance = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == query.ClientId)
@@ -445,27 +445,27 @@ namespace Stats.Helpers
                 {
                     currentRanking = 0;
                     totalRankedClients = 0;
-                    performanceBucket = null;
+                    performanceBucketCode = null;
                 }
                 else
                 {
                     currentRanking =
-                        await statManager.GetClientOverallRanking(query.ClientId!.Value, null, maxPerformance.Key);
-                    totalRankedClients = await serverDataViewer.RankedClientsCountAsync(null, maxPerformance.Key);
-                    performanceBucket = maxPerformance.Key;
+                        await statManager.GetClientOverallRanking(query.ClientId!.Value, null, maxPerformance.Key.Code);
+                    totalRankedClients = await serverDataViewer.RankedClientsCountAsync(null, maxPerformance.Key.Code);
+                    performanceBucketCode = maxPerformance.Key.Code;
                 }
             }
             else
             {
-                performanceBucket = query.PerformanceBucket;
+                performanceBucketCode = query.PerformanceBucketCode;
                 currentRanking =
-                    await statManager.GetClientOverallRanking(query.ClientId!.Value, serverId, performanceBucket);
-                totalRankedClients = await serverDataViewer.RankedClientsCountAsync(serverId, performanceBucket);
+                    await statManager.GetClientOverallRanking(query.ClientId!.Value, serverId, performanceBucketCode);
+                totalRankedClients = await serverDataViewer.RankedClientsCountAsync(serverId, performanceBucketCode);
             }
 
             return new ResourceQueryHelperResult<ClientRankingInfo>
             {
-                Results = [new ClientRankingInfo(currentRanking, totalRankedClients, performanceBucket)]
+                Results = [new ClientRankingInfo(currentRanking, totalRankedClients, performanceBucketCode)]
             };
         }
     }

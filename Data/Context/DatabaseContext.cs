@@ -25,6 +25,7 @@ namespace Data.Context
 
         #region STATS
 
+        public DbSet<EFPerformanceBucket> PerformanceBuckets { get; set; }
         public DbSet<Models.Vector3> Vector3s { get; set; }
         public DbSet<EFACSnapshotVector3> SnapshotVector3s { get; set; }
         public DbSet<EFACSnapshot> ACSnapshots { get; set; }

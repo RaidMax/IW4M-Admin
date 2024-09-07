@@ -620,7 +620,7 @@ public class ZombieClientStateManager(
     }
 
     public async Task GetAdvancedStatsMetrics(Dictionary<int, List<EFMeta>> meta, long? serverId,
-        string performanceBucket,
+        string performanceBucketCode,
         bool isTopStats)
     {
         if (isTopStats || !meta.Any())
@@ -634,8 +634,8 @@ public class ZombieClientStateManager(
         var iqStats = context.ZombieClientStatAggregates
             .Where(stat => stat.ClientId == clientId);
 
-        iqStats = !string.IsNullOrEmpty(performanceBucket)
-            ? iqStats.Where(stat => stat.Server.PerformanceBucket == performanceBucket)
+        iqStats = !string.IsNullOrEmpty(performanceBucketCode)
+            ? iqStats.Where(stat => stat.Server.PerformanceBucket.Code == performanceBucketCode)
             : iqStats.Where(stat => stat.ServerId == serverId);
 
         var stats = await iqStats.Select(stat => new

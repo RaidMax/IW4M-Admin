@@ -115,7 +115,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return 0;
         }
 
-        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime, long? serverId = null, string performanceBucket = null)
+        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime, long? serverId = null, string performanceBucketCode = null)
         {
             var oldestDate = DateTime.UtcNow - oldestStat;
             return ranking => ranking.ServerId == serverId
@@ -124,7 +124,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                               && ranking.ZScore != null
                               && ranking.PerformanceMetric != null
                               && ranking.Newest
-                              && ranking.PerformanceBucket == performanceBucket
+                              && ranking.PerformanceBucket.Code == performanceBucketCode
                               && ranking.Client.TotalConnectionTime >= (int)minPlayTime.TotalSeconds;
         }
 
@@ -150,13 +150,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             public DateTime CreatedDateTime { get; set; }
         }
 
-        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null, string performanceBucket = null)
+        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null, string performanceBucketCode = null)
         {
             var bucketConfig = await GetBucketConfig(serverId);
 
             await using var context = _contextFactory.CreateContext(false);
             var clientIdsList = await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId, performanceBucket))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId, performanceBucketCode))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
                 .Select(ranking => ranking.ClientId)
                 .Skip(start)
@@ -170,7 +170,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var eachRank = await context.Set<EFClientRankingHistory>()
                     .Where(ranking => ranking.ClientId == clientId)
                     .Where(ranking => ranking.ServerId == serverId)
-                    .Where(ranking => ranking.PerformanceBucket == performanceBucket)
+                    .Where(ranking => ranking.PerformanceBucket.Code == performanceBucketCode)
                     .OrderByDescending(ranking => ranking.CreatedDateTime)
                     .Select(ranking => new RankingSnapshot
                     {
@@ -279,14 +279,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             foreach (var customMetricFunc in Plugin.ServerManager.CustomStatsMetrics)
             {
                 await customMetricFunc(finished.ToDictionary(kvp => kvp.ClientId, kvp => kvp.Metrics), serverId,
-                    performanceBucket, true);
+                    performanceBucketCode, true);
             }
 
             return finished;
         }
 
         public async Task<PerformanceBucketConfiguration> GetBucketConfig(long? serverId = null,
-            string bucketName = null)
+            string performanceBucketCode = null)
         {
             var defaultConfig = new PerformanceBucketConfiguration
             {
@@ -294,26 +294,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 RankingExpiration = DateTime.UtcNow - Extensions.FifteenDaysAgo()
             };
 
-            if (serverId is null && bucketName is null)
+            if (serverId is null && performanceBucketCode is null)
             {
                 return defaultConfig;
             }
 
-            if (bucketName is not null)
+            if (performanceBucketCode is not null)
             {
-                return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Name == bucketName) ??
+                return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Code == performanceBucketCode) ??
                        defaultConfig;
             }
 
             var performanceBucket =
-                (await _serverCache.FirstAsync(server => server.Id == serverId)).PerformanceBucket;
+                (await _serverCache.FirstAsync(server => server.Id == serverId))?.PerformanceBucket?.Code;
 
             if (string.IsNullOrEmpty(performanceBucket))
             {
                 return defaultConfig;
             }
 
-            return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Name == performanceBucket) ??
+            return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Code == performanceBucket) ??
                    defaultConfig;
         }
 
@@ -1269,7 +1269,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Include(stat => stat.Server)
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
-                .Where(stat => stat.Server.PerformanceBucket == bucketConfig.Name)
+                .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code)
                 .Where(stats => stats.UpdatedAt >= oldestStateDate)
                 .Where(stats => stats.TimePlayed >= (int)bucketConfig.ClientMinPlayTime.TotalSeconds)
                 .ToListAsync();
@@ -1294,7 +1294,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var aggregateRanking = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId != clientId)
-                .Where(stat => bucketConfig.Name == stat.Server.PerformanceBucket)
+                .Where(stat => bucketConfig.Code == stat.Server.PerformanceBucket.Code)
                 .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration))
                 .GroupBy(stat => stat.ClientId)
                 .Where(group =>
@@ -1303,7 +1303,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Select(c => c.Key)
                 .CountAsync();
 
-            var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore, bucketConfig.Name);
+            var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore, bucketConfig.Code);
 
             if (newPerformanceMetric == null)
             {
@@ -1312,19 +1312,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
+            // TODO: CACHE THE EFPERFORMANCEBUCKET SO WE DON'T NEED TO LOOK IT UP - THERE WILL BE A REALISTIC LIMIT TO HOW MANY BUCKETS SHOULD BE LIVE
+            var performanceBucketId = (await context.PerformanceBuckets.FirstOrDefaultAsync(x => x.Code == bucketConfig.Code))
+                ?.PerformanceBucketId;
+
             var aggregateRankingSnapshot = new EFClientRankingHistory
             {
                 ClientId = clientId,
                 ZScore = aggregateZScore,
                 Ranking = aggregateRanking,
                 PerformanceMetric = newPerformanceMetric,
-                PerformanceBucket = bucketConfig.Name,
+                PerformanceBucketId = performanceBucketId,
                 Newest = true,
             };
 
             context.Add(aggregateRankingSnapshot);
 
-            await PruneOldRankings(context, clientId, performanceBucket: bucketConfig.Name);
+            await PruneOldRankings(context, clientId, performanceBucketCode: bucketConfig.Code);
             await context.SaveChangesAsync();
         }
 
@@ -1355,18 +1359,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             await context.SaveChangesAsync();
         }
 
-        private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null, string performanceBucket = null)
+        private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null, string performanceBucketCode = null)
         {
             var totalRankingEntries = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
-                .Where(r => r.PerformanceBucket == performanceBucket)
+                .Where(r => r.PerformanceBucket.Code == performanceBucketCode)
                 .CountAsync();
 
             var mostRecent = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
-                .Where(r => r.PerformanceBucket == performanceBucket)
+                .Where(r => r.PerformanceBucket.Code == performanceBucketCode)
                 .FirstOrDefaultAsync(r => r.Newest);
 
             if (mostRecent != null)
@@ -1382,7 +1386,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var lastRating = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == clientId)
                     .Where(r => r.ServerId == serverId)
-                    .Where(r => r.PerformanceBucket == performanceBucket)
+                    .Where(r => r.PerformanceBucket.Code == performanceBucketCode)
                     .OrderBy(r => r.CreatedDateTime)
                     .FirstOrDefaultAsync();
 
@@ -1398,6 +1402,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// </summary>
         /// <param name="attackerStats">Stats of the attacker</param>
         /// <param name="victimStats">Stats of the victim</param>
+        /// <param name="attacker">Attacker</param>
+        /// <param name="victim">Victim</param>
         public void CalculateKill(EFClientStatistics attackerStats, EFClientStatistics victimStats,
             EFClient attacker, EFClient victim)
         {
@@ -1439,8 +1445,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             attackerStats.EloRating =
                 attackerEloRatingFunc?.Invoke(attacker, attackerStats) ?? attackerStats.EloRating;
             
-            var victimEloRatingFunc =
-                victim.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("EloRatingFunction");
+            // Unused? New code. TODO: Check if needed?
+            //var victimEloRatingFunc =
+            //    victim.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("EloRatingFunction");
 
             victimStats.EloRating =
                 attackerEloRatingFunc?.Invoke(victim, victimStats) ?? victimStats.EloRating;

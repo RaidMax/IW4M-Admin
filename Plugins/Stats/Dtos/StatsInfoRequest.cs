@@ -7,6 +7,6 @@
         /// </summary>
         public int? ClientId { get; set; }
         public string? ServerEndpoint { get; set; }
-        public string PerformanceBucket { get; set; }
+        public string PerformanceBucketCode { get; set; }
     }
 }

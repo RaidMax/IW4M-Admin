@@ -431,6 +431,7 @@ namespace IW4MAdmin.Application
                 foreach (var serverConfig in _appConfig.Servers)
                 {
                     ConfigurationMigration.ModifyLogPath020919(serverConfig);
+                    ConfigurationMigration.UpdatePlutoniumT6Parser(serverConfig);
 
                     if (serverConfig.RConParserVersion == null || serverConfig.EventParserVersion == null)
                     {
@@ -447,6 +448,8 @@ namespace IW4MAdmin.Application
                         serverConfig.ModifyParsers();
                     }
                 }
+                
+                ConfigHandler.Set(_appConfig);
                 await ConfigHandler.Save();
             }
 

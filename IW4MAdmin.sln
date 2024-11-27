@@ -33,7 +33,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 		Plugins\ScriptPlugins\ParserIW4x.js = Plugins\ScriptPlugins\ParserIW4x.js
 		Plugins\ScriptPlugins\ParserIW6x.js = Plugins\ScriptPlugins\ParserIW6x.js
 		Plugins\ScriptPlugins\ParserPIW5.js = Plugins\ScriptPlugins\ParserPIW5.js
-		Plugins\ScriptPlugins\ParserPT6.js = Plugins\ScriptPlugins\ParserPT6.js
 		Plugins\ScriptPlugins\ParserRektT5M.js = Plugins\ScriptPlugins\ParserRektT5M.js
 		Plugins\ScriptPlugins\ParserT4.js = Plugins\ScriptPlugins\ParserT4.js
 		Plugins\ScriptPlugins\ParserT7.js = Plugins\ScriptPlugins\ParserT7.js

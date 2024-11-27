@@ -86,6 +86,22 @@ namespace IW4MAdmin.Application.Migration
             }
         }
 
+        public static void UpdatePlutoniumT6Parser(SharedLibraryCore.Configuration.ServerConfiguration config)
+        {
+            if (config.RConParserVersion != "Plutonium T6 Parser")
+            {
+                return;
+            }
+
+            if (!"Plutonium T6 parser requires an update. Would you like to automatically update now".PromptBool())
+            {
+                return;
+            }
+
+            config.RConParserVersion = "Plutonium T6 Parser (2024)";
+            config.EventParserVersion = "Plutonium T6 Parser (2024)";
+        }
+
         public static void RemoveObsoletePlugins20210322()
         {
             var files = new[] {"StatsWeb.dll", "StatsWeb.Views.dll", "IW4ScriptCommands.dll"};

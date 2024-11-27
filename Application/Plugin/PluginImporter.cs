@@ -100,7 +100,7 @@ namespace IW4MAdmin.Application.Plugin
             var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
             _logger.LogDebug("Discovered {Count} potential plugin assemblies", dllFileNames.Length);
 
-            if (!dllFileNames.Any())
+            if (dllFileNames.Length is 0)
             {
                 return (pluginTypes, commandTypes, configurationTypes);
             }
@@ -125,7 +125,7 @@ namespace IW4MAdmin.Application.Plugin
                     assembly.OrderByDescending(asm => asm.GetName().Version).First());
 
             var eligibleAssemblyTypes = assemblies.Concat(AppDomain.CurrentDomain.GetAssemblies()
-                    .Where(asm => !new[] { "IW4MAdmin", "SharedLibraryCore" }.Contains(asm.GetName().Name)))
+                    .Where(asm => !new[] { "IW4MAdmin", "SharedLibraryCore", "Stats" }.Contains(asm.GetName().Name)))
                 .SelectMany(asm =>
                 {
                     try
@@ -134,7 +134,7 @@ namespace IW4MAdmin.Application.Plugin
                     }
                     catch
                     {
-                        return Enumerable.Empty<Type>();
+                        return [];
                     }
                 }).Where(type =>
                     FilterTypes.Any(filterType => type.GetInterface(filterType.Name, false) != null) ||

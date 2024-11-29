@@ -9,6 +9,7 @@ on:
       - Data/**
       - SharedLibraryCore/**
       - Plugins/**
+      - Integrations/**
       - .github/workflows/build_application.yml
   pull_request:
     branches: [ develop ]

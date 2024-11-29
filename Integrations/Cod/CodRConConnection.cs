@@ -34,6 +34,7 @@ namespace Integrations.Cod
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
         private readonly int _retryAttempts;
+        private static readonly Server.Game[] RconDelayGames = [Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6];
 
         public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log,
             Encoding gameEncoding, int retryAttempts)
@@ -377,9 +378,9 @@ namespace Integrations.Cod
 
             await ReceiveAndStoreSocketData(rconSocket, token, connectionState);
 
-            if (_parser.GameName is Server.Game.IW3 or Server.Game.T4)
+            if (RconDelayGames.Contains(_parser.GameName))
             {
-                await Task.Delay(100, token); // CoD4x shenanigans 
+                await Task.Delay(100, token); 
             }
 
             while (rconSocket.Available > 0)

@@ -32,20 +32,20 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
             lastMap = elem;
         }
 
-        if (elem.connectionInterrupted) {
+        if (elem.ci) {
             offlineTime.push({
-                clientCount: maxClients,
-                timeString: elem.ts
+                cc: maxClients,
+                ts: elem.ts
             });
 
             onlineTime.push({
-                clientCount: 0,
-                timeString: elem.ts
+                cc: 0,
+                ts: elem.ts
             })
         } else {
             offlineTime.push({
-                clientCount: 0,
-                timeString: elem.ts
+                cc: 0,
+                ts: elem.ts
             });
 
             onlineTime.push(elem)

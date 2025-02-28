@@ -96,7 +96,7 @@ IsBotWrapper( client )
 
 GetXuidWrapper()
 {
-    return self GetXUID();
+    return self GetGuid();
 }
 
 _GetPlayerFromClientNum( clientNum )

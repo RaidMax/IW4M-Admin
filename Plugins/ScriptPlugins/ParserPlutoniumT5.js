@@ -2,7 +2,7 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'RaidMax',
+    author: 'RaidMax, diamante0018, ineedbots',
     version: 0.3,
     name: 'Plutonium T5 Parser (2025)',
     isParser: true,

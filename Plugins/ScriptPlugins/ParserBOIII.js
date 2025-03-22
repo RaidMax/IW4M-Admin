@@ -2,7 +2,7 @@ var rconParser;
 var eventParser;
 
 var plugin = {
-    author: 'Diamante',
+    author: 'diamante0018',
     version: 0.3,
     name: 'BOIII Parser',
     isParser: true,

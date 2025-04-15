@@ -2813,6 +2813,26 @@
         {
           "Alias": "Precinct",
           "Name": "mp_metropolis"
+        },
+        {
+          "Alias": "Zombies in Spaceland",
+          "Name": "cp_zmb"
+        },
+        {
+          "Alias": "Shaolin Shuffle",
+          "Name": "cp_disco"
+        },
+        {
+          "Alias": "The Beast From Beyond",
+          "Name": "cp_final"
+        },
+        {
+          "Alias": "Rave in the Redwoods",
+          "Name": "cp_rave"
+        },
+        {
+          "Alias": "Radioactive Thing",
+          "Name": "cp_town"
         }
       ]
     }

@@ -127,6 +127,9 @@ const plugin = {
                     'h2m': {
                         right: colorLeft
                     },
+                    'iw7': {
+                        right: colorLeft
+                    }
                 };
 
                 const servers = plugin.manager.servers;

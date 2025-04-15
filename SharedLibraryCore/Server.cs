@@ -37,7 +37,8 @@ namespace SharedLibraryCore
             CSGO = 10,
             H1 = 11,
             L4D2 = 12,
-            H2M = 13
+            H2M = 13,
+            IW7 = 14
         }
 
         // only here for performance

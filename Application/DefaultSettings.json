@@ -723,6 +723,83 @@
           "Alias": "Team Deathmatch"
         }
       ]
+    },
+    {
+      "Game": "IW7",
+      "Gametypes": [
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        },
+        {
+          "Name": "front",
+          "Alias": "Frontline"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search and Destroy"
+        },
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "dm",
+          "Alias": "Free For All"
+        },
+        {
+          "Name": "koth",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "tdef",
+          "Alias": "Defender"
+        },
+        {
+          "Name": "ball",
+          "Alias": "Uplink"
+        },
+        {
+          "Name": "dd",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture The Flag"
+        },
+        {
+          "Name": "sr",
+          "Alias": "Search and Rescue"
+        },
+        {
+          "Name": "siege",
+          "Alias": "Reinforce"
+        },
+        {
+          "Name": "grind",
+          "Alias": "Grind"
+        },
+        {
+          "Name": "infect",
+          "Alias": "Infected"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "grnd",
+          "Alias": "Drop Zone"
+        },
+        {
+          "Name": "zombies",
+          "Alias": "Zombies"
+        }
+      ]
     }
   ],
   "Maps": [
@@ -2599,6 +2676,163 @@
         {
           "Name": "dz_sirocco",
           "Alias": "Sirocco"
+        }
+      ]
+    },
+    {
+      "Game": "IW7",
+      "Maps": [
+        {
+          "Alias": "Frontier",
+          "Name": "mp_frontier"
+        },
+        {
+          "Alias": "Dominion",
+          "Name": "mp_afghan"
+        },
+        {
+          "Alias": "Depot 22",
+          "Name": "mp_depot"
+        },
+        {
+          "Alias": "Excess",
+          "Name": "mp_flip"
+        },
+        {
+          "Alias": "Renaissance",
+          "Name": "mp_geneva"
+        },
+        {
+          "Alias": "Renaissance (Free)",
+          "Name": "mp_renaissance2"
+        },
+        {
+          "Alias": "Heartland",
+          "Name": "mp_hawkwar"
+        },
+        {
+          "Alias": "Scrap",
+          "Name": "mp_junk"
+        },
+        {
+          "Alias": "Archive",
+          "Name": "mp_mansion"
+        },
+        {
+          "Alias": "Turista",
+          "Name": "mp_marsoasis"
+        },
+        {
+          "Alias": "Turista (Summer)",
+          "Name": "mp_turista2"
+        },
+        {
+          "Alias": "Neon",
+          "Name": "mp_neon"
+        },
+        {
+          "Alias": "Bermuda",
+          "Name": "mp_nova"
+        },
+        {
+          "Alias": "Permafrost",
+          "Name": "mp_overflow"
+        },
+        {
+          "Alias": "Permafrost (Free)",
+          "Name": "mp_permafrost2"
+        },
+        {
+          "Alias": "Ember",
+          "Name": "mp_paris"
+        },
+        {
+          "Alias": "Fore",
+          "Name": "mp_pixel"
+        },
+        {
+          "Alias": "Noir",
+          "Name": "mp_prime"
+        },
+        {
+          "Alias": "Carnage",
+          "Name": "mp_rally"
+        },
+        {
+          "Alias": "Carnage (Free)",
+          "Name": "mp_carnage2"
+        },
+        {
+          "Alias": "Breakout",
+          "Name": "mp_parkour"
+        },
+        {
+          "Alias": "Frost",
+          "Name": "mp_proto"
+        },
+        {
+          "Alias": "Crusher",
+          "Name": "mp_quarry"
+        },
+        {
+          "Alias": "Retaliation",
+          "Name": "mp_riot"
+        },
+        {
+          "Alias": "Skydock",
+          "Name": "mp_rivet"
+        },
+        {
+          "Alias": "Terminal",
+          "Name": "mp_skyway"
+        },
+        {
+          "Alias": "Mayday",
+          "Name": "mp_breakneck"
+        },
+        {
+          "Alias": "Altitude",
+          "Name": "mp_codphish"
+        },
+        {
+          "Alias": "Grounded",
+          "Name": "mp_desert"
+        },
+        {
+          "Alias": "Scorch",
+          "Name": "mp_divide"
+        },
+        {
+          "Alias": "Genesis",
+          "Name": "mp_dome_iw"
+        },
+        {
+          "Alias": "Throwback",
+          "Name": "mp_fallen"
+        },
+        {
+          "Alias": "Precinct",
+          "Name": "mp_metropolis"
+        },
+        {
+          "Alias": "Zombies in Spaceland",
+          "Name": "cp_zmb"
+        },
+        {
+          "Alias": "Shaolin Shuffle",
+          "Name": "cp_disco"
+        },
+        {
+          "Alias": "The Beast From Beyond",
+          "Name": "cp_final"
+        },
+        {
+          "Alias": "Rave in the Redwoods",
+          "Name": "cp_rave"
+        },
+        {
+          "Alias": "Radioactive Thing",
+          "Name": "cp_town"
         }
       ]
     }

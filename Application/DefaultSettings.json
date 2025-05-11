@@ -2531,6 +2531,42 @@
         {
           "Alias": "Wasteland",
           "Name": "mp_brecourt"
+        },
+        {
+          "Alias": "Dome",
+          "Name": "mp_dome"
+        },
+        {
+          "Alias": "Bootleg",
+          "Name": "mp_bootleg"
+        },
+        {
+          "Alias": "Fallen",
+          "Name": "mp_lambeth"
+        },
+        {
+          "Alias": "Hardhat",
+          "Name": "mp_hardhat"
+        },
+	{
+          "Alias": "Lockdown",
+          "Name": "mp_alpha"
+        },
+        {
+          "Alias": "Mission",
+          "Name": "mp_bravo"
+        },
+        {
+          "Alias": "Resistance",
+          "Name": "mp_paris"
+        },
+        {
+          "Alias": "Underground",
+          "Name": "mp_underground"
+        },
+        {
+          "Alias": "Erosion",
+          "Name": "mp_courtyard_ss"
         }
       ]
     },

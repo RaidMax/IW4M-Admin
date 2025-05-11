@@ -229,7 +229,7 @@ namespace SharedLibraryCore.Commands
     /// </summary>
     public class TempBanCommand : Command
     {
-        private static readonly string TempBanRegex = @"^([0-9]{1,5}\w+)\ (.+)";
+        private static readonly string TempBanRegex = @"^([0-9]{1,5}\p{L}+)\ (.+)";
         private readonly ApplicationConfiguration _appConfig;
 
         public TempBanCommand(ApplicationConfiguration appConfig, CommandConfiguration config,

@@ -312,8 +312,8 @@ namespace WebfrontCore.Controllers
             else
             {
                 var durationSpan = _appConfig.BanDurations[duration - 1];
-                var durationValue = durationSpan.TotalHours.ToString(CultureInfo.InvariantCulture) +
-                                    Localization["GLOBAL_TIME_HOURS"][0];
+                var durationValue = durationSpan.TotalMinutes.ToString(CultureInfo.InvariantCulture) +
+                                    Localization["GLOBAL_TIME_MINUTES"][0];
                 command =
                     $"{_appConfig.CommandPrefix}{_tempbanCommandName} @{targetId} {durationValue} {fallthroughReason}";
             }

@@ -510,7 +510,7 @@ namespace SharedLibraryCore
 
         public static TimeSpan ParseTimespan(this string input)
         {
-            var expressionMatch = Regex.Match(input, @"([0-9]+)(\w+)");
+            var expressionMatch = Regex.Match(input, @"^([0-9]{1,5})(\p{L}+)");
 
             if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
             {

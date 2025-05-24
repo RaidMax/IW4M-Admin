@@ -25,6 +25,7 @@ namespace SharedLibraryCore.Dtos
         public string IPAddress { get; set; }
         public string ExternalIPAddress { get; set; }
         public bool IsPasswordProtected { get; set; }
+        public string? ResolvedExternalIPAddress { get; set; }
         public string Endpoint => $"{IPAddress}:{Port}";
 
         public double? LobbyZScore

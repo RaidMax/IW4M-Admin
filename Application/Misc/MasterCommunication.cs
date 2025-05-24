@@ -149,7 +149,8 @@ namespace IW4MAdmin.Application.Misc
                                 MaxClientNum = s.MaxClients,
                                 Id = s.EndPoint,
                                 Port = (short)s.ListenPort,
-                                IPAddress = s.ListenAddress
+                                IPAddress = s.ListenAddress,
+                                ResolvedExternalIPAddress = s.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : null
                             }).ToList(),
                 WebfrontUrl = _appConfig.WebfrontUrl
             };

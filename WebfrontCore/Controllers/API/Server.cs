@@ -8,7 +8,6 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Controllers.API.Models;
-using SharedLibraryCore.Extensions;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -40,7 +39,7 @@ namespace WebfrontCore.Controllers.API
                     name = server.GametypeName
                 },
                 Parser = server.RconParser.Name,
-                ResolvedExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : null
+                ResolvedExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : null,
             }));
         }
 

@@ -39,6 +39,7 @@ namespace WebfrontCore.Controllers.API
                     name = server.GametypeName
                 },
                 Parser = server.RconParser.Name,
+                ResolvedExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : null,
             }));
         }
 
@@ -68,6 +69,7 @@ namespace WebfrontCore.Controllers.API
                     name = foundServer.GametypeName
                 },
                 Parser = foundServer.RconParser.Name,
+                ResolvedExternalIPAddress = foundServer.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : null
             });
         }
 

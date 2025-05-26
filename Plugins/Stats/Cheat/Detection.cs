@@ -372,6 +372,18 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
             #region SESSION_RATIOS
             if (Kills >= Thresholds.LowSampleMinKills)
             {
+                shouldIgnoreDetection = false; // reset
+                try
+                {
+                    shouldIgnoreDetection = _statsConfiguration.AnticheatConfiguration.IgnoredDetectionSpecification[(Server.Game)hit.GameName][DetectionType.Bone]
+                        .Any(_weaponRegex => Regex.IsMatch(hit.WeaponReference, _weaponRegex));
+                }
+
+                catch (KeyNotFoundException)
+                {
+                    // not configured, so we don't ignore
+                }
+
                 double marginOfError = Thresholds.GetMarginOfError(HitCount);
                 // determine what the max headshot percentage can be for current number of kills
                 double lerpAmount = Math.Min(1.0, (HitCount - Thresholds.LowSampleMinKills) / (double)(/*Thresholds.HighSampleMinKills*/ 60 - Thresholds.LowSampleMinKills));
@@ -388,65 +400,68 @@ namespace IW4MAdmin.Plugins.Stats.Cheat
                 double currentMaxBoneRatio = (HitLocationCount.Values.Select(v => v.Count / (double)HitCount).Max());
                 var bone = HitLocationCount.FirstOrDefault(b => b.Value.Count == HitLocationCount.Values.Max(_hit => _hit.Count)).Key;
 
-                #region HEADSHOT_RATIO
-                // flag on headshot
-                if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
+                if (!shouldIgnoreDetection)
                 {
-                    // ban on headshot
-                    if (currentHeadshotRatio > maxHeadshotLerpValueForBan)
+                    #region HEADSHOT_RATIO
+                    // flag on headshot
+                    if (currentHeadshotRatio > maxHeadshotLerpValueForFlag)
                     {
-                        results.Add(new DetectionPenaltyResult()
+                        // ban on headshot
+                        if (currentHeadshotRatio > maxHeadshotLerpValueForBan)
                         {
-                            ClientPenalty = EFPenalty.PenaltyType.Ban,
-                            Value = currentHeadshotRatio,
-                            Location = IW4Info.HitLocation.head,
-                            HitCount = HitCount,
-                            Type = DetectionType.Bone
-                        });
-                    }
-                    else
-                    {
-                        results.Add(new DetectionPenaltyResult()
+                            results.Add(new DetectionPenaltyResult()
+                            {
+                                ClientPenalty = EFPenalty.PenaltyType.Ban,
+                                Value = currentHeadshotRatio,
+                                Location = IW4Info.HitLocation.head,
+                                HitCount = HitCount,
+                                Type = DetectionType.Bone
+                            });
+                        }
+                        else
                         {
-                            ClientPenalty = EFPenalty.PenaltyType.Flag,
-                            Value = currentHeadshotRatio,
-                            Location = IW4Info.HitLocation.head,
-                            HitCount = HitCount,
-                            Type = DetectionType.Bone
-                        });
+                            results.Add(new DetectionPenaltyResult()
+                            {
+                                ClientPenalty = EFPenalty.PenaltyType.Flag,
+                                Value = currentHeadshotRatio,
+                                Location = IW4Info.HitLocation.head,
+                                HitCount = HitCount,
+                                Type = DetectionType.Bone
+                            });
+                        }
                     }
-                }
-                #endregion
+                    #endregion
 
-                #region BONE_RATIO
-                // flag on bone ratio
-                else if (currentMaxBoneRatio > maxBoneRatioLerpValueForFlag)
-                {
-                    // ban on bone ratio
-                    if (currentMaxBoneRatio > maxBoneRatioLerpValueForBan)
+                    #region BONE_RATIO
+                    // flag on bone ratio
+                    else if (currentMaxBoneRatio > maxBoneRatioLerpValueForFlag)
                     {
-                        results.Add(new DetectionPenaltyResult()
+                        // ban on bone ratio
+                        if (currentMaxBoneRatio > maxBoneRatioLerpValueForBan)
                         {
-                            ClientPenalty = EFPenalty.PenaltyType.Ban,
-                            Value = currentMaxBoneRatio,
-                            Location = bone,
-                            HitCount = HitCount,
-                            Type = DetectionType.Bone
-                        });
-                    }
-                    else
-                    {
-                        results.Add(new DetectionPenaltyResult()
+                            results.Add(new DetectionPenaltyResult()
+                            {
+                                ClientPenalty = EFPenalty.PenaltyType.Ban,
+                                Value = currentMaxBoneRatio,
+                                Location = bone,
+                                HitCount = HitCount,
+                                Type = DetectionType.Bone
+                            });
+                        }
+                        else
                         {
-                            ClientPenalty = EFPenalty.PenaltyType.Flag,
-                            Value = currentMaxBoneRatio,
-                            Location = bone,
-                            HitCount = HitCount,
-                            Type = DetectionType.Bone
-                        });
+                            results.Add(new DetectionPenaltyResult()
+                            {
+                                ClientPenalty = EFPenalty.PenaltyType.Flag,
+                                Value = currentMaxBoneRatio,
+                                Location = bone,
+                                HitCount = HitCount,
+                                Type = DetectionType.Bone
+                            });
+                        }
                     }
+                    #endregion
                 }
-                #endregion
             }
 
             #region CHEST_ABDOMEN_RATIO_SESSION

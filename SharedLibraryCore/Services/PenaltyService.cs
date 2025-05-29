@@ -198,10 +198,14 @@ namespace SharedLibraryCore.Services
         {
             await using var context = _contextFactory.CreateContext(false);
 
-            var recentlyUsedIps = await context.Aliases.Where(alias => alias.LinkId == linkId)
+            var cutoffDate = DateTime.UtcNow - _appConfig.RecentAliasIpLinkTimeLimit;
+
+            var recentlyUsedIps = await context.Aliases
+                .Where(alias => alias.LinkId == linkId)
                 .Where(alias => alias.IPAddress != null)
-                .Where(alias => alias.DateAdded >= DateTime.UtcNow - _appConfig.RecentAliasIpLinkTimeLimit)
-                .Select(alias => alias.IPAddress).ToListAsync();
+                .Where(alias => alias.DateAdded >= cutoffDate)
+                .Select(alias => alias.IPAddress)
+                .ToListAsync();
 
             if (!recentlyUsedIps.Any())
             {

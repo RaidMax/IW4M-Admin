@@ -26,7 +26,8 @@ namespace Stats.Config
                 {
                     { DetectionType.Chest, new[] { "m21.+" } },
                     { DetectionType.Recoil, new[] { "ranger.*_mp", "model1887.*_mp", ".+shotgun.*_mp", "turret_minigun_mp" } },
-                    { DetectionType.Button, new[] { ".*akimbo.*" } }
+                    { DetectionType.Button, new[] { ".*akimbo.*" } },
+                    { DetectionType.Bone, new string[0] }
                 }
             }
         };

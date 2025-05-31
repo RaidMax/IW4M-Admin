@@ -109,7 +109,7 @@ namespace IW4MAdmin.Application
             ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, _appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>()) };
+            AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>()) };
             AdditionalRConParsers = new List<IRConParser> { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;

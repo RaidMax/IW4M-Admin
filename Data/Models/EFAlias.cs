@@ -24,7 +24,7 @@ namespace Data.Models
         public DateTime DateAdded { get; set; }
 
         [NotMapped]
-        public const int MAX_NAME_LENGTH = 24;
+        public const int MAX_NAME_LENGTH = 64;
 
         [NotMapped]
         public const int MIN_NAME_LENGTH = 3;

@@ -19,6 +19,31 @@ using static Data.Models.Client.EFClient;
 namespace SharedLibraryCore.Commands
 {
     /// <summary>
+    ///     CoD AllowVote
+    /// </summary>
+    public class AllowVoteCommand : Command
+    {
+        private readonly ApplicationConfiguration _appConfig;
+
+        public AllowVoteCommand(ApplicationConfiguration appConfig, CommandConfiguration config) : base(config)
+        {
+            Name = "allowvote";
+            Description = "Enable/disable server voting.";
+            Alias = "av";
+            Permission = Permission.Moderator;
+            RequiresTarget = true;
+            Arguments = new[]
+            {
+                new CommandArgument
+                {
+                    Name = "Value"
+                    Required = true
+                }
+            };
+            _appConfig = appConfig;
+        }
+
+    /// <summary>
     ///     Quits IW4MAdmin
     /// </summary>
     public class QuitCommand : Command

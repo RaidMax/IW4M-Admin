@@ -36,7 +36,7 @@ namespace SharedLibraryCore.Commands
             {
                 new CommandArgument
                 {
-                    Name = "Value"
+                    Name = "Value",
                     Required = true
                 }
             };

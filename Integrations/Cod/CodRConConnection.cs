@@ -34,7 +34,7 @@ namespace Integrations.Cod
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
         private readonly int _retryAttempts;
-        private static readonly Server.Game[] RconDelayGames = [Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6];
+        private static readonly Server.Game[] RconDelayGames = [Server.Game.COD, Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6];
 
         public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log,
             Encoding gameEncoding, int retryAttempts)

@@ -34,7 +34,9 @@ namespace Integrations.Cod
         private readonly ILogger _log;
         private readonly Encoding _gameEncoding;
         private readonly int _retryAttempts;
-        private static readonly Server.Game[] RconDelayGames = [Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6];
+
+        private static readonly Server.Game[] RconDelayGames =
+            [Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6];
 
         public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log,
             Encoding gameEncoding, int retryAttempts)
@@ -168,7 +170,8 @@ namespace Integrations.Cod
                         break;
                     case StaticHelpers.QueryType.GET_STATUS:
                         waitForResponse = true;
-                        payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(Helpers.SafeConversion).ToArray();
+                        payload = (_config.CommandPrefixes.RConGetStatus + '\0').Select(Helpers.SafeConversion)
+                            .ToArray();
                         break;
                     case StaticHelpers.QueryType.GET_INFO:
                         waitForResponse = true;
@@ -197,13 +200,11 @@ namespace Integrations.Cod
             byte[][] response;
 
             retrySend:
-            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
-                   {
-                       DontFragment = false,
-                       Ttl = 100,
-                       ExclusiveAddressUse = true,
-                   })
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
             {
+                socket.DontFragment = false;
+                socket.Ttl = 100;
+                socket.ExclusiveAddressUse = true;
                 if (!token.IsCancellationRequested)
                 {
                     connectionState.ConnectionAttempts++;
@@ -309,7 +310,7 @@ namespace Integrations.Cod
             {
                 _log.LogDebug("Received empty response for RCon request {@Query}",
                     new { endpoint = Endpoint.ToString(), type, parameters });
-                return Array.Empty<string>();
+                return [];
             }
 
             var responseString = type == StaticHelpers.QueryType.COMMAND_STATUS
@@ -370,7 +371,7 @@ namespace Integrations.Cod
 
             if (!waitForResponse)
             {
-                return Array.Empty<byte[]>();
+                return [];
             }
 
             _log.LogDebug("Waiting to asynchronously receive data on attempt #{ConnectionAttempts}",
@@ -380,7 +381,7 @@ namespace Integrations.Cod
 
             if (RconDelayGames.Contains(_parser.GameName))
             {
-                await Task.Delay(100, token); 
+                await Task.Delay(100, token);
             }
 
             while (rconSocket.Available > 0)
@@ -447,7 +448,7 @@ namespace Integrations.Cod
 
             if (headerSplit.Length == 2)
             {
-                return headerSplit.Last().Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                return headerSplit.Last().Split(['\n'], StringSplitOptions.RemoveEmptyEntries)
                     .Select(line => line.StartsWith("^7") ? line[2..] : line).ToArray();
             }
 
@@ -462,31 +463,75 @@ namespace Integrations.Cod
 
         /// <summary>
         /// reassembles broken status segments into the 'correct' ordering
-        /// <remarks>this is primarily for T7, and is really only reliable for 2 segments</remarks>
+        /// <remarks>this is primarily for T7, CoD4x, and T6. Really only reliable for 3 segments</remarks>
         /// </summary>
         /// <param name="segments">array of segmented byte arrays</param>
         /// <returns></returns>
         private string ReassembleSegmentedStatus(IEnumerable<byte[]> segments)
         {
-            var splitStatusStrings = new List<string>();
+            var segmentStrings = segments
+                .Select(seg => _gameEncoding.GetString(seg, 0, seg.Length).TrimEnd('\0'))
+                .ToList();
 
-            foreach (var segment in segments)
+            if (segmentStrings.Count <= 1)
             {
-                var responseString = _gameEncoding.GetString(segment, 0, segment.Length);
-                var statusHeaderMatch = _config.StatusHeader.PatternMatcher.Match(responseString);
-                if (statusHeaderMatch.Success)
-                {
-                    splitStatusStrings.Insert(0, responseString.TrimEnd('\0'));
-                }
-
-                else
-                {
-                    splitStatusStrings.Add(responseString.Replace(_config.CommandPrefixes.RConResponse, "")
-                        .TrimEnd('\0'));
-                }
+                return string.Join("", segmentStrings);
             }
 
-            return string.Join("", splitStatusStrings);
+            var headerIndex = segmentStrings.FindIndex(s => _config.StatusHeader.PatternMatcher.Match(s).Success);
+
+            // when there's no header it'll likely fail anyway so we'll keep the original order
+            if (headerIndex == -1)
+            {
+                return string.Join("", segmentStrings.Select(s => s.Replace(_config.CommandPrefixes.RConResponse, "")));
+            }
+
+            var reassembledSegments = new List<string>();
+
+            // for T6 status the last packet contains a double new line
+            var hasDefinitiveLastSegment = segmentStrings.Any(s => s.EndsWith("\n\n"));
+
+            if (hasDefinitiveLastSegment)
+            {
+                // T6 behavior
+                var firstSegment = segmentStrings[headerIndex];
+                string lastSegment = null;
+                var middleSegments = new List<string>();
+
+                for (var i = 0; i < segmentStrings.Count; i++)
+                {
+                    if (i == headerIndex)
+                        continue;
+
+                    var currentSegment = segmentStrings[i];
+
+                    if (currentSegment.EndsWith("\n\n") && lastSegment == null)
+                    {
+                        lastSegment = currentSegment.Replace(_config.CommandPrefixes.RConResponse, "");
+                    }
+                    else
+                    {
+                        middleSegments.Add(currentSegment.Replace(_config.CommandPrefixes.RConResponse, ""));
+                    }
+                }
+
+                reassembledSegments.Add(firstSegment);
+                reassembledSegments.AddRange(middleSegments);
+
+                if (lastSegment != null)
+                {
+                    reassembledSegments.Add(lastSegment);
+                }
+            }
+            else
+            {
+                // other game (default) behavior
+                reassembledSegments.Add(segmentStrings[headerIndex]);
+                reassembledSegments.AddRange(segmentStrings.Where((_, i) => i != headerIndex)
+                    .Select(t => t.Replace(_config.CommandPrefixes.RConResponse, "")));
+            }
+
+            return string.Join("", reassembledSegments);
         }
 
         /// <summary>

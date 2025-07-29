@@ -70,7 +70,7 @@ namespace IW4MAdmin.Application
         readonly PenaltyService PenaltySvc;
         private readonly IAlertManager _alertManager;
         private readonly ConfigurationWatcher _watcher;
-        public IConfigurationHandler<ApplicationConfiguration> ConfigHandler;
+        private readonly IConfigurationHandlerV2<ApplicationConfiguration> _appConfigHandler;
         readonly IPageList PageList;
         private readonly TimeSpan _throttleTimeout = new TimeSpan(0, 1, 0);
         private CancellationTokenSource _isRunningTokenSource;
@@ -92,13 +92,15 @@ namespace IW4MAdmin.Application
 
         public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
             ITranslationLookup translationLookup, IConfigurationHandler<CommandConfiguration> commandConfiguration,
-            IConfigurationHandler<ApplicationConfiguration> appConfigHandler, IGameServerInstanceFactory serverInstanceFactory,
+            IConfigurationHandlerV2<ApplicationConfiguration> appConfigHandlerV2, IGameServerInstanceFactory serverInstanceFactory,
             IEnumerable<IPlugin> plugins, IParserRegexFactory parserRegexFactory, IEnumerable<IRegisterEvent> customParserEvents,
             ICoreEventHandler coreEventHandler, IScriptCommandFactory scriptCommandFactory, IDatabaseContextFactory contextFactory,
             IMetaRegistration metaRegistration, IScriptPluginServiceResolver scriptPluginServiceResolver, ClientService clientService, IServiceProvider serviceProvider,
             ChangeHistoryService changeHistoryService, ApplicationConfiguration appConfig, PenaltyService penaltyService, IAlertManager alertManager, IInteractionRegistration interactionRegistration, IEnumerable<IPluginV2> v2PLugins,
             ConfigurationWatcher watcher)
         {
+            _appConfigHandler = appConfigHandlerV2;
+            _appConfigHandler.Updated += OnConfigurationUpdated;
             MiddlewareActionHandler = actionHandler;
             _servers = new ConcurrentBag<Server>();
             MessageTokens = new List<MessageToken>();
@@ -106,7 +108,6 @@ namespace IW4MAdmin.Application
             PenaltySvc = penaltyService;
             _alertManager = alertManager;
             _watcher = watcher;
-            ConfigHandler = appConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
             AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>()) };
@@ -258,22 +259,22 @@ namespace IW4MAdmin.Application
             const int delayScalar = 50; // Task.Delay is inconsistent enough there's no reason to try to prevent collisions
             var timeout = TimeSpan.FromMinutes(2);
 
-            while (!_isRunningTokenSource.IsCancellationRequested)
+            while (!server.CancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     var delayFactor = Math.Min(_appConfig.RConPollRate, delayScalar * index);
-                    await Task.Delay(delayFactor, _isRunningTokenSource.Token);
+                    await Task.Delay(delayFactor, server.CancellationToken);
 
                     using var timeoutTokenSource = new CancellationTokenSource();
                     timeoutTokenSource.CancelAfter(timeout);
                     using var linkedTokenSource =
                         CancellationTokenSource.CreateLinkedTokenSource(timeoutTokenSource.Token,
-                            _isRunningTokenSource.Token);
+                            server.CancellationToken);
                     await server.ProcessUpdatesAsync(linkedTokenSource.Token);
 
                     await Task.Delay(Math.Max(1000, _appConfig.RConPollRate - delayFactor),
-                        _isRunningTokenSource.Token);
+                        server.CancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -293,7 +294,7 @@ namespace IW4MAdmin.Application
             }
             
             // run the final updates to clean up server
-            await server.ProcessUpdatesAsync(_isRunningTokenSource.Token);
+            await server.ProcessUpdatesAsync(server.CancellationToken);
         }
 
         public async Task Init()
@@ -369,7 +370,7 @@ namespace IW4MAdmin.Application
 
                 //if (newConfig.Servers == null)
                 {
-                    ConfigHandler.Set(_appConfig);
+                await _appConfigHandler.Set(_appConfig);
                     _appConfig.Servers = new ServerConfiguration[1];
 
                     do
@@ -388,7 +389,7 @@ namespace IW4MAdmin.Application
                         _appConfig.Servers = _appConfig.Servers.Where(_servers => _servers != null).Append((ServerConfiguration)serverConfig.Generate()).ToArray();
                     } while (Utilities.PromptBool(_translationLookup["SETUP_SERVER_SAVE"]));
 
-                    await ConfigHandler.Save();
+                await _appConfigHandler.Set(_appConfig);
                 }
             }
 
@@ -424,7 +425,7 @@ namespace IW4MAdmin.Application
                     throw new ConfigurationException("Could not validate configuration")
                     {
                         Errors = validationResult.Errors.Select(_error => _error.ErrorMessage).ToArray(),
-                        ConfigurationFileName = ConfigHandler.FileName
+                        ConfigurationFileName = "IW4MAdminSettings.json"
                     };
                 }
 
@@ -449,8 +450,7 @@ namespace IW4MAdmin.Application
                     }
                 }
                 
-                ConfigHandler.Set(_appConfig);
-                await ConfigHandler.Save();
+                await _appConfigHandler.Set(_appConfig);
             }
 
             if (_appConfig.Servers.Length == 0)
@@ -542,7 +542,7 @@ namespace IW4MAdmin.Application
 
         private async Task InitializeServers()
         {
-            var config = ConfigHandler.Configuration();
+            var config = _appConfig;
             int successServers = 0;
             Exception lastException = null;
 
@@ -688,9 +688,25 @@ namespace IW4MAdmin.Application
             return PenaltySvc;
         }
 
-        public IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings()
+        private async void OnConfigurationUpdated(ApplicationConfiguration newConfig)
         {
-            return ConfigHandler;
+            var newServers = newConfig.Servers.ToList();
+            var currentServers = _servers.ToList();
+
+            var serversToAdd = newServers.Where(s => currentServers.All(cs => cs.Id != $"{s.IPAddress}:{s.Port}")).ToList();
+            var serversToRemove = currentServers.Where(cs => newServers.All(s => cs.Id != $"{s.IPAddress}:{s.Port}")).ToList();
+
+            _logger.LogDebug("Detected configuration file change. Adding {AddCount} servers and removing {RemoveCount} servers", serversToAdd.Count, serversToRemove.Count);
+
+            foreach (var serverConfig in serversToAdd)
+            {
+                await AddServer(serverConfig);
+            }
+
+            foreach (var server in serversToRemove)
+            {
+                await RemoveServer(server.Id);
+            }
         }
 
         public void AddEvent(GameEvent gameEvent)
@@ -718,7 +734,7 @@ namespace IW4MAdmin.Application
 
         public IEventParser GenerateDynamicEventParser(string name)
         {
-            return new DynamicEventParser(_parserRegexFactory, _logger, ConfigHandler.Configuration(), _serviceProvider.GetRequiredService<IGameScriptEventFactory>())
+            return new DynamicEventParser(_parserRegexFactory, _logger, _appConfig, _serviceProvider.GetRequiredService<IGameScriptEventFactory>())
             {
                 Name = name
             };
@@ -897,6 +913,63 @@ namespace IW4MAdmin.Application
                         receiveEvent.Client.CurrentServer.AsConsoleClient(), true);
                 }
             }
+        }
+
+        public async Task AddServer(ServerConfiguration serverConfig)
+        {
+            var serverInstance = _serverInstanceFactory.CreateServer(serverConfig, this) as IW4MServer;
+
+            try
+            {
+                using (LogContext.PushProperty("Server", serverInstance!.ToString()))
+                {
+                    _logger.LogInformation("Beginning server communication initialization");
+                    await serverInstance.Initialize();
+
+                    _servers.Add(serverInstance);
+                    _ = ProcessUpdateHandler(serverInstance, _servers.Count);
+                    Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"].FormatExt(serverInstance.Hostname.StripColors()));
+                    _logger.LogInformation("Finishing initialization and now monitoring [{Server}]", serverInstance.Hostname);
+                }
+
+                QueueEvent(new MonitorStartEvent
+                {
+                    Server = serverInstance,
+                    Source = this
+                });
+            }
+            catch (ServerException e)
+            {
+                Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["SERVER_ERROR_UNFIXABLE"].FormatExt($"[{serverConfig.IPAddress}:{serverConfig.Port}]"));
+                using (LogContext.PushProperty("Server", $"{serverConfig.IPAddress}:{serverConfig.Port}"))
+                {
+                    _logger.LogError(e, "Unexpected exception occurred during initialization");
+                }
+            }
+        }
+
+        public async Task RemoveServer(string serverEndpoint)
+        {
+            var server = _servers.FirstOrDefault(s => s.Id == serverEndpoint);
+
+            if (server == null)
+            {
+                _logger.LogWarning("Could not find server with endpoint {Endpoint} to remove", serverEndpoint);
+                return;
+            }
+
+            server.CancellationTokenSource.Cancel();
+            // give the server a moment to cancel gracefully
+            await Task.Delay(500);
+            _servers.TryTake(out server);
+
+            QueueEvent(new MonitorStopEvent
+            {
+                Server = server,
+                Source = this
+            });
+
+            _logger.LogInformation("Stopped monitoring server {Server}", server.Id);
         }
     }
 }

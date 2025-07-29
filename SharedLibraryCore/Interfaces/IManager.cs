@@ -46,7 +46,6 @@ namespace SharedLibraryCore.Interfaces
         IList<MessageToken> GetMessageTokens();
         IList<EFClient> GetActiveClients();
         EFClient FindActiveClient(EFClient client);
-        IConfigurationHandler<ApplicationConfiguration> GetApplicationSettings();
         ClientService GetClientService();
         PenaltyService GetPenaltyService();
 
@@ -113,5 +112,19 @@ namespace SharedLibraryCore.Interfaces
 
         IAlertManager AlertManager { get; }
         IInteractionRegistration InteractionRegistration { get; }
+
+        /// <summary>
+        ///  Adds a new server to the manager
+        /// </summary>
+        /// <param name="serverConfig">configuration of the server to add</param>
+        /// <returns></returns>
+        Task AddServer(ServerConfiguration serverConfig);
+
+        /// <summary>
+        /// Removes a server from the manager
+        /// </summary>
+        /// <param name="serverEndpoint">endpoint of the server to remove</param>
+        /// <returns></returns>
+        Task RemoveServer(string serverEndpoint);
     }
 }

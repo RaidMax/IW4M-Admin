@@ -62,7 +62,7 @@ namespace SharedLibraryCore
 #pragma warning disable CS0612
         public Server(ILogger<Server> logger, Interfaces.ILogger deprecatedLogger,
 #pragma warning restore CS0612
-            ServerConfiguration config, IManager mgr, IRConConnectionFactory rconConnectionFactory,
+            ServerConfiguration config, ApplicationConfiguration appConfig, IManager mgr, IRConConnectionFactory rconConnectionFactory,
             IGameLogReaderFactory gameLogReaderFactory, IServiceProvider serviceProvider)
         {
             Password = config.Password;
@@ -79,14 +79,15 @@ namespace SharedLibraryCore
             ClientHistory = new ClientHistoryInfo();
             ChatHistory = new List<ChatInfo>();
             NextMessage = 0;
-            CustomSayEnabled = Manager.GetApplicationSettings().Configuration().EnableCustomSayName;
-            CustomSayName = Manager.GetApplicationSettings().Configuration().CustomSayName;
+            CustomSayEnabled = appConfig.EnableCustomSayName;
+            CustomSayName = appConfig.CustomSayName;
             this.gameLogReaderFactory = gameLogReaderFactory;
             RConConnectionFactory = rconConnectionFactory;
             ServerLogger = logger;
             DefaultSettings = serviceProvider.GetRequiredService<DefaultSettings>();
-            InitializeTokens();
-            InitializeAutoMessages();
+            CancellationTokenSource = new CancellationTokenSource();
+            InitializeTokens(appConfig);
+            InitializeAutoMessages(appConfig);
         }
 
         public long EndPoint => IPAddress.TryParse(ListenAddress, out _)
@@ -95,6 +96,8 @@ namespace SharedLibraryCore
 
         public abstract long LegacyDatabaseId { get; }
         public string Id => $"{ListenAddress}:{ListenPort}";
+        public CancellationTokenSource CancellationTokenSource { get; }
+        public CancellationToken CancellationToken => CancellationTokenSource.Token;
 
         // Objects
         public IManager Manager { get; protected set; }
@@ -399,12 +402,12 @@ namespace SharedLibraryCore
         /// <summary>
         ///     Initalize the macro variables
         /// </summary>
-        public abstract void InitializeTokens();
+        public abstract void InitializeTokens(ApplicationConfiguration appConfig);
 
         /// <summary>
         ///     Initialize the messages to be broadcasted
         /// </summary>
-        protected void InitializeAutoMessages()
+        protected void InitializeAutoMessages(ApplicationConfiguration appConfig)
         {
             BroadcastMessages = new List<string>();
 
@@ -413,7 +416,7 @@ namespace SharedLibraryCore
                 BroadcastMessages.AddRange(ServerConfig.AutoMessages);
             }
 
-            BroadcastMessages.AddRange(Manager.GetApplicationSettings().Configuration().AutoMessages);
+            BroadcastMessages.AddRange(appConfig.AutoMessages);
         }
 
         public override string ToString()

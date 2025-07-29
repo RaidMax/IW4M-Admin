@@ -58,6 +58,7 @@ namespace IW4MAdmin
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
+            ApplicationConfiguration appConfig,
             CommandConfiguration commandConfiguration,
             ITranslationLookup lookup,
             IMetaServiceV2 metaService, 
@@ -68,6 +69,7 @@ namespace IW4MAdmin
             serviceProvider.GetRequiredService<SharedLibraryCore.Interfaces.ILogger>(), 
 #pragma warning restore CS0612
             serverConfiguration,
+            appConfig,
             serviceProvider.GetRequiredService<IManager>(), 
             serviceProvider.GetRequiredService<IRConConnectionFactory>(),
             serviceProvider.GetRequiredService<IGameLogReaderFactory>(), serviceProvider)
@@ -1777,7 +1779,7 @@ namespace IW4MAdmin
             });
         }
 
-        public override void InitializeTokens()
+        public override void InitializeTokens(ApplicationConfiguration appConfig)
         {
             Manager.GetMessageTokens().Add(new MessageToken("TOTALPLAYERS", (Server s) => Task.Run(async () => (await Manager.GetClientService().GetTotalClientsAsync()).ToString())));
             Manager.GetMessageTokens().Add(new MessageToken("VERSION", (Server s) => Task.FromResult(Application.Program.Version.ToString())));

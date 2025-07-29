@@ -133,10 +133,11 @@ namespace WebfrontCore
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
+            var appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
+            if (appConfig.EnableWebfrontConnectionWhitelist)
             {
                 app.UseMiddleware<IPWhitelist>(serviceProvider.GetService<ILogger<IPWhitelist>>(),
-                    serviceProvider.GetRequiredService<ApplicationConfiguration>().WebfrontConnectionWhitelist);
+                    appConfig.WebfrontConnectionWhitelist);
             }
 
             app.UseStaticFiles();

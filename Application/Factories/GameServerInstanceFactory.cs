@@ -40,6 +40,7 @@ namespace IW4MAdmin.Application.Factories
         public Server CreateServer(ServerConfiguration config, IManager manager)
         {
             return new IW4MServer(config,
+                _serviceProvider.GetRequiredService<ApplicationConfiguration>(),
                 _serviceProvider.GetRequiredService<CommandConfiguration>(), _translationLookup, _metaService,
                 _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
                 _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());

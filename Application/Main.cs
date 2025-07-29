@@ -222,8 +222,9 @@ namespace IW4MAdmin.Application
             var masterCommunicator = serviceProvider.GetRequiredService<IMasterCommunication>();
             var webfrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
             using var onWebfrontErrored = new ManualResetEventSlim();
+            var appConfig = serviceProvider.GetRequiredService<ApplicationConfiguration>();
             
-            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
+            var webfrontTask = appConfig.EnableWebFront
                 ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken).ContinueWith(continuation =>
                 {
                     if (!continuation.IsFaulted)
@@ -436,17 +437,17 @@ namespace IW4MAdmin.Application
                 .AddConfiguration<StatsConfiguration>("StatsPluginSettings");
             
             // for legacy purposes. update at some point
-            var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
-            appConfigHandler.BuildAsync().GetAwaiter().GetResult();
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var appConfigHandler = serviceProvider.GetRequiredService<IConfigurationHandlerV2<ApplicationConfiguration>>();
+            var appConfig = appConfigHandler.Get("IW4MAdminSettings").Result;
+
             var commandConfigHandler = new BaseConfigurationHandler<CommandConfiguration>("CommandConfiguration");
             commandConfigHandler.BuildAsync().GetAwaiter().GetResult();
 
-            if (appConfigHandler.Configuration()?.MasterUrl == new Uri("http://api.raidmax.org:5000"))
+            if (appConfig?.MasterUrl == new Uri("http://api.raidmax.org:5000"))
             {
-                appConfigHandler.Configuration().MasterUrl = new ApplicationConfiguration().MasterUrl;
+                appConfig.MasterUrl = new ApplicationConfiguration().MasterUrl;
             }
-
-            var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
@@ -461,8 +462,7 @@ namespace IW4MAdmin.Application
             if (appConfig == null)
             {
                 appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
-                appConfigHandler.Set(appConfig);
-                appConfigHandler.Save().GetAwaiter().GetResult();
+                appConfigHandler.Set(appConfig).GetAwaiter().GetResult();
             }
 
             // register override level names
@@ -474,7 +474,7 @@ namespace IW4MAdmin.Application
             // build the dependency list
             serviceCollection
                 .AddBaseLogger(appConfig)
-                .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
+                .AddSingleton<IConfigurationHandlerV2<ApplicationConfiguration>>(appConfigHandler)
                 .AddSingleton<IConfigurationHandler<CommandConfiguration>>(commandConfigHandler)
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()

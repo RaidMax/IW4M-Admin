@@ -9,7 +9,6 @@ COPY Localization/ /app_defaults/Localization/
 
 COPY . .
 
-COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["./entrypoint.sh"]

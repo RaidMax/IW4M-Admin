@@ -47,6 +47,9 @@ EOF
 echo
 echo "Brought to you by RaidMax"
 echo "-------------------------"
+echo "UID: ${PUID:-0} / GID: ${PGID:-0}"
+echo "-------------------------"
+echo
 
 #
 # --- File & Directory Checks ---

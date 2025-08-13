@@ -26,20 +26,26 @@ GROUP_ID=${PGID:-0}
 if [ "$(id -u)" = "0" ] && [ "$USER_ID" -ne 0 ]; then
     echo "Running as user: $USER_ID:$GROUP_ID"
 
-    if ! getent group "$GROUP_ID" >/dev/null; then
-        addgroup --gid "$GROUP_ID" appgroup
-    fi
-
-    if ! getent passwd "$USER_ID" >/dev/null; then
-        echo "Creating new user 'appuser' with UID $USER_ID"
-        adduser --system --uid "$USER_ID" --gid "$GROUP_ID" --shell /sbin/nologin appuser
+    GROUPNAME="appgroup"
+    if getent group "$GROUP_ID" >/dev/null; then
+        GROUPNAME=$(getent group "$GROUP_ID" | cut -d: -f1)
+        echo "Group with GID $GROUP_ID already exists, adopting name '$GROUPNAME'"
     else
-        echo "User with UID $USER_ID already exists, adopting..."
-        USERNAME=$(getent passwd "$USER_ID" | cut -d: -f1)
+        addgroup --gid "$GROUP_ID" "$GROUPNAME"
     fi
 
-    chown -R "${USERNAME:-appuser}":"${GROUP_ID}" /app /app_defaults
-    exec gosu "${USERNAME:-appuser}" "$0" "$@"
+    USERNAME="appuser"
+    if getent passwd "$USER_ID" >/dev/null; then
+        USERNAME=$(getent passwd "$USER_ID" | cut -d: -f1)
+        echo "User with UID $USER_ID already exists, adopting name '$USERNAME'"
+    else
+        adduser --system --uid "$USER_ID" --gid "$GROUP_ID" --shell /sbin/nologin "$USERNAME"
+    fi
+
+    echo "Setting ownership for $USERNAME:$GROUPNAME..."
+    chown -R "$USERNAME":"$GROUPNAME" /app /app_defaults
+
+    exec gosu "$USERNAME" "$0" "$@"
 fi
 
 #

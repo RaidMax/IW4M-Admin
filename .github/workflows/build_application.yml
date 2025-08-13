@@ -274,7 +274,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ github.workspace }}/publish
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/release/pre' || github.ref == 'refs/heads/develop') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   

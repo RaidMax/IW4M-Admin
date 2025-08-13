@@ -11,4 +11,7 @@ COPY . .
 
 RUN chmod +x entrypoint.sh
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:1624/api/info)" = "200"
+
 ENTRYPOINT ["./entrypoint.sh"]

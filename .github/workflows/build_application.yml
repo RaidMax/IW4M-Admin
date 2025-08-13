@@ -261,6 +261,8 @@ jobs:
             type=raw,value=${{ env.buildNumber }}
             # tag with the short git sha (e.g., f15fbd3)
             type=sha,prefix=
+          labels: |
+            org.opencontainers.image.version=${{ env.buildNumber }}
             
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

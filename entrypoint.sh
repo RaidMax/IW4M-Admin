@@ -78,19 +78,7 @@ if [ ! -f "$LOCALIZATION_DIR/IW4MAdmin.en-US.json" ]; then
 fi
 
 #
-# --- Start Application - Intercept signal for safe shutdown ---
+# --- Start Application ---
 #
 echo "Configuration verified. Starting IW4MAdmin..."
-
-mkfifo /tmp/console
-
-cleanup() {
-    echo "Caught stop signal, sending '!quit' command..."
-    echo "!quit" > /tmp/console
-}
-
-trap cleanup SIGTERM SIGINT
-dotnet Lib/IW4MAdmin.dll < /tmp/console &
-pid=$!
-wait $pid
-rm /tmp/console
+exec dotnet Lib/IW4MAdmin.dll

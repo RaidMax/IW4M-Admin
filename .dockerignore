@@ -1,0 +1,8 @@
+# Exclude the directories that are already handled as backups
+/app_defaults
+
+# Exclude common development files
+.git
+.github
+.vscode
+*.md

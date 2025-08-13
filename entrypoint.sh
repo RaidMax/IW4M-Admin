@@ -23,15 +23,23 @@ echo "-------------------------"
 USER_ID=${PUID:-0}
 GROUP_ID=${PGID:-0}
 
-# If the provided user ID is not root (0), create a user
 if [ "$USER_ID" -ne 0 ]; then
     echo "Running as user: $USER_ID:$GROUP_ID"
 
-    addgroup --gid "$GROUP_ID" appgroup
-    adduser --system --uid "$USER_ID" --gid "$GROUP_ID" --shell /bin/bash appuser
-    
-    chown -R appuser:appgroup /app /app_defaults
-    exec gosu appuser "$0" "$@"
+    if ! getent group "$GROUP_ID" >/dev/null; then
+        addgroup --gid "$GROUP_ID" appgroup
+    fi
+
+    if ! getent passwd "$USER_ID" >/dev/null; then
+        echo "Creating new user 'appuser' with UID $USER_ID"
+        adduser --system --uid "$USER_ID" --gid "$GROUP_ID" --shell /bin/bash appuser
+    else
+        echo "User with UID $USER_ID already exists, adopting..."
+        USERNAME=$(getent passwd "$USER_ID" | cut -d: -f1)
+    fi
+
+    chown -R "${USERNAME:-appuser}":"${GROUP_ID}" /app /app_defaults
+    exec gosu "${USERNAME:-appuser}" "$0" "$@"
 fi
 
 #

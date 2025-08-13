@@ -19,6 +19,12 @@ on:
       - Data/**
       - SharedLibraryCore/**
       - Plugins/**
+  workflow_dispatch:
+    inputs:
+      buildNumber:
+        description: 'Manual build number (optional)'
+        required: false
+        type: string
 
 env:
   releaseType: prerelease

@@ -26,14 +26,11 @@ GROUP_ID=${PGID:-0}
 # If the provided user ID is not root (0), create a user
 if [ "$USER_ID" -ne 0 ]; then
     echo "Running as user: $USER_ID:$GROUP_ID"
-    # Create group and user with specified IDs
+
     addgroup --gid "$GROUP_ID" appgroup
     adduser --system --uid "$USER_ID" --gid "$GROUP_ID" --shell /bin/bash appuser
     
-    # Set ownership of key directories
     chown -R appuser:appgroup /app /app_defaults
-    
-    # Re-execute this script as the new user
     exec gosu appuser "$0" "$@"
 fi
 

@@ -215,10 +215,62 @@ jobs:
         with:
           name: IW4MAdmin-${{ env.buildNumber }}-${{ env.releaseType }}
           path: ${{ env.outputFolder }}
+
+  build_and_push_docker:
+    runs-on: ubuntu-latest
+    needs: [ make_version, build ]
+    # Grant permissions to write to the GitHub Packages registry
+    permissions:
+      contents: read
+      packages: write
+    
+    env:
+      buildNumber: ${{ needs.make_version.outputs.build_num }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download application artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: IW4MAdmin-${{ env.buildNumber }}-${{ env.releaseType }}
+          path: ${{ github.workspace }}/publish
+
+      - name: Prepare Docker build context
+        run: |
+          # The Dockerfile expects to be in the same directory as the app files.
+          # Copy it and the entrypoint script into the published artifact directory.
+          cp Dockerfile entrypoint.sh ${{ github.workspace }}/publish/
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/iw4madmin
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=${{ env.buildNumber }}
+            type=sha
+            
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ github.workspace }}/publish
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
   
   release_github:
     runs-on: ubuntu-latest
-    needs: [ make_version, build ]
+    needs: [ make_version, build, build_and_push_docker ]
     permissions:
       contents: write
     environment: prerelease

@@ -274,7 +274,7 @@ jobs:
   
   release_github:
     runs-on: ubuntu-latest
-    needs: [ make_version, build, build_and_push_docker ]
+    needs: [ make_version, build ]
     permissions:
       contents: write
     environment: prerelease

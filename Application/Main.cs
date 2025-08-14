@@ -20,6 +20,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Loader;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,6 +59,9 @@ namespace IW4MAdmin.Application
         private static Task _applicationTask;
         private static IServiceProvider _serviceProvider;
 
+        private static readonly object Lock = new();
+        private static bool _isExiting;
+
         /// <summary>
         /// entrypoint of the application
         /// </summary>
@@ -74,6 +78,7 @@ namespace IW4MAdmin.Application
                 {
                     return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(asm => asm.FullName == eventArgs.Name);
                 }
+
                 // added to be a bit more permissive with plugin references
                 return AppDomain.CurrentDomain.GetAssemblies()
                     .FirstOrDefault(asm => asm.FullName?.StartsWith(libraryName) ?? false);
@@ -91,6 +96,8 @@ namespace IW4MAdmin.Application
             Console.ForegroundColor = ConsoleColor.Gray;
 
             Console.CancelKeyPress += OnCancelKey;
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            AssemblyLoadContext.Default.Unloading += OnUnloading;
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4MAdmin");
@@ -101,14 +108,31 @@ namespace IW4MAdmin.Application
             await LaunchAsync();
         }
 
+
         /// <summary>
-        /// event callback executed when the control + c combination is detected
-        /// gracefully stops the server manager and waits for all tasks to finish
+        /// A single, thread-safe method to perform the application shutdown.
+        /// It's designed to be idempotent (safe to call multiple times).
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
+        private static async Task PerformShutdownAsync()
         {
+            var shouldShutdown = false;
+
+            lock (Lock)
+            {
+                if (!_isExiting)
+                {
+                    _isExiting = true;
+                    shouldShutdown = true;
+                }
+            }
+
+            if (!shouldShutdown)
+            {
+                return;
+            }
+
+            Utilities.DefaultLogger.LogInformation("Shutdown signal received. Stopping application manager...");
+
             if (_serverManager is not null)
             {
                 await _serverManager.Stop();
@@ -118,6 +142,38 @@ namespace IW4MAdmin.Application
             {
                 await _applicationTask;
             }
+        }
+
+        /// <summary>
+        /// Handles SIGTERM. This is the primary event for graceful shutdown in containers and on Linux.
+        /// The runtime is already terminating, so we must run cleanup synchronously.
+        /// </summary>
+        private static void OnUnloading(AssemblyLoadContext context)
+        {
+            Utilities.DefaultLogger.LogDebug("SIGTERM received (via AssemblyLoadContext.Unloading), performing synchronous shutdown");
+            PerformShutdownAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Handles Ctrl+C (SIGINT). We can prevent the process from exiting immediately
+        /// to perform a graceful, asynchronous shutdown.
+        /// </summary>
+        private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
+        {
+            Utilities.DefaultLogger.LogDebug("SIGINT received (via Console.CancelKeyPress), performing asynchronous shutdown");
+            // Prevent the OS from terminating the process, allowing our cleanup to run.
+            e.Cancel = true;
+            await PerformShutdownAsync();
+        }
+
+        /// <summary>
+        /// A fallback handler for other process exit scenarios.
+        /// The process is already terminating, so we must run cleanup synchronously.
+        /// </summary>
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            Utilities.DefaultLogger.LogDebug("ProcessExit event received, performing synchronous shutdown");
+            PerformShutdownAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -131,32 +187,32 @@ namespace IW4MAdmin.Application
             var logger = BuildDefaultLogger<Program>(new ApplicationConfiguration());
             Utilities.DefaultLogger = logger;
             logger.LogInformation("Begin IW4MAdmin startup. Version is {Version}", Version);
-            
-    #if DEBUG
+
+#if DEBUG
             StrongReferencesLoader.Load();
-    #endif
-            
+#endif
+
             try
             {
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
-                
+
                 logger.LogDebug("Configuring services...");
 
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
                 _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
                     (configHandler.Configuration() ?? new ApplicationConfiguration()).WebfrontBindUrl);
-              
+
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
 
                 await _serverManager.Init();
 
                 _applicationTask = RunApplicationTasksAsync(logger, _serverManager, _serviceProvider);
-                
+
                 await _applicationTask;
                 logger.LogInformation("Shutdown completed successfully");
             }
@@ -222,7 +278,7 @@ namespace IW4MAdmin.Application
             var masterCommunicator = serviceProvider.GetRequiredService<IMasterCommunication>();
             var webfrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
             using var onWebfrontErrored = new ManualResetEventSlim();
-            
+
             var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
                 ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken).ContinueWith(continuation =>
                 {
@@ -235,9 +291,8 @@ namespace IW4MAdmin.Application
                         continuation.Exception?.InnerException?.Message);
 
                     logger.LogDebug(continuation.Exception, "Unable to start webfront task");
-                    
+
                     onWebfrontErrored.Set();
-                    
                 })
                 : Task.CompletedTask;
 
@@ -277,7 +332,7 @@ namespace IW4MAdmin.Application
             logger.LogDebug("Starting webfront and input tasks");
             return Task.WhenAll(tasks);
         }
-        
+
         /// <summary>
         /// reads input from the console and executes entered commands on the default server
         /// </summary>
@@ -301,8 +356,8 @@ namespace IW4MAdmin.Application
                         await Task.Delay(1000);
                         continue;
                     }
-                    
-                    var lastCommand = await Console.In.ReadLineAsync();
+
+                    var lastCommand = await Console.In.ReadLineAsync(_serverManager.CancellationToken);
 
                     if (lastCommand == null)
                     {
@@ -352,8 +407,9 @@ namespace IW4MAdmin.Application
 
             // register the native commands
             foreach (var commandType in typeof(SharedLibraryCore.Commands.QuitCommand).Assembly.GetTypes()
-                .Concat(typeof(Program).Assembly.GetTypes().Where(type => type.Namespace?.StartsWith("IW4MAdmin.Application.Commands") ?? false))
-                .Where(command => command.BaseType == typeof(Command)))
+                         .Concat(typeof(Program).Assembly.GetTypes()
+                             .Where(type => type.Namespace?.StartsWith("IW4MAdmin.Application.Commands") ?? false))
+                         .Where(command => command.BaseType == typeof(Command)))
             {
                 defaultLogger.LogDebug("Registered native command type {Name}", commandType.Name);
                 serviceCollection.AddSingleton(typeof(IManagerCommand), commandType);
@@ -390,11 +446,11 @@ namespace IW4MAdmin.Application
             foreach (var configurationType in configurations)
             {
                 defaultLogger.LogDebug("Registered plugin config type {Name}", configurationType.Name);
-                var configInstance = (IBaseConfiguration) Activator.CreateInstance(configurationType);
+                var configInstance = (IBaseConfiguration)Activator.CreateInstance(configurationType);
                 var handlerType = typeof(BaseConfigurationHandler<>).MakeGenericType(configurationType);
                 var handlerInstance = Activator.CreateInstance(handlerType, configInstance.Name());
                 var genericInterfaceType = typeof(IConfigurationHandler<>).MakeGenericType(configurationType);
-                
+
                 serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
             }
 
@@ -409,10 +465,10 @@ namespace IW4MAdmin.Application
 
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
-                .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
-                .Union(plugins.SelectMany(asm => asm.Assembly.GetTypes())
-                    .Distinct()
-                    .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
+                         .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
+                         .Union(plugins.SelectMany(asm => asm.Assembly.GetTypes())
+                             .Distinct()
+                             .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
             {
                 var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
                 serviceCollection.AddSingleton(instance);
@@ -434,7 +490,7 @@ namespace IW4MAdmin.Application
                 .AddConfiguration<DefaultSettings>()
                 .AddConfiguration<CommandConfiguration>()
                 .AddConfiguration<StatsConfiguration>("StatsPluginSettings");
-            
+
             // for legacy purposes. update at some point
             var appConfigHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
             appConfigHandler.BuildAsync().GetAwaiter().GetResult();
@@ -450,17 +506,17 @@ namespace IW4MAdmin.Application
             var masterUri = Utilities.IsDevelopment
                 ? new Uri("http://127.0.0.1:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
-            var httpClient = new HttpClient(new HttpClientHandler {AllowAutoRedirect = true})
+            var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
             {
                 BaseAddress = masterUri,
                 Timeout = TimeSpan.FromSeconds(15)
             };
             var masterRestClient = RestService.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
-            
+
             if (appConfig == null)
             {
-                appConfig = (ApplicationConfiguration) new ApplicationConfiguration().Generate();
+                appConfig = (ApplicationConfiguration)new ApplicationConfiguration().Generate();
                 appConfigHandler.Set(appConfig);
                 appConfigHandler.Save().GetAwaiter().GetResult();
             }
@@ -474,7 +530,7 @@ namespace IW4MAdmin.Application
             // build the dependency list
             serviceCollection
                 .AddBaseLogger(appConfig)
-                .AddSingleton((IConfigurationHandler<ApplicationConfiguration>) appConfigHandler)
+                .AddSingleton((IConfigurationHandler<ApplicationConfiguration>)appConfigHandler)
                 .AddSingleton<IConfigurationHandler<CommandConfiguration>>(commandConfigHandler)
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
@@ -507,7 +563,8 @@ namespace IW4MAdmin.Application
                     UpdatedAliasResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>, ConnectionsResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>, PermissionLevelChangedResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>,
+                    PermissionLevelChangedResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>, ClientResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
@@ -538,7 +595,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IGameScriptEventFactory, GameScriptEventFactory>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
-           
+
             serviceCollection.AddSingleton<ICoreEventHandler, CoreEventHandler>();
             serviceCollection.AddSource();
             HandlePluginRegistration(appConfig, serviceCollection, masterRestClient);

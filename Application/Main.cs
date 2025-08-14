@@ -97,7 +97,7 @@ namespace IW4MAdmin.Application
 
             Console.CancelKeyPress += OnCancelKey;
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-            AssemblyLoadContext.Default.Unloading += OnUnloading;
+            //AssemblyLoadContext.Default.Unloading += OnUnloading;
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4MAdmin");
@@ -222,9 +222,6 @@ namespace IW4MAdmin.Application
                 var failMessage = translationLookup == null
                     ? "Failed to initialize IW4MAdmin"
                     : translationLookup["MANAGER_INIT_FAIL"];
-                var exitMessage = translationLookup == null
-                    ? "Press enter to exit..."
-                    : translationLookup["MANAGER_EXIT"];
 
                 logger.LogCritical(e, "Failed to initialize IW4MAdmin");
                 Console.WriteLine(failMessage);
@@ -252,11 +249,9 @@ namespace IW4MAdmin.Application
 
                 if (_serverManager is not null)
                 {
-                    await _serverManager?.Stop();
+                    await _serverManager.Stop();
                 }
 
-                Console.WriteLine(exitMessage);
-                await Console.In.ReadAsync(new char[1], 0, 1);
                 return;
             }
 
@@ -357,8 +352,14 @@ namespace IW4MAdmin.Application
                         continue;
                     }
 
-                    var lastCommand = await Console.In.ReadLineAsync(_serverManager.CancellationToken);
+                    var readLineTask = Task.Run(() => Console.In.ReadLineAsync());
+                    var completedTask = await Task.WhenAny(readLineTask, Task.Delay(Timeout.Infinite, _serverManager.CancellationToken));
+                    if (completedTask != readLineTask)
+                    {
+                        return;
+                    }
 
+                    var lastCommand = await readLineTask;
                     if (lastCommand == null)
                     {
                         continue;

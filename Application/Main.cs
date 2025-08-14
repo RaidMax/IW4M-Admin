@@ -97,7 +97,6 @@ namespace IW4MAdmin.Application
 
             Console.CancelKeyPress += OnCancelKey;
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-            //AssemblyLoadContext.Default.Unloading += OnUnloading;
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4MAdmin");
@@ -142,16 +141,6 @@ namespace IW4MAdmin.Application
             {
                 await _applicationTask;
             }
-        }
-
-        /// <summary>
-        /// Handles SIGTERM. This is the primary event for graceful shutdown in containers and on Linux.
-        /// The runtime is already terminating, so we must run cleanup synchronously.
-        /// </summary>
-        private static void OnUnloading(AssemblyLoadContext context)
-        {
-            Utilities.DefaultLogger.LogDebug("SIGTERM received (via AssemblyLoadContext.Unloading), performing synchronous shutdown");
-            PerformShutdownAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>

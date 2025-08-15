@@ -64,6 +64,7 @@ namespace IW4MAdmin.Application.IO
                             _logger.LogInformation("Not registering {Name} socket because it is already bound",
                                 nameof(NetworkGameLogReader));
                         }
+
                         return Task.FromResult(Enumerable.Empty<GameEvent>());
                     }
 
@@ -151,7 +152,14 @@ namespace IW4MAdmin.Application.IO
         {
             try
             {
-                return new IPEndPoint(Dns.GetHostAddresses(_uri.Host).First(), _uri.Port);
+                if (!IPAddress.TryParse(_uri.Host, out var address))
+                    address = Dns.GetHostAddresses(_uri.Host).FirstOrDefault();
+
+                if (address is null)
+                    throw new InvalidOperationException(
+                        $"Could not resolve host {_uri.Host} for {nameof(NetworkGameLogReader)}");
+
+                return new IPEndPoint(address, _uri.Port);
             }
             catch (Exception ex)
             {

@@ -260,6 +260,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/iw4madmin
           tags: |
+            # push to develop branch: tags as 'develop'
+            type=raw,value=develop
             # tag with the build number and -dev suffix (e.g., 2025.8.13.1-dev)
             type=raw,value=${{ env.buildNumber }}-dev
             # tag with the short git sha (e.g., f15fbd3)

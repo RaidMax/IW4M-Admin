@@ -222,16 +222,71 @@ jobs:
           name: IW4MAdmin-${{ env.buildNumber }}-${{ env.releaseType }}
           path: ${{ env.outputFolder }}
 
-  build_and_push_docker:
+  build_and_push_docker_dev:
     runs-on: ubuntu-latest
     needs: [ make_version, build ]
+    if: ${{ github.ref == 'refs/heads/develop' }}
     permissions:
       contents: read
       packages: write
-    
+
     env:
       buildNumber: ${{ needs.make_version.outputs.build_num }}
-      
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download application artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: IW4MAdmin-${{ env.buildNumber }}-${{ env.releaseType }}
+          path: ${{ github.workspace }}/publish
+
+      - name: Prepare Docker build context
+        run: |
+          cp Dockerfile entrypoint.sh ${{ github.workspace }}/publish/
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/iw4madmin
+          tags: |
+            # tag with the build number and -dev suffix (e.g., 2025.8.13.1-dev)
+            type=raw,value=${{ env.buildNumber }}-dev
+            # tag with the short git sha (e.g., f15fbd3)
+            type=sha,prefix=
+          labels: |
+            org.opencontainers.image.version=${{ env.buildNumber }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ github.workspace }}/publish
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build_and_push_docker_release:
+    runs-on: ubuntu-latest
+    needs: [ make_version, build ]
+    environment: prerelease
+    if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/release/pre' }}
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      buildNumber: ${{ needs.make_version.outputs.build_num }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -260,21 +315,19 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/iw4madmin
           tags: |
             # push to master or release/pre branch: tags as 'latest'
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/release/pre' }}
-            # push to develop branch: tags as 'develop'
-            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=latest
             # tag with the build number (e.g., 2025.8.13.1)
             type=raw,value=${{ env.buildNumber }}
             # tag with the short git sha (e.g., f15fbd3)
             type=sha,prefix=
           labels: |
             org.opencontainers.image.version=${{ env.buildNumber }}
-            
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ${{ github.workspace }}/publish
-          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/release/pre' || github.ref == 'refs/heads/develop') }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   

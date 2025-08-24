@@ -206,6 +206,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .ToListAsync();
 
             var finished = statsInfo
+                .Where(stat => rankingsDict[stat.ClientId].Any())
                 .OrderByDescending(stat => rankingsDict[stat.ClientId].First().PerformanceMetric)
                 .Select((s, index) => new TopStatsInfo
                 {

@@ -630,7 +630,7 @@ namespace IW4MAdmin.Application
                 }
             }
 
-            _isRunningTokenSource.Cancel();
+            await _isRunningTokenSource.CancelAsync();
 
             IsRunning = false;
         }

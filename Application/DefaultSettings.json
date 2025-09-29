@@ -186,10 +186,14 @@
           "Name": "twar",
           "Alias": "War"
         },
-	{
+	    {
           "Name": "cmp",
           "Alias": "Zombies"
-        }	      
+        },
+		{
+          "Name": "zom",
+          "Alias": "Zombies"
+        }	
       ]
     },
     {

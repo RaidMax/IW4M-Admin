@@ -195,8 +195,8 @@ namespace IW4MAdmin.Application.Misc
                 {
                     id = (long?)ids.First();
                 }
-                
-                var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+
+                var fifteenDaysAgo = Plugins.Stats.Extensions.FifteenDaysAgo();
                 return set
                     .Where(rating => rating.Newest)
                     .Where(rating => rating.ServerId == id)

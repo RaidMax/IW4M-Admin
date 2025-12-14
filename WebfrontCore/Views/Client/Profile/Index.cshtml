@@ -99,12 +99,12 @@
                                 }
                             </div>
 
-                            <div class="dropdown-menu dropdown-menu-center @(Model.Aliases.Where(alias => !alias.Item1.Contains(" ")).Max(alias => (int?)alias.Item1.Length) >= 15 ? "w-250" : "")" aria-labelledby="profileAliasHistory">
-                                @foreach (var (alias, dateAdded) in Model.Aliases.OrderByDescending(alias => alias.Item2).Take(15))
+                            <div class="dropdown-menu dropdown-menu-center @(Model.Aliases.Where(alias => !alias.Value.Contains(" ")).Max(alias => (int?)alias.Value.Length) >= 15 ? "w-250" : "")" aria-labelledby="profileAliasHistory">
+                                @foreach (var alias in Model.Aliases.OrderByDescending(alias => alias.Date).Take(15))
                                 {
-                                    <a asp-controller="Client" asp-action="Find" asp-route-clientName="@alias.StripColors()" class="dropdown-item" data-toggle="tooltip" data-title="@dateAdded.HumanizeForCurrentCulture()">
+                                    <a asp-controller="Client" asp-action="AdvancedFind" asp-route-clientName="@alias.Value.StripColors()" class="dropdown-item" data-toggle="tooltip" data-title="@alias.Date.HumanizeForCurrentCulture()">
                                         <i class="oi oi-magnifying-glass text-muted mr-5"></i>
-                                        <color-code value="@alias"></color-code>
+                                        <color-code value="@alias.Value"></color-code>
                                     </a>
                                 }
                                 @if (Model.Aliases.Count > 15)
@@ -145,24 +145,24 @@
                     <has-permission entity="MetaAliasUpdate" required-permission="Read">
                         <div class="dropdown with-arrow">
                             <div data-toggle="dropdown" id="profileIPAddressHistory" aria-haspopup="true" aria-expanded="false">
-                                @if (Model.IPs.Any(ip => !string.IsNullOrEmpty(ip.Item1)))
+                                @if (Model.IPs.Any(ip => !string.IsNullOrEmpty(ip.Value)))
                                 {
                                     <i class="oi oi-caret-bottom font-size-12 text-muted" aria-hidden="true"></i>
                                 }
                             </div>
                             <div class="dropdown-menu dropdown-menu-center" aria-labelledby="profileAliasHistory">
-                                @foreach (var (ip, dateAdded) in Model.IPs.OrderByDescending(ip => ip.Item2).Take(15))
+                                @foreach (var ip in Model.IPs.OrderByDescending(ip => ip.Date).Take(15))
                                 {
-                                    if (string.IsNullOrEmpty(ip))
+                                    if (string.IsNullOrEmpty(ip.Value))
                                     {
                                         continue;
                                     }
-                                    <div class="d-flex dropdown-item" data-toggle="tooltip" data-title="@dateAdded.HumanizeForCurrentCulture()">
-                                        <a asp-controller="Client" asp-action="Find" asp-route-clientName="@ip">
+                                    <div class="d-flex dropdown-item" data-toggle="tooltip" data-title="@ip.Date.HumanizeForCurrentCulture()">
+                                        <a asp-controller="Client" asp-action="AdvancedFind" asp-route-clientIP="@ip.Value">
                                             <i class="oi oi-magnifying-glass text-muted mr-5"></i>
                                         </a>
-                                        <a href="#contextModal" class="profile-ip-lookup dropdown-item p-0 m-0" data-ip="@ip">
-                                            <color-code value="@ip"></color-code>
+                                        <a href="#contextModal" class="profile-ip-lookup dropdown-item p-0 m-0" data-ip="@ip.Value">
+                                            <color-code value="@ip.Value"></color-code>
                                         </a>
                                     </div>
                                 }

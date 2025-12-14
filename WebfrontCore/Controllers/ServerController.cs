@@ -57,7 +57,8 @@ namespace WebfrontCore.Controllers
             return PartialView("_ClientActivity", serverInfo);
         }
 
-        [HttpGet]
+        [NonAction]
+        // [HttpGet]
         public ActionResult Scoreboard(string serverId)
         {
             ViewBag.Title = Localization["WEBFRONT_TITLE_SCOREBOARD"];
@@ -68,7 +69,8 @@ namespace WebfrontCore.Controllers
             return View(ProjectScoreboard(Manager.GetServers(), null, true));
         }
 
-        [HttpGet("[controller]/{id}/scoreboard")]
+        [NonAction]
+        // [HttpGet("[controller]/{id}/scoreboard")]
         public ActionResult Scoreboard(string id, [FromQuery] string order = null, [FromQuery] bool down = true)
         {
             var server = Manager.GetServers().FirstOrDefault(srv => srv.ToString() == id);

@@ -27,6 +27,8 @@ namespace SharedLibraryCore.Dtos
         /// </summary>
         public SortDirection Direction { get; set; } = SortDirection.Descending;
 
+        public string SortColumn { get; set; }
+
         public DateTime? Before { get; set; }
         
         public DateTime? After { get; set; }

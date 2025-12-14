@@ -28,6 +28,7 @@ namespace SharedLibraryCore
         private const int CookieLifespan = 3;
 
         private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
+        private static readonly byte[] LocalHostIPv6 = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }; // ::1
         private static string _socialLink;
         private static string _socialTitle;
         
@@ -88,7 +89,12 @@ namespace SharedLibraryCore
 
         public override async void OnActionExecuting(ActionExecutingContext context)
         {
-            if (!HttpContext.Connection.RemoteIpAddress.GetAddressBytes().SequenceEqual(LocalHost))
+            var remoteIpBytes = HttpContext.Connection.RemoteIpAddress?.GetAddressBytes() ?? Array.Empty<byte>();
+            // If X-Forwarded-For is present, this is a proxied request - don't treat as localhost even if IP is 127.0.0.1
+            var hasForwardedHeader = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For");
+            var isLocalHost = !hasForwardedHeader && (remoteIpBytes.SequenceEqual(LocalHost) || remoteIpBytes.SequenceEqual(LocalHostIPv6));
+            
+            if (!isLocalHost)
             {
                 try
                 {

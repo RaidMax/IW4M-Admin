@@ -85,11 +85,20 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
                     WebfrontPermission.Read));
         }
 
-        var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection });
+        var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection, a.Client.FirstConnection });
 
-        iqGroupedClientAliases = query.Direction == SortDirection.Descending
-            ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.LastConnection)
-            : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
+        if (query.SortColumn == "FirstConnection")
+        {
+             iqGroupedClientAliases = query.Direction == SortDirection.Descending
+                ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.FirstConnection)
+                : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.FirstConnection);
+        }
+        else
+        {
+            iqGroupedClientAliases = query.Direction == SortDirection.Descending
+                ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.LastConnection)
+                : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
+        }
 
         var clientIds = await iqGroupedClientAliases.Select(g => g.Key.ClientId)
             .Skip(query.Offset)
@@ -110,6 +119,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
                 ClientLevel = clientAlias.Client.Level.ToLocalizedLevelName(),
                 ClientLevelValue = clientAlias.Client.Level,
                 LastConnection = clientAlias.Client.LastConnection,
+                FirstConnection = clientAlias.Client.FirstConnection,
                 Game = clientAlias.Client.GameName
             })
             .ToListAsync();

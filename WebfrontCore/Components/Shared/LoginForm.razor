@@ -1,0 +1,58 @@
+@inject IJSRuntime JS
+@inject WebfrontCore.Services.AppState AppState
+@inject WebfrontCore.Services.IToastService ToastService
+@using WebfrontCore.Services
+
+<form @onsubmit="Login" @onsubmit:preventDefault>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon-clientId">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_CLIENTID"))</span>
+        </div>
+        <input type="number" class="form-control" @bind="ClientId" @bind:event="oninput" aria-label="clientId" aria-describedby="basic-addon-clientId">
+    </div>
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="basic-addon-Password">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_PASSWORD"))</span>
+        </div>
+        <input type="password" class="form-control" @bind="Password" @bind:event="oninput" aria-label="Password" aria-describedby="basic-addon-Password">
+    </div>
+    
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @ErrorMessage
+        </div>
+    }
+
+    <button type="submit" class="btn btn-block btn-primary">@(AppState.Loc("WEBFRONT_LOGIN_BUTTON_SUBMIT"))</button>
+</form>
+
+@code {
+    private int ClientId { get; set; }
+    private string Password { get; set; }
+    private string ErrorMessage { get; set; }
+
+    private async Task Login()
+    {
+        ErrorMessage = null;
+        if (ClientId == 0 || string.IsNullOrEmpty(Password))
+        {
+            ErrorMessage = "Please enter ID and Password";
+            return;
+        }
+        
+        var request = new
+        {
+            ClientId = ClientId,
+            Password = Password
+        };
+
+        // Call JS to perform the fetch and reload
+        var result = await JS.InvokeAsync<string>("processLoginPost", "/Account/Login", request);
+        
+        if (result != "OK")
+        {
+            ErrorMessage = result;
+        }
+    }
+}

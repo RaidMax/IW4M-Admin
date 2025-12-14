@@ -1,0 +1,151 @@
+@page "/About"
+@using WebfrontCore.Controllers.API
+@using WebfrontCore.Components.Shared
+@using System.Text.RegularExpressions
+@using SharedLibraryCore
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+
+@if (AboutInfo == null)
+{
+    <div class="text-center mt-20">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="content text-wrap mt-20">
+        @* Community Banner *@
+        @if (AboutInfo.CommunityInformation?.EnableBanner == true)
+        {
+            <img class="img-fluid mb-20" style="max-height: 250px" src="images/community/banner.png" alt="@AboutInfo.CommunityInformation?.Name"/>
+        }
+
+        @* Community Name *@
+        @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Name))
+        {
+            <h2 class="content-title">
+                <ColorCode Value="@AboutInfo.CommunityInformation.Name" />
+            </h2>
+        }
+
+        <div class="card m-0 rounded">
+            @* About Title and Description *@
+            @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Description))
+            {
+                <h5 class="text-primary mt-0">@AppState.Loc("WEBFRONT_ABOUT_TITLE")</h5>
+                <div class="text-md-justify">
+                    <ColorCode Value="@AboutInfo.CommunityInformation.Description" />
+                </div>
+                
+                @* Social Links *@
+                @if (AboutInfo.CommunityInformation.SocialAccounts?.Any() == true)
+                {
+                    <div class="mt-10">
+                        @foreach (var social in AboutInfo.CommunityInformation.SocialAccounts)
+                        {
+                            <div>
+                                <a href="@social.Url" target="_blank" title="@social.Title" class="d-flex no-decoration">
+                                    @if (!string.IsNullOrWhiteSpace(social.IconId))
+                                    {
+                                        <i class="oi @social.IconId mr-5" style="width: 1.6rem;"></i>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(social.IconUrl))
+                                    {
+                                        var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
+                                            ? parsedUrl.AbsoluteUri
+                                            : $"images/community/{social.IconUrl}";
+                                        <img class="img-fluid mr-5" style="width: 1.6rem; fill: white" src="@url" alt="@social.Title"/>
+                                    }
+                                    <div class="ml-1">@social.Title</div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        @* Rules Section *@
+        @if (AllRules.Any(rule => rule.Rules.Any()))
+        {
+            <h2 class="content-title mt-20">@AppState.Loc("WEBFRONT_ABOUT_COMMUNITY_GUIDELINES")</h2>
+        }
+
+        <div class="card m-0 rounded">
+            @foreach (var ruleSet in AllRules)
+            {
+                if (!ruleSet.Rules.Any())
+                {
+                    continue;
+                }
+
+                var start = 1;
+                <h5 class="text-primary mt-0 mb-0">
+                    <ColorCode Value="@ruleSet.ServerName" />
+                </h5>
+                @foreach (var rule in ruleSet.Rules)
+                {
+                    <div class="rule">
+                        @if (!rule.StartsWith("#") && !Regex.IsMatch(rule.StripColors(), @"^(Rule ?#?)?\d+(\.|\))"))
+                        {
+                            <span>@start.</span>
+                        }
+                        <span class="text-muted">
+                            <ColorCode Value="@rule" />
+                        </span>
+                    </div>
+                    start++;
+                }
+                <div class="mb-20"></div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private AboutDto AboutInfo { get; set; }
+    private List<RuleSetInfo> AllRules { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AboutInfo = await Api.GetAboutAsync();
+        
+        if (AboutInfo != null)
+        {
+            // Build all rules list similar to MVC
+            AllRules = new List<RuleSetInfo>();
+            
+            // Global rules first
+            if (AboutInfo.GlobalRules?.Any() == true)
+            {
+                AllRules.Add(new RuleSetInfo 
+                { 
+                    ServerName = AppState.Loc("WEBFRONT_ABOUT_GLOBAL_RULES"), 
+                    Rules = AboutInfo.GlobalRules.ToList() 
+                });
+            }
+            
+            // Server-specific rules
+            if (AboutInfo.ServerRules != null)
+            {
+                foreach (var server in AboutInfo.ServerRules.Where(s => s.Rules?.Any() == true))
+                {
+                    AllRules.Add(new RuleSetInfo 
+                    { 
+                        ServerName = server.ServerName, 
+                        Rules = server.Rules.ToList() 
+                    });
+                }
+            }
+        }
+    }
+    
+    private class RuleSetInfo
+    {
+        public string ServerName { get; set; }
+        public List<string> Rules { get; set; } = new();
+    }
+}

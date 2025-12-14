@@ -1,0 +1,63 @@
+@using WebfrontCore.Controllers.API.Dtos
+@using SharedLibraryCore
+@using Data.Models
+@using Humanizer
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+
+@if (ReportsList.Any())
+{
+    <div class="content-title">@AppState.Loc("WEBFRONT_MODAL_REPORTS_TITLE")</div>
+    <div class="text-muted">@AppState.Loc("WEBFRONT_MODAL_REPORTS_SUBTITLE")</div>
+
+    @foreach (var server in ReportsList)
+    {
+        <div class="rounded bg-very-dark-dm bg-light-ex-lm mt-10 mb-10 p-10">
+            <h5 class="mt-0 mb-5 text-truncate">
+                <ColorCode Value="@server.Name" />
+            </h5>
+            @foreach (var report in server.Reports)
+            {
+                 // Penalty rendering logic reused from _ReceivedPenaltyResponse logic or simplified
+                 // The view used _ReceivedPenaltyResponse partial. 
+                 // I will inline it or create partial component? 
+                 // Inline for simplicity unless complex.
+                 // ReceivedPenaltyResponse DTO structure:
+                 /*
+                    public string OffenderName { get; set; }
+                    public int OffenderClientId { get; set; }
+                    public string PunisherName { get; set; }
+                    public int PunisherClientId { get; set; }
+                    public string Offense { get; set; }
+                    public EFPenalty.PenaltyType PenaltyType { get; set; }
+                 */
+                 
+                 <div class="font-weight-bold">@report.ReportedOn.HumanizeForCurrentCulture()</div>
+                 <div class="font-size-12">
+                     <a href="/Client/Profile/@report.Target.ClientId">
+                         <ColorCode Value="@report.Target.Name" />
+                     </a>
+                     
+                     <span> (@report.Target.ClientId) @AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_WAS") @AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_REPORT").ToLower() @AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_BY") </span>
+                     
+                     <a href="/Client/Profile/@report.Origin.ClientId">
+                         <ColorCode Value="@report.Origin.Name" />
+                     </a>
+                     <span> (@report.Origin.ClientId) @AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_FOR") @report.Reason</span>
+                 </div>
+                 <hr/>
+            }
+        </div>
+    }
+}
+
+@code {
+    private List<ServerReportsDto> ReportsList = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            ReportsList = (await Api.GetReportsAsync()).ToList();
+        } catch {}
+    }
+}

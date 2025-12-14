@@ -1,0 +1,215 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@using System.Threading
+@inject IZeroJsInterop JS
+@inject AppState AppState
+@inject IWebfrontApiClient Api
+@inject IHttpContextAccessor HttpContextAccessor
+@inject SharedLibraryCore.Configuration.ApplicationConfiguration AppConfig
+@using WebfrontCore.Services
+@using Microsoft.AspNetCore.Http
+@using SharedLibraryCore.Dtos
+@using Data.Models.Client
+
+@if (!_isInitialized)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <WebfrontCore.Components.Shared.ActionModal @ref="_actionModal" />
+    
+    <CascadingValue Value="_actionModal">
+    <div class="page-wrapper with-navbar with-sidebar" data-sidebar-type="overlayed-sm-and-down">
+        <!-- toast notifications -->
+        <div class="sticky-alerts" style="z-index: 1001"></div>
+        
+        <!-- top menu bar -->
+        <nav class="navbar">
+            <button id="toggle-sidebar-btn" class="btn btn-action" type="button" onclick="halfmoon.toggleSidebar()">
+                <i class="oi oi-menu" aria-hidden="true"></i>
+            </button>
+
+            <!-- branding -->
+            <a href="/" class="navbar-brand mr-20 mr-md-0">
+                @if (string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding))
+                {
+                    <div>IW4MAdmin</div>
+                }
+                else
+                {
+                     <div>@AppConfig.WebfrontCustomBranding</div>
+                }
+            </a>
+
+            <!-- client badges -->
+            <div class="d-none d-md-block">
+                @if (_navData != null)
+                {
+                    <div class="badge-group ml-20" role="group" aria-label="...">
+                        <span class="badge badge-primary">@(_navData.TotalClientCount)</span>
+                        <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE")</span>
+                    </div>
+
+                    <HasPermission Entity="PrivilegedClientsPage" RequiredPermission="Read">
+                        <div class="badge-group ml-10" role="group" aria-label="...">
+                            <span class="badge badge-success">@(_navData.TotalAdminCount)</span>
+                            <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")</span>
+                        </div>
+                    </HasPermission>
+
+                    <HasPermission Entity="AdminMenu" RequiredPermission="Read">
+                        <div class="badge-group ml-10" role="group">
+                            <span class="badge badge-danger">@(_navData.TotalReportCount)</span>
+                            <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
+                        </div>
+                    </HasPermission>
+                }
+            </div>
+
+            <SearchResourceForm />
+
+            <div class="d-flex ml-auto">
+                <div class="align-self-center">
+                     <WebfrontCore.Components.Shared.Partials.Notifications />
+                </div>
+                <div class="btn btn-action mr-10 ml-10" @onclick="ToggleDarkMode" data-toggle="tooltip" data-title="Toggle Dark Mode" data-placement="bottom">
+                    <i class="oi oi-moon"></i>
+                </div>
+            </div>
+        </nav>
+
+        <NavMenu />
+
+        <div id="target_id">
+           <!-- Target ID content -->
+        </div>
+
+        <div class="container-fluid content-wrapper">
+            <div id="mainLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display: none">
+                <div class="progress-bar-value"></div>
+            </div>
+            
+            @Body
+        </div>
+    </div>
+    </CascadingValue>
+}
+
+@code {
+    private WebfrontCore.Components.Shared.ActionModal _actionModal;
+    private bool _isInitialized = false;
+    private bool _halfmoonInitialized = false;
+
+    private NavigationData _navData;
+    private PeriodicTimer _badgeRefreshTimer;
+    private CancellationTokenSource _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            
+            // Read authenticated user directly from HttpContext.User (cookie-based auth)
+            var user = httpContext?.User;
+            
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                var clientIdClaim = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Sid)?.Value;
+                var nameClaim = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var roleClaim = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+                var gameClaim = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.PrimaryGroupSid)?.Value;
+
+                if (int.TryParse(clientIdClaim, out var clientId) && 
+                    !string.IsNullOrEmpty(nameClaim) && 
+                    !string.IsNullOrEmpty(roleClaim))
+                {
+                    var level = Enum.TryParse<EFClient.Permission>(roleClaim, out var parsedLevel) 
+                        ? parsedLevel 
+                        : EFClient.Permission.User;
+                    var game = Enum.TryParse<Data.Models.Reference.Game>(gameClaim, out var parsedGame) 
+                        ? parsedGame 
+                        : Data.Models.Reference.Game.IW4;
+
+                    AppState.SetUser(new ClientInfo
+                    {
+                        ClientId = clientId,
+                        Name = nameClaim,
+                        Level = level,
+                        Game = game
+                    });
+                }
+            }
+        }
+        catch
+        {
+            // Handle errors gracefully
+        }
+
+        try
+        {
+             // ... existing initialization logic ...
+             _navData = await Api.GetNavigationDataAsync();
+        }
+        catch {}
+        
+        _isInitialized = true;
+        
+        // Start periodic badge refresh
+        _cts = new CancellationTokenSource();
+        _badgeRefreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _ = RefreshBadgesAsync();
+        AppState.OnChange += StateHasChanged;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_isInitialized && !_halfmoonInitialized)
+        {
+            _halfmoonInitialized = true;
+            await JS.InitializeHalfmoon();
+            StateHasChanged();
+        }
+    }
+    
+    private async Task RefreshBadgesAsync()
+    {
+        try
+        {
+            while (await _badgeRefreshTimer.WaitForNextTickAsync(_cts.Token))
+            {
+                try
+                {
+                    _navData = await Api.GetNavigationDataAsync();
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch
+                {
+                    // Ignore refresh errors
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when component is disposed
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _badgeRefreshTimer?.Dispose();
+        AppState.OnChange -= StateHasChanged;
+    }
+
+    private async Task ToggleDarkMode()
+    {
+        await JS.ToggleDarkMode();
+    }
+}

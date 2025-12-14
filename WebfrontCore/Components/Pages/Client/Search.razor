@@ -1,0 +1,139 @@
+@page "/Client/Search"
+@page "/Client/Find"
+@using SharedLibraryCore.Dtos
+@using Data.Models.Client
+@using SharedLibraryCore
+@using WebfrontCore.ViewModels
+@using Humanizer
+@using WebfrontCore.Controllers.API.Dtos
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+@inject NavigationManager NavManager
+@inject SharedLibraryCore.Configuration.ApplicationConfiguration Config
+
+<div class="content mt-0">
+    <h2 class="content-title mt-20 mb-0">@(AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE"))</h2>
+    
+    @if (!string.IsNullOrEmpty(SearchTerm))
+    {
+        <div class="text-muted mb-15">
+             <span class="badge">@SearchTerm</span>
+             <span class="text-primary">@ResultCount</span>
+        </div>
+    }
+
+    @if (Results != null)
+    {
+        <!-- desktop -->
+        <table class="table d-none d-md-table">
+            <thead>
+            <tr class="bg-primary text-light">
+                <td>@(AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME"))</td>
+                <td>@(AppState.Loc("WEBFRONT_PROFILE_LEVEL"))</td>
+                <td class="text-right">@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</td>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var client in Results)
+            {
+                <tr class="bg-dark-dm bg-light-lm">
+                    <td class="col-5">
+                        <a href="/Client/Profile/@client.ClientId">
+                            <ColorCode Value="@client.Name" />
+                        </a>
+                    </td>
+                     @if (!Config.HasPermission(AppState.User.Level, WebfrontCore.Permissions.WebfrontEntity.ClientLevel, WebfrontCore.Permissions.WebfrontPermission.Read) && Config.EnablePrivilegedUserPrivacy)
+                    {
+                        <td class="col-3 level-color-0">@(AppState.Loc("GLOBAL_PERMISSION_USER"))</td>
+                    }
+                    else
+                    {
+                         <td class="col-3 level-color-@((int)client.Level)">@client.Level.ToLocalizedLevelName()</td>
+                    }
+                    <td class="col-4 text-right">@client.LastConnection.Humanize()</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <!-- mobile -->
+        <table class="table bg-dark-dm bg-light-lm d-md-none">
+            <tbody>
+            @foreach (var client in Results)
+            {
+                <tr class="d-flex">
+                    <td class="bg-primary text-light">
+                        <div>@(AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME"))</div>
+                        <div>@(AppState.Loc("WEBFRONT_PROFILE_LEVEL"))</div>
+                        <div>@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</div>
+                    </td>
+                    <td class="flex-grow">
+                        <a href="/Client/Profile/@client.ClientId" class="link-inverse">
+                            <ColorCode Value="@client.Name" />
+                        </a>
+                         @if (!Config.HasPermission(AppState.User.Level, WebfrontCore.Permissions.WebfrontEntity.ClientLevel, WebfrontCore.Permissions.WebfrontPermission.Read) && Config.EnablePrivilegedUserPrivacy)
+                        {
+                            <div class="p-2 level-color-0">@(AppState.Loc("GLOBAL_PERMISSION_USER"))</div>
+                        }
+                        else
+                        {
+                            <div class="p-2 level-color-@((int)client.Level)">@client.Level.ToLocalizedLevelName()</div>
+                        }
+                        <div>@client.LastConnection.Humanize()</div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else if (IsLoading)
+    {
+         <div class="text-center p-20">
+            <span class="oi oi-loop-circular rotating font-size-24 text-primary"></span>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string clientName { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string q { get; set; }
+
+    public string SearchTerm => clientName ?? q;
+
+    private IEnumerable<FindClientResult> Results;
+    private long ResultCount;
+    private bool IsLoading = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+             Results = new List<FindClientResult>();
+             return;
+        }
+
+        IsLoading = true;
+        try 
+        {
+            var request = new FindClientRequest
+            {
+                Name = SearchTerm,
+                Count = 50 // Default
+            };
+            var response = await Api.SearchClientsAsync(request);
+            Results = response.Clients;
+            ResultCount = response.TotalFoundClients;
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+        finally 
+        {
+            IsLoading = false;
+        }
+    }
+}

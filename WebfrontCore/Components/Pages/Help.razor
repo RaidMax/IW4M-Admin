@@ -1,0 +1,147 @@
+@page "/Help"
+@using WebfrontCore.Controllers.API
+@using WebfrontCore.Components.Shared
+@using SharedLibraryCore
+@using Data.Models
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+
+@if (CommandGroups == null)
+{
+     <div class="text-center mt-20">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="content mt-20">
+        @foreach (var group in CommandGroups)
+        {
+            <div class="command-assembly-container">
+                <h2 class="content-title mb-lg-20 mt-20">@group.Name</h2>
+
+                <!-- Desktop Table -->
+                <table class="table rounded">
+                    <thead>
+                        <tr class="bg-primary text-light d-none d-lg-table-row">
+                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_NAME")</th>
+                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_ALIAS")</th>
+                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION")</th>
+                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET")</th>
+                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</th>
+                            <th>@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</th>
+                            <th class="text-right">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var command in group.Commands)
+                        {
+                            <!-- Desktop Row -->
+                            <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
+                                <td class="font-weight-bold">@command.Name</td>
+                                <td>@command.Alias</td>
+                                <td class="text-muted">@command.Description</td>
+                                <td class="@(command.RequiresTarget ? "text-success" : "text-danger")">@command.RequiresTarget</td>
+                                <td class="text-muted">@CommandPrefix@command.Syntax</td>
+                                <td>
+                                    @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                                    {
+                                        <div class="d-flex">
+                                            @foreach (var game in command.SupportedGames)
+                                            {
+                                                <div class="mr-5" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
+                                                    <div class="badge">@game.ToString()</div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="badge">@AppState.Loc("WEBFRONT_HELP_ALL_GAMES")</div>
+                                    }
+                                </td>
+                                <td class="text-right level-color-@((int)command.Permission)">@command.Permission.ToLocalizedLevelName()</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Mobile Table -->
+                <table class="table d-lg-none rounded no-cell-divider bg-dark-dm bg-light-lm" style="border-collapse: collapse">
+                    @foreach (var command in group.Commands)
+                    {
+                        <tr>
+                            <th class="bg-primary text-right text-light first-row" style="width:40%">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_NAME")</th>
+                            <td class="first-row font-weight-bold">@command.Name</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-primary text-right text-light">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_ALIAS")</th>
+                            <td>@command.Alias</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-primary text-right text-light align-top">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION")</th>
+                            <td class="text-muted">@command.Description</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-primary text-right text-light">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET")</th>
+                            <td class="@(command.RequiresTarget ? "text-success" : "text-danger") align-top">@command.RequiresTarget</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-primary text-right text-light align-top">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</th>
+                            <td class="text-muted">@CommandPrefix@command.Syntax</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-primary text-right text-light">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</th>
+                            <td>
+                                @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                                {
+                                    <div class="d-flex">
+                                        @foreach (var game in command.SupportedGames)
+                                        {
+                                            <div class="mr-5" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
+                                                <div class="badge">@game.ToString()</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="badge">@AppState.Loc("WEBFRONT_HELP_ALL_GAMES")</div>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="bg-primary text-right text-light last-row">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL")</th>
+                            <td class="level-color-@((int)command.Permission) last-row">@command.Permission.ToLocalizedLevelName()</td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<CommandGroupDto> CommandGroups { get; set; }
+    private string CommandPrefix { get; set; } = "!";
+
+    protected override async Task OnInitializedAsync()
+    {
+        CommandGroups = await Api.GetHelpAsync();
+        // Try to get command prefix from status API
+        try
+        {
+            var status = await Api.GetStatusAsync();
+            if (!string.IsNullOrEmpty(status?.CommandPrefix))
+            {
+                CommandPrefix = status.CommandPrefix;
+            }
+        }
+        catch
+        {
+            // Use default prefix if status API fails
+        }
+    }
+}

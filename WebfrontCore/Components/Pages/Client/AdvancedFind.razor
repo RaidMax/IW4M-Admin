@@ -1,0 +1,305 @@
+@page "/Client/AdvancedFind"
+@using WebfrontCore.QueryHelpers.Models
+@using SharedLibraryCore
+@using Data.Models.Client
+@using WebfrontCore.Components.Shared
+@using System.Web
+@using Humanizer
+@using Data.Models
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+@inject NavigationManager NavManager
+@inject WebfrontCore.Services.IZeroJsInterop JsInterop
+@implements IAsyncDisposable
+
+<div class="content mt-0">
+    <h2 class="content-title mt-20">@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE")</h2>
+
+    <table class="table">
+        <thead>
+        <tr class="bg-primary text-light d-none d-md-table-row">
+            <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</td>
+            @if (CanSeeIp)
+            {
+                <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</td>
+                <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</td>
+            }
+            <td>@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</td>
+            <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</td>
+            <td class="text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</td>
+            <td class="text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</td>
+        </tr>
+        </thead>
+        <tbody id="searchResultContainer">
+            @if (_isLoading && Results.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            else if (Results.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        No results found
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var client in Results)
+                {
+                    <!-- Desktop Row -->
+                    <tr class="bg-dark-dm bg-light-lm d-none d-md-table-row">
+                        <td>
+                            <a href="/Client/Profile/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
+                                <ColorCode Value="@client.CurrentClientName" />
+                            </a>
+                        </td>
+                        @if (CanSeeIp)
+                        {
+                            <td>@FormatIp(client.CurrentClientIp)</td>
+                            <td>
+                                <div class="d-flex">
+                                    @if (string.IsNullOrEmpty(client.ClientCountryCode))
+                                    {
+                                        <div class="d-flex">
+                                            <i class="oi oi-question-mark ml-5 mr-20"></i>
+                                            <div class="font-size-12 font-weight-light">Unknown</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <img src="https://flagcdn.com/32x24/@(client.ClientCountryCode.ToLower()).png" class="mr-10 rounded align-self-center" alt="@client.ClientCountryDisplayName"/>
+                                        <div class="font-size-12 font-weight-light">@client.ClientCountryDisplayName</div>
+                                    }
+                                </div>
+                            </td>
+                        }
+                        <td>@client.ClientLevel</td>
+                        <td>
+                            <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
+                                <span class="badge">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
+                            </div>
+                        </td>
+                        <td class="text-right">@client.FirstConnection.Humanize()</td>
+                        <td class="text-right">@client.LastConnection.Humanize()</td>
+                    </tr>
+
+                    <!-- Mobile Row -->
+                    <tr class="d-table-row d-md-none d-flex border-bottom">
+                        <td class="bg-primary text-light text-right d-flex flex-column w-quarter">
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</div>
+                            @if (CanSeeIp)
+                            {
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</div>
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</div>
+                            }
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</div>
+                        </td>
+                        <td class="d-flex flex-column w-three-quarter">
+                            <div class="mt-5 mb-5">
+                                <a href="/Client/Profile/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
+                                    <ColorCode Value="@client.CurrentClientName" />
+                                </a>
+                            </div>
+                            @if (CanSeeIp)
+                            {
+                                <div class="mt-5 mb-5">@FormatIp(client.CurrentClientIp)</div>
+                                <div class="mt-5 mb-5">
+                                    <div class="d-flex">
+                                        @if (string.IsNullOrEmpty(client.ClientCountryCode))
+                                        {
+                                            <div class="mr-5">Unknown</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="mr-5">@client.ClientCountryDisplayName</div>
+                                            <img src="https://flagcdn.com/24x18/@(client.ClientCountryCode.ToLower()).png" class="rounded align-self-center" alt="@client.ClientCountryDisplayName"/>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            <div class="mt-5 mb-5">@client.ClientLevel</div>
+                            <div class="mt-5 mb-5">
+                                <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
+                                    <span class="badge font-size-12">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
+                                </div>
+                            </div>
+                            <div class="mt-5 mb-5">@client.FirstConnection.Humanize()</div>
+                            <div class="mt-5 mb-5">@client.LastConnection.Humanize()</div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="text-center">
+        @if (_isLoading && Results.Count > 0)
+        {
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        }
+        
+        @if (HasMoreResults)
+        {
+            <i @ref="_loadMoreTrigger" class="oi oi-chevron-bottom loader-load-more text-primary @(_isLoading ? "d-none" : "")" aria-hidden="true"></i>
+        }
+        else if (Results.Count > 0)
+        {
+            <span class="text-muted">No more results to display</span>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ClientResourceResponse> Results { get; set; } = new();
+    private ClientResourceRequest Request { get; set; } = new();
+    private int Offset { get; set; } = 0;
+    private const int Count = 30;
+    private bool HasMoreResults { get; set; } = true;
+    private bool _isLoading = false;
+    private ElementReference _loadMoreTrigger;
+    private DotNetObjectReference<AdvancedFind>? _dotNetRef;
+    private bool CanSeeIp => AppState.User?.Level >= EFClient.Permission.Trusted;
+    private bool _observerSetup;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavManager.LocationChanged += OnLocationChanged;
+        await LoadSearchParameters();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (HasMoreResults && !_observerSetup)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _dotNetRef);
+            _observerSetup = true;
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        if (!HasMoreResults || _isLoading)
+        {
+            return;
+        }
+        
+        Offset += Count;
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task LoadData()
+    {
+        if (_isLoading) return;
+        
+        _isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            Request.Offset = Offset;
+            Request.Count = Count;
+            
+            var response = await Api.GetClientsAsync(Request);
+            if (response != null && response.Any())
+            {
+                Results.AddRange(response);
+                if (response.Count() < Count)
+                {
+                    HasMoreResults = false;
+                }
+            }
+            else
+            {
+                HasMoreResults = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading clients: {ex.Message}");
+            HasMoreResults = false;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        NavManager.LocationChanged -= OnLocationChanged;
+        _dotNetRef?.Dispose();
+        await Task.CompletedTask;
+    }
+
+    private async void OnLocationChanged(object sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        await LoadSearchParameters();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadSearchParameters()
+    {
+        // Reset state
+        Results.Clear();
+        Offset = 0;
+        HasMoreResults = true;
+        _observerSetup = false;
+        
+        // Parse query parameters
+        var uri = new Uri(NavManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        
+        Request = new ClientResourceRequest();
+        Request.ClientName = query["clientName"];
+        Request.IsExactClientName = bool.Parse(query["isExactClientName"] ?? "false");
+        Request.ClientIp = query["clientIP"];
+        Request.IsExactClientIp = bool.Parse(query["isExactClientIP"] ?? "false");
+        Request.ClientGuid = query["clientGuid"];
+        
+        if (Enum.TryParse<EFClient.Permission>(query["clientLevel"], out var level))
+            Request.ClientLevel = level;
+        
+        if (Enum.TryParse<Reference.Game>(query["gameName"], out var game))
+            Request.GameName = game;
+        
+        if (DateTime.TryParse(query["clientConnected"], out var connected))
+            Request.ClientConnected = connected;
+        if (int.TryParse(query["direction"], out var direction))
+            Request.Direction = (SharedLibraryCore.Dtos.SortDirection)direction;
+        
+        Request.SortColumn = query["sortColumn"];
+        
+        Request.RequesterPermission = AppState.User?.Level ?? EFClient.Permission.User;
+        
+        await LoadData();
+    }
+
+    private string MakeAbbreviation(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        
+        var words = text.Split(' ');
+        if (words.Length == 1) return text;
+        
+        return string.Join("", words.Select(w => w.Length > 0 ? w[0].ToString() : ""));
+    }
+
+    private string FormatIp(int? ip) => ip.HasValue ? SharedLibraryCore.Utilities.ConvertIPtoString(ip.Value) : "-";
+}

@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using Data.Models.Server;
 
@@ -57,8 +58,9 @@ namespace Data.Models.Client.Stats
         public double MaxStrain { get; set; }
 
         [NotMapped]
+        [JsonIgnore]
         public float AverageHitOffset =>
-            (float) Math.Round(
+            HitLocations == null ? 0f : (float) Math.Round(
                 HitLocations.Sum(c => c.HitOffsetAverage) /
                 Math.Max(1, HitLocations.Count(c => c.HitOffsetAverage > 0)), 4);
 
@@ -110,9 +112,12 @@ namespace Data.Models.Client.Stats
         [NotMapped]
         public double SessionSPM { get; set; }
         [NotMapped]
+        [JsonIgnore]
         public SemaphoreSlim ProcessingHit { get; }
 
-        [NotMapped] public MatchData MatchData { get; } = new MatchData();
+        [NotMapped]
+        [JsonIgnore]
+        public MatchData MatchData { get; } = new MatchData();
     }
 
     public class MatchData

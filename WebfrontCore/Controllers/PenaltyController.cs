@@ -20,6 +20,7 @@ namespace WebfrontCore.Controllers
             _contextFactory = contextFactory;
         }
 
+        [NonAction]
         public IActionResult List(EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool hideAutomatedPenalties = true)
         {
             ViewBag.Description = Localization["WEBFRONT_DESCRIPTION_PENALTIES"];
@@ -30,6 +31,7 @@ namespace WebfrontCore.Controllers
             return View(showOnly);
         }
 
+        [NonAction]
         public async Task<IActionResult> ListAsync(int offset = 0, int count = 30, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool hideAutomatedPenalties = true)
         {
             return await Task.FromResult(View("_List", new ViewModels.PenaltyFilterInfo

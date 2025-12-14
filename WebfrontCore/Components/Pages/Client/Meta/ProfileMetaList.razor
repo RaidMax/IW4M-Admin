@@ -1,0 +1,233 @@
+@using SharedLibraryCore.Dtos.Meta.Responses
+@using SharedLibraryCore.Interfaces
+@using WebfrontCore.Services
+@using Humanizer
+@using SharedLibraryCore
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components
+@inject IWebfrontApiClient Api
+@inject AppState AppState
+@inject IZeroJsInterop JsInterop
+@implements IAsyncDisposable
+
+@if (Loading && !MetaItems.Any())
+{
+     <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    string lastHeader = null;
+    
+    foreach (var item in MetaItems)
+    {
+        var currentHeader = item.When.HumanizeForCurrentCulture();
+        
+        if (currentHeader != lastHeader)
+        {
+            <div class="text-muted font-size-16 font-weight-medium mt-20 mb-10">@currentHeader</div>
+            lastHeader = currentHeader;
+        }
+        
+        <div class="mb-5">
+            @if (item is AdministeredPenaltyResponse penalized)
+            {
+                <AdministeredPenalty Meta="penalized" ShowHeader="false" />
+            }
+            else if (item is ReceivedPenaltyResponse received)
+            {
+                <ReceivedPenalty Meta="received" ShowHeader="false" />
+            }
+            else if (item is MessageResponse message)
+            {
+                 <Message Meta="message" ShowHeader="false" />
+            }
+             else if (item is UpdatedAliasResponse alias)
+            {
+                 <UpdatedAlias Meta="alias" ShowHeader="false" />
+            }
+             else if (item is ConnectionHistoryResponse connection)
+            {
+                 <ConnectionHistory Meta="connection" ShowHeader="false" />
+            }
+            else if (item is PermissionLevelChangedResponse permission)
+            {
+                 <PermissionLevelChanged Meta="permission" ShowHeader="false" />
+            }
+            else if (item is InformationResponse info)
+            {
+                 <div class="mb-5 p-15 rounded bg-very-dark-dm bg-light-ex-lm profile-meta-entry">
+                     <div class="profile-meta-value text-primary font-size-14"><ColorCode Value="@info.Value" /></div>
+                     <div class="profile-meta-title text-muted font-size-12">@info.Key.Titleize()</div>
+                 </div>
+            }
+            else if (item is ClientNoteMetaResponse note)
+            {
+                <span data-toggle="tooltip" data-title="@string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), note.When.ToString("G"))" data-placement="top">
+                    <span class="text-muted">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
+                    <span class="text-white-dm text-black-lm">@note.Note</span>
+                    <span class="text-muted">&mdash;</span>
+                    <a class="link-inverse" href="/Client/Profile/@note.OriginEntityId">
+                        <ColorCode Value="@note.OriginEntityName" />
+                    </a>
+                </span>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    Unknown Meta Type: @item.GetType().Name (@item.Type)
+                </div>
+            }
+        </div>
+    }
+
+    @if (HasMore)
+    {
+        <div @ref="_loadMoreTrigger" style="height: 1px;"></div>
+    }
+}
+ 
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="alert alert-danger mt-10">
+        @_errorMessage
+    </div>
+}
+
+@code {
+    [Parameter] public int ClientId { get; set; }
+    [Parameter] public MetaType? MetaFilterType { get; set; }
+
+    private List<BaseMetaResponse> MetaItems { get; set; } = new();
+    private bool Loading { get; set; }
+    private string _errorMessage;
+    private int Offset { get; set; } = 0;
+    private int Count { get; set; } = 30;
+    private long? StartAt { get; set; } 
+    private bool HasMore { get; set; } = true;
+    
+    private int _previousClientId;
+    private MetaType? _previousMetaFilter;
+    
+    private DotNetObjectReference<ProfileMetaList> _objRef;
+    private bool _observerSetup;
+    private ElementReference _loadMoreTrigger;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reset when client ID or filter type changes
+        if (_previousClientId != ClientId || _previousMetaFilter != MetaFilterType)
+        {
+            MetaItems.Clear();
+            Offset = 0;
+            StartAt = DateTime.UtcNow.ToFileTimeUtc();
+            HasMore = true;
+            _previousClientId = ClientId;
+            _previousMetaFilter = MetaFilterType;
+            _observerSetup = false;
+        }
+        
+        if (MetaItems.Count == 0)
+        {
+            await LoadData();
+        }
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (MetaItems.Any() && HasMore && !_observerSetup)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _objRef);
+            _observerSetup = true;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        if (Loading || !HasMore) return;
+        Loading = true;
+        StateHasChanged();
+        
+        try
+        {
+            if (MetaItems.Any())
+            {
+                StartAt = MetaItems.Last().When.ToFileTimeUtc();
+                Offset = 0;
+            }
+            
+            var newItems = await Api.GetClientMetaAsync(ClientId, Count, Offset, StartAt, MetaFilterType);
+            var itemList = newItems?.ToList() ?? new List<BaseMetaResponse>();
+            
+
+            
+            // Filter out duplicates (backend provider issue safeguard)
+            var n = 0;
+            var uniqueItems = new List<BaseMetaResponse>();
+            
+            foreach (var item in itemList)
+            {
+                // Simple duplicate check based on ID if available, or Type+When+Value as fallback
+                // BaseMetaResponse has MetaId, but it might be 0 for some dynamic types.
+                if (item.MetaId > 0)
+                {
+                    if (MetaItems.Any(existing => existing.MetaId == item.MetaId && existing.Type == item.Type))
+                        continue;
+                }
+                else
+                {
+                    // Fallback for items without ID
+                   if (MetaItems.Any(existing => existing.Type == item.Type && 
+                                                 existing.When == item.When && 
+                                                 existing.Order == item.Order))
+                        continue;
+                }
+                
+                uniqueItems.Add(item);
+                n++;
+            }
+            
+            if (n == 0)
+            {
+                // If we got items but they were all duplicates, we've reached the end/loop
+                HasMore = false;
+            }
+            else
+            {
+                 MetaItems.AddRange(uniqueItems);
+            }
+            
+            if (itemList.Count < Count)
+            {
+                HasMore = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading meta: {ex.Message}";
+            Console.WriteLine($"Error loading meta: {ex}");
+            HasMore = false;
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+    
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        _objRef?.Dispose();
+        await Task.CompletedTask;
+    }
+}

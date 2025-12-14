@@ -17,6 +17,8 @@ public class ClientResourceResponse
     public string ClientCountryDisplayName { get; set; }
     public string ClientLevel { get; set; }
     public EFClient.Permission ClientLevelValue { get; set; }
+
     public DateTime LastConnection { get; set; }
+    public DateTime FirstConnection { get; set; }
     public Reference.Game Game { get; set; }
 }

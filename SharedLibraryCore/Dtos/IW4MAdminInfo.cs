@@ -21,5 +21,10 @@ namespace SharedLibraryCore.Dtos
         ///     collection of unique game names being monitored
         /// </summary>
         public Reference.Game[] ActiveServerGames { get; set; }
+
+        /// <summary>
+        ///     the command prefix used for in-game commands
+        /// </summary>
+        public string CommandPrefix { get; set; }
     }
 }

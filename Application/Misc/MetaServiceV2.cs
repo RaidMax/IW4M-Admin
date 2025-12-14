@@ -189,7 +189,7 @@ public class MetaServiceV2 : IMetaServiceV2
 
         try
         {
-            return JsonSerializer.Deserialize<T>(meta.Value);
+            return JsonSerializer.Deserialize<T>(meta.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
         catch (Exception ex)
         {
@@ -348,7 +348,9 @@ public class MetaServiceV2 : IMetaServiceV2
         }
 
         await using var context = _contextFactory.CreateContext(false);
-        return await context.EFMeta.FirstOrDefaultAsync(meta => meta.Key == metaKey, token);
+        return await context.EFMeta
+            .Where(meta => meta.ClientId == null)
+            .FirstOrDefaultAsync(meta => meta.Key == metaKey, token);
     }
 
     public async Task<T> GetPersistentMetaValue<T>(string metaKey, CancellationToken token = default) where T : class

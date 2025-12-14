@@ -1,0 +1,64 @@
+@using WebfrontCore.Components.Shared.Partials
+@using WebfrontCore.Components.Shared
+@inject WebfrontCore.Services.AppState AppState
+@inject NavigationManager NavManager
+
+<div class="ml-auto d-inline-flex" style="max-width: 400px;">
+    <div class="input-group">
+        <!-- Mobile Dropdown -->
+        <HasPermission Entity="AdvancedSearch" RequiredPermission="Read">
+            <div class="input-group-prepend dropdown with-arrow d-block d-md-none">
+                <button class="btn" type="button" data-toggle="dropdown">
+                    <i class="oi oi-chevron-bottom"></i>
+                </button>
+                <div class="dropdown-menu w-300">
+                    <SearchResourceFilter />
+                </div>
+            </div>
+        </HasPermission>
+
+        <!-- Basic Search -->
+        <form @onsubmit="BasicSubmit" class="flex-fill">
+            <input @bind="ClientName" class="form-control" type="text"
+                   placeholder="@(AppState.Loc("WEBFRONT_NAV_SEARCH"))" required="required"/>
+        </form>
+
+        <!-- Desktop Dropdown -->
+        <HasPermission Entity="AdvancedSearch" RequiredPermission="Read">
+            <div class="input-group-append dropdown dropleft with-arrow d-md-block d-none">
+                <button class="btn" type="button" data-toggle="dropdown">
+                    <i class="oi oi-chevron-bottom"></i>
+                </button>
+                <div class="dropdown-menu w-400">
+                     <SearchResourceFilter />
+                </div>
+            </div>
+        </HasPermission>
+
+        <div class="input-group-append">
+            <button class="btn" @onclick="BasicSubmit" type="button">
+                <i class="oi oi-magnifying-glass"></i>
+            </button>
+        </div>
+
+    </div>
+    <br/>
+</div>
+
+@code {
+    private string ClientName { get; set; }
+
+    private void BasicSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(ClientName)) return;
+        
+        // Basic search goes to Client/AdvancedFind with just clientName
+        var url = NavManager.GetUriWithQueryParameters("/Client/AdvancedFind", new Dictionary<string, object>
+        {
+            { "clientName", ClientName },
+            { "isLegacyQuery", true }
+        });
+        
+        NavManager.NavigateTo(url);
+    }
+}

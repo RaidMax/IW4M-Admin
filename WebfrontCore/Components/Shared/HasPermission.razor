@@ -1,0 +1,42 @@
+@using WebfrontCore.Services
+@using WebfrontCore.Permissions
+@using SharedLibraryCore
+@using Data.Models.Client
+@inject AppState AppState
+@inject SharedLibraryCore.Configuration.ApplicationConfiguration Config
+
+@if (Authorized)
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public string Entity { get; set; }
+    [Parameter] public string RequiredPermission { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    private bool Authorized => CheckPermission();
+
+    private bool CheckPermission()
+    {
+        if (AppState.User == null) 
+        {
+            // Not logged in - deny access
+            return false;
+        }
+        
+        // Parse the entity and permission from string parameters
+        if (!Enum.TryParse<WebfrontEntity>(Entity, out var entityEnum))
+        {
+            return false;
+        }
+        
+        if (!Enum.TryParse<WebfrontPermission>(RequiredPermission, out var permissionEnum))
+        {
+            return false;
+        }
+        
+        // Use the extension method from SharedLibraryCore.Utilities
+        return Config.HasPermission(AppState.User.Level, entityEnum, permissionEnum);
+    }
+}

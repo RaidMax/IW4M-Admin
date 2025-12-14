@@ -4,7 +4,6 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 
 namespace WebfrontCore.Controllers
 {
@@ -13,13 +12,13 @@ namespace WebfrontCore.Controllers
         private readonly IRemoteCommandService _remoteCommandService;
         private readonly ITranslationLookup _translationLookup;
 
-        public ConsoleController(IManager manager, IRemoteCommandService remoteCommandService,
-            ITranslationLookup translationLookup) : base(manager)
+        public ConsoleController(IManager manager, IRemoteCommandService remoteCommandService, ITranslationLookup translationLookup) : base(manager)
         {
             _remoteCommandService = remoteCommandService;
             _translationLookup = translationLookup;
         }
 
+        [NonAction]
         public IActionResult Index()
         {
             var activeServers = Manager.GetServers().Select(s => new ServerInfo()
@@ -36,7 +35,7 @@ namespace WebfrontCore.Controllers
             return View(activeServers);
         }
 
-        [Authorize]
+        [NonAction]
         public async Task<IActionResult> Execute(long serverId, string command)
         {
             if (Client.ClientId < 1)

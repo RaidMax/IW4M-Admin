@@ -1,22 +1,45 @@
 ﻿window.onresize = function () {
+    if (window.hitLocationData) {
+        drawPlayerModel();
+    }
+}
+
+window.initAdvancedStats = function (history, hitLocations, maxPct) {
+    // Store globally for resize event
+    window.hitLocationData = hitLocations;
+    window.maxPercentage = maxPct;
+
+    // Setup Performance
+    const chart = $('#client_performance_history');
+    if (chart.length) {
+        chart.data('history', history);
+        setupPerformanceGraph();
+    }
+
+    // Setup Hitmodel
     drawPlayerModel();
 }
 
 $(document).ready(function () {
+    // Legacy support or generic handlers
     $('.table-slide').click(function () {
         if ($(window).width() < 993) {
             $(this).prev().find('.hidden-row').toggleClass('d-none d-flex');
         } else {
             $(this).prev().find('.hidden-row-lg').toggleClass('d-none');
         }
-        
+
         $(this).attr('data-title', '');
         $(this).attr('data-toggle', '');
- 
+
         $(this).children('span').toggleClass('oi-chevron-top oi-chevron-bottom');
     });
-    setupPerformanceGraph();
-    drawPlayerModel();
+
+    // If legacy page loads with data embedded
+    if (typeof hitLocationData !== 'undefined') {
+        setupPerformanceGraph();
+        drawPlayerModel();
+    }
 })
 
 function setupPerformanceGraph() {
@@ -261,7 +284,7 @@ function drawHitLocationChart(context, background, scalar, width, height) {
 
         const color = '#' + red + green + '0077';
         const location = hitLocations[hit.name];
-        
+
         if (location === undefined) {
             return true;
         }
@@ -311,8 +334,8 @@ function getClosestMultiple(baseValue, value) {
 function renderPerformanceChart() {
     const id = 'client_performance_history';
     const data = $('#' + id).data('history');
-    
-    if (data === undefined) {
+
+    if (data === undefined || data === null) {
         return;
     }
     if (data.length <= 1) {
@@ -322,10 +345,11 @@ function renderPerformanceChart() {
 
     const labels = [];
     const values = [];
-    
+
     data.forEach(function (item, i) {
-        labels.push(item.OccurredAt);
-        values.push(item.Performance)
+        // Handle both PascalCase (from MVC) and camelCase (from Blazor JS interop)
+        labels.push(item.OccurredAt || item.occurredAt);
+        values.push(item.Performance || item.performance);
     });
 
     const padding = 4;

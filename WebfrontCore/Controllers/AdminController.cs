@@ -24,7 +24,8 @@ namespace WebfrontCore.Controllers
             _banInfoQueryHelper = banInfoQueryHelper;
         }
 
-        [Authorize]
+        [NonAction]
+        // [Authorize]
         public async Task<IActionResult> AuditLog()
         {
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
@@ -40,7 +41,7 @@ namespace WebfrontCore.Controllers
             return View(auditItems);
         }
 
-        [Authorize]
+        [NonAction]
         public async Task<IActionResult> ListAuditLog([FromQuery] PaginationRequest paginationInfo)
         {
             ViewBag.EnableColorCodes = Manager.GetApplicationSettings().Configuration().EnableColorCodes;
@@ -48,7 +49,7 @@ namespace WebfrontCore.Controllers
             return PartialView("_ListAuditLog", auditItems);
         }
 
-        [Authorize]
+        [NonAction]
         public async Task<IActionResult> BanManagement([FromQuery] BanInfoRequest request)
         {
             var results = await _banInfoQueryHelper.QueryResource(request);
@@ -63,7 +64,7 @@ namespace WebfrontCore.Controllers
             return View(results.Results);
         }
 
-        [Authorize]
+        [NonAction]
         public async Task<IActionResult> BanManagementList([FromQuery] BanInfoRequest request)
         {
             var results = await _banInfoQueryHelper.QueryResource(request);

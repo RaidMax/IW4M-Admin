@@ -19,33 +19,32 @@ namespace WebfrontCore.Controllers
 
         }
 
-        [HttpGet]
-        [Obsolete]
-        public async Task<IActionResult> Login(int clientId, string password)
+        [HttpPost]
+        public async Task<IActionResult> Login([FromBody] ViewModels.LoginRequest request)
         {
-            if (clientId == 0 || string.IsNullOrEmpty(password))
+            if (request == null || request.ClientId == 0 || string.IsNullOrEmpty(request.Password))
             {
                 return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
             }
 
             try
             {
-                var privilegedClient = await Manager.GetClientService().GetClientForLogin(clientId);
+                var privilegedClient = await Manager.GetClientService().GetClientForLogin(request.ClientId);
                 var loginSuccess = false;
                 
                 if (Utilities.IsDevelopment)
                 {
-                    loginSuccess = clientId == 1;
+                    loginSuccess = request.ClientId == 1;
                 }
 
                 if (!Authorized && !loginSuccess)
                 {
                     loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(new TokenIdentifier
                                    {
-                                       ClientId = clientId,
-                                       Token = password
+                                       ClientId = request.ClientId,
+                                       Token = request.Password
                                    }) ||
-                                   (await Task.FromResult(Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] ==
+                                   (await Task.FromResult(Hashing.Hash(request.Password, privilegedClient.PasswordSalt)))[0] ==
                                    privilegedClient.Password;
                 }
 

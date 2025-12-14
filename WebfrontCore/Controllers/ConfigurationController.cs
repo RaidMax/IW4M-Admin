@@ -31,6 +31,7 @@ namespace WebfrontCore.Controllers
         /// Endpoint to get the current configuration view
         /// </summary>
         /// <returns></returns>
+        [NonAction]
         public IActionResult Edit()
         {
             if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
@@ -41,6 +42,7 @@ namespace WebfrontCore.Controllers
             return RedirectToAction("Files");
         }
 
+        [NonAction]
         public async Task<IActionResult> Files()
         {
             if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
@@ -68,7 +70,8 @@ namespace WebfrontCore.Controllers
             }
         }
 
-        [HttpPatch("{Controller}/File/{fileName}")]
+        [NonAction]
+        // [HttpPatch("{Controller}/File/{fileName}")]
         public async Task<IActionResult> PatchFiles([FromRoute] string fileName)
         {
             if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
@@ -124,7 +127,8 @@ namespace WebfrontCore.Controllers
         /// </summary>
         /// <param name="newConfiguration">bound configuration</param>
         /// <returns></returns>
-        [HttpPost]
+        [NonAction]
+        // [HttpPost]
         public async Task<IActionResult> Save(ApplicationConfiguration newConfiguration)
         {
             // todo: make this authorization middleware instead of these checks

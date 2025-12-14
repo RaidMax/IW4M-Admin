@@ -1,0 +1,53 @@
+@using SharedLibraryCore.Dtos.Meta.Responses
+@using SharedLibraryCore
+@using SharedLibraryCore.Interfaces
+@using WebfrontCore.Components.Shared
+@using Humanizer
+
+<div class="d-flex flex-wrap">
+@foreach (var metaColumn in MetaColumns)
+{
+    @foreach (var meta in metaColumn)
+    {
+        <div class="m-md-5 p-15 w-half rounded bg-very-dark-dm bg-light-ex-lm profile-meta-entry font-size-12  w-md-100 w-lg-150" 
+             title="@meta.meta.ToolTipText">
+
+            @{var results = Utilities.SplitTranslationTokens(meta.meta.Key);}
+
+            @if (results.Any(result => result.IsInterpolation))
+            {
+                foreach (var result in results)
+                {
+                    if (result.IsInterpolation)
+                    {
+                        <div class="profile-meta-value text-primary font-size-14"><ColorCode Value="@meta.meta.Value" />&nbsp;</div>
+                    }
+
+                    else
+                    {
+                        <span class="profile-meta-title text-muted font-size-12">@result.MatchValue.Titleize()&nbsp;</span>
+                    }
+                }
+            }
+
+            else
+            {
+                <div class="profile-meta-value text-primary font-size-14"><ColorCode Value="@meta.meta.Value" />&nbsp;</div>
+                <div class="profile-meta-title text-muted font-size-12">@meta.meta.Key.Titleize()&nbsp;</div>
+            }
+        </div>
+    }
+}
+</div>
+
+@code {
+    [Parameter] public IEnumerable<InformationResponse> Meta { get; set; }
+
+    private IEnumerable<IGrouping<int, (int index, InformationResponse meta)>> MetaColumns => 
+        Meta?
+        .Where(meta => meta.Type == MetaType.Information)
+        .OrderBy(meta => meta.Order)
+        .Select((meta, i) => (index: i, meta))
+        .GroupBy(meta => meta.index / 5) 
+        ?? Enumerable.Empty<IGrouping<int, (int index, InformationResponse meta)>>();
+}

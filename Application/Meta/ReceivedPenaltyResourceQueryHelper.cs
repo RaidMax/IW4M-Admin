@@ -104,7 +104,8 @@ namespace IW4MAdmin.Application.Meta
                     When = _penalty.When,
                     ExpirationDate = _penalty.Expires,
                     IsLinked = _penalty.OffenderId != query.ClientId,
-                    IsSensitive = _penalty.Type == EFPenalty.PenaltyType.Flag
+                    IsSensitive = _penalty.Type == EFPenalty.PenaltyType.Flag,
+                    Type = MetaType.ReceivedPenalty
                 })
                 .ToListAsync();
 

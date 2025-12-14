@@ -55,15 +55,20 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("servers")]
-        public ActionResult<IEnumerable<ServerInfo>> GetServers([FromQuery] Reference.Game? game = null)
+        public async Task<ActionResult<IEnumerable<ServerInfo>>> GetServers([FromQuery] Reference.Game? game = null, CancellationToken token = default)
         {
             var servers = Manager.GetServers()
-                .Where(server => game is null || server.GameName == (SharedLibraryCore.Server.Game)game);
+                .Where(server => game is null || server.GameName == (SharedLibraryCore.Server.Game)game)
+                .ToList();
+
+            var clientHistories = await _serverDataViewer.ClientHistoryAsync(Manager.GetApplicationSettings().Configuration().MaxClientHistoryTime, token);
 
             var serverInfo = new List<ServerInfo>();
 
             foreach (var server in servers)
             {
+                var history = clientHistories.FirstOrDefault(h => h.ServerId == server.LegacyDatabaseId);
+                
                 serverInfo.Add(new ServerInfo
                 {
                     Name = server.Hostname,
@@ -75,7 +80,17 @@ namespace WebfrontCore.Controllers.API
                     MaxClients = server.MaxClients,
                     PrivateClientSlots = server.PrivateClientSlots,
                     GameType = server.GametypeName,
-                    ClientHistory = new ClientHistoryInfo(),
+                    ClientHistory = new ClientHistoryInfo
+                    {
+                        ClientCounts = history?.ClientCounts?.Select(historyItem => new ClientCountSnapshot
+                        {
+                            Time = historyItem.Time,
+                            ClientCount = historyItem.ClientCount,
+                            ConnectionInterrupted = historyItem.ConnectionInterrupted,
+                            Map = historyItem.Map,
+                            MapAlias = server.Maps.FirstOrDefault(map => map.Name == historyItem.Map)?.Alias ?? historyItem.Map
+                        }).ToList() ?? []
+                    },
                     Players = server.GetClientsAsList()
                         .Select(client => new PlayerInfo
                         {

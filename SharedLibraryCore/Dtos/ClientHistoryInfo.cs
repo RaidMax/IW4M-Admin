@@ -12,7 +12,6 @@ namespace SharedLibraryCore.Dtos
 
     public class ClientCountSnapshot
     {
-        [JsonIgnore]
         public DateTime Time { get; set; }
         [JsonPropertyName("ts")]
         public string TimeString => Time.ToString("yyyy-MM-ddTHH:mm:ssZ");

@@ -1,0 +1,61 @@
+@page "/Interaction/Render/{InteractionName}"
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+
+<div class="content text-wrap mt-20">
+    @if (IsLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ErrorMessage</div>
+    }
+    else if (InteractionData != null)
+    {
+        <h2 class="content-title">
+            <ColorCode Value="@InteractionData.Title" />
+        </h2>
+        @((MarkupString)InteractionData.Content)
+    }
+</div>
+
+@code {
+    [Parameter] public string InteractionName { get; set; }
+
+    private WebfrontCore.Controllers.API.InteractionResponse InteractionData;
+    private bool IsLoading = true;
+    private string ErrorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        InteractionData = null;
+
+        try
+        {
+            InteractionData = await Api.GetInteractionAsync(InteractionName);
+        }
+        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            ErrorMessage = AppState.Loc("WEBFRONT_ERROR_GENERIC");
+        }
+        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            ErrorMessage = AppState.Loc("WEBFRONT_ACTION_UNAUTHORIZED");
+        }
+        catch (Exception)
+        {
+            ErrorMessage = AppState.Loc("WEBFRONT_ERROR_GENERIC");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

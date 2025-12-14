@@ -1,0 +1,197 @@
+@page "/Admin/AuditLog"
+@using SharedLibraryCore.Dtos
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+@inject WebfrontCore.Services.IZeroJsInterop JS
+@implements IAsyncDisposable
+
+<div class="content mt-0">
+    <h2 class="content-title mt-20 mb-10">@AppState.Loc("WEBFRONT_NAV_AUDIT_LOG")</h2>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_error
+        </div>
+    }
+    else if (Results == null)
+    {
+        <div class="text-center mt-20">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <table class="table">
+            <thead class="d-none d-lg-table-header-group">
+                <tr class="bg-primary text-light pt-2 pb-2">
+                    <th scope="col">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
+                    <th scope="col">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
+                    <th scope="col">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
+                    <th scope="col">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</th>
+                    <th scope="col">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</th>
+                    <th scope="col" class="text-right">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</th>
+                </tr>
+            </thead>
+            <tbody class="border-bottom bg-dark">
+                @foreach (var info in Results)
+                {
+                    <!-- desktop -->
+                    <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
+                        <td class="font-weight-bold">@info.Action</td>
+                        <td>
+                            <a href="/Client/Profile/@info.OriginId">
+                                <ColorCode Value="@info.OriginName" />
+                            </a>
+                        </td>
+                        <td>
+                            @if (info.TargetId != null)
+                            {
+                                <a href="/Client/Profile/@info.TargetId">
+                                    <ColorCode Value="@info.TargetName" />
+                                </a>
+                            }
+                            else
+                            {
+                                <span>&ndash;</span>
+                            }
+                        </td>
+                        <td>@info.Data</td>
+                        <td class="text-force-break font-weight-light">@info.NewValue</td>
+                        <td class="text-right">@info.When.ToLocalTime().ToString("g")</td>
+                    </tr>
+
+                    <!-- mobile -->
+                    <tr class="d-table-row d-lg-none d-flex bg-dark-dm bg-light-lm">
+                        <td class="bg-primary text-light text-right flex-grow-0 w-quarter d-flex flex-column">
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</div>
+                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</div>
+                            <div class="mt-5 mb-5 mt-auto">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</div>
+                        </td>
+                        <td class="w-three-quarter d-flex flex-column">
+                            <div class="mt-5 mb-5">@info.Action</div>
+                            <div class="mt-5 mb-5">
+                                <a href="/Client/Profile/@info.OriginId" class="link-inverse">
+                                    <ColorCode Value="@info.OriginName" />
+                                </a>
+                            </div>
+                            @if (info.TargetId != null)
+                            {
+                                <div class="mt-5 mb-5">
+                                    <a href="/Client/Profile/@info.TargetId">
+                                        <ColorCode Value="@info.TargetName" />
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mt-5 mb-5">&ndash;</div>
+                            }
+                            <div class="mt-5 mb-5">@info.Data</div>
+                            <div class="mt-5 mb-5 text-force-break">@info.NewValue</div>
+                            <div class="mt-5 mb-5 text-muted">@info.When.ToLocalTime().ToString("g")</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (HasMoreResults)
+        {
+            <div @ref="loadMoreTrigger" class="text-center mt-10">
+                @if (IsLoading)
+                {
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                }
+                else
+                {
+                    <i class="loader-load-more oi oi-chevron-bottom text-primary"></i>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private PaginationRequest Request { get; set; } = new PaginationRequest { Count = 25, Offset = 0 };
+    private List<AuditInfo> Results { get; set; }
+    private bool HasMoreResults { get; set; } = true;
+    private bool IsLoading { get; set; }
+    private ElementReference loadMoreTrigger;
+    private DotNetObjectReference<AuditLog> objRef;
+    private bool observerSetUp = false;
+    private string _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Set up observer after first data load, not on firstRender
+        if (!observerSetUp && HasMoreResults && Results != null)
+        {
+            observerSetUp = true;
+            objRef = DotNetObjectReference.Create(this);
+            await JS.SetupInfiniteScroll(loadMoreTrigger, objRef);
+        }
+    }
+
+    private async Task LoadData()
+    {
+        if (IsLoading) return;
+        IsLoading = true;
+
+        try
+        {
+            var result = await Api.GetAuditLogAsync(Request);
+            if (Request.Offset == 0)
+            {
+                Results = result.ToList();
+            }
+            else
+            {
+                Results.AddRange(result);
+            }
+
+            HasMoreResults = result.Count >= Request.Count;
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading audit log: {ex.Message}");
+            _error = "Failed to load audit log. You may not have permission to view this page.";
+            HasMoreResults = false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        if (!HasMoreResults || IsLoading) return;
+        Request.Offset += Request.Count;
+        await LoadData();
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
+        {
+            await JS.RemoveInfiniteScroll(loadMoreTrigger);
+            objRef.Dispose();
+        }
+    }
+}

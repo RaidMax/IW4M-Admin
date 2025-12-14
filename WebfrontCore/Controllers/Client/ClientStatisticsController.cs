@@ -25,6 +25,7 @@ namespace WebfrontCore.Controllers
             _serverDataViewer = serverDataViewer;
         }
 
+        [NonAction]
         [HttpGet("{id:int}/advanced")]
         public async Task<IActionResult> Advanced(int id, [FromQuery] string serverId, CancellationToken token = default)
         {

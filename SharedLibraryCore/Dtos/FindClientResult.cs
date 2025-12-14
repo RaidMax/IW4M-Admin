@@ -1,4 +1,6 @@
-﻿namespace SharedLibraryCore.Dtos
+﻿using SharedLibraryCore.Dtos;
+
+namespace SharedLibraryCore.Dtos
 {
     public class FindClientResult
     {
@@ -16,5 +18,8 @@
         ///     name of client
         /// </summary>
         public string Name { get; set; }
+        
+        public Data.Models.Client.EFClient.Permission Level { get; set; }
+        public System.DateTime LastConnection { get; set; }
     }
 }

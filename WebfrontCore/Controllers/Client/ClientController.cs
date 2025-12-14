@@ -42,10 +42,12 @@ namespace WebfrontCore.Controllers
         }
 
         [Obsolete]
+        [NonAction]
         public IActionResult ProfileAsync(int id, MetaType? metaFilterType,
             CancellationToken token = default) => RedirectToAction("Profile", "Client", new
             { id, metaFilterType });
 
+        [NonAction]
         public async Task<IActionResult> Profile(int id, MetaType? metaFilterType, CancellationToken token = default)
         {
             var client = await Manager.GetClientService().Get(id);
@@ -125,6 +127,7 @@ namespace WebfrontCore.Controllers
                     // we want the longest "duplicate" name
                     .Select(grp => grp.OrderByDescending(item => item.Name.Length).First())
                     .Distinct()
+                    .Select(a => new ProfileMetaEntry { Value = a.Name, Date = a.DateAdded })
                     .ToList(),
                 IPs = PermissionsSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read)
                     ? client.AliasLink.Children
@@ -132,8 +135,9 @@ namespace WebfrontCore.Controllers
                         .GroupBy(alias => alias.Item1)
                         .Select(grp => grp.OrderByDescending(item => item.DateAdded).First())
                         .Distinct()
+                        .Select(i => new ProfileMetaEntry { Value = i.Item1, Date = i.DateAdded })
                         .ToList()
-                    : new List<(string, DateTime)>(),
+                    : new List<ProfileMetaEntry>(),
                 HasActivePenalty = activePenalties.Any(penalty => penalty.Type != EFPenalty.PenaltyType.Flag),
                 Online = ingameClient != null,
                 TimeOnline = (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture(),
@@ -145,9 +149,25 @@ namespace WebfrontCore.Controllers
                         : ingameClient.CurrentServer.ListenAddress,
                     ingameClient.CurrentServer.ListenPort),
                 CurrentServerName = ingameClient?.CurrentServer?.Hostname,
-                GeoLocationInfo = await _geoLocationService.Locate(client.IPAddressString),
+                GeoLocationInfo = MapGeoLocation(await _geoLocationService.Locate(client.IPAddressString)),
                 NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null: note,
-                Interactions = interactions.ToList()
+                Interactions = interactions.Select(interaction => new InteractionInfo 
+                {
+                    EntityId = interaction.EntityId,
+                    InteractionId = interaction.InteractionId,
+                    InteractionType = interaction.InteractionType,
+                    Enabled = interaction.Enabled,
+                    Name = interaction.Name,
+                    Description = interaction.Description,
+                    DisplayMeta = interaction.DisplayMeta,
+                    ActionPath = interaction.ActionPath,
+                    ActionMeta = interaction.ActionMeta,
+                    ActionUri = interaction.ActionUri,
+                    MinimumPermission = interaction.MinimumPermission,
+                    PermissionEntity = interaction.PermissionEntity,
+                    PermissionAccess = interaction.PermissionAccess,
+                    Source = interaction.Source
+                }).ToList()
             };
 
             var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest
@@ -183,6 +203,7 @@ namespace WebfrontCore.Controllers
             return View("Profile/Index", clientDto);
         }
 
+        [NonAction]
         public async Task<IActionResult> Privileged()
         {
             if (Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy && !Authorized)
@@ -220,6 +241,7 @@ namespace WebfrontCore.Controllers
             return View("Privileged/Index", adminsDict);
         }
 
+        [NonAction]
         public async Task<IActionResult> Find(string clientName)
         {
             if (string.IsNullOrWhiteSpace(clientName))
@@ -245,6 +267,7 @@ namespace WebfrontCore.Controllers
             return View("Find/Index", clientsDto);
         }
 
+        [NonAction]
         public async Task<IActionResult> AdvancedFind(ClientResourceRequest request)
         {
             ViewBag.Title = Localization["WEBFRONT_SEARCH_RESULTS_TITLE"];
@@ -277,6 +300,24 @@ namespace WebfrontCore.Controllers
                 metaType = metaFilterType,
                 token
             });
+        }
+        
+        private static SharedLibraryCore.Dtos.GeoLocationInfo MapGeoLocation(SharedLibraryCore.Interfaces.IGeoLocationResult geoLocation)
+        {
+            if (geoLocation == null)
+            {
+                return null;
+            }
+            
+            return new SharedLibraryCore.Dtos.GeoLocationInfo
+            {
+                Country = geoLocation.Country,
+                CountryCode = geoLocation.CountryCode,
+                Region = geoLocation.Region,
+                ASN = geoLocation.ASN,
+                Timezone = geoLocation.Timezone,
+                Organization = geoLocation.Organization
+            };
         }
     }
 }

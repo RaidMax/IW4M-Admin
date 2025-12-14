@@ -1,0 +1,349 @@
+@page "/Client/Statistics"
+@page "/Stats/TopPlayers"
+@using SharedLibraryCore.Dtos
+@using Data.Models.Client
+@using SharedLibraryCore
+@using WebfrontCore.ViewModels
+@using Humanizer
+@using IW4MAdmin.Plugins.Stats.Web.Dtos
+@using IW4MAdmin.Plugins.Stats.Helpers
+@using System.Text.Json
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+@inject WebfrontCore.Services.IZeroJsInterop JsInterop
+@inject NavigationManager NavManager
+@implements IAsyncDisposable
+
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9 mt-0">
+        <h2 class="content-title mb-0">@(AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE"))</h2>
+        <span class="text-muted">
+            <ColorCode Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))" />
+            &mdash; <span class="text-primary">@TotalRankedClients.ToString("#,##0")</span> @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE"))
+        </span>
+
+        <div id="topPlayersContainer">
+            @if (TopPlayers == null)
+            {
+                <div class="text-center mt-20">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            }
+            else if (TopPlayers.Count == 0)
+            {
+                <div class="card m-0 mt-15">
+                    <div class="d-flex">
+                        <i class="oi oi-timer align-self-center mb-10" style="font-size: 6rem;"></i>
+                        <div class="p-15">
+                            <h2 class="content-title mb-0">@(AppState.Loc("PLUGINS_STATS_TEXT_NOQUALIFY"))</h2>
+                            <span class="text-muted">@(AppState.Loc("WEBFRONT_TOP_PLAYERS_NOQUALIFY_SUBTITLE"))</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var stat in TopPlayers)
+                {
+                    <div class="card m-0 mt-15 p-20 d-flex flex-column flex-md-row justify-content-between">
+                        <div class="d-flex flex-column w-full w-md-quarter">
+                            <div class="d-flex align-items-center mb-15">
+                                <div class="d-flex text-muted">
+                                    <span class="font-size-20">#</span>
+                                    <div style="font-size: 4.5rem; line-height: 4.5rem; font-family: SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">@stat.Ranking</div>
+                                </div>
+                                <div class="ml-10">
+                                    <div class="d-flex flex-row">
+                                        <a href="/Client/Profile/@stat.ClientId" class="no-decoration text-light-dm text-dark-lm font-size-20 text-force-break" style="line-height: 2.5rem;">
+                                            <ColorCode Value="@stat.Name" />
+                                        </a>
+                                        @if (stat.RatingChange > 0)
+                                        {
+                                            <div class="d-flex flex-column text-center ml-5 mr-5 align-self-center">
+                                                <div class="oi oi-caret-top text-success client-rating-change-up"></div>
+                                                <div class="client-rating-change-amount text-success">@stat.RatingChange</div>
+                                            </div>
+                                        }
+                                        @if (stat.RatingChange < 0)
+                                        {
+                                            <div class="d-flex flex-column text-center ml-5 mr-5 align-self-center">
+                                                <div class="client-rating-change-amount client-rating-change-amount-down text-danger">@Math.Abs(stat.RatingChange)</div>
+                                                <div class="oi oi-caret-bottom text-danger client-rating-change-down"></div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="font-size-14">
+                                        <span class="text-primary">
+                                            @(stat.Performance?.ToNumericalString() ?? "--")
+                                        </span>
+                                        @if (stat.ServerId == null)
+                                        {
+                                            <span class="text-muted">@(AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt("").ToLower())</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">@(AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt("").ToLower())</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column font-size-12 text-right text-md-left">
+                                <div>
+                                    <span class="text-primary">@stat.Kills.ToNumericalString()</span><span class="text-muted"> @(AppState.Loc("PLUGINS_STATS_TEXT_KILLS"))</span>
+                                </div>
+                                <div>
+                                    <span class="text-primary">@stat.Deaths.ToNumericalString()</span><span class="text-muted"> @(AppState.Loc("PLUGINS_STATS_TEXT_DEATHS"))</span>
+                                </div>
+                                <div>
+                                    <span class="text-primary">@stat.KDR.ToString("F2")</span><span class="text-muted"> @(AppState.Loc("PLUGINS_STATS_TEXT_KDR"))</span>
+                                </div>
+                                <div>
+                                    <span class="text-primary">@stat.TimePlayedValue.HumanizeForCurrentCulture() </span><span class="text-muted">@(AppState.Loc("WEBFRONT_PROFILE_PLAYER"))</span>
+                                </div>
+                                <div>
+                                    <span class="text-primary"> @stat.LastSeenValue.HumanizeForCurrentCulture() </span><span class="text-muted">@(AppState.Loc("WEBFRONT_PROFILE_LSEEN"))</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full w-md-half client-rating-graph pt-10 pb-10">
+                            <canvas id="rating_history_@(stat.ClientId)_@(stat.Id)" data-history="@(JsonSerializer.Serialize(stat.PerformanceHistory != null ? stat.PerformanceHistory.OrderBy(perf => perf.OccurredAt).ToList() : new List<PerformanceHistory>()))"></canvas>
+                        </div>
+                        <div class="w-quarter align-self-center d-flex justify-content-center">
+                            <img class="w-100 h-100" src="/images/stats/ranks/rank_@(GetRankIconIndex(stat.ZScore)).png" alt="@stat.Performance"/>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        
+        @if (HasMore)
+        {
+            <div class="text-center" @ref="_loadMoreTrigger">
+                @if (IsLoading)
+                {
+                    <span class="oi oi-loop-circular rotating text-primary mt-5" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <i class="oi oi-chevron-bottom loader-load-more text-primary mt-5 cursor-pointer" aria-hidden="true" @onclick="LoadMore"></i>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- side context menu -->
+    <div class="col-12 col-lg-3">
+         @if (MenuItems != null)
+        {
+            <SideContextMenu Model="MenuItems" />
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string serverId { get; set; }
+
+    private List<TopStatsInfo> TopPlayers;
+    private long TotalRankedClients; 
+    private ServerInfo SelectedServer;
+    private SideContextMenuItems MenuItems;
+    private int Offset = 0;
+    private const int Count = 25;
+    private bool IsLoading = false;
+    private bool HasMore = true;
+    
+    private ElementReference _loadMoreTrigger;
+    private DotNetObjectReference<Index> _objRef;
+    private bool _observerSetup;
+    private string _previousServerId;
+    private bool _chartsInitialized;
+    private bool _firstLoad = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Load on first load OR when serverId changes
+        if (_firstLoad || _previousServerId != serverId)
+        {
+            _firstLoad = false;
+            _previousServerId = serverId;
+            Offset = 0;
+            TopPlayers = null;
+            HasMore = true;
+            _observerSetup = false;
+            _chartsInitialized = false;
+            
+            await LoadData();
+            await GenerateMenu();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Setup infinite scroll
+        if (TopPlayers != null && TopPlayers.Any() && HasMore && !_observerSetup)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _objRef);
+            _observerSetup = true;
+        }
+        
+        // Initialize performance charts for each player
+        if (TopPlayers != null && TopPlayers.Any() && !_chartsInitialized)
+        {
+            await Task.Delay(100); // Delay to ensure DOM is ready
+            _chartsInitialized = true;
+            try
+            {
+                await JsInterop.InitTopPlayersCharts();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing charts: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        
+        try 
+        {
+            var response = await Api.GetTopPlayersAsync(Count, Offset, serverId);
+            var newPlayers = response.Players;
+            TotalRankedClients = response.TotalRankedClients;
+
+            if (newPlayers.Count < Count)
+            {
+                HasMore = false;
+            }
+
+            if (TopPlayers == null)
+            {
+                TopPlayers = newPlayers;
+            }
+            else
+            {
+                TopPlayers.AddRange(newPlayers);
+            }
+            
+            if (serverId != null)
+            {
+               var servers = await Api.GetServersAsync();
+               SelectedServer = servers.FirstOrDefault(s => s.Endpoint == serverId);
+            }
+            else
+            {
+                SelectedServer = null;
+            }
+        }
+        catch (Exception)
+        {
+            HasMore = false;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        if (IsLoading || !HasMore) return;
+        
+        Offset += Count;
+        await LoadData();
+        StateHasChanged();
+        
+        // Initialize charts for newly loaded items after DOM updates
+        await Task.Delay(150); // Give DOM time to render new elements
+        try
+        {
+            await JsInterop.InitTopPlayersCharts();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing charts after load more: {ex.Message}");
+        }
+    }
+
+    private async Task GenerateMenu()
+    {
+        var servers = await Api.GetServersAsync();
+        
+        MenuItems = new SideContextMenuItems
+        {
+            MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
+            Items = servers.Select(server => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = $"/Client/Statistics?serverId={server.Endpoint}",
+                Title = server.Name.StripColors(),
+                IsActive = serverId == server.Endpoint,
+                Meta = server.Game.ToString(),
+                IsCollapse = true
+            }).Prepend(new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = "/Client/Statistics",
+                Title = AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"),
+                IsActive = serverId == null
+            }).ToList()
+        };
+    }
+
+    private int GetRankIconIndex(double? zScore)
+    {
+        // Logic from IW4MAdmin.Plugins.Stats.Extensions.RankIconIndexForZScore
+        if (zScore == null)
+        {
+            return 0;
+        }
+
+        const int ZScoreRange = 3;
+        const int RankIconDivisions = 24;
+        const double divisionIncrement = (ZScoreRange * 2) / (double)RankIconDivisions;
+        var rank = 1;
+        
+        for (var i = rank; i <= RankIconDivisions; i++)
+        {
+            var bottom = Math.Round(-ZScoreRange + (i - 1) * divisionIncrement, 5);
+            var top = Math.Round(-ZScoreRange + i * divisionIncrement, 5);
+
+            if (zScore > bottom && zScore <= top)
+            {
+                return rank;
+            }
+
+            if (i == 1 && zScore < bottom // catch all for really bad players
+                // catch all for very good players
+                || i == RankIconDivisions && zScore > top)
+            {
+                return i;
+            }
+
+            rank++;
+        }
+
+        return 0;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_observerSetup)
+        {
+            try
+            {
+                await JsInterop.RemoveInfiniteScroll(_loadMoreTrigger);
+            }
+            catch { }
+        }
+        _objRef?.Dispose();
+    }
+}

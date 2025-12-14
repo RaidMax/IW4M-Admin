@@ -11,6 +11,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
@@ -20,6 +21,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text.Json.Serialization.Metadata;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using Data.Abstractions;
@@ -87,6 +91,13 @@ namespace WebfrontCore
                 mvcBuilder.AddApplicationPart(asm);
             }
 
+            mvcBuilder.AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
+
             services.AddHttpContextAccessor();
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -105,8 +116,28 @@ namespace WebfrontCore
             services
                 .AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
                     AdvancedClientStatsResourceQueryHelper>();
+
             services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
             services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
+
+            // Blazor Services
+            services.AddHttpContextAccessor();
+            services.AddRazorPages();
+            services.AddServerSideBlazor().AddCircuitOptions(options =>
+            {
+                options.DetailedErrors = true;
+            });;
+            services.AddScoped<Services.AppState>();
+            services.AddScoped<Services.IZeroJsInterop, Services.ZeroJsInterop>();
+            services.AddScoped<Services.IToastService, Services.ToastService>();
+            services.AddTransient<Services.CookieForwardingHandler>();
+            services.AddHttpClient<Services.IWebfrontApiClient, Services.WebfrontApiClient>((sp, client) => 
+            {
+                var manager = sp.GetService<SharedLibraryCore.Interfaces.IManager>();
+                var webfrontUrl = manager?.GetApplicationSettings()?.Configuration()?.WebfrontUrl ?? "http://127.0.0.1:1624";
+                client.BaseAddress = new Uri(webfrontUrl);
+            }).AddHttpMessageHandler<Services.CookieForwardingHandler>();
+            services.AddScoped<Services.IActionService, Services.ActionService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -153,6 +184,8 @@ namespace WebfrontCore
             {
                 endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}")
                     .RequireRateLimiting("concurrencyPolicy");
+                endpoints.MapBlazorHub();
+                endpoints.MapFallbackToPage("/_Host");
             });
         }
     }

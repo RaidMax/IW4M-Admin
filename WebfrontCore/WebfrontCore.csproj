@@ -43,6 +43,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="8.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.6" />
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />

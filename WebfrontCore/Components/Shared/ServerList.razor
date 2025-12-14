@@ -1,0 +1,13 @@
+@using SharedLibraryCore.Dtos
+
+@if (Model != null)
+{
+    foreach (var s in Model)
+    {
+        <ServerCard Model="s" />
+    }
+}
+
+@code {
+    [Parameter] public IEnumerable<ServerInfo> Model { get; set; }
+}

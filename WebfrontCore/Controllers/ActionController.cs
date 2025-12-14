@@ -95,7 +95,9 @@ namespace WebfrontCore.Controllers
             }
         }
 
-        public IActionResult DynamicActionForm(int? id, string meta)
+        private IActionResult ViewOrOk(object model, bool json, string viewName = "_ActionForm") => json ? Ok(model) : View(viewName, model);
+
+        public IActionResult DynamicActionForm(int? id, string meta, [FromQuery] bool json = false)
         {
             if (Client.ClientId < 1)
             {
@@ -190,7 +192,7 @@ namespace WebfrontCore.Controllers
                 Inputs = inputs
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> DynamicActionAsync(CancellationToken token = default)
@@ -253,7 +255,7 @@ namespace WebfrontCore.Controllers
             return success ? Ok(result) : BadRequest(result);
         }
 
-        public IActionResult BanForm()
+        public IActionResult BanForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -296,7 +298,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> BanAsync(int targetId, string reason, int duration, string presetReason = null)
@@ -327,7 +329,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult UnbanForm(long? id)
+        public IActionResult UnbanForm(long? id, [FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -354,7 +356,7 @@ namespace WebfrontCore.Controllers
                 });
             }
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> UnbanAsync(int targetId, string reason)
@@ -368,7 +370,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult LoginForm()
+        public IActionResult LoginForm([FromQuery] bool json = false)
         {
             var login = new ActionInfo
             {
@@ -393,7 +395,7 @@ namespace WebfrontCore.Controllers
                 Action = "Login"
             };
 
-            return View("_ActionForm", login);
+            return ViewOrOk(login, json);
         }
 
         public async Task<IActionResult> Login(int clientId, string password)
@@ -401,7 +403,7 @@ namespace WebfrontCore.Controllers
             return await Task.FromResult(RedirectToAction("Login", "Account", new { clientId, password }));
         }
 
-        public IActionResult EditForm()
+        public IActionResult EditForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -425,7 +427,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> EditAsync(int targetId, string level)
@@ -439,7 +441,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult GenerateLoginTokenForm()
+        public IActionResult GenerateLoginTokenForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -449,7 +451,7 @@ namespace WebfrontCore.Controllers
                 Inputs = new List<InputInfo>()
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         [Authorize]
@@ -466,7 +468,7 @@ namespace WebfrontCore.Controllers
                 Client.ClientId);
         }
 
-        public IActionResult ChatForm(long id)
+        public IActionResult ChatForm(long id, [FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -490,7 +492,7 @@ namespace WebfrontCore.Controllers
                 Action = "ChatAsync"
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> ChatAsync(long id, string message)
@@ -542,7 +544,7 @@ namespace WebfrontCore.Controllers
             return View("Partials/_Reports", serverInfo);
         }
 
-        public IActionResult FlagForm()
+        public IActionResult FlagForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -567,7 +569,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> FlagAsync(int targetId, string reason, string presetReason = null)
@@ -581,7 +583,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult UnflagForm()
+        public IActionResult UnflagForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -599,7 +601,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> UnflagAsync(int targetId, string reason)
@@ -613,7 +615,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult KickForm(int id)
+        public IActionResult KickForm(int id, [FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -644,7 +646,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> KickAsync(int targetId, string reason, string presetReason = null)
@@ -663,7 +665,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public IActionResult DismissAlertForm(Guid id)
+        public IActionResult DismissAlertForm(Guid id, [FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -682,7 +684,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public IActionResult DismissAlert(Guid alertId)
@@ -697,7 +699,7 @@ namespace WebfrontCore.Controllers
             });
         }
 
-        public IActionResult DismissAllAlertsForm()
+        public IActionResult DismissAllAlertsForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -716,7 +718,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public IActionResult DismissAllAlerts(int targetId)
@@ -731,7 +733,7 @@ namespace WebfrontCore.Controllers
             });
         }
 
-        public IActionResult OfflineMessageForm()
+        public IActionResult OfflineMessageForm([FromQuery] bool json = false)
         {
             var info = new ActionInfo
             {
@@ -748,7 +750,7 @@ namespace WebfrontCore.Controllers
                 Action = "OfflineMessage",
                 ShouldRefresh = true
             };
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> OfflineMessage(int targetId, string message)
@@ -762,12 +764,43 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public async Task<IActionResult> SetClientTagForm(int id, CancellationToken token)
+        public class TagMetaDto
         {
-            var tags = await _metaService.GetPersistentMetaValue<List<LookupValue<string>>>(EFMeta.ClientTagNameV2,
-                token) ?? new List<LookupValue<string>>();
+            public int Id { get; set; }
+            public string Value { get; set; }
+        }
+
+        public async Task<IActionResult> SetClientTagForm(int id, CancellationToken token, [FromQuery] bool json = false)
+        {
+            var meta = await _metaService.GetPersistentMeta(EFMeta.ClientTagNameV2, token);
+            var tags = new List<TagMetaDto>();
+
+            if (meta == null)
+            {
+                System.Console.WriteLine($"[DEBUG] SetClientTagForm: Global meta '{EFMeta.ClientTagNameV2}' NOT found.");
+            }
+            else
+            {
+                 System.Console.WriteLine($"[DEBUG] SetClientTagForm: Meta found. Value: {meta.Value}");
+                 try 
+                 {
+                     tags = System.Text.Json.JsonSerializer.Deserialize<List<TagMetaDto>>(meta.Value, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                     System.Console.WriteLine($"[DEBUG] SetClientTagForm: Deserialized {tags?.Count} tags.");
+                 }
+                 catch(Exception ex)
+                 {
+                     System.Console.WriteLine($"[DEBUG] SetClientTagForm: Deserialization FAILED. {ex.Message}");
+                 }
+            }
+
+            tags = tags ?? new List<TagMetaDto>();
+            
             var existingTag = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2,
                 EFMeta.ClientTagNameV2, id, Manager.CancellationToken);
+
+            // Log existing tag for debug
+            if (existingTag != null) System.Console.WriteLine($"[DEBUG] Existing Tag Value: {existingTag.Value}");
+            
             var info = new ActionInfo
             {
                 ActionButtonLabel = Localization["WEBFRONT_ACTION_SET_CLIENT_TAG_SUBMIT"],
@@ -788,7 +821,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> SetClientTag(int targetId, string clientTag)
@@ -813,7 +846,7 @@ namespace WebfrontCore.Controllers
             }));
         }
 
-        public async Task<IActionResult> AddClientNoteForm(int id)
+        public async Task<IActionResult> AddClientNoteForm(int id, [FromQuery] bool json = false)
         {
             var existingNote = await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", id);
             var info = new ActionInfo
@@ -834,7 +867,7 @@ namespace WebfrontCore.Controllers
                 ShouldRefresh = true
             };
 
-            return View("_ActionForm", info);
+            return ViewOrOk(info, json);
         }
 
         public async Task<IActionResult> AddClientNote(int targetId, string note)

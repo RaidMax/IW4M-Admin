@@ -336,7 +336,9 @@ namespace SharedLibraryCore.Services
                 {
                     ClientId = _client.ClientId,
                     Xuid = _client.NetworkId.ToString("X"),
-                    Name = _client.CurrentAlias.Name
+                    Name = _client.CurrentAlias.Name,
+                    Level = _client.Level,
+                    LastConnection = _client.LastConnection
                 })
                 .Skip(query.Offset)
                 .Take(query.Count)
@@ -935,7 +937,19 @@ namespace SharedLibraryCore.Services
             var clientList = await iqClients.ToListAsync();
             foreach (var client in clientList)
             {
-                client.GeoLocationInfo = await _geoLocationService.Locate(client.IPAddress);
+                var geoResult = await _geoLocationService.Locate(client.IPAddress);
+                if (geoResult != null)
+                {
+                    client.GeoLocationInfo = new Dtos.GeoLocationInfo
+                    {
+                        Country = geoResult.Country,
+                        CountryCode = geoResult.CountryCode,
+                        Region = geoResult.Region,
+                        ASN = geoResult.ASN,
+                        Timezone = geoResult.Timezone,
+                        Organization = geoResult.Organization
+                    };
+                }
             }
 
             return clientList;

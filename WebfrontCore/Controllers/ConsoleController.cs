@@ -18,6 +18,7 @@ namespace WebfrontCore.Controllers
             _translationLookup = translationLookup;
         }
 
+        [NonAction]
         public IActionResult Index()
         {
             var activeServers = Manager.GetServers().Select(s => new ServerInfo()
@@ -34,6 +35,7 @@ namespace WebfrontCore.Controllers
             return View(activeServers);
         }
 
+        [NonAction]
         public async Task<IActionResult> Execute(long serverId, string command)
         {
             if (Client.ClientId < 1)

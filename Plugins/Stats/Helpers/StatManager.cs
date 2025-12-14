@@ -63,7 +63,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public Expression<Func<EFRating, bool>> GetRankingFunc(long? serverId = null)
         {
-            var fifteenDaysAgo = DateTime.UtcNow.AddDays(-15);
+            var fifteenDaysAgo = Extensions.FifteenDaysAgo();
             return (r) => r.ServerId == serverId &&
                           r.When > fifteenDaysAgo &&
                           r.RatingHistory.Client.Level != EFClient.Permission.Banned &&

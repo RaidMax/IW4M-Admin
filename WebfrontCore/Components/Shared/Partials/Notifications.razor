@@ -1,0 +1,109 @@
+@using SharedLibraryCore.Alerts
+@using Humanizer
+@using SharedLibraryCore
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+@inject WebfrontCore.Services.IToastService ToastService
+
+<div class="dropdown with-arrow" data-toggle="dropdown" id="alert-toggle" aria-haspopup="true" aria-expanded="false">
+    <div data-toggle="tooltip" data-title="@(Alerts.Any() ? AppState.Loc("WEBFRONT_ALERTS_SOME_TOOLTIP") : AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP"))" data-placement="bottom">
+        <i class="oi oi-bell mt-5"></i>
+    </div>
+    @if (Alerts.Any())
+    {
+        <div class="position-absolute bg-danger rounded-circle ml-10" style="width: 0.5em;height: 0.5em;top: 0;"></div>
+        <div class="dropdown-menu dropdown-menu-right w-250 w-md-400" aria-labelledby="alert-toggle">
+            <div class="d-flex">
+                <h6 class="dropdown-header">@(AppState.Loc("WEBFRONT_ALERTS_POPOVER_COUNT").FormatExt(Alerts.Count))</h6>
+                <i class="oi oi-circle-x font-size-12 text-danger align-self-center profile-action" @onclick="DismissAll" @onclick:stopPropagation style="cursor: pointer"></i>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div style="max-height: 50vh; overflow: scroll" >
+                @foreach (var alert in Alerts)
+                {
+                    <div class="d-flex p-5 pl-10 pr-10">
+                        <div class="align-self-center">
+                            @if (alert.Category == Alert.AlertCategory.Error)
+                            {
+                                <i class="oi oi-warning text-danger font-size-12 mr-5"></i>
+                            }
+                            @if (alert.Category == Alert.AlertCategory.Warning)
+                            {
+                                <i class="oi oi-warning text-secondary font-size-12 mr-5"></i>
+                            }
+                            @if (alert.Category == Alert.AlertCategory.Information)
+                            {
+                                <i class="oi oi-circle-check font-size-12 mr-5 text-primary"></i>
+                            }
+                            @if (alert.Category == Alert.AlertCategory.Message)
+                            {
+                                <i class="oi oi-envelope-closed font-size-12 mr-5 text-primary"></i>
+                            }
+                        </div>
+                        <div class="font-size-12 p-5 w-full">
+                            <span class="text-force-break">@alert.Message</span>
+                            <div class="text-muted d-flex">
+                                <span>@alert.OccuredAt.HumanizeForCurrentCulture()</span>
+                                @if (!string.IsNullOrEmpty(alert.Source))
+                                {
+                                    <span class="ml-5 mr-5">&#8226;</span>
+                                    @if (alert.SourceId is null)
+                                    {
+                                        <div class="text-white font-weight-light">@alert.Source.StripColors()</div>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Client/Profile/@alert.SourceId" class="no-decoration">@alert.Source</a>
+                                    } 
+                                }
+                            </div>
+                        </div>
+                        <div class="ml-auto">
+                            <i class="oi oi-circle-x font-size-12 ml-5 align-self-center profile-action" @onclick="() => Dismiss(alert.AlertId)" @onclick:stopPropagation style="cursor: pointer"></i>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Alert.AlertState> Alerts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            Alerts = (await Api.GetAlertsAsync()).ToList();
+        } catch {}
+    }
+
+    private async Task Dismiss(Guid id)
+    {
+        try
+        {
+            await Api.DismissAlertAsync(id);
+            Alerts.RemoveAll(a => a.AlertId == id);
+            await ToastService.ShowSuccessAsync("Alert dismissed");
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowErrorAsync($"Failed to dismiss alert: {ex.Message}");
+        }
+    }
+    
+    private async Task DismissAll()
+    {
+        try
+        {
+            await Api.DismissAllAlertsAsync();
+            var count = Alerts.Count;
+            Alerts.Clear();
+            await ToastService.ShowSuccessAsync($"Dismissed {count} alert{(count != 1 ? "s" : "")}");
+        }
+        catch (Exception ex)
+        {
+            await ToastService.ShowErrorAsync($"Failed to dismiss alerts: {ex.Message}");
+        }
+    }
+}

@@ -1,0 +1,263 @@
+@page "/Penalty/List"
+@using SharedLibraryCore.Dtos
+@using Data.Models
+@using WebfrontCore.Permissions
+@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject WebfrontCore.Services.AppState AppState
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="content mt-20">
+    <h2 class="content-title mt-15">@AppState.Loc("WEBFRONT_PENALTY_TITLE")</h2>
+    
+    <div class="table-responsive">
+        <table class="table with-fixed-layout bg-dark-dm bg-light-lm">
+            <thead>
+            <tr class="bg-primary text-light d-none d-lg-table-row">
+                <th colspan="20%">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
+                <th colspan="10%">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
+                <th colspan="35%">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_OFFENSE")</th>
+                <th colspan="20%">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
+                <th colspan="15%" class="text-right">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TIME")</th>
+            </tr>
+            <tr class="d-flex d-lg-table-row flex-column">
+                <td colspan="20%" class="p-10 pb-10">
+                    <div class="d-flex p-5 pr-15 bg-dark-dm bg-light-lm rounded">
+                        <div class="custom-switch">
+                            <input type="checkbox" id="hide_automated_penalties_checkbox" checked="@IgnoreAutomated" @onchange="OnIgnoreAutomatedChanged" />
+                            <label for="hide_automated_penalties_checkbox">@AppState.Loc("WEBFRONT_PENALTY_HIDE_AUTOMATED")</label>
+                        </div>
+                    </div>
+                </td>
+                <td colspan="46%" class="p-10 pt-5 pb-5">
+                    <div class="input-group mb-10 mb-lg-0">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_SHOWONLY")</span>
+                        </div>
+                        <select class="pl-15 form-control" @onchange="OnShowOnlyChanged">
+                            @foreach (var penaltyType in Enum.GetValues(typeof(EFPenalty.PenaltyType)).Cast<EFPenalty.PenaltyType>().OrderByDescending(p => p == EFPenalty.PenaltyType.Any))
+                            {
+                                <option value="@((int)penaltyType)" selected="@(penaltyType == ShowOnly)">@AppState.Loc($"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}")</option>
+                            }
+                        </select>
+                    </div>
+                </td>
+            </tr>
+            </thead>
+            <tbody id="penalty_table">
+                @if (_isLoading && Penalties.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var penalty in Penalties)
+                    {
+                        <!-- Desktop Row -->
+                        <tr class="d-none d-lg-table-row">
+                            <td colspan="20%">
+                                <a href="/Client/Profile/@penalty.OffenderId" class="level-color-@((int)penalty.OffenderLevel)">
+                                    <ColorCode Value="@penalty.OffenderName" />
+                                </a>
+                            </td>
+                            <td colspan="10%" class="penalties-color-@penalty.PenaltyTypeText.ToLower()">
+                                @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
+                            </td>
+                            <td colspan="35%">
+                                <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
+                            </td>
+                            <td colspan="20%">
+                                <a href="/Client/Profile/@penalty.PunisherId" class="level-color-@((int)penalty.PunisherLevel)">
+                                    <ColorCode Value="@penalty.PunisherName" />
+                                </a>
+                            </td>
+                            <td colspan="15%" class="text-right">
+                                @if (penalty.Expired)
+                                {
+                                    <span>@penalty.TimePunishedString</span>
+                                }
+                                else
+                                {
+                                    <span>@penalty.TimeRemaining</span>
+                                }
+                            </td>
+                        </tr>
+
+                         <!-- Mobile Row -->
+                         <tr class="d-table-row d-lg-none d-flex border-bottom">
+                             <td class="bg-primary text-light text-right d-flex flex-column w-quarter">
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</div>
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</div>
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_OFFENSE")</div>
+                                <div class="mt-5 mb-5 mt-auto">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</div>
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TIME")</div>
+                            </td>
+                            <td class=" d-flex flex-column w-three-quarter">
+                                <div class="mt-5 mb-5">
+                                    <a href="/Client/Profile/@penalty.OffenderId">
+                                        <ColorCode Value="@penalty.OffenderName" />
+                                    </a>
+                                </div>
+                                <div class="mt-5 mb-5 penalties-color-@penalty.PenaltyTypeText.ToLower()">
+                                    @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
+                                </div>
+                                <div class="mt-5 mb-5 text-force-break">
+                                    <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
+                                </div>
+                                <a href="/Client/Profile/@penalty.PunisherId" class="mt-5 mb-5 level-color-@((int)penalty.PunisherLevel)">
+                                    <ColorCode Value="@penalty.PunisherName" />
+                                </a>
+                                <div class="mt-5 mb-5 text-muted">
+                                    @if (penalty.Expired)
+                                    {
+                                        <span>@penalty.TimePunishedString</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@penalty.TimeRemaining</span>
+                                    }
+                                </div>
+                            </td>
+                         </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Infinite scroll trigger element -->
+    <div id="loadMoreTrigger" @ref="_loadMoreTrigger" class="w-full text-center pb-20">
+        @if (_isLoading && Penalties.Count > 0)
+        {
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        }
+        else if (HasMoreResults)
+        {
+            <i class="oi oi-chevron-bottom mt-10 text-primary loader-load-more" aria-hidden="true"></i>
+        }
+        else if (Penalties.Count > 0)
+        {
+            <span class="text-muted">No more penalties to display</span>
+        }
+    </div>
+
+</div>
+
+@code {
+    private List<PenaltyInfo> Penalties { get; set; } = new();
+    private int Offset { get; set; } = 0;
+    private int Count { get; set; } = 30;
+    private bool IgnoreAutomated { get; set; } = true;
+    private EFPenalty.PenaltyType ShowOnly { get; set; } = EFPenalty.PenaltyType.Any;
+    private bool HasMoreResults { get; set; } = true;
+    private bool _isLoading = false;
+    private ElementReference _loadMoreTrigger;
+    private DotNetObjectReference<List>? _dotNetRef;
+    private IJSObjectReference? _jsModule;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/blazor_lib.js");
+            
+            // Set up intersection observer for infinite scroll
+            await JS.InvokeVoidAsync("blazorInfiniteScroll.setup", _loadMoreTrigger, _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMore()
+    {
+        if (!HasMoreResults || _isLoading)
+        {
+            return;
+        }
+        
+        Offset += Count;
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task OnIgnoreAutomatedChanged(ChangeEventArgs e)
+    {
+        IgnoreAutomated = (bool)e.Value!;
+        await ResetAndLoad();
+    }
+
+    private async Task OnShowOnlyChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var val))
+        {
+            ShowOnly = (EFPenalty.PenaltyType)val;
+            await ResetAndLoad();
+        }
+    }
+
+    private async Task ResetAndLoad()
+    {
+        Offset = 0;
+        Penalties.Clear();
+        HasMoreResults = true;
+        StateHasChanged();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (_isLoading) return;
+        
+        _isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            var result = await Api.GetPenaltiesAsync(Offset, Count, ShowOnly, IgnoreAutomated);
+            if (result != null && result.Any())
+            {
+                Penalties.AddRange(result);
+                if (result.Count() < Count)
+                {
+                    HasMoreResults = false;
+                }
+            }
+            else
+            {
+                HasMoreResults = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading penalties: {ex.Message}");
+            HasMoreResults = false;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule != null)
+        {
+            await _jsModule.DisposeAsync();
+        }
+        _dotNetRef?.Dispose();
+    }
+}

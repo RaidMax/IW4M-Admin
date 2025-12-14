@@ -17,10 +17,11 @@ function getStatsChart(id) {
     const values = [];
 
     data.forEach(function (item, i) {
-        labels.push(item.OccurredAt);
-        values.push(item.Performance)
+        // Handle both PascalCase (from MVC) and camelCase (from Blazor JS interop)
+        labels.push(item.OccurredAt || item.occurredAt);
+        values.push(item.Performance || item.performance);
     });
-    
+
 
     const padding = 4;
     let dataMin = Math.min(...values);
@@ -113,7 +114,7 @@ function getStatsChart(id) {
         type: 'line',
         data: chartData,
         options: options
-    }); 
+    });
 }
 
 $(document).ready(function () {
@@ -121,7 +122,7 @@ $(document).ready(function () {
         getStatsChart($(element).children('canvas').attr('id'));
     });
 
-  
+
     $('.top-players-link').click(function (event) {
         $($(this).attr('href')).html('');
         initLoader('/Stats/GetTopPlayersAsync?serverId=' + $(this).data('serverid'), $(this).attr('href'), 10, 0);

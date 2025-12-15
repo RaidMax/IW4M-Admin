@@ -21,7 +21,6 @@ public partial class BanManagement
 
     protected override async Task OnInitializedAsync()
     {
-        await Search();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

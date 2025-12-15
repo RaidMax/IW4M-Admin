@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using Humanizer;
-using Humanizer.Localisation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;

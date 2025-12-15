@@ -1,21 +1,20 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Interfaces;
-using Stats.Dtos;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
-using IW4MAdmin.Plugins.Stats;
-using Stats.Config;
-using SharedLibraryCore;
-using IW4MAdmin.Plugins.Stats.Helpers;
+﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using IW4MAdmin.Plugins.Stats.Helpers;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
+using Stats.Config;
+using Stats.Dtos;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace StatsWeb.API
+namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/stats")]

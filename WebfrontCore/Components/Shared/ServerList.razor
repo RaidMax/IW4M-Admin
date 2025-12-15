@@ -1,10 +1,9 @@
-@using SharedLibraryCore.Dtos
 
 @if (Model != null)
 {
-    foreach (var s in Model)
+    foreach (var serverInfo in Model)
     {
-        <ServerCard Model="s" />
+        <ServerCard Model="serverInfo"/>
     }
 }
 

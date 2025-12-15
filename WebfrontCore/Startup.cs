@@ -1,192 +1,180 @@
-﻿using System;
-using FluentValidation;
-using FluentValidation.AspNetCore;
+﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
 using Stats.Helpers;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text.Json.Serialization.Metadata;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.RateLimiting;
-using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Helpers;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.RateLimiting;
+using SharedLibraryCore;
+using WebfrontCore.Components;
 using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 using WebfrontCore.QueryHelpers;
 using WebfrontCore.QueryHelpers.Models;
 
-namespace WebfrontCore
+namespace WebfrontCore;
+
+public class Startup
 {
-    public class Startup
+    // This method gets called by the runtime. Use this method to add services to the container.
+    public void ConfigureServices(IServiceCollection services)
     {
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        // 1. CORS Configuration
+        services.AddCors(_options =>
         {
-            // allow CORS
-            services.AddCors(_options =>
-            {
-                _options.AddPolicy("AllowAll",
-                    _builder =>
-                    {
-                        _builder.AllowAnyOrigin()
-                            .AllowAnyMethod()
-                            .AllowAnyHeader();
-                    });
-            });
-
-            services.AddStackPolicy(options =>
-            {
-                options.MaxConcurrentRequests =
-                    int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
-                options.RequestQueueLimit = int.Parse(Environment.GetEnvironmentVariable("RequestQueueLimit") ?? "1");
-            });
-
-            services.AddRateLimiter(options => options.AddConcurrencyLimiter("concurrencyPolicy", opt =>
-            {
-                opt.PermitLimit = 2;
-                opt.QueueLimit = 25;
-                opt.QueueProcessingOrder = QueueProcessingOrder.NewestFirst;
-            }));
-
-            IEnumerable<Assembly> pluginAssemblies()
-            {
-                string pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
-
-                if (Directory.Exists(pluginDir))
+            _options.AddPolicy("AllowAll",
+                _builder =>
                 {
-                    var dllFileNames =
-                        Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
-                            "*.dll");
-                    return dllFileNames.Select(_file => Assembly.LoadFrom(_file));
-                }
-
-                return Enumerable.Empty<Assembly>();
-            }
-
-            // Add framework services.
-            var mvcBuilder = services.AddMvc(options => options.SuppressAsyncSuffixInActionNames = false);
-            services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
-
-            foreach (var asm in pluginAssemblies())
-            {
-                mvcBuilder.AddApplicationPart(asm);
-            }
-
-            mvcBuilder.AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
-                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            });
-
-            services.AddHttpContextAccessor();
-
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-                {
-                    options.AccessDeniedPath = "/";
-                    options.LoginPath = "/";
-                    options.Events.OnValidatePrincipal += ClaimsPermissionRemoval.ValidateAsync;
-                    options.Events.OnSignedIn += ClaimsPermissionRemoval.OnSignedIn;
+                    _builder.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
                 });
+        });
 
-            services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
-            services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
-            services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
-            services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
-            services
-                .AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
-                    AdvancedClientStatsResourceQueryHelper>();
-
-            services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
-            services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
-
-            // Blazor Services
-            services.AddHttpContextAccessor();
-            services.AddRazorPages();
-            services.AddServerSideBlazor().AddCircuitOptions(options =>
-            {
-                options.DetailedErrors = true;
-            });;
-            services.AddScoped<Services.AppState>();
-            services.AddScoped<Services.IZeroJsInterop, Services.ZeroJsInterop>();
-            services.AddScoped<Services.IToastService, Services.ToastService>();
-            services.AddTransient<Services.CookieForwardingHandler>();
-            services.AddHttpClient<Services.IWebfrontApiClient, Services.WebfrontApiClient>((sp, client) => 
-            {
-                var manager = sp.GetService<SharedLibraryCore.Interfaces.IManager>();
-                var webfrontUrl = manager?.GetApplicationSettings()?.Configuration()?.WebfrontUrl ?? "http://127.0.0.1:1624";
-                client.BaseAddress = new Uri(webfrontUrl);
-            }).AddHttpMessageHandler<Services.CookieForwardingHandler>();
-            services.AddScoped<Services.IActionService, Services.ActionService>();
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
+        // 2. Custom Stack Policies
+        services.AddStackPolicy(options =>
         {
-            app.UseStatusCodePages(_context =>
-            {
-                if (_context.HttpContext.Response.StatusCode == (int)HttpStatusCode.NotFound)
-                {
-                    _context.HttpContext.Response.Redirect(
-                        $"/Home/ResponseStatusCode?statusCode={_context.HttpContext.Response.StatusCode}");
-                }
+            options.MaxConcurrentRequests =
+                int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
+            options.RequestQueueLimit = int.Parse(Environment.GetEnvironmentVariable("RequestQueueLimit") ?? "1");
+        });
 
-                return Task.CompletedTask;
-            });
+        // 3. Rate Limiter
+        services.AddRateLimiter(options => options.AddConcurrencyLimiter("concurrencyPolicy", opt =>
+        {
+            opt.PermitLimit = 2;
+            opt.QueueLimit = 25;
+            opt.QueueProcessingOrder = QueueProcessingOrder.NewestFirst;
+        }));
 
-            if (env.EnvironmentName == "Development")
-            {
-                app.UseDeveloperExceptionPage();
-            }
+        // Add framework services.
+        var mvcBuilder = services.AddControllers(options => options.SuppressAsyncSuffixInActionNames = false);
+        services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
 
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-            }
-
-            if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
-            {
-                app.UseMiddleware<IPWhitelist>(serviceProvider.GetService<ILogger<IPWhitelist>>(),
-                    serviceProvider.GetRequiredService<ApplicationConfiguration>().WebfrontConnectionWhitelist);
-            }
-
-            app.UseStaticFiles();
-            app.UseAuthentication();
-            app.UseCors("AllowAll");
-
-            // prevents banned/demoted users from keeping their claims
-            app.UseMiddleware<ClaimsPermissionRemoval>(Program.Manager);
-
-            app.UseRouting();
-            app.UseAuthorization();
-            app.UseRateLimiter();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}")
-                    .RequireRateLimiting("concurrencyPolicy");
-                endpoints.MapBlazorHub();
-                endpoints.MapFallbackToPage("/_Host");
-            });
+        foreach (var asm in PluginAssemblies())
+        {
+            mvcBuilder.AddApplicationPart(asm);
         }
+
+        mvcBuilder.AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        });
+
+        services.AddHttpContextAccessor();
+
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.AccessDeniedPath = "/";
+                options.LoginPath = "/";
+                options.Events.OnValidatePrincipal += ClaimsPermissionRemoval.ValidateAsync;
+                options.Events.OnSignedIn += ClaimsPermissionRemoval.OnSignedIn;
+            });
+
+        // 5. Domain Services / Singletons
+        services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
+        // Note: Kept Validator registration for DI, but removed MVC auto-validation adapters
+        services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
+        services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
+        services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
+        services
+            .AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
+                AdvancedClientStatsResourceQueryHelper>();
+
+        services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
+        services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
+
+        services.AddRazorComponents()
+            .AddInteractiveServerComponents(options => { options.DetailedErrors = true; });
+
+        services.AddScoped<Services.AppState>();
+        services.AddScoped<Services.IZeroJsInterop, Services.ZeroJsInterop>();
+        services.AddScoped<Services.IToastService, Services.ToastService>();
+        services.AddTransient<Services.CookieForwardingHandler>();
+
+        services.AddHttpClient<Services.IWebfrontApiClient, Services.WebfrontApiClient>((sp, client) =>
+        {
+            var manager = sp.GetService<IManager>();
+            var webfrontUrl = manager?.GetApplicationSettings()?.Configuration()?.WebfrontUrl ?? "http://127.0.0.1:1624";
+            client.BaseAddress = new Uri(webfrontUrl);
+        }).AddHttpMessageHandler<Services.CookieForwardingHandler>();
+
+        services.AddScoped<Services.IActionService, Services.ActionService>();
+        return;
+
+        IEnumerable<Assembly> PluginAssemblies()
+        {
+            var pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
+
+            if (!Directory.Exists(pluginDir)) return [];
+            var dllFileNames =
+                Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
+                    "*.dll");
+            return dllFileNames.Select(Assembly.LoadFrom);
+        }
+    }
+
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
+    {
+        // Status code handling is done via UseStatusCodePagesWithReExecute below
+
+        if (env.EnvironmentName == "Development")
+        {
+            app.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
+        }
+
+        if (Program.Manager.GetApplicationSettings().Configuration().EnableWebfrontConnectionWhitelist)
+        {
+            app.UseMiddleware<IPWhitelist>(serviceProvider.GetService<ILogger<IPWhitelist>>(),
+                serviceProvider.GetRequiredService<ApplicationConfiguration>().WebfrontConnectionWhitelist);
+        }
+
+        // Static files from wwwroot
+        app.UseStaticFiles();
+
+        app.UseRouting();
+
+        app.UseAntiforgery();
+
+        app.UseAuthentication();
+        app.UseCors("AllowAll");
+
+        app.UseMiddleware<ClaimsPermissionRemoval>(Program.Manager);
+
+        app.UseAuthorization();
+        app.UseStatusCodePagesWithReExecute("/NotFound", createScopeForStatusCodePages: true);
+        app.UseRateLimiter();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}")
+                .RequireRateLimiting("concurrencyPolicy");
+            
+            // Pure Blazor Routing with static assets chained (serves _framework/blazor.web.js)
+            endpoints.MapStaticAssets();
+            endpoints.MapRazorComponents<App>()
+                .AddInteractiveServerRenderMode();
+        });
     }
 }

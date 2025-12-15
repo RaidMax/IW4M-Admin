@@ -1,10 +1,3 @@
-@using SharedLibraryCore.Alerts
-@using Humanizer
-@using SharedLibraryCore
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject WebfrontCore.Services.AppState AppState
-@inject WebfrontCore.Services.IToastService ToastService
-
 <div class="dropdown with-arrow" data-toggle="dropdown" id="alert-toggle" aria-haspopup="true" aria-expanded="false">
     <div data-toggle="tooltip" data-title="@(Alerts.Any() ? AppState.Loc("WEBFRONT_ALERTS_SOME_TOOLTIP") : AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP"))" data-placement="bottom">
         <i class="oi oi-bell mt-5"></i>
@@ -67,43 +60,3 @@
         </div>
     }
 </div>
-
-@code {
-    private List<Alert.AlertState> Alerts = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        try {
-            Alerts = (await Api.GetAlertsAsync()).ToList();
-        } catch {}
-    }
-
-    private async Task Dismiss(Guid id)
-    {
-        try
-        {
-            await Api.DismissAlertAsync(id);
-            Alerts.RemoveAll(a => a.AlertId == id);
-            await ToastService.ShowSuccessAsync("Alert dismissed");
-        }
-        catch (Exception ex)
-        {
-            await ToastService.ShowErrorAsync($"Failed to dismiss alert: {ex.Message}");
-        }
-    }
-    
-    private async Task DismissAll()
-    {
-        try
-        {
-            await Api.DismissAllAlertsAsync();
-            var count = Alerts.Count;
-            Alerts.Clear();
-            await ToastService.ShowSuccessAsync($"Dismissed {count} alert{(count != 1 ? "s" : "")}");
-        }
-        catch (Exception ex)
-        {
-            await ToastService.ShowErrorAsync($"Failed to dismiss alerts: {ex.Message}");
-        }
-    }
-}

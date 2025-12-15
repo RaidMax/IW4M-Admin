@@ -1,7 +1,5 @@
 @page "/Server/Scoreboard"
-@using WebfrontCore.Services
-@inject IWebfrontApiClient Api
-@inject NavigationManager NavManager
+
 
 @if (Loading)
 {
@@ -18,32 +16,4 @@ else if (NoServers)
             No servers available.
         </div>
     </div>
-}
-
-@code {
-    private bool Loading { get; set; } = true;
-    private bool NoServers { get; set; }
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var servers = await Api.GetServersAsync();
-            if (servers != null && servers.Any())
-            {
-                // Redirect to first server's scoreboard
-                NavManager.NavigateTo($"/Server/{servers.First().ID}/Scoreboard", replace: true);
-                return;
-            }
-            NoServers = true;
-        }
-        catch
-        {
-            NoServers = true;
-        }
-        finally
-        {
-            Loading = false;
-        }
-    }
 }

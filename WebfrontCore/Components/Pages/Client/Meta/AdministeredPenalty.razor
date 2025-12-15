@@ -1,9 +1,4 @@
-@using SharedLibraryCore.Dtos.Meta.Responses
-@using SharedLibraryCore
-@using WebfrontCore.Components.Shared
-@using Data.Models
-@using Humanizer
-@inject WebfrontCore.Services.AppState AppState
+@inject AppState AppState
 
 @if (ShowHeader)
 {
@@ -32,7 +27,7 @@
             {
                 <span class="text-highlight">
                     <a class="link-inverse" href="/Client/Profile/@Meta.OffenderClientId">
-                        <ColorCode Value="@Meta.OffenderName" />
+                        <ColorCode Value="@Meta.OffenderName"/>
                     </a>
                 </span>
             }
@@ -42,36 +37,40 @@
                 <span class="text-light-dm text-dark-lm">
                      @if (AppState.User != null && !string.IsNullOrEmpty(Meta.AutomatedOffense) && Meta.PenaltyType != EFPenalty.PenaltyType.Warning)
                     {
-                          @* Utilities.FormatExt is an extension, might need explicit call or different approach *@
-                          <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)&nbsp;</span>
-                           <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed cursor-pointer" 
-                                 title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"
-                                 @onclick="ToggleDetails"></span>
-                           
-                           @if (IsOpen)
-                           {
-                               if (IsLoading) {
-                                    <div class="spinner-border spinner-border-sm text-primary ml-5" role="status"></div>
-                               }
-                               else if (SnapshotInfo != null)
-                               {
-                                   <div class="penalty-info-context bg-very-dark-dm bg-light-lm p-20 mt-10 mb-10 rounded border-top border-bottom">
+                        @* Utilities.FormatExt is an extension, might need explicit call or different approach *@
+                        <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)&nbsp;</span>
+                        <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed cursor-pointer"
+                              title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"
+                              @onclick="@ToggleDetails"></span>
+
+                        @if (IsOpen)
+                        {
+                            if (IsLoading)
+                            {
+                                <div class="spinner-border spinner-border-sm text-primary ml-5" role="status"></div>
+                            }
+                            else if (SnapshotInfo != null)
+                            {
+                                <div
+                                    class="penalty-info-context bg-very-dark-dm bg-light-lm p-20 mt-10 mb-10 rounded border-top border-bottom">
                                        @foreach (var snapshot in SnapshotInfo)
-                                       {
-                                           foreach (var kvp in snapshot)
-                                           {
-                                               <span class="text-light-dm text-dark-lm font-weight-bold">@kvp.Key</span>
-                                               <span>&mdash; <ColorCode Value="@kvp.Value" /></span><br/>
-                                           }
-                                           <hr class="mt-10 mb-10 border-secondary"/>
-                                       }
+                                    {
+                                        foreach (var kvp in snapshot)
+                                        {
+                                            <span class="text-light-dm text-dark-lm font-weight-bold">@kvp.Key</span>
+                                            <span>&mdash; <ColorCode Value="@kvp.Value"/></span>
+                                            <br/>
+                                        }
+
+                                        <hr class="mt-10 mb-10 border-secondary"/>
+                                    }
                                    </div>
-                               }
-                           }
+                            }
+                        }
                     }
                     else
                     {
-                         <ColorCode Value="@Meta.Offense" />
+                        <ColorCode Value="@Meta.Offense"/>
                     }
                 </span>
             }
@@ -89,34 +88,3 @@
     }
 </div>
 </span>
-
-@code {
-    [Parameter] public AdministeredPenaltyResponse Meta { get; set; }
-    [Parameter] public bool ShowHeader { get; set; } = true;
-    [Inject] public WebfrontCore.Services.IWebfrontApiClient Api { get; set; }
-
-    private bool IsOpen { get; set; }
-    private bool IsLoading { get; set; }
-    private List<Dictionary<string, string>> SnapshotInfo { get; set; }
-
-    private async Task ToggleDetails()
-    {
-        IsOpen = !IsOpen;
-        if (IsOpen && SnapshotInfo == null)
-        {
-            IsLoading = true;
-            try
-            {
-                SnapshotInfo = await Api.GetAutomatedPenaltyInfoAsync(Meta.PenaltyId);
-            }
-            catch (Exception)
-            {
-                // Handle error
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-    }
-}

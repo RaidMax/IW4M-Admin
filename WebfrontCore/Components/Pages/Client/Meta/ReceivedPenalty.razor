@@ -1,10 +1,4 @@
-@using SharedLibraryCore.Dtos.Meta.Responses
-@using SharedLibraryCore
-@using WebfrontCore.Components.Shared
-@using Data.Models
-@using Humanizer
-@inject WebfrontCore.Services.AppState AppState
-@inject WebfrontCore.Services.IWebfrontApiClient Api
+@inject AppState AppState
 
 @if (ShowHeader)
 {
@@ -34,7 +28,7 @@
             {
                 <span class="text-highlight">
                     <a href="/Client/Profile/@Meta.PunisherClientId">
-                        <ColorCode Value="@Meta.PunisherName" />
+                        <ColorCode Value="@Meta.PunisherName"/>
                     </a>
                     &nbsp;
                 </span>
@@ -46,13 +40,14 @@
                      @* Simplified check for authorized/automated *@
                     @if (AppState.User != null && !string.IsNullOrEmpty(Meta.AutomatedOffense) && Meta.PenaltyType != EFPenalty.PenaltyType.Warning && Meta.PenaltyType != EFPenalty.PenaltyType.Kick)
                     {
-                          @* Utilities.FormatExt is an extension, might need explicit call or different approach *@
-                          <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)&nbsp;</span>
-                           <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed" title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")">&nbsp;</span>
+                        @* Utilities.FormatExt is an extension, might need explicit call or different approach *@
+                        <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)&nbsp;</span>
+                        <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed"
+                              title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")">&nbsp;</span>
                     }
                     else
                     {
-                         <ColorCode Value="@Meta.Offense" />
+                        <ColorCode Value="@Meta.Offense"/>
                     }
                 </span>
             }
@@ -74,7 +69,7 @@
         <span>&mdash;</span>
         @foreach (var helperResult in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_LINKED_ACCOUNT"))
         {
-             if (!helperResult.IsInterpolation)
+            if (!helperResult.IsInterpolation)
             {
                 <span>@helperResult.MatchValue&nbsp;</span>
             }
@@ -82,7 +77,7 @@
             else
             {
                 <a class="link-inverse" href="/Client/Profile/@Meta.OffenderClientId">
-                    <ColorCode Value="@Meta.OffenderName" />
+                    <ColorCode Value="@Meta.OffenderName"/>
                     &nbsp;
                 </a>
             }

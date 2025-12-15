@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
 

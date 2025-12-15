@@ -1,12 +1,9 @@
-@using SharedLibraryCore.Dtos
-@using SharedLibraryCore
-@inject WebfrontCore.Services.AppState AppState
 
 <div class="pt-10 pl-15 pr-15 d-flex flex-wrap flex-column flex-md-row w-full w-auto-lg">
     @if (GroupedClients.Count > 0)
     {
         <div class="flex-fill flex-lg-grow-0 w-full w-md-half">
-            @foreach (var chat in Model.ChatHistory)
+            @foreach (var chat in Model?.ChatHistory ?? [])
             {
                 var message = chat.IsHidden && (AppState.User == null /* || Check Auth */) ? chat.HiddenMessage : chat.Message;
                 var stateIcon = GetIconForState(chat.Message);
@@ -14,14 +11,14 @@
                 <div class="text-truncate">
                     <i class="oi @stateIcon"></i>
                     <span>
-                        <ColorCode Value="@chat.Name" />
+                        <ColorCode Value="@chat.Name"/>
                     </span>
                     @if (string.IsNullOrEmpty(stateIcon))
                     {
                         <span class="text-truncate">
                             &mdash;
                             <span class="text-white-dm text-black-lm">
-                                <ColorCode Value="@(CapClientName(message, 48))" />
+                                <ColorCode Value="@(CapClientName(message, 48))"/>
                             </span>
                         </span>
                     }
@@ -40,12 +37,13 @@
                     var levelColorClass = (AppState.User == null || client.client.LevelInt == 0) ? "text-light-dm text-dark-lm" : $"level-color-{client.client.LevelInt}";
                     <div class="d-flex @(clientIndex.index == 1 ? "justify-content-start flex-row-reverse" : "")">
                         <HasPermission Entity="AdminMenu" RequiredPermission="Write">
-                            <a href="#" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId" aria-hidden="true" @onclick:preventDefault>
+                            <a href="#" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId"
+                               aria-hidden="true" @onclick:preventDefault>
                                 <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
                             </a>
                         </HasPermission>
                         <a href="Client/Profile/@client.client.ClientId" class="@levelColorClass no-decoration text-truncate ml-5 mr-5">
-                            <ColorCode Value="@client.client.Name" />
+                            <ColorCode Value="@client.client.Name"/>
                         </a>
                     </div>
                 }
@@ -57,38 +55,3 @@
         }
     </div>
 </div>
-
-@code {
-    [Parameter] public ServerInfo Model { get; set; }
-
-    private List<dynamic> GroupedClients => GetGroupedClients();
-
-    private List<dynamic> GetGroupedClients()
-    {
-        if (Model == null) return new List<dynamic>();
-        var half = Model.ClientCount == 0 || Model.Players.Count == 0 ? 0 : (int)Math.Ceiling(Model.ClientCount / 2.0);
-        return Model.Players.Select((client, i) => new { index = i, client })
-            .OrderBy(c => c.client.Name)
-            .GroupBy(c => c.index >= half).Select((group, index) => (dynamic)new
-            {
-                group,
-                index
-            }).ToList();
-    }
-
-    private string GetIconForState(string messageState)
-    {
-        return messageState switch
-        {
-            "CONNECTED" => "oi-account-login text-success mr-5",
-            "DISCONNECTED" => "oi-account-logout text-danger mr-5",
-            _ => ""
-        };
-    }
-
-    private string CapClientName(string message, int length)
-    {
-        if (message == null) return "";
-        return message.Length > length ? message.Substring(0, length) + "..." : message;
-    }
-}

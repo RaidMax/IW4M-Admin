@@ -1,15 +1,8 @@
-@using WebfrontCore.ViewModels
-@using SharedLibraryCore.Database.Models
-@using System.Globalization
-@using SharedLibraryCore.Dtos
-@using SharedLibraryCore
-@inject WebfrontCore.Services.AppState AppState
-
 <h4 class="content-title mb-0">
     @(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))
 </h4>
 <span class="text-muted">
-    <ColorCode Value="@Model.ServerName" />
+    <ColorCode Value="@Model.ServerName"/>
 </span>
 
 @if (!Model.ClientInfo.Any())
@@ -20,28 +13,28 @@ else
 {
     <table class="table table-sort mt-15">
         <tr class="bg-dark-dm bg-white-lm d-none d-lg-table-row">
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("ClientName")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("ClientName"))">
                 @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PLAYER")) @(GetSortIndicator("ClientName"))
             </th>
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("Score")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Score"))">
                 @(AppState.Loc("WEBFRONT_ADV_STATS_SCORE")) @(GetSortIndicator("Score"))
             </th>
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("Kills")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Kills"))">
                 @(AppState.Loc("WEBFRONT_ADV_STATS_KILLS")) @(GetSortIndicator("Kills"))
             </th>
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("Deaths")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Deaths"))">
                 @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_DEATHS")) @(GetSortIndicator("Deaths"))
             </th>
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("Kdr")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Kdr"))">
                 @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_RATIO")) @(GetSortIndicator("Kdr"))
             </th>
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("ScorePerMinute")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("ScorePerMinute"))">
                 @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_SPM")) @(GetSortIndicator("ScorePerMinute"))
             </th>
-            <th class="table-sort-column cursor-pointer" @onclick='() => Sort("ZScore")'>
+            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("ZScore"))">
                 @(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE")) @(GetSortIndicator("ZScore"))
             </th>
-            <th class="text-right table-sort-column cursor-pointer" @onclick='() => Sort("Ping")'>
+            <th class="text-right table-sort-column cursor-pointer" @onclick="@(() => Sort("Ping"))">
                 @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PING")) @(GetSortIndicator("Ping"))
             </th>
         </tr>
@@ -52,7 +45,7 @@ else
             <tr class="@teamClass d-none d-lg-table-row">
                 <td>
                     <a href="Client/Profile/@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
-                        <ColorCode Value="@client.ClientName" />
+                        <ColorCode Value="@client.ClientName"/>
                     </a>
                 </td>
                 <td>@client.Score</td>
@@ -65,7 +58,7 @@ else
             </tr>
 
             <!-- mobile -->
-             <tr class="d-table-row d-lg-none d-flex">
+            <tr class="d-table-row d-lg-none d-flex">
                 <td class="text-right bg-primary text-light flex-grow-0">
                     <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PLAYER"))</div>
                     <div>@(AppState.Loc("WEBFRONT_ADV_STATS_SCORE"))</div>
@@ -77,9 +70,9 @@ else
                     <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PING"))</div>
                 </td>
 
-                 <td class="@teamClass flex-fill">
+                <td class="@teamClass flex-fill">
                     <a href="Client/Profile/@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
-                        <ColorCode Value="@client.ClientName" />
+                        <ColorCode Value="@client.ClientName"/>
                     </a>
                     <div>@client.Score</div>
                     <div>@(client.Kills ?? 0)</div>
@@ -92,62 +85,4 @@ else
             </tr>
         }
     </table>
-}
-
-@code {
-    [Parameter] public ScoreboardInfo Model { get; set; }
-    
-    private string OrderByKey = nameof(ClientScoreboardInfo.Score);
-    private bool Descending = true;
-
-    private IEnumerable<ClientScoreboardInfo> SortedClients => GetSortedClients();
-
-    private IEnumerable<ClientScoreboardInfo> GetSortedClients()
-    {
-        var query = Model.ClientInfo.AsQueryable(); // Just to use dynamic OrderBy if needed, or switch
-        
-        // Simple switch for now
-        Func<ClientScoreboardInfo, object> keySelector = OrderByKey switch
-        {
-            nameof(ClientScoreboardInfo.ClientName) => c => c.ClientName,
-            nameof(ClientScoreboardInfo.Kills) => c => c.Kills,
-            nameof(ClientScoreboardInfo.Deaths) => c => c.Deaths,
-            nameof(ClientScoreboardInfo.Kdr) => c => c.Kdr,
-            nameof(ClientScoreboardInfo.ScorePerMinute) => c => c.ScorePerMinute,
-            nameof(ClientScoreboardInfo.ZScore) => c => c.ZScore,
-            nameof(ClientScoreboardInfo.Ping) => c => c.Ping,
-            _ => c => c.Score
-        };
-
-        return Descending ? Model.ClientInfo.OrderByDescending(keySelector) : Model.ClientInfo.OrderBy(keySelector);
-    }
-
-    private void Sort(string key)
-    {
-        if (OrderByKey == key)
-        {
-            Descending = !Descending;
-        }
-        else
-        {
-            OrderByKey = key;
-            Descending = true;
-        }
-    }
-
-    private MarkupString GetSortIndicator(string key)
-    {
-        if (OrderByKey == key)
-        {
-             return new MarkupString(Descending ? "<span class=\"ml-5 font-size-12\">▼</span>" : "<span class=\"ml-5 font-size-12\">▲</span>");
-        }
-        return new MarkupString("");
-    }
-
-    string GetTeamBackgroundColorClass(ClientScoreboardInfo client)
-    {
-         // mapping EFClient.TeamType
-         // Assuming EFClient namespace available
-        return $"team-{client.Team.ToString().ToLower()}-bg {(client.Team == EFClient.TeamType.Unknown ? "bg-dark-dm bg-light-lm" : "")}";
-    }
 }

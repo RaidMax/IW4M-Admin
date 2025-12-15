@@ -1,5 +1,4 @@
-@using WebfrontCore.Components.Shared.Partials.Search
-@inject WebfrontCore.Services.AppState AppState
+@inject AppState AppState
 
 <h6 class="dropdown-header">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))</h6>
 <div class="dropdown-divider"></div>
@@ -13,14 +12,14 @@
             <option value="chat">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT"))</option>
         </select>
     </div>
-    
+
     @if (SearchType == "client")
     {
-        <ClientSearch />
+        <ClientSearch/>
     }
     else
     {
-        <ChatSearch />
+        <ChatSearch/>
     }
 </div>
 

@@ -24,7 +24,7 @@ namespace WebfrontCore
         {
             return _webHost?.RunAsync(cancellationToken);
         }
-        
+
         private static IWebHost BuildWebHost(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
         {
             return new WebHostBuilder()

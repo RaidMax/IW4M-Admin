@@ -1,78 +1,80 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
-    <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
-    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-    <PreserveCompilationContext>true</PreserveCompilationContext>
-    <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
-    <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
-    <Version>2022.0.0</Version>
-    <Authors>RaidMax</Authors>
-    <Company>Forever None</Company>
-    <Product>IW4MAdmin</Product>
-    <Description>IW4MAdmin is a complete server administration tool for IW4x and most Call of Duty® dedicated servers</Description>
-    <Copyright>2019</Copyright>
-    <PackageLicenseUrl>https://github.com/RaidMax/IW4M-Admin/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://raidmax.org/IW4MAdmin</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
-    <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
-    <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
-    <Configurations>Debug;Release;Prerelease</Configurations>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
+        <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
+        <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+        <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
+        <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
+        <Version>2022.0.0</Version>
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Product>IW4MAdmin</Product>
+        <Description>IW4MAdmin is a complete server administration tool for IW4x and most Call of Duty® dedicated servers</Description>
+        <Copyright>2019</Copyright>
+        <PackageLicenseUrl>https://github.com/RaidMax/IW4M-Admin/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageProjectUrl>https://raidmax.org/IW4MAdmin</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
+        <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
+        <ApplicationIcon/>
+        <OutputType>Library</OutputType>
+        <StartupObject/>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <ImplicitUsings>true</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <ServerGarbageCollection>true</ServerGarbageCollection>
-    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-    <TieredCompilation>true</TieredCompilation>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
-    <Content Update="wwwroot\css\src\global.min.css" CopyToPublishDirectory="Never" />
-    <Content Update="Views\*.*" CopyToPublishDirectory="Never" />
-    <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
-    <None Remove="Properties\launchSettings.json" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+        <TieredCompilation>true</TieredCompilation>
+        <LangVersion>Latest</LangVersion>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="8.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.6" />
-    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
-  </ItemGroup>
+    <ItemGroup>
+        <!-- Static web assets should be included -->
+        <Content Update="Views\*.*" CopyToPublishDirectory="Never"/>
+        <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest"/>
+        <None Remove="Properties\launchSettings.json"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <DotNetCliToolReference Include="BundlerMinifier.Core" Version="3.2.449" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1"/>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\lib\canvas.js\" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.1"/>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Plugins\Stats\Stats.csproj" />
-    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
-    <ProjectReference Include="..\Data\Data.csproj" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="libman.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <DotNetCliToolReference Include="BundlerMinifier.Core" Version="3.2.449"/>
+    </ItemGroup>
 
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties />
-    </VisualStudio>
-  </ProjectExtensions>
+    <ItemGroup>
+        <Folder Include="wwwroot\lib\canvas.js\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Plugins\Stats\Stats.csproj"/>
+        <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj"/>
+        <ProjectReference Include="..\Data\Data.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="libman.json">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ProjectExtensions>
+        <VisualStudio>
+            <UserProperties/>
+        </VisualStudio>
+    </ProjectExtensions>
 
 </Project>

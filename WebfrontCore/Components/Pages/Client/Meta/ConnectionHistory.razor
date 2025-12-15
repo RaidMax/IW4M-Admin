@@ -1,9 +1,4 @@
-@using SharedLibraryCore.Dtos.Meta.Responses
-@using SharedLibraryCore
-@using WebfrontCore.Components.Shared
-@using Humanizer
-@using Data.Models
-@inject WebfrontCore.Services.AppState AppState
+@inject AppState AppState
 
 @if (ShowHeader)
 {
@@ -17,28 +12,28 @@
 
 <span data-toggle="tooltip" data-title="@tooltipText" data-placement="top">
 @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
-{
-    if (token.IsInterpolation)
     {
-        switch (token.MatchValue)
+        if (token.IsInterpolation)
         {
-            case "action":
-                <span
-                    class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-secondary")">@token.TranslationValue&nbsp;</span>
-                break;
-            case "server":
-                <span class="text-light-dm text-dark-lm">
+            switch (token.MatchValue)
+            {
+                case "action":
+                    <span
+                        class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-secondary")">@token.TranslationValue&nbsp;</span>
+                    break;
+                case "server":
+                    <span class="text-light-dm text-dark-lm">
                     <ColorCode Value="@Meta.ServerName"/>
                     &nbsp;
                 </span>
-                break;
+                    break;
+            }
+        }
+        else
+        {
+            <span class="text-muted">@token.MatchValue&nbsp;</span>
         }
     }
-    else
-    {
-        <span class="text-muted">@token.MatchValue&nbsp;</span>
-    }
-}
 </span>
 
 @code {

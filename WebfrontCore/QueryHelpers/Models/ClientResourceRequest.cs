@@ -1,5 +1,4 @@
-﻿using System;
-using Data.Models;
+﻿using Data.Models;
 using Data.Models.Client;
 using SharedLibraryCore.QueryHelper;
 

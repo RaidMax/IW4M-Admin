@@ -1,19 +1,4 @@
 @page "/Client/Profile/{Id:int}"
-@using SharedLibraryCore.Dtos
-@using SharedLibraryCore.Interfaces
-@using SharedLibraryCore
-@using Data.Models
-@using Data.Models.Client
-@using WebfrontCore.Components.Shared.Partials
-@using WebfrontCore.Components.Pages.Client.Meta
-@using WebfrontCore.Permissions
-@using WebfrontCore.ViewModels
-@using Humanizer
-
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject WebfrontCore.Services.AppState AppState
-@inject NavigationManager NavManager
-@inject SharedLibraryCore.Configuration.ApplicationConfiguration Config
 
 @if (_isLoading)
 {
@@ -84,14 +69,17 @@ else
                 @* Online Status Indicator *@
                 @if (Client.Online)
                 {
-                    <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10" title="@AppState.Loc("WEBFRONT_PROFILE_TOOLTIP_ONLINE")"></div>
+                    <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10"
+                         title="@AppState.Loc("WEBFRONT_PROFILE_TOOLTIP_ONLINE")"></div>
                     <div class="bg-success rounded-circle position-absolute status-indicator with-ripple z-10 mt-10 ml-10"></div>
                 }
 
                 <div class="card p-15 ml-0 mr-0 mt-0 mb-10 d-flex flex-fill flex-wrap flex-column flex-md-row justify-content-center">
                     <div class="pl-5 pr-5 d-flex flex-column flex-md-row">
                         @* Avatar *@
-                        <div id="profile_avatar" class="w-150 w-md-100 h-150 h-md-100 mt-5 mb-5 d-flex justify-content-center align-self-center rounded @ClassForProfileBackground() @(isTempBanned ? "penalties-bgcolor-tempban" : "")" style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")')">
+                        <div id="profile_avatar"
+                             class="w-150 w-md-100 h-150 h-md-100 mt-5 mb-5 d-flex justify-content-center align-self-center rounded @ClassForProfileBackground() @(isTempBanned ? "penalties-bgcolor-tempban" : "")"
+                             style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")')">
                             @if (string.IsNullOrEmpty(gravatarUrl))
                             {
                                 <div class="profile-shortcode align-self-center text-dark-lm">@shortCode</div>
@@ -101,37 +89,42 @@ else
                             @* Name with Alias Dropdown *@
                             <div id="profile_name">
                                 <span class="font-size-20 font-weight-medium text-force-break">
-                                    <ColorCode Value="@Client.Name" />
+                                    <ColorCode Value="@Client.Name"/>
                                 </span>
                                 <HasPermission Entity="MetaAliasUpdate" RequiredPermission="Read">
                                     @if (Client.Aliases?.Any() == true)
                                     {
                                         <div class="dropdown with-arrow d-inline">
-                                            <i class="oi oi-caret-bottom font-size-12 cursor-pointer" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
-                                            <div class="dropdown-menu dropdown-menu-center @(Client.Aliases.Any(a => a.Value != null && !a.Value.Contains(" ") && a.Value.StripColors().Length >= 15) ? "w-250" : "")">
+                                            <i class="oi oi-caret-bottom font-size-12 cursor-pointer" data-toggle="dropdown"
+                                               aria-haspopup="true" aria-expanded="false"></i>
+                                            <div
+                                                class="dropdown-menu dropdown-menu-center @(Client.Aliases.Any(a => a.Value != null && !a.Value.Contains(" ") && a.Value.StripColors().Length >= 15) ? "w-250" : "")">
                                                 @foreach (var alias in Client.Aliases.OrderByDescending(a => a.Date).Take(15))
                                                 {
-                                                    <a href="/Client/AdvancedFind?clientName=@Uri.EscapeDataString(alias.Value?.StripColors() ?? "")" class="dropdown-item" title="@alias.Date.HumanizeForCurrentCulture()">
+                                                    <a href="/Client/AdvancedFind?clientName=@Uri.EscapeDataString(alias.Value?.StripColors() ?? "")"
+                                                       class="dropdown-item" title="@alias.Date.HumanizeForCurrentCulture()">
                                                         <i class="oi oi-magnifying-glass text-muted mr-5"></i>
-                                                        <ColorCode Value="@alias.Value" />
+                                                        <ColorCode Value="@alias.Value"/>
                                                     </a>
                                                 }
                                                 @if (Client.Aliases.Count > 15)
                                                 {
                                                     <div class="dropdown-divider"></div>
-                                                    <span class="dropdown-item bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.Aliases.Count - 15)</span>
+                                                    <span
+                                                        class="dropdown-item bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.Aliases.Count - 15)</span>
                                                 }
                                             </div>
                                         </div>
                                     }
                                 </HasPermission>
                             </div>
-                            
+
                             @* Permission Level *@
                             <HasPermission Entity="ClientLevel" RequiredPermission="Read">
-                                <div class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Client.LevelInt">
+                                <div
+                                    class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Client.LevelInt">
                                     <div class="d-flex flex-row">
-                                        <ColorCode Value="@Client.Level" />
+                                        <ColorCode Value="@Client.Level"/>
                                     </div>
                                 </div>
                             </HasPermission>
@@ -139,7 +132,8 @@ else
                             @* GUID with Alternate Formats *@
                             <HasPermission Entity="ClientGuid" RequiredPermission="Read">
                                 <div class="dropdown dropup with-arrow">
-                                    <div class="text-muted cursor-pointer" data-toggle="dropdown" id="altGuidFormatsDropdown" aria-haspopup="true" aria-expanded="false">@Client.NetworkId.ToString("X")</div>
+                                    <div class="text-muted cursor-pointer" data-toggle="dropdown" id="altGuidFormatsDropdown"
+                                         aria-haspopup="true" aria-expanded="false">@Client.NetworkId.ToString("X")</div>
                                     <div class="dropdown-menu" aria-labelledby="altGuidFormatsDropdown">
                                         <div class="p-10 font-size-12">
                                             <div>@AppState.Loc("WEBFRONT_PROFILE_POPOVER_ALTERNATIVE_GUID")</div>
@@ -149,13 +143,14 @@ else
                                     </div>
                                 </div>
                             </HasPermission>
-                            
+
                             @* IP Address with History Dropdown *@
                             <div class="align-self-center align-self-md-start d-flex flex-row">
                                 <span class="text-muted mr-5">@Client.IPAddress</span>
                                 <HasPermission Entity="MetaAliasUpdate" RequiredPermission="Read">
                                     <div class="dropdown with-arrow">
-                                        <i class="oi oi-caret-bottom font-size-12 text-muted cursor-pointer" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+                                        <i class="oi oi-caret-bottom font-size-12 text-muted cursor-pointer" data-toggle="dropdown"
+                                           aria-haspopup="true" aria-expanded="false"></i>
                                         <div class="dropdown-menu dropdown-menu-center">
                                             @if (Client.IPs?.Any(ip => !string.IsNullOrEmpty(ip.Value)) == true)
                                             {
@@ -165,13 +160,15 @@ else
                                                         <a href="/Client/AdvancedFind?clientIP=@ip.Value">
                                                             <i class="oi oi-magnifying-glass text-muted mr-5"></i>
                                                         </a>
-                                                        <ColorCode Value="@ip.Value" />
+                                                        <ColorCode Value="@ip.Value"/>
                                                     </div>
                                                 }
+
                                                 @if (Client.IPs.Count(i => !string.IsNullOrEmpty(i.Value)) > 15)
                                                 {
                                                     <div class="dropdown-divider"></div>
-                                                    <span class="dropdown-item bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.IPs.Count(i => !string.IsNullOrEmpty(i.Value)) - 15)</span>
+                                                    <span
+                                                        class="dropdown-item bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.IPs.Count(i => !string.IsNullOrEmpty(i.Value)) - 15)</span>
                                                 }
                                             }
                                             else
@@ -180,7 +177,7 @@ else
                                                     <a href="/Client/Search?clientName=@Client.IPAddress">
                                                         <i class="oi oi-magnifying-glass text-muted mr-5"></i>
                                                     </a>
-                                                    <ColorCode Value="@Client.IPAddress" />
+                                                    <ColorCode Value="@Client.IPAddress"/>
                                                 </div>
                                             }
                                         </div>
@@ -203,7 +200,7 @@ else
                                     }
                                     <div class="mt-5">
                                         <a href="/Client/Profile/@Client.NoteMeta.OriginEntityId" class="no-decoration">
-                                            <ColorCode Value="@Client.NoteMeta.OriginEntityName" />
+                                            <ColorCode Value="@Client.NoteMeta.OriginEntityName"/>
                                         </a>
                                         <span>— @Client.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
                                     </div>
@@ -218,7 +215,8 @@ else
                             @if (Client.GeoLocationInfo != null && !string.IsNullOrEmpty(Client.GeoLocationInfo.CountryCode))
                             {
                                 <a href="#" data-toggle="dropdown" id="avatar-popover-toggle" aria-haspopup="true" aria-expanded="false">
-                                    <div class="profile-country-flag w-100 rounded align-self-center" style="background-image: url('https://flagcdn.com/w160/@(Client.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
+                                    <div class="profile-country-flag w-100 rounded align-self-center"
+                                         style="background-image: url('https://flagcdn.com/w160/@(Client.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-center z-30" aria-labelledby="avatar-popover-toggle">
                                     <HasPermission Entity="ClientIPAddress" RequiredPermission="Read">
@@ -246,7 +244,7 @@ else
                         <div class="d-flex flex-column flex-md-row text-center text-md-left flex-wrap">
                             @if (Client.Meta != null)
                             {
-                                <Information Meta="@(Client.Meta.Cast<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>())" />
+                                <Information Meta="@(Client.Meta.Cast<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>())"/>
                             }
                         </div>
                     </div>
@@ -257,13 +255,15 @@ else
             <div class="mb-10 mt-15 m-auto">
                 @foreach (var type in GetFilterableMetaTypes())
                 {
-                    var buttonClass = (!_selectedMetaFilter.HasValue && type == MetaType.All) || 
-                                     (_selectedMetaFilter.HasValue && _selectedMetaFilter.Value == type)
-                                     ? "btn-primary text-light" : "text-muted";
+                    var buttonClass = (!_selectedMetaFilter.HasValue && type == MetaType.All) ||
+                                          (_selectedMetaFilter.HasValue && _selectedMetaFilter.Value == type)
+                        ? "btn-primary text-light"
+                        : "text-muted";
                     <button class="btn btn-sm d-none d-md-inline mt-5 mb-5 @buttonClass meta-filter" @onclick="() => SetMetaFilter(type)">
                         @type.ToTranslatedName()
                     </button>
-                    <button class="btn btn-block d-block d-md-none mt-10 mb-10 @buttonClass meta-filter" @onclick="() => SetMetaFilter(type)">
+                    <button class="btn btn-block d-block d-md-none mt-10 mb-10 @buttonClass meta-filter"
+                            @onclick="() => SetMetaFilter(type)">
                         @type.ToTranslatedName()
                     </button>
                 }
@@ -273,257 +273,14 @@ else
             {
                 <div class="row d-md-flex pt-2">
                     <div id="profile_events" class="text-muted text-left pl-md-0 pr-md-0 col-12">
-                        <ProfileMetaList ClientId="@Client.ClientId" MetaFilterType="@_selectedMetaFilter" />
+                        <ProfileMetaList ClientId="@Client.ClientId" MetaFilterType="@_selectedMetaFilter"/>
                     </div>
                 </div>
             }
         </div>
-        
+
         <div class="col-12 col-lg-3">
-            <WebfrontCore.Components.Shared.SideContextMenu Model="ContextItems" />
+            <WebfrontCore.Components.Shared.SideContextMenu Model="ContextItems"/>
         </div>
     </div>
-}
-
-@code {
-    [Parameter] public int Id { get; set; }
-    private PlayerInfo Client { get; set; }
-    private SideContextMenuItems ContextItems { get; set; }
-    private bool _isLoading = true;
-    private string _error = null;
-    private MetaType? _selectedMetaFilter = null;
-    
-    private bool IsAuthorized => AppState.User != null && (int)AppState.User.Level >= (int)EFClient.Permission.Trusted;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        _isLoading = true;
-        _error = null;
-        _selectedMetaFilter = null;
-        
-        try
-        {
-            Client = await Api.GetClientProfileAsync(Id);
-            if (Client != null)
-            {
-                BuildContextMenu();
-            }
-        }
-        catch(Exception ex)
-        {
-            _error = ex.Message;
-            Console.WriteLine($"Profile load error: {ex}");
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void SetMetaFilter(MetaType type)
-    {
-        _selectedMetaFilter = type == MetaType.All ? null : type;
-        StateHasChanged();
-    }
-
-    private IEnumerable<MetaType> GetFilterableMetaTypes()
-    {
-        var ignoredTypes = new[] { MetaType.Information, MetaType.Other, MetaType.QuickMessage };
-        return Enum.GetValues(typeof(MetaType))
-            .Cast<MetaType>()
-            .Where(meta => !ignoredTypes.Contains(meta))
-            .OrderByDescending(meta => meta == MetaType.All);
-    }
-
-    private string GetShortCode(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return "?";
-        var match = System.Text.RegularExpressions.Regex.Match(name.ToUpper(), "[A-Z]").Value;
-        return string.IsNullOrEmpty(match) ? "?" : match;
-    }
-    
-    private void BuildContextMenu()
-    {
-        var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;
-        var isPermBanned = Client.LevelInt == (int)EFClient.Permission.Banned;
-        var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
-        var userLevel = AppState.User?.Level ?? EFClient.Permission.User;
-        
-        ContextItems = new SideContextMenuItems
-        {
-            MenuTitle = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TITLE")
-        };
-        
-        // Join Server (if online)
-        if (Client.Online && !string.IsNullOrEmpty(Client.ConnectProtocolUrl))
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_JOIN"),
-                IsButton = true,
-                IsLink = true,
-                Reference = Client.ConnectProtocolUrl,
-                Tooltip = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TOOLTIP_JOIN").FormatExt(Client.CurrentServerName?.StripColors() ?? ""),
-                Icon = "oi-play-circle",
-            });
-        }
-
-        // Edit Level (if authorized)
-        if (Client.LevelInt != -1 && IsAuthorized)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_LEVEL"),
-                IsButton = true,
-                Reference = "edit",
-                Icon = "oi-cog",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Set Tag (if authorized)
-        if (IsAuthorized)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TAG"),
-                IsButton = true,
-                Reference = "SetClientTag",
-                Icon = "oi-tag",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Add Note (if authorized + permission)
-        if (IsAuthorized && HasPermission(WebfrontEntity.ClientNote, WebfrontPermission.Write))
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_NOTE"),
-                IsButton = true,
-                Reference = "AddClientNote",
-                Icon = "oi-clipboard",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Send Message (if authorized)
-        if (IsAuthorized)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MESSAGE"),
-                IsButton = true,
-                Reference = "OfflineMessage",
-                Icon = "oi oi-envelope-closed",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // View Stats (always)
-        ContextItems.Items.Add(new SideContextMenuItem
-        {
-            Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_STATS"),
-            IsButton = true,
-            IsLink = true,
-            Reference = $"/Client/Statistics/{Id}/Advanced",
-            Icon = "oi-graph",
-        });
-
-        // Flag/Unflag (if authorized + not perm banned)
-        if (!isPermBanned && IsAuthorized)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = isFlagged ? AppState.Loc("WEBFRONT_ACTION_UNFLAG_NAME") : AppState.Loc("WEBFRONT_ACTION_FLAG_NAME"),
-                IsButton = true,
-                Reference = isFlagged ? "unflag" : "flag",
-                Icon = "oi-flag",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Kick (if online + higher level)
-        if (Client.LevelInt < (int)userLevel && Client.Online)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_ACTION_KICK_NAME"),
-                IsButton = true,
-                Reference = "kick",
-                Icon = "oi-circle-x",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Ban (if not banned + higher level + authorized)
-        if ((Client.LevelInt < (int)userLevel && !isPermBanned || isTempBanned) && IsAuthorized)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_ACTION_BAN_NAME"),
-                IsButton = true,
-                Reference = "ban",
-                Icon = "oi-lock-unlocked",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Unban (if banned + higher level + authorized)
-        if ((Client.LevelInt < (int)userLevel && isPermBanned || isTempBanned) && IsAuthorized)
-        {
-            ContextItems.Items.Add(new SideContextMenuItem
-            {
-                Title = AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME"),
-                IsButton = true,
-                Reference = "unban",
-                Icon = "oi-lock-locked",
-                EntityId = Client.ClientId
-            });
-        }
-
-        // Plugin Interactions
-        if (Client.Interactions != null)
-        {
-            foreach (var interaction in Client.Interactions.Where(i => (int)userLevel >= ((int?)i.MinimumPermission ?? 0)))
-            {
-                ContextItems.Items.Add(new SideContextMenuItem
-                {
-                    Title = interaction.Name,
-                    Tooltip = interaction.Description,
-                    EntityId = interaction.EntityId,
-                    Icon = interaction.DisplayMeta,
-                    Reference = interaction.ActionPath,
-                    Meta = System.Text.Json.JsonSerializer.Serialize(interaction.ActionMeta),
-                    IsButton = true
-                });
-            }
-        }
-    }
-
-    private bool HasPermission(WebfrontEntity entity, WebfrontPermission permission)
-    {
-        if (AppState.User == null) return false;
-        return Config.HasPermission(AppState.User.Level, entity, permission);
-    }
-
-    private string ClassForProfileBackground()
-    {
-        if (!HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
-            return "level-bgcolor-0";
-        return $"level-bgcolor-{Client.LevelInt}";
-    }
-
-    string ClassForPenaltyType(EFPenalty.PenaltyType type)
-    {
-        return type switch
-        {
-            EFPenalty.PenaltyType.Ban => "alert-danger",
-            EFPenalty.PenaltyType.Flag => "alert-secondary",
-            EFPenalty.PenaltyType.TempBan => "alert-secondary",
-            EFPenalty.PenaltyType.TempMute => "alert-secondary",
-            EFPenalty.PenaltyType.Mute => "alert-secondary",
-            _ => "alert"
-        };
-    }
 }

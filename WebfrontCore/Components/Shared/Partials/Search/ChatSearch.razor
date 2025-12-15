@@ -1,20 +1,11 @@
-#nullable enable
-@using WebfrontCore.QueryHelpers.Models
-@using SharedLibraryCore.Interfaces
-@using System.Globalization
-@using SharedLibraryCore
-@inject NavigationManager NavManager
-@inject WebfrontCore.Services.AppState AppState
-@inject IManager Manager
-
 <div id="chatSearchWrapper">
     <div class="form-group">
         <label for="messageContains">@(AppState.Loc("WEBFRONT_ACTION_LABEL_MESSAGE"))</label>
         <div class="d-flex">
-            <input type="text" class="form-control" id="messageContains" placeholder="Contains" @bind="Model.MessageContains" />
+            <input type="text" class="form-control" id="messageContains" placeholder="Contains" @bind="Model.MessageContains"/>
             <div class="custom-control ml-10 align-self-center">
                 <div class="custom-switch">
-                     <input type="checkbox" id="isExactMatch" @bind="Model.IsExactMatch" />
+                    <input type="checkbox" id="isExactMatch" @bind="Model.IsExactMatch"/>
                     <label for="isExactMatch">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</label>
                 </div>
             </div>
@@ -26,7 +17,7 @@
         <label for="clientId" class="">@(AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER"))</label>
 
         <div class="d-flex">
-            <input type="text" class="form-control w-quarter" id="clientId" placeholder="Id" @bind="Model.ClientId" />
+            <input type="text" class="form-control w-quarter" id="clientId" placeholder="Id" @bind="Model.ClientId"/>
             <select class="form-control w-three-quarter ml-10" id="serverId" @bind="Model.ServerId">
                 <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
                 @foreach (var server in Manager.GetServers())
@@ -40,54 +31,16 @@
     <div class="form-group">
         <label for="sentAfter">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_AFTER"))</label>
         <div class="d-flex">
-            <input type="datetime-local" class="form-control" id="sentAfter" @bind="LocalSentAfter" />
+            <input type="datetime-local" class="form-control" id="sentAfter" @bind="LocalSentAfter"/>
         </div>
     </div>
 
     <div class="form-group">
         <label for="sentBefore">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_BEFORE"))</label>
         <div class="d-flex">
-             <input type="datetime-local" class="form-control" id="sentBefore" @bind="LocalSentBefore" />
+            <input type="datetime-local" class="form-control" id="sentBefore" @bind="LocalSentBefore"/>
         </div>
     </div>
 
-    <button class="btn btn-primary" @onclick="Submit">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))</button>
+    <button class="btn btn-primary" @onclick="@Submit">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))</button>
 </div>
-
-@code {
-    [Parameter] public ChatResourceRequest Model { get; set; } = new ChatResourceRequest();
-    
-    // Local bindable properties
-    private DateTime LocalSentAfter { get; set; }
-    private DateTime LocalSentBefore { get; set; }
-
-    protected override void OnInitialized()
-    {
-        LocalSentAfter = Model.SentAfterDateTime ?? DateTime.UtcNow.AddHours(-1);
-        LocalSentBefore = Model.SentBeforeDateTime ?? DateTime.UtcNow;
-    }
-
-    private void Submit()
-    {
-        // Update model properties (optional, mainly for query building)
-        Model.SentAfter = LocalSentAfter.Date;
-        Model.SentAfterTime = LocalSentAfter.ToString("HH:mm");
-        Model.SentBefore = LocalSentBefore.Date;
-        Model.SentBeforeTime = LocalSentBefore.ToString("HH:mm");
-
-        var query = new Dictionary<string, object?>
-        {
-            { "messageContains", Model.MessageContains },
-            { "isExactMatch", Model.IsExactMatch },
-            { "clientId", Model.ClientId },
-            { "serverId", Model.ServerId },
-            { "sentAfter", Model.SentAfter?.ToString("s", CultureInfo.InvariantCulture) },
-            { "sentAfterTime", Model.SentAfterTime },
-            { "sentBefore", Model.SentBefore.ToString("s", CultureInfo.InvariantCulture) },
-            { "sentBeforeTime", Model.SentBeforeTime }
-        };
-
-        var url = NavManager.GetUriWithQueryParameters("/Stats/FindMessage", query);
-        NavManager.NavigateTo(url, forceLoad: true);
-    }
-}

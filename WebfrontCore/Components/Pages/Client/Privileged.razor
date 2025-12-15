@@ -1,13 +1,4 @@
 @page "/Client/Privileged"
-@using SharedLibraryCore.Dtos
-@using Data.Models.Client
-@using SharedLibraryCore
-@using WebfrontCore.ViewModels
-@using Humanizer
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject WebfrontCore.Services.AppState AppState
-@inject NavigationManager NavManager
-@inject SharedLibraryCore.Configuration.ApplicationConfiguration Config
 
 <div class="content mt-0">
     <h4 class="content-title mt-20">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h4>
@@ -21,72 +12,50 @@
                 <tr class="level-bgcolor-@((int)key)">
                     <th colspan="50%" class="text-light">@(key.ToLocalizedLevelName())</th>
                     <th colspan="20%">@(AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"))</th>
-                    <th colspan="30%" class="text-right font-weight-bold text-force-break">@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</th>
+                    <th colspan="30%"
+                        class="text-right font-weight-bold text-force-break">@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</th>
                 </tr>
                 </thead>
                 <tbody>
-                    @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
+                @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
+                {
+                    if (client.IsMasked && !Config.HasPermission(AppState.User.Level, WebfrontCore.Permissions.WebfrontEntity.ClientLevel, WebfrontCore.Permissions.WebfrontPermission.Read))
                     {
-                        if (client.IsMasked && !Config.HasPermission(AppState.User.Level, WebfrontCore.Permissions.WebfrontEntity.ClientLevel, WebfrontCore.Permissions.WebfrontPermission.Read))
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
-                        <tr class="bg-dark-dm bg-light-lm">
-                            <td colspan="50%">
-                                @if (client.IsMasked)
-                                {
-                                    <span data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                    <tr class="bg-dark-dm bg-light-lm">
+                        <td colspan="50%">
+                            @if (client.IsMasked)
+                            {
+                                <span data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
                                         <span class="oi oi-shield mr-5 font-size-12"></span>
                                     </span>
-                                }
+                            }
 
-                                <a href="/Client/Profile/@client.ClientId" class="text-force-break">
-                                    <ColorCode Value="@client.Name" />
-                                </a>
-                            </td>
-                            <td colspan="20%" class="d-none d-md-table-cell">
-                                <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
-                            </td>
-                            <td colspan="20%" class="d-table-cell d-md-none">
-                                <div class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
-                            </td>
-                            <td colspan="30%" class="text-right">
-                                @client.LastConnection.Humanize()
-                            </td>
-                        </tr>
-                    }
+                            <a href="/Client/Profile/@client.ClientId" class="text-force-break">
+                                <ColorCode Value="@client.Name"/>
+                            </a>
+                        </td>
+                        <td colspan="20%" class="d-none d-md-table-cell">
+                            <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
+                        </td>
+                        <td colspan="20%" class="d-table-cell d-md-none">
+                            <div class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
+                        </td>
+                        <td colspan="30%" class="text-right">
+                            @client.LastConnection.Humanize()
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         }
     }
     else
     {
-         <div class="text-center p-20">
+        <div class="text-center p-20">
             <span class="oi oi-loop-circular rotating font-size-24 text-primary"></span>
         </div>
     }
 </div>
-
-@code {
-    private Dictionary<EFClient.Permission, IList<ClientInfo>> PrivilegedClients;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try 
-        {
-            PrivilegedClients = await Api.GetPrivilegedClientsAsync();
-        }
-        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
-        {
-             // If privacy enabled and not logged in, user might be forbidden
-             // However, the menu link should probably be hidden or we redirect?
-             // MVC redirects to Index.
-             NavManager.NavigateTo("/");
-        }
-        catch (Exception)
-        {
-            // Handle error
-        }
-    }
-}

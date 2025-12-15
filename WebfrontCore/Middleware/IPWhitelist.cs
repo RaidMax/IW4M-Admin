@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+﻿using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace WebfrontCore.Middleware
 {

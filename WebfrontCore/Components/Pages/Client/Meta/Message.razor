@@ -1,18 +1,14 @@
-@using SharedLibraryCore.Dtos.Meta.Responses
-@using SharedLibraryCore
-@using WebfrontCore.Components.Shared
-@using Humanizer
 
 @if (ShowHeader)
 {
     <span class="text-muted font-size-12 mr-5">@Meta.When.HumanizeForCurrentCulture() &mdash;</span>
 }
 
-<div @onclick="ToggleContext" style="cursor: pointer" class="d-inline">
+<div @onclick="@ToggleContext" style="cursor: pointer" class="d-inline">
     <span class="oi oi-chevron-@(IsOpen ? "bottom" : "right") font-size-12 mr-5"></span>
 
     <span class="text-white-dm text-black-lm text-break">
-        <ColorCode Value="@Meta.Message" />&nbsp;
+        <ColorCode Value="@Meta.Message"/>&nbsp;
     </span>
     <span class="text-muted font-size-12 align-top">@Meta.ServerName</span>&nbsp;
 </div>
@@ -30,60 +26,26 @@
     else if (ContextMessages != null)
     {
         <div class="client-message-context mt-10 mb-10 pl-20">
-             <div class="rounded-top bg-primary text-light mb-0 p-10 pt-5 pb-5 font-size-12">
-                 @Meta.When.HumanizeForCurrentCulture()
-             </div>
-             <div class="bg-very-dark-dm bg-light-lm p-10 pr-20 rounded-bottom">
-                 @foreach (var message in ContextMessages)
-                 {
-                     var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
-                     <div class="font-size-14 mb-2 @(isOriginalMessage ? "rounded p-2" : "")" style="@(isOriginalMessage ? "background-color: rgba(0, 123, 255, 0.25); border-left: 3px solid #007bff;" : "")">
+            <div class="rounded-top bg-primary text-light mb-0 p-10 pt-5 pb-5 font-size-12">
+                @Meta.When.HumanizeForCurrentCulture()
+            </div>
+            <div class="bg-very-dark-dm bg-light-lm p-10 pr-20 rounded-bottom">
+                @foreach (var message in ContextMessages)
+                {
+                    var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
+                    <div class="font-size-14 mb-2 @(isOriginalMessage ? "rounded p-2" : "")"
+                         style="@(isOriginalMessage ? "background-color: rgba(0, 123, 255, 0.25); border-left: 3px solid #007bff;" : "")">
                          <span class="font-weight-bold">
-                             <ColorCode Value="@message.ClientName" />
+                             <ColorCode Value="@message.ClientName"/>
                          </span>
-                         &mdash;
-                         <span class="@(message.IsQuickMessage ? "font-italic" : "") text-light-dm text-dark-lm">
-                             <ColorCode Value="@message.Message" />
+                        &mdash;
+                        <span class="@(message.IsQuickMessage ? "font-italic" : "") text-light-dm text-dark-lm">
+                             <ColorCode Value="@message.Message"/>
                          </span>
-                         <span class="text-muted font-size-12 ml-5">@message.When.ToString("T")</span>
-                     </div>
-                 }
-             </div>
+                        <span class="text-muted font-size-12 ml-5">@message.When.ToString("T")</span>
+                    </div>
+                }
+            </div>
         </div>
-    }
-}
-
-@code {
-    [Parameter] public MessageResponse Meta { get; set; }
-    [Parameter] public bool ShowHeader { get; set; } = true;
-    [Inject] public WebfrontCore.Services.IWebfrontApiClient Api { get; set; }
-
-    private bool IsOpen { get; set; }
-    private bool IsLoading { get; set; }
-    private List<MessageResponse> ContextMessages { get; set; }
-
-    private async Task ToggleContext()
-    {
-        IsOpen = !IsOpen;
-        if (IsOpen && ContextMessages == null)
-        {
-            IsLoading = true;
-            try
-            {
-                 // Passing long time directly might have precision issues with JSON, but API expects long.
-                 // Meta.When is DateTime. We need ToFileTimeUtc if that's what backend expects.
-                 // Backend Controller expected 'long when'.
-                 ContextMessages = await Api.GetMessageContextAsync(Meta.ServerId.ToString(), Meta.When.ToFileTimeUtc());
-            }
-            catch (Exception ex)
-            {
-                // Handle error
-                Console.WriteLine(ex);
-            }
-            finally 
-            {
-                IsLoading = false;
-            }
-        }
     }
 }

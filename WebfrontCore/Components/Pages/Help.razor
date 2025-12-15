@@ -1,10 +1,4 @@
 @page "/Help"
-@using WebfrontCore.Controllers.API
-@using WebfrontCore.Components.Shared
-@using SharedLibraryCore
-@using Data.Models
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject WebfrontCore.Services.AppState AppState
 
 @if (CommandGroups == null)
 {
@@ -121,27 +115,4 @@ else
             </div>
         }
     </div>
-}
-
-@code {
-    private List<CommandGroupDto> CommandGroups { get; set; }
-    private string CommandPrefix { get; set; } = "!";
-
-    protected override async Task OnInitializedAsync()
-    {
-        CommandGroups = await Api.GetHelpAsync();
-        // Try to get command prefix from status API
-        try
-        {
-            var status = await Api.GetStatusAsync();
-            if (!string.IsNullOrEmpty(status?.CommandPrefix))
-            {
-                CommandPrefix = status.CommandPrefix;
-            }
-        }
-        catch
-        {
-            // Use default prefix if status API fails
-        }
-    }
 }

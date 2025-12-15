@@ -1,13 +1,32 @@
-@using WebfrontCore.Components.Layout
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>IW4MAdmin</title>
+    
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <ResourcePreloader/>
 
-<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+    <link rel="stylesheet" href="/lib/halfmoon/css/halfmoon-variables.css"/>
+    <link rel="stylesheet" href="/css/src/main.css"/>
+    <link rel="stylesheet" href="/css/open-iconic-bootstrap-override.css"/>
+    <ImportMap/>
+    <HeadOutlet/>
+</head>
+<body class="dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars">
+
+<Routes/>
+<ReconnectModal/>
+
+<script src="/lib/jquery/dist/jquery.js"></script>
+<script src="/lib/halfmoon/js/halfmoon.js"></script>
+<script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
+<script src="/lib/moment.js/min/moment-with-locales.js"></script>
+<script src="/js/blazor_lib.js"></script>
+<script src="/js/stats.js"></script>
+<script src="/js/advanced_stats.js"></script>
+<script src="_framework/blazor.web.js"></script>
+</body>
+</html>
+

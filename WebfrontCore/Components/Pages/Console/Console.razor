@@ -1,0 +1,69 @@
+@page "/Console"
+
+<div class="content mt-0">
+    <h2 class="content-title mt-20">@AppState.Loc("WEBFRONT_CONSOLE_TITLE")</h2>
+
+    <div id="console" class="card m-0 mb-20">
+        <div id="console_command_response" class="bg-dark-dm bg-light-lm p-10 code rounded overflow-y-scroll h-300">
+             @foreach(var line in CommandOutput)
+             {
+                 <div>@line</div>
+             }
+             @if (!CommandOutput.Any())
+             {
+                <pre style="font-size: 8px;">                                /(((((((*                           
+                      ./((((((((((((((((,                            
+            .*/(((((((((((((((((((((((((.                            
+    *((((((((((((((((((((((((((((((((((                              
+ ./(((((((((((((((((((((((((((((((((((/ ,**,                         
+    ./(((((((((((((((((((((((((((((((/  ,******,                     
+       ,(((((((((((((((((((((((((((((* ********//**.                 
+         */(((((((((((((((((((((((((* ***************                
+      ,***  ,(((((((((((((((((((((((,  ,***************.             
+     ,****/**,*/(((((((((((((((((((.       *************,            
+    ************,,((((((((((((((((*.         ,************           
+  .***********,     *(((((((((((((            .*//*********          
+ .,**********,        ,(((((((((/               ***********          
+ ,**********,           *(((((((/               ,**********          
+ ,/*********,             .*(((*                 **********,         
+ ,/*********,                .*.                 ***********.        
+ ,**********,                                   ***********          
+  .***********                                  ***********          
+  .************                               .***********           
+    ************.                           .************,           
+     ,*************                      .**************,            
+      .*****************              *****************.             
+         *******************************************,                
+           .*//***********************************.                  
+              ********************************,.                     
+                 .************************,                          
+                            ,.**,           
+            </pre>
+             }
+        </div>
+    </div>
+
+    <div class="card m-0 rounded">
+        <div class="input-group mb-10">
+            <div class="input-group-prepend">
+                <div class="input-group-text">@AppState.Loc("WEBFRONT_CONSOLE_FORM_SERVER")</div>
+            </div>
+            <select class="form-control" @bind="SelectedServerId">
+                @foreach (var server in Servers)
+                {
+                    <option value="@server.ID">[@server.Game] @server.Name</option>
+                }
+            </select>
+        </div>
+        <form @onsubmit="@ExecuteCommand">
+            <div class="input-group">
+                <input class="form-control" placeholder="@AppState.Loc("WEBFRONT_CONSOLE_FORM_PLACEHOLDER_COMMAND")" type="text" @bind="Command" required="required"/>
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit" disabled="@IsExecuting">
+                        @AppState.Loc("WEBFRONT_CONSOLE_EXECUTE")
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

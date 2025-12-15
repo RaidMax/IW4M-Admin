@@ -1,15 +1,6 @@
 @page "/Client/Search"
 @page "/Client/Find"
-@using SharedLibraryCore.Dtos
-@using Data.Models.Client
-@using SharedLibraryCore
-@using WebfrontCore.ViewModels
-@using Humanizer
-@using WebfrontCore.Controllers.API.Dtos
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject WebfrontCore.Services.AppState AppState
-@inject NavigationManager NavManager
-@inject SharedLibraryCore.Configuration.ApplicationConfiguration Config
+
 
 <div class="content mt-0">
     <h2 class="content-title mt-20 mb-0">@(AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE"))</h2>
@@ -93,47 +84,3 @@
         </div>
     }
 </div>
-
-@code {
-    [SupplyParameterFromQuery]
-    public string clientName { get; set; }
-
-    [SupplyParameterFromQuery]
-    public string q { get; set; }
-
-    public string SearchTerm => clientName ?? q;
-
-    private IEnumerable<FindClientResult> Results;
-    private long ResultCount;
-    private bool IsLoading = false;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (string.IsNullOrWhiteSpace(SearchTerm))
-        {
-             Results = new List<FindClientResult>();
-             return;
-        }
-
-        IsLoading = true;
-        try 
-        {
-            var request = new FindClientRequest
-            {
-                Name = SearchTerm,
-                Count = 50 // Default
-            };
-            var response = await Api.SearchClientsAsync(request);
-            Results = response.Clients;
-            ResultCount = response.TotalFoundClients;
-        }
-        catch (Exception)
-        {
-            // Handle error
-        }
-        finally 
-        {
-            IsLoading = false;
-        }
-    }
-}

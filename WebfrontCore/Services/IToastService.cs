@@ -1,12 +1,10 @@
-using System.Threading.Tasks;
 
-namespace WebfrontCore.Services
+namespace WebfrontCore.Services;
+
+public interface IToastService
 {
-    public interface IToastService
-    {
-        Task ShowSuccessAsync(string message, string title = null, int? duration = null);
-        Task ShowErrorAsync(string message, string title = null, int? duration = null);
-        Task ShowWarningAsync(string message, string title = null, int? duration = null);
-        Task ShowInfoAsync(string message, string title = null, int? duration = null);
-    }
+    Task ShowSuccessAsync(string message, string title = null, int? duration = null);
+    Task ShowErrorAsync(string message, string title = null, int? duration = null);
+    Task ShowWarningAsync(string message, string title = null, int? duration = null);
+    Task ShowInfoAsync(string message, string title = null, int? duration = null);
 }

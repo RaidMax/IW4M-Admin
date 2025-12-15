@@ -1,6 +1,3 @@
-@using WebfrontCore.ViewModels
-@inject WebfrontCore.Services.IZeroJsInterop JS
-@inject WebfrontCore.Services.AppState AppState
 
 <div class="d-none d-lg-flex col-3">
     <div class="on-this-page-nav pt-0" style="margin-left: 3rem;">
@@ -16,16 +13,17 @@
 
             @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
             {
-                <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "blazor-action")" 
-                   @onclick='(e) => OnActionClick(item, e)'
+                <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "blazor-action")"
+                   @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
                    @onclick:preventDefault="@(!item.IsLink)">
-                    <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                    <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left"
+                         data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
                         <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
                         <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
                     </div>
                 </a>
             }
-            
+
             @foreach (var group in groupedItems)
             {
                 <details class="collapse-panel mt-0 pb-10 pt-10 pl-20 border-left" open="@(index == 0)">
@@ -35,11 +33,12 @@
                     <div class="collapse-content" style="overflow: scroll; max-height: 30rem; max-width:350px;">
                         @foreach (var item in group)
                         {
-                            <a href="@(item.IsLink ? item.Reference : "#")" style="border: 0; padding: 0;" 
-                               class="@(item.IsLink ? "" : "blazor-action")" 
+                            <a href="@(item.IsLink ? item.Reference : "#")" style="border: 0; padding: 0;"
+                               class="@(item.IsLink ? "" : "blazor-action")"
                                @onclick='(e) => OnActionClick(item, e)'
                                @onclick:preventDefault="@(!item.IsLink)">
-                                <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                                <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left"
+                                     data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
                                     <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
                                     <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
                                 </div>
@@ -62,10 +61,11 @@
                 @foreach (var item in Model.Items)
                 {
                     <div class="mt-15 mb-15">
-                <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "blazor-action")" 
-                   @onclick='(e) => OnActionClick(item, e)'
-                   @onclick:preventDefault="@(!item.IsLink)">
-                            <div class="btn btn-block btn-lg @(item.IsActive ? "btn-primary" : "") text-truncate" data-title="@item.Tooltip" data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                        <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "blazor-action")"
+                           @onclick='(e) => OnActionClick(item, e)'
+                           @onclick:preventDefault="@(!item.IsLink)">
+                            <div class="btn btn-block btn-lg @(item.IsActive ? "btn-primary" : "") text-truncate" data-title="@item.Tooltip"
+                                 data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
                                 <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
                                 <span>@item.Title</span>
                             </div>
@@ -73,28 +73,11 @@
                     </div>
                 }
                 <hr/>
-                <button class="btn btn-lg btn-danger btn-block mt-15" data-dismiss="modal" type="button" @onclick='() => JS.ToggleModal("contextMenuModal")'>
+                <button class="btn btn-lg btn-danger btn-block mt-15" data-dismiss="modal" type="button"
+                        @onclick="@(() => JS.ToggleModal("contextMenuModal"))">
                     @(AppState.Loc("WEBFRONT_CONTEXT_MENU_BUTTON_CLOSE"))
                 </button>
             </div>
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter] public SideContextMenuItems Model { get; set; }
-    
-    [CascadingParameter] public WebfrontCore.Components.Shared.ActionModal ActionModal { get; set; }
-
-    private async Task OnActionClick(SideContextMenuItem item, MouseEventArgs e)
-    {
-        if (item.IsLink) return;
-
-        if (ActionModal != null && !string.IsNullOrEmpty(item.Reference))
-        {
-             // item.Reference e.g. "BanForm" or "edit".
-             // We pass it to Open, which handles fetching /Action/{Name}Form
-             await ActionModal.Open(item.Reference, item.EntityId, item.Meta);
-        }
-    }
-}

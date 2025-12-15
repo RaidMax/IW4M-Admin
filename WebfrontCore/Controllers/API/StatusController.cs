@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Data.Models;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 
@@ -16,26 +10,19 @@ namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class StatusController : BaseController
+    public class StatusController(IManager manager, IServerDataViewer serverDataViewer)
+        : BaseController(manager)
     {
-        private readonly IServerDataViewer _serverDataViewer;
-        private readonly DefaultSettings _defaultSettings;
-
-        public StatusController(IManager manager, IServerDataViewer serverDataViewer, DefaultSettings defaultSettings) : base(manager)
-        {
-            _serverDataViewer = serverDataViewer;
-            _defaultSettings = defaultSettings;
-        }
-
         [HttpGet]
-        public async Task<ActionResult<IW4MAdminInfo>> GetStatus([FromQuery] Reference.Game? game = null, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<IW4MAdminInfo>> GetStatus([FromQuery] Reference.Game? game = null,
+            CancellationToken cancellationToken = default)
         {
             var servers = Manager.GetServers().Where(server => game is null || server.GameName == (SharedLibraryCore.Server.Game?)game)
                 .ToList();
             var (clientCount, time) =
-                await _serverDataViewer.MaxConcurrentClientsAsync(gameCode: game, token: cancellationToken);
+                await serverDataViewer.MaxConcurrentClientsAsync(gameCode: game, token: cancellationToken);
             var (count, recentCount) =
-                await _serverDataViewer.ClientCountsAsync(gameCode: game, token: cancellationToken);
+                await serverDataViewer.ClientCountsAsync(gameCode: game, token: cancellationToken);
 
             var model = new IW4MAdminInfo
             {
@@ -55,20 +42,22 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("servers")]
-        public async Task<ActionResult<IEnumerable<ServerInfo>>> GetServers([FromQuery] Reference.Game? game = null, CancellationToken token = default)
+        public async Task<ActionResult<IEnumerable<ServerInfo>>> GetServers([FromQuery] Reference.Game? game = null,
+            CancellationToken token = default)
         {
             var servers = Manager.GetServers()
                 .Where(server => game is null || server.GameName == (SharedLibraryCore.Server.Game)game)
                 .ToList();
 
-            var clientHistories = await _serverDataViewer.ClientHistoryAsync(Manager.GetApplicationSettings().Configuration().MaxClientHistoryTime, token);
+            var clientHistories =
+                await serverDataViewer.ClientHistoryAsync(Manager.GetApplicationSettings().Configuration().MaxClientHistoryTime, token);
 
             var serverInfo = new List<ServerInfo>();
 
             foreach (var server in servers)
             {
                 var history = clientHistories.FirstOrDefault(h => h.ServerId == server.LegacyDatabaseId);
-                
+
                 serverInfo.Add(new ServerInfo
                 {
                     Name = server.Hostname,
@@ -134,30 +123,30 @@ namespace WebfrontCore.Controllers.API
                 GameType = server.GametypeName,
                 ClientHistory = new ClientHistoryInfo
                 {
-                     // ClientHistory property on server object is ServerClientHistory type? 
-                     // We need to map it. Existing controller mapped: ClientHistory = new ClientHistoryInfo() then populated later?
-                     // API Server.cs uses clientHistoryAsync logic.
-                     // For simplicity, we assume we can just pass server.ClientHistory.ClientCounts if available.
-                     ClientCounts = server.ClientHistory.ClientCounts.ToList()
+                    // ClientHistory property on server object is ServerClientHistory type? 
+                    // We need to map it. Existing controller mapped: ClientHistory = new ClientHistoryInfo() then populated later?
+                    // API Server.cs uses clientHistoryAsync logic.
+                    // For simplicity, we assume we can just pass server.ClientHistory.ClientCounts if available.
+                    ClientCounts = server.ClientHistory.ClientCounts.ToList()
                 },
                 Players = server.GetClientsAsList()
-                        .Select(client => new PlayerInfo
-                        {
-                            Name = client.Name,
-                            ClientId = client.ClientId,
-                            Level = client.Level.ToLocalizedLevelName(),
-                            LevelInt = (int)client.Level,
-                            Tag = client.Tag,
-                            ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager
-                                .CLIENT_STATS_KEY)?.ZScore
-                        }).ToList(),
+                    .Select(client => new PlayerInfo
+                    {
+                        Name = client.Name,
+                        ClientId = client.ClientId,
+                        Level = client.Level.ToLocalizedLevelName(),
+                        LevelInt = (int)client.Level,
+                        Tag = client.Tag,
+                        ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager
+                            .CLIENT_STATS_KEY)?.ZScore
+                    }).ToList(),
                 ChatHistory = server.ChatHistory.ToList(),
                 Online = !server.Throttled,
                 IPAddress = server.ListenAddress,
                 ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
                 ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
-                        server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
-                        server.ListenPort)
+                    server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
+                    server.ListenPort)
             });
         }
 

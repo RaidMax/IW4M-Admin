@@ -1,8 +1,6 @@
 ﻿using SharedLibraryCore;
 using System;
 using System.IO;
-using System.Linq;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Migration
 {
@@ -35,45 +33,6 @@ namespace IW4MAdmin.Application.Migration
             if (!Directory.Exists(Path.Join(Utilities.OperatingDirectory, "Localization")))
             {
                 Directory.CreateDirectory(Path.Join(Utilities.OperatingDirectory, "Localization"));
-            }
-        }
-
-        /// <summary>
-        /// moves existing configs from the root folder into a configs folder
-        /// </summary>
-        public static void MoveConfigFolder10518(ILogger log)
-        {
-            string currentDirectory = Utilities.OperatingDirectory;
-
-            // we don't want to do this for migrations or tests where the 
-            // property isn't initialized or it's wrong
-            if (currentDirectory != null)
-            {
-                string configDirectory = Path.Join(currentDirectory, "Configuration");
-
-                if (!Directory.Exists(configDirectory))
-                {
-                    Directory.CreateDirectory(configDirectory);
-                }
-
-                var configurationFiles = Directory.EnumerateFiles(currentDirectory, "*.json")
-                    .Select(f => f.Split(Path.DirectorySeparatorChar).Last())
-                    .Where(f => f.Count(c => c == '.') == 1);
-
-                foreach (var configFile in configurationFiles)
-                {
-                    string destinationPath = Path.Join("Configuration", configFile);
-                    if (!File.Exists(destinationPath))
-                    {
-                        File.Move(configFile, destinationPath);
-                    }
-                }
-
-                if (!File.Exists(Path.Join("Database", "Database.db")) &&
-                    File.Exists("Database.db"))
-                {
-                    File.Move("Database.db", Path.Join("Database", "Database.db"));
-                }
             }
         }
 

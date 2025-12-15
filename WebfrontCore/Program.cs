@@ -1,48 +1,220 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+﻿using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using System.Threading.RateLimiting;
+using Data.Abstractions;
+using Data.Helpers;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.RateLimiting;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Services;
+using Stats.Dtos;
+using Stats.Helpers;
+using WebfrontCore.Components;
+using WebfrontCore.Controllers.API.Validation;
+using WebfrontCore.Middleware;
+using WebfrontCore.QueryHelpers;
+using WebfrontCore.QueryHelpers.Models;
 
-namespace WebfrontCore
+namespace WebfrontCore;
+
+public class Program
 {
-    public class Program
+    public static IManager Manager = null!;
+    private static WebApplication? _webApp;
+
+    public static IServiceProvider InitializeServices(Action<IServiceCollection> registerDependenciesAction,
+        string bindUrl)
     {
-        public static IManager Manager;
-        private static IWebHost _webHost;
+        _webApp = BuildWebApp(registerDependenciesAction, bindUrl);
+        Manager = _webApp.Services.GetRequiredService<IManager>();
+        return _webApp.Services;
+    }
 
-        public static IServiceProvider InitializeServices(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
-        {
-            _webHost = BuildWebHost(registerDependenciesAction, bindUrl);
-            Manager = _webHost.Services.GetRequiredService<IManager>();
-            return _webHost.Services;
-        }
+    public static Task GetWebHostTask(CancellationToken cancellationToken)
+    {
+        return _webApp?.RunAsync(cancellationToken) ?? Task.CompletedTask;
+    }
 
-        public static Task GetWebHostTask(CancellationToken cancellationToken)
-        {
-            return _webHost?.RunAsync(cancellationToken);
-        }
-
-        private static IWebHost BuildWebHost(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
-        {
-            return new WebHostBuilder()
+    private static WebApplication BuildWebApp(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
+    {
 #if DEBUG
-                .UseContentRoot(Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\..\", "WebfrontCore")))
+        var contentRoot =
+            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\", "WebfrontCore"));
 #else
-                .UseContentRoot(SharedLibraryCore.Utilities.OperatingDirectory)
+        var contentRoot = SharedLibraryCore.Utilities.OperatingDirectory)
 #endif
-                .UseUrls(bindUrl)
-                .UseKestrel(cfg =>
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
+        {
+            ContentRootPath = contentRoot,
+            WebRootPath = Path.Combine(contentRoot, "wwwroot")
+        });
+
+        builder.WebHost.UseUrls(bindUrl);
+
+        // This is needed because the Application project doesn't use Microsoft.NET.Sdk.Web
+        builder.WebHost.UseStaticWebAssets();
+
+        builder.WebHost.ConfigureKestrel(cfg =>
+        {
+            cfg.Limits.MaxConcurrentConnections =
+                int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
+            cfg.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
+        });
+
+        registerDependenciesAction(builder.Services);
+        ConfigureServices(builder.Services);
+
+        var app = builder.Build();
+
+        ConfigureMiddleware(app);
+
+        return app;
+    }
+
+    private static void ConfigureServices(IServiceCollection services)
+    {
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll",
+                policyBuilder =>
                 {
-                    cfg.Limits.MaxConcurrentConnections =
-                        int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
-                    cfg.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
-                })
-                .ConfigureServices(registerDependenciesAction)
-                .UseStartup<Startup>()
-                .Build();
+                    policyBuilder.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+        });
+
+        services.AddStackPolicy(options =>
+        {
+            options.MaxConcurrentRequests =
+                int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
+            options.RequestQueueLimit = int.Parse(Environment.GetEnvironmentVariable("RequestQueueLimit") ?? "1");
+        });
+
+        services.AddRateLimiter(options => options.AddConcurrencyLimiter("concurrencyPolicy", opt =>
+        {
+            opt.PermitLimit = 2;
+            opt.QueueLimit = 25;
+            opt.QueueProcessingOrder = QueueProcessingOrder.NewestFirst;
+        }));
+
+        // Add framework services
+        var mvcBuilder = services.AddControllers(options => options.SuppressAsyncSuffixInActionNames = false);
+        services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+
+        // Add WebfrontCore assembly for controller discovery (CreateSlimBuilder doesn't auto-discover)
+        mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
+
+        foreach (var asm in PluginAssemblies())
+        {
+            mvcBuilder.AddApplicationPart(asm);
         }
+
+        mvcBuilder.AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        });
+
+        services.AddHttpContextAccessor();
+
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.AccessDeniedPath = "/";
+                options.LoginPath = "/";
+                options.Events.OnValidatePrincipal += ClaimsPermissionRemoval.ValidateAsync;
+                options.Events.OnSignedIn += ClaimsPermissionRemoval.OnSignedIn;
+            });
+
+        services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
+        services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
+        services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
+        services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();
+        services
+            .AddSingleton<IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
+                AdvancedClientStatsResourceQueryHelper>();
+        services.AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>));
+        services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
+
+        services.AddRazorComponents()
+            .AddInteractiveServerComponents(options => { options.DetailedErrors = true; });
+
+        services.AddScoped<Services.AppState>();
+        services.AddScoped<Services.IZeroJsInterop, Services.ZeroJsInterop>();
+        services.AddScoped<Services.IToastService, Services.ToastService>();
+        services.AddTransient<Services.CookieForwardingHandler>();
+
+        services.AddHttpClient<Services.IWebfrontApiClient, Services.WebfrontApiClient>((sp, client) =>
+        {
+            var manager = sp.GetService<IManager>();
+            var webfrontUrl = manager?.GetApplicationSettings()?.Configuration()?.WebfrontUrl ??
+                              "http://127.0.0.1:1624";
+            client.BaseAddress = new Uri(webfrontUrl);
+        }).AddHttpMessageHandler<Services.CookieForwardingHandler>();
+
+        services.AddScoped<Services.IActionService, Services.ActionService>();
+        return;
+
+        IEnumerable<Assembly> PluginAssemblies()
+        {
+            var pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
+
+            if (!Directory.Exists(pluginDir))
+                return [];
+            var dllFileNames =
+                Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
+                    "*.dll");
+            return dllFileNames.Select(Assembly.LoadFrom);
+        }
+    }
+
+    private static void ConfigureMiddleware(WebApplication app)
+    {
+        var appConfig = app.Services.GetRequiredService<ApplicationConfiguration>();
+        var manager = app.Services.GetRequiredService<IManager>();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error");
+            app.UseHsts();
+        }
+
+        if (appConfig.EnableWebfrontConnectionWhitelist)
+        {
+            app.UseMiddleware<IPWhitelist>(
+                app.Services.GetService<ILogger<IPWhitelist>>(),
+                appConfig.WebfrontConnectionWhitelist);
+        }
+
+        app.UseRouting();
+        app.UseAuthentication();
+        app.UseCors("AllowAll");
+        app.UseMiddleware<ClaimsPermissionRemoval>(manager);
+        app.UseAuthorization();
+        app.UseStatusCodePagesWithReExecute("/NotFound", createScopeForStatusCodePages: true);
+        app.UseAntiforgery();
+        app.UseRateLimiter();
+
+        app.MapControllers()
+            .RequireRateLimiting("concurrencyPolicy");
+
+        app.MapStaticAssets();
+
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
     }
 }

@@ -17,7 +17,10 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2024.6.29.807" PrivateAssets="All" />
+    <!--  <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2024.6.29.807" PrivateAssets="All" />-->
+    <!-- temporary until .net 10 nuget is ready -->
+    <ProjectReference Include="..\..\Data\Data.csproj" />
+    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
   </ItemGroup>
 
 </Project>

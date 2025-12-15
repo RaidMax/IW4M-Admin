@@ -6,11 +6,11 @@ namespace WebfrontCore.QueryHelpers.Models;
 
 public class ClientResourceRequest : ClientPaginationRequest
 {
-    public string ClientName { get; set; }
+    public string? ClientName { get; set; }
     public bool IsExactClientName { get; set; }
-    public string ClientIp { get; set; }
+    public string? ClientIp { get; set; }
     public bool IsExactClientIp { get; set; }
-    public string ClientGuid { get; set; }
+    public string? ClientGuid { get; set; }
     public DateTime? ClientConnected { get; set; }
     public EFClient.Permission? ClientLevel { get; set; }
     public Reference.Game? GameName { get; set; }

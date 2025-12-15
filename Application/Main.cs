@@ -205,7 +205,6 @@ namespace IW4MAdmin.Application
             try
             {
                 // do any needed housekeeping file/folder migrations
-                ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
 

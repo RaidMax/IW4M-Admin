@@ -13,18 +13,20 @@ public partial class ServerCard
     [Parameter] public ServerInfo Model { get; set; }
     private PeriodicTimer _timer;
     private readonly CancellationTokenSource _cts = new();
+    
+    private bool _chartInitialized;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && Model != null)
+        if (Model?.ClientHistory?.ClientCounts != null && !_chartInitialized)
         {
-            var strings = new
-            {
-                players = AppState.Loc("WEBFRONT_SCRIPT_SERVER_PLAYERS"), unreachable = AppState.Loc("WEBFRONT_SCRIPT_SERVER_UNREACHABLE")
-            };
-            await JS.InvokeVoidAsync("initServerChart", $"server_history_canvas_{Model.ID}", Model.ClientHistory.ClientCounts,
-                Model.MaxClients, strings);
+            var strings = new { players = AppState.Loc("WEBFRONT_SCRIPT_SERVER_PLAYERS"), unreachable = AppState.Loc("WEBFRONT_SCRIPT_SERVER_UNREACHABLE") };
+            await JS.InvokeVoidAsync("initServerChart", $"server_history_canvas_{Model.ID}", Model.ClientHistory.ClientCounts, Model.MaxClients, strings);
+            _chartInitialized = true;
+        }
 
+        if (firstRender)
+        {
             // Start timer only after render
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
             RunTimer();

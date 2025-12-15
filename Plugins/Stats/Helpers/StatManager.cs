@@ -18,7 +18,7 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Server;
-using Humanizer.Localisation;
+using Humanizer;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Stats.Client.Abstractions;
@@ -216,7 +216,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Kills = s.Kills,
                     KDR = Math.Round(s.KDR, 2),
                     LastSeen = (DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].First().LastConnection))
-                        .HumanizeForCurrentCulture(1, TimeUnit.Week, TimeUnit.Second, ",", false),
+                        .HumanizeForCurrentCulture(1, TimeUnit.Week, TimeUnit.Second, ","),
                     LastSeenValue = DateTime.UtcNow - (s.UpdatedAt ?? rankingsDict[s.ClientId].First().LastConnection),
                     Name = rankingsDict[s.ClientId].First().Name,
                     Performance = Math.Round(rankingsDict[s.ClientId].First().PerformanceMetric ?? 0, 2),

@@ -1,9 +1,4 @@
 @page "/Configuration/Files"
-@using WebfrontCore.ViewModels
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject WebfrontCore.Services.AppState AppState
-@inject WebfrontCore.Services.IToastService ToastService
-@inject IJSRuntime JS
 
 <div class="content mt-0">
     <h4 class="content-title mt-20 mb-0">@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE")</h4>
@@ -22,7 +17,7 @@
         foreach (var file in ConfigurationFiles.OrderByDescending(f => f.FileName.Contains("IW4MAdmin")))
         {
              <div class="card m-0 p-0 mt-20 mb-20">
-                <div class="bg-primary p-10 rounded-top text-light d-flex justify-content-between align-items-center" @onclick="() => ToggleFile(file)" style="cursor: pointer;">
+                <div class="bg-primary p-10 rounded-top text-light d-flex justify-content-between align-items-center" @onclick="@(() => ToggleFile(file))" style="cursor: pointer;">
                     <div>
                         <i class="oi oi-expand-down mr-5" ></i>
                         <span>@file.FileName</span>
@@ -45,53 +40,3 @@
         }
     }
 </div>
-
-@code {
-    private List<ConfigurationFileInfo> ConfigurationFiles { get; set; }
-    private HashSet<string> ExpandedFiles { get; set; } = new();
-    private Dictionary<string, string> SaveStatus { get; set; } = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var files = await Api.GetConfigurationFilesAsync();
-            ConfigurationFiles = files.ToList();
-            foreach(var f in ConfigurationFiles) SaveStatus[f.FileName] = "";
-        }
-        catch(Exception)
-        {
-            // Handle error (e.g. unauthorized)
-        }
-    }
-
-    private void ToggleFile(ConfigurationFileInfo file)
-    {
-        if (ExpandedFiles.Contains(file.FileName))
-        {
-            ExpandedFiles.Remove(file.FileName);
-        }
-        else
-        {
-            ExpandedFiles.Add(file.FileName);
-        }
-    }
-
-    private async Task SaveFile(ConfigurationFileInfo file)
-    {
-        try
-        {
-            SaveStatus[file.FileName] = "Saving...";
-            await Api.SaveConfigurationFileAsync(file.FileName, file.FileContent);
-            SaveStatus[file.FileName] = "Saved!";
-            await ToastService.ShowSuccessAsync($"Saved {file.FileName}");
-            await Task.Delay(3000);
-            SaveStatus[file.FileName] = "";
-        }
-        catch (Exception ex)
-        {
-            SaveStatus[file.FileName] = $"Error: {ex.Message}";
-            await ToastService.ShowErrorAsync(ex.Message, "Save Failed");
-        }
-    }
-}

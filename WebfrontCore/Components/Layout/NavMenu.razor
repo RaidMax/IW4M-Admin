@@ -1,10 +1,7 @@
-@using WebfrontCore.Services
-@inject IWebfrontApiClient Api
-@inject AppState AppState
-@inject IZeroJsInterop JS
+
 
 <!-- left side navigation -->
-<div class="sidebar-overlay" @onclick="ToggleSidebar"></div>
+<div class="sidebar-overlay" @onclick="@ToggleSidebar"></div>
 <div class="sidebar">
     <div class="sidebar-menu list">
         <div class="sidebar-content m-0">
@@ -12,7 +9,7 @@
             @* <div class="pr-20 pl-20 mb-20 d-block d-lg-none">
                 <SearchResourceForm Model="Compact"/>
             </div> *@
-            
+
             <span class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</span>
             <div class="sidebar-divider"></div>
             <!-- servers -->
@@ -39,7 +36,7 @@
                     <span class="name">@(Loc("WEBFRONT_NAV_PRIVILEGED"))</span>
                 </NavLink>
             </HasPermission>
-             <!-- help -->
+            <!-- help -->
             <HasPermission Entity="HelpPage" RequiredPermission="Read">
                 <NavLink href="Help" class="sidebar-link">
                     <i class="oi oi-question-mark mr-5"></i>
@@ -51,17 +48,17 @@
             {
                 foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Main")))
                 {
-                     <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                    <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
                         <i class="oi @interaction.DisplayMeta mr-5"></i>
                         <span class="name">@interaction.Name</span>
                     </NavLink>
                 }
             }
-        
+
             <!-- profile -->
             @if (AppState.User != null)
             {
-                 <NavLink href="@($"Client/Profile/{AppState.User.ClientId}")" class="sidebar-link">
+                <NavLink href="@($"Client/Profile/{AppState.User.ClientId}")" class="sidebar-link">
                     <i class="oi oi-person mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
                 </NavLink>
@@ -99,7 +96,7 @@
             {
                 <span class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_SOCIALS"))</span>
                 <div class="sidebar-divider"></div>
-                
+
                 @foreach (var social in NavData.CommunityInformation.SocialAccounts)
                 {
                     <a href="@social.Url" class="sidebar-link" target="_blank" title="@social.Title">
@@ -119,7 +116,7 @@
                         </div>
                     </a>
                 }
-                
+
                 @* Social Interactions *@
                 @if (NavData?.Interactions != null)
                 {
@@ -134,15 +131,16 @@
                         }
                     }
                 }
+
                 <br/>
             }
-            
+
             <!-- Admin Section -->
             <HasPermission Entity="AdminMenu" RequiredPermission="Read">
                 <br/>
                 <div class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_ADMIN"))</div>
                 <div class="sidebar-divider"></div>
-                
+
                 <!-- Console -->
                 <HasPermission Entity="ConsolePage" RequiredPermission="Read">
                     <NavLink href="Console" class="sidebar-link">
@@ -150,79 +148,79 @@
                         <span class="name">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
                     </NavLink>
                 </HasPermission>
-                
+
                 <!-- Ban Management -->
                 <NavLink href="Admin/BanManagement" class="sidebar-link">
                     <i class="oi oi-ban mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
                 </NavLink>
             </HasPermission>
-                
-                <!-- Configuration (Owner only) -->
-                @if (AppState.User?.Level >= Data.Models.Client.EFClient.Permission.Owner)
+
+            <!-- Configuration (Owner only) -->
+            @if (AppState.User?.Level >= Data.Models.Client.EFClient.Permission.Owner)
+            {
+                <NavLink href="Configuration/Files" class="sidebar-link">
+                    <i class="oi oi-cog mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
+                </NavLink>
+            }
+
+            <!-- Audit Log -->
+            <HasPermission Entity="AuditPage" RequiredPermission="Read">
+                <NavLink href="Admin/AuditLog" class="sidebar-link">
+                    <i class="oi oi-book mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
+                </NavLink>
+            </HasPermission>
+
+            <!-- Recent Clients -->
+            <HasPermission Entity="RecentPlayersPage" RequiredPermission="Read">
+                <NavLink href="Client/AdvancedFind?direction=1&sortColumn=FirstConnection" class="sidebar-link">
+                    <i class="oi oi-timer mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
+                </NavLink>
+            </HasPermission>
+
+            <!-- Admin Interactions -->
+            @if (NavData?.Interactions != null)
+            {
+                foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Admin")))
                 {
-                    <NavLink href="Configuration/Files" class="sidebar-link">
-                        <i class="oi oi-cog mr-5"></i>
-                        <span class="name">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
-                    </NavLink>
-                }
-                
-                <!-- Audit Log -->
-                <HasPermission Entity="AuditPage" RequiredPermission="Read">
-                    <NavLink href="Admin/AuditLog" class="sidebar-link">
-                        <i class="oi oi-book mr-5"></i>
-                        <span class="name">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
-                    </NavLink>
-                </HasPermission>
-                
-                <!-- Recent Clients -->
-                <HasPermission Entity="RecentPlayersPage" RequiredPermission="Read">
-                    <NavLink href="Client/AdvancedFind?direction=1&sortColumn=FirstConnection" class="sidebar-link">
-                        <i class="oi oi-timer mr-5"></i>
-                        <span class="name">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
-                    </NavLink>
-                </HasPermission>
-                
-                <!-- Admin Interactions -->
-                @if (NavData?.Interactions != null)
-                {
-                    foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Admin")))
+                    if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
                     {
-                        if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
-                        {
-                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
-                                <i class="oi @interaction.DisplayMeta mr-5"></i>
-                                <span class="name">@interaction.Name</span>
-                            </NavLink>
-                        }
+                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                            <i class="oi @interaction.DisplayMeta mr-5"></i>
+                            <span class="name">@interaction.Name</span>
+                        </NavLink>
                     }
                 }
-                
-                <!-- Login Token (for authenticated users) -->
-                @if (AppState.User != null)
-                {
-                    <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("GenerateLoginToken")' class="sidebar-link">
-                        <i class="oi oi-key mr-5"></i>
-                        <span class="name">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
-                    </a>
+            }
 
-                    <!-- Logout -->
-                    <a href="Account/Logout" class="sidebar-link">
-                        <i class="oi oi-account-logout mr-5"></i>
-                        <span class="name">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
-                    </a>
-                }
-                else 
-                {
-                    <!-- Login (for unauthenticated users) -->
-                    <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("Login")' class="sidebar-link">
-                        <i class="oi oi-key mr-5"></i>
-                        <span class="name">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>
-                    </a>
-                }
-            
+            <!-- Login Token (for authenticated users) -->
+            @if (AppState.User != null)
+            {
+                <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("GenerateLoginToken")' class="sidebar-link">
+                    <i class="oi oi-key mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
+                </a>
+
+                <!-- Logout -->
+                <a href="Account/Logout" class="sidebar-link">
+                    <i class="oi oi-account-logout mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
+                </a>
+            }
+            else
+            {
+                <!-- Login (for unauthenticated users) -->
+                <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("Login")' class="sidebar-link">
+                    <i class="oi oi-key mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>
+                </a>
+            }
+
             <div class="sidebar-divider mt-0 mb-0"></div>
-            
+
             <!-- User Info / Login Status -->
             <div class="sidebar-link font-size-12 font-weight-light">
                 @if (AppState.User != null)
@@ -246,51 +244,11 @@
                 }
             </div>
 
-             <a href="https://github.com/RaidMax/IW4M-Admin/releases" class="sidebar-link" target="_blank">
-                <span class="name font-size-12 font-weight-light">IW4MAdmin <span class="text-primary">@WebfrontCore.Program.Manager.Version</span></span>
+            <a href="https://github.com/RaidMax/IW4M-Admin/releases" class="sidebar-link" target="_blank">
+                <span class="name font-size-12 font-weight-light">IW4MAdmin <span
+                        class="text-primary">@WebfrontCore.Program.Manager.Version</span></span>
             </a>
         </div>
     </div>
 </div>
 
-@code {
-    [CascadingParameter] public WebfrontCore.Components.Shared.ActionModal ActionModal { get; set; }
-    private NavigationData NavData;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try 
-        {
-            NavData = await Api.GetNavigationDataAsync();
-            if (NavData?.User != null)
-            {
-                AppState.SetUser(NavData.User);
-            }
-            if (NavData?.Localization != null)
-            {
-                AppState.SetLocalization(NavData.Localization);
-            }
-        }
-        catch 
-        {
-            // Handle error (offline/api fail)
-        }
-        
-        AppState.OnChange += StateHasChanged;
-    }
-
-    public void Dispose()
-    {
-        AppState.OnChange -= StateHasChanged;
-    }
-
-    private async Task ToggleSidebar()
-    {
-        await JS.ToggleSidebar();
-    }
-
-    private string Loc(string key)
-    {
-        return AppState.Loc(key);
-    }
-}

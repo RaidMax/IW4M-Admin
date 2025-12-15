@@ -1,36 +1,35 @@
-@using SharedLibraryCore.Dtos
-@using SharedLibraryCore
-@using System.Threading
-@inject WebfrontCore.Services.AppState AppState
-@inject WebfrontCore.Services.IWebfrontApiClient Api
-@inject IJSRuntime JS
+
 @implements IDisposable
 
 <div class="card mt-20 mb-20 ml-0 mr-0 p-0">
-    <div class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-lg-row flex-wrap justify-content-between text-light" id="server_header_@Model.ID">
+    <div class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-lg-row flex-wrap justify-content-between text-light"
+         id="server_header_@Model.ID">
         <!-- first column -->
         <div class="d-flex align-self-center flex-column-reverse flex-lg-row col-12 col-lg-6">
             <div class="ml-5 mr-5 text-center text-lg-left">
-                <ColorCode Value="@Model.Name" />
+                <ColorCode Value="@Model.Name"/>
                 <div class="server-header-ip-address font-weight-light" style="display:none">@(Model.ExternalIPAddress):@(Model.Port)</div>
             </div>
             <div class="d-flex justify-content-center">
-                 <!-- connect button -->
-                <a href="@Model.ConnectProtocolUrl" class="text-light align-self-center server-join-button" title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
+                <!-- connect button -->
+                <a href="@Model.ConnectProtocolUrl" class="text-light align-self-center server-join-button"
+                   title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
                     <i class="oi oi-play-circle ml-5 mr-5"></i>
                 </a>
                 <HasPermission Entity="AdminMenu" RequiredPermission="Write">
-                     <!-- send message button -->
-                     <a href="#" @onclick:preventDefault class="profile-action text-light align-self-center" data-action="chat" data-action-id="@Model.ID">
+                    <!-- send message button -->
+                    <a href="#" @onclick:preventDefault class="profile-action text-light align-self-center" data-action="chat"
+                       data-action-id="@Model.ID">
                         <i class="oi oi-chat ml-5 mr-5"></i>
                     </a>
                 </HasPermission>
-                 <!-- scoreboard button -->
+                <!-- scoreboard button -->
                 <a href="Server/@Model.Endpoint/Scoreboard" title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))"
                    class="text-light align-self-center">
                     <i class="oi oi-spreadsheet ml-5 mr-5"></i>
                 </a>
-                <span class="ml-5 mr-5 text-light-dm text-primary-lm badge font-weight-light" data-toggle="tooltip" data-title="@(AppState.Loc($"GAME_{Model.Game}"))">
+                <span class="ml-5 mr-5 text-light-dm text-primary-lm badge font-weight-light" data-toggle="tooltip"
+                      data-title="@(AppState.Loc($"GAME_{Model.Game}"))">
                     @Model.Game.ToString() 
                 </span>
             </div>
@@ -45,25 +44,27 @@
             }
 
         </div>
-         <!-- third column -->
+        <!-- third column -->
         <div class="align-self-center d-flex flex-column flex-lg-row col-12 col-lg-2 justify-content-end">
             @if (Model.LobbyZScore != null)
             {
-                <div data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_HOME_RATING_DESC"))" class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">
+                <div data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_HOME_RATING_DESC"))"
+                     class="cursor-help d-flex flex-row-reverse flex-md-row justify-content-center">
                     <span>@(Model.LobbyZScore ?? 0)</span>
                     <span class="oi oi-bolt align-self-center" style="margin-right: 2px; margin-left:  2px"></span>
                 </div>
             }
             <div class="mr-5 ml-5 align-self-center">
-                <span class="server-clientcount">@Model.ClientCount</span>/<span class="server-maxclients">@(Model.MaxClients - Model.PrivateClientSlots)@(Model.PrivateClientSlots > 0 ? $" ({Model.MaxClients})": "")</span>
+                <span class="server-clientcount">@Model.ClientCount</span>/<span
+                    class="server-maxclients">@(Model.MaxClients - Model.PrivateClientSlots)@(Model.PrivateClientSlots > 0 ? $" ({Model.MaxClients})" : "")</span>
             </div>
         </div>
     </div>
 
     <div id="server_clientactivity_@Model.ID" class="bg-dark-dm bg-light-lm server-activity">
-        <ClientActivity Model="@Model" />
+        <ClientActivity Model="@Model"/>
     </div>
-     
+
     @if (Model.Players.Any())
     {
         <div class="ml-15 mr-15">
@@ -72,61 +73,9 @@
     }
 
     <div class="server-history">
-        <div class="server-history-row m-auto bg-dark-dm bg-light-lm rounded-bottom" style="position:relative; width: 100%" id="server_history_@Model.ID">
+        <div class="server-history-row m-auto bg-dark-dm bg-light-lm rounded-bottom" style="position:relative; width: 100%"
+             id="server_history_@Model.ID">
             <canvas id="server_history_canvas_@Model.ID" class="rounded-bottom" height="100"></canvas>
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter] public ServerInfo Model { get; set; }
-    private PeriodicTimer _timer;
-    private CancellationTokenSource _cts = new();
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && Model != null)
-        {
-             var strings = new { players = AppState.Loc("WEBFRONT_SCRIPT_SERVER_PLAYERS"), unreachable = AppState.Loc("WEBFRONT_SCRIPT_SERVER_UNREACHABLE") };
-             await JS.InvokeVoidAsync("initServerChart", $"server_history_canvas_{Model.ID}", Model.ClientHistory.ClientCounts, Model.MaxClients, strings);
-             
-             // Start timer only after render
-             _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
-             RunTimer();
-        }
-    }
-    
-    private async void RunTimer()
-    {
-        try 
-        {
-            while (await _timer.WaitForNextTickAsync(_cts.Token))
-            {
-                 await Refresh();
-            }
-        }
-        catch (OperationCanceledException) { }
-    }
-
-    private async Task Refresh()
-    {
-         try
-         {
-             var updated = await Api.GetServerAsync(Model.ID);
-             if (updated != null) 
-             {
-                 // Update properties only if meaningful to avoid full re-render flickering? 
-                 // Or just replace model.
-                 Model = updated;
-                 StateHasChanged();
-             }
-         }
-         catch {}
-    }
-
-    public void Dispose()
-    {
-        _cts.Cancel();
-        _timer?.Dispose();
-    }
-}

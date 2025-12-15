@@ -59,8 +59,14 @@ namespace IW4MAdmin.Application
         private static Task _applicationTask;
         private static IServiceProvider _serviceProvider;
 
-        private static readonly object Lock = new();
+        private static readonly Lock Lock = new();
         private static bool _isExiting;
+
+        // TODO: Temporary shim for Dragonfruit removal.
+        public static async Task Main()
+        {
+            await Main(false, 25, 25);
+        }
 
         /// <summary>
         /// entrypoint of the application

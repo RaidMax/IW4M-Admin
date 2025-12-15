@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace WebfrontCore.ViewModels;
+﻿namespace WebfrontCore.ViewModels;
 
 public class SideContextMenuItem
 {

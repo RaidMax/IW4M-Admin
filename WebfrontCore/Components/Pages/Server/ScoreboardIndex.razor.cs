@@ -1,0 +1,36 @@
+﻿using Microsoft.AspNetCore.Components;
+using WebfrontCore.Services;
+
+namespace WebfrontCore.Components.Pages.Server;
+
+public partial class ScoreboardIndex
+{
+    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
+    private bool Loading { get; set; } = true;
+    private bool NoServers { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var servers = await Api.GetServersAsync();
+            if (servers != null && servers.Count != 0)
+            {
+                // Redirect to first server's scoreboard
+                NavManager.NavigateTo($"/Server/{servers.First().ID}/Scoreboard", replace: true);
+                return;
+            }
+
+            NoServers = true;
+        }
+        catch
+        {
+            NoServers = true;
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+}

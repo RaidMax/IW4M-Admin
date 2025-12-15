@@ -1,17 +1,9 @@
 @page "/Admin/BanManagement"
-@using WebfrontCore.QueryHelpers.Models
-@using SharedLibraryCore.Interfaces
-@using WebfrontCore.Services
 @implements IAsyncDisposable
-@inject IWebfrontApiClient Api
-@inject AppState AppState
-@inject IZeroJsInterop JsInterop
-@inject IJSRuntime JS
-@inject IToastService ToastService
 
 <div class="content mt-0">
     <h2 class="content-title mt-20 mb-10">@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT")</h2>
-    
+
     @if (_showUnbanModal)
     {
         <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
@@ -26,12 +18,15 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="unbanReason">@AppState.Loc("WEBFRONT_ACTION_LABEL_REASON")</label>
-                            <input type="text" class="form-control" id="unbanReason" @bind="_unbanReason" placeholder="@AppState.Loc("WEBFRONT_PENALTY_LIST_BAN_REVOKED_REASON")" />
+                            <input type="text" class="form-control" id="unbanReason" @bind="_unbanReason"
+                                   placeholder="@AppState.Loc("WEBFRONT_PENALTY_LIST_BAN_REVOKED_REASON")"/>
                         </div>
                     </div>
                     <div class="modal-footer border-top-0">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseUnbanModal">@AppState.Loc("WEBFRONT_MODAL_BUTTON_CANCEL")</button>
-                        <button type="button" class="btn btn-primary" @onclick="ConfirmUnban">@AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME")</button>
+                        <button type="button" class="btn btn-secondary"
+                                @onclick="CloseUnbanModal">@AppState.Loc("WEBFRONT_MODAL_BUTTON_CANCEL")</button>
+                        <button type="button" class="btn btn-primary"
+                                @onclick="ConfirmUnban">@AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME")</button>
                     </div>
                 </div>
             </div>
@@ -40,7 +35,7 @@
 
     @if (Results == null)
     {
-         <div class="text-center mt-20">
+        <div class="text-center mt-20">
             <div class="spinner-border text-primary" role="status">
                 <span class="sr-only">Loading...</span>
             </div>
@@ -54,40 +49,44 @@
     <EditForm Model="Request" OnValidSubmit="Search">
         <div class="d-flex flex-column flex-md-row mt-10">
             <div class="input-group">
-                <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientName" placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_NAME")" />
+                <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientName"
+                           placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_NAME")"/>
                 <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
                     </button>
                 </div>
             </div>
-             <div class="input-group mr-md-5 ml-md-10 mt-10 mb-5 mt-md-0 mb-md-0">
-                 <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientGuid" placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_GUID")" />
-                 <div class="input-group-append">
+            <div class="input-group mr-md-5 ml-md-10 mt-10 mb-5 mt-md-0 mb-md-0">
+                <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientGuid"
+                           placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_GUID")"/>
+                <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
                     </button>
                 </div>
-             </div>
-             <div class="input-group mr-md-10 ml-md-5 mb-10 mt-5 mt-md-0 mb-md-0">
-                 <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientIP" placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_IP")" />
-                 <div class="input-group-append">
+            </div>
+            <div class="input-group mr-md-10 ml-md-5 mb-10 mt-5 mt-md-0 mb-md-0">
+                <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientIP"
+                           placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_IP")"/>
+                <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
                     </button>
                 </div>
-             </div>
-             <div class="input-group">
-                 <InputNumber class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientId" placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")" />
-                 <div class="input-group-append">
+            </div>
+            <div class="input-group">
+                <InputNumber class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientId"
+                             placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")"/>
+                <div class="input-group-append">
                     <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
                         <i class="oi oi-magnifying-glass"></i>
                     </button>
                 </div>
-             </div>
+            </div>
         </div>
     </EditForm>
-    
+
     <div id="ban_entry_list" class="mt-20">
         @if (Results != null)
         {
@@ -96,16 +95,17 @@
                 <div class="card p-10 m-0 mt-15 mb-15">
                     <div class="d-flex flex-row flex-wrap">
                         <div class="d-flex p-15 mr-md-10 w-full w-md-200 bg-very-dark-dm bg-light-ex-lm rounded">
-                             <div class="align-self-center w-full">
+                            <div class="align-self-center w-full">
                                 <div class="d-flex font-size-16">
                                     <a href="Client/Profile/@ban.ClientId" class="no-decoration flex-fill text-force-break mr-5">
-                                        <ColorCode Value="@ban.ClientName" />
+                                        <ColorCode Value="@ban.ClientName"/>
                                     </a>
-                                     <div title="@AppState.Loc($"GAME_{ban.Game}")">
-                                         <div class="badge align-self-center">@SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
-                                     </div>
+                                    <div title="@AppState.Loc($"GAME_{ban.Game}")">
+                                        <div
+                                            class="badge align-self-center">@SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
+                                    </div>
                                 </div>
-                                
+
                                 <HasPermission Entity="ClientGuid" RequiredPermission="Read">
                                     <div class="text-muted">@ban.NetworkId.ToString("X")</div>
                                 </HasPermission>
@@ -115,32 +115,36 @@
                                 <br/>
                                 @if (ban.AttachedPenalty is not null)
                                 {
-                                     <div class="text-muted font-weight-light">
-                                         <ColorCode Value="@ban.AttachedPenalty.Offense" />
-                                     </div>
-                                     <div class="text-danger font-weight-light">@(ban.AttachedPenalty.DateTime.HasValue ? ban.AttachedPenalty.DateTime.Value.ToLocalTime().ToString() : "")</div>
-                                     <br/>
-                                     <div class="btn profile-action" @onclick="() => OpenUnbanModal(ban.ClientId)">@AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")</div>
+                                    <div class="text-muted font-weight-light">
+                                        <ColorCode Value="@ban.AttachedPenalty.Offense"/>
+                                    </div>
+                                    <div
+                                        class="text-danger font-weight-light">@(ban.AttachedPenalty.DateTime.HasValue ? ban.AttachedPenalty.DateTime.Value.ToLocalTime().ToString() : "")</div>
+                                    <br/>
+                                    <div class="btn profile-action"
+                                         @onclick="() => OpenUnbanModal(ban.ClientId)">@AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")</div>
                                 }
                                 else
                                 {
-                                     <div class="align-self-end text-muted font-weight-light">
+                                    <div class="align-self-end text-muted font-weight-light">
                                         <span class="oi oi-warning font-size-12"></span>
                                         <span>@AppState.Loc("WEBFRONT_BAN_MGMT_LINK_ONLY")</span>
                                     </div>
                                 }
-                             </div>
+                            </div>
                         </div>
-                        
-                         @foreach (var associatedEntity in ban.AssociatedPenalties)
+
+                        @foreach (var associatedEntity in ban.AssociatedPenalties)
                         {
-                            <div class="d-flex flex-wrap flex-column w-full w-md-200 p-10 border rounded mt-10 mt-md-0" style="border-style: dashed !important;">
+                            <div class="d-flex flex-wrap flex-column w-full w-md-200 p-10 border rounded mt-10 mt-md-0"
+                                 style="border-style: dashed !important;">
                                 <div class="d-flex font-size-16">
-                                     <div title="@AppState.Loc("WEBFRONT_BAN_MGMT_TOOLTIP_LINKED")" class="d-flex flex-fill">
+                                    <div title="@AppState.Loc("WEBFRONT_BAN_MGMT_TOOLTIP_LINKED")" class="d-flex flex-fill">
                                         <i class="oi oi-link-intact align-self-center"></i>
                                         <div class="text-truncate ml-5 mr-5">
-                                            <a href="Client/Profile/@associatedEntity.OffenderInfo.ClientId" class="no-decoration text-force-break">
-                                                <ColorCode Value="@associatedEntity.OffenderInfo.ClientName" />
+                                            <a href="Client/Profile/@associatedEntity.OffenderInfo.ClientId"
+                                               class="no-decoration text-force-break">
+                                                <ColorCode Value="@associatedEntity.OffenderInfo.ClientName"/>
                                             </a>
                                         </div>
                                     </div>
@@ -155,10 +159,12 @@
                                 </HasPermission>
                                 <br/>
                                 <div class="text-muted font-weight-light">
-                                    <ColorCode Value="@associatedEntity.Offense" />
+                                    <ColorCode Value="@associatedEntity.Offense"/>
                                 </div>
-                                <div class="text-danger font-weight-light">@(associatedEntity.DateTime.HasValue ? associatedEntity.DateTime.Value.ToLocalTime().ToString() : "")</div>
-                                <div class="btn profile-action mt-10" @onclick="() => OpenUnbanModal(associatedEntity.OffenderInfo.ClientId ?? 0)">@AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")</div>
+                                <div
+                                    class="text-danger font-weight-light">@(associatedEntity.DateTime.HasValue ? associatedEntity.DateTime.Value.ToLocalTime().ToString() : "")</div>
+                                <div class="btn profile-action mt-10"
+                                     @onclick="() => OpenUnbanModal(associatedEntity.OffenderInfo.ClientId ?? 0)">@AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")</div>
                             </div>
                         }
                     </div>
@@ -166,131 +172,23 @@
             }
         }
     </div>
-    
-     <div class="w-full text-center mt-20">
-         @if (HasMoreResults)
-         {
-              <div @ref="LoadMoreTrigger" class="d-flex justify-content-center">
-                 @if (IsLoading)
-                 {
-                     <div class="spinner-border text-primary" role="status">
+
+    <div class="w-full text-center mt-20">
+        @if (HasMoreResults)
+        {
+            <div @ref="LoadMoreTrigger" class="d-flex justify-content-center">
+                @if (IsLoading)
+                {
+                    <div class="spinner-border text-primary" role="status">
                         <span class="sr-only">Loading...</span>
                     </div>
-                 }
-                 else
-                 {
-                      <i class="oi oi-chevron-bottom mt-10 loader-load-more text-primary m-auto" aria-hidden="true" 
-                         style="opacity: 0; pointer-events: none;"></i>
-                 }
-              </div>
-         }
-     </div>
+                }
+                else
+                {
+                    <i class="oi oi-chevron-bottom mt-10 loader-load-more text-primary m-auto" aria-hidden="true"
+                       style="opacity: 0; pointer-events: none;"></i>
+                }
+            </div>
+        }
+    </div>
 </div>
-
-@code {
-    private BanInfoRequest Request { get; set; } = new BanInfoRequest { Count = 10, Offset = 0 };
-    private List<BanInfo> Results { get; set; }
-    private bool HasMoreResults { get; set; } = true;
-    private bool IsLoading { get; set; }
-    private ElementReference LoadMoreTrigger;
-    private DotNetObjectReference<BanManagement>? _objRef;
-    private bool _observerSetup;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await Search();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Results != null && HasMoreResults && !_observerSetup)
-        {
-            _objRef = DotNetObjectReference.Create(this);
-            await JsInterop.SetupInfiniteScroll(LoadMoreTrigger, _objRef);
-            _observerSetup = true;
-        }
-    }
-
-    private async Task Search()
-    {
-        Results = null; // Show loading spinner
-        Request.Offset = 0;
-        var result = await Api.GetBansAsync(Request);
-        Results = result.Results.ToList();
-        HasMoreResults = Results.Count >= Request.Count;
-        _observerSetup = false; // Reset observer so it re-initializes for new list
-        StateHasChanged();
-    }
-
-    [JSInvokable]
-    public async Task LoadMore()
-    {
-        if (IsLoading || !HasMoreResults) return;
-
-        IsLoading = true;
-        StateHasChanged();
-
-        Request.Offset += Request.Count;
-        var result = await Api.GetBansAsync(Request);
-        
-        IsLoading = false;
-
-        if (result.Results.Any())
-        {
-            Results.AddRange(result.Results);
-        }
-        
-        if (result.RetrievedResultCount < Request.Count)
-        {
-            HasMoreResults = false;
-            await DisposeAsync(); // Cleanup if no more results
-        }
-        
-        StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_observerSetup)
-        {
-            await JsInterop.RemoveInfiniteScroll(LoadMoreTrigger);
-            _observerSetup = false;
-        }
-        _objRef?.Dispose();
-    }
-    
-    private int _unbanTargetId;
-    private string _unbanReason;
-    private bool _showUnbanModal;
-
-    private void OpenUnbanModal(int clientId)
-    {
-        _unbanTargetId = clientId;
-        _unbanReason = string.Empty;
-        _showUnbanModal = true;
-    }
-
-    private void CloseUnbanModal()
-    {
-        _showUnbanModal = false;
-        _unbanTargetId = 0;
-        _unbanReason = string.Empty;
-    }
-
-    private async Task ConfirmUnban()
-    {
-        if (string.IsNullOrWhiteSpace(_unbanReason)) return;
-
-        try
-        {
-            var message = await Api.UnbanClientAsync(_unbanTargetId, _unbanReason);
-            await ToastService.ShowSuccessAsync(message);
-            CloseUnbanModal();
-            await Search(); // Refresh results
-        }
-        catch (Exception ex)
-        {
-            await ToastService.ShowErrorAsync(ex.Message);
-        }
-    }
-}

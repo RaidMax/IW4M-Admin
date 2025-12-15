@@ -1,7 +1,4 @@
-@using WebfrontCore.Components.Shared.Partials
-@using WebfrontCore.Components.Shared
-@inject WebfrontCore.Services.AppState AppState
-@inject NavigationManager NavManager
+
 
 <div class="ml-auto d-inline-flex" style="max-width: 400px;">
     <div class="input-group">
@@ -18,7 +15,7 @@
         </HasPermission>
 
         <!-- Basic Search -->
-        <form @onsubmit="BasicSubmit" class="flex-fill">
+        <form @onsubmit="@BasicSubmit" class="flex-fill">
             <input @bind="ClientName" class="form-control" type="text"
                    placeholder="@(AppState.Loc("WEBFRONT_NAV_SEARCH"))" required="required"/>
         </form>
@@ -44,21 +41,3 @@
     </div>
     <br/>
 </div>
-
-@code {
-    private string ClientName { get; set; }
-
-    private void BasicSubmit()
-    {
-        if (string.IsNullOrWhiteSpace(ClientName)) return;
-        
-        // Basic search goes to Client/AdvancedFind with just clientName
-        var url = NavManager.GetUriWithQueryParameters("/Client/AdvancedFind", new Dictionary<string, object>
-        {
-            { "clientName", ClientName },
-            { "isLegacyQuery", true }
-        });
-        
-        NavManager.NavigateTo(url);
-    }
-}

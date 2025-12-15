@@ -1,18 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Data.Models;
 using Data.Models.Client;
-using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
-using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.ViewModels;
 

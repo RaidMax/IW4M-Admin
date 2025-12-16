@@ -1,12 +1,30 @@
+@rendermode InteractiveServer
+@inject IWebfrontApiClient Api
 
-@if (Model != null)
+@if (_servers != null)
 {
-    foreach (var serverInfo in Model)
+    foreach (var serverInfo in _servers)
     {
         <ServerCard Model="serverInfo"/>
     }
 }
+else
+{
+    <p>Loading servers...</p>
+}
 
 @code {
-    [Parameter] public IEnumerable<ServerInfo> Model { get; set; }
+    private List<SharedLibraryCore.Dtos.ServerInfo>? _servers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _servers = await Api.GetServersAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ServerList] ERROR in OnInitializedAsync: {ex}");
+        }
+    }
 }

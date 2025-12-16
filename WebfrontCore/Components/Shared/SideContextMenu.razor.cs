@@ -12,17 +12,14 @@ public partial class SideContextMenu
     [Inject] public required IZeroJsInterop JS { get; set; }
 
     [Parameter] public SideContextMenuItems Model { get; set; }
-    public ActionModal ActionModal { get; set; }
+    [Parameter] public EventCallback<SideContextMenuItem> OnActionSelect { get; set; }
 
     private async Task OnActionClick(SideContextMenuItem item, MouseEventArgs e)
     {
         if (item.IsLink) return;
-
-        if (ActionModal != null && !string.IsNullOrEmpty(item.Reference))
+        if (OnActionSelect.HasDelegate)
         {
-            // item.Reference e.g. "BanForm" or "edit".
-            // We pass it to Open, which handles fetching /Action/{Name}Form
-            await ActionModal.Open(item.Reference, item.EntityId, item.Meta);
+            await OnActionSelect.InvokeAsync(item);
         }
     }
 }

@@ -1,0 +1,73 @@
+
+<div id="clientSearchWrapper">
+    <div class="form-group">
+        <label for="clientName">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"))</label>
+        <div class="d-flex">
+            <input type="text" class="form-control" id="clientName" placeholder="Unknown Soldier" @bind="Model.ClientName"/>
+            <div class="custom-control ml-10 align-self-center">
+                <div class="custom-switch">
+                    <input type="checkbox" id="isExactClientName" @bind="Model.IsExactClientName"/>
+                    <label for="isExactClientName">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="clientIP">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_IP"))</label>
+        <div class="d-flex">
+            <input type="text" class="form-control" id="clientIP" placeholder="1.1.1.1" @bind="Model.ClientIp"/>
+            <div class="custom-control ml-10 align-self-center">
+                <div class="custom-switch">
+                    <input type="checkbox" id="isExactClientIP" @bind="Model.IsExactClientIp"/>
+                    <label for="isExactClientIP">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="clientGuid">GUID <span class="text-primary">&bull;</span> XUID <span class="text-primary">&bull;</span>
+            NetworkID</label>
+        <input type="text" class="form-control" id="clientGuid" placeholder="110000100000001" @bind="Model.ClientGuid"/>
+    </div>
+
+    <div class="form-group">
+        <label for="clientLevel" class="w-half">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_PERMISSION"))</label>
+        <label for="clientGameName">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"))</label>
+
+        <div class="d-flex">
+            <select class="form-control w-half" id="clientLevel" @bind="Model.ClientLevel">
+                <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
+                @foreach (EFClient.Permission permission in Enum.GetValues(typeof(EFClient.Permission)))
+                {
+                    <option value="@permission">@permission.ToString()</option>
+                }
+            </select>
+            <select class="form-control w-half ml-10" id="clientGameName" @bind="Model.GameName">
+                <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
+                @foreach (Reference.Game game in Enum.GetValues(typeof(Reference.Game)))
+                {
+                    <option value="@game">@game.ToString()</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="clientConnected">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"))</label>
+        <div class="d-flex">
+            <input type="datetime-local" class="form-control w-half" id="clientConnected" @bind="Model.ClientConnected"/>
+
+            <div class="custom-control ml-10 align-self-center">
+                <div class="custom-switch">
+                    <input type="checkbox" id="resultOrder" @bind="IsAscending"/>
+                    <label for="resultOrder">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_OLDEST_FIRST"))</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" @onclick="Submit">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))</button>
+</div>
+

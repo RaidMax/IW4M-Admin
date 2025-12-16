@@ -12,12 +12,12 @@ using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Services;
-using WebfrontCore.Controllers.API.Dtos;
-using WebfrontCore.Permissions;
-using WebfrontCore.QueryHelpers.Models;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using SharedLibraryCore.QueryHelper;
+using WebfrontCore.Controllers.API.Models;
+using WebfrontCore.Core.Auth;
+using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace WebfrontCore.Controllers.API
 {

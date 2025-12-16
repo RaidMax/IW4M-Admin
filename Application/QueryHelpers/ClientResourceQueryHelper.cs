@@ -12,8 +12,8 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Permissions;
-using WebfrontCore.QueryHelpers.Models;
+using WebfrontCore.Core.Auth;
+using WebfrontCore.Core.QueryHelpers.Models;
 using EFClient = Data.Models.Client.EFClient;
 
 namespace IW4MAdmin.Application.QueryHelpers;

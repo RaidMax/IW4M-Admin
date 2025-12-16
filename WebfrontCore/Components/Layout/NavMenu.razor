@@ -201,10 +201,13 @@
                 </a>
 
                 <!-- Logout -->
-                <a href="/Account/Logout" class="sidebar-link">
-                    <i class="oi oi-account-logout mr-5"></i>
-                    <span class="name">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
-                </a>
+                <form action="/Account/Logout" method="post" style="margin: 0; padding: 0;">
+                     <AntiforgeryToken />
+                     <button type="submit" class="sidebar-link" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: inherit; font-size: inherit; font-family: inherit;">
+                        <i class="oi oi-account-logout mr-5"></i>
+                        <span class="name">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
+                     </button>
+                </form>
             }
             else
             {

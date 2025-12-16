@@ -167,6 +167,7 @@ public class Program
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddScoped<AuthenticationStateProvider, PersistingAuthenticationStateProvider>();
+        services.AddCascadingAuthenticationState();
 
         services.AddScoped<Services.IActionService, Services.ActionService>();
         return;

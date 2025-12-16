@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using WebfrontCore.Components.Features.Admin.Models;
 
 namespace WebfrontCore.Controllers.API
 {

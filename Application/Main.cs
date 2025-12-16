@@ -48,7 +48,7 @@ using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
 using Stats.Helpers;
-using WebfrontCore.QueryHelpers.Models;
+using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace IW4MAdmin.Application
 {

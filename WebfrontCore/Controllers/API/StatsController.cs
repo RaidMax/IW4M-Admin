@@ -7,6 +7,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using Stats.Config;
 using Stats.Dtos;
+using WebfrontCore.Controllers.API.Models;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace WebfrontCore.Controllers.API
@@ -78,7 +79,7 @@ namespace WebfrontCore.Controllers.API
 
              var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId);
 
-             return Ok(new WebfrontCore.Controllers.API.Dtos.TopStatsResponse
+             return Ok(new TopStatsResponse
              {
                  Players = stats,
                  TotalRankedClients = totalRanked

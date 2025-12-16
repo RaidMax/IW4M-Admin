@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Components.Features.Servers.Models;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -161,14 +162,14 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("server/{serverId}/scoreboard")]
-        public ActionResult<ViewModels.ScoreboardInfo> GetScoreboard(string serverId)
+        public ActionResult<ScoreboardInfo> GetScoreboard(string serverId)
         {
             var server = Manager.GetServers()
                 .FirstOrDefault(s => s.Id == serverId);
             if (server == null)
                 return NotFound();
 
-            return Ok(new ViewModels.ScoreboardInfo
+            return Ok(new ScoreboardInfo
             {
                 MapName = server.CurrentMap.ToString(),
                 ServerName = server.Hostname,
@@ -180,7 +181,7 @@ namespace WebfrontCore.Controllers.API
                             stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY),
                             client
                         })
-                    .Select(clientData => new ViewModels.ClientScoreboardInfo
+                    .Select(clientData => new ClientScoreboardInfo
                     {
                         ClientName = clientData.client.Name,
                         ClientId = clientData.client.ClientId,

@@ -26,8 +26,8 @@ public partial class AdvancedFind
     private bool _isLoading = false;
     private ElementReference _loadMoreTrigger;
     private DotNetObjectReference<AdvancedFind> _dotNetRef;
-    private bool CanSeeIp => _canSeeIp;
-    private bool _canSeeIp;
+    private bool CanSeeIp { get; set; }
+    private bool CanSeeLevel { get; set; }
     private bool _observerSetup;
 
     protected override async Task OnInitializedAsync()
@@ -148,6 +148,7 @@ public partial class AdvancedFind
         var user = authState.User;
         var canReadIp = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")).Succeeded;
         var canReadGuid = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")).Succeeded;
+        var canReadLevel = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")).Succeeded;
 
         if (!canReadIp)
         {
@@ -160,7 +161,8 @@ public partial class AdvancedFind
             Request.ClientGuid = null;
         }
 
-        _canSeeIp = canReadIp;
+        CanSeeIp = canReadIp;
+        CanSeeLevel = canReadLevel;
 
         await LoadData();
     }

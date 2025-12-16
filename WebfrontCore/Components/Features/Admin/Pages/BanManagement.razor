@@ -59,24 +59,29 @@
                     </button>
                 </div>
             </div>
-            <div class="input-group mr-md-5 ml-md-10 mt-10 mb-5 mt-md-0 mb-md-0">
-                <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientGuid"
-                           placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_GUID")"/>
-                <div class="input-group-append">
-                    <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
-                        <i class="oi oi-magnifying-glass"></i>
-                    </button>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")"
+                           Context="guidContext">
+                <div class="input-group mr-md-5 ml-md-10 mt-10 mb-5 mt-md-0 mb-md-0">
+                    <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientGuid"
+                               placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_GUID")"/>
+                    <div class="input-group-append">
+                        <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
+                            <i class="oi oi-magnifying-glass"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="input-group mr-md-10 ml-md-5 mb-10 mt-5 mt-md-0 mb-md-0">
-                <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientIP"
-                           placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_IP")"/>
-                <div class="input-group-append">
-                    <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
-                        <i class="oi oi-magnifying-glass"></i>
-                    </button>
+            </AuthorizeView>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")" Context="IpContext">
+                <div class="input-group mr-md-10 ml-md-5 mb-10 mt-5 mt-md-0 mb-md-0">
+                    <InputText class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientIP"
+                               placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_IP")"/>
+                    <div class="input-group-append">
+                        <button class="btn bg-dark-dm bg-light-ex-lm" type="submit">
+                            <i class="oi oi-magnifying-glass"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </AuthorizeView>
             <div class="input-group">
                 <InputNumber class="form-control bg-dark-dm bg-light-ex-lm" @bind-Value="Request.ClientId"
                              placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")"/>
@@ -99,7 +104,8 @@
                         <div class="d-flex p-15 mr-md-10 w-full w-md-200 bg-very-dark-dm bg-light-ex-lm rounded">
                             <div class="align-self-center w-full">
                                 <div class="d-flex font-size-16">
-                                    <a href="Client/Profile/@ban.ClientId" class="no-decoration flex-fill text-force-break mr-5">
+                                    <a href="Client/Profile/@ban.ClientId"
+                                       class="no-decoration flex-fill text-force-break mr-5">
                                         <ColorCode Value="@ban.ClientName"/>
                                     </a>
                                     <div title="@AppState.Loc($"GAME_{ban.Game}")">
@@ -110,10 +116,12 @@
                                     </div>
                                 </div>
 
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
+                                <AuthorizeView
+                                    Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@ban.NetworkId.ToString("X")</div>
                                 </AuthorizeView>
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                <AuthorizeView
+                                    Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@ban.IPAddress</div>
                                 </AuthorizeView>
                                 <br/>
@@ -143,7 +151,8 @@
                             <div class="d-flex flex-wrap flex-column w-full w-md-200 p-10 border rounded mt-10 mt-md-0"
                                  style="border-style: dashed !important;">
                                 <div class="d-flex font-size-16">
-                                    <div title="@AppState.Loc("WEBFRONT_BAN_MGMT_TOOLTIP_LINKED")" class="d-flex flex-fill">
+                                    <div title="@AppState.Loc("WEBFRONT_BAN_MGMT_TOOLTIP_LINKED")"
+                                         class="d-flex flex-fill">
                                         <i class="oi oi-link-intact align-self-center"></i>
                                         <div class="text-truncate ml-5 mr-5">
                                             <a href="Client/Profile/@associatedEntity.OffenderInfo.ClientId"
@@ -152,13 +161,17 @@
                                             </a>
                                         </div>
                                     </div>
-                                    <div class="badge">@Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
+                                    <div
+                                        class="badge">@Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
                                 </div>
                                 <br/>
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
-                                    <div class="text-muted">@associatedEntity.OffenderInfo.NetworkId?.ToString("X")</div>
+                                <AuthorizeView
+                                    Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
+                                    <div
+                                        class="text-muted">@associatedEntity.OffenderInfo.NetworkId?.ToString("X")</div>
                                 </AuthorizeView>
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                <AuthorizeView
+                                    Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@associatedEntity.OffenderInfo.IPAddress</div>
                                 </AuthorizeView>
                                 <br/>

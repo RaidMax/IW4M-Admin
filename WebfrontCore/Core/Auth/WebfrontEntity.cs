@@ -19,6 +19,7 @@ public enum WebfrontEntity
     ClientNote,
     Interaction,
     AdvancedSearch,
+    AuditLogDataDetails,
 }
 
 public enum WebfrontPermission

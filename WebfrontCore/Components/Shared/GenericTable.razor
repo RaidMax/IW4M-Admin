@@ -44,24 +44,20 @@
                     <td>
                         @if (data.Template is null)
                         {
-                            if (data.Type == ColumnType.Text)
+                            switch (data.Type)
                             {
-                                <span>@data.Value</span>
-                            }
-
-                            if (data.Type == ColumnType.Link)
-                            {
-                                <a href="@data.Data" class="no-decoration">@data.Value</a>
-                            }
-
-                            if (data.Type == ColumnType.Icon)
-                            {
-                                <span class="oi @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
-                            }
-
-                            if (data.Type == ColumnType.Button)
-                            {
-                                <div class="btn profile-action" data-action="@data.Data" data-action-id="@data.Id">@data.Value</div>
+                                case ColumnType.Text:
+                                    <span>@data.Value</span>
+                                    break;
+                                case ColumnType.Link:
+                                    <a href="@data.Data" class="no-decoration">@data.Value</a>
+                                    break;
+                                case ColumnType.Icon:
+                                    <span class="oi @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
+                                    break;
+                                case ColumnType.Button:
+                                    <div class="btn profile-action" data-action="@data.Data" data-action-id="@data.Id">@data.Value</div>
+                                    break;
                             }
                         }
                         else

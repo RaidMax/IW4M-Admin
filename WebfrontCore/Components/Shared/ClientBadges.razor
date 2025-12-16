@@ -1,25 +1,23 @@
 <div class="d-none d-md-block">
-    <CascadingAuthenticationState>
-        @if (_navData != null)
-        {
-            <div class="badge-group ml-20" role="group" aria-label="...">
-                <span class="badge badge-primary">@(_navData.TotalClientCount)</span>
-                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE")</span>
+    @if (_navData != null)
+    {
+        <div class="badge-group ml-20" role="group" aria-label="...">
+            <span class="badge badge-primary">@(_navData.TotalClientCount)</span>
+            <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE")</span>
+        </div>
+
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
+            <div class="badge-group ml-10" role="group" aria-label="...">
+                <span class="badge badge-success">@(_navData.TotalAdminCount)</span>
+                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")</span>
             </div>
+        </AuthorizeView>
 
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
-                <div class="badge-group ml-10" role="group" aria-label="...">
-                    <span class="badge badge-success">@(_navData.TotalAdminCount)</span>
-                    <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")</span>
-                </div>
-            </AuthorizeView>
-
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
-                <div class="badge-group ml-10" role="group">
-                    <span class="badge badge-danger">@(_navData.TotalReportCount)</span>
-                    <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
-                </div>
-            </AuthorizeView>
-        }
-    </CascadingAuthenticationState>
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
+            <div class="badge-group ml-10" role="group">
+                <span class="badge badge-danger">@(_navData.TotalReportCount)</span>
+                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
+            </div>
+        </AuthorizeView>
+    }
 </div>

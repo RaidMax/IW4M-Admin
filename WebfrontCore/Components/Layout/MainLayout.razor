@@ -12,7 +12,7 @@
 else
 {
     <div class="page-wrapper with-navbar with-sidebar" data-sidebar-type="overlayed-sm-and-down">
-        <Microsoft.AspNetCore.Components.Forms.AntiforgeryToken />
+        <AntiforgeryToken />
         <!-- toast notifications -->
         <div class="sticky-alerts" style="z-index: 1001"></div>
 
@@ -35,11 +35,11 @@ else
             </a>
 
             <!-- client badges -->
-            <WebfrontCore.Components.Shared.ClientBadges @rendermode="InteractiveServer" />
+            <ClientBadges @rendermode="InteractiveServer" />
             
             <div class="d-flex ml-auto">
                 <div class="align-self-center">
-                    <WebfrontCore.Components.Shared.Partials.Notifications/>
+                    <Notifications/>
                 </div>
                 <div class="btn btn-action mr-10 ml-10" @onclick="@ToggleDarkMode" data-toggle="tooltip" data-title="Toggle Dark Mode"
                      data-placement="bottom">

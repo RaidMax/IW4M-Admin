@@ -18,18 +18,13 @@ namespace WebfrontCore.Controllers.API
         [HttpGet("{interactionName}")]
         public async Task<ActionResult<InteractionResponse>> Render([FromRoute] string interactionName, CancellationToken token)
         {
-            System.Console.WriteLine($"[InteractionAPI DEBUG] Interaction: {interactionName}");
-            System.Console.WriteLine($"[InteractionAPI DEBUG] Client.Level: {Client?.Level}, Client.ClientId: {Client?.ClientId}");
-            
             var interactionData = (await _interactionRegistration.GetInteractions(interactionName, token: token)).FirstOrDefault();
 
             if (interactionData is null)
             {
-                System.Console.WriteLine($"[InteractionAPI DEBUG] Interaction not found");
                 return NotFound();
             }
 
-            System.Console.WriteLine($"[InteractionAPI DEBUG] Required permission: {interactionData.MinimumPermission}, Client has: {Client?.Level}");
             if (Client.Level < interactionData.MinimumPermission)
             {
                 return Unauthorized();

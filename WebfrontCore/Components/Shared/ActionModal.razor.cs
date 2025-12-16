@@ -21,15 +21,34 @@ public partial class ActionModal
     private ActionInfo _actionInfo;
     private readonly Dictionary<string, object?> _formData = new();
     private int? _targetId;
+    private string? _serverId;
 
     [Parameter] public string ModalId { get; set; } = "action-modal";
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        ActionService.OnOpenAction += OnOpenAction;
+    }
 
-    public async Task Open(string actionName, int? targetId = null, string meta = null)
+    public void Dispose()
+    {
+        ActionService.OnOpenAction -= OnOpenAction;
+    }
+
+    private async void OnOpenAction(string actionName, int? targetId, string meta, string? serverId)
+    {
+        await Open(actionName, targetId, meta, serverId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async Task Open(string actionName, int? targetId = null, string meta = null, string? serverId = null)
     {
         _isLoading = true;
         _error = null;
         _actionInfo = null;
         _targetId = targetId;
+        _serverId = serverId;
         _formData.Clear();
 
         // Login is handled by specific component
@@ -50,7 +69,7 @@ public partial class ActionModal
 
         try
         {
-            _actionInfo = await ActionService.GetActionInfoAsync(actionName, targetId, meta);
+            _actionInfo = await ActionService.GetActionInfoAsync(actionName, targetId, meta, serverId);
 
             if (_actionInfo != null)
             {
@@ -61,7 +80,7 @@ public partial class ActionModal
                     {
                         _formData[input.Name] = input.Value;
                     }
-                    else if (input.Values != null && input.Type == "select")
+                    else if (input is { Type: "select" })
                     {
                         // Handle !selected!
                         var selected = input.Values.FirstOrDefault(k => k.Key.StartsWith("!selected!"));
@@ -80,7 +99,7 @@ public partial class ActionModal
                     }
                     else
                     {
-                        _formData[input.Name] = input.Value;
+                        _formData[input.Name] = input.Value ?? string.Empty;
                     }
                 }
             }
@@ -125,7 +144,7 @@ public partial class ActionModal
                 CurrentAlias = new EFAlias { Name = AppState.User?.Name ?? "Webfront" }
             };
 
-            var (success, message) = await ActionService.ExecuteActionAsync(_actionInfo.Action, _targetId, _formData, origin);
+            var (success, message) = await ActionService.ExecuteActionAsync(_actionInfo.Action, _targetId, _formData, origin, _serverId);
 
             // Show toast/alert
             string alertType;

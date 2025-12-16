@@ -19,6 +19,7 @@ public partial class Profile
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
 
     private PlayerInfo Client { get; set; }
     private SideContextMenuItems ContextItems { get; set; }
@@ -61,15 +62,15 @@ public partial class Profile
     private IEnumerable<MetaType> GetFilterableMetaTypes()
     {
         var ignoredTypes = new[] { MetaType.Information, MetaType.Other, MetaType.QuickMessage };
-        return Enum.GetValues(typeof(MetaType))
-            .Cast<MetaType>()
+        return Enum.GetValues<MetaType>()
             .Where(meta => !ignoredTypes.Contains(meta))
             .OrderByDescending(meta => meta == MetaType.All);
     }
 
-    private string GetShortCode(string name)
+    private static string GetShortCode(string name)
     {
-        if (string.IsNullOrEmpty(name)) return "?";
+        if (string.IsNullOrEmpty(name))
+            return "?";
         var match = System.Text.RegularExpressions.Regex.Match(name.ToUpper(), "[A-Z]").Value;
         return string.IsNullOrEmpty(match) ? "?" : match;
     }
@@ -168,7 +169,9 @@ public partial class Profile
         {
             ContextItems.Items.Add(new SideContextMenuItem
             {
-                Title = isFlagged ? AppState.Loc("WEBFRONT_ACTION_UNFLAG_NAME") : AppState.Loc("WEBFRONT_ACTION_FLAG_NAME"),
+                Title = isFlagged
+                    ? AppState.Loc("WEBFRONT_ACTION_UNFLAG_NAME")
+                    : AppState.Loc("WEBFRONT_ACTION_FLAG_NAME"),
                 IsButton = true,
                 Reference = isFlagged ? "unflag" : "flag",
                 Icon = "oi-flag",
@@ -216,38 +219,40 @@ public partial class Profile
         }
 
         // Plugin Interactions
-        if (Client.Interactions != null)
+        if (Client.Interactions == null)
         {
-            foreach (var interaction in Client.Interactions.Where(i => (int)userLevel >= ((int?)i.MinimumPermission ?? 0)))
+            return;
+        }
+
+        foreach (var interaction in Client.Interactions.Where(i =>
+                     (int)userLevel >= ((int?)i.MinimumPermission ?? 0)))
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
             {
-                ContextItems.Items.Add(new SideContextMenuItem
-                {
-                    Title = interaction.Name,
-                    Tooltip = interaction.Description,
-                    EntityId = interaction.EntityId,
-                    Icon = interaction.DisplayMeta,
-                    Reference = interaction.ActionPath,
-                    Meta = System.Text.Json.JsonSerializer.Serialize(interaction.ActionMeta),
-                    IsButton = true
-                });
-            }
+                Title = interaction.Name,
+                Tooltip = interaction.Description,
+                EntityId = interaction.EntityId,
+                Icon = interaction.DisplayMeta,
+                Reference = interaction.ActionPath,
+                Meta = System.Text.Json.JsonSerializer.Serialize(interaction.ActionMeta),
+                IsButton = true
+            });
         }
     }
 
     private bool HasPermission(WebfrontEntity entity, WebfrontPermission permission)
     {
-        if (AppState.User == null) return false;
-        return Config.HasPermission(AppState.User.Level, entity, permission);
+        return AppState.User != null && Config.HasPermission(AppState.User.Level, entity, permission);
     }
 
     private string ClassForProfileBackground()
     {
-        if (!HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
-            return "level-bgcolor-0";
-        return $"level-bgcolor-{Client.LevelInt}";
+        return !HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)
+            ? "level-bgcolor-0"
+            : $"level-bgcolor-{Client.LevelInt}";
     }
 
-    private string ClassForPenaltyType(EFPenalty.PenaltyType type)
+    private static string ClassForPenaltyType(EFPenalty.PenaltyType type)
     {
         return type switch
         {
@@ -259,13 +264,9 @@ public partial class Profile
             _ => "alert"
         };
     }
-    private ActionModal _actionModal;
 
-    private async Task OnProfileContextAction(SideContextMenuItem item)
+    private void OnProfileContextAction(SideContextMenuItem item)
     {
-        if (_actionModal != null)
-        {
-            await _actionModal.Open(item.Reference, item.EntityId, item.Meta);
-        }
+        ActionService.OpenAction(item.Reference, item.EntityId, item.Meta);
     }
 }

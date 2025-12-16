@@ -5,7 +5,7 @@
 <div class="card mt-20 mb-20 ml-0 mr-0 p-0">
     <div
         class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-lg-row flex-wrap justify-content-between text-light"
-        id="server_header_@Model.ID">
+        id="server_header_@Model.Id">
         <!-- first column -->
         <div class="d-flex align-self-center flex-column-reverse flex-lg-row col-12 col-lg-6">
             <div class="ml-5 mr-5 text-center text-lg-left">
@@ -22,7 +22,7 @@
                     <!-- send message button -->
                     <a href="#" @onclick:preventDefault class="profile-action text-light align-self-center"
                        data-action="chat"
-                       data-action-id="@Model.ID">
+                       data-action-id="@Model.Id">
                         <i class="oi oi-chat ml-5 mr-5"></i>
                     </a>
                 </AuthorizeView>
@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <div id="server_clientactivity_@Model.ID" class="bg-dark-dm bg-light-lm server-activity">
+    <div id="server_clientactivity_@Model.Id" class="bg-dark-dm bg-light-lm server-activity">
         <ClientActivity Model="@Model"/>
     </div>
 
@@ -79,8 +79,8 @@
     <div class="server-history">
         <div class="server-history-row m-auto bg-dark-dm bg-light-lm rounded-bottom"
              style="position:relative; width: 100%"
-             id="server_history_@Model.ID">
-            <canvas id="server_history_canvas_@Model.ID" class="rounded-bottom" height="100"></canvas>
+             id="server_history_@Model.Id">
+            <canvas id="server_history_canvas_@Model.Id" class="rounded-bottom" height="100"></canvas>
         </div>
     </div>
 

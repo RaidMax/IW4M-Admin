@@ -34,7 +34,7 @@ namespace WebfrontCore.Controllers.API
                 });
             }
 
-            var server = Manager.GetServers().FirstOrDefault(s => s.EndPoint == request.ServerId);
+            var server = Manager.GetServers().FirstOrDefault(s => s.Id == request.ServerId);
             if (server == null) return NotFound("Server not found");
 
             var (success, response) = await _remoteCommandService.ExecuteWithResult(Client.ClientId, null, request.Command,
@@ -49,7 +49,7 @@ namespace WebfrontCore.Controllers.API
 
     public class ConsoleCommandRequest
     {
-        public long ServerId { get; set; }
+        public string ServerId { get; set; }
         public string Command { get; set; }
     }
 }

@@ -53,7 +53,7 @@
             <select class="form-control" @bind="SelectedServerId">
                 @foreach (var server in Servers)
                 {
-                    <option value="@server.ID">[@server.Game] @server.Name</option>
+                    <option value="@server.Id">[@server.Game] @server.Name</option>
                 }
             </select>
         </div>

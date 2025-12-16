@@ -17,7 +17,8 @@ namespace WebfrontCore.Controllers.API
         public async Task<ActionResult<IW4MAdminInfo>> GetStatus([FromQuery] Reference.Game? game = null,
             CancellationToken cancellationToken = default)
         {
-            var servers = Manager.GetServers().Where(server => game is null || server.GameName == (SharedLibraryCore.Server.Game?)game)
+            var servers = Manager.GetServers()
+                .Where(server => game is null || server.GameName == (SharedLibraryCore.Server.Game?)game)
                 .ToList();
             var (clientCount, time) =
                 await serverDataViewer.MaxConcurrentClientsAsync(gameCode: game, token: cancellationToken);
@@ -50,7 +51,8 @@ namespace WebfrontCore.Controllers.API
                 .ToList();
 
             var clientHistories =
-                await serverDataViewer.ClientHistoryAsync(Manager.GetApplicationSettings().Configuration().MaxClientHistoryTime, token);
+                await serverDataViewer.ClientHistoryAsync(
+                    Manager.GetApplicationSettings().Configuration().MaxClientHistoryTime, token);
 
             var serverInfo = new List<ServerInfo>();
 
@@ -61,7 +63,7 @@ namespace WebfrontCore.Controllers.API
                 serverInfo.Add(new ServerInfo
                 {
                     Name = server.Hostname,
-                    ID = server.EndPoint,
+                    Id = server.Id,
                     Port = server.ListenPort,
                     Map = server.CurrentMap?.Alias,
                     Game = (Reference.Game)server.GameName,
@@ -77,7 +79,8 @@ namespace WebfrontCore.Controllers.API
                             ClientCount = historyItem.ClientCount,
                             ConnectionInterrupted = historyItem.ConnectionInterrupted,
                             Map = historyItem.Map,
-                            MapAlias = server.Maps.FirstOrDefault(map => map.Name == historyItem.Map)?.Alias ?? historyItem.Map
+                            MapAlias = server.Maps.FirstOrDefault(map => map.Name == historyItem.Map)?.Alias ??
+                                       historyItem.Map
                         }).ToList() ?? []
                     },
                     Players = server.GetClientsAsList()
@@ -94,9 +97,13 @@ namespace WebfrontCore.Controllers.API
                     ChatHistory = server.ChatHistory.ToList(),
                     Online = !server.Throttled,
                     IPAddress = server.ListenAddress,
-                    ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
+                    ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal()
+                        ? Manager.ExternalIPAddress
+                        : server.ListenAddress,
                     ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
-                        server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
+                        server.ResolvedIpEndPoint.Address.IsInternal()
+                            ? Manager.ExternalIPAddress
+                            : server.ListenAddress,
                         server.ListenPort)
                 });
             }
@@ -105,15 +112,16 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("servers/{id}")]
-        public ActionResult<ServerInfo> GetServer(long id)
+        public ActionResult<ServerInfo> GetServer(string id)
         {
-            var server = Manager.GetServers().FirstOrDefault(s => s.EndPoint == id);
-            if (server == null) return NotFound();
+            var server = Manager.GetServers().FirstOrDefault(s => s.Id == id);
+            if (server == null)
+                return NotFound();
 
             return Ok(new ServerInfo
             {
                 Name = server.Hostname,
-                ID = server.EndPoint,
+                Id = server.Id,
                 Port = server.ListenPort,
                 Map = server.CurrentMap?.Alias,
                 Game = (Reference.Game)server.GameName,
@@ -143,24 +151,28 @@ namespace WebfrontCore.Controllers.API
                 ChatHistory = server.ChatHistory.ToList(),
                 Online = !server.Throttled,
                 IPAddress = server.ListenAddress,
-                ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
+                ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal()
+                    ? Manager.ExternalIPAddress
+                    : server.ListenAddress,
                 ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                     server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : server.ListenAddress,
                     server.ListenPort)
             });
         }
 
-        [HttpGet("server/{id}/scoreboard")]
-        public ActionResult<WebfrontCore.ViewModels.ScoreboardInfo> GetScoreboard(long id)
+        [HttpGet("server/{serverId}/scoreboard")]
+        public ActionResult<ViewModels.ScoreboardInfo> GetScoreboard(string serverId)
         {
-            var server = Manager.GetServers().FirstOrDefault(s => s.EndPoint == id);
-            if (server == null) return NotFound();
+            var server = Manager.GetServers()
+                .FirstOrDefault(s => s.Id == serverId);
+            if (server == null)
+                return NotFound();
 
-            return Ok(new WebfrontCore.ViewModels.ScoreboardInfo
+            return Ok(new ViewModels.ScoreboardInfo
             {
                 MapName = server.CurrentMap.ToString(),
                 ServerName = server.Hostname,
-                ServerId = server.ToString(), // ServerId in viewmodel is string
+                ServerId = server.Id,
                 GameCode = server.GameCode,
                 ClientInfo = server.GetClientsAsList().Select(client =>
                         new
@@ -168,7 +180,7 @@ namespace WebfrontCore.Controllers.API
                             stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY),
                             client
                         })
-                    .Select(clientData => new WebfrontCore.ViewModels.ClientScoreboardInfo
+                    .Select(clientData => new ViewModels.ClientScoreboardInfo
                     {
                         ClientName = clientData.client.Name,
                         ClientId = clientData.client.ClientId,

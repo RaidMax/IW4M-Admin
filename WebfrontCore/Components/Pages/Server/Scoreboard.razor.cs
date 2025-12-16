@@ -8,12 +8,12 @@ public partial class Scoreboard
 {
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Parameter] public long Id { get; set; }
+    [Parameter] public string Id { get; set; }
     private ScoreboardInfo ScoreboardModel { get; set; }
     private SideContextMenuItems ContextItems { get; set; }
     private PeriodicTimer _refreshTimer;
     private CancellationTokenSource _cts;
-    private long _previousId;
+    private string _previousId;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -56,9 +56,9 @@ public partial class Scoreboard
                     Items = servers.Select(server => new SideContextMenuItem
                     {
                         IsLink = true,
-                        Reference = $"/Server/{server.ID}/Scoreboard",
+                        Reference = $"/Server/{server.Id}/Scoreboard",
                         Title = server.Name,
-                        IsActive = server.ID == Id,
+                        IsActive = server.Id == Id,
                         IsCollapse = true,
                         Meta = server.Game.ToString()
                     }).ToList()

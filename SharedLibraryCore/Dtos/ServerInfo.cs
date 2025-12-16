@@ -20,7 +20,7 @@ namespace SharedLibraryCore.Dtos
         public List<PlayerInfo> Players { get; set; }
         public List<Report> Reports { get; set; }
         public ClientHistoryInfo ClientHistory { get; set; }
-        public long ID { get; set; }
+        public string Id { get; set; }
         public bool Online { get; set; }
         public string ConnectProtocolUrl { get; set; }
         public string IPAddress { get; set; }

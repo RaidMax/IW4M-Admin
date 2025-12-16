@@ -67,7 +67,8 @@ namespace WebfrontCore.Controllers.API
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to retrieve clients with query - {@Request}", request);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Messages = [e.Message] });
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse { Messages = [e.Message] });
             }
         }
 
@@ -83,6 +84,14 @@ namespace WebfrontCore.Controllers.API
                 {
                     Messages = ModelState.Values
                         .SelectMany(value => value.Errors.Select(error => error.ErrorMessage)).ToArray()
+                });
+            }
+
+            if (!request.HasData)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Messages = ["You must provide at least 1 search criteria"]
                 });
             }
 
@@ -106,7 +115,8 @@ namespace WebfrontCore.Controllers.API
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to search clients with query - {@Request}", request);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Messages = [e.Message] });
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse { Messages = [e.Message] });
             }
         }
 
@@ -117,7 +127,7 @@ namespace WebfrontCore.Controllers.API
         {
             if (Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy && !Authorized)
             {
-                 return Forbid();
+                return Forbid();
             }
 
             var admins = (await clientService.GetPrivilegedClients())
@@ -179,16 +189,18 @@ namespace WebfrontCore.Controllers.API
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to retrieve information for Client - {ClientId}", clientId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Messages = [e.Message] });
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse { Messages = [e.Message] });
             }
         }
-        
+
         [HttpGet("{clientId:int}/profile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<PlayerInfo>> GetProfileAsync([FromRoute] int clientId, [FromQuery] MetaType? metaFilterType)
+        public async Task<ActionResult<PlayerInfo>> GetProfileAsync([FromRoute] int clientId,
+            [FromQuery] MetaType? metaFilterType)
         {
-             var client = await Manager.GetClientService().Get(clientId);
+            var client = await Manager.GetClientService().Get(clientId);
 
             if (client == null)
             {
@@ -281,8 +293,8 @@ namespace WebfrontCore.Controllers.API
                     ingameClient.CurrentServer.ListenPort),
                 CurrentServerName = ingameClient?.CurrentServer?.Hostname,
                 GeoLocationInfo = MapGeoLocation(await geoLocationService.Locate(client.IPAddressString)),
-                NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null: note,
-                Interactions = interactions.Select(interaction => new InteractionInfo 
+                NoteMeta = string.IsNullOrWhiteSpace(note?.Note) ? null : note,
+                Interactions = interactions.Select(interaction => new InteractionInfo
                 {
                     EntityId = interaction.EntityId,
                     InteractionId = interaction.InteractionId,
@@ -324,13 +336,15 @@ namespace WebfrontCore.Controllers.API
                 _ => (int)penalty.Type
             });
             clientDto.Meta.AddRange(Authorized ? meta : meta.Where(m => !m.IsSensitive));
-            
+
             return clientDto;
         }
 
         [HttpGet("{clientId:int}/meta")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<BaseMetaResponse>>> GetMetaAsync([FromRoute] int clientId, [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType, CancellationToken token)
+        public async Task<ActionResult<IEnumerable<BaseMetaResponse>>> GetMetaAsync([FromRoute] int clientId,
+            [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType,
+            CancellationToken token)
         {
             var request = new ClientPaginationRequest
             {
@@ -345,17 +359,17 @@ namespace WebfrontCore.Controllers.API
             // TODO: Use actual user level if authenticated, but for now Authorized check is simple.
             // If we want real level, we need User UserClaimsPrincipal (if available in API)
             // But Authorized property in BaseController uses User.
-            
+
             if (User.Identity.IsAuthenticated)
             {
-                 var levelClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                 if (Enum.TryParse(levelClaim, out EFClient.Permission result))
-                 {
-                     level = result;
-                 }
+                var levelClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                if (Enum.TryParse(levelClaim, out EFClient.Permission result))
+                {
+                    level = result;
+                }
             }
 
-             if (!config.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
+            if (!config.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
             {
                 permissionSet = new List<string>();
             }
@@ -368,17 +382,24 @@ namespace WebfrontCore.Controllers.API
             }
             else
             {
-                 meta = metaType switch
+                meta = metaType switch
                 {
-                    MetaType.Information => await metaService.GetRuntimeMeta<InformationResponse>(request, metaType.Value, token),
-                    MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate, WebfrontPermission.Read)
+                    MetaType.Information => await metaService.GetRuntimeMeta<InformationResponse>(request,
+                        metaType.Value, token),
+                    MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate,
+                        WebfrontPermission.Read)
                         ? await metaService.GetRuntimeMeta<UpdatedAliasResponse>(request, metaType.Value, token)
                         : new List<IClientMeta>(),
-                    MetaType.ChatMessage => await metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value, token),
-                    MetaType.Penalized => await metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request, metaType.Value, token),
-                    MetaType.ReceivedPenalty => await metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request, metaType.Value, token),
-                    MetaType.ConnectionHistory => await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request, metaType.Value, token),
-                    MetaType.PermissionLevel => await metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(request, metaType.Value, token),
+                    MetaType.ChatMessage => await metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value,
+                        token),
+                    MetaType.Penalized => await metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request,
+                        metaType.Value, token),
+                    MetaType.ReceivedPenalty => await metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request,
+                        metaType.Value, token),
+                    MetaType.ConnectionHistory => await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request,
+                        metaType.Value, token),
+                    MetaType.PermissionLevel => await metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(
+                        request, metaType.Value, token),
                     _ => await metaService.GetRuntimeMeta(request, token) // Fallback
                 };
             }
@@ -422,7 +443,8 @@ namespace WebfrontCore.Controllers.API
                     };
 
                     loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(tokenData) ||
-                                   (await Task.FromResult(Hashing.Hash(request.Password, privilegedClient.PasswordSalt)))[0] ==
+                                   (await Task.FromResult(Hashing.Hash(request.Password,
+                                       privilegedClient.PasswordSalt)))[0] ==
                                    privilegedClient.Password;
                 }
 
@@ -456,9 +478,10 @@ namespace WebfrontCore.Controllers.API
                         Source = this,
                         LoginSource = LoginEvent.LoginSourceType.Webfront,
                         EntityId = Client.ClientId.ToString(),
-                        Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var loginStringValues)
-                            ? loginStringValues.ToString()
-                            : HttpContext.Connection.RemoteIpAddress?.ToString()
+                        Identifier =
+                            HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var loginStringValues)
+                                ? loginStringValues.ToString()
+                                : HttpContext.Connection.RemoteIpAddress?.ToString()
                     });
 
                     return Ok();
@@ -508,14 +531,14 @@ namespace WebfrontCore.Controllers.API
         {
             public string Password { get; set; }
         }
-        
+
         private static GeoLocationInfo MapGeoLocation(IGeoLocationResult geoLocation)
         {
             if (geoLocation == null)
             {
                 return null;
             }
-            
+
             return new GeoLocationInfo
             {
                 Country = geoLocation.Country,

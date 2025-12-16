@@ -18,6 +18,5 @@ public class ClientResourceRequest : ClientPaginationRequest
     
     public EFClient.Permission RequesterPermission { get; set; } = EFClient.Permission.User;
     
-    public bool HasData => !string.IsNullOrEmpty(ClientName) || !string.IsNullOrEmpty(ClientIp) ||
-                                                                         !string.IsNullOrEmpty(ClientGuid) || ClientLevel is not null || GameName is not null;
+    public bool HasData => !string.IsNullOrEmpty(ClientName) || !string.IsNullOrEmpty(ClientIp) || !string.IsNullOrEmpty(ClientGuid) || ClientLevel is not null || GameName is not null;
 }

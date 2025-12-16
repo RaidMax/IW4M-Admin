@@ -159,9 +159,9 @@ else
 
                             @* IP Address with History Dropdown *@
                             <div class="align-self-center align-self-md-start d-flex flex-row">
-                                <span class="text-muted mr-5">@Client.IPAddress</span>
                                 <AuthorizeView
-                                    Policy="@($"Permissions.{WebfrontEntity.MetaAliasUpdate}.{WebfrontPermission.Read}")">
+                                    Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                    <span class="text-muted mr-5">@Client.IPAddress</span>
                                     <div class="dropdown with-arrow">
                                         <i class="oi oi-caret-bottom font-size-12 text-muted cursor-pointer"
                                            data-toggle="dropdown"

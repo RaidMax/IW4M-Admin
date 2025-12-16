@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos;
+using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Admin.Pages;
@@ -10,7 +11,7 @@ public partial class AuditLog
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JS { get; set; }
-    private PaginationRequest Request { get; set; } = new PaginationRequest { Count = 25, Offset = 0 };
+    private PaginationRequest Request { get; } = new() { Count = 50, Offset = 0 };
     private List<AuditInfo> Results { get; set; }
     private bool HasMoreResults { get; set; } = true;
     private bool IsLoading { get; set; }
@@ -18,6 +19,8 @@ public partial class AuditLog
     private DotNetObjectReference<AuditLog> objRef;
     private bool observerSetUp = false;
     private string _error;
+
+    private static string DataDetailsPolicy => $"Permissions.{WebfrontEntity.AuditLogDataDetails}.{WebfrontPermission.Read}";
 
     protected override async Task OnInitializedAsync()
     {

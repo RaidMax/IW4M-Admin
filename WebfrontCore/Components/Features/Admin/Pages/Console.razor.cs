@@ -1,10 +1,8 @@
-﻿using Data.Models.Client;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
-
-namespace WebfrontCore.Components.Features.Console.Pages;
+namespace WebfrontCore.Components.Features.Admin.Pages;
 
 public partial class Console
 {
@@ -19,7 +17,7 @@ public partial class Console
 
     protected override async Task OnInitializedAsync()
     {
-        if (AppState.User == null || AppState.User.Level < EFClient.Permission.Owner)
+        if (AppState.User is null)
         {
             await ToastService.ShowErrorAsync(AppState.Loc("WEBFRONT_chain_error_permission"), AppState.Loc("WEBFRONT_modal_title_error"));
             return;

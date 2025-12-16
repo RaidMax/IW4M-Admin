@@ -7,6 +7,7 @@ namespace WebfrontCore.Components.Shared;
 public partial class ClientActivity
 {
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
     [Parameter] public ServerInfo? Model { get; set; }
     
     private List<ClientGroup> GroupedClients => GetGroupedClients();

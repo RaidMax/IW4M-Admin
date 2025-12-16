@@ -1,0 +1,52 @@
+@page "/"
+
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9">
+        <h2 class="content-title mb-0">@(AppState.Loc("WEBFRONT_SERVERS_TITLE"))</h2>
+        @if (Model != null)
+        {
+            @if (Model.Game.HasValue)
+            {
+                <span class="text-muted">@(AppState.Loc($"GAME_{Model.Game.Value}"))</span>
+            }
+            else
+            {
+                <span class="text-muted">@(AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))</span>
+            }
+            <div class="card p-0 m-0">
+                <div class="d-flex flex-column flex-md-row justify-content-md-between bg-dark-dm bg-light-lm p-10 mt-15 mb-15 rounded">
+                    <div class="align-self-center align-content-md-start">@((MarkupString)FormatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</div>
+                    <div class="align-self-center align-content-md-start" data-toggle="tooltip" data-title="@Model.MaxConcurrentClientsTime.Humanize().Titleize()">@((MarkupString)FormatTranslation("WEBFRONT_HOME_MAX_CONCURRENT_CLIENTS", Model.MaxConcurrentClients.ToString("#,##0")))</div>
+                    <div class="align-self-center align-content-md-start">@((MarkupString)FormatTranslation("WEBFRONT_HOME_RECENT_CLIENTS", Model.RecentClientCount.ToString("#,##0")))</div>
+                    <div class="align-self-center align-content-md-start">@((MarkupString)FormatTranslation("WEBFRONT_HOME_TOTAL_CLIENTS", Model.TotalClientCount.ToString("#,##0")))</div>
+                </div>
+            </div>
+            
+            <ServerList />
+            <DashboardReports />
+        }
+    </div>
+    
+    @if (Model != null)
+    {
+         var menuItems = new SideContextMenuItems
+        {
+            MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
+            Items = Model.ActiveServerGames.Select(game => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = $"/?game={game}",
+                Title = AppState.Loc($"GAME_{game}"),
+                IsActive = game == Model.Game
+            }).Prepend(new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = "/",
+                Title = AppState.Loc("GAME_ALL"),
+                IsActive = !Model.Game.HasValue
+            }).ToList()
+        };
+        
+        <SideContextMenu Model="menuItems" />
+    }
+</div>

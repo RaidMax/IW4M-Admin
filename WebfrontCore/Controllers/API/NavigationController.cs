@@ -2,34 +2,29 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Services;
+using WebfrontCore.Core.Services;
+using Page = WebfrontCore.Core.Services.Page;
 
 namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class NavigationController : BaseController
+    public class NavigationController(
+        IManager manager,
+        IInteractionRegistration interactionRegistration)
+        : BaseController(manager)
     {
-        private readonly IInteractionRegistration _interactionRegistration;
-
-        public NavigationController(
-            IManager manager,
-            IInteractionRegistration interactionRegistration) : base(manager)
-        {
-            _interactionRegistration = interactionRegistration;
-        }
-
         [HttpGet]
-        public async System.Threading.Tasks.Task<ActionResult<NavigationData>> GetNavigationData()
+        public async Task<ActionResult<NavigationData>> GetNavigationData()
         {
             // Get pages from Manager's page list (IDictionary<string, string> where key=name, value=location)
             var rawPages = Manager.GetPageList().Pages;
             var pages = rawPages
-                .Select(kvp => new Services.Page { Name = kvp.Key, Location = kvp.Value })
+                .Select(kvp => new Page { Name = kvp.Key, Location = kvp.Value })
                 .ToList();
 
             // Get all navigation interactions (Main, Admin, Social)
-            var interactions = (await _interactionRegistration.GetInteractions("Webfront::Nav"))
+            var interactions = (await interactionRegistration.GetInteractions("Webfront::Nav"))
                 .Select(i => new InteractionData
                 {
                     InteractionId = i.InteractionId,

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.QueryHelpers.Models;
+using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace WebfrontCore.Controllers.API
 {

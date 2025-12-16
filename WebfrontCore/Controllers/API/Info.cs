@@ -1,8 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;

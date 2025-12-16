@@ -1,8 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
@@ -74,12 +71,9 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpPost("{id}/execute")]
+        [Authorize(Policy = "Permissions.ConsolePage.Read")]
         public async Task<IActionResult> ExecuteCommandForServer(string id, [FromBody] CommandRequest commandRequest)
         {
-            if (!Authorized)
-            {
-                return Unauthorized();
-            }
 
             var foundServer = Manager.GetServers().FirstOrDefault(server => server.EndPoint == long.Parse(id));
 

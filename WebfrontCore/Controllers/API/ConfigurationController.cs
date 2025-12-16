@@ -1,34 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WebfrontCore.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 
 namespace WebfrontCore.Controllers.API
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
-    public class ConfigurationController : BaseController
+    public class ConfigurationController(IManager manager) : BaseController(manager)
     {
-        public ConfigurationController(IManager manager) : base(manager)
-        {
-        }
-
         [HttpGet("files")]
-        [Authorize]
         public async Task<ActionResult<IEnumerable<ConfigurationFileInfo>>> GetFiles()
         {
-            if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            if (Client.Level < Data.Models.Client.EFClient.Permission.Owner)
             {
-                return Unauthorized();
+                return Forbid();
             }
 
             try
@@ -41,7 +29,7 @@ namespace WebfrontCore.Controllers.API
                         FileName = fileName.Split(System.IO.Path.DirectorySeparatorChar).Last(),
                         FileContent = await System.IO.File.ReadAllTextAsync(fileName)
                     }));
-                
+
                 return Ok(files);
             }
             catch (Exception ex)
@@ -51,12 +39,11 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpPost("files/{fileName}")]
-        [Authorize]
         public async Task<IActionResult> SaveFile([FromRoute] string fileName, [FromBody] ConfigurationFileInfo content)
         {
-             if (Client.Level < SharedLibraryCore.Database.Models.EFClient.Permission.Owner)
+            if (Client.Level < Data.Models.Client.EFClient.Permission.Owner)
             {
-                return Unauthorized();
+                return Forbid();
             }
 
             if (!fileName.EndsWith(".json"))
@@ -67,12 +54,12 @@ namespace WebfrontCore.Controllers.API
             // content.FileContent is the body
             if (string.IsNullOrEmpty(content.FileContent))
             {
-                 // Check if raw body?
-                 // FromBody binding usually expects JSON. If we send { "FileContent": "..." } it works.
-                 return BadRequest("File content cannot be empty");
+                // Check if raw body?
+                // FromBody binding usually expects JSON. If we send { "FileContent": "..." } it works.
+                return BadRequest("File content cannot be empty");
             }
-            
-             // Verification it is valid json
+
+            // Verification it is valid json
             try
             {
                 System.Text.Json.JsonDocument.Parse(content.FileContent);

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace WebfrontCore.Controllers.API.Dtos
 {
     public class ServerReportsDto

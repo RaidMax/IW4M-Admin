@@ -3,11 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System.Threading.Tasks;
 using WebfrontCore.QueryHelpers.Models;
-using System.Collections.Generic;
-using System;
-using System.Linq;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -29,7 +25,7 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("audit")]
-        [Authorize]
+        [Authorize(Policy = "Permissions.AuditPage.Read")]
         public async Task<ActionResult<System.Collections.Generic.IList<SharedLibraryCore.Dtos.AuditInfo>>> GetAuditLog([FromQuery] PaginationRequest request)
         {
             var auditItems = await _auditInformationRepository.ListAuditInformation(request);
@@ -37,6 +33,7 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("bans")]
+        [Authorize(Policy = "Permissions.BanManagementPage.Read")]
         public async Task<ActionResult<SharedLibraryCore.Helpers.ResourceQueryHelperResult<BanInfo>>> GetBans([FromQuery] BanInfoRequest request)
         {
             var results = await _banInfoQueryHelper.QueryResource(request);

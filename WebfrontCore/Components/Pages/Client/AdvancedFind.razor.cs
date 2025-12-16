@@ -1,9 +1,11 @@
 ﻿using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.JSInterop;
 using WebfrontCore.QueryHelpers.Models;
 using WebfrontCore.Services;
+using WebfrontCore.Permissions;
 
 namespace WebfrontCore.Components.Pages.Client;
 
@@ -13,6 +15,9 @@ public partial class AdvancedFind
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
+    [Inject] public required Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthProvider { get; set; }
+    [Inject] public required Microsoft.AspNetCore.Authorization.IAuthorizationService AuthService { get; set; }
+
     private List<ClientResourceResponse> Results { get; set; } = new();
     private ClientResourceRequest Request { get; set; } = new();
     private int Offset { get; set; } = 0;
@@ -21,7 +26,8 @@ public partial class AdvancedFind
     private bool _isLoading = false;
     private ElementReference _loadMoreTrigger;
     private DotNetObjectReference<AdvancedFind> _dotNetRef;
-    private bool CanSeeIp => AppState.User?.Level >= EFClient.Permission.Trusted;
+    private bool CanSeeIp => _canSeeIp;
+    private bool _canSeeIp;
     private bool _observerSetup;
 
     protected override async Task OnInitializedAsync()
@@ -137,6 +143,24 @@ public partial class AdvancedFind
         Request.SortColumn = query["sortColumn"];
 
         Request.RequesterPermission = AppState.User?.Level ?? EFClient.Permission.User;
+
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var canReadIp = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")).Succeeded;
+        var canReadGuid = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")).Succeeded;
+
+        if (!canReadIp)
+        {
+            Request.ClientIp = null;
+            Request.IsExactClientIp = false;
+        }
+
+        if (!canReadGuid)
+        {
+            Request.ClientGuid = null;
+        }
+
+        _canSeeIp = canReadIp;
 
         await LoadData();
     }

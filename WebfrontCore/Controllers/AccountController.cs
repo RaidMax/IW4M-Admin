@@ -17,7 +17,7 @@ namespace WebfrontCore.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody] ViewModels.LoginRequest request)
+        public async Task<IActionResult> Login([FromForm] ViewModels.LoginRequest request)
         {
             if (request == null || request.ClientId == 0 || string.IsNullOrEmpty(request.Password))
             {

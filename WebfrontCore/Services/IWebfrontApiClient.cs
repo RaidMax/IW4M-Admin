@@ -26,8 +26,8 @@ namespace WebfrontCore.Services
         Task SaveConfigurationFileAsync(string fileName, string content);
         Task<Dictionary<Data.Models.Client.EFClient.Permission, IList<ClientInfo>>> GetPrivilegedClientsAsync();
         Task<FindClientResponse> SearchClientsAsync(FindClientRequest request);
-        Task<TopStatsResponse> GetTopPlayersAsync(int count, int offset, string serverId = null);
-        Task<Stats.Dtos.AdvancedStatsInfo> GetAdvancedStatsAsync(int clientId, string serverId = null);
+        Task<TopStatsResponse> GetTopPlayersAsync(int count, int offset, string? serverId = null);
+        Task<Stats.Dtos.AdvancedStatsInfo> GetAdvancedStatsAsync(int clientId, string? serverId = null);
         Task<IEnumerable<SharedLibraryCore.Alerts.Alert.AlertState>> GetAlertsAsync();
         Task DismissAlertAsync(Guid alertId);
         Task DismissAllAlertsAsync();

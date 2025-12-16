@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -22,6 +20,7 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpPost("execute")]
+        [Authorize(Policy = "Permissions.ConsolePage.Read")]
         public async Task<ActionResult<IEnumerable<CommandResponseInfo>>> ExecuteCommand([FromBody] ConsoleCommandRequest request)
         {
              if (Client.ClientId < 1)

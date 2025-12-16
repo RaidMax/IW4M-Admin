@@ -12,7 +12,7 @@ public partial class SideContextMenu
     [Inject] public required IZeroJsInterop JS { get; set; }
 
     [Parameter] public SideContextMenuItems Model { get; set; }
-    [CascadingParameter] public ActionModal ActionModal { get; set; }
+    public ActionModal ActionModal { get; set; }
 
     private async Task OnActionClick(SideContextMenuItem item, MouseEventArgs e)
     {

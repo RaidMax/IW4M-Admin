@@ -11,82 +11,56 @@
 }
 else
 {
-    <WebfrontCore.Components.Shared.ActionModal @ref="_actionModal"/>
+    <div class="page-wrapper with-navbar with-sidebar" data-sidebar-type="overlayed-sm-and-down">
+        <Microsoft.AspNetCore.Components.Forms.AntiforgeryToken />
+        <!-- toast notifications -->
+        <div class="sticky-alerts" style="z-index: 1001"></div>
 
-    <CascadingValue Value="_actionModal">
-        <div class="page-wrapper with-navbar with-sidebar" data-sidebar-type="overlayed-sm-and-down">
-            <!-- toast notifications -->
-            <div class="sticky-alerts" style="z-index: 1001"></div>
+        <!-- top menu bar -->
+        <nav class="navbar">
+            <button id="toggle-sidebar-btn" class="btn btn-action" type="button" onclick="halfmoon.toggleSidebar()">
+                <i class="oi oi-menu" aria-hidden="true"></i>
+            </button>
 
-            <!-- top menu bar -->
-            <nav class="navbar">
-                <button id="toggle-sidebar-btn" class="btn btn-action" type="button" onclick="halfmoon.toggleSidebar()">
-                    <i class="oi oi-menu" aria-hidden="true"></i>
-                </button>
+            <!-- branding -->
+            <a href="/" class="navbar-brand mr-20 mr-md-0">
+                @if (string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding))
+                {
+                    <div>IW4MAdmin</div>
+                }
+                else
+                {
+                    <div>@AppConfig.WebfrontCustomBranding</div>
+                }
+            </a>
 
-                <!-- branding -->
-                <a href="/" class="navbar-brand mr-20 mr-md-0">
-                    @if (string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding))
-                    {
-                        <div>IW4MAdmin</div>
-                    }
-                    else
-                    {
-                        <div>@AppConfig.WebfrontCustomBranding</div>
-                    }
-                </a>
-
-                <!-- client badges -->
-                <div class="d-none d-md-block">
-                    @if (_navData != null)
-                    {
-                        <div class="badge-group ml-20" role="group" aria-label="...">
-                            <span class="badge badge-primary">@(_navData.TotalClientCount)</span>
-                            <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE")</span>
-                        </div>
-
-                        <HasPermission Entity="PrivilegedClientsPage" RequiredPermission="Read">
-                            <div class="badge-group ml-10" role="group" aria-label="...">
-                                <span class="badge badge-success">@(_navData.TotalAdminCount)</span>
-                                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")</span>
-                            </div>
-                        </HasPermission>
-
-                        <HasPermission Entity="AdminMenu" RequiredPermission="Read">
-                            <div class="badge-group ml-10" role="group">
-                                <span class="badge badge-danger">@(_navData.TotalReportCount)</span>
-                                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
-                            </div>
-                        </HasPermission>
-                    }
+            <!-- client badges -->
+            <WebfrontCore.Components.Shared.ClientBadges @rendermode="InteractiveServer" />
+            
+            <div class="d-flex ml-auto">
+                <div class="align-self-center">
+                    <WebfrontCore.Components.Shared.Partials.Notifications/>
                 </div>
-
-                <SearchResourceForm/>
-
-                <div class="d-flex ml-auto">
-                    <div class="align-self-center">
-                        <WebfrontCore.Components.Shared.Partials.Notifications/>
-                    </div>
-                    <div class="btn btn-action mr-10 ml-10" @onclick="@ToggleDarkMode" data-toggle="tooltip" data-title="Toggle Dark Mode"
-                         data-placement="bottom">
-                        <i class="oi oi-moon"></i>
-                    </div>
+                <div class="btn btn-action mr-10 ml-10" @onclick="@ToggleDarkMode" data-toggle="tooltip" data-title="Toggle Dark Mode"
+                     data-placement="bottom">
+                    <i class="oi oi-moon"></i>
                 </div>
-            </nav>
-
-            <NavMenu/>
-
-            <div id="target_id">
-                <!-- Target ID content -->
+                <SearchResourceForm @rendermode="InteractiveServer"/>
             </div>
+        </nav>
 
-            <div class="container-fluid content-wrapper">
-                <div id="mainLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display: none">
-                    <div class="progress-bar-value"></div>
-                </div>
+        <NavMenu/>
 
-                @Body
-            </div>
+        <div id="target_id">
+            <!-- Target ID content -->
         </div>
-    </CascadingValue>
+
+        <div class="container-fluid content-wrapper">
+            <div id="mainLoadingBar" class="progress-bar position-absolute flex-fill position-fixed z-30" style="display: none">
+                <div class="progress-bar-value"></div>
+            </div>
+
+            @Body
+        </div>
+    </div>
 }

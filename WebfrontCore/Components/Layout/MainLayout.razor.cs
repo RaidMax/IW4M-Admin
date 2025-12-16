@@ -13,12 +13,8 @@ public partial class MainLayout
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
-    private Shared.ActionModal _actionModal;
     private bool _isInitialized = false;
     private bool _halfmoonInitialized = false;
-    private NavigationData _navData;
-    private PeriodicTimer _badgeRefreshTimer;
-    private CancellationTokenSource _cts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,18 +61,13 @@ public partial class MainLayout
         try
         {
             // ... existing initialization logic ...
-            _navData = await Api.GetNavigationDataAsync();
+            // ... existing initialization logic ...
         }
         catch
         {
         }
 
         _isInitialized = true;
-
-        // Start periodic badge refresh
-        _cts = new CancellationTokenSource();
-        _badgeRefreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        _ = RefreshBadgesAsync();
         AppState.OnChange += StateHasChanged;
     }
 
@@ -90,34 +81,10 @@ public partial class MainLayout
         }
     }
 
-    private async Task RefreshBadgesAsync()
-    {
-        try
-        {
-            while (await _badgeRefreshTimer.WaitForNextTickAsync(_cts.Token))
-            {
-                try
-                {
-                    _navData = await Api.GetNavigationDataAsync();
-                    await InvokeAsync(StateHasChanged);
-                }
-                catch
-                {
-                    // Ignore refresh errors
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when component is disposed
-        }
-    }
+
 
     public void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _badgeRefreshTimer?.Dispose();
         AppState.OnChange -= StateHasChanged;
     }
 

@@ -22,6 +22,8 @@ using WebfrontCore.Controllers.API.Validation;
 using WebfrontCore.Middleware;
 using WebfrontCore.QueryHelpers;
 using WebfrontCore.QueryHelpers.Models;
+using WebfrontCore.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace WebfrontCore;
 
@@ -162,6 +164,10 @@ public class Program
             client.BaseAddress = new Uri(webfrontUrl);
         }).AddHttpMessageHandler<Services.CookieForwardingHandler>();
 
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+        services.AddScoped<AuthenticationStateProvider, PersistingAuthenticationStateProvider>();
+
         services.AddScoped<Services.IActionService, Services.ActionService>();
         return;
 
@@ -208,6 +214,11 @@ public class Program
         app.UseStatusCodePagesWithReExecute("/NotFound", createScopeForStatusCodePages: true);
         app.UseAntiforgery();
         app.UseRateLimiter();
+
+        app.MapControllerRoute(
+            name: "default",
+            pattern: "{controller=Home}/{action=Index}/{id?}")
+            .RequireRateLimiting("concurrencyPolicy");
 
         app.MapControllers()
             .RequireRateLimiting("concurrencyPolicy");

@@ -184,6 +184,8 @@ namespace WebfrontCore.Services
                 queryParams["gameName"] = request.GameName.Value.ToString();
             if (request.ClientConnected.HasValue)
                 queryParams["clientConnected"] = request.ClientConnected.Value.ToString("o");
+            if (!string.IsNullOrEmpty(request.SortColumn))
+                queryParams["sortColumn"] = request.SortColumn;
             queryParams["direction"] = ((int)request.Direction).ToString();
 
             var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={System.Net.WebUtility.UrlEncode(kvp.Value)}"));

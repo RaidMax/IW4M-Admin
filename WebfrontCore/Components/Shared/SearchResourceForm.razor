@@ -1,9 +1,8 @@
-@rendermode InteractiveServer
-
+<CascadingAuthenticationState>
 <div class="ml-auto d-inline-flex" style="max-width: 400px;">
     <div class="input-group">
         <!-- Mobile Dropdown -->
-        <HasPermission Entity="AdvancedSearch" RequiredPermission="Read">
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
             <div class="input-group-prepend dropdown with-arrow d-block d-md-none">
                 <button class="btn" type="button" data-toggle="dropdown">
                     <i class="oi oi-chevron-bottom"></i>
@@ -12,7 +11,7 @@
                     <SearchResourceFilter />
                 </div>
             </div>
-        </HasPermission>
+        </AuthorizeView>
 
         <!-- Basic Search -->
         <form @onsubmit="@BasicSubmit" class="flex-fill">
@@ -21,7 +20,7 @@
         </form>
 
         <!-- Desktop Dropdown -->
-        <HasPermission Entity="AdvancedSearch" RequiredPermission="Read">
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
             <div class="input-group-append dropdown dropleft with-arrow d-md-block d-none">
                 <button class="btn" type="button" data-toggle="dropdown">
                     <i class="oi oi-chevron-bottom"></i>
@@ -30,7 +29,7 @@
                      <SearchResourceFilter />
                 </div>
             </div>
-        </HasPermission>
+        </AuthorizeView>
 
         <div class="input-group-append">
             <button class="btn" @onclick="BasicSubmit" type="button">
@@ -41,3 +40,4 @@
     </div>
     <br/>
 </div>
+</CascadingAuthenticationState>

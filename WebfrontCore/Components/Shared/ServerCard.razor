@@ -2,6 +2,7 @@
 @implements IDisposable
 @rendermode InteractiveServer
 
+<CascadingAuthenticationState>
 <div class="card mt-20 mb-20 ml-0 mr-0 p-0">
     <div class="p-5 pl-10 pr-10 bg-primary rounded-top d-flex flex-column flex-lg-row flex-wrap justify-content-between text-light"
          id="server_header_@Model.ID">
@@ -17,13 +18,13 @@
                    title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
                     <i class="oi oi-play-circle ml-5 mr-5"></i>
                 </a>
-                <HasPermission Entity="AdminMenu" RequiredPermission="Write">
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
                     <!-- send message button -->
                     <a href="#" @onclick:preventDefault class="profile-action text-light align-self-center" data-action="chat"
                        data-action-id="@Model.ID">
                         <i class="oi oi-chat ml-5 mr-5"></i>
                     </a>
-                </HasPermission>
+                </AuthorizeView>
                 <!-- scoreboard button -->
                 <a href="Server/@Model.Endpoint/Scoreboard" title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))"
                    class="text-light align-self-center">
@@ -80,3 +81,4 @@
         </div>
     </div>
 </div>
+</CascadingAuthenticationState>

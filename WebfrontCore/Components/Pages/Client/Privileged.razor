@@ -3,7 +3,10 @@
 <div class="content mt-0">
     <h4 class="content-title mt-20">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h4>
 
-    @if (PrivilegedClients != null)
+@using WebfrontCore.Permissions
+@attribute [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
+
+@if (PrivilegedClients != null)
     {
         @foreach (var key in PrivilegedClients.Keys)
         {
@@ -19,34 +22,50 @@
                 <tbody>
                 @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
                 {
-                    if (client.IsMasked && !Config.HasPermission(AppState.User.Level, WebfrontCore.Permissions.WebfrontEntity.ClientLevel, WebfrontCore.Permissions.WebfrontPermission.Read))
+                    @if (client.IsMasked)
                     {
-                        continue;
-                    }
-
-                    <tr class="bg-dark-dm bg-light-lm">
-                        <td colspan="50%">
-                            @if (client.IsMasked)
-                            {
-                                <span data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                             <tr class="bg-dark-dm bg-light-lm">
+                                <td colspan="50%">
+                                    <span data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
                                         <span class="oi oi-shield mr-5 font-size-12"></span>
                                     </span>
-                            }
 
-                            <a href="/Client/Profile/@client.ClientId" class="text-force-break">
-                                <ColorCode Value="@client.Name"/>
-                            </a>
-                        </td>
-                        <td colspan="20%" class="d-none d-md-table-cell">
-                            <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
-                        </td>
-                        <td colspan="20%" class="d-table-cell d-md-none">
-                            <div class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
-                        </td>
-                        <td colspan="30%" class="text-right">
-                            @client.LastConnection.Humanize()
-                        </td>
-                    </tr>
+                                    <a href="/Client/Profile/@client.ClientId" class="text-force-break">
+                                        <ColorCode Value="@client.Name"/>
+                                    </a>
+                                </td>
+                                <td colspan="20%" class="d-none d-md-table-cell">
+                                    <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
+                                </td>
+                                <td colspan="20%" class="d-table-cell d-md-none">
+                                    <div class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
+                                </td>
+                                <td colspan="30%" class="text-right">
+                                    @client.LastConnection.Humanize()
+                                </td>
+                            </tr>
+                        </AuthorizeView>
+                    }
+                    else
+                    {
+                        <tr class="bg-dark-dm bg-light-lm">
+                            <td colspan="50%">
+                                <a href="/Client/Profile/@client.ClientId" class="text-force-break">
+                                    <ColorCode Value="@client.Name"/>
+                                </a>
+                            </td>
+                            <td colspan="20%" class="d-none d-md-table-cell">
+                                <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
+                            </td>
+                            <td colspan="20%" class="d-table-cell d-md-none">
+                                <div class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
+                            </td>
+                            <td colspan="30%" class="text-right">
+                                @client.LastConnection.Humanize()
+                            </td>
+                        </tr>
+                    }
                 }
                 </tbody>
             </table>

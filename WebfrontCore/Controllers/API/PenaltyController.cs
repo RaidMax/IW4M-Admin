@@ -2,11 +2,8 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Data.Models;
 using Microsoft.AspNetCore.Authorization;
-using System.Linq;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -60,12 +57,11 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpPost("unban/{targetId}")]
+        [Authorize]
         public async Task<IActionResult> UnbanAsync(int targetId, [FromBody] UnbanRequest request)
         {
             var client = await Manager.GetClientService().Get(targetId);
             if (client == null) return NotFound();
-
-            if (!Authorized) return Unauthorized();
 
             var server = Manager.GetServers().First();
             Client.CurrentServer = server;

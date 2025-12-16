@@ -1,5 +1,6 @@
 @page "/Admin/BanManagement"
 @implements IAsyncDisposable
+@attribute [Authorize(Policy = "Permissions.BanManagementPage.Read")]
 @rendermode InteractiveServer
 
 <div class="content mt-0">
@@ -103,16 +104,18 @@
                                     </a>
                                     <div title="@AppState.Loc($"GAME_{ban.Game}")">
                                         <div
-                                            class="badge align-self-center">@SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
+                                            class="badge align-self-center">
+                                            @Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))
+                                        </div>
                                     </div>
                                 </div>
 
-                                <HasPermission Entity="ClientGuid" RequiredPermission="Read">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@ban.NetworkId.ToString("X")</div>
-                                </HasPermission>
-                                <HasPermission Entity="ClientIPAddress" RequiredPermission="Read">
+                                </AuthorizeView>
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@ban.IPAddress</div>
-                                </HasPermission>
+                                </AuthorizeView>
                                 <br/>
                                 @if (ban.AttachedPenalty is not null)
                                 {
@@ -149,15 +152,15 @@
                                             </a>
                                         </div>
                                     </div>
-                                    <div class="badge">@SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
+                                    <div class="badge">@Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))</div>
                                 </div>
                                 <br/>
-                                <HasPermission Entity="ClientGuid" RequiredPermission="Read">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@associatedEntity.OffenderInfo.NetworkId?.ToString("X")</div>
-                                </HasPermission>
-                                <HasPermission Entity="ClientIPAddress" RequiredPermission="Read">
+                                </AuthorizeView>
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                     <div class="text-muted">@associatedEntity.OffenderInfo.IPAddress</div>
-                                </HasPermission>
+                                </AuthorizeView>
                                 <br/>
                                 <div class="text-muted font-weight-light">
                                     <ColorCode Value="@associatedEntity.Offense"/>

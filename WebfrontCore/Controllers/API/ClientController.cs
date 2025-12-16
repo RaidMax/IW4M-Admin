@@ -1,19 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Threading;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
@@ -23,7 +17,6 @@ using WebfrontCore.Permissions;
 using WebfrontCore.QueryHelpers.Models;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
-using Microsoft.Extensions.Options;
 using SharedLibraryCore.QueryHelper;
 
 namespace WebfrontCore.Controllers.API
@@ -95,6 +88,16 @@ namespace WebfrontCore.Controllers.API
 
             try
             {
+                if (!PermissionsSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read))
+                {
+                    request.ClientIp = null;
+                }
+
+                if (!PermissionsSet.HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read))
+                {
+                    request.ClientGuid = null;
+                }
+
                 request.RequesterPermission = Client.Level;
                 var results = await clientResourceHelper.QueryResource(request);
 
@@ -109,6 +112,7 @@ namespace WebfrontCore.Controllers.API
 
         [HttpGet("privileged")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
         public async Task<IActionResult> GetPrivilegedAsync()
         {
             if (Manager.GetApplicationSettings().Configuration().EnablePrivilegedUserPrivacy && !Authorized)
@@ -182,7 +186,7 @@ namespace WebfrontCore.Controllers.API
         [HttpGet("{clientId:int}/profile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SharedLibraryCore.Dtos.PlayerInfo>> GetProfileAsync([FromRoute] int clientId, [FromQuery] MetaType? metaFilterType)
+        public async Task<ActionResult<PlayerInfo>> GetProfileAsync([FromRoute] int clientId, [FromQuery] MetaType? metaFilterType)
         {
              var client = await Manager.GetClientService().Get(clientId);
 
@@ -221,23 +225,23 @@ namespace WebfrontCore.Controllers.API
             var hasActiveBan = activePenalties.Any(penalty => penalty.Type == EFPenalty.PenaltyType.Ban);
             if (hasActiveBan)
             {
-                client.Level = Data.Models.Client.EFClient.Permission.Banned;
+                client.Level = EFClient.Permission.Banned;
             }
 
             var displayLevelInt = (int)client.Level;
             var displayLevel = client.Level.ToLocalizedLevelName();
 
-            var shouldHideBanLevel = !hasActiveBan && client.Level == Data.Models.Client.EFClient.Permission.Banned;
+            var shouldHideBanLevel = !hasActiveBan && client.Level == EFClient.Permission.Banned;
             if (!Authorized && client.Level.ShouldHideLevel() || shouldHideBanLevel)
             {
-                displayLevelInt = (int)Data.Models.Client.EFClient.Permission.User;
-                displayLevel = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+                displayLevelInt = (int)EFClient.Permission.User;
+                displayLevel = EFClient.Permission.User.ToLocalizedLevelName();
             }
 
             displayLevel = string.IsNullOrEmpty(client.Tag) ? displayLevel : $"{displayLevel} ({client.Tag})";
             var ingameClient = Manager.GetActiveClients().FirstOrDefault(c => c.ClientId == client.ClientId);
 
-            var clientDto = new SharedLibraryCore.Dtos.PlayerInfo
+            var clientDto = new PlayerInfo
             {
                 Name = client.Name,
                 Game = client.GameName,
@@ -248,7 +252,7 @@ namespace WebfrontCore.Controllers.API
                     ? client.IPAddressString
                     : null,
                 NetworkId = client.NetworkId,
-                Meta = new List<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>(),
+                Meta = new List<InformationResponse>(),
                 Aliases = client.AliasLink.Children
                     .Select(alias => (alias.Name, alias.DateAdded))
                     .GroupBy(alias => alias.Name.StripColors())
@@ -297,7 +301,7 @@ namespace WebfrontCore.Controllers.API
                 }).ToList(),
             };
 
-            var meta = await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>(new ClientPaginationRequest
+            var meta = await metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest
             {
                 ClientId = client.ClientId,
                 Before = DateTime.UtcNow
@@ -305,7 +309,7 @@ namespace WebfrontCore.Controllers.API
 
             if (gravatar != null)
             {
-                clientDto.Meta.Add(new SharedLibraryCore.Dtos.Meta.Responses.InformationResponse()
+                clientDto.Meta.Add(new InformationResponse()
                 {
                     Key = "GravatarEmail",
                     Type = MetaType.Other,
@@ -326,7 +330,7 @@ namespace WebfrontCore.Controllers.API
 
         [HttpGet("{clientId:int}/meta")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.BaseMetaResponse>>> GetMetaAsync([FromRoute] int clientId, [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType, CancellationToken token)
+        public async Task<ActionResult<IEnumerable<BaseMetaResponse>>> GetMetaAsync([FromRoute] int clientId, [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType, CancellationToken token)
         {
             var request = new ClientPaginationRequest
             {
@@ -337,7 +341,7 @@ namespace WebfrontCore.Controllers.API
             };
 
             var config = Manager.GetApplicationSettings().Configuration();
-            var level = Authorized ? Data.Models.Client.EFClient.Permission.Owner : Data.Models.Client.EFClient.Permission.User;
+            var level = Authorized ? EFClient.Permission.Owner : EFClient.Permission.User;
             // TODO: Use actual user level if authenticated, but for now Authorized check is simple.
             // If we want real level, we need User UserClaimsPrincipal (if available in API)
             // But Authorized property in BaseController uses User.
@@ -345,7 +349,7 @@ namespace WebfrontCore.Controllers.API
             if (User.Identity.IsAuthenticated)
             {
                  var levelClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                 if (Enum.TryParse(levelClaim, out Data.Models.Client.EFClient.Permission result))
+                 if (Enum.TryParse(levelClaim, out EFClient.Permission result))
                  {
                      level = result;
                  }
@@ -366,25 +370,25 @@ namespace WebfrontCore.Controllers.API
             {
                  meta = metaType switch
                 {
-                    MetaType.Information => await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.InformationResponse>(request, metaType.Value, token),
+                    MetaType.Information => await metaService.GetRuntimeMeta<InformationResponse>(request, metaType.Value, token),
                     MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate, WebfrontPermission.Read)
-                        ? await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.UpdatedAliasResponse>(request, metaType.Value, token)
+                        ? await metaService.GetRuntimeMeta<UpdatedAliasResponse>(request, metaType.Value, token)
                         : new List<IClientMeta>(),
-                    MetaType.ChatMessage => await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>(request, metaType.Value, token),
-                    MetaType.Penalized => await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.AdministeredPenaltyResponse>(request, metaType.Value, token),
-                    MetaType.ReceivedPenalty => await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.ReceivedPenaltyResponse>(request, metaType.Value, token),
-                    MetaType.ConnectionHistory => await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.ConnectionHistoryResponse>(request, metaType.Value, token),
-                    MetaType.PermissionLevel => await metaService.GetRuntimeMeta<SharedLibraryCore.Dtos.Meta.Responses.PermissionLevelChangedResponse>(request, metaType.Value, token),
+                    MetaType.ChatMessage => await metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value, token),
+                    MetaType.Penalized => await metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request, metaType.Value, token),
+                    MetaType.ReceivedPenalty => await metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request, metaType.Value, token),
+                    MetaType.ConnectionHistory => await metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request, metaType.Value, token),
+                    MetaType.PermissionLevel => await metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(request, metaType.Value, token),
                     _ => await metaService.GetRuntimeMeta(request, token) // Fallback
                 };
             }
 
-            if (level < Data.Models.Client.EFClient.Permission.Trusted)
+            if (level < EFClient.Permission.Trusted)
             {
                 meta = meta?.Where(_meta => !_meta.IsSensitive);
             }
 
-            return Ok(meta?.Cast<SharedLibraryCore.Dtos.Meta.Responses.BaseMetaResponse>().ToList());
+            return Ok(meta?.Cast<BaseMetaResponse>().ToList());
         }
 
         [HttpPost("{clientId:int}/login")]
@@ -505,14 +509,14 @@ namespace WebfrontCore.Controllers.API
             public string Password { get; set; }
         }
         
-        private static SharedLibraryCore.Dtos.GeoLocationInfo MapGeoLocation(SharedLibraryCore.Interfaces.IGeoLocationResult geoLocation)
+        private static GeoLocationInfo MapGeoLocation(IGeoLocationResult geoLocation)
         {
             if (geoLocation == null)
             {
                 return null;
             }
             
-            return new SharedLibraryCore.Dtos.GeoLocationInfo
+            return new GeoLocationInfo
             {
                 Country = geoLocation.Country,
                 CountryCode = geoLocation.CountryCode,

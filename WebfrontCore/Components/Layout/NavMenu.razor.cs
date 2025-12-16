@@ -9,8 +9,8 @@ public partial class NavMenu
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JS { get; set; }
-    [CascadingParameter] public ActionModal ActionModal { get; set; }
-    private NavigationData NavData;
+    public ActionModal ActionModal { get; set; }
+    private NavigationData? NavData;
 
     protected override async Task OnInitializedAsync()
     {

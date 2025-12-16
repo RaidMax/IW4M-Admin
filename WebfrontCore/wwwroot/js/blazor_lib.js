@@ -153,12 +153,28 @@ window.processLogin = function (url) {
 }
 
 window.processLoginPost = function (url, body) {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const formData = new URLSearchParams();
+
+    // Convert object to FormData
+    for (const key in body) {
+        if (body.hasOwnProperty(key)) {
+            formData.append(key, body[key]);
+        }
+    }
+
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    };
+
+    if (token) {
+        headers['RequestVerificationToken'] = token;
+    }
+
     return fetch(url, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
+        headers: headers,
+        body: formData.toString()
     })
         .then(response => {
             if (response.ok) {

@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
 using WebfrontCore.Services;
 
 namespace WebfrontCore.Controllers.API

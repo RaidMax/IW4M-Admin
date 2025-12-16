@@ -32,18 +32,18 @@
         @foreach (var clientIndex in GroupedClients)
         {
             <div class="w-half">
-                @foreach (var client in clientIndex.group)
+                @foreach (var client in clientIndex.Group)
                 {
-                    var levelColorClass = (AppState.User == null || client.client.LevelInt == 0) ? "text-light-dm text-dark-lm" : $"level-color-{client.client.LevelInt}";
-                    <div class="d-flex @(clientIndex.index == 1 ? "justify-content-start flex-row-reverse" : "")">
+                    var levelColorClass = (AppState.User == null || client.Client.LevelInt == 0) ? "text-light-dm text-dark-lm" : $"level-color-{client.Client.LevelInt}";
+                    <div class="d-flex @(clientIndex.Index == 1 ? "justify-content-start flex-row-reverse" : "")">
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
-                            <a href="#" class="profile-action" data-action="kick" data-action-id="@client.client.ClientId"
+                            <a href="#" class="profile-action" data-action="kick" data-action-id="@client.Client.ClientId"
                                aria-hidden="true" @onclick:preventDefault>
                                 <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
                             </a>
                         </AuthorizeView>
-                        <a href="Client/Profile/@client.client.ClientId" class="@levelColorClass no-decoration text-truncate ml-5 mr-5">
-                            <ColorCode Value="@client.client.Name"/>
+                        <a href="Client/Profile/@client.Client.ClientId" class="@levelColorClass no-decoration text-truncate ml-5 mr-5">
+                            <ColorCode Value="@client.Client.Name"/>
                         </a>
                     </div>
                 }

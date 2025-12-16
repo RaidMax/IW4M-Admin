@@ -9,19 +9,33 @@ public partial class ClientActivity
     [Inject] public required AppState AppState { get; set; }
     [Parameter] public ServerInfo? Model { get; set; }
     
-    // TODO: dynamic? Yuck. WHAT IS THAT!?
-    private List<dynamic> GroupedClients => GetGroupedClients();
+    private List<ClientGroup> GroupedClients => GetGroupedClients();
 
-    private List<dynamic> GetGroupedClients()
+    public class ClientGroup
+    {
+        public int Index { get; set; }
+        public List<ClientItem> Group { get; set; } = [];
+    }
+
+    public class ClientItem
+    {
+        public int Index { get; set; }
+        public PlayerInfo Client { get; set; }
+    }
+
+    private List<ClientGroup> GetGroupedClients()
     {
         if (Model == null) return [];
         var half = Model.ClientCount == 0 || Model.Players.Count == 0 ? 0 : (int)Math.Ceiling(Model.ClientCount / 2.0);
-        return Model.Players.Select((client, i) => new { index = i, client })
-            .OrderBy(c => c.client.Name)
-            .GroupBy(c => c.index >= half).Select((group, index) => (dynamic)new
+        
+        return Model.Players
+            .Select((client, i) => new ClientItem { Index = i, Client = client })
+            .OrderBy(c => c.Client.Name)
+            .GroupBy(c => c.Index >= half)
+            .Select((group, index) => new ClientGroup
             {
-                group,
-                index
+                Index = index,
+                Group = group.ToList()
             }).ToList();
     }
 

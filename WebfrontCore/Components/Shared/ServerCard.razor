@@ -20,9 +20,7 @@
                 </a>
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
                     <!-- send message button -->
-                    <a href="#" @onclick:preventDefault class="profile-action text-light align-self-center"
-                       data-action="chat"
-                       data-action-id="@Model.Id">
+                    <a href="#" @onclick:preventDefault @onclick="() => OnChat.InvokeAsync(Model.Endpoint)" class="profile-action text-light align-self-center">
                         <i class="oi oi-chat ml-5 mr-5"></i>
                     </a>
                 </AuthorizeView>

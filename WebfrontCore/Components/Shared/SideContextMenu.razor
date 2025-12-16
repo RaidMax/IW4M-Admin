@@ -50,34 +50,3 @@
         </div>
     </div>
 </div>
-
-<div class="modal" id="contextMenuModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-content">
-                <div class="content-title">@Model.MenuTitle</div>
-                <hr/>
-                @foreach (var item in Model.Items)
-                {
-                    <div class="mt-15 mb-15">
-                        <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" class="@(item.IsLink ? "" : "blazor-action")"
-                           @onclick='(e) => OnActionClick(item, e)'
-                           @onclick:preventDefault="@(!item.IsLink)">
-                            <div class="btn btn-block btn-lg @(item.IsActive ? "btn-primary" : "") text-truncate" data-title="@item.Tooltip"
-                                 data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
-                                <span>@item.Title</span>
-                            </div>
-                        </a>
-                    </div>
-                }
-                <hr/>
-                <button class="btn btn-lg btn-danger btn-block mt-15" data-dismiss="modal" type="button"
-                        @onclick="@(() => JS.ToggleModal("contextMenuModal"))">
-                    @(AppState.Loc("WEBFRONT_CONTEXT_MENU_BUTTON_CLOSE"))
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-

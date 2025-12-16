@@ -493,6 +493,7 @@ namespace WebfrontCore.Controllers
             return View("_ActionForm", info);
         }
 
+        [Authorize]
         public async Task<IActionResult> ChatAsync(long id, string message)
         {
             var server = Manager.GetServers().First(server => server.EndPoint == id);

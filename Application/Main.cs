@@ -66,7 +66,8 @@ namespace IW4MAdmin.Application
         /// entrypoint of the application
         /// </summary>
         /// <returns></returns>
-        public static async Task Main(bool noConfirm = false, int? maxConcurrentRequests = 25, int? requestQueueLimit = 25)
+        public static async Task Main(bool noConfirm = false, int? maxConcurrentRequests = 25,
+            int? requestQueueLimit = 25)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
             AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
@@ -76,7 +77,8 @@ namespace IW4MAdmin.Application
                 var overrides = new[] { nameof(SharedLibraryCore), nameof(Stats) };
                 if (!overrides.Contains(libraryName))
                 {
-                    return AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(asm => asm.FullName == eventArgs.Name);
+                    return AppDomain.CurrentDomain.GetAssemblies()
+                        .FirstOrDefault(asm => asm.FullName == eventArgs.Name);
                 }
 
                 // added to be a bit more permissive with plugin references
@@ -89,7 +91,8 @@ namespace IW4MAdmin.Application
                 AppContext.SetSwitch("NoConfirmPrompt", true);
             }
 
-            Environment.SetEnvironmentVariable("MaxConcurrentRequests", (maxConcurrentRequests * Environment.ProcessorCount).ToString());
+            Environment.SetEnvironmentVariable("MaxConcurrentRequests",
+                (maxConcurrentRequests * Environment.ProcessorCount).ToString());
             Environment.SetEnvironmentVariable("RequestQueueLimit", requestQueueLimit.ToString());
 
             Console.OutputEncoding = Encoding.UTF8;
@@ -103,6 +106,17 @@ namespace IW4MAdmin.Application
             Console.WriteLine(" by RaidMax ");
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("!!!! IMPORTANT !!!!");
+            Console.WriteLine("The next update of IW4MAdmin will require .NET 10.");
+            Console.WriteLine("This is a breaking change!");
+            Console.WriteLine(
+                "Please update the ASP.NET Core Runtime: https://dotnet.microsoft.com/en-us/download/dotnet/10.0");
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!");
+
+
+            Console.ForegroundColor = ConsoleColor.Gray;
 
             await LaunchAsync();
         }
@@ -149,7 +163,8 @@ namespace IW4MAdmin.Application
         /// </summary>
         private static async void OnCancelKey(object sender, ConsoleCancelEventArgs e)
         {
-            Utilities.DefaultLogger.LogDebug("SIGINT received (via Console.CancelKeyPress), performing asynchronous shutdown");
+            Utilities.DefaultLogger.LogDebug(
+                "SIGINT received (via Console.CancelKeyPress), performing asynchronous shutdown");
             // Prevent the OS from terminating the process, allowing our cleanup to run.
             e.Cancel = true;
             await PerformShutdownAsync();
@@ -342,7 +357,8 @@ namespace IW4MAdmin.Application
                     }
 
                     var readLineTask = Task.Run(() => Console.In.ReadLineAsync());
-                    var completedTask = await Task.WhenAny(readLineTask, Task.Delay(Timeout.Infinite, _serverManager.CancellationToken));
+                    var completedTask = await Task.WhenAny(readLineTask,
+                        Task.Delay(Timeout.Infinite, _serverManager.CancellationToken));
                     if (completedTask != readLineTask)
                     {
                         return;
@@ -552,10 +568,12 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, UpdatedAliasResponse>,
                     UpdatedAliasResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>, ConnectionsResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, ConnectionHistoryResponse>,
+                    ConnectionsResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientPaginationRequest, PermissionLevelChangedResponse>,
                     PermissionLevelChangedResourceQueryHelper>()
-                .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>, ClientResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>,
+                    ClientResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
@@ -572,7 +590,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
-                .AddSingleton<IGeoLocationService>(new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
+                .AddSingleton<IGeoLocationService>(
+                    new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
                 .AddSingleton<IAlertManager, AlertManager>()
 #pragma warning disable CS0618
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()

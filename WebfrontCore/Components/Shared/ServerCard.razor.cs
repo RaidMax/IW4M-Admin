@@ -11,6 +11,7 @@ public partial class ServerCard
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Parameter] public ServerInfo Model { get; set; }
+    [Parameter] public EventCallback<string> OnChat { get; set; }
     
     private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _cts = new();

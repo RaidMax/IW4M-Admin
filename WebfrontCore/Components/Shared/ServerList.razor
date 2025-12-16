@@ -1,11 +1,12 @@
 @rendermode InteractiveServer
 @inject IWebfrontApiClient Api
+@inject IActionService ActionService
 
 @if (_servers != null)
 {
     foreach (var serverInfo in _servers)
     {
-        <ServerCard Model="serverInfo"/>
+        <ServerCard Model="serverInfo" OnChat="OpenChat"/>
     }
 }
 else
@@ -26,5 +27,10 @@ else
         {
             Console.WriteLine($"[ServerList] ERROR in OnInitializedAsync: {ex}");
         }
+    }
+
+    private void OpenChat(string serverId)
+    {
+        ActionService.OpenAction("Chat", serverId: serverId, targetId: null, meta: null);
     }
 }

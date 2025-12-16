@@ -25,7 +25,7 @@ public partial class ServerCard
                 players = AppState.Loc("WEBFRONT_SCRIPT_SERVER_PLAYERS"),
                 unreachable = AppState.Loc("WEBFRONT_SCRIPT_SERVER_UNREACHABLE")
             };
-            await JS.InvokeVoidAsync("initServerChart", $"server_history_canvas_{Model.ID}",
+            await JS.InvokeVoidAsync("initServerChart", $"server_history_canvas_{Model.Id}",
                 Model.ClientHistory.ClientCounts, Model.MaxClients, strings);
             _chartInitialized = true;
         }
@@ -60,7 +60,7 @@ public partial class ServerCard
     {
         try
         {
-            var updated = await Api.GetServerAsync(Model.ID);
+            var updated = await Api.GetServerAsync(Model.Id);
             if (updated != null)
             {
                 Model = updated;

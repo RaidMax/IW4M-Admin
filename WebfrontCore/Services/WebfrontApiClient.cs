@@ -19,7 +19,7 @@ namespace WebfrontCore.Services
             return response ?? [];
         }
 
-        public async Task<ServerInfo> GetServerAsync(long id)
+        public async Task<ServerInfo> GetServerAsync(string id)
         {
             return await httpClient.GetFromJsonAsync<ServerInfo>($"/api/status/servers/{id}");
         }
@@ -43,7 +43,7 @@ namespace WebfrontCore.Services
             httpClient.GetFromJsonAsync<PlayerInfo>($"/api/client/{clientId}/profile?metaFilterType={metaFilterType}");
 
 
-        public Task<ScoreboardInfo> GetScoreboardAsync(long serverId) =>
+        public Task<ScoreboardInfo> GetScoreboardAsync(string serverId) =>
             httpClient.GetFromJsonAsync<ScoreboardInfo>($"/api/status/server/{serverId}/scoreboard");
 
         public Task<SharedLibraryCore.Helpers.ResourceQueryHelperResult<QueryHelpers.Models.BanInfo>> GetBansAsync(
@@ -68,7 +68,7 @@ namespace WebfrontCore.Services
                 $"/api/admin/audit?offset={request.Offset}&count={request.Count}");
 
         public async Task<List<CommandResponseInfo>> ExecuteConsoleCommandAsync(
-            long serverId, string command)
+            string serverId, string command)
         {
             var response = await httpClient.PostAsJsonAsync("/api/console/execute", new { ServerId = serverId, Command = command });
             // Even 400 returns content we want to display

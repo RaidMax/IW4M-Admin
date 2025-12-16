@@ -7,17 +7,17 @@ namespace WebfrontCore.Services
     public interface IWebfrontApiClient
     {
         Task<List<ServerInfo>> GetServersAsync(Reference.Game? game = null);
-        Task<ServerInfo> GetServerAsync(long id);
+        Task<ServerInfo> GetServerAsync(string id);
         Task<IW4MAdminInfo> GetStatusAsync(Reference.Game? game = null);
         Task<NavigationData> GetNavigationDataAsync();
         Task<PlayerInfo> GetClientProfileAsync(int clientId, SharedLibraryCore.Interfaces.MetaType? metaFilterType = null);
-        Task<ViewModels.ScoreboardInfo> GetScoreboardAsync(long serverId);
+        Task<ViewModels.ScoreboardInfo> GetScoreboardAsync(string serverId);
 
         Task<SharedLibraryCore.Helpers.ResourceQueryHelperResult<QueryHelpers.Models.BanInfo>> GetBansAsync(
             QueryHelpers.Models.BanInfoRequest request);
 
         Task<IList<AuditInfo>> GetAuditLogAsync(PaginationRequest request);
-        Task<List<CommandResponseInfo>> ExecuteConsoleCommandAsync(long serverId, string command);
+        Task<List<CommandResponseInfo>> ExecuteConsoleCommandAsync(string serverId, string command);
 
         Task<IList<PenaltyInfo>> GetPenaltiesAsync(int offset = 0, int count = 30,
             EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true);

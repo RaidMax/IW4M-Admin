@@ -11,7 +11,7 @@ public partial class Console
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     private List<ServerInfo> Servers { get; set; } = [];
-    private long SelectedServerId { get; set; }
+    private string SelectedServerId { get; set; }
     private string Command { get; set; }
     private List<string> CommandOutput { get; set; } = [];
     private bool IsExecuting { get; set; }
@@ -27,13 +27,13 @@ public partial class Console
         Servers = await Api.GetServersAsync();
         if (Servers.Any())
         {
-            SelectedServerId = Servers.First().ID;
+            SelectedServerId = Servers.First().Id;
         }
     }
 
     private async Task ExecuteCommand()
     {
-        if (string.IsNullOrWhiteSpace(Command) || SelectedServerId == 0) return;
+        if (string.IsNullOrWhiteSpace(Command) || string.IsNullOrEmpty(SelectedServerId)) return;
 
         IsExecuting = true;
         try

@@ -27,18 +27,16 @@ namespace SharedLibraryCore
         /// </summary>
         private const int CookieLifespan = 3;
 
-        private static readonly byte[] LocalHost = { 127, 0, 0, 1 };
-        private static readonly byte[] LocalHostIPv6 = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }; // ::1
         private static string _socialLink;
         private static string _socialTitle;
-        
-        protected List<Page> Pages;
+
+        protected readonly List<Page> Pages;
         protected List<string> PermissionsSet;
-        protected bool Authorized { get; set; }
+        protected bool Authorized => User.Identity?.IsAuthenticated == true && Client.ClientId >= 0;
         protected TranslationLookup Localization { get; }
         protected EFClient Client { get; }
         protected ApplicationConfiguration AppConfig { get; }
-        
+
         public IManager Manager { get; }
 
         public BaseController(IManager manager)
@@ -74,7 +72,7 @@ namespace SharedLibraryCore
                 CurrentAlias = new EFAlias { Name = "Webfront Guest" }
             };
         }
-        
+
         protected async Task SignInAsync(ClaimsPrincipal claimsPrinciple)
         {
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrinciple,
@@ -89,67 +87,40 @@ namespace SharedLibraryCore
 
         public override async void OnActionExecuting(ActionExecutingContext context)
         {
-            var remoteIpBytes = HttpContext.Connection.RemoteIpAddress?.GetAddressBytes() ?? Array.Empty<byte>();
-            // If X-Forwarded-For is present, this is a proxied request - don't treat as localhost even if IP is 127.0.0.1
-            var hasForwardedHeader = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For");
-            var isLocalHost = !hasForwardedHeader && (remoteIpBytes.SequenceEqual(LocalHost) || remoteIpBytes.SequenceEqual(LocalHostIPv6));
-            
-            if (!isLocalHost)
+            try
             {
-                try
-                {
-                    var clientId =
-                        Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid)?.Value ?? "-1");
+                var clientId =
+                    Convert.ToInt32(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid)?.Value ?? "-1");
 
-                    if (clientId > 0)
-                    {
-                        Client.ClientId = clientId;
-                        Client.NetworkId = clientId == 1
-                            ? 0
-                            : User.Claims.First(claim => claim.Type == ClaimTypes.PrimarySid).Value
-                                .ConvertGuidToLong(NumberStyles.HexNumber);
-                        Client.Level = (Data.Models.Client.EFClient.Permission)Enum.Parse(
-                            typeof(Data.Models.Client.EFClient.Permission),
-                            User.Claims.First(c => c.Type == ClaimTypes.Role).Value);
-                        Client.CurrentAlias = new EFAlias
-                            { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
-                        Authorized = Client.ClientId >= 0;
-                        Client.GameName =
-                            Enum.Parse<Reference.Game>(User.Claims
-                                .First(claim => claim.Type == ClaimTypes.PrimaryGroupSid).Value);
-                    }
-                }
-
-                catch (InvalidOperationException)
+                if (clientId > 0)
                 {
-                }
+                    Client.ClientId = clientId;
+                    Client.NetworkId = clientId == 1
+                        ? 0
+                        : User.Claims.First(claim => claim.Type == ClaimTypes.PrimarySid).Value
+                            .ConvertGuidToLong(NumberStyles.HexNumber);
+                    Client.Level =
+                        Enum.Parse<Data.Models.Client.EFClient.Permission>(User.Claims
+                            .First(c => c.Type == ClaimTypes.Role).Value);
+                    Client.CurrentAlias = new EFAlias
+                        { Name = User.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value };
 
-                catch (KeyNotFoundException)
-                {
-                    // force the "banned" client to be signed out
-                    HttpContext.SignOutAsync().Wait(5000);
+                    Client.GameName =
+                        Enum.Parse<Reference.Game>(User.Claims
+                            .First(claim => claim.Type == ClaimTypes.PrimaryGroupSid).Value);
                 }
             }
 
-            // give the local host full access
-            else if (!HttpContext.Request.Headers.ContainsKey("X-Forwarded-For"))
+            catch (InvalidOperationException)
             {
-                Client.ClientId = 1;
-                Client.Level = Data.Models.Client.EFClient.Permission.Console;
-                Client.CurrentAlias = new EFAlias { Name = "IW4MAdmin" };
-                Authorized = true;
-                var claims = new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, Client.CurrentAlias.Name),
-                    new Claim(ClaimTypes.Role, Client.Level.ToString()),
-                    new Claim(ClaimTypes.Sid, Client.ClientId.ToString()),
-                    new Claim(ClaimTypes.PrimarySid, Client.NetworkId.ToString("X")),
-                    new Claim(ClaimTypes.PrimaryGroupSid, Client.GameName.ToString())
-                };
-                var claimsIdentity = new ClaimsIdentity(claims, "login");
-                SignInAsync(new ClaimsPrincipal(claimsIdentity)).Wait();
             }
-            
+
+            catch (KeyNotFoundException)
+            {
+                // force the "banned" client to be signed out
+                HttpContext.SignOutAsync().Wait(5000);
+            }
+
             if (AppConfig.PermissionSets.ContainsKey(Client.Level.ToString()))
             {
                 PermissionsSet = AppConfig.PermissionSets[Client.Level.ToString()];

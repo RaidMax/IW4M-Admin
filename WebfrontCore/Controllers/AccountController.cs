@@ -9,17 +9,12 @@ using SharedLibraryCore.Helpers;
 
 namespace WebfrontCore.Controllers
 {
-    public class AccountController : BaseController
+    public class AccountController(IManager manager) : BaseController(manager)
     {
-        public AccountController(IManager manager) : base(manager)
-        {
-
-        }
-
         [HttpPost]
         public async Task<IActionResult> Login([FromForm] ViewModels.LoginRequest request)
         {
-            if (request == null || request.ClientId == 0 || string.IsNullOrEmpty(request.Password))
+            if (request.ClientId == 0 || string.IsNullOrEmpty(request.Password))
             {
                 return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
             }
@@ -28,11 +23,6 @@ namespace WebfrontCore.Controllers
             {
                 var privilegedClient = await Manager.GetClientService().GetClientForLogin(request.ClientId);
                 var loginSuccess = false;
-                
-                if (Utilities.IsDevelopment)
-                {
-                    loginSuccess = request.ClientId == 1;
-                }
 
                 if (!Authorized && !loginSuccess)
                 {
@@ -41,7 +31,8 @@ namespace WebfrontCore.Controllers
                                        ClientId = request.ClientId,
                                        Token = request.Password
                                    }) ||
-                                   (await Task.FromResult(Hashing.Hash(request.Password, privilegedClient.PasswordSalt)))[0] ==
+                                   (await Task.FromResult(Hashing.Hash(request.Password,
+                                       privilegedClient.PasswordSalt)))[0] ==
                                    privilegedClient.Password;
                 }
 
@@ -59,24 +50,24 @@ namespace WebfrontCore.Controllers
                     var claimsIdentity = new ClaimsIdentity(claims, "login");
                     var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
                     await SignInAsync(claimsPrinciple);
-                    
+
                     Manager.AddEvent(new GameEvent
                     {
                         Origin = privilegedClient,
                         Type = GameEvent.EventType.Login,
                         Owner = Manager.GetServers().First(),
-                        Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
-                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                        Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For")
+                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString()
                             : HttpContext.Connection.RemoteIpAddress?.ToString()
                     });
-                    
+
                     Manager.QueueEvent(new LoginEvent
                     {
                         Source = this,
                         LoginSource = LoginEvent.LoginSourceType.Webfront,
                         EntityId = privilegedClient.ClientId.ToString(),
-                        Identifier = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
-                            ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                        Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out Microsoft.Extensions.Primitives.StringValues value)
+                            ? value.ToString()
                             : HttpContext.Connection.RemoteIpAddress?.ToString()
                     });
 
@@ -92,7 +83,7 @@ namespace WebfrontCore.Controllers
             return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
         }
 
-        [HttpGet]
+        [HttpPost]
         public async Task<IActionResult> Logout()
         {
             if (Authorized)
@@ -102,8 +93,8 @@ namespace WebfrontCore.Controllers
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.GetServers().First(),
-                    Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
-                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                    Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var value)
+                        ? value.ToString()
                         : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
                 
@@ -112,14 +103,14 @@ namespace WebfrontCore.Controllers
                     Source = this,
                     LoginSource = LoginEvent.LoginSourceType.Webfront,
                     EntityId = Client.ClientId.ToString(),
-                    Identifier = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For") 
-                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString() 
+                    Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var value1)
+                        ? value1.ToString()
                         : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
             }
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Home");
+            return LocalRedirect("/");
         }
     }
 }

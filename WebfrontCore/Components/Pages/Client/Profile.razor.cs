@@ -7,6 +7,7 @@ using SharedLibraryCore.Interfaces;
 using WebfrontCore.Permissions;
 using WebfrontCore.Services;
 using WebfrontCore.ViewModels;
+using WebfrontCore.Components.Shared;
 
 namespace WebfrontCore.Components.Pages.Client;
 
@@ -257,5 +258,14 @@ public partial class Profile
             EFPenalty.PenaltyType.Mute => "alert-secondary",
             _ => "alert"
         };
+    }
+    private ActionModal _actionModal;
+
+    private async Task OnProfileContextAction(SideContextMenuItem item)
+    {
+        if (_actionModal != null)
+        {
+            await _actionModal.Open(item.Reference, item.EntityId, item.Meta);
+        }
     }
 }

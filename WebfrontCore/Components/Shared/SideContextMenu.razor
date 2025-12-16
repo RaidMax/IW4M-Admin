@@ -13,7 +13,7 @@
 
             @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
             {
-                <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "blazor-action")"
+                <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" class="@(item.IsLink ? "" : "blazor-action")"
                    @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
                    @onclick:preventDefault="@(!item.IsLink)">
                     <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left"
@@ -33,7 +33,7 @@
                     <div class="collapse-content" style="overflow: scroll; max-height: 30rem; max-width:350px;">
                         @foreach (var item in group)
                         {
-                            <a href="@(item.IsLink ? item.Reference : "#")" style="border: 0; padding: 0;"
+                            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" style="border: 0; padding: 0;"
                                class="@(item.IsLink ? "" : "blazor-action")"
                                @onclick='(e) => OnActionClick(item, e)'
                                @onclick:preventDefault="@(!item.IsLink)">
@@ -61,7 +61,7 @@
                 @foreach (var item in Model.Items)
                 {
                     <div class="mt-15 mb-15">
-                        <a href="@(item.IsLink ? item.Reference : "#")" class="@(item.IsLink ? "" : "blazor-action")"
+                        <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" class="@(item.IsLink ? "" : "blazor-action")"
                            @onclick='(e) => OnActionClick(item, e)'
                            @onclick:preventDefault="@(!item.IsLink)">
                             <div class="btn btn-block btn-lg @(item.IsActive ? "btn-primary" : "") text-truncate" data-title="@item.Tooltip"
@@ -81,4 +81,4 @@
         </div>
     </div>
 </div>
-<WebfrontCore.Components.Shared.ActionModal @ref="ActionModal" ModalId="context-menu-action-modal"/>
+

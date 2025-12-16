@@ -14,7 +14,10 @@
                 <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</td>
                 <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</td>
             }
-            <td>@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</td>
+            @if (CanSeeLevel)
+            {
+                <td>@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</td>
+            }
             <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</td>
             <td class="text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</td>
             <td class="text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</td>
@@ -46,7 +49,7 @@
                     <!-- Desktop Row -->
                     <tr class="bg-dark-dm bg-light-lm d-none d-md-table-row">
                         <td>
-                            <a href="/Client/Profile/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
+                            <a href="/Client/Profile/@client.ClientId" class="@(CanSeeLevel ? $"level-color-{(int)client.ClientLevelValue}" : "")">
                                 <ColorCode Value="@client.CurrentClientName" />
                             </a>
                         </td>
@@ -70,7 +73,10 @@
                                 </div>
                             </td>
                         }
-                        <td>@client.ClientLevel</td>
+                        @if (CanSeeLevel)
+                        {
+                            <td>@client.ClientLevel</td>
+                        }
                         <td>
                             <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
                                 <span class="badge">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
@@ -89,15 +95,17 @@
                                 <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</div>
                                 <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</div>
                             }
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
+                            @if (CanSeeLevel)
+                            {
+                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
+                            }
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</div>
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</div>
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</div>
                         </td>
                         <td class="d-flex flex-column w-three-quarter">
                             <div class="mt-5 mb-5">
-                                <a href="/Client/Profile/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
+                                <a href="/Client/Profile/@client.ClientId" class="@(CanSeeLevel ? $"level-color-{(int)client.ClientLevelValue}" : "")">
                                     <ColorCode Value="@client.CurrentClientName" />
                                 </a>
                             </div>
@@ -118,7 +126,10 @@
                                     </div>
                                 </div>
                             }
-                            <div class="mt-5 mb-5">@client.ClientLevel</div>
+                            @if (CanSeeLevel)
+                            {
+                                <div class="mt-5 mb-5">@client.ClientLevel</div>
+                            }
                             <div class="mt-5 mb-5">
                                 <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
                                     <span class="badge font-size-12">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace WebfrontCore.Controllers.API.Dtos;
+﻿namespace WebfrontCore.Controllers.API.Dtos;
 
 public class InfoResponse
 {

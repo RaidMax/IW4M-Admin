@@ -1,12 +1,5 @@
-using System.Collections.Generic;
-using System;
-using System.Linq;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore;
 using Data.Models;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using WebfrontCore.ViewModels;
 using WebfrontCore.Controllers.API.Dtos;
 
@@ -111,11 +104,11 @@ namespace WebfrontCore.Services
             return httpClient.GetFromJsonAsync<FindClientResponse>($"/api/client/find{query}");
         }
 
-        public Task<TopStatsResponse> GetTopPlayersAsync(int count, int offset, string serverId = null) =>
+        public Task<TopStatsResponse> GetTopPlayersAsync(int count, int offset, string? serverId = null) =>
             httpClient.GetFromJsonAsync<TopStatsResponse>(
                 $"/api/stats/top?count={count}&offset={offset}{(serverId != null ? $"&serverId={serverId}" : "")}");
 
-        public Task<Stats.Dtos.AdvancedStatsInfo> GetAdvancedStatsAsync(int clientId, string serverId = null) =>
+        public Task<Stats.Dtos.AdvancedStatsInfo> GetAdvancedStatsAsync(int clientId, string? serverId = null) =>
             httpClient.GetFromJsonAsync<Stats.Dtos.AdvancedStatsInfo>(
                 $"/api/stats/{clientId}/advanced{(serverId != null ? $"?serverId={serverId}" : "")}");
 

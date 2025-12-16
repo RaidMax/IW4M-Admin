@@ -1,4 +1,5 @@
 @page "/Console"
+@attribute [Authorize(Policy = "Permissions.ConsolePage.Read")]
 @rendermode InteractiveServer
 
 <div class="content mt-0">

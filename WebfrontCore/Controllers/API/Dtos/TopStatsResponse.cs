@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using IW4MAdmin.Plugins.Stats.Web.Dtos;
 
 namespace WebfrontCore.Controllers.API.Dtos

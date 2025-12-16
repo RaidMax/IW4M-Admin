@@ -35,7 +35,7 @@ namespace WebfrontCore.Services
             }
         }
         
-        public ClientInfo User { get; private set; }
+        public ClientInfo? User { get; private set; }
         public System.Collections.Generic.Dictionary<string, string> Localization { get; private set; }
 
         public void SetUser(ClientInfo user)

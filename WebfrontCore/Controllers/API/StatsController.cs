@@ -1,12 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using IW4MAdmin.Plugins.Stats.Helpers;
-using Microsoft.AspNetCore.Http;
+﻿using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
@@ -50,7 +45,7 @@ namespace WebfrontCore.Controllers.API
         [HttpGet("{clientId:int}/advanced")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetAdvancedStats(int clientId, [FromQuery] string serverId, CancellationToken token = default)
+        public async Task<IActionResult> GetAdvancedStats(int clientId, [FromQuery] string? serverId, CancellationToken token = default)
         {
             var hitInfo = (await _advancedStatsQueryHelper.QueryResource(new StatsInfoRequest
             {
@@ -72,7 +67,7 @@ namespace WebfrontCore.Controllers.API
 
         [HttpGet("top")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetTopPlayers([FromQuery] int count = 25, [FromQuery] int offset = 0, [FromQuery] string serverId = null)
+        public async Task<IActionResult> GetTopPlayers([FromQuery] int count = 25, [FromQuery] int offset = 0, [FromQuery] string? serverId = null)
         {
              var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId) as IGameServer;
              var legacyId = server?.LegacyDatabaseId;
@@ -154,6 +149,7 @@ namespace WebfrontCore.Controllers.API
         [HttpGet("penalty/{penaltyId}/context")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Authorize(Policy = "Permissions.BanManagementPage.Read")]
         public async Task<IActionResult> GetAutomatedPenaltyInfo(int penaltyId)
         {
             await using var context = _contextFactory.CreateContext(false);

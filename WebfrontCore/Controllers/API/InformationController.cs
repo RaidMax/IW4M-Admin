@@ -2,9 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
-using WebfrontCore.ViewModels;
 
 namespace WebfrontCore.Controllers.API
 {

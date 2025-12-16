@@ -14,10 +14,11 @@ public enum WebfrontEntity
     AuditPage,
     RecentPlayersPage,
     ProfilePage,
+    BanManagementPage,
     AdminMenu,
     ClientNote,
     Interaction,
-    AdvancedSearch
+    AdvancedSearch,
 }
 
 public enum WebfrontPermission

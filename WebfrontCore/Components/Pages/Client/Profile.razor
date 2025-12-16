@@ -1,5 +1,7 @@
 @page "/Client/Profile/{Id:int}"
 @rendermode InteractiveServer
+@using WebfrontCore.Permissions
+@using Microsoft.AspNetCore.Components.Authorization
 
 @if (_isLoading)
 {
@@ -36,12 +38,14 @@ else
     var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
     var shortCode = GetShortCode(Client.Name);
 
+<CascadingAuthenticationState>
+
     <div class="content row mt-20">
         <div class="col-12 col-lg-9">
             @* Active Penalty Banner *@
             @if (Client.ActivePenalty != null)
             {
-                <HasPermission Entity="ClientLevel" RequiredPermission="Read">
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                     <div class="alert @ClassForPenaltyType(Client.ActivePenalty.Type) mt-10 mb-10" role="alert">
                         @if (IsAuthorized && !string.IsNullOrEmpty(Client.ActivePenalty.AutomatedOffense) && Client.ActivePenalty.Type != EFPenalty.PenaltyType.Warning)
                         {
@@ -60,7 +64,7 @@ else
                             </span>
                         }
                     </div>
-                </HasPermission>
+                </AuthorizeView>
             }
 
             <h2 class="content-title mb-0">@AppState.Loc("WEBFRONT_PROFILE_TITLE")</h2>
@@ -92,7 +96,7 @@ else
                                 <span class="font-size-20 font-weight-medium text-force-break">
                                     <ColorCode Value="@Client.Name"/>
                                 </span>
-                                <HasPermission Entity="MetaAliasUpdate" RequiredPermission="Read">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.MetaAliasUpdate}.{WebfrontPermission.Read}")">
                                     @if (Client.Aliases?.Any() == true)
                                     {
                                         <div class="dropdown with-arrow d-inline">
@@ -117,21 +121,21 @@ else
                                             </div>
                                         </div>
                                     }
-                                </HasPermission>
+                                </AuthorizeView>
                             </div>
 
                             @* Permission Level *@
-                            <HasPermission Entity="ClientLevel" RequiredPermission="Read">
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <div
                                     class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Client.LevelInt">
                                     <div class="d-flex flex-row">
                                         <ColorCode Value="@Client.Level"/>
                                     </div>
                                 </div>
-                            </HasPermission>
+                            </AuthorizeView>
 
                             @* GUID with Alternate Formats *@
-                            <HasPermission Entity="ClientGuid" RequiredPermission="Read">
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
                                 <div class="dropdown dropup with-arrow">
                                     <div class="text-muted cursor-pointer" data-toggle="dropdown" id="altGuidFormatsDropdown"
                                          aria-haspopup="true" aria-expanded="false">@Client.NetworkId.ToString("X")</div>
@@ -143,12 +147,12 @@ else
                                         </div>
                                     </div>
                                 </div>
-                            </HasPermission>
+                            </AuthorizeView>
 
                             @* IP Address with History Dropdown *@
                             <div class="align-self-center align-self-md-start d-flex flex-row">
                                 <span class="text-muted mr-5">@Client.IPAddress</span>
-                                <HasPermission Entity="MetaAliasUpdate" RequiredPermission="Read">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.MetaAliasUpdate}.{WebfrontPermission.Read}")">
                                     <div class="dropdown with-arrow">
                                         <i class="oi oi-caret-bottom font-size-12 text-muted cursor-pointer" data-toggle="dropdown"
                                            aria-haspopup="true" aria-expanded="false"></i>
@@ -183,7 +187,7 @@ else
                                             }
                                         </div>
                                     </div>
-                                </HasPermission>
+                                </AuthorizeView>
                             </div>
                         </div>
                     </div>
@@ -191,7 +195,7 @@ else
                     @* Note Display *@
                     @if (Client.NoteMeta != null && !string.IsNullOrWhiteSpace(Client.NoteMeta.Note))
                     {
-                        <HasPermission Entity="ClientNote" RequiredPermission="Read">
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientNote}.{WebfrontPermission.Read}")">
                             <div class="rounded border p-10 m-10 d-flex flex-column flex-md-row" style="border-style: dashed !important">
                                 <i class="align-self-center oi oi-clipboard"></i>
                                 <div class="align-self-center font-size-12 font-weight-light pl-10 pr-10">
@@ -207,7 +211,7 @@ else
                                     </div>
                                 </div>
                             </div>
-                        </HasPermission>
+                        </AuthorizeView>
                     }
 
                     @* GeoLocation Flag with Popover *@
@@ -220,10 +224,10 @@ else
                                          style="background-image: url('https://flagcdn.com/w160/@(Client.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-center z-30" aria-labelledby="avatar-popover-toggle">
-                                    <HasPermission Entity="ClientIPAddress" RequiredPermission="Read">
+                                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                         <h6 class="dropdown-header font-weight-bold">@Client.IPAddress</h6>
                                         <div class="dropdown-divider"></div>
-                                    </HasPermission>
+                                    </AuthorizeView>
                                     <div class="dropdown-item geo-country">@Client.GeoLocationInfo.Country</div>
                                     @if (!string.IsNullOrEmpty(Client.GeoLocationInfo.Region))
                                     {
@@ -284,4 +288,5 @@ else
             <WebfrontCore.Components.Shared.SideContextMenu Model="ContextItems"/>
         </div>
     </div>
+</CascadingAuthenticationState>
 }

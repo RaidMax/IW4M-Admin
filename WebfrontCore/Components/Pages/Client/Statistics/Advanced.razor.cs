@@ -36,7 +36,7 @@ public partial class Advanced
             Stats = await Api.GetAdvancedStatsAsync(ClientId, serverId);
             GenerateMenu();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             NavManager.NavigateTo("/Client/Profile/" + ClientId);
         }

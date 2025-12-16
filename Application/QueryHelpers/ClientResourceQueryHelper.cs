@@ -85,13 +85,13 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
                     WebfrontPermission.Read));
         }
 
-        var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection, a.Client.FirstConnection });
+        var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection });
 
         if (query.SortColumn == "FirstConnection")
         {
              iqGroupedClientAliases = query.Direction == SortDirection.Descending
-                ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.FirstConnection)
-                : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.FirstConnection);
+                ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.ClientId)
+                : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.ClientId);
         }
         else
         {

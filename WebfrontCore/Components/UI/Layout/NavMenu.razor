@@ -1,0 +1,255 @@
+@rendermode InteractiveServer
+
+<!-- left side navigation -->
+<div class="sidebar-overlay" @onclick="@ToggleSidebar"></div>
+<div class="sidebar">
+    <div class="sidebar-menu list">
+        <div class="sidebar-content m-0">
+            <!-- Search Form Placeholder -->
+            @* <div class="pr-20 pl-20 mb-20 d-block d-lg-none">
+                    <SearchResourceForm Model="Compact"/>
+                </div> *@
+
+            <span class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</span>
+            <div class="sidebar-divider"></div>
+            <!-- servers -->
+            <NavLink href="" Match="NavLinkMatch.All" class="sidebar-link">
+                <i class="oi oi-hard-drive mr-5"></i>
+                <span class="name">@(Loc("WEBFRONT_NAV_SERVERS"))</span>
+            </NavLink>
+            <!-- about -->
+            <NavLink href="About" class="sidebar-link">
+                <i class="oi oi-info mr-5"></i>
+                <span class="name">@(Loc("WEBFRONT_NAV_ABOUT"))</span>
+            </NavLink>
+            <!-- penalties -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
+                <NavLink href="Penalty/List" class="sidebar-link">
+                    <i class="oi oi-lock-locked mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_PENALTIES"))</span>
+                </NavLink>
+            </AuthorizeView>
+            <!-- privileged -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
+                <NavLink href="Client/Privileged" class="sidebar-link">
+                    <i class="oi oi-people mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_PRIVILEGED"))</span>
+                </NavLink>
+            </AuthorizeView>
+            <!-- help -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.HelpPage}.{WebfrontPermission.Read}")">
+                <NavLink href="Help" class="sidebar-link">
+                    <i class="oi oi-question-mark mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_HELP"))</span>
+                </NavLink>
+            </AuthorizeView>
+
+            @if (NavData?.Interactions is not null)
+            {
+                foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Main")))
+                {
+                    <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                        <i class="oi @interaction.DisplayMeta mr-5"></i>
+                        <span class="name">@interaction.Name</span>
+                    </NavLink>
+                }
+            }
+
+            <!-- profile -->
+            @if (AppState.User is not null)
+            {
+                <NavLink href="@($"Client/Profile/{AppState.User.ClientId}")" class="sidebar-link">
+                    <i class="oi oi-person mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
+                </NavLink>
+            }
+
+            <br/>
+            <!-- stats -->
+            <div class="sidebar-title ">@(Loc("WEBFRONT_NAV_TITLE_STATS"))</div>
+            <div class="sidebar-divider"></div>
+
+            <!-- dynamically registered pages -->
+            @if (NavData?.Pages is not null && NavData.Pages.Any())
+            {
+                foreach (var pageLink in NavData.Pages)
+                {
+                    <a class="sidebar-link" href="@pageLink.Location">
+                        <i class="oi @(pageLink.Location.EndsWith("Radar") ? "oi-wifi" : "oi-bar-chart") mr-5"></i>
+                        <span class="name">@pageLink.Name</span>
+                    </a>
+                }
+            }
+
+            <!-- scoreboard -->
+            <NavLink href="Server/Scoreboard" class="sidebar-link">
+                <i class="oi oi-spreadsheet mr-5"></i>
+                <span class="name">@(Loc("WEBFRONT_NAV_TITLE_SCOREBOARD"))</span>
+            </NavLink>
+            <br/>
+
+            <!-- socials -->
+            @if (NavData?.CommunityInformation?.IsEnabled == true && NavData.CommunityInformation.SocialAccounts?.Any() == true)
+            {
+                <span class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_SOCIALS"))</span>
+                <div class="sidebar-divider"></div>
+
+                @foreach (var social in NavData.CommunityInformation.SocialAccounts)
+                {
+                    <a href="@social.Url" class="sidebar-link" target="_blank" title="@social.Title">
+                        <div class="d-flex align-items-center">
+                            @if (!string.IsNullOrWhiteSpace(social.IconId))
+                            {
+                                <i class="oi @social.IconId align-self-center"></i>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(social.IconUrl))
+                            {
+                                var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out Uri parsedUrl)
+                                    ? parsedUrl.AbsoluteUri
+                                    : $"/images/community/{social.IconUrl}";
+                                <img class="img-fluid social-icon align-self-center" src="@url" alt="@social.Title"/>
+                            }
+                            <div class="name text-truncate align-self-center">@social.Title</div>
+                        </div>
+                    </a>
+                }
+
+                @if (NavData?.Interactions is not null)
+                {
+                    foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Social")))
+                    {
+                        if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
+                        {
+                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                                <i class="oi @interaction.DisplayMeta mr-5"></i>
+                                <span class="name">@interaction.Name</span>
+                            </NavLink>
+                        }
+                    }
+                }
+            }
+
+            <!-- Admin Section -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
+                <br/>
+                <div class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_ADMIN"))</div>
+                <div class="sidebar-divider"></div>
+
+                <!-- Console -->
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")" Context="consoleContext">
+                    <NavLink href="Console" class="sidebar-link">
+                        <i class="oi oi-terminal mr-5"></i>
+                        <span class="name">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
+                    </NavLink>
+                </AuthorizeView>
+
+                <!-- Ban Management -->
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")" Context="banContext">
+                    <NavLink href="Admin/BanManagement" class="sidebar-link">
+                        <i class="oi oi-ban mr-5"></i>
+                        <span class="name">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
+                    </NavLink>
+                </AuthorizeView>
+            </AuthorizeView>
+
+            <!-- Configuration (Owner only) -->
+            <AuthorizeView Roles="Owner">
+                <NavLink href="Configuration/Files" class="sidebar-link">
+                    <i class="oi oi-cog mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
+                </NavLink>
+            </AuthorizeView>
+
+            <!-- Audit Log -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AuditPage}.{WebfrontPermission.Read}")">
+                <NavLink href="Admin/AuditLog" class="sidebar-link">
+                    <i class="oi oi-book mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
+                </NavLink>
+            </AuthorizeView>
+
+            <!-- Recent Clients -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.RecentPlayersPage}.{WebfrontPermission.Read}")">
+                <NavLink href="Client/AdvancedFind?direction=1&sortColumn=FirstConnection" class="sidebar-link">
+                    <i class="oi oi-timer mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
+                </NavLink>
+            </AuthorizeView>
+
+            <!-- Admin Interactions -->
+            @if (NavData?.Interactions != null)
+            {
+                foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Admin")))
+                {
+                    if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
+                    {
+                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                            <i class="oi @interaction.DisplayMeta mr-5"></i>
+                            <span class="name">@interaction.Name</span>
+                        </NavLink>
+                    }
+                }
+            }
+
+            <!-- Login Token (for authenticated users) -->
+            @if (AppState.User is not null)
+            {
+                <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("GenerateLoginToken")'
+                   class="sidebar-link">
+                    <i class="oi oi-key mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
+                </a>
+
+                <!-- Logout -->
+                <form action="/Account/Logout" method="post" style="margin: 0; padding: 0;">
+                     <AntiforgeryToken />
+                     <button type="submit" class="sidebar-link" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: inherit; font-size: inherit; font-family: inherit;">
+                        <i class="oi oi-account-logout mr-5"></i>
+                        <span class="name">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
+                     </button>
+                </form>
+            }
+            else
+            {
+                <!-- Login (for unauthenticated users) -->
+                <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("Login")' class="sidebar-link">
+                    <i class="oi oi-key mr-5"></i>
+                    <span class="name">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>
+                </a>
+            }
+
+            <div class="sidebar-divider mt-0 mb-0"></div>
+
+            <!-- User Info / Login Status -->
+            <div class="sidebar-link font-size-12 font-weight-light">
+                @if (AppState.User is not null)
+                {
+                    var format = Loc("WEBFRONT_NAV_LOGIN_YES_FORMAT");
+                    @foreach (var match in SharedLibraryCore.Utilities.SplitTranslationTokens(format))
+                    {
+                        if (match.IsInterpolation && match.MatchValue == "username")
+                        {
+                            <ColorCode Value="@AppState.User.Name"></ColorCode>
+                        }
+                        else
+                        {
+                            <span>@match.MatchValue</span>
+                        }
+                    }
+                }
+                else
+                {
+                    <span>@(Loc("WEBFRONT_NAV_LOGIN_NO_FORMAT"))</span>
+                }
+            </div>
+
+            <a href="https://github.com/RaidMax/IW4M-Admin/releases" class="sidebar-link" target="_blank">
+                    <span class="name font-size-12 font-weight-light">IW4MAdmin <span
+                            class="text-primary">
+                        @Program.Manager.Version
+                    </span></span>
+            </a>
+        </div>
+    </div>
+</div>
+<ActionModal @ref="ActionModal"/>

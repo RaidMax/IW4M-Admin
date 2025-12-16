@@ -12,7 +12,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Permissions;
+using WebfrontCore.Core.Auth;
 using WebfrontCore.QueryHelpers.Models;
 using EFClient = Data.Models.Client.EFClient;
 

@@ -17,13 +17,14 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
 using Stats.Helpers;
-using WebfrontCore.Components;
 using WebfrontCore.Controllers.API.Validation;
-using WebfrontCore.Middleware;
-using WebfrontCore.QueryHelpers;
 using WebfrontCore.QueryHelpers.Models;
-using WebfrontCore.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using WebfrontCore.Components;
+using WebfrontCore.Core.Auth;
+using WebfrontCore.Core.Middleware;
+using WebfrontCore.Core.QueryHelpers;
+using WebfrontCore.Core.Services;
 
 namespace WebfrontCore;
 
@@ -151,25 +152,25 @@ public class Program
         services.AddRazorComponents()
             .AddInteractiveServerComponents(options => { options.DetailedErrors = true; });
 
-        services.AddScoped<Services.AppState>();
-        services.AddScoped<Services.IZeroJsInterop, Services.ZeroJsInterop>();
-        services.AddScoped<Services.IToastService, Services.ToastService>();
-        services.AddTransient<Services.CookieForwardingHandler>();
+        services.AddScoped<AppState>();
+        services.AddScoped<IZeroJsInterop, ZeroJsInterop>();
+        services.AddScoped<IToastService, ToastService>();
+        services.AddTransient<CookieForwardingHandler>();
 
-        services.AddHttpClient<Services.IWebfrontApiClient, Services.WebfrontApiClient>((sp, client) =>
+        services.AddHttpClient<IWebfrontApiClient, WebfrontApiClient>((sp, client) =>
         {
             var manager = sp.GetService<IManager>();
             var webfrontUrl = manager?.GetApplicationSettings()?.Configuration()?.WebfrontUrl ??
                               "http://127.0.0.1:1624";
             client.BaseAddress = new Uri(webfrontUrl);
-        }).AddHttpMessageHandler<Services.CookieForwardingHandler>();
+        }).AddHttpMessageHandler<CookieForwardingHandler>();
 
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddScoped<AuthenticationStateProvider, PersistingAuthenticationStateProvider>();
         services.AddCascadingAuthenticationState();
 
-        services.AddScoped<Services.IActionService, Services.ActionService>();
+        services.AddScoped<IActionService, ActionService>();
         return;
 
         IEnumerable<Assembly> PluginAssemblies()

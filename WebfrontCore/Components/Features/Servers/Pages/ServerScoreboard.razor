@@ -1,0 +1,29 @@
+@page "/Server/{Id}/Scoreboard"
+@implements IDisposable
+@rendermode InteractiveServer
+
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9">
+        @if (ScoreboardModel != null)
+        {
+            <div class="scoreboard-container" data-server-id="@Id">
+                @* Using the shared component *@
+                <ScoreboardTable Model="ScoreboardModel" />
+            </div>
+        }
+        else
+        {
+             <div class="text-center mt-20">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="col-12 col-lg-3">
+        @if (ContextItems != null)
+        {
+           <SideContextMenu Model="ContextItems" />
+        }
+    </div>
+</div>

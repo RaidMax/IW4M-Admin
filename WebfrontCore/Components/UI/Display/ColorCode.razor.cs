@@ -1,0 +1,47 @@
+﻿using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Components;
+
+namespace WebfrontCore.Components.UI.Display;
+
+public partial class ColorCode
+{
+    [Parameter] public string Value { get; set; }
+
+    // We assume enabled for now, or inject config - TODO: This seems redundant at this point.
+    private bool _allow = true;
+    private string RenderedHtml => ProcessColorCodes();
+
+    private string ProcessColorCodes()
+    {
+        if (string.IsNullOrEmpty(Value)) return string.Empty;
+
+        if (!_allow)
+        {
+            return StripColors(Value);
+        }
+
+        var matches = Regex.Matches(Value, @"\^([0-9]|\:)([^\^]*)");
+        if (matches.Count <= 1)
+        {
+            return StripColors(Value);
+        }
+
+        var sb = new System.Text.StringBuilder();
+        foreach (Match match in matches)
+        {
+            var colorCodeChar = match.Groups[1].ToString().Last();
+            var code = (colorCodeChar >= 48 && colorCodeChar <= 57) ? colorCodeChar.ToString() : ((int)colorCodeChar).ToString();
+            var text = match.Groups[2].ToString();
+
+            sb.Append($"<span class='text-color-code-{code}'>{text}</span>");
+        }
+
+        return sb.ToString();
+    }
+
+    private static string StripColors(string input)
+    {
+        // Simple strip implementation matching shared lib if possible
+        return Regex.Replace(input, @"\^[0-9:]", "");
+    }
+}

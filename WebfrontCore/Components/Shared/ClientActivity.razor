@@ -37,8 +37,8 @@
                     var levelColorClass = (AppState.User == null || client.Client.LevelInt == 0) ? "text-light-dm text-dark-lm" : $"level-color-{client.Client.LevelInt}";
                     <div class="d-flex @(clientIndex.Index == 1 ? "justify-content-start flex-row-reverse" : "")">
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
-                            <a href="#" class="profile-action" data-action="kick" data-action-id="@client.Client.ClientId"
-                               aria-hidden="true" @onclick:preventDefault>
+                            <a href="#" class="profile-action" aria-hidden="true" @onclick:preventDefault
+                               @onclick="@(() => ActionService.OpenAction("Kick", client.Client.ClientId, null, null))">
                                 <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
                             </a>
                         </AuthorizeView>

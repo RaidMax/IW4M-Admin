@@ -1,24 +1,34 @@
 @page "/Interaction/Render/{InteractionName}"
 
+@layout EmptyLayout
 
-<div class="content text-wrap mt-20">
-    @if (IsLoading)
-    {
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
+@if (IsLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
         </div>
-    }
-    else if (ErrorMessage != null)
+    </div>
+}
+else if (ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+else if (InteractionData != null)
+{
+    if (ParsedInteractionType == InteractionType.TemplateContent)
     {
-        <div class="alert alert-danger">@ErrorMessage</div>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="content text-wrap mt-20">
+                <h2 class="content-title">
+                    <ColorCode Value="@InteractionData.Title"/>
+                </h2>
+                @((MarkupString)InteractionData.Content)
+            </div>
+        </LayoutView>
     }
-    else if (InteractionData != null)
+    else
     {
-        <h2 class="content-title">
-            <ColorCode Value="@InteractionData.Title" />
-        </h2>
         @((MarkupString)InteractionData.Content)
     }
-</div>
+}

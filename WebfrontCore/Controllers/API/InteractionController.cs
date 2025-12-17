@@ -37,7 +37,8 @@ namespace WebfrontCore.Controllers.API
             {
                 Title = interactionData.Description ?? interactionData.Name,
                 Content = result ?? "",
-                InteractionType = interactionData.InteractionType.ToString()
+                InteractionType = interactionData.InteractionType.ToString(),
+                DisplayMeta = interactionData.DisplayMeta
             });
         }
     }
@@ -47,5 +48,6 @@ namespace WebfrontCore.Controllers.API
         public string Title { get; set; }
         public string Content { get; set; }
         public string InteractionType { get; set; }
+        public string DisplayMeta { get; set; }
     }
 }

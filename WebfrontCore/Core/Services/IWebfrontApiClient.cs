@@ -43,7 +43,7 @@ public interface IWebfrontApiClient
     Task<IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.BaseMetaResponse>> GetClientMetaAsync(
         int clientId, int count, int offset, long? startAt, SharedLibraryCore.Interfaces.MetaType? metaType);
 
-    Task<Controllers.API.InteractionResponse> GetInteractionAsync(string interactionName);
+    Task<Controllers.API.InteractionResponse> GetInteractionAsync(string interactionName, string? query = null);
     Task<string> UnbanClientAsync(int clientId, string reason);
 
     Task<IEnumerable<ClientResourceResponse>> GetClientsAsync(ClientResourceRequest request);

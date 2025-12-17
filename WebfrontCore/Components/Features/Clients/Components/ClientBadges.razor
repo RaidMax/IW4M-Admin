@@ -14,7 +14,7 @@
         </AuthorizeView>
 
         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
-            <div class="badge-group ml-10" role="group">
+            <div class="badge-group ml-10" role="group" @onclick="ShowReports" style="cursor: pointer">
                 <span class="badge badge-danger">@(_navData.TotalReportCount)</span>
                 <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
             </div>

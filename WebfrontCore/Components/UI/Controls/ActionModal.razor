@@ -2,7 +2,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">@(_actionInfo?.Name ?? (_isLogin ? AppState.Loc("WEBFRONT_NAV_TITLE_LOGIN") : "Action"))</h5>
+                <h5 class="modal-title">@(_actionInfo?.Name ?? (_childContent != null ? _customTitle : (_isLogin ? AppState.Loc("WEBFRONT_NAV_TITLE_LOGIN") : "Action")))</h5>
                 <button type="button" class="close" @onclick="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -20,6 +20,10 @@
                 else if (_error != null)
                 {
                     <div class="alert alert-danger">@_error</div>
+                }
+                else if (_childContent != null)
+                {
+                    @_childContent
                 }
                 else if (_actionInfo != null)
                 {

@@ -1,6 +1,9 @@
 @page "/Console"
 @attribute [Authorize(Policy = "Permissions.ConsolePage.Read")]
+@namespace WebfrontCore.Components.Features.Admin.Pages
 @rendermode InteractiveServer
+
+<PageTitle>Web Console | IW4MAdmin</PageTitle>
 
 <div class="content mt-0">
     <h2 class="content-title mt-20">@AppState.Loc("WEBFRONT_CONSOLE_TITLE")</h2>

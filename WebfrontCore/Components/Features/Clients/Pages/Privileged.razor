@@ -1,6 +1,9 @@
 @page "/Client/Privileged"
 @attribute [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
 
+<PageTitle>Privileged Clients | IW4MAdmin</PageTitle>
+
+
 <div class="content mt-0">
     <h4 class="content-title mt-20">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h4>
     @if (PrivilegedClients != null)

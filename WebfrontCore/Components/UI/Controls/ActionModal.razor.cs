@@ -23,20 +23,36 @@ public partial class ActionModal
     private string? _serverId;
 
     [Parameter] public string ModalId { get; set; } = "action-modal";
+    private RenderFragment _childContent;
+    private string _customTitle;
     
     protected override void OnInitialized()
     {
         base.OnInitialized();
         ActionService.OnOpenAction += OnOpenAction;
+        ActionService.OnOpenCustomAction += OnOpenCustomAction;
     }
 
     public void Dispose()
     {
         ActionService.OnOpenAction -= OnOpenAction;
+        ActionService.OnOpenCustomAction -= OnOpenCustomAction;
+    }
+
+    private async void OnOpenCustomAction(RenderFragment content, string title)
+    {
+        _childContent = content;
+        _customTitle = title;
+        _actionInfo = null; // Clear standard action info
+        _error = null;
+        _isLoading = false;
+        await Runtime.InvokeVoidAsync("halfmoon.toggleModal", ModalId);
+        await InvokeAsync(StateHasChanged);
     }
 
     private async void OnOpenAction(string actionName, int? targetId, string meta, string? serverId)
     {
+        _childContent = null;
         await Open(actionName, targetId, meta, serverId);
         await InvokeAsync(StateHasChanged);
     }
@@ -123,6 +139,7 @@ public partial class ActionModal
     {
         await Runtime.InvokeVoidAsync("halfmoon.toggleModal", ModalId);
         _actionInfo = null;
+        _childContent = null;
         StateHasChanged();
     }
 

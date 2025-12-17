@@ -10,6 +10,7 @@ namespace WebfrontCore.Components.Features.Clients.Statistics;
 
 public partial class StatsOverview
 {
+    [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
@@ -29,6 +30,7 @@ public partial class StatsOverview
     private string _previousServerId;
     private bool _chartsInitialized;
     private bool _firstLoad = true;
+    private bool _localizationInitialized;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -63,6 +65,25 @@ public partial class StatsOverview
         {
             await Task.Delay(100); // Delay to ensure DOM is ready
             _chartsInitialized = true;
+            
+            if (!_localizationInitialized)
+            {
+                var localization = new Dictionary<string, string>
+                {
+                    { "WEBFRONT_ADV_STATS_RANKING_METRIC", AppState.Loc("WEBFRONT_ADV_STATS_RANKING_METRIC") },
+                    { "PLUGINS_STATS_COMMANDS_PERFORMANCE", AppState.Loc("PLUGINS_STATS_COMMANDS_PERFORMANCE") }
+                };
+                try 
+                {
+                    await Runtime.InvokeVoidAsync("eval", $"window._localization = {System.Text.Json.JsonSerializer.Serialize(localization)};");
+                    _localizationInitialized = true;
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Error initializing localization: {ex.Message}");
+                }
+            }
+
             try
             {
                 await JsInterop.InitTopPlayersCharts();

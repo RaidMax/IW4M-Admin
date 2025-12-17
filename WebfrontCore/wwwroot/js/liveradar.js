@@ -144,7 +144,11 @@ function calculateViewPosition(x, y, distance) {
     let ny = Math.sin(x) * Math.cos(y);
     let nz = Math.sin(360.0 - y);
 
-    return { x: (nx * distance) * stateInfo.mapScaler, y: (ny * distance) * stateInfo.mapScaler, z: (nz * distance)  * stateInfo.mapScaler };
+    return {
+        x: (nx * distance) * stateInfo.mapScaler,
+        y: (ny * distance) * stateInfo.mapScaler,
+        z: (nz * distance) * stateInfo.mapScaler
+    };
 }
 
 function lerp(start, end, complete) {
@@ -154,7 +158,7 @@ function lerp(start, end, complete) {
 function easeLerp(start, end, t) {
     let t2 = (1 - Math.cos(t * Math.PI)) / 2;
 
-    return (start * (1-t2) + end * t2);
+    return (start * (1 - t2) + end * t2);
 }
 
 function fixRollAngles(oldAngles, newAngles) {
@@ -165,9 +169,7 @@ function fixRollAngles(oldAngles, newAngles) {
 
     if (angleDifferenceX > Math.PI) {
         newX = oldAngles.x + (Math.PI * 2) - angleDifferenceX;
-    }
-
-    else if (Math.abs(newAngles.x - oldAngles.x) > Math.PI) {
+    } else if (Math.abs(newAngles.x - oldAngles.x) > Math.PI) {
         newX = newAngles.x - (Math.PI * 2);
     }
 
@@ -175,13 +177,11 @@ function fixRollAngles(oldAngles, newAngles) {
 
     if (angleDifferenceY > Math.PI) {
         newY = oldAngles.y + (Math.PI * 2) - angleDifferenceY;
-    }
-
-    else if (Math.abs(newAngles.y - oldAngles.y) > Math.PI) {
+    } else if (Math.abs(newAngles.y - oldAngles.y) > Math.PI) {
         newY = newAngles.y - (Math.PI * 2);
     }
 
-    return { x: newX, y: newY };
+    return {x: newX, y: newY};
 }
 
 function toRadians(deg) {
@@ -207,7 +207,7 @@ function weaponImageForWeapon(weapon) {
         name = "none";
     }
 
-    return `../images/radar/hud_weapons/hud_${weapons[name]}.png`;
+    return `/images/radar/hud_weapons/hud_${weapons[name]}.png`;
 }
 
 function updatePlayerData() {
@@ -220,17 +220,17 @@ function updatePlayerData() {
         }
 
         let column = player.team === 'allies' ? $('.player-data-left') : $('.player-data-right');
-        
+
         let greenProgressClass = 'rounded-top';
         let redProgressClass = 'rounded-right';
-        
+
         if (player.health < 100) {
             greenProgressClass = 'rounded-left';
         }
         if (player.health <= 0) {
             redProgressClass = 'rounded-top';
         }
-        
+
         column.append(`
 <div class="card m-0 p-0 mb-15">
         <div class="progress h-25">
@@ -250,7 +250,7 @@ function updatePlayerData() {
                                     <span class="align-self-center oi oi-target pr-5"></span>
                                     <div class="pr-10 align-self-center">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
                                     <span class="align-self-center oi oi-graph pr-5"></span>
-                                    <div>${ player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
+                                    <div>${player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
                                 </div>
                               </div>
                           </div>
@@ -262,12 +262,12 @@ function updatePlayerData() {
 }
 
 function updateRadarData() {
-    $.getJSON(radarDataUrl, function (_radarItem) {
+    $.getJSON(window.radarDataUrl, function (_radarItem) {
         newRadarData = _radarItem;
     });
 
 
-    $.getJSON(mapDataUrl, function (_map) {
+    $.getJSON(window.mapDataUrl, function (_map) {
         stateInfo.mapInfo = _map
     });
 
@@ -308,13 +308,14 @@ function updateRadarData() {
             else if (value.isAlive && !previous.isAlive) {
                 value.previous = value;
             }
-        }});
+        }
+    });
 
     // we switch out the items to
     previousRadarData = newRadarData;
 
     $('#map_name').html(stateInfo.mapInfo.alias);
-    $('#map_list').css('background-image', `url(../images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@2x.jpg)`);
+    $('#map_list').css('background-image', `url(/images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@2x.jpg)`);
     checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), stateInfo.mapInfo);
     updatePlayerData();
 }
@@ -383,9 +384,9 @@ function updateMap() {
 
         drawCircle(ctx, currentX, currentY, teamColor);
         drawTriangle(ctx,
-            { x: currentX, y: currentY },
-            { x: currentX + firstVertex.x, y: currentY + firstVertex.y },
-            { x: currentX + secondVertex.x, y: currentY + secondVertex.y },
+            {x: currentX, y: currentY},
+            {x: currentX + firstVertex.x, y: currentY + firstVertex.y},
+            {x: currentX + secondVertex.x, y: currentY + secondVertex.y},
             fovColor);
         drawText(ctx, currentX, currentY - (textOffset * stateInfo.imageScaler), value.name, 16, 'white', teamColor, 'center')
     });
@@ -416,11 +417,18 @@ function updateMap() {
     window.requestAnimationFrame(updateMap);
 }
 
-$(document).ready(function () {
+window.initLiveRadar = function (radarDataUrl, mapDataUrl) {
     if ($('#map_canvas').length === 0) {
+        console.error("[LiveRadar] Canvas #map_canvas not found!");
         return;
     }
-    
+
+    // Reset state if re-initializing
+    if (stateInfo && stateInfo.intervalId) {
+        console.log("[LiveRadar] Cleaning up previous interval", stateInfo.intervalId);
+        clearInterval(stateInfo.intervalId);
+    }
+
     stateInfo = {
         canvas: $('#map_canvas'),
         ctx: $('#map_canvas')[0].getContext('2d'),
@@ -433,11 +441,22 @@ $(document).ready(function () {
         deathIcons: {},
         deathIconTime: 4000
     };
-    
-    $.getJSON(radarDataUrl, function (_map) {
+
+    // Globals update
+    window.radarDataUrl = radarDataUrl;
+    window.mapDataUrl = mapDataUrl;
+
+    // Correct logic: First fetch MAP metadata, then start polling for radar entities.
+    $.getJSON(window.mapDataUrl, function (_map) {
         stateInfo.mapInfo = _map;
+
+        // Initial Radar Data fetch
         updateRadarData();
-        setInterval(updateRadarData, stateInfo.updateFrequency);
+
+        // Start polling
+        stateInfo.intervalId = setInterval(updateRadarData, stateInfo.updateFrequency);
         window.requestAnimationFrame(updateMap);
+    }).fail(function (jqxhr, textStatus, error) {
+        console.error("[LiveRadar] Map Metadata fetch failed:", textStatus, error);
     });
-})
+}

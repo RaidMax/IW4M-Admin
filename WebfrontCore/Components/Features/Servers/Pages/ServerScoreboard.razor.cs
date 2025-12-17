@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.Features.Servers.Models;
-using WebfrontCore.Components.UI.Navigation;
 
 namespace WebfrontCore.Components.Features.Servers.Pages;
 

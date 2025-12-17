@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.UI.Navigation;

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using WebfrontCore.Components.Features.Admin.Components;
 using WebfrontCore.Core.Services;
 
 
@@ -8,6 +9,7 @@ public partial class ClientBadges : IDisposable
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
 
     private NavigationData? _navData;
     private PeriodicTimer? _badgeRefreshTimer;
@@ -67,5 +69,14 @@ public partial class ClientBadges : IDisposable
         _cts?.Dispose();
         _badgeRefreshTimer?.Dispose();
         AppState.OnChange -= StateHasChanged;
+    }
+
+    private void ShowReports()
+    {
+        ActionService.OpenCustom(builder =>
+        {
+            builder.OpenComponent<DashboardReports>(0);
+            builder.CloseComponent();
+        }, AppState.Loc("WEBFRONT_MODAL_REPORTS_TITLE"));
     }
 }

@@ -12,12 +12,19 @@ public partial class DashboardReports
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadReports();
+    }
+
+    private async Task LoadReports()
+    {
         try
         {
             ReportsList = (await Api.GetReportsAsync()).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            // Logging is handled in the razor component or valid to ignore here if UI handles empty state
+            ReportsList = [];
         }
     }
 }

@@ -1,8 +1,17 @@
 @page "/Penalty/List"
 @implements IAsyncDisposable
 @rendermode InteractiveServer
+@inject NavigationManager NavManager
 
-<PageTitle>Client Penalties | IW4MAdmin</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_PENALTY_TITLE") | IW4MAdmin</PageTitle>
+
+<HeadContent>
+    <meta property="og:title" content="@AppState.Loc("WEBFRONT_PENALTY_TITLE") | IW4MAdmin" />
+    <meta property="og:description" content="@AppState.Loc("WEBFRONT_PENALTY_TITLE")" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@NavManager.Uri" />
+    <meta name="theme-color" content="#dc3545">
+</HeadContent>
 
 <div class="content mt-20">
     <h2 class="content-title mt-15">@AppState.Loc("WEBFRONT_PENALTY_TITLE")</h2>

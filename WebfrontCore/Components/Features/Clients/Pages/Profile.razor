@@ -3,7 +3,7 @@
 
 @if (_isLoading)
 {
-    <PageTitle>Client | IW4MAdmin</PageTitle>
+    <PageTitle>@AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE") | IW4MAdmin</PageTitle>
 
     <div class="content mt-20">
         <div class="text-center">
@@ -35,10 +35,22 @@ else
     <PageTitle>@Client.Name.StripColors() | IW4MAdmin</PageTitle>
 
     var gravatarUrl = Client.Meta?.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
-    var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;
-    var isPermBanned = Client.LevelInt == (int)EFClient.Permission.Banned;
     var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
     var shortCode = GetShortCode(Client.Name);
+    var description = $"{AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")} - {AppState.Loc($"GAME_{Client.Game}")} - {Client.LastConnection.HumanizeForCurrentCulture()}";
+    var imageUrl = !string.IsNullOrEmpty(gravatarUrl) ? $"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg" : "";
+
+    <HeadContent>
+        <meta property="og:title" content="@Client.Name.StripColors() | IW4MAdmin" />
+        <meta property="og:description" content="@description" />
+        <meta property="og:type" content="profile" />
+        <meta property="og:url" content="@NavManager.Uri" />
+        @if (!string.IsNullOrEmpty(imageUrl))
+        {
+            <meta property="og:image" content="@imageUrl" />
+        }
+        <meta name="theme-color" content="#007bff">
+    </HeadContent>
 
     <div class="content row mt-20">
         <div class="col-12 col-lg-9">
@@ -314,3 +326,4 @@ else
         </div>
     </div>
 }
+

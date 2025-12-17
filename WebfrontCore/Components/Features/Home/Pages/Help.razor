@@ -1,6 +1,15 @@
 @page "/Help"
+@inject NavigationManager NavManager
 
-<PageTitle>Help | IW4MAdmin</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE") | IW4MAdmin</PageTitle>
+
+<HeadContent>
+    <meta property="og:title" content="@AppState.Loc("WEBFRONT_HELP_TITLE") | IW4MAdmin" />
+    <meta property="og:description" content="@AppState.Loc("WEBFRONT_HELP_COMMANDS")" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@NavManager.Uri" />
+    <meta name="theme-color" content="#007bff">
+</HeadContent>
 
 @if (CommandGroups == null)
 {

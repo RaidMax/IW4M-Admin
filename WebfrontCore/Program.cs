@@ -116,7 +116,7 @@ public class Program
         // Add WebfrontCore assembly for controller discovery (CreateSlimBuilder doesn't auto-discover)
         mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
 
-        foreach (var asm in PluginAssemblies())
+        foreach (var asm in GetPluginAssemblies())
         {
             mvcBuilder.AddApplicationPart(asm);
         }
@@ -150,7 +150,7 @@ public class Program
         services.AddSingleton<IResourceQueryHelper<BanInfoRequest, BanInfo>, BanInfoResourceQueryHelper>();
 
         services.AddRazorComponents()
-            .AddInteractiveServerComponents(options => { options.DetailedErrors = true; });
+            .AddInteractiveServerComponents(options => { options.DetailedErrors = Utilities.IsDevelopment; });
 
         services.AddScoped<AppState>();
         services.AddScoped<IZeroJsInterop, ZeroJsInterop>();
@@ -165,25 +165,14 @@ public class Program
             client.BaseAddress = new Uri(webfrontUrl);
         }).AddHttpMessageHandler<CookieForwardingHandler>();
 
-        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
-        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+        services
+            .AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services
+            .AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddScoped<AuthenticationStateProvider, PersistingAuthenticationStateProvider>();
         services.AddCascadingAuthenticationState();
 
         services.AddScoped<IActionService, ActionService>();
-        return;
-
-        IEnumerable<Assembly> PluginAssemblies()
-        {
-            var pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
-
-            if (!Directory.Exists(pluginDir))
-                return [];
-            var dllFileNames =
-                Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
-                    "*.dll");
-            return dllFileNames.Select(Assembly.LoadFrom);
-        }
     }
 
     private static void ConfigureMiddleware(WebApplication app)
@@ -218,8 +207,8 @@ public class Program
         app.UseRateLimiter();
 
         app.MapControllerRoute(
-            name: "default",
-            pattern: "{controller=Home}/{action=Index}/{id?}")
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}")
             .RequireRateLimiting("concurrencyPolicy");
 
         app.MapControllers()
@@ -228,6 +217,19 @@ public class Program
         app.MapStaticAssets();
 
         app.MapRazorComponents<App>()
-            .AddInteractiveServerRenderMode();
+            .AddInteractiveServerRenderMode()
+            .AddAdditionalAssemblies(GetPluginAssemblies().ToArray());
+    }
+
+    private static IEnumerable<Assembly> GetPluginAssemblies()
+    {
+        var pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
+
+        if (!Directory.Exists(pluginDir))
+            return [];
+        var dllFileNames =
+            Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
+                "*.dll");
+        return dllFileNames.Select(Assembly.LoadFrom);
     }
 }

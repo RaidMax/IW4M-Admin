@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.Linq;
 using IW4MAdmin.Plugins.LiveRadar.Configuration;
@@ -8,38 +7,10 @@ using Microsoft.AspNetCore.Http;
 
 namespace IW4MAdmin.Plugins.LiveRadar.Web.Controllers
 {
-    public class RadarController : BaseController
+    public class RadarController(IManager manager, LiveRadarConfiguration config) : BaseController(manager)
     {
-        private readonly IManager _manager;
-        private readonly LiveRadarConfiguration _config;
+        private readonly IManager _manager = manager;
 
-        public RadarController(IManager manager, LiveRadarConfiguration config) :
-            base(manager)
-        {
-            _manager = manager;
-            _config = config;
-        }
-
-        [HttpGet]
-        [Route("Radar/{serverId?}")]
-        public IActionResult Index(string serverId = null)
-        {
-            var servers = _manager.GetServers()
-                .Where(server => server.GameName == Server.Game.IW4)
-                .Select(server => new ServerInfo
-                {
-                    Name = server.Hostname,
-                    IPAddress = server.ListenAddress,
-                    Port = server.ListenPort,
-                    Game = server.GameCode
-                });
-
-            ViewBag.Title = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"];
-            ViewBag.SelectedServerId = string.IsNullOrEmpty(serverId) ? servers.FirstOrDefault()?.Endpoint : serverId;
-
-            // ReSharper disable once Mvc.ViewNotResolved
-            return View("~/Views/Plugins/LiveRadar/Radar/Index.cshtml", servers);
-        }
 
         [HttpGet]
         [Route("Radar/{serverId}/Map")]
@@ -54,7 +25,7 @@ namespace IW4MAdmin.Plugins.LiveRadar.Web.Controllers
                 return NotFound();
             }
 
-            var map = _config.Maps.FirstOrDefault(map => map.Name == server.CurrentMap.Name);
+            var map = config.Maps.FirstOrDefault(map => map.Name == server.CurrentMap.Name);
 
             if (map == null)
             {
@@ -74,15 +45,15 @@ namespace IW4MAdmin.Plugins.LiveRadar.Web.Controllers
             var server = serverId == null
                 ? _manager.GetServers().FirstOrDefault()
                 : _manager.GetServers().FirstOrDefault(server => server.ToString() == serverId);
-            
+
             if (server == null)
             {
                 return NotFound();
             }
-            
+
             var radarInfo = server.GetClientsAsList()
                 .Select(client => client.GetAdditionalProperty<RadarDto>("LiveRadar")).ToList();
-            
+
             return Json(radarInfo);
         }
     }

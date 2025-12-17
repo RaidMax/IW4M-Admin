@@ -1,0 +1,55 @@
+@page "/Radar/{ServerId?}"
+@using Microsoft.AspNetCore.Components.Web
+@rendermode RenderMode.InteractiveServer
+
+@using SharedLibraryCore
+@using SharedLibraryCore.Interfaces
+@using Microsoft.JSInterop
+@inject IManager Manager
+@inject IJSRuntime JS
+
+<div class="content mt-20 row">
+    <div class="col-12 col-lg-9">
+        <h2 class="content-title mb-0">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_LIVE_RADAR_TITLE"]</h2>
+        <div class="text-muted mb-15">
+            <span>@SelectedServerName.StripColors()</span>
+        </div>
+        <div class="d-flex flex-column flex-md-row justify-content-between ">
+            <div class="player-data-left w-md-quarter" style="opacity: 0;">
+            </div>
+            <div class="w-md-half m-0 mb-15 ml-md-15 mr-md-15">
+                <div id="map_name" class="bg-dark-dm bg-light-lm text-center p-10 rounded-top">&mdash;</div>
+                <div id="map_list" class="rounded" style="background-size:cover; padding-bottom: 100% !important;">
+                    <canvas id="map_canvas" style="position:absolute;"></canvas>
+                </div>
+            </div>
+            <div class="player-data-right w-md-quarter" style="opacity: 0;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Menu -->
+    <div class="col-12 col-lg-3">
+        <div class="card p-0">
+            <div class="card-header">
+                <h5 class="card-title">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"]</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    @foreach (var server in Servers)
+                    {
+                        <a href="/LiveRadar/@server.ToString()"
+                           class="list-group-item list-group-item-action @(IsSelected(server) ? "active" : "")">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>@server.Hostname.StripColors()</div>
+                                <span class="badge badge-secondary">@server.GameName</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <img class="hide" id="hud_death" src="/images/radar/death.png"/>
+</div>

@@ -3,9 +3,9 @@ using Data.Models.Client.Stats.Reference;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Dtos;
 using Stats.Dtos;
 using Stats.Helpers;
-using WebfrontCore.Components.UI.Navigation;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
@@ -86,7 +86,8 @@ public partial class AdvancedStats
 
     private string GetWeaponNameForHit(EFClientHitStatistic stat, GameStringConfiguration config)
     {
-        if (stat == null) return null;
+        if (stat == null)
+            return null;
         var rebuiltName = stat.RebuildWeaponName();
         var name = config.GetStringForGame(rebuiltName, stat.Weapon?.Game);
         return !rebuiltName.Equals(name, StringComparison.InvariantCultureIgnoreCase)
@@ -96,7 +97,8 @@ public partial class AdvancedStats
 
     private string GetWeaponAttachmentName(EFWeaponAttachmentCombo attachment, GameStringConfiguration config)
     {
-        if (attachment == null) return null;
+        if (attachment == null)
+            return null;
         var attachmentText = string.Join(" + ", new[]
         {
             config.GetStringForGame(attachment.Attachment1.Name, attachment.Attachment1.Game),

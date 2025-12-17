@@ -1,5 +1,8 @@
-﻿namespace WebfrontCore.Components.UI.Navigation;
+﻿using System.Collections.Generic;
 
+namespace SharedLibraryCore.Dtos;
+
+// todo: move after refactor
 public class SideContextMenuItem
 {
     public bool IsLink { get; set; }

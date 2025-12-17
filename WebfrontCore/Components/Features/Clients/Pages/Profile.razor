@@ -3,6 +3,8 @@
 
 @if (_isLoading)
 {
+    <PageTitle>Client | IW4MAdmin</PageTitle>
+
     <div class="content mt-20">
         <div class="text-center">
             <div class="spinner-border text-primary" role="status">
@@ -30,12 +32,13 @@ else if (Client == null)
 }
 else
 {
+    <PageTitle>@Client.Name.StripColors() | IW4MAdmin</PageTitle>
+
     var gravatarUrl = Client.Meta?.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;
     var isPermBanned = Client.LevelInt == (int)EFClient.Permission.Banned;
     var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
     var shortCode = GetShortCode(Client.Name);
-
 
     <div class="content row mt-20">
         <div class="col-12 col-lg-9">
@@ -269,7 +272,7 @@ else
                         <div class="d-flex flex-column flex-md-row text-center text-md-left flex-wrap">
                             @if (Client.Meta != null)
                             {
-                                <ClientMetaList ClientId="@Client.ClientId" MetaFilterType="@MetaType.Information" />
+                                <ClientMetaList ClientId="@Client.ClientId" MetaFilterType="@MetaType.Information"/>
                             }
                         </div>
                     </div>

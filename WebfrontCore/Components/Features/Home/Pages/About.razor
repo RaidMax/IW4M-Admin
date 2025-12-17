@@ -2,6 +2,8 @@
 
 @if (AboutInfo == null)
 {
+    <PageTitle>About | IW4MAdmin</PageTitle>
+
     <div class="text-center mt-20">
         <div class="spinner-border text-primary" role="status">
             <span class="sr-only">Loading...</span>
@@ -10,6 +12,7 @@
 }
 else
 {
+    <PageTitle>@AboutInfo.CommunityInformation.Name | IW4MAdmin</PageTitle>
     <div class="content text-wrap mt-20">
         @* Community Banner *@
         @if (AboutInfo.CommunityInformation?.EnableBanner == true)

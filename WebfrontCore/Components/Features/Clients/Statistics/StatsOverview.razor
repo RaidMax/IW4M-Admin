@@ -2,8 +2,17 @@
 @page "/Stats/TopPlayers"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
+@inject NavigationManager NavManager
 
-<PageTitle>Top Players | IW4MAdmin</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE") | IW4MAdmin</PageTitle>
+
+<HeadContent>
+    <meta property="og:title" content="@AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE") | IW4MAdmin" />
+    <meta property="og:description" content="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS")) &mdash; @TotalRankedClients.ToString("#,##0") @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE"))" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@NavManager.Uri" />
+    <meta name="theme-color" content="#007bff">
+</HeadContent>
 
 <div class="content mt-20 row">
     <div class="col-12 col-lg-9 mt-0">

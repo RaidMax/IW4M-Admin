@@ -5,6 +5,7 @@ namespace WebfrontCore.Components.Features.Servers.Pages;
 
 public partial class ScoreboardIndex
 {
+    [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     private bool Loading { get; set; } = true;

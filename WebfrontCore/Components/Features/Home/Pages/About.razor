@@ -1,8 +1,9 @@
 @page "/About"
+@inject NavigationManager NavManager
 
 @if (AboutInfo == null)
 {
-    <PageTitle>About | IW4MAdmin</PageTitle>
+    <PageTitle>@AppState.Loc("WEBFRONT_ABOUT_TITLE") | IW4MAdmin</PageTitle>
 
     <div class="text-center mt-20">
         <div class="spinner-border text-primary" role="status">
@@ -13,6 +14,15 @@
 else
 {
     <PageTitle>@AboutInfo.CommunityInformation.Name | IW4MAdmin</PageTitle>
+
+    <HeadContent>
+        <meta property="og:title" content="@($"{AboutInfo.CommunityInformation.Name} | {AppState.Loc("WEBFRONT_ABOUT_TITLE")}")" />
+        <meta property="og:description" content="@AboutInfo.CommunityInformation.Description.StripColors()" />
+        <meta property="og:type" content="website" />
+         <meta property="og:url" content="@NavManager.Uri" />
+        <meta name="theme-color" content="#007bff">
+    </HeadContent>
+
     <div class="content text-wrap mt-20">
         @* Community Banner *@
         @if (AboutInfo.CommunityInformation?.EnableBanner == true)

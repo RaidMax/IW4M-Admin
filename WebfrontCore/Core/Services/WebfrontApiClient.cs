@@ -145,9 +145,9 @@ public class WebfrontApiClient(HttpClient httpClient) : IWebfrontApiClient
             $"/api/client/{clientId}/meta{query}");
     }
 
-    public Task<Controllers.API.InteractionResponse> GetInteractionAsync(string interactionName) =>
+    public Task<Controllers.API.InteractionResponse> GetInteractionAsync(string interactionName, string? query = null) =>
         httpClient.GetFromJsonAsync<Controllers.API.InteractionResponse>(
-            $"/api/interaction/{System.Net.WebUtility.UrlEncode(interactionName)}", _jsonOptions);
+            $"/api/interaction/{System.Net.WebUtility.UrlEncode(interactionName)}{query}", _jsonOptions);
 
     public async Task<string> UnbanClientAsync(int clientId, string reason)
     {

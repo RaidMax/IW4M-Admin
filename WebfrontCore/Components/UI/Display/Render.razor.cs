@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using WebfrontCore.Controllers.API;
 using WebfrontCore.Core.Services;
+using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore.Components.UI.Display;
 
@@ -8,8 +9,10 @@ public partial class Render
 {
     [Inject] public required IWebfrontApiClient Api { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required NavigationManager NavigationManager { get; set; }
     [Parameter] public string InteractionName { get; set; }
     private InteractionResponse InteractionData;
+    protected InteractionType ParsedInteractionType;
     private bool IsLoading = true;
     private string ErrorMessage;
 
@@ -21,7 +24,9 @@ public partial class Render
 
         try
         {
-            InteractionData = await Api.GetInteractionAsync(InteractionName);
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            InteractionData = await Api.GetInteractionAsync(InteractionName, uri.Query);
+            Enum.TryParse(InteractionData.InteractionType, out ParsedInteractionType);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {

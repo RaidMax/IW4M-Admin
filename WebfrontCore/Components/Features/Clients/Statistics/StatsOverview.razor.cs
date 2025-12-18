@@ -101,7 +101,12 @@ public partial class StatsOverview
 
         try
         {
-            var response = await DataService.GetTopStatsAsync(Count, Offset, serverId);
+            var response = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
+            {
+                Count = Count,
+                Offset = Offset,
+                ServerId = serverId
+            });
             var newPlayers = response.Players;
             TotalRankedClients = response.TotalRankedClients;
 

@@ -4,7 +4,7 @@ namespace WebfrontCore.Components.UI.Navigation.Models;
 
 public class NavigationInfo
 {
-    public required ClientInfo User { get; set; }
+    public ClientInfo? User { get; set; }
     public bool Authorized { get; set; }
     public required Dictionary<string, string> Localization { get; set; }
     public required IEnumerable<Page> Pages { get; set; }

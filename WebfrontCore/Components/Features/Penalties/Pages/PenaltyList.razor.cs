@@ -85,7 +85,13 @@ public partial class PenaltyList
 
         try
         {
-            var result = await DataService.GetPenaltiesAsync(Offset, Count, ShowOnly, IgnoreAutomated);
+            var result = await DataService.GetPenaltiesAsync(new WebfrontCore.Controllers.API.Models.PenaltyRequest
+            {
+                Offset = Offset,
+                Count = Count,
+                ShowOnly = ShowOnly,
+                IgnoreAutomated = IgnoreAutomated
+            });
             if (result != null && result.Any())
             {
                 Penalties.AddRange(result);

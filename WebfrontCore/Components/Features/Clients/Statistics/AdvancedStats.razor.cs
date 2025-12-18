@@ -38,7 +38,7 @@ public partial class AdvancedStats
         }
         catch (Exception ex)
         {
-            NavManager.NavigateTo("/Client/Profile/" + ClientId);
+            NavManager.NavigateTo("/client" + ClientId);
         }
     }
 
@@ -68,7 +68,7 @@ public partial class AdvancedStats
             Items = Stats.Servers.Select(server => new SideContextMenuItem
             {
                 IsLink = true,
-                Reference = $"/Client/Statistics/{ClientId}/Advanced?serverId={server.Endpoint}",
+                Reference = $"/client/{ClientId}/stats?serverId={server.Endpoint}",
                 Title = server.Name.StripColors(),
                 IsActive = Stats.ServerEndpoint == server.Endpoint,
                 Meta = server.Game.ToString(),
@@ -76,7 +76,7 @@ public partial class AdvancedStats
             }).Prepend(new SideContextMenuItem
             {
                 IsLink = true,
-                Reference = $"/Client/Statistics/{ClientId}/Advanced",
+                Reference = $"/client/{ClientId}/stats",
                 Title = AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"),
                 IsActive = Stats.ServerEndpoint == null
             }).ToList()

@@ -1,4 +1,5 @@
 @page "/Admin/BanManagement"
+@page "/manage-bans"
 @implements IAsyncDisposable
 @attribute [Authorize(Policy = "Permissions.BanManagementPage.Read")]
 @rendermode InteractiveServer
@@ -106,7 +107,7 @@
                         <div class="d-flex p-15 mr-md-10 w-full w-md-200 bg-very-dark-dm bg-light-ex-lm rounded">
                             <div class="align-self-center w-full">
                                 <div class="d-flex font-size-16">
-                                    <a href="Client/Profile/@ban.ClientId"
+                                    <a href="/client/@ban.ClientId"
                                        class="no-decoration flex-fill text-force-break mr-5">
                                         <ColorCode Value="@ban.ClientName"/>
                                     </a>
@@ -157,7 +158,7 @@
                                          class="d-flex flex-fill">
                                         <i class="oi oi-link-intact align-self-center"></i>
                                         <div class="text-truncate ml-5 mr-5">
-                                            <a href="Client/Profile/@associatedEntity.OffenderInfo.ClientId"
+                                            <a href="/client/@associatedEntity.OffenderInfo.ClientId"
                                                class="no-decoration text-force-break">
                                                 <ColorCode Value="@associatedEntity.OffenderInfo.ClientName"/>
                                             </a>

@@ -1,4 +1,5 @@
 @page "/Client/Profile/{Id:int}"
+@page "/client/{Id:int}"
 @rendermode InteractiveServer
 
 @if (_isLoading)
@@ -123,7 +124,7 @@ else
                                                 class="dropdown-menu dropdown-menu-center @(Client.Aliases.Any(a => a.Value != null && !a.Value.Contains(" ") && a.Value.StripColors().Length >= 15) ? "w-250" : "")">
                                                 @foreach (var alias in Client.Aliases.OrderByDescending(a => a.Date).Take(15))
                                                 {
-                                                    <a href="/Client/AdvancedFind?clientName=@Uri.EscapeDataString(alias.Value?.StripColors() ?? "")"
+                                                    <a href="/find-client?clientName=@Uri.EscapeDataString(alias.Value?.StripColors() ?? "")"
                                                        class="dropdown-item"
                                                        title="@alias.Date.HumanizeForCurrentCulture()">
                                                         <i class="oi oi-magnifying-glass text-muted mr-5"></i>
@@ -188,7 +189,7 @@ else
                                                 {
                                                     <div class="d-flex dropdown-item"
                                                          title="@ip.Date.HumanizeForCurrentCulture()">
-                                                        <a href="/Client/AdvancedFind?clientIP=@ip.Value">
+                                                        <a href="/find-client?clientIP=@ip.Value">
                                                             <i class="oi oi-magnifying-glass text-muted mr-5"></i>
                                                         </a>
                                                         <ColorCode Value="@ip.Value"/>
@@ -233,7 +234,7 @@ else
                                         <div class="text-force-break">@line.TrimEnd('\r')</div>
                                     }
                                     <div class="mt-5">
-                                        <a href="/Client/Profile/@Client.NoteMeta.OriginEntityId"
+                                        <a href="/client/@Client.NoteMeta.OriginEntityId"
                                            class="no-decoration">
                                             <ColorCode Value="@Client.NoteMeta.OriginEntityName"/>
                                         </a>
@@ -326,4 +327,3 @@ else
         </div>
     </div>
 }
-

@@ -1,5 +1,6 @@
 @page "/Client/Statistics"
 @page "/Stats/TopPlayers"
+@page "/stats/top"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 @inject NavigationManager NavManager
@@ -56,7 +57,7 @@
                                 </div>
                                 <div class="ml-10">
                                     <div class="d-flex flex-row">
-                                        <a href="/Client/Profile/@stat.ClientId" class="no-decoration text-light-dm text-dark-lm font-size-20 text-force-break" style="line-height: 2.5rem;">
+                                        <a href="/client/@stat.ClientId" class="no-decoration text-light-dm text-dark-lm font-size-20 text-force-break" style="line-height: 2.5rem;">
                                             <ColorCode Value="@stat.Name" />
                                         </a>
                                         @if (stat.RatingChange > 0)

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
-using WebfrontCore.Components.UI.Navigation;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
@@ -171,7 +170,7 @@ public partial class StatsOverview
             Items = servers.Select(server => new SideContextMenuItem
             {
                 IsLink = true,
-                Reference = $"/Client/Statistics?serverId={server.Endpoint}",
+                Reference = $"/stats/top?serverId={server.Endpoint}",
                 Title = server.Name.StripColors(),
                 IsActive = serverId == server.Endpoint,
                 Meta = server.Game.ToString(),
@@ -179,7 +178,7 @@ public partial class StatsOverview
             }).Prepend(new SideContextMenuItem
             {
                 IsLink = true,
-                Reference = "/Client/Statistics",
+                Reference = "/stats/top",
                 Title = AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"),
                 IsActive = serverId == null
             }).ToList()

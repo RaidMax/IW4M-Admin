@@ -159,7 +159,7 @@ public partial class Profile
             Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_STATS"),
             IsButton = true,
             IsLink = true,
-            Reference = $"/Client/Statistics/{Id}/Advanced",
+            Reference = $"/client/{Id}/stats",
             Icon = "oi-graph",
         });
 

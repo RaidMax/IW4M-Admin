@@ -1,4 +1,5 @@
 @page "/Penalty/List"
+@page "/penalties"
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
@@ -68,7 +69,7 @@
                         <!-- Desktop Row -->
                         <tr class="d-none d-lg-table-row">
                             <td colspan="20%">
-                                <a href="/Client/Profile/@penalty.OffenderId" class="level-color-@((int)penalty.OffenderLevel)">
+                                <a href="/client/@penalty.OffenderId" class="level-color-@((int)penalty.OffenderLevel)">
                                     <ColorCode Value="@penalty.OffenderName" />
                                 </a>
                             </td>
@@ -79,7 +80,7 @@
                                 <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
                             </td>
                             <td colspan="20%">
-                                <a href="/Client/Profile/@penalty.PunisherId" class="level-color-@((int)penalty.PunisherLevel)">
+                                <a href="/client/@penalty.PunisherId" class="level-color-@((int)penalty.PunisherLevel)">
                                     <ColorCode Value="@penalty.PunisherName" />
                                 </a>
                             </td>
@@ -106,7 +107,7 @@
                             </td>
                             <td class=" d-flex flex-column w-three-quarter">
                                 <div class="mt-5 mb-5">
-                                    <a href="/Client/Profile/@penalty.OffenderId">
+                                    <a href="/client/@penalty.OffenderId">
                                         <ColorCode Value="@penalty.OffenderName" />
                                     </a>
                                 </div>
@@ -116,7 +117,7 @@
                                 <div class="mt-5 mb-5 text-force-break">
                                     <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
                                 </div>
-                                <a href="/Client/Profile/@penalty.PunisherId" class="mt-5 mb-5 level-color-@((int)penalty.PunisherLevel)">
+                                <a href="/client/@penalty.PunisherId" class="mt-5 mb-5 level-color-@((int)penalty.PunisherLevel)">
                                     <ColorCode Value="@penalty.PunisherName" />
                                 </a>
                                 <div class="mt-5 mb-5 text-muted">

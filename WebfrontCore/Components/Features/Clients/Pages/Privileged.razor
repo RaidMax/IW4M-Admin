@@ -1,4 +1,5 @@
 @page "/Client/Privileged"
+@page "/privileged-clients"
 @attribute [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
 
 <PageTitle>@AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE") | IW4MAdmin</PageTitle>
@@ -40,7 +41,7 @@
                                         <span class="oi oi-shield mr-5 font-size-12"></span>
                                     </span>
 
-                                    <a href="/Client/Profile/@client.ClientId" class="text-force-break">
+                                    <a href="/client/@client.ClientId" class="text-force-break">
                                         <ColorCode Value="@client.Name"/>
                                     </a>
                                 </td>
@@ -61,7 +62,7 @@
                     {
                         <tr class="bg-dark-dm bg-light-lm">
                             <td colspan="50%">
-                                <a href="/Client/Profile/@client.ClientId" class="text-force-break">
+                                <a href="/client/@client.ClientId" class="text-force-break">
                                     <ColorCode Value="@client.Name"/>
                                 </a>
                             </td>

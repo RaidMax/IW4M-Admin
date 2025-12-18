@@ -6,7 +6,7 @@ namespace WebfrontCore.Components.Features.Admin.Pages;
 
 public partial class Console
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     private List<ServerInfo> Servers { get; set; } = [];
@@ -23,7 +23,7 @@ public partial class Console
             return;
         }
 
-        Servers = await Api.GetServersAsync();
+        Servers = await DataService.GetServersAsync();
         if (Servers.Any())
         {
             SelectedServerId = Servers.First().Id;
@@ -38,7 +38,7 @@ public partial class Console
         try
         {
             CommandOutput.Add($"> {Command}");
-            var responses = await Api.ExecuteConsoleCommandAsync(SelectedServerId, Command);
+            var responses = await DataService.ExecuteCommandAsync(SelectedServerId, Command);
 
             foreach (var response in responses)
             {

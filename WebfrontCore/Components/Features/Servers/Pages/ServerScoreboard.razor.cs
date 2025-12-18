@@ -7,7 +7,7 @@ namespace WebfrontCore.Components.Features.Servers.Pages;
 
 public partial class ServerScoreboard
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Parameter] public string Id { get; set; }
     private ScoreboardInfo ScoreboardModel { get; set; }
@@ -44,12 +44,12 @@ public partial class ServerScoreboard
         try
         {
             // Fetch the specific server scoreboard
-            ScoreboardModel = await Api.GetScoreboardAsync(Id);
+            ScoreboardModel = await DataService.GetServerScoreboardAsync(Id);
 
             // Only load context menu once (server list doesn't change often)
             if (ContextItems == null)
             {
-                var servers = await Api.GetServersAsync();
+                var servers = await DataService.GetServersAsync();
 
                 ContextItems = new SideContextMenuItems
                 {
@@ -80,7 +80,7 @@ public partial class ServerScoreboard
             {
                 try
                 {
-                    ScoreboardModel = await Api.GetScoreboardAsync(Id);
+                    ScoreboardModel = await DataService.GetServerScoreboardAsync(Id);
                     await InvokeAsync(StateHasChanged);
                 }
                 catch

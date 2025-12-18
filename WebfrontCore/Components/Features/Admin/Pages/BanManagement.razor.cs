@@ -7,7 +7,7 @@ namespace WebfrontCore.Components.Features.Admin.Pages;
 
 public partial class BanManagement
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
@@ -37,7 +37,7 @@ public partial class BanManagement
     {
         Results = null; // Show loading spinner
         Request.Offset = 0;
-        var result = await Api.GetBansAsync(Request);
+        var result = await DataService.GetBansAsync(Request);
         Results = result.Results.ToList();
         HasMoreResults = Results.Count >= Request.Count;
         _observerSetup = false; // Reset observer so it re-initializes for new list
@@ -53,7 +53,7 @@ public partial class BanManagement
         StateHasChanged();
 
         Request.Offset += Request.Count;
-        var result = await Api.GetBansAsync(Request);
+        var result = await DataService.GetBansAsync(Request);
 
         IsLoading = false;
 
@@ -106,7 +106,7 @@ public partial class BanManagement
 
         try
         {
-            var message = await Api.UnbanClientAsync(_unbanTargetId, _unbanReason);
+            var message = await DataService.UnbanClientAsync(_unbanTargetId, _unbanReason);
             await ToastService.ShowSuccessAsync(message);
             CloseUnbanModal();
             await Search(); // Refresh results

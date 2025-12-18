@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.Features.Clients.Components;
 
 public partial class ClientMetaList : IAsyncDisposable
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
 
@@ -86,7 +86,7 @@ public partial class ClientMetaList : IAsyncDisposable
                 Offset = 0;
             }
 
-            var newItems = await Api.GetClientMetaAsync(ClientId, Count, Offset, StartAt, MetaFilterType);
+            var newItems = await DataService.GetClientMetaAsync(ClientId, Count, Offset, StartAt, MetaFilterType);
             var itemList = newItems?.ToList() ?? new List<BaseMetaResponse>();
 
             var n = 0;
@@ -172,7 +172,7 @@ public partial class ClientMetaList : IAsyncDisposable
             state.IsLoading = true;
             try
             {
-                state.SnapshotInfo = await Api.GetAutomatedPenaltyInfoAsync(meta.PenaltyId);
+                state.SnapshotInfo = await DataService.GetAutomatedPenaltyContextAsync(meta.PenaltyId);
             }
             catch (Exception)
             {
@@ -195,7 +195,7 @@ public partial class ClientMetaList : IAsyncDisposable
             state.IsLoading = true;
             try
             {
-                state.ContextMessages = await Api.GetMessageContextAsync(meta.ServerId.ToString(), meta.When.ToFileTimeUtc());
+                state.ContextMessages = await DataService.GetChatContextAsync(meta.ServerId.ToString(), meta.When.ToFileTimeUtc());
             }
             catch (Exception ex)
             {

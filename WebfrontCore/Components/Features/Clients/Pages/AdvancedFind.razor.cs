@@ -13,7 +13,7 @@ namespace WebfrontCore.Components.Features.Clients.Pages;
 public partial class AdvancedFind
 {
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
     [Inject] public required AuthenticationStateProvider AuthProvider { get; set; }
@@ -72,7 +72,7 @@ public partial class AdvancedFind
             Request.Offset = Offset;
             Request.Count = Count;
 
-            var response = await Api.GetClientsAsync(Request);
+            var response = await DataService.GetClientsAsync(Request);
             if (response != null && response.Any())
             {
                 Results.AddRange(response);

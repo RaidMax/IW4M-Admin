@@ -2,6 +2,7 @@
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.Services;
 using Data.Models;
 using Microsoft.AspNetCore.Authorization;
 
@@ -11,48 +12,17 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     public class PenaltyController : BaseController
     {
-        public PenaltyController(IManager manager) : base(manager)
+        private readonly IWebfrontDataService _dataService;
+
+        public PenaltyController(IManager manager, IWebfrontDataService dataService) : base(manager)
         {
+            _dataService = dataService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IList<PenaltyInfo>>> GetPenalties(int offset = 0, int count = 30, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true)
         {
-            var penalties = await Manager.GetPenaltyService().GetRecentPenalties(count, offset, showOnly, ignoreAutomated);
-            // Permission filtering logic from PenaltyListViewComponent
-            if (Client.Level == Data.Models.Client.EFClient.Permission.User)
-            {
-                 // Filter sensitive info if needed, though GetRecentPenalties might return DTOs already.
-                 // The ViewComponent logic was:
-                 // penalties = User.Identity.IsAuthenticated ? penalties : penalties.Where(p => !p.Sensitive).ToList();
-                 // Here Client.ClientId is set if authenticated.
-                 // Actually BaseController sets Client.
-                 
-                 // Wait, logic in ViewComponent:
-                 // penalties = User.Identity.IsAuthenticated ? penalties : penalties.Where(p => !p.Sensitive).ToList();
-                 
-                 // In API, if not authenticated (Client.ClientId is 0 or -1?), we should filter.
-                 // But BaseController usually requires auth for Client to be populated?
-                 // Let's check BaseController. But assume we need to replicate the logic.
-            }
-            
-            // Check if user is authenticated. BaseController has 'Authorized' property or similar?
-            // BaseController sets Client from claims. if not logged in, Client is probably a default or null.
-            // Let's rely on User.Identity.IsAuthenticated from Controller context.
-            
-            if (!User.Identity.IsAuthenticated)
-            {
-                // Filter sensitive
-                // PenaltyInfo has a Sensitive property.
-                // We need to return a new list if filtering.
-                 var filtered = new List<PenaltyInfo>();
-                 foreach(var p in penalties)
-                 {
-                     if (!p.Sensitive) filtered.Add(p);
-                 }
-                 return Ok(filtered);
-            }
-
+            var penalties = await _dataService.GetPenaltiesAsync(offset, count, showOnly, ignoreAutomated);
             return Ok(penalties);
         }
 
@@ -60,29 +30,15 @@ namespace WebfrontCore.Controllers.API
         [Authorize]
         public async Task<IActionResult> UnbanAsync(int targetId, [FromBody] UnbanRequest request)
         {
-            var client = await Manager.GetClientService().Get(targetId);
-            if (client == null) return NotFound();
-
-            var server = Manager.GetServers().First();
-            Client.CurrentServer = server;
-            var unbanEvent = client.Unban(request.Reason, Client);
-            
-            // Wait for the event to complete and get its result
-            await unbanEvent.WaitAsync();
-            
-            if (unbanEvent.Failed)
+            try
             {
-                var errorMessage = unbanEvent.Output.Count > 0 
-                    ? string.Join(" ", unbanEvent.Output) 
-                    : "Unban failed";
-                return BadRequest(new { message = errorMessage });
+               var message = await _dataService.UnbanClientAsync(targetId, request.Reason);
+               return Ok(new { message });
             }
-            
-            var successMessage = unbanEvent.Output.Count > 0 
-                ? string.Join(" ", unbanEvent.Output) 
-                : "Client unbanned successfully";
-            
-            return Ok(new { message = successMessage });
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 

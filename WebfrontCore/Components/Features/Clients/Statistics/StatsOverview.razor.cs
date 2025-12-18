@@ -10,7 +10,7 @@ namespace WebfrontCore.Components.Features.Clients.Statistics;
 public partial class StatsOverview
 {
     [Inject] public required IJSRuntime Runtime { get; set; }
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
     [SupplyParameterFromQuery] public string serverId { get; set; }
@@ -101,7 +101,7 @@ public partial class StatsOverview
 
         try
         {
-            var response = await Api.GetTopPlayersAsync(Count, Offset, serverId);
+            var response = await DataService.GetTopStatsAsync(Count, Offset, serverId);
             var newPlayers = response.Players;
             TotalRankedClients = response.TotalRankedClients;
 
@@ -121,7 +121,7 @@ public partial class StatsOverview
 
             if (serverId != null)
             {
-                var servers = await Api.GetServersAsync();
+                var servers = await DataService.GetServersAsync();
                 SelectedServer = servers.FirstOrDefault(s => s.Endpoint == serverId);
             }
             else
@@ -162,7 +162,7 @@ public partial class StatsOverview
 
     private async Task GenerateMenu()
     {
-        var servers = await Api.GetServersAsync();
+        var servers = await DataService.GetServersAsync();
 
         MenuItems = new SideContextMenuItems
         {

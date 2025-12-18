@@ -7,7 +7,7 @@ namespace WebfrontCore.Components.UI.Display;
 
 public partial class Render
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavigationManager { get; set; }
     [Parameter] public string InteractionName { get; set; }
@@ -25,7 +25,7 @@ public partial class Render
         try
         {
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-            InteractionData = await Api.GetInteractionAsync(InteractionName, uri.Query);
+            InteractionData = await DataService.GetInteractionAsync(InteractionName, uri.Query);
             Enum.TryParse(InteractionData.InteractionType, out ParsedInteractionType);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)

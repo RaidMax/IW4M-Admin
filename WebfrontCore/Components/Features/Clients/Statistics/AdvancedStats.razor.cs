@@ -12,7 +12,7 @@ namespace WebfrontCore.Components.Features.Clients.Statistics;
 
 public partial class AdvancedStats
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required DefaultSettings DefaultConfig { get; set; }
@@ -33,7 +33,7 @@ public partial class AdvancedStats
         _chartsInitialized = false; // Reset when params change
         try
         {
-            Stats = await Api.GetAdvancedStatsAsync(ClientId, serverId);
+            Stats = await DataService.GetClientStatisticsAsync(ClientId, serverId);
             GenerateMenu();
         }
         catch (Exception ex)

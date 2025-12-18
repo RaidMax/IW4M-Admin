@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.Features.Penalties.Pages;
 
 public partial class PenaltyList
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     private List<PenaltyInfo> Penalties { get; set; } = [];
@@ -85,7 +85,7 @@ public partial class PenaltyList
 
         try
         {
-            var result = await Api.GetPenaltiesAsync(Offset, Count, ShowOnly, IgnoreAutomated);
+            var result = await DataService.GetPenaltiesAsync(Offset, Count, ShowOnly, IgnoreAutomated);
             if (result != null && result.Any())
             {
                 Penalties.AddRange(result);

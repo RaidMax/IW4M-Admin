@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.Features.Servers.Components;
 public partial class ServerCard
 {
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Parameter] public ServerInfo Model { get; set; }
     [Parameter] public EventCallback<string> OnChat { get; set; }
@@ -61,7 +61,7 @@ public partial class ServerCard
     {
         try
         {
-            var updated = await Api.GetServerAsync(Model.Id);
+            var updated = await DataService.GetServer(Model.Id);
             if (updated != null)
             {
                 Model = updated;

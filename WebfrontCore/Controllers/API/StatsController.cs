@@ -16,74 +16,37 @@ namespace WebfrontCore.Controllers.API
     [Route("api/stats")]
     public class StatsController : ControllerBase
     {
-        private readonly ILogger _logger;
-        private readonly IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> _statsQueryHelper;
-        private readonly IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> _advancedStatsQueryHelper;
-        private readonly StatManager _statManager;
-        private readonly StatsConfiguration _config;
-        private readonly IManager _manager;
-        private readonly SharedLibraryCore.Interfaces.IServerDataViewer _serverDataViewer;
+        private readonly WebfrontCore.Core.Services.IWebfrontDataService _dataService;
+        private readonly ILogger<StatsController> _logger;
 
-        public StatsController(ILogger<StatsController> logger, IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> statsQueryHelper,
-            StatManager statManager, StatsConfiguration config, IManager manager, SharedLibraryCore.Interfaces.IServerDataViewer serverDataViewer,
-            IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> advancedStatsQueryHelper, Data.Abstractions.IDatabaseContextFactory contextFactory,
-            IResourceQueryHelper<ChatSearchQuery, SharedLibraryCore.Dtos.Meta.Responses.MessageResponse> chatQueryHelper)
+        public StatsController(ILogger<StatsController> logger, WebfrontCore.Core.Services.IWebfrontDataService dataService)
         {
-            _statsQueryHelper = statsQueryHelper;
             _logger = logger;
-            _statManager = statManager;
-            _config = config;
-            _manager = manager;
-            _serverDataViewer = serverDataViewer;
-            _advancedStatsQueryHelper = advancedStatsQueryHelper;
-            _contextFactory = contextFactory; 
-            _chatQueryHelper = chatQueryHelper;
+            _dataService = dataService;
         }
-
-        private readonly Data.Abstractions.IDatabaseContextFactory _contextFactory;
-        private readonly IResourceQueryHelper<ChatSearchQuery, SharedLibraryCore.Dtos.Meta.Responses.MessageResponse> _chatQueryHelper;
 
         [HttpGet("{clientId:int}/advanced")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAdvancedStats(int clientId, [FromQuery] string? serverId, CancellationToken token = default)
         {
-            var hitInfo = (await _advancedStatsQueryHelper.QueryResource(new StatsInfoRequest
+            try
             {
-                ClientId = clientId,
-                ServerEndpoint = serverId
-            }))?.Results?.First();
-
-            if (hitInfo is null)
+                var hitInfo = await _dataService.GetClientStatisticsAsync(clientId, serverId);
+                return Ok(hitInfo);
+            }
+            catch (Exception)
             {
                 return NotFound();
             }
-            
-            var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId) as IGameServer;
-            long? matchedServerId = server?.LegacyDatabaseId;
-
-            hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId, token);
-            return Ok(hitInfo);
         }
 
         [HttpGet("top")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTopPlayers([FromQuery] int count = 25, [FromQuery] int offset = 0, [FromQuery] string? serverId = null)
         {
-             var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId) as IGameServer;
-             var legacyId = server?.LegacyDatabaseId;
-
-             var stats = _config?.EnableAdvancedMetrics ?? true
-                   ? await _statManager.GetNewTopStats(offset, count, legacyId)
-                   : await _statManager.GetTopStats(offset, count, legacyId);
-
-             var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId);
-
-             return Ok(new TopStatsResponse
-             {
-                 Players = stats,
-                 TotalRankedClients = totalRanked
-             });
+             var response = await _dataService.GetTopStatsAsync(count, offset, serverId);
+             return Ok(response);
         }
 
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -98,26 +61,19 @@ namespace WebfrontCore.Controllers.API
                 {
                     Messages = new[] { $"Client Id must be between 1 and {int.MaxValue}" }
                 });
-
             }
-
-            var request = new StatsInfoRequest()
-            {
-                ClientId = clientId
-            };
 
             try
             {
-                var result = await _statsQueryHelper.QueryResource(request);
+                var result = await _dataService.GetClientStatsAsync(clientId);
 
-                if (result.RetrievedResultCount == 0)
+                if (result.Count == 0)
                 {
                     return NotFound();
                 }
 
-                return Ok(result.Results);
+                return Ok(result);
             }
-
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Could not get client stats for client id {clientId}", clientId);
@@ -133,18 +89,8 @@ namespace WebfrontCore.Controllers.API
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMessageContext([FromQuery] string serverId, [FromQuery] long when)
         {
-            var whenTime = DateTime.FromFileTimeUtc(when);
-            var whenUpper = whenTime.AddMinutes(5);
-            var whenLower = whenTime.AddMinutes(-5);
-
-            var messages = await _chatQueryHelper.QueryResource(new ChatSearchQuery
-            {
-                ServerId = serverId,
-                SentBefore = whenUpper,
-                SentAfter = whenLower
-            });
-
-            return Ok(messages.Results.OrderBy(message => message.When));
+            var messages = await _dataService.GetChatContextAsync(serverId, when);
+            return Ok(messages);
         }
 
         [HttpGet("penalty/{penaltyId}/context")]
@@ -153,69 +99,16 @@ namespace WebfrontCore.Controllers.API
         [Authorize(Policy = "Permissions.BanManagementPage.Read")]
         public async Task<IActionResult> GetAutomatedPenaltyInfo(int penaltyId)
         {
-            await using var context = _contextFactory.CreateContext(false);
-
-            var penalty = await context.Penalties
-                .Select(_penalty => new
-                    { _penalty.OffenderId, _penalty.PenaltyId, _penalty.When, _penalty.AutomatedOffense })
-                .FirstOrDefaultAsync(_penalty => _penalty.PenaltyId == penaltyId);
-
-            if (penalty == null)
+            try
             {
-                return NotFound();
+                 // The DataService returns List<Dictionary<string, string>>
+                 var info = await _dataService.GetAutomatedPenaltyContextAsync(penaltyId);
+                 return Ok(info);
             }
-
-            var iqSnapshotInfo = context.ACSnapshots
-                .Where(s => s.ClientId == penalty.OffenderId)
-                .Include(s => s.LastStrainAngle)
-                .Include(s => s.HitOrigin)
-                .Include(s => s.HitDestination)
-                .Include(s => s.CurrentViewAngle)
-                .Include(s => s.Server)
-                .Include(s => s.PredictedViewAngles)
-                .ThenInclude(angles => angles.Vector)
-                .OrderBy(s => s.When)
-                .ThenBy(s => s.Hits);
-
-            var penaltyInfo = await iqSnapshotInfo.ToListAsync();
-
-            if (penaltyInfo.Count > 0)
+            catch (Exception)
             {
-                var formattedInfo = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, string>>();
-                
-                foreach (var snapshot in penaltyInfo)
-                {
-                    var snapshotDict = new System.Collections.Generic.Dictionary<string, string>();
-                    var props = snapshot.GetType().GetProperties().OrderBy(prop => prop.Name);
-
-                    foreach (var prop in props)
-                    {
-                         if ((prop.Name.EndsWith("Id") && prop.Name != "WeaponId" || prop.Name == "Server") || 
-                             new[] {"Active", "Client", "PredictedViewAngles"}.Contains(prop.Name))
-                        {
-                            continue;
-                        }
-                        
-                        var value = prop.GetValue(snapshot)?.ToString()?.StripColors();
-                        snapshotDict.Add(prop.Name, value);
-                    }
-                    formattedInfo.Add(snapshotDict);
-                }
-
-                return Ok(formattedInfo);
-            }
-            else
-            {
-                // Fallback to message context logic if no snapshots
-                 return Ok(new System.Collections.Generic.List<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>
-                {
-                    new()
-                    {
-                        ClientId = penalty.OffenderId,
-                        Message = penalty.AutomatedOffense,
-                        When = penalty.When
-                    }
-                });
+                 // DataService throws if penalty not found or something
+                 return NotFound();
             }
         }
     }

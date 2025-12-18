@@ -6,7 +6,7 @@ namespace WebfrontCore.Components.UI.Layout;
 
 public partial class NotificationCenter
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     private List<Alert.AlertState> Alerts = [];
@@ -15,7 +15,7 @@ public partial class NotificationCenter
     {
         try
         {
-            Alerts = (await Api.GetAlertsAsync()).ToList();
+            Alerts = (await DataService.GetAlertsAsync()).ToList();
         }
         catch
         {
@@ -26,7 +26,7 @@ public partial class NotificationCenter
     {
         try
         {
-            await Api.DismissAlertAsync(id);
+            await DataService.DismissAlertAsync(id);
             Alerts.RemoveAll(a => a.AlertId == id);
             await ToastService.ShowSuccessAsync("Alert dismissed");
         }
@@ -40,7 +40,7 @@ public partial class NotificationCenter
     {
         try
         {
-            await Api.DismissAllAlertsAsync();
+            await DataService.DismissAllAlertsAsync();
             var count = Alerts.Count;
             Alerts.Clear();
             await ToastService.ShowSuccessAsync($"Dismissed {count} alert{(count != 1 ? "s" : string.Empty)}");

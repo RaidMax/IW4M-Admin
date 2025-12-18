@@ -1,7 +1,7 @@
-﻿namespace WebfrontCore.Controllers.API.Models
+﻿namespace WebfrontCore.Controllers.API.Models;
+
+public class CommandRequest
 {
-    public class CommandRequest
-    {
-        public string Command { get; set; }
-    }
+    public required string ServerId { get; set; }
+    public required string Command { get; set; }
 }

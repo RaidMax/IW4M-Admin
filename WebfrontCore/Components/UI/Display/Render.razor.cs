@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
-using WebfrontCore.Controllers.API;
 using WebfrontCore.Core.Services;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Controllers.API.Models;
 
 namespace WebfrontCore.Components.UI.Display;
 
@@ -25,7 +25,9 @@ public partial class Render
         try
         {
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-            InteractionData = await DataService.GetInteractionAsync(InteractionName, uri.Query);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query)
+                .ToDictionary(k => k.Key, v => v.Value.ToString());
+            InteractionData = await DataService.GetInteractionAsync(InteractionName, query);
             Enum.TryParse(InteractionData.InteractionType, out ParsedInteractionType);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)

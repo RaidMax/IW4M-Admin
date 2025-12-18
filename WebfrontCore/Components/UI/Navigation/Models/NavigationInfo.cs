@@ -11,6 +11,6 @@ public class NavigationInfo
     public required IEnumerable<NavigationInteractionInfo> Interactions { get; set; }
     public required WebfrontCore.Components.Features.Home.Models.CommunityInfo CommunityInformation { get; set; }
     public int TotalClientCount { get; set; }
-    public int TotalAdminCount { get; set; }
-    public int TotalReportCount { get; set; }
+    public int? TotalAdminCount { get; set; }
+    public int? TotalReportCount { get; set; }
 }

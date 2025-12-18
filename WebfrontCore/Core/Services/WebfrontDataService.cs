@@ -36,7 +36,6 @@ public class WebfrontDataService : IWebfrontDataService
     private readonly IMetaServiceV2 _metaService;
     private readonly IGeoLocationService _geoLocationService;
     private readonly IInteractionRegistration _interactionRegistration;
-    private readonly IResourceQueryHelper<FindClientRequest, FindClientResult> _findClientHelper;
     private readonly IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse> _clientResourceHelper;
     private readonly IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> _statsHelper;
     private readonly IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> _advancedStatsHelper;
@@ -59,7 +58,6 @@ public class WebfrontDataService : IWebfrontDataService
         IMetaServiceV2 metaService,
         IGeoLocationService geoLocationService,
         IInteractionRegistration interactionRegistration,
-        IResourceQueryHelper<FindClientRequest, FindClientResult> findClientHelper,
         IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse> clientResourceHelper,
         IResourceQueryHelper<StatsInfoRequest, StatsInfoResult> statsHelper,
         IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo> advancedStatsHelper,
@@ -83,7 +81,6 @@ public class WebfrontDataService : IWebfrontDataService
         _metaService = metaService;
         _geoLocationService = geoLocationService;
         _interactionRegistration = interactionRegistration;
-        _findClientHelper = findClientHelper;
         _clientResourceHelper = clientResourceHelper;
         _statsHelper = statsHelper;
         _advancedStatsHelper = advancedStatsHelper;
@@ -147,6 +144,17 @@ public class WebfrontDataService : IWebfrontDataService
                         Tag = client.Tag,
                         ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY)?.ZScore
                     })
+                    .Select(p =>
+                    {
+                        if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
+                        {
+                            return p;
+                        }
+
+                        p.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+                        p.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
+                        return p;
+                    })
                     .ToList(),
                 ChatHistory = server.ChatHistory.ToList(),
                 Online = !server.Throttled,
@@ -192,7 +200,19 @@ public class WebfrontDataService : IWebfrontDataService
                     Tag = client.Tag,
                     ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager
                         .CLIENT_STATS_KEY)?.ZScore
-                }).ToList(),
+                })
+                .Select(p =>
+                {
+                    if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
+                    {
+                        return p;
+                    }
+
+                    p.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+                    p.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
+                    return p;
+                })
+                .ToList(),
             ChatHistory = server.ChatHistory.ToList(),
             Online = !server.Throttled,
             IPAddress = server.ListenAddress,
@@ -295,12 +315,16 @@ public class WebfrontDataService : IWebfrontDataService
                     }) ?? []).ToArray()
             },
             TotalClientCount = _manager.GetServers().Sum(server => server.ClientNum),
-            TotalAdminCount = _manager.GetServers().Sum(server =>
-                server.GetClientsAsList()
-                    .Count(client => client.Level >= Data.Models.Client.EFClient.Permission.Trusted)),
-            TotalReportCount = _manager.GetServers().Sum(server =>
-                server.Reports.Count(report =>
-                    DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)))
+            TotalAdminCount = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)
+                ? _manager.GetServers().Sum(server =>
+                    server.GetClientsAsList()
+                        .Count(client => client.Level >= Data.Models.Client.EFClient.Permission.Trusted))
+                : null,
+            TotalReportCount = HasPermission(WebfrontEntity.Penalty, WebfrontPermission.Read)
+                ? _manager.GetServers().Sum(server =>
+                    server.Reports.Count(report =>
+                        DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)))
+                : null
         };
     }
 
@@ -351,7 +375,7 @@ public class WebfrontDataService : IWebfrontDataService
         var displayLevel = client.Level.ToLocalizedLevelName();
 
         var shouldHideBanLevel = !hasActiveBan && client.Level == Data.Models.Client.EFClient.Permission.Banned;
-        var authorized = _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false; // Simplified
+        var authorized = _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 
         if (!authorized && client.Level.ShouldHideLevel() || shouldHideBanLevel)
         {
@@ -394,7 +418,7 @@ public class WebfrontDataService : IWebfrontDataService
                 .Distinct()
                 .Select(a => new ProfileMetaEntry { Value = a.Name, Date = a.DateAdded })
                 .ToList(),
-            IPs = client.AliasLink.Children // Placeholder: Needs permission check
+            IPs = client.AliasLink.Children
                 .Select(alias => (alias.IPAddress.ConvertIPtoString(), alias.DateAdded))
                 .GroupBy(alias => alias.Item1)
                 .Select(grp => grp.OrderByDescending(item => item.DateAdded).First())
@@ -433,16 +457,20 @@ public class WebfrontDataService : IWebfrontDataService
             }).ToList(),
         };
 
-        var config = _manager.GetApplicationSettings().Configuration();
-        var executor = await GetExecutorAsync();
-        var level = executor?.Level ?? Data.Models.Client.EFClient.Permission.User;
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+        var canViewGuid = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read);
+        var canViewLevel = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
 
-        if (!config.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
+        if (!canViewLevel)
         {
-            permissionSet = [];
+            clientDto.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+            clientDto.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
         }
 
-        var canViewIp = permissionSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+        if (!canViewGuid)
+        {
+            clientDto.NetworkId = 0;
+        }
 
         var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest
         {
@@ -504,8 +532,10 @@ public class WebfrontDataService : IWebfrontDataService
         {
             ClientId = clientInfo.ClientId,
             Name = clientInfo.CleanedName,
-            Level = clientInfo.Level.ToLocalizedLevelName(),
-            NetworkId = clientInfo.NetworkId,
+            Level = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)
+                ? clientInfo.Level.ToLocalizedLevelName()
+                : Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName(),
+            NetworkId = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read) ? clientInfo.NetworkId : 0,
             GameName = clientInfo.GameName.ToString(),
             Tag = metaResult?.Value,
             FirstConnection = clientInfo.FirstConnection,
@@ -651,9 +681,38 @@ public class WebfrontDataService : IWebfrontDataService
         var penalties = await _manager.GetPenaltyService()
             .GetRecentPenalties(request.Count, request.Offset, request.ShowOnly, request.IgnoreAutomated);
         var permission = GetRequestingPermission();
-        return permission == Data.Models.Client.EFClient.Permission.User
+        var filteredPenalties = permission == Data.Models.Client.EFClient.Permission.User
             ? penalties.Where(p => !p.Sensitive).ToList()
             : penalties;
+
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+        var canViewGuid = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read);
+        var canViewLevel = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
+
+        return filteredPenalties.Select(p =>
+        {
+            if (!canViewIp)
+            {
+                p.OffenderIPAddress = null;
+                p.PunisherIPAddress = null;
+            }
+
+            if (!canViewGuid)
+            {
+                p.OffenderNetworkId = 0;
+                p.PunisherNetworkId = 0;
+            }
+
+            if (canViewLevel)
+            {
+                return p;
+            }
+
+            p.OffenderLevel = Data.Models.Client.EFClient.Permission.User;
+            p.PunisherLevel = Data.Models.Client.EFClient.Permission.User;
+
+            return p;
+        }).ToList();
     }
 
     public async Task<string> UnbanClientAsync(int clientId, string reason)
@@ -797,16 +856,6 @@ public class WebfrontDataService : IWebfrontDataService
             .GroupBy(client => client.Level)
             .ToDictionary(folder => folder.Key, IList<ClientInfo> (folder) => folder.ToList());
         return admins;
-    }
-
-    public async Task<FindClientResponse> SearchClientsAsync(FindClientRequest request)
-    {
-        var results = await _findClientHelper.QueryResource(request);
-        return new FindClientResponse
-        {
-            Clients = results.Results.ToList(),
-            TotalFoundClients = results.RetrievedResultCount
-        };
     }
 
     public async Task<IEnumerable<SharedLibraryCore.Alerts.Alert.AlertState>> GetAlertsAsync()
@@ -981,33 +1030,39 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<IEnumerable<ClientResourceResponse>> GetClientsAsync(ClientResourceRequest request)
+    public async Task<IEnumerable<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request)
     {
-        var executor = await GetExecutorAsync();
-        request.RequesterPermission = executor?.Level ?? Data.Models.Client.EFClient.Permission.User;
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+        var canViewLevel = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
 
-        var config = _manager.GetApplicationSettings().Configuration();
-        if (config.PermissionSets.TryGetValue(request.RequesterPermission.ToString(), out var permissionSet))
-        {
-            if (!permissionSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read))
-            {
-                request.ClientIp = null;
-            }
-
-            if (!permissionSet.HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read))
-            {
-                request.ClientGuid = null;
-            }
-        }
-        else
+        // Filter request parameters if user lacks permission
+        if (!canViewIp)
         {
             request.ClientIp = null;
-            request.ClientGuid = null;
         }
 
         var results = await _clientResourceHelper.QueryResource(request);
-        return results.Results;
+
+        return results.Results.Select(r =>
+        {
+            if (!canViewIp)
+            {
+                r.CurrentClientIp = null;
+                r.MatchedClientIp = null;
+            }
+
+            if (canViewLevel)
+            {
+                return r;
+            }
+
+            r.ClientLevel = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+            r.ClientLevelValue = Data.Models.Client.EFClient.Permission.User;
+
+            return r;
+        });
     }
+
 
     public async Task<List<MessageResponse>> GetChatContextAsync(string serverId,
         long when)
@@ -1248,6 +1303,13 @@ public class WebfrontDataService : IWebfrontDataService
         });
 
         return claimsPrincipal;
+    }
+
+    private bool HasPermission(WebfrontEntity entity, WebfrontPermission permission)
+    {
+        var role = GetRequestingPermission();
+        var config = _manager.GetApplicationSettings().Configuration();
+        return config.PermissionSets.TryGetValue(role.ToString(), out var set) && set.HasPermission(entity, permission);
     }
 
     private Data.Models.Client.EFClient.Permission GetRequestingPermission()

@@ -29,7 +29,7 @@ public interface IWebfrontDataService
     Task<IList<PenaltyInfo>> GetPenaltiesAsync(int offset = 0, int count = 30,
         EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true);
     Task<IEnumerable<ConfigurationFileInfo>> GetConfigurationFilesAsync();
-    Task<string> SaveConfigurationFileAsync(string fileName, string content);
+    Task SaveConfigurationFileAsync(string fileName, string content);
     Task<Dictionary<Data.Models.Client.EFClient.Permission, IList<ClientInfo>>> GetPrivilegedClientsAsync();
     Task<FindClientResponse> SearchClientsAsync(FindClientRequest request);
     Task<TopStatsResponse> GetTopStatsAsync(int count, int offset, string? serverId = null);
@@ -43,9 +43,12 @@ public interface IWebfrontDataService
     Task<List<CommandGroupInfo>> GetHelpCommandsAsync();
     Task<IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.BaseMetaResponse>> GetClientMetaAsync(
         int clientId, int count, int offset, long? startAt, SharedLibraryCore.Interfaces.MetaType? metaType);
-    Task<Controllers.API.InteractionResponse?> GetInteractionAsync(string interactionName, string? query = null);
+    Task<InteractionResponse?> GetInteractionAsync(string interactionName, Dictionary<string, string>? query = null);
+    Task<System.Security.Claims.ClaimsPrincipal> LoginAsync(int clientId, string password, string ipAddress);
     Task<string> UnbanClientAsync(int clientId, string reason);
     Task<IEnumerable<ClientResourceResponse>> GetClientsAsync(ClientResourceRequest request);
     Task<List<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>> GetChatContextAsync(string serverId, long when);
     Task<List<Dictionary<string, string>>> GetAutomatedPenaltyContextAsync(int penaltyId);
+    Task<SystemInfo> GetSystemInfoAsync();
+    Task<IEnumerable<ClientCountSnapshot>> GetClientHistoryAsync(string serverId);
 }

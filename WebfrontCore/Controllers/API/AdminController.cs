@@ -10,61 +10,52 @@ using WebfrontCore.Components.Features.Servers.Models;
 namespace WebfrontCore.Controllers.API
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
-    public class AdminController : BaseController
+    public class AdminController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
-        private readonly IWebfrontDataService _dataService;
-
-        public AdminController(IManager manager, IWebfrontDataService dataService) : base(manager)
-        {
-            _dataService = dataService;
-        }
-
         [HttpGet("audit")]
         [Authorize(Policy = "Permissions.AuditPage.Read")]
-        public async Task<ActionResult<System.Collections.Generic.IList<SharedLibraryCore.Dtos.AuditInfo>>> GetAuditLog([FromQuery] PaginationRequest request)
+        public async Task<ActionResult<IList<AuditInfo>>> GetAuditLog([FromQuery] PaginationRequest request)
         {
-            var auditItems = await _dataService.GetAuditLogAsync(request);
+            var auditItems = await dataService.GetAuditLogAsync(request);
             return Ok(auditItems);
         }
 
         [HttpGet("bans")]
         [Authorize(Policy = "Permissions.BanManagementPage.Read")]
-        public async Task<ActionResult<SharedLibraryCore.Helpers.ResourceQueryHelperResult<BanInfo>>> GetBans([FromQuery] BanInfoRequest request)
+        public async Task<ActionResult<SharedLibraryCore.Helpers.ResourceQueryHelperResult<BanInfo>>> GetBans(
+            [FromQuery] BanInfoRequest request)
         {
-            var results = await _dataService.GetBansAsync(request);
+            var results = await dataService.GetBansAsync(request);
             return Ok(results);
         }
 
         [HttpGet("alerts")]
-        [Authorize]
         public async Task<ActionResult<IEnumerable<SharedLibraryCore.Alerts.Alert.AlertState>>> GetAlerts()
         {
-            var alerts = await _dataService.GetAlertsAsync();
+            var alerts = await dataService.GetAlertsAsync();
             return Ok(alerts);
         }
 
         [HttpPost("alerts/{id:guid}/dismiss")]
-        [Authorize]
         public async Task<ActionResult> DismissAlert(Guid id)
         {
-            await _dataService.DismissAlertAsync(id);
+            await dataService.DismissAlertAsync(id);
             return Ok();
         }
-        
+
         [HttpPost("alerts/dismiss/all")]
-        [Authorize]
         public async Task<ActionResult> DismissAllAlerts()
         {
-            await _dataService.DismissAllAlertsAsync();
+            await dataService.DismissAllAlertsAsync();
             return Ok();
         }
 
         [HttpGet("reports")]
-        [Authorize]
         public async Task<ActionResult<IEnumerable<ServerReportsInfo>>> GetReports()
         {
-            var reports = await _dataService.GetReportsAsync();
+            var reports = await dataService.GetReportsAsync();
             return Ok(reports);
         }
     }

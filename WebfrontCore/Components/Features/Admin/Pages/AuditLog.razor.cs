@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.Features.Admin.Pages;
 
 public partial class AuditLog
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JS { get; set; }
     private PaginationRequest Request { get; } = new() { Count = 50, Offset = 0 };
@@ -45,7 +45,7 @@ public partial class AuditLog
 
         try
         {
-            var result = await Api.GetAuditLogAsync(Request);
+            var result = await DataService.GetAuditLogAsync(Request);
             if (Request.Offset == 0)
             {
                 Results = result.ToList();

@@ -157,13 +157,7 @@ public class Program
         services.AddScoped<IToastService, ToastService>();
         services.AddTransient<CookieForwardingHandler>();
 
-        services.AddHttpClient<IWebfrontApiClient, WebfrontApiClient>((sp, client) =>
-        {
-            var manager = sp.GetService<IManager>();
-            var webfrontUrl = manager?.GetApplicationSettings()?.Configuration()?.WebfrontUrl ??
-                              "http://127.0.0.1:1624";
-            client.BaseAddress = new Uri(webfrontUrl);
-        }).AddHttpMessageHandler<CookieForwardingHandler>();
+        services.AddScoped<IWebfrontDataService, WebfrontDataService>();
 
         services
             .AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermissionAuthorizationHandler>();

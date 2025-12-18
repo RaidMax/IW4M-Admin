@@ -7,7 +7,7 @@ namespace WebfrontCore.Components.Features.Clients.Pages;
 
 public partial class Privileged
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
@@ -18,7 +18,7 @@ public partial class Privileged
     {
         try
         {
-            PrivilegedClients = await Api.GetPrivilegedClientsAsync();
+            PrivilegedClients = await DataService.GetPrivilegedClientsAsync();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
         {

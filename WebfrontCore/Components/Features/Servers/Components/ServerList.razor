@@ -1,5 +1,5 @@
 @rendermode InteractiveServer
-@inject IWebfrontApiClient Api
+@inject IWebfrontDataService DataService
 @inject IActionService ActionService
 
 @if (_servers != null)
@@ -21,7 +21,7 @@ else
     {
         try
         {
-            _servers = await Api.GetServersAsync();
+            _servers = await DataService.GetServersAsync();
         }
         catch (Exception ex)
         {

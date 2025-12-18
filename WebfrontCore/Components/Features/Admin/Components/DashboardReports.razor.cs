@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Components;
-using WebfrontCore.Controllers.API.Dtos;
+using WebfrontCore.Components.Features.Servers.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Admin.Components;
 
 public partial class DashboardReports
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    private List<ServerReportsDto> ReportsList = [];
+    private List<ServerReportsInfo> ReportsList = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -19,7 +19,7 @@ public partial class DashboardReports
     {
         try
         {
-            ReportsList = (await Api.GetReportsAsync()).ToList();
+            ReportsList = (await DataService.GetReportsAsync()).ToList();
         }
         catch (Exception ex)
         {

@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.Features.Home.Pages;
 
 public partial class Home
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [SupplyParameterFromQuery] public string Game { get; set; }
 
@@ -22,7 +22,7 @@ public partial class Home
             gameEnum = g;
         }
 
-        Model = await Api.GetStatusAsync(gameEnum);
+        Model = await DataService.GetStatusAsync(gameEnum);
     }
 
     private string FormatTranslation(string translationKey, params object[] values)

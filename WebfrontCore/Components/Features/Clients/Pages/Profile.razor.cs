@@ -14,7 +14,7 @@ public partial class Profile
 {
     [Parameter] public int Id { get; set; }
 
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
@@ -35,7 +35,7 @@ public partial class Profile
 
         try
         {
-            Client = await Api.GetClientProfileAsync(Id);
+            Client = await DataService.GetClientProfileAsync(Id);
             if (Client != null)
             {
                 BuildContextMenu();

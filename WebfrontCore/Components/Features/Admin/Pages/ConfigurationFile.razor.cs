@@ -6,7 +6,7 @@ namespace WebfrontCore.Components.Features.Admin.Pages;
 
 public partial class ConfigurationFile
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     private List<ConfigurationFileInfo> ConfigurationFiles { get; set; }
@@ -17,7 +17,7 @@ public partial class ConfigurationFile
     {
         try
         {
-            var files = await Api.GetConfigurationFilesAsync();
+            var files = await DataService.GetConfigurationFilesAsync();
             ConfigurationFiles = files.ToList();
             foreach (var f in ConfigurationFiles) SaveStatus[f.FileName] = "";
         }
@@ -44,7 +44,7 @@ public partial class ConfigurationFile
         try
         {
             SaveStatus[file.FileName] = "Saving...";
-            await Api.SaveConfigurationFileAsync(file.FileName, file.FileContent);
+            await DataService.SaveConfigurationFileAsync(file.FileName, file.FileContent);
             SaveStatus[file.FileName] = "Saved!";
             await ToastService.ShowSuccessAsync($"Saved {file.FileName}");
             await Task.Delay(3000);

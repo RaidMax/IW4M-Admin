@@ -1,19 +1,19 @@
 ﻿using Microsoft.AspNetCore.Components;
-using WebfrontCore.Controllers.API;
+using WebfrontCore.Components.Features.Home.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Home.Pages;
 
 public partial class About
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    private AboutDto AboutInfo { get; set; }
+    private AboutInfo AboutInfo { get; set; }
     private List<RuleSetInfo> AllRules { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {
-        AboutInfo = await Api.GetAboutAsync();
+        AboutInfo = await DataService.GetAboutInfoAsync();
 
         if (AboutInfo != null)
         {

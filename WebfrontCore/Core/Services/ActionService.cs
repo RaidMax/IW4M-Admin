@@ -297,13 +297,6 @@ public class ActionService : IActionService
         if (server == null)
             return (false, "No servers available");
 
-        // If interaction is "command", 'Data' usually contains the command string template or command itself.
-        // DynamicActionAsync logic:
-        // var (success, result) = await _remoteCommandService.ExecuteWithResult(Client.ClientId, targetId, data, inputs.Values, server);
-
-        // inputs.Values might need order? 
-        // ExecuteWithResult takes args as IEnumerable<string>.
-
         var (success, response) =
             await _remoteCommandService.ExecuteWithResult(origin.ClientId, targetId, data, inputs.Values, server);
 

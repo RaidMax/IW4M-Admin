@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Components.Features.Home.Models;
+using WebfrontCore.Components.Features.Console.Models;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -23,7 +25,7 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("about")]
-        public ActionResult<AboutDto> GetAbout()
+        public ActionResult<AboutInfo> GetAbout()
         {
              var activeServers = _appConfig.Servers.Where(server =>
                 Manager.GetServers().FirstOrDefault(s => s.ListenAddress == server.IPAddress && s.ListenPort == server.Port) != null);
@@ -32,7 +34,7 @@ namespace WebfrontCore.Controllers.API
             {
                 var server = Manager.GetServers().First(server =>
                     server.ListenAddress == config.IPAddress && server.ListenPort == config.Port);
-                return new ServerRulesDto
+                return new ServerRulesInfo
                 {
                     ServerName = server.ServerName,
                     IPAddress = server.ListenAddress,
@@ -41,7 +43,7 @@ namespace WebfrontCore.Controllers.API
                 };
             }).ToList();
 
-            return new AboutDto
+            return new AboutInfo
             {
                 CommunityInformation = _appConfig.CommunityInformation,
                 GlobalRules = _appConfig.GlobalRules,
@@ -50,7 +52,7 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("help")]
-        public ActionResult<List<CommandGroupDto>> GetHelp()
+        public ActionResult<List<CommandGroupInfo>> GetHelp()
         {
              var userLevel = Authorized ? Data.Models.Client.EFClient.Permission.Owner : Data.Models.Client.EFClient.Permission.User;
              if (User.Identity.IsAuthenticated)
@@ -88,10 +90,10 @@ namespace WebfrontCore.Controllers.API
 
                     return _pluginTypeNames[pluginType].FirstOrDefault() ?? _translationLookup["WEBFRONT_HELP_COMMAND_NATIVE"];
                 })
-                .Select(group => new CommandGroupDto
+                .Select(group => new CommandGroupInfo
                 {
                     Name = group.Key,
-                    Commands = group.Select(c => new CommandDto
+                    Commands = group.Select(c => new CommandInfo
                     {
                         Name = c.Name,
                         Alias = c.Alias,
@@ -106,36 +108,6 @@ namespace WebfrontCore.Controllers.API
             return commands;
         }
     }
-
-    public class AboutDto
-    {
-        public CommunityInformationConfiguration CommunityInformation { get; set; }
-        public string[] GlobalRules { get; set; }
-        public List<ServerRulesDto> ServerRules { get; set; }
-    }
-
-    public class ServerRulesDto
-    {
-        public string ServerName { get; set; }
-        public string IPAddress { get; set; }
-        public int Port { get; set; }
-        public string[] Rules { get; set; }
-    }
-
-    public class CommandGroupDto
-    {
-        public string Name { get; set; }
-        public List<CommandDto> Commands { get; set; }
-    }
-
-    public class CommandDto
-    {
-        public string Name { get; set; }
-        public string Alias { get; set; }
-        public string Description { get; set; }
-        public string Syntax { get; set; }
-        public bool RequiresTarget { get; set; }
-        public Data.Models.Client.EFClient.Permission Permission { get; set; }
-        public SharedLibraryCore.Server.Game[] SupportedGames { get; set; }
-    }
 }
+
+

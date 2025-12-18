@@ -10,7 +10,7 @@ public partial class MainLayout
 {
     [Inject] public required IZeroJsInterop JS { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private bool _isInitialized = false;

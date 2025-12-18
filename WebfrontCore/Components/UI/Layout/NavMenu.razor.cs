@@ -1,22 +1,23 @@
 ﻿using Microsoft.AspNetCore.Components;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.UI.Controls;
+using WebfrontCore.Components.UI.Navigation.Models;
 
 namespace WebfrontCore.Components.UI.Layout;
 
 public partial class NavMenu
 {
-    [Inject] public required IWebfrontApiClient Api { get; set; }
+    [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JS { get; set; }
     public ActionModal ActionModal { get; set; }
-    private NavigationData? NavData;
+    private NavigationInfo? NavData;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            NavData = await Api.GetNavigationDataAsync();
+            NavData = await DataService.GetNavigationDataAsync();
             if (NavData?.User != null)
             {
                 AppState.SetUser(NavData.User);

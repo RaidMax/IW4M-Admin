@@ -1,6 +1,5 @@
 @page "/Client/AdvancedFind"
 @page "/find-client"
-@implements IAsyncDisposable
 @rendermode InteractiveServer
 
 <PageTitle>@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE") | IW4MAdmin</PageTitle>
@@ -12,15 +11,13 @@
         <thead>
         <tr class="bg-primary text-light d-none d-md-table-row">
             <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</td>
-            @if (CanSeeIp)
-            {
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                 <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</td>
                 <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</td>
-            }
-            @if (CanSeeLevel)
-            {
+            </AuthorizeView>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                 <td>@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</td>
-            }
+            </AuthorizeView>
             <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</td>
             <td class="text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</td>
             <td class="text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</td>
@@ -30,7 +27,7 @@
             @if (_isLoading && Results.Count == 0)
             {
                 <tr>
-                    <td colspan="6" class="text-center">
+                    <td colspan="7" class="text-center">
                         <div class="spinner-border text-primary" role="status">
                             <span class="sr-only">Loading...</span>
                         </div>
@@ -40,7 +37,7 @@
             else if (Results.Count == 0)
             {
                 <tr>
-                    <td colspan="6" class="text-center text-muted">
+                    <td colspan="7" class="text-center text-muted">
                         No results found
                     </td>
                 </tr>
@@ -52,12 +49,11 @@
                     <!-- Desktop Row -->
                     <tr class="bg-dark-dm bg-light-lm d-none d-md-table-row">
                         <td>
-                            <a href="/client/@client.ClientId" class="@(CanSeeLevel ? $"level-color-{(int)client.ClientLevelValue}" : "")">
+                            <a href="/client/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
                                 <ColorCode Value="@client.CurrentClientName" />
                             </a>
                         </td>
-                        @if (CanSeeIp)
-                        {
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                             <td>@FormatIp(client.CurrentClientIp)</td>
                             <td>
                                 <div class="d-flex">
@@ -75,11 +71,10 @@
                                     }
                                 </div>
                             </td>
-                        }
-                        @if (CanSeeLevel)
-                        {
+                        </AuthorizeView>
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                             <td>@client.ClientLevel</td>
-                        }
+                        </AuthorizeView>
                         <td>
                             <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
                                 <span class="badge">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
@@ -93,27 +88,24 @@
                     <tr class="d-table-row d-md-none d-flex border-bottom">
                         <td class="bg-primary text-light text-right d-flex flex-column w-quarter">
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</div>
-                            @if (CanSeeIp)
-                            {
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                 <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</div>
                                 <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</div>
-                            }
-                            @if (CanSeeLevel)
-                            {
+                            </AuthorizeView>
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
-                            }
+                            </AuthorizeView>
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</div>
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</div>
                             <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</div>
                         </td>
                         <td class="d-flex flex-column w-three-quarter">
                             <div class="mt-5 mb-5">
-                                <a href="/client/@client.ClientId" class="@(CanSeeLevel ? $"level-color-{(int)client.ClientLevelValue}" : "")">
+                                <a href="/client/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
                                     <ColorCode Value="@client.CurrentClientName" />
                                 </a>
                             </div>
-                            @if (CanSeeIp)
-                            {
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                 <div class="mt-5 mb-5">@FormatIp(client.CurrentClientIp)</div>
                                 <div class="mt-5 mb-5">
                                     <div class="d-flex">
@@ -128,11 +120,10 @@
                                         }
                                     </div>
                                 </div>
-                            }
-                            @if (CanSeeLevel)
-                            {
+                            </AuthorizeView>
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <div class="mt-5 mb-5">@client.ClientLevel</div>
-                            }
+                            </AuthorizeView>
                             <div class="mt-5 mb-5">
                                 <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
                                     <span class="badge font-size-12">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
@@ -155,7 +146,7 @@
             </div>
         }
         
-        @if (HasMoreResults)
+        @if (_hasMore)
         {
             <i @ref="_loadMoreTrigger" class="oi oi-chevron-bottom loader-load-more text-primary @(_isLoading ? "d-none" : "")" aria-hidden="true"></i>
         }

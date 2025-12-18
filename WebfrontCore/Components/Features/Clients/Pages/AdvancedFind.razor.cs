@@ -1,45 +1,68 @@
 ﻿using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
-using WebfrontCore.Core.Auth;
+using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Pages;
 
-public partial class AdvancedFind
+public partial class AdvancedFind : IAsyncDisposable
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
-    [Inject] public required AuthenticationStateProvider AuthProvider { get; set; }
-    [Inject] public required IAuthorizationService AuthService { get; set; }
 
-    private List<ClientResourceResponse> Results { get; set; } = new();
-    private ClientResourceRequest Request { get; set; } = new();
-    private int Offset { get; set; } = 0;
-    private const int Count = 30;
-    private bool HasMoreResults { get; set; } = true;
-    private bool _isLoading = false;
-    private ElementReference _loadMoreTrigger;
-    private DotNetObjectReference<AdvancedFind> _dotNetRef;
-    private bool CanSeeIp { get; set; }
-    private bool CanSeeLevel { get; set; }
+    [SupplyParameterFromQuery(Name = "clientName")]
+    public string? ClientName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "isExactClientName")]
+    public bool IsExactClientName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "clientIP")]
+    public string? ClientIp { get; set; }
+
+    [SupplyParameterFromQuery(Name = "isExactClientIP")]
+    public bool IsExactClientIp { get; set; }
+
+    [SupplyParameterFromQuery(Name = "clientGuid")]
+    public string? ClientGuid { get; set; }
+
+    [SupplyParameterFromQuery(Name = "clientLevel")]
+    public string? ClientLevel { get; set; }
+
+    [SupplyParameterFromQuery(Name = "gameName")]
+    public string? GameName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "clientConnected")]
+    public DateTime? ClientConnected { get; set; }
+
+    [SupplyParameterFromQuery(Name = "direction")]
+    public int? Direction { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sortColumn")]
+    public string? SortColumn { get; set; }
+
+    private List<ClientResourceResponse> Results { get; } = [];
+    private int _offset;
+    private const int PageSize = 30;
+    private bool _hasMore = true;
+    private bool _isLoading;
     private bool _observerSetup;
+    private ElementReference _loadMoreTrigger;
+    private DotNetObjectReference<AdvancedFind>? _dotNetRef;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        NavManager.LocationChanged += OnLocationChanged;
-        await LoadSearchParameters();
+        ResetState();
+        await LoadDataAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (HasMoreResults && !_observerSetup)
+        if (_hasMore && !_observerSetup && Results.Count > 0)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _dotNetRef);
@@ -50,17 +73,56 @@ public partial class AdvancedFind
     [JSInvokable]
     public async Task LoadMore()
     {
-        if (!HasMoreResults || _isLoading)
-        {
+        if (_isLoading || !_hasMore)
             return;
-        }
 
-        Offset += Count;
-        await LoadData();
+        _offset += PageSize;
+        await LoadDataAsync();
         StateHasChanged();
     }
 
-    private async Task LoadData()
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
+        await Task.CompletedTask;
+    }
+
+    private void ResetState()
+    {
+        Results.Clear();
+        _offset = 0;
+        _hasMore = true;
+        _observerSetup = false;
+    }
+
+    private ClientResourceRequest BuildRequest()
+    {
+        var request = new ClientResourceRequest
+        {
+            ClientName = ClientName,
+            IsExactClientName = IsExactClientName,
+            ClientIp = ClientIp,
+            IsExactClientIp = IsExactClientIp,
+            ClientGuid = ClientGuid,
+            ClientConnected = ClientConnected,
+            SortColumn = SortColumn,
+            Offset = _offset,
+            Count = PageSize
+        };
+
+        if (Enum.TryParse<EFClient.Permission>(ClientLevel, out var level))
+            request.ClientLevel = level;
+
+        if (Enum.TryParse<Reference.Game>(GameName, out var game))
+            request.GameName = game;
+
+        if (Direction.HasValue)
+            request.Direction = (SortDirection)Direction.Value;
+
+        return request;
+    }
+
+    private async Task LoadDataAsync()
     {
         if (_isLoading)
             return;
@@ -70,27 +132,19 @@ public partial class AdvancedFind
 
         try
         {
-            Request.Offset = Offset;
-            Request.Count = Count;
+            var response = (await DataService.SearchClientsAsync(BuildRequest())).ToList();
 
-            var response = await DataService.SearchClientsAsync(Request);
-            if (response != null && response.Any())
+            if (response.Count > 0)
             {
                 Results.AddRange(response);
-                if (response.Count() < Count)
-                {
-                    HasMoreResults = false;
-                }
             }
-            else
-            {
-                HasMoreResults = false;
-            }
+
+            _hasMore = response.Count >= PageSize;
         }
         catch (Exception ex)
         {
             System.Console.WriteLine($"Error loading clients: {ex.Message}");
-            HasMoreResults = false;
+            _hasMore = false;
         }
         finally
         {
@@ -99,92 +153,17 @@ public partial class AdvancedFind
         }
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        NavManager.LocationChanged -= OnLocationChanged;
-        _dotNetRef?.Dispose();
-        await Task.CompletedTask;
-    }
+    private static string FormatIp(int? ip) =>
+        ip.HasValue ? SharedLibraryCore.Utilities.ConvertIPtoString(ip.Value) : "-";
 
-    private async void OnLocationChanged(object sender,
-        Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        await LoadSearchParameters();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task LoadSearchParameters()
-    {
-        // Reset state
-        Results.Clear();
-        Offset = 0;
-        HasMoreResults = true;
-        _observerSetup = false;
-
-        // Parse query parameters
-        var uri = new Uri(NavManager.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-
-        Request = new ClientResourceRequest();
-        Request.ClientName = query["clientName"];
-        Request.IsExactClientName = bool.Parse(query["isExactClientName"] ?? "false");
-        Request.ClientIp = query["clientIP"];
-        Request.IsExactClientIp = bool.Parse(query["isExactClientIP"] ?? "false");
-        Request.ClientGuid = query["clientGuid"];
-
-        if (Enum.TryParse<EFClient.Permission>(query["clientLevel"], out var level))
-            Request.ClientLevel = level;
-
-        if (Enum.TryParse<Reference.Game>(query["gameName"], out var game))
-            Request.GameName = game;
-
-        if (DateTime.TryParse(query["clientConnected"], out var connected))
-            Request.ClientConnected = connected;
-        if (int.TryParse(query["direction"], out var direction))
-            Request.Direction = (SharedLibraryCore.Dtos.SortDirection)direction;
-
-        Request.SortColumn = query["sortColumn"];
-
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var canReadIp =
-            (await AuthService.AuthorizeAsync(user,
-                $"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")).Succeeded;
-        var canReadGuid =
-            (await AuthService.AuthorizeAsync(user,
-                $"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")).Succeeded;
-        var canReadLevel =
-            (await AuthService.AuthorizeAsync(user,
-                $"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")).Succeeded;
-
-        if (!canReadIp)
-        {
-            Request.ClientIp = null;
-            Request.IsExactClientIp = false;
-        }
-
-        if (!canReadGuid)
-        {
-            Request.ClientGuid = null;
-        }
-
-        CanSeeIp = canReadIp;
-        CanSeeLevel = canReadLevel;
-
-        await LoadData();
-    }
-
-    private string MakeAbbreviation(string text)
+    private static string MakeAbbreviation(string? text)
     {
         if (string.IsNullOrEmpty(text))
-            return text;
+            return text ?? string.Empty;
 
         var words = text.Split(' ');
-        if (words.Length == 1)
-            return text;
-
-        return string.Join("", words.Select(w => w.Length > 0 ? w[0].ToString() : ""));
+        return words.Length == 1
+            ? text
+            : string.Concat(words.Where(w => w.Length > 0).Select(w => w[0]));
     }
-
-    private string FormatIp(int? ip) => ip.HasValue ? SharedLibraryCore.Utilities.ConvertIPtoString(ip.Value) : "-";
 }

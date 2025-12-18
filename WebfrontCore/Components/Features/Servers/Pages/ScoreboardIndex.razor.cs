@@ -19,7 +19,7 @@ public partial class ScoreboardIndex
             if (servers != null && servers.Count != 0)
             {
                 // Redirect to first server's scoreboard
-                NavManager.NavigateTo($"/Server/{servers.First().Id}/Scoreboard", replace: true);
+                NavManager.NavigateTo($"/scoreboard/{servers.First().Id}", replace: true);
                 return;
             }
 

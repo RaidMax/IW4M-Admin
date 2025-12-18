@@ -1,4 +1,5 @@
 @page "/Client/Statistics/{ClientId:int}/Advanced"
+@page "/client/{ClientId:int}/stats"
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 
@@ -163,7 +164,7 @@ else
 
                     <div class="d-flex flex-column align-self-center m-10 text-center text-lg-left" id="client_stats_summary">
                         <div class="font-size-20 mb-0 font-weight-bold">
-                            <a href="/Client/Profile/@Stats.ClientId" class="no-decoration">
+                            <a href="/client/@Stats.ClientId" class="no-decoration">
                                 <ColorCode Value="@Stats.ClientName"/>
                             </a>
                         </div>

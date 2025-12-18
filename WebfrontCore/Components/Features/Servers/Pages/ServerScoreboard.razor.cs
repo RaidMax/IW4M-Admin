@@ -57,7 +57,7 @@ public partial class ServerScoreboard
                     Items = servers.Select(server => new SideContextMenuItem
                     {
                         IsLink = true,
-                        Reference = $"/Server/{server.Id}/Scoreboard",
+                        Reference = $"/scoreboard/{server.Id}",
                         Title = server.Name,
                         IsActive = server.Id == Id,
                         IsCollapse = true,

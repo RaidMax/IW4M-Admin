@@ -34,7 +34,7 @@ public partial class ClientSearch
             { "direction", ((int)Model.Direction).ToString() }
         };
 
-        var url = NavManager.GetUriWithQueryParameters("/Client/AdvancedFind", query);
+        var url = NavManager.GetUriWithQueryParameters("/find-client", query);
         NavManager.NavigateTo(url);
     }
 }

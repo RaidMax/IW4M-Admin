@@ -93,7 +93,7 @@ else
                         else if (match.MatchValue == "offender")
                         {
                             <span class="text-highlight">
-                                <a class="link-inverse" href="/Client/Profile/@Meta.OffenderClientId">
+                                <a class="link-inverse" href="/client/@Meta.OffenderClientId">
                                     <ColorCode Value="@Meta.OffenderName"/>
                                 </a>
                             </span>
@@ -170,7 +170,7 @@ else
                         else if (match.MatchValue == "punisher")
                         {
                             <span class="text-highlight">
-                                <a href="/Client/Profile/@Meta.PunisherClientId">
+                                <a href="/client/@Meta.PunisherClientId">
                                     <ColorCode Value="@Meta.PunisherName"/>
                                 </a>
                                 &nbsp;
@@ -213,7 +213,7 @@ else
                         }
                         else
                         {
-                            <a class="link-inverse" href="/Client/Profile/@Meta.OffenderClientId">
+                            <a class="link-inverse" href="/client/@Meta.OffenderClientId">
                                 <ColorCode Value="@Meta.OffenderName"/>
                                 &nbsp;
                             </a>
@@ -356,7 +356,7 @@ else
                         break;
                     case "originClient":
                         <span class="text-highlight">
-                            <a href="/Client/Profile/@Meta.ChangedById">
+                            <a href="/client/@Meta.ChangedById">
                                 <ColorCode Value="@Meta.ChangedByName" />
                             </a>
                         </span>
@@ -386,7 +386,7 @@ else
             <span class="text-muted">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
             <span class="text-white-dm text-black-lm">@Meta.Note</span>
             <span class="text-muted">&mdash;</span>
-            <a class="link-inverse" href="/Client/Profile/@Meta.OriginEntityId">
+            <a class="link-inverse" href="/client/@Meta.OriginEntityId">
                 <ColorCode Value="@Meta.OriginEntityName" />
             </a>
         </span>

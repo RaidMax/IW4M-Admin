@@ -13,32 +13,32 @@
             <span class="sidebar-title">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</span>
             <div class="sidebar-divider"></div>
             <!-- servers -->
-            <NavLink href="" Match="NavLinkMatch.All" class="sidebar-link">
+            <NavLink href="servers" Match="NavLinkMatch.All" class="sidebar-link">
                 <i class="oi oi-hard-drive mr-5"></i>
                 <span class="name">@(Loc("WEBFRONT_NAV_SERVERS"))</span>
             </NavLink>
             <!-- about -->
-            <NavLink href="About" class="sidebar-link">
+            <NavLink href="about" class="sidebar-link">
                 <i class="oi oi-info mr-5"></i>
                 <span class="name">@(Loc("WEBFRONT_NAV_ABOUT"))</span>
             </NavLink>
             <!-- penalties -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
-                <NavLink href="Penalty/List" class="sidebar-link">
+                <NavLink href="penalties" class="sidebar-link">
                     <i class="oi oi-lock-locked mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_PENALTIES"))</span>
                 </NavLink>
             </AuthorizeView>
             <!-- privileged -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
-                <NavLink href="Client/Privileged" class="sidebar-link">
+                <NavLink href="privileged-clients" class="sidebar-link">
                     <i class="oi oi-people mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_PRIVILEGED"))</span>
                 </NavLink>
             </AuthorizeView>
             <!-- help -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.HelpPage}.{WebfrontPermission.Read}")">
-                <NavLink href="Help" class="sidebar-link">
+                <NavLink href="commands" class="sidebar-link">
                     <i class="oi oi-question-mark mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_HELP"))</span>
                 </NavLink>
@@ -58,7 +58,7 @@
             <!-- profile -->
             @if (AppState.User is not null)
             {
-                <NavLink href="@($"Client/Profile/{AppState.User.ClientId}")" class="sidebar-link">
+                <NavLink href="@($"client/{AppState.User.ClientId}")" class="sidebar-link">
                     <i class="oi oi-person mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
                 </NavLink>
@@ -82,7 +82,7 @@
             }
 
             <!-- scoreboard -->
-            <NavLink href="Server/Scoreboard" class="sidebar-link">
+            <NavLink href="scoreboard" class="sidebar-link">
                 <i class="oi oi-spreadsheet mr-5"></i>
                 <span class="name">@(Loc("WEBFRONT_NAV_TITLE_SCOREBOARD"))</span>
             </NavLink>
@@ -137,7 +137,7 @@
 
                 <!-- Console -->
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")" Context="consoleContext">
-                    <NavLink href="Console" class="sidebar-link">
+                    <NavLink href="console" class="sidebar-link">
                         <i class="oi oi-terminal mr-5"></i>
                         <span class="name">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
                     </NavLink>
@@ -145,7 +145,7 @@
 
                 <!-- Ban Management -->
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")" Context="banContext">
-                    <NavLink href="Admin/BanManagement" class="sidebar-link">
+                    <NavLink href="manage-bans" class="sidebar-link">
                         <i class="oi oi-ban mr-5"></i>
                         <span class="name">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
                     </NavLink>
@@ -154,7 +154,7 @@
 
             <!-- Configuration (Owner only) -->
             <AuthorizeView Roles="Owner">
-                <NavLink href="Configuration/Files" class="sidebar-link">
+                <NavLink href="configuration" class="sidebar-link">
                     <i class="oi oi-cog mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
                 </NavLink>
@@ -162,7 +162,7 @@
 
             <!-- Audit Log -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AuditPage}.{WebfrontPermission.Read}")">
-                <NavLink href="Admin/AuditLog" class="sidebar-link">
+                <NavLink href="audit" class="sidebar-link">
                     <i class="oi oi-book mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
                 </NavLink>
@@ -170,7 +170,7 @@
 
             <!-- Recent Clients -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.RecentPlayersPage}.{WebfrontPermission.Read}")">
-                <NavLink href="Client/AdvancedFind?direction=1&sortColumn=FirstConnection" class="sidebar-link">
+                <NavLink href="find-client?direction=1&sortColumn=FirstConnection" class="sidebar-link">
                     <i class="oi oi-timer mr-5"></i>
                     <span class="name">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
                 </NavLink>

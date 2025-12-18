@@ -239,7 +239,7 @@ public class Plugin : IPluginV2
         manager.GetPageList()
             .Pages.Add(
                 Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_COMMANDS_TOP_TEXT"],
-                "/Stats/TopPlayers");
+                "/stats/top");
 
         // meta data info
         async Task<IEnumerable<InformationResponse>> GetStats(ClientPaginationRequest request,

@@ -1,4 +1,5 @@
 @page "/Admin/AuditLog"
+@page "/audit"
 @attribute [Authorize(Policy = "Permissions.AuditPage.Read")]
 @implements IAsyncDisposable
 @rendermode InteractiveServer
@@ -44,14 +45,14 @@
                 <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
                     <td class="font-weight-bold">@info.Action</td>
                     <td>
-                        <a href="/Client/Profile/@info.OriginId">
+                        <a href="/client/@info.OriginId">
                             <ColorCode Value="@info.OriginName"/>
                         </a>
                     </td>
                     <td>
                         @if (info.TargetId != null)
                         {
-                            <a href="/Client/Profile/@info.TargetId">
+                            <a href="/client/@info.TargetId">
                                 <ColorCode Value="@info.TargetName"/>
                             </a>
                         }
@@ -82,14 +83,14 @@
                     <td class="w-three-quarter d-flex flex-column">
                         <div class="mt-5 mb-5">@info.Action</div>
                         <div class="mt-5 mb-5">
-                            <a href="/Client/Profile/@info.OriginId" class="link-inverse">
+                            <a href="/client/@info.OriginId" class="link-inverse">
                                 <ColorCode Value="@info.OriginName"/>
                             </a>
                         </div>
                         @if (info.TargetId != null)
                         {
                             <div class="mt-5 mb-5">
-                                <a href="/Client/Profile/@info.TargetId">
+                                <a href="/client/@info.TargetId">
                                     <ColorCode Value="@info.TargetName"/>
                                 </a>
                             </div>

@@ -140,7 +140,7 @@ public class Plugin : IPluginV2
             }
 
             (monitorEvent.Source as IManager)?.GetPageList().Pages
-                .Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/Radar");
+                .Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/radar");
             _addedPage = true;
         }
 

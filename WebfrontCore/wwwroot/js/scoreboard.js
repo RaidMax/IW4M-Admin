@@ -4,7 +4,7 @@
 
     const scoreboardTable = $(serverPanel).children('.table-sort');
 
-    $.get(`/Server/${serverId}/Scoreboard?order=${scoreboardTable.data('sort-column')}&down=${scoreboardTable.data('sort-down')}`, (response) => {
+    $.get(`/screboard/${serverId}?order=${scoreboardTable.data('sort-column')}&down=${scoreboardTable.data('sort-down')}`, (response) => {
         $(serverPanel).html(response);
         setupDataSorting();
     });

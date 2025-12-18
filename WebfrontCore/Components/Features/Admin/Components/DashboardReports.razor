@@ -17,13 +17,13 @@
                 {
                     <div class="font-weight-bold">@report.ReportedOn.HumanizeForCurrentCulture()</div>
                     <div class="font-size-12">
-                        <a href="/Client/Profile/@report.Target.ClientId">
+                        <a href="/client/@report.Target.ClientId">
                             <ColorCode Value="@report.Target.Name"/>
                         </a>
 
                         <span> (@report.Target.ClientId) was reported by </span>
 
-                        <a href="/Client/Profile/@report.Origin.ClientId">
+                        <a href="/client/@report.Origin.ClientId">
                             <ColorCode Value="@report.Origin.Name"/>
                         </a>
                         <span> (@report.Origin.ClientId) for @report.Reason</span>

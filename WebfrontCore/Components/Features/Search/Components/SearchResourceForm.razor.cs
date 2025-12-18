@@ -15,8 +15,7 @@ public partial class SearchResourceForm
     {
         if (string.IsNullOrWhiteSpace(ClientName)) return;
 
-        // Basic search goes to Client/AdvancedFind with just clientName
-        var url = NavManager.GetUriWithQueryParameters("/Client/AdvancedFind", new Dictionary<string, object?>
+        var url = NavManager.GetUriWithQueryParameters("/find-client", new Dictionary<string, object?>
         {
             { "clientName", ClientName },
             { "isLegacyQuery", true }

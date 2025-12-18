@@ -1,4 +1,4 @@
-@page "/Radar/{ServerId?}"
+@page "/radar/{ServerId?}"
 @using Microsoft.AspNetCore.Components.Web
 @rendermode RenderMode.InteractiveServer
 
@@ -38,7 +38,7 @@
                 <div class="list-group list-group-flush">
                     @foreach (var server in Servers)
                     {
-                        <a href="/LiveRadar/@server.ToString()"
+                        <a href="/radar/@server.Id"
                            class="list-group-item list-group-item-action @(IsSelected(server) ? "active" : "")">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>@server.Hostname.StripColors()</div>

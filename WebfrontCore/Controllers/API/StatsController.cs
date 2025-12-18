@@ -33,7 +33,12 @@ namespace WebfrontCore.Controllers.API
         public async Task<IActionResult> GetTopPlayers([FromQuery] int count = 25, [FromQuery] int offset = 0,
             [FromQuery] string? serverId = null)
         {
-            var response = await dataService.GetTopStatsAsync(count, offset, serverId);
+            var response = await dataService.GetTopStatsAsync(new Models.TopStatsRequest
+            {
+                Count = count,
+                Offset = offset,
+                ServerId = serverId
+            });
             return Ok(response);
         }
 

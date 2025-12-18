@@ -74,7 +74,8 @@ public partial class ClientMetaList : IAsyncDisposable
 
     private async Task LoadData()
     {
-        if (Loading || !HasMore) return;
+        if (Loading || !HasMore)
+            return;
         Loading = true;
         StateHasChanged();
 
@@ -86,7 +87,15 @@ public partial class ClientMetaList : IAsyncDisposable
                 Offset = 0;
             }
 
-            var newItems = await DataService.GetClientMetaAsync(ClientId, Count, Offset, StartAt, MetaFilterType);
+            var newItems = await DataService.GetClientMetaAsync(
+                new WebfrontCore.Controllers.API.Models.ClientMetaRequest
+                {
+                    ClientId = ClientId,
+                    Count = Count,
+                    Offset = Offset,
+                    StartAt = StartAt,
+                    MetaType = MetaFilterType
+                });
             var itemList = newItems?.ToList() ?? new List<BaseMetaResponse>();
 
             var n = 0;
@@ -159,6 +168,7 @@ public partial class ClientMetaList : IAsyncDisposable
             state = new MetaItemState();
             _itemStates[item] = state;
         }
+
         return state;
     }
 
@@ -195,7 +205,8 @@ public partial class ClientMetaList : IAsyncDisposable
             state.IsLoading = true;
             try
             {
-                state.ContextMessages = await DataService.GetChatContextAsync(meta.ServerId.ToString(), meta.When.ToFileTimeUtc());
+                state.ContextMessages =
+                    await DataService.GetChatContextAsync(meta.ServerId.ToString(), meta.When.ToFileTimeUtc());
             }
             catch (Exception ex)
             {

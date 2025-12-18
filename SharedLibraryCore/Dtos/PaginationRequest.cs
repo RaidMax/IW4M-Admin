@@ -15,7 +15,7 @@ namespace SharedLibraryCore.Dtos
         /// <summary>
         ///     how many items to take
         /// </summary>
-        public int Count { get; set; } = 30;
+        public int Count { get; set; } = 50;
 
         /// <summary>
         ///     filter query

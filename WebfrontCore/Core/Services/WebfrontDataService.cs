@@ -3,7 +3,6 @@ using System.Diagnostics;
 using SharedLibraryCore.Dtos;
 using Data.Models;
 using SharedLibraryCore.Helpers;
-
 using WebfrontCore.Components.Features.Admin.Models;
 using WebfrontCore.Components.Features.Servers.Models;
 using WebfrontCore.Controllers.API.Models;
@@ -250,12 +249,7 @@ public class WebfrontDataService : IWebfrontDataService
             })
             .ToList();
 
-        var user = new ClientInfo
-        {
-            ClientId = -1,
-            Name = "Webfront User",
-            Level = Data.Models.Client.EFClient.Permission.User,
-        };
+        ClientInfo? user = null;
         var currentUser = await GetExecutorAsync();
         var authorized = currentUser is not null;
 
@@ -282,15 +276,16 @@ public class WebfrontDataService : IWebfrontDataService
             Interactions = interactions
                 .Select(i => new NavigationInteractionInfo
                 {
-                   InteractionId = i.InteractionId,
-                   MinimumPermission = i.MinimumPermission,
-                   Name = i.Name,
-                   DisplayMeta = i.DisplayMeta
+                    InteractionId = i.InteractionId,
+                    MinimumPermission = i.MinimumPermission,
+                    Name = i.Name,
+                    DisplayMeta = i.DisplayMeta
                 }),
             CommunityInformation = new CommunityInfo
             {
                 IsEnabled = _manager.GetApplicationSettings().Configuration().CommunityInformation?.IsEnabled ?? false,
-                SocialAccounts = (_manager.GetApplicationSettings().Configuration().CommunityInformation?.SocialAccounts?
+                SocialAccounts = (_manager.GetApplicationSettings().Configuration().CommunityInformation?.SocialAccounts
+                    ?
                     .Select(s => new SocialAccountInfo
                     {
                         Title = s.Title,
@@ -520,29 +515,18 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<IEnumerable<BaseMetaResponse>> GetClientMetaAsync(
-        int clientId, int count, int offset, long? startAt, MetaType? metaType)
+    public async Task<IEnumerable<BaseMetaResponse>> GetClientMetaAsync(ClientMetaRequest request)
     {
-        var request = new ClientPaginationRequest
+        var metaRequest = new ClientPaginationRequest
         {
-            ClientId = clientId,
-            Count = count,
-            Offset = offset,
-            Before = startAt.HasValue ? DateTime.FromFileTimeUtc(startAt.Value) : DateTime.UtcNow,
+            ClientId = request.ClientId,
+            Count = request.Count,
+            Offset = request.Offset,
+            Before = request.StartAt.HasValue ? DateTime.FromFileTimeUtc(request.StartAt.Value) : DateTime.UtcNow,
         };
 
         var config = _manager.GetApplicationSettings().Configuration();
-        var user = _httpContextAccessor.HttpContext?.User;
-        var level = Data.Models.Client.EFClient.Permission.User;
-
-        if (user?.Identity?.IsAuthenticated == true)
-        {
-            var levelClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            if (Enum.TryParse(levelClaim, out Data.Models.Client.EFClient.Permission result))
-            {
-                level = result;
-            }
-        }
+        var level = GetRequestingPermission();
 
         if (!config.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
         {
@@ -551,30 +535,31 @@ public class WebfrontDataService : IWebfrontDataService
 
         IEnumerable<IClientMeta>? meta;
 
-        if (metaType is null or MetaType.All)
+        if (request.MetaType is null or MetaType.All)
         {
-            meta = await _metaService.GetRuntimeMeta(request);
+            meta = await _metaService.GetRuntimeMeta(metaRequest);
         }
         else
         {
-            meta = metaType switch
+            meta = request.MetaType switch
             {
-                MetaType.Information => await _metaService.GetRuntimeMeta<InformationResponse>(request,
-                    metaType.Value),
+                MetaType.Information => await _metaService.GetRuntimeMeta<InformationResponse>(metaRequest,
+                    request.MetaType.Value),
                 MetaType.AliasUpdate => permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate,
                     WebfrontPermission.Read)
-                    ? await _metaService.GetRuntimeMeta<UpdatedAliasResponse>(request, metaType.Value)
+                    ? await _metaService.GetRuntimeMeta<UpdatedAliasResponse>(metaRequest, request.MetaType.Value)
                     : new List<IClientMeta>(),
-                MetaType.ChatMessage => await _metaService.GetRuntimeMeta<MessageResponse>(request, metaType.Value),
-                MetaType.Penalized => await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(request,
-                    metaType.Value),
-                MetaType.ReceivedPenalty => await _metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(request,
-                    metaType.Value),
-                MetaType.ConnectionHistory => await _metaService.GetRuntimeMeta<ConnectionHistoryResponse>(request,
-                    metaType.Value),
+                MetaType.ChatMessage => await _metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
+                    request.MetaType.Value),
+                MetaType.Penalized => await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(metaRequest,
+                    request.MetaType.Value),
+                MetaType.ReceivedPenalty => await _metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(metaRequest,
+                    request.MetaType.Value),
+                MetaType.ConnectionHistory => await _metaService.GetRuntimeMeta<ConnectionHistoryResponse>(metaRequest,
+                    request.MetaType.Value),
                 MetaType.PermissionLevel => await _metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(
-                    request, metaType.Value),
-                _ => await _metaService.GetRuntimeMeta(request)
+                    metaRequest, request.MetaType.Value),
+                _ => await _metaService.GetRuntimeMeta(metaRequest)
             };
         }
 
@@ -661,12 +646,14 @@ public class WebfrontDataService : IWebfrontDataService
         return response.ToList();
     }
 
-    public async Task<IList<PenaltyInfo>> GetPenaltiesAsync(int offset = 0, int count = 30,
-        EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true)
+    public async Task<IList<PenaltyInfo>> GetPenaltiesAsync(PenaltyRequest request)
     {
-        var penalties = await _manager.GetPenaltyService().GetRecentPenalties(count, offset, showOnly, ignoreAutomated);
-        var user = _httpContextAccessor.HttpContext?.User;
-        return user?.Identity?.IsAuthenticated != true ? penalties.Where(p => !p.Sensitive).ToList() : penalties;
+        var penalties = await _manager.GetPenaltyService()
+            .GetRecentPenalties(request.Count, request.Offset, request.ShowOnly, request.IgnoreAutomated);
+        var permission = GetRequestingPermission();
+        return permission == Data.Models.Client.EFClient.Permission.User
+            ? penalties.Where(p => !p.Sensitive).ToList()
+            : penalties;
     }
 
     public async Task<string> UnbanClientAsync(int clientId, string reason)
@@ -699,14 +686,14 @@ public class WebfrontDataService : IWebfrontDataService
         return msg;
     }
 
-    public async Task<TopStatsResponse> GetTopStatsAsync(int count, int offset, string? serverId = null)
+    public async Task<TopStatsResponse> GetTopStatsAsync(TopStatsRequest request)
     {
-        var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId) as IGameServer;
+        var server = _manager.GetServers().FirstOrDefault(s => s.Id == request.ServerId) as IGameServer;
         var legacyId = server?.LegacyDatabaseId;
 
         var stats = _statsConfig.EnableAdvancedMetrics
-            ? await _statManager.GetNewTopStats(offset, count, legacyId)
-            : await _statManager.GetTopStats(offset, count, legacyId);
+            ? await _statManager.GetNewTopStats(request.Offset, request.Count, legacyId)
+            : await _statManager.GetTopStats(request.Offset, request.Count, legacyId);
 
         var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId);
 
@@ -842,7 +829,6 @@ public class WebfrontDataService : IWebfrontDataService
             _alertManager.MarkAllAlertsAsRead(client.ClientId);
         }
     }
-
 
     public Task<IEnumerable<ServerReportsInfo>> GetReportsAsync()
     {
@@ -995,21 +981,6 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    private async Task<EFClient?> GetExecutorAsync()
-    {
-        var user = _httpContextAccessor.HttpContext?.User;
-        if (user?.Identity?.IsAuthenticated != true)
-            return null;
-
-        var sidClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid);
-        if (sidClaim != null && int.TryParse(sidClaim.Value, out var clientId))
-        {
-            return await _clientService.Get(clientId);
-        }
-
-        return null;
-    }
-
     public async Task<IEnumerable<ClientResourceResponse>> GetClientsAsync(ClientResourceRequest request)
     {
         var executor = await GetExecutorAsync();
@@ -1124,10 +1095,12 @@ public class WebfrontDataService : IWebfrontDataService
     public async Task<SystemInfo> GetSystemInfoAsync()
     {
         var duration = TimeSpan.FromHours(24);
-        var (totalClients, totalRecentClients) = await _serverDataViewer.ClientCountsAsync(duration, null, CancellationToken.None);
-        var (maxConcurrent, maxConcurrentTime) = await _serverDataViewer.MaxConcurrentClientsAsync(overPeriod: duration, token: CancellationToken.None);
+        var (totalClients, totalRecentClients) =
+            await _serverDataViewer.ClientCountsAsync(duration, null, CancellationToken.None);
+        var (maxConcurrent, maxConcurrentTime) =
+            await _serverDataViewer.MaxConcurrentClientsAsync(overPeriod: duration, token: CancellationToken.None);
         var uptime = DateTime.Now - Process.GetCurrentProcess().StartTime;
-        
+
         return new SystemInfo
         {
             TotalTrackedClients = totalClients,
@@ -1159,7 +1132,8 @@ public class WebfrontDataService : IWebfrontDataService
             return [];
         }
 
-        var clientHistory = (await _serverDataViewer.ClientHistoryAsync(_appConfig.MaxClientHistoryTime, CancellationToken.None))?
+        var clientHistory =
+            (await _serverDataViewer.ClientHistoryAsync(_appConfig.MaxClientHistoryTime, CancellationToken.None))?
             .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
             new ClientHistoryInfo
             {
@@ -1189,24 +1163,28 @@ public class WebfrontDataService : IWebfrontDataService
 
         return clientCountSnapshots;
     }
-    
-    public async Task<InteractionResponse?> GetInteractionAsync(string interactionName, Dictionary<string, string>? query = null)
+
+    public async Task<InteractionResponse?> GetInteractionAsync(string interactionName,
+        Dictionary<string, string>? query = null)
     {
-        var interactionData = (await _interactionRegistration.GetInteractions(interactionName, token: CancellationToken.None)).FirstOrDefault();
+        var interactionData =
+            (await _interactionRegistration.GetInteractions(interactionName, token: CancellationToken.None))
+            .FirstOrDefault();
 
         if (interactionData is null)
         {
             return null;
         }
-        
+
         var executor = await GetExecutorAsync();
 
         if ((executor?.Level ?? Data.Models.Client.EFClient.Permission.User) < interactionData.MinimumPermission)
         {
-             throw new UnauthorizedAccessException("Insufficient permission to execute interaction");
+            throw new UnauthorizedAccessException("Insufficient permission to execute interaction");
         }
-        
-        var result = await _interactionRegistration.ProcessInteraction(interactionName, executor?.ClientId ?? 0, meta: query ?? new Dictionary<string, string>(), token: CancellationToken.None);
+
+        var result = await _interactionRegistration.ProcessInteraction(interactionName, executor?.ClientId ?? 0,
+            meta: query ?? new Dictionary<string, string>(), token: CancellationToken.None);
 
         return new InteractionResponse
         {
@@ -1217,27 +1195,28 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<ClaimsPrincipal> LoginAsync(int clientId, string password, string ipAddress)
+    public async Task<ClaimsPrincipal> LoginAsync(ServiceLoginRequest request)
     {
-        if (clientId is 0)
+        if (request.ClientId is 0)
         {
-             throw new UnauthorizedAccessException("Invalid Client ID");
+            throw new UnauthorizedAccessException("Invalid Client ID");
         }
 
-        var privilegedClient = await _clientService.GetClientForLogin(clientId);
-        
+        var privilegedClient = await _clientService.GetClientForLogin(request.ClientId);
+
         var tokenData = new TokenIdentifier
         {
-            ClientId = clientId,
-            Token = password
+            ClientId = request.ClientId,
+            Token = request.Password
         };
 
         var loginSuccess = _manager.TokenAuthenticator.AuthorizeToken(tokenData) ||
-                       (await Task.FromResult(Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
+                           (await Task.FromResult(Hashing.Hash(request.Password, privilegedClient.PasswordSalt)))[0] ==
+                           privilegedClient.Password;
 
         if (!loginSuccess)
         {
-             throw new UnauthorizedAccessException("Invalid credentials");
+            throw new UnauthorizedAccessException("Invalid credentials");
         }
 
         List<Claim> claims =
@@ -1257,17 +1236,46 @@ public class WebfrontDataService : IWebfrontDataService
             Origin = privilegedClient,
             Type = GameEvent.EventType.Login,
             Owner = _manager.GetServers().First(),
-            Data = ipAddress
+            Data = request.IpAddress
         });
 
         _manager.QueueEvent(new LoginEvent
         {
             Source = this,
             LoginSource = LoginEvent.LoginSourceType.Webfront,
-            EntityId = clientId.ToString(),
-            Identifier = ipAddress
+            EntityId = request.ClientId.ToString(),
+            Identifier = request.IpAddress
         });
 
         return claimsPrincipal;
+    }
+
+    private Data.Models.Client.EFClient.Permission GetRequestingPermission()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            return Data.Models.Client.EFClient.Permission.User;
+        }
+
+        var levelClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        return Enum.TryParse(levelClaim, out Data.Models.Client.EFClient.Permission result)
+            ? result
+            : Data.Models.Client.EFClient.Permission.User;
+    }
+
+    private async Task<EFClient?> GetExecutorAsync()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true)
+            return null;
+
+        var sidClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid);
+        if (sidClaim != null && int.TryParse(sidClaim.Value, out var clientId))
+        {
+            return await _clientService.Get(clientId);
+        }
+
+        return null;
     }
 }

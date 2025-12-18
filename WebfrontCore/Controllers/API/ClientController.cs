@@ -53,7 +53,7 @@ namespace WebfrontCore.Controllers.API
 
             try
             {
-                var results = await dataService.GetClientsAsync(request);
+                var results = await dataService.SearchClientsAsync(request);
                 return Ok(results);
             }
             catch (Exception e)

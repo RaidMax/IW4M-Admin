@@ -62,7 +62,8 @@ public partial class AdvancedFind
 
     private async Task LoadData()
     {
-        if (_isLoading) return;
+        if (_isLoading)
+            return;
 
         _isLoading = true;
         StateHasChanged();
@@ -72,7 +73,7 @@ public partial class AdvancedFind
             Request.Offset = Offset;
             Request.Count = Count;
 
-            var response = await DataService.GetClientsAsync(Request);
+            var response = await DataService.SearchClientsAsync(Request);
             if (response != null && response.Any())
             {
                 Results.AddRange(response);
@@ -105,7 +106,8 @@ public partial class AdvancedFind
         await Task.CompletedTask;
     }
 
-    private async void OnLocationChanged(object sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    private async void OnLocationChanged(object sender,
+        Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         await LoadSearchParameters();
         await InvokeAsync(StateHasChanged);
@@ -143,13 +145,17 @@ public partial class AdvancedFind
 
         Request.SortColumn = query["sortColumn"];
 
-        Request.RequesterPermission = AppState.User?.Level ?? EFClient.Permission.User;
-
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        var canReadIp = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")).Succeeded;
-        var canReadGuid = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")).Succeeded;
-        var canReadLevel = (await AuthService.AuthorizeAsync(user, $"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")).Succeeded;
+        var canReadIp =
+            (await AuthService.AuthorizeAsync(user,
+                $"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")).Succeeded;
+        var canReadGuid =
+            (await AuthService.AuthorizeAsync(user,
+                $"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")).Succeeded;
+        var canReadLevel =
+            (await AuthService.AuthorizeAsync(user,
+                $"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")).Succeeded;
 
         if (!canReadIp)
         {
@@ -170,10 +176,12 @@ public partial class AdvancedFind
 
     private string MakeAbbreviation(string text)
     {
-        if (string.IsNullOrEmpty(text)) return text;
+        if (string.IsNullOrEmpty(text))
+            return text;
 
         var words = text.Split(' ');
-        if (words.Length == 1) return text;
+        if (words.Length == 1)
+            return text;
 
         return string.Join("", words.Select(w => w.Length > 0 ? w[0].ToString() : ""));
     }

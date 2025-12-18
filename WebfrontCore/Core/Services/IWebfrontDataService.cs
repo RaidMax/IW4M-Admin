@@ -26,13 +26,12 @@ public interface IWebfrontDataService
     Task<ResourceQueryHelperResult<BanInfo>?> GetBansAsync(BanInfoRequest request);
     Task<IList<AuditInfo>> GetAuditLogAsync(PaginationRequest request);
     Task<List<CommandResponseInfo>> ExecuteCommandAsync(string serverId, string command);
-    Task<IList<PenaltyInfo>> GetPenaltiesAsync(int offset = 0, int count = 30,
-        EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true);
+    Task<IList<PenaltyInfo>> GetPenaltiesAsync(PenaltyRequest request);
     Task<IEnumerable<ConfigurationFileInfo>> GetConfigurationFilesAsync();
     Task SaveConfigurationFileAsync(string fileName, string content);
     Task<Dictionary<Data.Models.Client.EFClient.Permission, IList<ClientInfo>>> GetPrivilegedClientsAsync();
     Task<FindClientResponse> SearchClientsAsync(FindClientRequest request);
-    Task<TopStatsResponse> GetTopStatsAsync(int count, int offset, string? serverId = null);
+    Task<TopStatsResponse> GetTopStatsAsync(TopStatsRequest request);
     Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null);
     Task<IList<StatsInfoResult>> GetClientStatsAsync(int clientId);
     Task<IEnumerable<SharedLibraryCore.Alerts.Alert.AlertState>> GetAlertsAsync();
@@ -41,10 +40,9 @@ public interface IWebfrontDataService
     Task<IEnumerable<ServerReportsInfo>> GetReportsAsync();
     Task<AboutInfo> GetAboutInfoAsync();
     Task<List<CommandGroupInfo>> GetHelpCommandsAsync();
-    Task<IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.BaseMetaResponse>> GetClientMetaAsync(
-        int clientId, int count, int offset, long? startAt, SharedLibraryCore.Interfaces.MetaType? metaType);
+    Task<IEnumerable<SharedLibraryCore.Dtos.Meta.Responses.BaseMetaResponse>> GetClientMetaAsync(ClientMetaRequest request);
     Task<InteractionResponse?> GetInteractionAsync(string interactionName, Dictionary<string, string>? query = null);
-    Task<System.Security.Claims.ClaimsPrincipal> LoginAsync(int clientId, string password, string ipAddress);
+    Task<System.Security.Claims.ClaimsPrincipal> LoginAsync(ServiceLoginRequest request);
     Task<string> UnbanClientAsync(int clientId, string reason);
     Task<IEnumerable<ClientResourceResponse>> GetClientsAsync(ClientResourceRequest request);
     Task<List<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>> GetChatContextAsync(string serverId, long when);

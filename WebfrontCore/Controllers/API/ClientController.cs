@@ -114,7 +114,14 @@ namespace WebfrontCore.Controllers.API
             [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType,
             CancellationToken token)
         {
-            var meta = await dataService.GetClientMetaAsync(clientId, count, offset, startAt, metaType);
+            var meta = await dataService.GetClientMetaAsync(new ClientMetaRequest
+            {
+                ClientId = clientId,
+                Count = count,
+                Offset = offset,
+                StartAt = startAt,
+                MetaType = metaType
+            });
             return Ok(meta);
         }
 
@@ -136,7 +143,12 @@ namespace WebfrontCore.Controllers.API
 
             try
             {
-                var principal = await dataService.LoginAsync(clientId, request.Password, ip);
+                var principal = await dataService.LoginAsync(new ServiceLoginRequest
+                {
+                    ClientId = clientId,
+                    Password = request.Password,
+                    IpAddress = ip
+                });
                 await SignInAsync(principal);
                 return Ok();
             }

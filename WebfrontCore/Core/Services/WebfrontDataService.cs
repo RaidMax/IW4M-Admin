@@ -1,4 +1,5 @@
 using SharedLibraryCore;
+using System.Diagnostics;
 using SharedLibraryCore.Dtos;
 using Data.Models;
 using SharedLibraryCore.Helpers;
@@ -20,8 +21,9 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
-using WebfrontCore.Controllers.API;
 using WebfrontCore.Core.Auth;
+using System.Security.Claims;
+using SharedLibraryCore.Events.Management;
 
 namespace WebfrontCore.Core.Services;
 
@@ -535,7 +537,7 @@ public class WebfrontDataService : IWebfrontDataService
 
         if (user?.Identity?.IsAuthenticated == true)
         {
-            var levelClaim = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var levelClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
             if (Enum.TryParse(levelClaim, out Data.Models.Client.EFClient.Permission result))
             {
                 level = result;
@@ -762,16 +764,16 @@ public class WebfrontDataService : IWebfrontDataService
         }
     }
 
-    public async Task<string> SaveConfigurationFileAsync(string fileName, string content)
+    public async Task SaveConfigurationFileAsync(string fileName, string content)
     {
         if (!fileName.EndsWith(".json"))
         {
-            return "File must be of json format.";
+            throw new ArgumentException("File must be of json format.");
         }
 
         if (string.IsNullOrEmpty(content))
         {
-            return "File content cannot be empty";
+            throw new ArgumentException("File content cannot be empty");
         }
 
         try
@@ -780,7 +782,7 @@ public class WebfrontDataService : IWebfrontDataService
         }
         catch (System.Text.Json.JsonException ex)
         {
-            return $"File is not valid. {fileName}: {ex.Message}";
+            throw new ArgumentException($"File is not valid. {fileName}: {ex.Message}");
         }
 
         var path = Path.Join(Utilities.OperatingDirectory, "Configuration",
@@ -788,11 +790,10 @@ public class WebfrontDataService : IWebfrontDataService
 
         if (!File.Exists(path))
         {
-            return $"{fileName} does not exist";
+            throw new FileNotFoundException($"{fileName} does not exist");
         }
 
         await File.WriteAllTextAsync(path, content);
-        return $"{fileName} saved successfully";
     }
 
     public async Task<Dictionary<Data.Models.Client.EFClient.Permission, IList<ClientInfo>>> GetPrivilegedClientsAsync()
@@ -1000,7 +1001,7 @@ public class WebfrontDataService : IWebfrontDataService
         if (user?.Identity?.IsAuthenticated != true)
             return null;
 
-        var sidClaim = user.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Sid);
+        var sidClaim = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid);
         if (sidClaim != null && int.TryParse(sidClaim.Value, out var clientId))
         {
             return await _clientService.Get(clientId);
@@ -1118,5 +1119,155 @@ public class WebfrontDataService : IWebfrontDataService
         }
 
         return formattedInfo;
+    }
+
+    public async Task<SystemInfo> GetSystemInfoAsync()
+    {
+        var duration = TimeSpan.FromHours(24);
+        var (totalClients, totalRecentClients) = await _serverDataViewer.ClientCountsAsync(duration, null, CancellationToken.None);
+        var (maxConcurrent, maxConcurrentTime) = await _serverDataViewer.MaxConcurrentClientsAsync(overPeriod: duration, token: CancellationToken.None);
+        var uptime = DateTime.Now - Process.GetCurrentProcess().StartTime;
+        
+        return new SystemInfo
+        {
+            TotalTrackedClients = totalClients,
+            TotalConnectedClients = _manager.GetActiveClients().Count,
+            TotalClientSlots = _manager.GetServers().Sum(server => server.MaxClients),
+            MaxConcurrentClients = new SystemInfo.MetricSnapshot<int?>
+            {
+                Value = maxConcurrent,
+                Time = maxConcurrentTime,
+                EndAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow - duration
+            },
+            TotalRecentClients = new SystemInfo.MetricSnapshot<int>
+            {
+                Value = totalRecentClients,
+                EndAt = DateTime.UtcNow,
+                StartAt = DateTime.UtcNow - duration
+            },
+            Uptime = uptime,
+        };
+    }
+
+    public async Task<IEnumerable<ClientCountSnapshot>> GetClientHistoryAsync(string serverId)
+    {
+        var foundServer = _manager.GetServers().FirstOrDefault(server => server.Id == serverId);
+
+        if (foundServer is null)
+        {
+            return [];
+        }
+
+        var clientHistory = (await _serverDataViewer.ClientHistoryAsync(_appConfig.MaxClientHistoryTime, CancellationToken.None))?
+            .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
+            new ClientHistoryInfo
+            {
+                ServerId = foundServer.LegacyDatabaseId,
+                ClientCounts = []
+            };
+
+        var counts = clientHistory.ClientCounts?.AsEnumerable() ?? [];
+
+        if (foundServer.ClientHistory.ClientCounts.Count is not 0)
+        {
+            counts = counts.Union(foundServer.ClientHistory.ClientCounts.Where(history =>
+                    history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
+                .Where(history => history.Time >= DateTime.UtcNow - _appConfig.MaxClientHistoryTime);
+        }
+
+        var clientCountSnapshots = counts.ToList();
+        if (foundServer.Maps.Count <= 0)
+        {
+            return clientCountSnapshots;
+        }
+
+        foreach (var count in clientCountSnapshots)
+        {
+            count.MapAlias = foundServer.Maps.FirstOrDefault(map => map.Name == count.Map)?.Alias ?? count.Map;
+        }
+
+        return clientCountSnapshots;
+    }
+    
+    public async Task<InteractionResponse?> GetInteractionAsync(string interactionName, Dictionary<string, string>? query = null)
+    {
+        var interactionData = (await _interactionRegistration.GetInteractions(interactionName, token: CancellationToken.None)).FirstOrDefault();
+
+        if (interactionData is null)
+        {
+            return null;
+        }
+        
+        var executor = await GetExecutorAsync();
+
+        if ((executor?.Level ?? Data.Models.Client.EFClient.Permission.User) < interactionData.MinimumPermission)
+        {
+             throw new UnauthorizedAccessException("Insufficient permission to execute interaction");
+        }
+        
+        var result = await _interactionRegistration.ProcessInteraction(interactionName, executor?.ClientId ?? 0, meta: query ?? new Dictionary<string, string>(), token: CancellationToken.None);
+
+        return new InteractionResponse
+        {
+            Title = interactionData.Description ?? interactionData.Name,
+            Content = result ?? "",
+            InteractionType = interactionData.InteractionType.ToString(),
+            DisplayMeta = interactionData.DisplayMeta
+        };
+    }
+
+    public async Task<ClaimsPrincipal> LoginAsync(int clientId, string password, string ipAddress)
+    {
+        if (clientId is 0)
+        {
+             throw new UnauthorizedAccessException("Invalid Client ID");
+        }
+
+        var privilegedClient = await _clientService.GetClientForLogin(clientId);
+        
+        var tokenData = new TokenIdentifier
+        {
+            ClientId = clientId,
+            Token = password
+        };
+
+        var loginSuccess = _manager.TokenAuthenticator.AuthorizeToken(tokenData) ||
+                       (await Task.FromResult(Hashing.Hash(password, privilegedClient.PasswordSalt)))[0] == privilegedClient.Password;
+
+        if (!loginSuccess)
+        {
+             throw new UnauthorizedAccessException("Invalid credentials");
+        }
+
+        List<Claim> claims =
+        [
+            new(ClaimTypes.NameIdentifier, privilegedClient.Name),
+            new(ClaimTypes.Role, privilegedClient.Level.ToString()),
+            new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
+            new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
+            new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
+        ];
+
+        var claimsIdentity = new ClaimsIdentity(claims, "login");
+        var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+        _manager.AddEvent(new GameEvent
+        {
+            Origin = privilegedClient,
+            Type = GameEvent.EventType.Login,
+            Owner = _manager.GetServers().First(),
+            Data = ipAddress
+        });
+
+        _manager.QueueEvent(new LoginEvent
+        {
+            Source = this,
+            LoginSource = LoginEvent.LoginSourceType.Webfront,
+            EntityId = clientId.ToString(),
+            Identifier = ipAddress
+        });
+
+        return claimsPrincipal;
     }
 }

@@ -1,147 +1,59 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using Data.Models;
+using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Controllers.API.Models;
+using WebfrontCore.Components.Features.Servers.Models;
+using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ServerController(
-        IManager manager,
-        IServerDataViewer serverDataViewer,
-        ApplicationConfiguration applicationConfiguration,
-        IRemoteCommandService remoteCommandService)
-        : BaseController(manager)
+    public class ServerController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         [HttpGet]
-        public IActionResult Index()
+        public async Task<ActionResult<IEnumerable<ServerInfo>>> GetServers([FromQuery] Reference.Game? game = null,
+            CancellationToken token = default)
         {
-            return new JsonResult(Manager.GetServers().Select(server => new
-            {
-                Id = server.EndPoint,
-                server.ServerName,
-                server.ListenAddress,
-                server.ListenPort,
-                Game = server.GameName.ToString(),
-                server.ClientNum,
-                server.MaxClients,
-                server.CurrentMap,
-                currentGameType = new
-                {
-                    type = server.Gametype,
-                    name = server.GametypeName
-                },
-                Parser = server.RconParser.Name,
-                ResolvedExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : null,
-            }));
+            var servers = await dataService.GetServersAsync(game);
+            return Ok(servers);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetServerById(string id)
+        public async Task<ActionResult<ServerInfo>> GetServer(string id)
         {
-            var foundServer = Manager.GetServers().FirstOrDefault(server => server.EndPoint == long.Parse(id));
-
-            if (foundServer == null)
+            try
             {
-                return new NotFoundResult();
+                var server = await dataService.GetServer(id);
+                if (server == null) return NotFound();
+                return Ok(server);
             }
-
-            return new JsonResult(new
+            catch (Exception)
             {
-                Id = foundServer.EndPoint,
-                foundServer.ServerName,
-                foundServer.ListenAddress,
-                foundServer.ListenPort,
-                Game = foundServer.GameName.ToString(),
-                foundServer.ClientNum,
-                foundServer.MaxClients,
-                foundServer.CurrentMap,
-                currentGameType = new
-                {
-                    type = foundServer.Gametype,
-                    name = foundServer.GametypeName
-                },
-                Parser = foundServer.RconParser.Name,
-                ResolvedExternalIPAddress = foundServer.ResolvedIpEndPoint.Address.IsInternal() ? Manager.ExternalIPAddress : null
-            });
+                return NotFound();
+            }
         }
 
-        [HttpPost("{id}/execute")]
-        [Authorize(Policy = "Permissions.ConsolePage.Read")]
-        public async Task<IActionResult> ExecuteCommandForServer(string id, [FromBody] CommandRequest commandRequest)
+        [HttpGet("{id}/scoreboard")]
+        public async Task<ActionResult<ScoreboardInfo>> GetScoreboard(string id)
         {
-
-            var foundServer = Manager.GetServers().FirstOrDefault(server => server.EndPoint == long.Parse(id));
-
-            if (foundServer == null)
+            try
             {
-                return new BadRequestObjectResult($"No server with id '{id}' was found");
+                var scoreboard = await dataService.GetServerScoreboardAsync(id);
+                return Ok(scoreboard);
             }
-
-            if (string.IsNullOrEmpty(commandRequest.Command))
+            catch (Exception)
             {
-                return new BadRequestObjectResult("Command cannot be empty");
+                return NotFound();
             }
-
-            var start = TimeProvider.System.GetLocalNow();
-            Client.CurrentServer = foundServer;
-
-            var completedResult =
-                await remoteCommandService.ExecuteWithResult(Client.ClientId, null, commandRequest.Command, null, foundServer);
-
-            return new JsonResult(new
-            {
-                ExecutionTimeMs = Math.Round((TimeProvider.System.GetLocalNow() - start).TotalMilliseconds, 0),
-                Output = completedResult.Item2.Where(x => !string.IsNullOrWhiteSpace(x.Response))
-                    .Select(x => x.Response.Trim())
-            });
         }
-
+        
         [HttpGet("{id}/history")]
-        public async Task<IActionResult> GetClientHistory(string id)
+        public async Task<ActionResult<IEnumerable<ClientCountSnapshot>>> GetClientHistory(string id)
         {
-            var foundServer = Manager.GetServers().FirstOrDefault(server => server.Id == id);
-
-            if (foundServer is null)
-            {
-                return new NotFoundResult();
-            }
-
-            var clientHistory =
-                (await serverDataViewer.ClientHistoryAsync(applicationConfiguration.MaxClientHistoryTime, CancellationToken.None))?
-                .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
-                new ClientHistoryInfo
-                {
-                    ServerId = foundServer.LegacyDatabaseId,
-                    ClientCounts = []
-                };
-
-            var counts = clientHistory.ClientCounts?.AsEnumerable() ?? [];
-
-            if (foundServer.ClientHistory.ClientCounts.Count is not 0)
-            {
-                counts = counts.Union(foundServer.ClientHistory.ClientCounts.Where(history =>
-                        history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
-                    .Where(history => history.Time >= DateTime.UtcNow - applicationConfiguration.MaxClientHistoryTime);
-            }
-
-            if (ViewBag.Maps?.Count is 0)
-            {
-                return Json(counts.ToList());
-            }
-
-            var clientCountSnapshots = counts.ToList();
-            foreach (var count in clientCountSnapshots)
-            {
-                count.MapAlias = foundServer.Maps.FirstOrDefault(map => map.Name == count.Map)?.Alias ??
-                                 count.Map;
-            }
-
-            return Json(clientCountSnapshots);
+            var history = await dataService.GetClientHistoryAsync(id);
+            return Ok(history);
         }
     }
 }

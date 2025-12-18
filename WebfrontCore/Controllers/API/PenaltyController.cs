@@ -6,23 +6,18 @@ using WebfrontCore.Core.Services;
 using Data.Models;
 using Microsoft.AspNetCore.Authorization;
 
+using WebfrontCore.Controllers.API.Models;
+
 namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PenaltyController : BaseController
+    public class PenaltyController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
-        private readonly IWebfrontDataService _dataService;
-
-        public PenaltyController(IManager manager, IWebfrontDataService dataService) : base(manager)
-        {
-            _dataService = dataService;
-        }
-
         [HttpGet]
         public async Task<ActionResult<IList<PenaltyInfo>>> GetPenalties(int offset = 0, int count = 30, EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true)
         {
-            var penalties = await _dataService.GetPenaltiesAsync(offset, count, showOnly, ignoreAutomated);
+            var penalties = await dataService.GetPenaltiesAsync(offset, count, showOnly, ignoreAutomated);
             return Ok(penalties);
         }
 
@@ -32,7 +27,7 @@ namespace WebfrontCore.Controllers.API
         {
             try
             {
-               var message = await _dataService.UnbanClientAsync(targetId, request.Reason);
+               var message = await dataService.UnbanClientAsync(targetId, request.Reason);
                return Ok(new { message });
             }
             catch (Exception ex)
@@ -40,10 +35,5 @@ namespace WebfrontCore.Controllers.API
                 return BadRequest(new { message = ex.Message });
             }
         }
-    }
-
-    public class UnbanRequest
-    {
-        public string Reason { get; set; }
     }
 }

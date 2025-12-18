@@ -1,92 +1,50 @@
+using Data.Models.Client;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using WebfrontCore.Components.Features.Admin.Models;
+using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
 {
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = nameof(EFClient.Permission.Owner))]
     [Route("api/[controller]")]
-    public class ConfigurationController(IManager manager) : BaseController(manager)
+    public class ConfigurationController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         [HttpGet("files")]
         public async Task<ActionResult<IEnumerable<ConfigurationFileInfo>>> GetFiles()
         {
-            if (Client.Level < Data.Models.Client.EFClient.Permission.Owner)
-            {
-                return Forbid();
-            }
-
-            try
-            {
-                var files = await Task.WhenAll(System.IO.Directory
-                    .GetFiles(System.IO.Path.Join(Utilities.OperatingDirectory, "Configuration"))
-                    .Where(file => file.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
-                    .Select(async fileName => new ConfigurationFileInfo
-                    {
-                        FileName = fileName.Split(System.IO.Path.DirectorySeparatorChar).Last(),
-                        FileContent = await System.IO.File.ReadAllTextAsync(fileName)
-                    }));
-
-                return Ok(files);
-            }
-            catch (Exception ex)
-            {
-                return Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
-            }
+            var files = await dataService.GetConfigurationFilesAsync();
+            return Ok(files);
         }
 
         [HttpPost("files/{fileName}")]
         public async Task<IActionResult> SaveFile([FromRoute] string fileName, [FromBody] ConfigurationFileInfo content)
         {
-            if (Client.Level < Data.Models.Client.EFClient.Permission.Owner)
+            if (Client.Level < EFClient.Permission.Owner)
             {
                 return Forbid();
             }
 
-            if (!fileName.EndsWith(".json"))
-            {
-                return BadRequest("File must be of json format.");
-            }
-
-            // content.FileContent is the body
-            if (string.IsNullOrEmpty(content.FileContent))
-            {
-                // Check if raw body?
-                // FromBody binding usually expects JSON. If we send { "FileContent": "..." } it works.
-                return BadRequest("File content cannot be empty");
-            }
-
-            // Verification it is valid json
             try
             {
-                System.Text.Json.JsonDocument.Parse(content.FileContent);
+                await dataService.SaveConfigurationFileAsync(fileName, content.FileContent);
+                return NoContent();
             }
-            catch (System.Text.Json.JsonException ex)
+            catch (ArgumentException ex)
             {
-                return BadRequest($"{fileName}: {ex.Message}");
+                return BadRequest(ex.Message);
             }
-
-            var path = Path.Join(Utilities.OperatingDirectory, "Configuration",
-                fileName.Replace($"{Path.DirectorySeparatorChar}", ""));
-
-            if (!System.IO.File.Exists(path))
+            catch (FileNotFoundException ex)
             {
-                return NotFound($"{fileName} does not exist");
-            }
-
-            try
-            {
-                await System.IO.File.WriteAllTextAsync(path, content.FileContent);
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
                 return Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
             }
-
-            return NoContent();
         }
     }
 }

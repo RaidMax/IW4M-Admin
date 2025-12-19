@@ -33,10 +33,6 @@
     {
       "library": "vanillajs-datepicker@1.2.0",
       "destination": "wwwroot/lib/vanillajs-datepicker"
-    },
-    {
-      "library": "tailwindcss@4.1.18",
-      "destination": "wwwroot/lib/tailwindcss"
     }
   ]
 }

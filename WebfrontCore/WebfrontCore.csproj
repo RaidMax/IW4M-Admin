@@ -73,4 +73,12 @@
         </VisualStudio>
     </ProjectExtensions>
 
+    <Target Name="DownloadTailwind" Condition="!Exists('Tools\tailwindcss.exe')">
+        <MakeDir Directories="Tools" />
+        <Exec Command="curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-windows-x64.exe -o Tools\tailwindcss.exe" />
+    </Target>
+
+    <Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="DownloadTailwind">
+        <Exec Command="$(ProjectDir)Tools\tailwindcss.exe -c wwwroot\css\src\tailwind.config.js -i wwwroot\css\src\tailwind.scss -o wwwroot\lib\tailwindcss\tailwind.css" />
+    </Target>
 </Project>

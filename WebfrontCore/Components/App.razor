@@ -1,4 +1,3 @@
-@using Microsoft.AspNetCore.Components.Web
 <!DOCTYPE html>
 <html lang="en" class="h-full antialiased">
 <head>
@@ -7,15 +6,17 @@
     <base href="/"/>
     <ResourcePreloader/>
     <script src="https://unpkg.com/@@phosphor-icons/web"></script>
-    <environment include="Development">
+    @* ReSharper disable once Razor.UnresolvedComponent *@
+    <Environment include="Development">
         <link rel="stylesheet" href="/css/tailwind.css"/>
         <!-- <link rel="stylesheet" href="/lib/halfmoon/css/halfmoon-variables.css"/>
         <link rel="stylesheet" href="/css/src/main.css"/>
         <link rel="stylesheet" href="/css/open-iconic-bootstrap-override.css"/>-->
-    </environment>
-    <environment include="Production">
+    </Environment>
+    @* ReSharper disable once Razor.UnresolvedComponent *@
+    <Environment include="Production">
         <!--<link rel="stylesheet" href="~/css/global.min.css"/>-->
-    </environment>
+    </Environment>
     <link rel="icon" type="image/png" href="images/icon.png"/>
     <ImportMap/>
     <HeadOutlet/>
@@ -24,7 +25,8 @@
 
 <Routes/>
 <ReconnectModal/>
-<environment include="Development">
+@* ReSharper disable once Razor.UnresolvedComponent *@
+<Environment include="Development">
     <script src="/lib/jquery/dist/jquery.js"></script>
     <script src="/lib/halfmoon/js/halfmoon.js"></script>
     <script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
@@ -33,10 +35,11 @@
     <script src="/js/stats.js"></script>
     <script src="/js/advanced_stats.js"></script>
     <script src="/js/liveradar.js"></script>
-</environment>
-<environment include="Production">
+</Environment>
+@* ReSharper disable once Razor.UnresolvedComponent *@
+<Environment include="Production">
     <script type="text/javascript" src="~/js/global.min.js"></script>
-</environment>
+</Environment>
 <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 </html>

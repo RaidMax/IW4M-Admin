@@ -1,9 +1,7 @@
 @if (Loading && !MetaItems.Any())
 {
-    <div class="text-center">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
+    <div class="flex justify-center items-center py-12">
+        <i class="ph ph-spinner animate-spin text-3xl text-blue-500"></i>
     </div>
 }
 else
@@ -14,13 +12,17 @@ else
     {
         var currentHeader = item.When.HumanizeForCurrentCulture();
 
-        if (currentHeader != lastHeader)
+        if (currentHeader != lastHeader && item.Type != MetaType.Information)
         {
-            <div class="text-muted font-size-16 font-weight-medium mt-20 mb-10">@currentHeader</div>
+            <div class="flex items-center gap-4 mt-8 mb-4">
+                <div class="h-px flex-1 bg-white/5"></div>
+                <span class="text-slate-500 font-medium text-xs uppercase tracking-wider">@currentHeader</span>
+                <div class="h-px flex-1 bg-white/5"></div>
+            </div>
             lastHeader = currentHeader;
         }
 
-        <div class="mb-5">
+        <div class="group py-2">
             @switch (item)
             {
                 case AdministeredPenaltyResponse penalized:
@@ -48,7 +50,7 @@ else
                     @ClientNoteTemplate(note)
                     break;
                 default:
-                    <div class="alert alert-warning">
+                    <div class="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 p-2 rounded text-sm">
                         Unknown Meta Type: @item.GetType().Name (@item.Type)
                     </div>
                     break;
@@ -58,74 +60,89 @@ else
 
     @if (HasMore)
     {
-        <div @ref="_loadMoreTrigger" style="height: 1px;"></div>
+        <div @ref="_loadMoreTrigger" class="h-px w-full"></div>
     }
 }
 
 @if (!string.IsNullOrEmpty(_errorMessage))
 {
-    <div class="alert alert-danger mt-10">
-        @_errorMessage
+    <div class="mt-4 bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded flex items-center gap-2">
+        <i class="ph ph-warning-circle"></i>
+        <span>@_errorMessage</span>
     </div>
 }
 
 @code {
+    private string GetPenaltyColor(string type) => type?.ToLower() switch
+    {
+        "ban" => "text-red-500",
+        "tempban" => "text-orange-500",
+        "kick" => "text-yellow-500",
+        "warning" => "text-yellow-400",
+        "unban" => "text-green-500",
+        _ => "text-slate-400"
+    };
 
     // --- RenderFragments ---
     // @formatter:off
     RenderFragment<AdministeredPenaltyResponse> AdministeredPenaltyTemplate => (Meta) => @<text>
         @{
-            var tooltipText = string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), Meta.When.ToString("G"));
             var localizationKey = $"WEBFRONT_CLIENT_META_PENALIZED_{Meta.PenaltyType.ToString().ToUpper()}_V2";
             var state = GetState(Meta);
         }
 
-        <span data-toggle="tooltip" data-title="@tooltipText" data-placement="top">
-            <div class="d-inline">
+        <div class="text-slate-300 text-sm leading-relaxed" title="@Meta.When.ToString("G")">
+            <div class="inline">
                 @foreach (var match in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
                 {
                     if (match.IsInterpolation)
                     {
                         if (match.MatchValue == "action")
                         {
-                            <span class="penalties-color-@Meta.PenaltyType.ToString().ToLower()">@match.TranslationValue</span>
+                            <span class="@GetPenaltyColor(Meta.PenaltyType.ToString()) font-medium">@match.TranslationValue</span>
                         }
                         else if (match.MatchValue == "offender")
                         {
-                            <span class="text-highlight">
-                                <a class="link-inverse" href="/client/@Meta.OffenderClientId">
-                                    <ColorCode Value="@Meta.OffenderName"/>
-                                </a>
-                            </span>
+                            <a class="text-blue-400 hover:text-blue-300 transition-colors font-medium" href="/client/@Meta.OffenderClientId">
+                                <ColorCode Value="@Meta.OffenderName"/>
+                            </a>
                         }
                         else if (match.MatchValue == "reason")
                         {
-                            <span class="text-light-dm text-dark-lm">
+                            <span class="text-slate-200">
                                 @if (AppState.User != null && !string.IsNullOrEmpty(Meta.AutomatedOffense) && Meta.PenaltyType != EFPenalty.PenaltyType.Warning)
                                 {
                                     <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)</span>
-                                    <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed cursor-pointer"
-                                          title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"
-                                          @onclick="@(() => TogglePenaltyDetails(Meta))"></span>
+                                    <button class="inline-flex items-center justify-center ml-1 text-blue-400 hover:text-blue-300 align-middle"
+                                            title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"
+                                            @onclick="@(() => TogglePenaltyDetails(Meta))">
+                                         <i class="ph ph-list-magnifying-glass text-lg"></i>
+                                    </button>
 
                                     @if (state.IsOpen)
                                     {
                                         if (state.IsLoading)
                                         {
-                                            <div class="spinner-border spinner-border-sm text-primary ml-5" role="status"></div>
+                                            <i class="ph ph-spinner animate-spin text-blue-500 ml-2"></i>
                                         }
                                         else if (state.SnapshotInfo != null)
                                         {
-                                            <div class="penalty-info-context bg-very-dark-dm bg-light-lm p-20 mt-10 mb-10 rounded border-top border-bottom">
+                                            <div class="mt-3 mb-2 bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-xs block">
                                                 @foreach (var snapshot in state.SnapshotInfo)
                                                 {
-                                                    foreach (var kvp in snapshot)
+                                                    <div class="space-y-1">
+                                                        @foreach (var kvp in snapshot)
+                                                        {
+                                                            <div class="flex gap-2">
+                                                                <span class="text-slate-500">@kvp.Key:</span>
+                                                                <span class="text-slate-300"><ColorCode Value="@kvp.Value"/></span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    @if (snapshot != state.SnapshotInfo.Last())
                                                     {
-                                                        <span class="text-light-dm text-dark-lm font-weight-bold">@kvp.Key</span>
-                                                        <span> &mdash; <ColorCode Value="@kvp.Value"/></span>
-                                                        <br/>
+                                                        <div class="my-3 border-t border-slate-800"></div>
                                                     }
-                                                    <hr class="mt-10 mb-10 border-secondary"/>
                                                 }
                                             </div>
                                         }
@@ -139,51 +156,48 @@ else
                         }
                         else if (match.MatchValue == "time")
                         {
-                            <span class="text-light-dm text-dark-lm">@Meta.LengthText</span>
+                            <span class="text-slate-400">@Meta.LengthText</span>
                         }
                     }
                     else
                     {
-                        <span>@match.MatchValue</span>
+                        <span class="text-slate-400">@match.MatchValue</span>
                     }
                     <span>&nbsp;</span>
                 }
             </div>
-        </span>
+        </div>
     </text>;
 
     RenderFragment<ReceivedPenaltyResponse> ReceivedPenaltyTemplate => (Meta) => @<text>
         @{
-            var tooltipText = string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), Meta.When.ToString("G"));
             var localizationKey = $"WEBFRONT_CLIENT_META_WAS_PENALIZED_{Meta.PenaltyType.ToString().ToUpper()}_V2";
         }
 
-        <span data-toggle="tooltip" data-title="@tooltipText" data-placement="top">
-            <div class="d-inline">
+        <div class="text-slate-300 text-sm leading-relaxed" title="@Meta.When.ToString("G")">
+            <div class="inline">
                 @foreach (var match in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
                 {
                     if (match.IsInterpolation)
                     {
                         if (match.MatchValue == "action")
                         {
-                            <span class="penalties-color-@Meta.PenaltyType.ToString().ToLower()">@match.TranslationValue</span>
+                            <span class="@GetPenaltyColor(Meta.PenaltyType.ToString()) font-medium">@match.TranslationValue</span>
                         }
                         else if (match.MatchValue == "punisher")
                         {
-                            <span class="text-highlight">
-                                <a href="/client/@Meta.PunisherClientId">
-                                    <ColorCode Value="@Meta.PunisherName"/>
-                                </a>
-                            </span>
+                            <a class="text-blue-400 hover:text-blue-300 transition-colors font-medium" href="/client/@Meta.PunisherClientId">
+                                <ColorCode Value="@Meta.PunisherName"/>
+                            </a>
                         }
                         else if (match.MatchValue == "reason")
                         {
-                            <span class="text-white-dm text-black-lm">
+                            <span class="text-slate-200">
                                 @if (AppState.User != null && !string.IsNullOrEmpty(Meta.AutomatedOffense) && Meta.PenaltyType != EFPenalty.PenaltyType.Warning && Meta.PenaltyType != EFPenalty.PenaltyType.Kick)
                                 {
-                                    <span class="mr-2">@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)</span>
-                                    <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed"
-                                          title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"></span>
+                                    <span class="mr-1">@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)</span>
+                                    <i class="ph ph-list-magnifying-glass text-blue-400 align-middle"
+                                          title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"></i>
                                 }
                                 else
                                 {
@@ -193,28 +207,28 @@ else
                         }
                         else if (match.MatchValue == "time")
                         {
-                            <span class="text-light-dm text-dark-lm">@Meta.LengthText</span>
+                            <span class="text-slate-400">@Meta.LengthText</span>
                         }
                     }
                     else
                     {
-                        <span>@match.MatchValue</span>
+                        <span class="text-slate-400">@match.MatchValue</span>
                     }
                     <span>&nbsp;</span>
                 }
 
                 @if (Meta.ClientId != Meta.OffenderClientId)
                 {
-                    <span>&mdash;</span>
+                    <span class="text-slate-600 mx-1">&mdash;</span>
                     @foreach (var helperResult in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_LINKED_ACCOUNT"))
                     {
                         if (!helperResult.IsInterpolation)
                         {
-                            <span>@helperResult.MatchValue</span>
+                            <span class="text-slate-400">@helperResult.MatchValue</span>
                         }
                         else
                         {
-                            <a class="link-inverse" href="/client/@Meta.OffenderClientId">
+                            <a class="text-blue-400 hover:text-blue-300 transition-colors" href="/client/@Meta.OffenderClientId">
                                 <ColorCode Value="@Meta.OffenderName"/>
                             </a>
                         }
@@ -222,52 +236,53 @@ else
                     }
                 }
             </div>
-        </span>
+        </div>
     </text>;
 
     RenderFragment<MessageResponse> MessageTemplate => (Meta) => @<text>
         @{
             var state = GetState(Meta);
         }
-        <div @onclick="@(() => ToggleMessageContext(Meta))" style="cursor: pointer" class="d-inline">
-            <span class="oi oi-chevron-@(state.IsOpen ? "bottom" : "right") font-size-12 mr-5"></span>
-            <span class="text-white-dm text-black-lm text-break">
-                <ColorCode Value="@Meta.Message"/>&nbsp;
-            </span>
-            <span class="text-muted font-size-12 align-top">@Meta.ServerName</span>&nbsp;
+        <div @onclick="@(() => ToggleMessageContext(Meta))" class="cursor-pointer group/msg text-sm">
+            <div class="flex items-start gap-2">
+                <div class="mt-0.5 text-slate-500 group-hover/msg:text-blue-400 transition-colors">
+                    <i class="ph @(state.IsOpen ? "ph-caret-down" : "ph-caret-right")"></i>
+                </div>
+                <div>
+                    <span class="text-slate-200 break-words hover:text-white transition-colors">
+                        <ColorCode Value="@Meta.Message"/>
+                    </span>
+                    <span class="ml-2 text-slate-500 text-xs">@Meta.ServerName</span>
+                </div>
+            </div>
         </div>
 
         @if (state.IsOpen)
         {
             if (state.IsLoading)
             {
-                <div class="text-center mt-5 mb-5">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
+                <div class="flex justify-center py-2">
+                    <i class="ph ph-spinner animate-spin text-blue-500"></i>
                 </div>
             }
             else if (state.ContextMessages != null)
             {
-                <div class="client-message-context mt-10 mb-10 pl-20">
-                    <div class="rounded-top bg-primary text-light mb-0 p-10 pt-5 pb-5 font-size-12">
+                <div class="mt-2 mb-4 ml-6 rounded-lg overflow-hidden border border-slate-700 shadow-lg">
+                    <div class="bg-blue-600/20 px-3 py-1.5 border-b border-blue-500/20 text-xs text-blue-200 font-mono">
                         @Meta.When.HumanizeForCurrentCulture()
                     </div>
-                    <div class="bg-very-dark-dm bg-light-lm p-10 pr-20 rounded-bottom">
+                    <div class="bg-slate-900 p-3 space-y-1">
                         @foreach (var message in state.ContextMessages)
                         {
                             var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
-                            <div class="font-size-14 mb-2 @(isOriginalMessage ? "rounded p-2" : "")"
-                                 style="@(isOriginalMessage ? "background-color: rgba(0, 123, 255, 0.25); border-left: 3px solid #007bff;" : "")">
-                                 <span class="font-weight-bold">
+                            <div class="text-xs flex gap-2 p-1.5 rounded @(isOriginalMessage ? "bg-blue-500/10 border-l-2 border-blue-500 -ml-[1px]" : "opacity-75")">
+                                <span class="font-bold text-slate-300 whitespace-nowrap">
                                      <ColorCode Value="@message.ClientName"/>
-                                 </span>
-                                &mdash;
-                                <span class="@(message.IsQuickMessage ? "font-italic" : "") text-light-dm text-dark-lm">
+                                </span>
+                                <span class="@(message.IsQuickMessage ? "italic text-slate-500" : "text-slate-400") break-all">
                                     <ColorCode Value="@message.Message"/>
-                                    &nbsp;
-                                 </span>
-                                <span class="text-muted font-size-12 ml-5">@message.When.ToString("T")</span>
+                                </span>
+                                <span class="text-slate-600 ml-auto whitespace-nowrap">@message.When.ToString("T")</span>
                             </div>
                         }
                     </div>
@@ -277,10 +292,7 @@ else
     </text>;
 
     RenderFragment<UpdatedAliasResponse> UpdatedAliasTemplate => (Meta) => @<text>
-        @{
-            var tooltipText = string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), Meta.When.ToString("G"));
-        }
-        <span data-toggle="tooltip" data-title="@tooltipText" data-placement="top">
+        <div class="text-sm text-slate-400" title="@Meta.When.ToString("G")">
         @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc("WEBFRONT_PROFILE_META_CONNECT_ALIAS")))
         {
             if (token.IsInterpolation)
@@ -288,13 +300,13 @@ else
                 switch (token.MatchValue)
                 {
                     case "action":
-                        <span class="text-secondary">@token.TranslationValue</span>
+                        <span class="text-slate-500">@token.TranslationValue</span>
                         break;
                     case "alias":
-                        <span class="text-light-dm text-dark-lm">
+                        <span class="text-slate-300 font-medium">
                             <ColorCode Value="@Meta.Name" />
                              <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                  [@Meta.IPAddress]
+                                  <span class="font-mono text-xs text-slate-500 ml-1">[@Meta.IPAddress]</span>
                              </AuthorizeView>
                         </span>
                         break;
@@ -302,19 +314,18 @@ else
             }
             else
             {
-                <span class="text-muted">@token.MatchValue</span>
+                <span>@token.MatchValue</span>
             }
             <span>&nbsp;</span>
         }
-        </span>
+        </div>
     </text>;
 
     RenderFragment<ConnectionHistoryResponse> ConnectionHistoryTemplate => (Meta) => @<text>
         @{
             var localizationKey = $"WEBFRONT_CLIENT_META_CONNECTION_{Meta.ConnectionType.ToString().ToUpper()}";
-            var tooltipText = string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), Meta.When.ToString("G"));
         }
-        <span data-toggle="tooltip" data-title="@tooltipText" data-placement="top">
+        <div class="text-sm text-slate-400" title="@Meta.When.ToString("G")">
         @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
             {
                 if (token.IsInterpolation)
@@ -322,11 +333,12 @@ else
                     switch (token.MatchValue)
                     {
                         case "action":
-                            <span
-                                class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-secondary")">@token.TranslationValue</span>
+                            <span class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-green-400" : "text-slate-500") font-medium">
+                                @token.TranslationValue
+                            </span>
                             break;
                         case "server":
-                            <span class="text-light-dm text-dark-lm">
+                            <span class="text-slate-300">
                                 <ColorCode Value="@Meta.ServerName"/>
                             </span>
                             break;
@@ -334,18 +346,15 @@ else
                 }
                 else
                 {
-                    <span class="text-muted">@token.MatchValue</span>
+                    <span>@token.MatchValue</span>
                 }
                 <span>&nbsp;</span>
             }
-        </span>
+        </div>
     </text>;
 
     RenderFragment<PermissionLevelChangedResponse> PermissionLevelChangedTemplate => (Meta) => @<text>
-        @{
-            var tooltipText = string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), Meta.When.ToString("G"));
-        }
-        <span data-toggle="tooltip" data-title="@tooltipText" data-placement="top">
+        <div class="text-sm text-slate-400" title="@Meta.When.ToString("G")">
         @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc("WEBFRONT_CLIENT_META_PERMISSION_CHANGED")))
         {
             if (token.IsInterpolation)
@@ -353,45 +362,49 @@ else
                 switch (token.MatchValue)
                 {
                     case "permission":
-                        <span class="level-color-@((int)Meta.CurrentPermissionLevel)">@Meta.CurrentPermissionLevel.ToLocalizedLevelName()</span>
-                        break;
-                    case "originClient":
-                        <span class="text-highlight">
-                            <a href="/client/@Meta.ChangedById">
-                                <ColorCode Value="@Meta.ChangedByName" />
-                            </a>
+                        <span class="level-color-@((int)Meta.CurrentPermissionLevel) px-1.5 py-0.5 rounded text-xs border border-white/5 bg-slate-800">
+                            @Meta.CurrentPermissionLevel.ToLocalizedLevelName()
                         </span>
                         break;
+                    case "originClient":
+                        <a class="text-blue-400 hover:text-blue-300 transition-colors" href="/client/@Meta.ChangedById">
+                            <ColorCode Value="@Meta.ChangedByName" />
+                        </a>
+                        break;
                     case "type":
-                         <span class="text-white-50">@token.TranslationValue</span>
+                         <span class="text-slate-500 italic">@token.TranslationValue</span>
                         break;
                 }
             }
             else
             {
-                <span class="text-muted">@token.MatchValue</span>
+                <span>@token.MatchValue</span>
             }
             <span>&nbsp;</span>
         }
-        </span>
+        </div>
     </text>;
 
     RenderFragment<InformationResponse> InformationTemplate => (Meta) => @<text>
-         <div class="mb-5 p-15 rounded bg-very-dark-dm bg-light-ex-lm profile-meta-entry">
-             <div class="profile-meta-value text-primary font-size-14"><ColorCode Value="@Meta.Value" /></div>
-             <div class="profile-meta-title text-muted font-size-12">@Meta.Key.Titleize()</div>
+         <div class="p-3 rounded-lg bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors h-full">
+             <div class="text-slate-200 font-mono text-sm break-all">
+                 <ColorCode Value="@Meta.Value" />
+             </div>
+             <div class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mt-1">
+                 @Meta.Key.Titleize()
+             </div>
          </div>
     </text>;
 
     RenderFragment<ClientNoteMetaResponse> ClientNoteTemplate => (Meta) => @<text>
-        <span data-toggle="tooltip" data-title="@string.Format(AppState.Loc("WEBFRONT_META_TOOLTIP_TIME"), Meta.When.ToString("G"))" data-placement="top">
-            <span class="text-muted">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
-            <span class="text-white-dm text-black-lm">@Meta.Note</span>
-            <span class="text-muted">&mdash;</span>
-            <a class="link-inverse" href="/client/@Meta.OriginEntityId">
+        <div class="text-sm flex gap-2 items-center" title="@Meta.When.ToString("G")">
+            <span class="text-slate-500 uppercase text-xs font-bold tracking-wider">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
+            <span class="text-slate-200 italic">@Meta.Note</span>
+            <span class="text-slate-600">&mdash;</span>
+            <a class="text-blue-400 hover:text-blue-300 transition-colors text-xs" href="/client/@Meta.OriginEntityId">
                 <ColorCode Value="@Meta.OriginEntityName" />
             </a>
-        </span>
+        </div>
     </text>;
     // @formatter:on
 }

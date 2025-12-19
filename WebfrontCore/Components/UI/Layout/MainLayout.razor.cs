@@ -96,6 +96,5 @@ public partial class MainLayout
 
     private async Task ToggleDarkMode()
     {
-        await JS.ToggleDarkMode();
     }
 }

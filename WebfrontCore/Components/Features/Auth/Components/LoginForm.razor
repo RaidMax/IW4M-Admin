@@ -1,26 +1,29 @@
-<form @onsubmit="@Login" @onsubmit:preventDefault>
-    <div class="input-group mb-3">
-        <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon-clientId">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_CLIENTID"))</span>
+<form @onsubmit="@Login" @onsubmit:preventDefault class="space-y-4">
+    <div class="space-y-1">
+        <label for="clientId" class="block text-sm font-medium text-slate-300">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_CLIENTID"))</label>
+        <div class="relative">
+            <input type="number" id="clientId" class="bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+                   @bind="ClientId" @bind:event="oninput" aria-label="clientId" />
         </div>
-        <input type="number" class="form-control" @bind="ClientId" @bind:event="oninput" aria-label="clientId"
-               aria-describedby="basic-addon-clientId">
     </div>
-    <div class="input-group mb-3">
-        <div class="input-group-prepend">
-            <span class="input-group-text" id="basic-addon-Password">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_PASSWORD"))</span>
+    
+    <div class="space-y-1">
+        <label for="password" class="block text-sm font-medium text-slate-300">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_PASSWORD"))</label>
+        <div class="relative">
+            <input type="password" id="password" class="bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" 
+                   @bind="Password" @bind:event="oninput" aria-label="Password" />
         </div>
-        <input type="password" class="form-control" @bind="Password" @bind:event="oninput" aria-label="Password"
-               aria-describedby="basic-addon-Password">
     </div>
 
     @if (!string.IsNullOrEmpty(ErrorMessage))
     {
-        <div class="alert alert-danger">
+        <div class="bg-red-900/20 border border-red-900/50 text-red-400 p-3 rounded-lg text-sm">
             @ErrorMessage
         </div>
     }
 
-    <button type="submit" class="btn btn-block btn-primary">@(AppState.Loc("WEBFRONT_LOGIN_BUTTON_SUBMIT"))</button>
+    <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">
+        @(AppState.Loc("WEBFRONT_LOGIN_BUTTON_SUBMIT"))
+    </button>
 </form>
 

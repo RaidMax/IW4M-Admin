@@ -31,12 +31,12 @@ else
     var config = DefaultConfig.GameStrings;
     // Helper Variables and logic ported from View
     var weapons = Stats.ByWeapon
-        .Where(hit => hit.DamageInflicted > 0 || (hit.DamageInflicted == 0 && hit.HitCount > 0))
+        .Where(hit => hit.DamageInflicted > 0 || hit is { DamageInflicted: 0, HitCount: > 0 })
         .GroupBy(hit => new { hit.WeaponId })
         .Select(group =>
         {
             var withoutAttachments = group.FirstOrDefault(hit => hit.WeaponAttachmentComboId == null);
-            var mostUsedAttachment = group.Except(new[] { withoutAttachments })
+            var mostUsedAttachment = group.Except([withoutAttachments])
                 .OrderByDescending(g => g.DamageInflicted)
                 .GroupBy(g => g.WeaponAttachmentComboId)
                 .FirstOrDefault()

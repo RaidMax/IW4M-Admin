@@ -1,50 +1,81 @@
-
-<div id="clientSearchWrapper">
-    <div class="form-group">
-        <label for="clientName">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"))</label>
-        <div class="d-flex">
-            <input type="text" class="form-control" id="clientName" placeholder="Unknown Soldier" @bind="Model.ClientName"/>
-            <div class="custom-control ml-10 align-self-center">
-                <div class="custom-switch">
-                    <input type="checkbox" id="isExactClientName" @bind="Model.IsExactClientName"/>
-                    <label for="isExactClientName">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</label>
-                </div>
-            </div>
+<div id="clientSearchWrapper" class="space-y-4 text-slate-200">
+    <!-- Name & Exact Match -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <div class="flex-1 space-y-1">
+            <label for="clientName" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"))
+            </label>
+            <input type="text" 
+                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                   id="clientName" 
+                   placeholder="Unknown Soldier" 
+                   @bind="Model.ClientName" />
+        </div>
+        <div class="flex items-center pb-2">
+            <label class="relative inline-flex items-center cursor-pointer group">
+                <input type="checkbox" id="isExactClientName" class="sr-only peer" @bind="Model.IsExactClientName">
+                <div class="relative w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 flex-shrink-0"></div>
+                <span class="ml-3 text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</span>
+            </label>
         </div>
     </div>
 
-    <div class="form-group">
-        <label for="clientIP">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_IP"))</label>
-        <div class="d-flex">
-            <input type="text" class="form-control" id="clientIP" placeholder="1.1.1.1" @bind="Model.ClientIp"/>
-            <div class="custom-control ml-10 align-self-center">
-                <div class="custom-switch">
-                    <input type="checkbox" id="isExactClientIP" @bind="Model.IsExactClientIp"/>
-                    <label for="isExactClientIP">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</label>
-                </div>
-            </div>
+    <!-- IP & Exact Match -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <div class="flex-1 space-y-1">
+            <label for="clientIP" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_IP"))
+            </label>
+            <input type="text" 
+                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                   id="clientIP" 
+                   placeholder="1.1.1.1" 
+                   @bind="Model.ClientIp" />
+        </div>
+        <div class="flex items-center pb-2">
+            <label class="relative inline-flex items-center cursor-pointer group">
+                <input type="checkbox" id="isExactClientIP" class="sr-only peer" @bind="Model.IsExactClientIp">
+                <div class="relative w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 flex-shrink-0"></div>
+                <span class="ml-3 text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</span>
+            </label>
         </div>
     </div>
 
-    <div class="form-group">
-        <label for="clientGuid">GUID <span class="text-primary">&bull;</span> XUID <span class="text-primary">&bull;</span>
-            NetworkID</label>
-        <input type="text" class="form-control" id="clientGuid" placeholder="110000100000001" @bind="Model.ClientGuid"/>
+    <!-- IDs -->
+    <div class="space-y-1">
+        <label for="clientGuid" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            GUID <span class="text-blue-500">&bull;</span> XUID <span class="text-blue-500">&bull;</span> NetworkID
+        </label>
+        <input type="text" 
+               class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+               id="clientGuid" 
+               placeholder="110000100000001" 
+               @bind="Model.ClientGuid" />
     </div>
 
-    <div class="form-group">
-        <label for="clientLevel" class="w-half">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_PERMISSION"))</label>
-        <label for="clientGameName">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"))</label>
-
-        <div class="d-flex">
-            <select class="form-control w-half" id="clientLevel" @bind="Model.ClientLevel">
+    <!-- Level & Game -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-1">
+            <label for="clientLevel" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_PERMISSION"))
+            </label>
+            <select class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                    id="clientLevel" 
+                    @bind="Model.ClientLevel">
                 <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
                 @foreach (EFClient.Permission permission in Enum.GetValues(typeof(EFClient.Permission)))
                 {
                     <option value="@permission">@permission.ToString()</option>
                 }
             </select>
-            <select class="form-control w-half ml-10" id="clientGameName" @bind="Model.GameName">
+        </div>
+        <div class="space-y-1">
+            <label for="clientGameName" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"))
+            </label>
+            <select class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                    id="clientGameName" 
+                    @bind="Model.GameName">
                 <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
                 @foreach (Reference.Game game in Enum.GetValues(typeof(Reference.Game)))
                 {
@@ -54,20 +85,31 @@
         </div>
     </div>
 
-    <div class="form-group">
-        <label for="clientConnected">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"))</label>
-        <div class="d-flex">
-            <input type="datetime-local" class="form-control w-half" id="clientConnected" @bind="Model.ClientConnected"/>
-
-            <div class="custom-control ml-10 align-self-center">
-                <div class="custom-switch">
-                    <input type="checkbox" id="resultOrder" @bind="IsAscending"/>
-                    <label for="resultOrder">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_OLDEST_FIRST"))</label>
-                </div>
-            </div>
+    <!-- Connected & Order -->
+    <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <div class="flex-1 space-y-1">
+            <label for="clientConnected" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"))
+            </label>
+            <!-- [color-scheme:dark] ensures the native calendar popup is dark -->
+            <input type="datetime-local" 
+                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 [color-scheme:dark]" 
+                   id="clientConnected" 
+                   @bind="Model.ClientConnected" />
+        </div>
+        <div class="flex items-center">
+            <label class="relative inline-flex items-center cursor-pointer group">
+                <input type="checkbox" id="resultOrder" class="sr-only peer" @bind="IsAscending">
+                <div class="relative w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 flex-shrink-0"></div>
+                <span class="ml-3 text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_OLDEST_FIRST"))</span>
+            </label>
         </div>
     </div>
 
-    <button class="btn btn-primary" @onclick="Submit">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))</button>
+    <div class="pt-2">
+        <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-900 transition-colors" 
+                @onclick="Submit">
+            @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))
+        </button>
+    </div>
 </div>
-

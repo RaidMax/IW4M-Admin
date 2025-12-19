@@ -64,6 +64,7 @@
         <Content Update="libman.json">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
+        <Content Remove="wwwroot\lib\**" />
     </ItemGroup>
 
     <ProjectExtensions>

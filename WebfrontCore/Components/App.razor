@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Components.Web
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,10 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
     <ResourcePreloader/>
-
-    <link rel="stylesheet" href="/lib/halfmoon/css/halfmoon-variables.css"/>
-    <link rel="stylesheet" href="/css/src/main.css"/>
-    <link rel="stylesheet" href="/css/open-iconic-bootstrap-override.css"/>
+    <environment include="Development">
+        <link rel="stylesheet" href="/lib/halfmoon/css/halfmoon-variables.css"/>
+        <link rel="stylesheet" href="/css/src/main.css"/>
+        <link rel="stylesheet" href="/css/open-iconic-bootstrap-override.css"/>
+    </environment>
+    <environment include="Production">
+        <link rel="stylesheet" href="~/css/global.min.css"/>
+    </environment>
     <link rel="icon" type="image/png" href="images/icon.png"/>
     <ImportMap/>
     <HeadOutlet/>
@@ -17,15 +22,19 @@
 
 <Routes/>
 <ReconnectModal/>
-
-<script src="/lib/jquery/dist/jquery.js"></script>
-<script src="/lib/halfmoon/js/halfmoon.js"></script>
-<script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
-<script src="/lib/moment.js/min/moment-with-locales.js"></script>
-<script src="/js/blazor_lib.js"></script>
-<script src="/js/stats.js"></script>
-<script src="/js/advanced_stats.js"></script>
-<script src="/js/liveradar.js"></script>
+<Environment include="Development">
+    <script src="/lib/jquery/dist/jquery.js"></script>
+    <script src="/lib/halfmoon/js/halfmoon.js"></script>
+    <script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="/lib/moment.js/min/moment-with-locales.js"></script>
+    <script src="/js/blazor_lib.js"></script>
+    <script src="/js/stats.js"></script>
+    <script src="/js/advanced_stats.js"></script>
+    <script src="/js/liveradar.js"></script>
+</Environment>
+<Environment include="Production">
+    <script type="text/javascript" src="~/js/global.min.js"></script>
+</Environment>
 <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 </html>

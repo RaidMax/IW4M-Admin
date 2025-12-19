@@ -52,7 +52,7 @@ public class Program
         var contentRoot =
             Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\", "WebfrontCore"));
 #else
-        var contentRoot = SharedLibraryCore.Utilities.OperatingDirectory)
+        var contentRoot = Utilities.OperatingDirectory;
 #endif
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {

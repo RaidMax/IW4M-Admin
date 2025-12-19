@@ -10,7 +10,6 @@ public enum WebfrontEntity
     PrivilegedClientsPage,
     HelpPage,
     ConsolePage,
-    ConfigurationPage,
     AuditPage,
     RecentPlayersPage,
     ProfilePage,

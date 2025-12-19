@@ -289,5 +289,3 @@ window.initHalfmoon = function () {
         console.log('halfmoon.pageWrapper was found correctly');
     }
 }
-
-

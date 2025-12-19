@@ -50,4 +50,5 @@ public partial class NavMenu
     {
         return AppState.Loc(key);
     }
+    
 }

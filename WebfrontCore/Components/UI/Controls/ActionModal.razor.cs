@@ -21,6 +21,7 @@ public partial class ActionModal
     private readonly Dictionary<string, object?> _formData = new();
     private int? _targetId;
     private string? _serverId;
+    private bool _isVisible;
 
     [Parameter] public string ModalId { get; set; } = "action-modal";
     private RenderFragment _childContent;
@@ -46,7 +47,8 @@ public partial class ActionModal
         _actionInfo = null; // Clear standard action info
         _error = null;
         _isLoading = false;
-        await Runtime.InvokeVoidAsync("halfmoon.toggleModal", ModalId);
+        _isLoading = false;
+        _isVisible = true;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -71,7 +73,8 @@ public partial class ActionModal
         _isLegacy = false;
 
         // Ensure modal is shown (toggle if hidden)
-        await Runtime.InvokeVoidAsync("halfmoon.toggleModal", ModalId);
+        // Ensure modal is shown (toggle if hidden)
+        _isVisible = true;
 
         if (_isLogin)
         {
@@ -137,7 +140,7 @@ public partial class ActionModal
 
     private async Task Close()
     {
-        await Runtime.InvokeVoidAsync("halfmoon.toggleModal", ModalId);
+        _isVisible = false;
         _actionInfo = null;
         _childContent = null;
         StateHasChanged();

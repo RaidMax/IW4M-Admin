@@ -7,28 +7,29 @@
 {
     <PageTitle>@AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE") | IW4MAdmin</PageTitle>
 
-    <div class="content mt-20">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
-            <p class="mt-10 text-muted">Loading profile for client @Id...</p>
-        </div>
+    <div class="flex flex-col items-center justify-center min-h-[50vh] text-slate-400">
+        <i class="ph ph-spinner animate-spin text-4xl text-blue-500 mb-4"></i>
+        <p class="font-medium">Loading profile for client @Id...</p>
     </div>
 }
 else if (!string.IsNullOrEmpty(_error))
 {
-    <div class="content mt-20">
-        <div class="alert alert-danger" role="alert">
-            <strong>Error loading profile:</strong> @_error
+    <div class="max-w-7xl mx-auto mt-8 px-6">
+        <div class="bg-red-500/10 border border-red-500/20 text-red-500 p-6 rounded-lg flex items-center gap-3" role="alert">
+            <i class="ph ph-warning-circle text-2xl"></i>
+            <div>
+                <strong class="block font-semibold">Error loading profile</strong>
+                <span class="opacity-90">@_error</span>
+            </div>
         </div>
     </div>
 }
 else if (Client == null)
 {
-    <div class="content mt-20">
-        <div class="alert alert-warning" role="alert">
-            Client not found (ID: @Id)
+    <div class="max-w-7xl mx-auto mt-8 px-6">
+        <div class="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 p-6 rounded-lg flex items-center gap-3" role="alert">
+            <i class="ph ph-warning text-2xl"></i>
+            <span>Client not found (ID: @Id)</span>
         </div>
     </div>
 }
@@ -51,169 +52,218 @@ else
         {
             <meta property="og:image" content="@imageUrl"/>
         }
-        <meta name="theme-color" content="#007bff">
+        <meta name="theme-color" content="#117ac0">
     </HeadContent>
 
-    <div class="content row mt-20">
-        <div class="col-12 col-lg-9">
+    <div class="max-w-[1920px] mx-auto flex flex-col xl:flex-row min-h-screen">
+        
+        @* Main Content *@
+        <div class="flex-1 min-w-0 p-6 space-y-6">
+            
             @* Active Penalty Banner *@
             @if (Client.ActivePenalty != null)
             {
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                    <div class="alert @ClassForPenaltyType(Client.ActivePenalty.Type) mt-10 mb-10" role="alert">
-                        @if (IsAuthorized && !string.IsNullOrEmpty(Client.ActivePenalty.AutomatedOffense) && Client.ActivePenalty.Type != EFPenalty.PenaltyType.Warning)
-                        {
-                            <span class="text-light-dm font-weight-lighter">
-                                @(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION").FormatExt(Client.ActivePenalty.AutomatedOffense))
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="text-light-dm font-weight-lighter">@Client.ActivePenalty.Offense</span>
-                        }
+                    @{
+                        var penaltyColors = Client.ActivePenalty.Type switch {
+                            EFPenalty.PenaltyType.Ban => "bg-red-500/10 border-red-500/20 text-red-500",
+                            EFPenalty.PenaltyType.TempBan => "bg-orange-500/10 border-orange-500/20 text-orange-500",
+                            EFPenalty.PenaltyType.Warning => "bg-yellow-500/10 border-yellow-500/20 text-yellow-500",
+                            _ => "bg-slate-800 border-slate-700 text-slate-300"
+                        };
+                    }
+                    <div class="rounded-lg border px-5 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 @penaltyColors">
+                        <div class="flex items-center gap-3">
+                            <i class="ph ph-gavel text-xl shrink-0"></i>
+                            <div class="flex flex-col">
+                                @if (IsAuthorized && !string.IsNullOrEmpty(Client.ActivePenalty.AutomatedOffense) && Client.ActivePenalty.Type != EFPenalty.PenaltyType.Warning)
+                                {
+                                    <span class="font-medium">@AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION").FormatExt(Client.ActivePenalty.AutomatedOffense)</span>
+                                }
+                                else
+                                {
+                                    <span class="font-medium">@Client.ActivePenalty.Offense</span>
+                                }
+                            </div>
+                        </div>
+                        
                         @if (Client.ActivePenalty.Expires.HasValue && isTempBanned)
                         {
-                            <span class="ml-5 text-muted">
-                                — @((Client.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture())
-                            </span>
+                            <div class="text-sm opacity-80 whitespace-nowrap flex items-center gap-2 bg-black/10 px-3 py-1 rounded-full">
+                                <i class="ph ph-clock"></i>
+                                <span>Expires @((Client.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture())</span>
+                            </div>
                         }
                     </div>
                 </AuthorizeView>
             }
 
-            <h2 class="content-title mb-0">@AppState.Loc("WEBFRONT_PROFILE_TITLE")</h2>
-            <div class="font-size-12 text-muted">@AppState.Loc($"GAME_{Client.Game}")</div>
+            @* Header & Titles *@
+            <div class="flex flex-wrap items-end justify-between gap-4 border-b border-white/5 pb-4">
+                <div>
+                    <h2 class="text-3xl font-bold tracking-tight text-white">@AppState.Loc("WEBFRONT_PROFILE_TITLE")</h2>
+                    <div class="flex items-center gap-2 mt-1 text-slate-400">
+                        <i class="ph ph-game-controller text-lg"></i>
+                        <span class="text-sm font-medium uppercase tracking-wider">@AppState.Loc($"GAME_{Client.Game}")</span>
+                    </div>
+                </div>
+            </div>
 
-            <div id="profile_wrapper" class="mb-10 mt-10">
-                @* Online Status Indicator *@
-                @if (Client.Online)
-                {
-                    <div class="bg-success rounded-circle position-absolute status-indicator z-20 mt-10 ml-10"
-                         title="@AppState.Loc("WEBFRONT_PROFILE_TOOLTIP_ONLINE")"></div>
-                    <div
-                        class="bg-success rounded-circle position-absolute status-indicator with-ripple z-10 mt-10 ml-10"></div>
-                }
-
-                <div
-                    class="card p-15 ml-0 mr-0 mt-0 mb-10 d-flex flex-fill flex-wrap flex-column flex-md-row justify-content-center">
-                    <div class="pl-5 pr-5 d-flex flex-column flex-md-row">
-                        @* Avatar *@
-                        <div id="profile_avatar"
-                             class="w-150 w-md-100 h-150 h-md-100 mt-5 mb-5 d-flex justify-content-center align-self-center rounded @ClassForProfileBackground() @(isTempBanned ? "penalties-bgcolor-tempban" : "")"
-                             style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")')">
-                            @if (string.IsNullOrEmpty(gravatarUrl))
+            @* Main Profile Card *@
+            <div class="bg-slate-800 rounded-xl shadow-xl border border-white/5 overflow-visible">
+                
+                <div class="p-8">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        
+                        @* Avatar Section *@
+                        <div class="relative shrink-0 flex justify-center md:justify-start group">
+                            @if (Client.Online)
                             {
-                                <div class="profile-shortcode align-self-center text-dark-lm">@shortCode</div>
+                                <div class="absolute -top-1 -right-1 z-20 flex h-5 w-5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-5 w-5 bg-green-500 border-2 border-slate-800"></span>
+                                </div>
                             }
+
+                            <div class="w-40 h-40 rounded-2xl bg-slate-900 bg-cover bg-center shadow-inner flex items-center justify-center overflow-hidden border-4 border-slate-900 @ClassForProfileBackground() @(isTempBanned ? "ring-2 ring-red-500 ring-offset-2 ring-offset-slate-900" : "")"
+                                 style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")')">
+                                @if (string.IsNullOrEmpty(gravatarUrl))
+                                {
+                                    <span class="text-5xl font-bold text-slate-700 select-none">@shortCode</span>
+                                }
+                            </div>
                         </div>
-                        <div
-                            class="d-flex flex-column align-self-center ml-20 mr-20 mt-10 mb-10 mt-md-0 mb-md-0 text-center text-md-left">
-                            @* Name with Alias Dropdown *@
-                            <div id="profile_name">
-                                <span class="font-size-20 font-weight-medium text-force-break">
-                                    <ColorCode Value="@Client.Name"/>
-                                </span>
-                                <AuthorizeView
-                                    Policy="@($"Permissions.{WebfrontEntity.MetaAliasUpdate}.{WebfrontPermission.Read}")">
-                                    @if (Client.Aliases?.Any() == true)
-                                    {
-                                        <div class="dropdown with-arrow d-inline">
-                                            <i class="oi oi-caret-bottom font-size-12 cursor-pointer"
-                                               data-toggle="dropdown"
-                                               aria-haspopup="true" aria-expanded="false"></i>
-                                            <div
-                                                class="dropdown-menu dropdown-menu-center @(Client.Aliases.Any(a => a.Value != null && !a.Value.Contains(" ") && a.Value.StripColors().Length >= 15) ? "w-250" : "")">
-                                                @foreach (var alias in Client.Aliases.OrderByDescending(a => a.Date).Take(15))
-                                                {
-                                                    <a href="/find-client?clientName=@Uri.EscapeDataString(alias.Value?.StripColors() ?? "")"
-                                                       class="dropdown-item"
-                                                       title="@alias.Date.HumanizeForCurrentCulture()">
-                                                        <i class="oi oi-magnifying-glass text-muted mr-5"></i>
-                                                        <ColorCode Value="@alias.Value"/>
-                                                    </a>
-                                                }
-                                                @if (Client.Aliases.Count > 15)
-                                                {
-                                                    <div class="dropdown-divider"></div>
-                                                    <span
-                                                        class="dropdown-item bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.Aliases.Count - 15)</span>
+
+                        @* Details Section *@
+                        <div class="flex-grow space-y-5 text-center md:text-left min-w-0">
+                            
+                            @* Name Row *@
+                            <div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+                                <div class="relative group">
+                                    <div class="flex items-center gap-3">
+                                        <h1 class="text-3xl font-bold text-white leading-tight break-all">
+                                            <ColorCode Value="@Client.Name"/>
+                                        </h1>
+                                        
+                                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.MetaAliasUpdate}.{WebfrontPermission.Read}")">
+                                            @if (Client.Aliases?.Any() == true)
+                                            {
+                                                <div class="relative inline-block text-left">
+                                                    <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                                                        <i class="ph ph-caret-down text-lg"></i>
+                                                    </button>
+                                                    
+                                                    <div class="absolute left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                                                        <div class="max-h-[300px] overflow-y-auto py-2">
+                                                            @foreach (var alias in Client.Aliases.OrderByDescending(a => a.Date).Take(15))
+                                                            {
+                                                                <a href="/find-client?clientName=@Uri.EscapeDataString(alias.Value?.StripColors() ?? "")"
+                                                                   class="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors group/item">
+                                                                    <i class="ph ph-clock-counter-clockwise text-slate-500 group-hover/item:text-blue-400"></i>
+                                                                    <div class="flex flex-col min-w-0">
+                                                                        <span class="text-sm truncate"><ColorCode Value="@alias.Value"/></span>
+                                                                        <span class="text-[10px] text-slate-600 uppercase tracking-wide">@alias.Date.HumanizeForCurrentCulture()</span>
+                                                                    </div>
+                                                                </a>
+                                                            }
+                                                            @if (Client.Aliases.Count > 15)
+                                                            {
+                                                                <div class="bg-slate-950 px-4 py-2 text-xs text-center text-slate-500 border-t border-slate-800">
+                                                                    @AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.Aliases.Count - 15)
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </AuthorizeView>
+                                    </div>
+
+                                    @* Level Badge *@
+                                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                        <div class="mt-2 inline-flex items-center px-3 py-1 rounded-md text-sm font-semibold border border-white/5 bg-slate-900/50 level-color-@Client.LevelInt">
+                                            <ColorCode Value="@Client.Level"/>
+                                        </div>
+                                    </AuthorizeView>
+                                </div>
+
+                                @* Country Flag *@
+                                @if (Client.GeoLocationInfo != null && !string.IsNullOrEmpty(Client.GeoLocationInfo.CountryCode))
+                                {
+                                    <div class="relative group z-10">
+                                        <img src="https://flagcdn.com/w160/@(Client.GeoLocationInfo.CountryCode.ToLower()).png" 
+                                             class="h-8 w-auto rounded shadow-sm opacity-90 hover:opacity-100 transition-opacity cursor-help" 
+                                             alt="@Client.GeoLocationInfo.Country" />
+                                        
+                                        <div class="absolute right-1/2 translate-x-1/2 md:right-0 md:translate-x-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-left">
+                                            <div class="space-y-2">
+                                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                                    <div class="pb-2 border-b border-white/10 mb-2">
+                                                        <span class="text-xs uppercase text-slate-500 font-bold tracking-wider">IP Address</span>
+                                                        <div class="font-mono text-blue-400">@Client.IPAddress</div>
+                                                    </div>
+                                                </AuthorizeView>
+                                                <div>
+                                                    <span class="text-xs uppercase text-slate-500 font-bold tracking-wider">Location</span>
+                                                    <div class="text-slate-300">@Client.GeoLocationInfo.Country</div>
+                                                    @if (!string.IsNullOrEmpty(Client.GeoLocationInfo.Region)) {
+                                                        <div class="text-sm text-slate-400">@Client.GeoLocationInfo.Region</div>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(Client.GeoLocationInfo.Organization)) {
+                                                    <div>
+                                                        <span class="text-xs uppercase text-slate-500 font-bold tracking-wider">ISP</span>
+                                                        <div class="text-sm text-slate-400 truncate">@Client.GeoLocationInfo.Organization</div>
+                                                    </div>
                                                 }
                                             </div>
                                         </div>
-                                    }
-                                </AuthorizeView>
+                                    </div>
+                                }
                             </div>
 
-                            @* Permission Level *@
-                            <AuthorizeView
-                                Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                <div
-                                    class="align-self-center align-self-md-start font-weight-bold font-size-16 level-color-@Client.LevelInt">
-                                    <div class="d-flex flex-row">
-                                        <ColorCode Value="@Client.Level"/>
-                                    </div>
-                                </div>
-                            </AuthorizeView>
-
-                            @* GUID with Alternate Formats *@
-                            <AuthorizeView
-                                Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
-                                <div class="dropdown dropup with-arrow">
-                                    <div class="text-muted cursor-pointer" data-toggle="dropdown"
-                                         id="altGuidFormatsDropdown"
-                                         aria-haspopup="true"
-                                         aria-expanded="false">@Client.NetworkId.ToString("X")</div>
-                                    <div class="dropdown-menu" aria-labelledby="altGuidFormatsDropdown">
-                                        <div class="p-10 font-size-12">
-                                            <div>@AppState.Loc("WEBFRONT_PROFILE_POPOVER_ALTERNATIVE_GUID")</div>
-                                            <div class="dropdown-divider mt-5 mb-5"></div>
-                                            <div
-                                                class="text-muted font-weight-lighter">@((ulong)Client.NetworkId)</div>
+                            @* Meta Info Grid *@
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
+                                    <div class="relative group">
+                                        <div class="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer p-2 rounded hover:bg-white/5 -ml-2">
+                                            <i class="ph ph-fingerprint text-xl"></i>
+                                            <span class="font-mono text-sm truncate">@Client.NetworkId.ToString("X")</span>
+                                            <i class="ph ph-caret-down text-xs opacity-50"></i>
+                                        </div>
+                                        
+                                        <div class="absolute left-0 mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                                            <div class="text-xs text-slate-500 mb-1">Decimal ID</div>
+                                            <div class="font-mono text-sm select-all">@((ulong)Client.NetworkId)</div>
                                         </div>
                                     </div>
-                                </div>
-                            </AuthorizeView>
+                                </AuthorizeView>
 
-                            @* IP Address with History Dropdown *@
-                            <div class="align-self-center align-self-md-start d-flex flex-row">
-                                <AuthorizeView
-                                    Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                    <span class="text-muted mr-5">@Client.IPAddress</span>
-                                    <div class="dropdown with-arrow">
-                                        <i class="oi oi-caret-bottom font-size-12 text-muted cursor-pointer"
-                                           data-toggle="dropdown"
-                                           aria-haspopup="true" aria-expanded="false"></i>
-                                        <div class="dropdown-menu dropdown-menu-center">
-                                            @if (Client.IPs?.Any(ip => !string.IsNullOrEmpty(ip.Value)) == true)
-                                            {
-                                                @foreach (var ip in Client.IPs.Where(i => !string.IsNullOrEmpty(i.Value)).OrderByDescending(i => i.Date).Take(15))
-                                                {
-                                                    <div class="d-flex dropdown-item"
-                                                         title="@ip.Date.HumanizeForCurrentCulture()">
-                                                        <a href="/find-client?clientIP=@ip.Value">
-                                                            <i class="oi oi-magnifying-glass text-muted mr-5"></i>
-                                                        </a>
-                                                        <ColorCode Value="@ip.Value"/>
-                                                    </div>
-                                                }
-
-                                                @if (Client.IPs.Count(i => !string.IsNullOrEmpty(i.Value)) > 15)
-                                                {
-                                                    <div class="dropdown-divider"></div>
-                                                    <span
-                                                        class="dropdown-item bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_PROFILE_ALIAS_COUNT_MORE_FORMAT").FormatExt(Client.IPs.Count(i => !string.IsNullOrEmpty(i.Value)) - 15)</span>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <div class="d-flex dropdown-item"
-                                                     title="@AppState.Loc("WEBFRONT_PROFILE_IP_CURRENT")">
-                                                    <a href="/Client/Search?clientName=@Client.IPAddress">
-                                                        <i class="oi oi-magnifying-glass text-muted mr-5"></i>
-                                                    </a>
-                                                    <ColorCode Value="@Client.IPAddress"/>
-                                                </div>
-                                            }
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                    <div class="relative group">
+                                        <div class="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer p-2 rounded hover:bg-white/5 -ml-2">
+                                            <i class="ph ph-globe-ip text-xl"></i>
+                                            <span class="font-mono text-sm truncate">@Client.IPAddress</span>
+                                            <i class="ph ph-caret-down text-xs opacity-50"></i>
+                                        </div>
+                                        
+                                        <div class="absolute left-0 mt-1 w-72 bg-slate-900 border border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                                             <div class="max-h-[200px] overflow-y-auto py-2">
+                                                 @if (Client.IPs?.Any(ip => !string.IsNullOrEmpty(ip.Value)) == true)
+                                                 {
+                                                     @foreach (var ip in Client.IPs.Where(i => !string.IsNullOrEmpty(i.Value)).OrderByDescending(i => i.Date).Take(15))
+                                                     {
+                                                         <a href="/find-client?clientIP=@ip.Value" class="flex items-center justify-between px-4 py-2 hover:bg-white/5 text-sm group/item">
+                                                             <span class="font-mono text-slate-300"><ColorCode Value="@ip.Value"/></span>
+                                                             <i class="ph ph-magnifying-glass text-slate-600 group-hover/item:text-blue-400"></i>
+                                                         </a>
+                                                     }
+                                                 }
+                                                 else
+                                                 {
+                                                     <div class="px-4 py-2 text-sm text-slate-400">No IP history recorded</div>
+                                                 }
+                                             </div>
                                         </div>
                                     </div>
                                 </AuthorizeView>
@@ -221,110 +271,80 @@ else
                         </div>
                     </div>
 
-                    @* Note Display *@
+                    @* Notes Block *@
                     @if (Client.NoteMeta != null && !string.IsNullOrWhiteSpace(Client.NoteMeta.Note))
                     {
-                        <AuthorizeView
-                            Policy="@($"Permissions.{WebfrontEntity.ClientNote}.{WebfrontPermission.Read}")">
-                            <div class="rounded border p-10 m-10 d-flex flex-column flex-md-row"
-                                 style="border-style: dashed !important">
-                                <i class="align-self-center oi oi-clipboard"></i>
-                                <div class="align-self-center font-size-12 font-weight-light pl-10 pr-10">
-                                    @foreach (var line in Client.NoteMeta.Note.Split("\n"))
-                                    {
-                                        <div class="text-force-break">@line.TrimEnd('\r')</div>
-                                    }
-                                    <div class="mt-5">
-                                        <a href="/client/@Client.NoteMeta.OriginEntityId"
-                                           class="no-decoration">
-                                            <ColorCode Value="@Client.NoteMeta.OriginEntityName"/>
-                                        </a>
-                                        <span>— @Client.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientNote}.{WebfrontPermission.Read}")">
+                            <div class="mt-8 relative group">
+                                <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent rounded-lg -m-1"></div>
+                                <div class="relative bg-slate-900/50 border border-blue-500/20 rounded-lg p-5 flex gap-4">
+                                    <i class="ph ph-notepad text-2xl text-blue-500/80 shrink-0"></i>
+                                    <div class="space-y-2 w-full">
+                                        <div class="text-sm text-slate-300 leading-relaxed font-light">
+                                            @foreach (var line in Client.NoteMeta.Note.Split("\n"))
+                                            {
+                                                <p class="break-words">@line.TrimEnd('\r')</p>
+                                            }
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs text-slate-500 pt-2 border-t border-white/5">
+                                            <i class="ph ph-user"></i>
+                                            <a href="/client/@Client.NoteMeta.OriginEntityId" class="hover:text-blue-400 transition-colors font-medium">
+                                                <ColorCode Value="@Client.NoteMeta.OriginEntityName"/>
+                                            </a>
+                                            <span class="mx-1">&bull;</span>
+                                            <span>@Client.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </AuthorizeView>
                     }
 
-                    @* GeoLocation Flag with Popover *@
-                    <div class="flex-fill d-flex justify-content-center justify-content-md-end mt-10 mt-md-0">
-                        <div id="ipGeoDropdown" class="dropdown with-arrow align-self-center">
-                            @if (Client.GeoLocationInfo != null && !string.IsNullOrEmpty(Client.GeoLocationInfo.CountryCode))
-                            {
-                                <a href="#" data-toggle="dropdown" id="avatar-popover-toggle" aria-haspopup="true"
-                                   aria-expanded="false">
-                                    <div class="profile-country-flag w-100 rounded align-self-center"
-                                         style="background-image: url('https://flagcdn.com/w160/@(Client.GeoLocationInfo.CountryCode.ToLower()).png')"></div>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-center z-30"
-                                     aria-labelledby="avatar-popover-toggle">
-                                    <AuthorizeView
-                                        Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                        <h6 class="dropdown-header font-weight-bold">@Client.IPAddress</h6>
-                                        <div class="dropdown-divider"></div>
-                                    </AuthorizeView>
-                                    <div class="dropdown-item geo-country">@Client.GeoLocationInfo.Country</div>
-                                    @if (!string.IsNullOrEmpty(Client.GeoLocationInfo.Region))
-                                    {
-                                        <div
-                                            class="dropdown-item text-muted geo-region">@Client.GeoLocationInfo.Region</div>
-                                        <div class="dropdown-divider"></div>
-                                    }
-                                    @if (!string.IsNullOrEmpty(Client.GeoLocationInfo.Organization))
-                                    {
-                                        <div
-                                            class="dropdown-item geo-organization">@Client.GeoLocationInfo.Organization</div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div>
-                        <hr class="mr-5 ml-5"/>
-                        @* Meta Information Block *@
-                        <div class="d-flex flex-column flex-md-row text-center text-md-left flex-wrap">
-                            @if (Client.Meta != null)
-                            {
+                    @* Information Tags *@
+                    @if (Client.Meta != null)
+                    {
+                        <div class="mt-8 pt-6 border-t border-white/5">
+                            <div class="flex flex-wrap gap-3 justify-center md:justify-start">
                                 <ClientMetaList ClientId="@Client.ClientId" MetaFilterType="@MetaType.Information"/>
-                            }
+                            </div>
                         </div>
-                    </div>
+                    }
                 </div>
             </div>
 
-            @* Meta Filter Buttons *@
-            <div class="mb-10 mt-15 m-auto">
-                @foreach (var type in GetFilterableMetaTypes())
-                {
-                    var buttonClass = (!_selectedMetaFilter.HasValue && type == MetaType.All) ||
-                                          (_selectedMetaFilter.HasValue && _selectedMetaFilter.Value == type)
-                        ? "btn-primary text-light"
-                        : "text-muted";
-                    <button class="btn btn-sm d-none d-md-inline mt-5 mb-5 @buttonClass meta-filter"
-                            @onclick="() => SetMetaFilter(type)">
-                        @type.ToTranslatedName()
-                    </button>
-                    <button class="btn btn-block d-block d-md-none mt-10 mb-10 @buttonClass meta-filter"
-                            @onclick="() => SetMetaFilter(type)">
-                        @type.ToTranslatedName()
-                    </button>
-                }
-            </div>
+            @* Activity Log Section *@
+            <div class="space-y-4">
+                <div class="flex flex-wrap items-center gap-2 p-1 bg-slate-800 rounded-lg border border-white/5 w-fit">
+                    @foreach (var type in GetFilterableMetaTypes())
+                    {
+                        var isActive = (!_selectedMetaFilter.HasValue && type == MetaType.All) ||
+                                      (_selectedMetaFilter.HasValue && _selectedMetaFilter.Value == type);
+                        
+                        var activeClass = isActive 
+                            ? "bg-blue-600 text-white shadow-md" 
+                            : "text-slate-400 hover:text-white hover:bg-white/5";
 
-            @if (!IsAuthorized && !Config.EnablePrivilegedUserPrivacy || IsAuthorized)
-            {
-                <div class="row d-md-flex pt-2">
-                    <div id="profile_events" class="text-muted text-left pl-md-0 pr-md-0 col-12">
+                        <button class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 @activeClass"
+                                @onclick="() => SetMetaFilter(type)">
+                            @type.ToTranslatedName()
+                        </button>
+                    }
+                </div>
+
+                @if (!IsAuthorized && !Config.EnablePrivilegedUserPrivacy || IsAuthorized)
+                {
+                    <div class="bg-slate-800 rounded-xl shadow-lg border border-white/5 p-6 min-h-[300px]">
                         <ClientMetaList ClientId="@Client.ClientId" MetaFilterType="@_selectedMetaFilter"/>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
 
-        <div class="col-12 col-lg-3">
-            <SideContextMenu Model="ContextItems"
-                             OnActionSelect="OnProfileContextAction"/>
+        @* Right Column: Sidebar (Sticky Wrapper) *@
+        <div class="hidden xl:block xl:w-80 xl:shrink-0 xl:p-6 pl-0">
+             <div class="sticky top-6">
+                <SideContextMenu Model="ContextItems" OnActionSelect="OnProfileContextAction" />
+             </div>
         </div>
     </div>
 }

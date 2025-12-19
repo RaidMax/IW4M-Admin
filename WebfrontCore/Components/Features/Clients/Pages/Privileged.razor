@@ -14,79 +14,135 @@
 
 
 
-<div class="content mt-0">
-    <h4 class="content-title mt-20">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h4>
+<div class="mt-4 md:mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-slate-100">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h1>
+    </div>
+
     @if (PrivilegedClients != null)
     {
         @foreach (var key in PrivilegedClients.Keys)
         {
-            <table class="table mb-20" style="table-layout:fixed;">
-                <thead>
-                <tr class="level-bgcolor-@((int)key)">
-                    <th colspan="50%" class="text-light">@(key.ToLocalizedLevelName())</th>
-                    <th colspan="20%">@(AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"))</th>
-                    <th colspan="30%"
-                        class="text-right font-weight-bold text-force-break">@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
-                {
-                    @if (client.IsMasked)
-                    {
-                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                            <tr class="bg-dark-dm bg-light-lm">
-                                <td colspan="50%">
-                                    <span data-toggle="tooltip" data-title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
-                                        <span class="oi oi-shield mr-5 font-size-12"></span>
-                                    </span>
+            <div class="mb-8 overflow-hidden bg-slate-800 rounded-lg shadow ring-1 ring-slate-700/50">
+                <div class="px-4 py-3 bg-slate-900/50 border-b border-slate-700 font-semibold text-slate-200">
+                    @(key.ToLocalizedLevelName())
+                </div>
 
-                                    <a href="/client/@client.ClientId" class="text-force-break">
-                                        <ColorCode Value="@client.Name"/>
-                                    </a>
-                                </td>
-                                <td colspan="20%" class="d-none d-md-table-cell">
-                                    <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
-                                </td>
-                                <td colspan="20%" class="d-table-cell d-md-none">
-                                    <div
-                                        class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
-                                </td>
-                                <td colspan="30%" class="text-right">
-                                    @client.LastConnection.Humanize()
-                                </td>
-                            </tr>
-                        </AuthorizeView>
-                    }
-                    else
-                    {
-                        <tr class="bg-dark-dm bg-light-lm">
-                            <td colspan="50%">
-                                <a href="/client/@client.ClientId" class="text-force-break">
-                                    <ColorCode Value="@client.Name"/>
-                                </a>
-                            </td>
-                            <td colspan="20%" class="d-none d-md-table-cell">
-                                <div class="badge">@(AppState.Loc($"GAME_{client.Game}"))</div>
-                            </td>
-                            <td colspan="20%" class="d-table-cell d-md-none">
-                                <div
-                                    class="badge">@(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))</div>
-                            </td>
-                            <td colspan="30%" class="text-right">
-                                @client.LastConnection.Humanize()
-                            </td>
+                <!-- Desktop Table -->
+                <table class="hidden md:table w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-xs uppercase text-slate-400 bg-slate-900/30 border-b border-slate-700">
+                            <th class="px-4 py-3 font-medium">@(AppState.Loc("WEBFRONT_CLIENT_NAME"))</th>
+                            <th class="px-4 py-3 font-medium w-1/4">@(AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"))</th>
+                            <th class="px-4 py-3 font-medium text-right w-1/4">@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</th>
                         </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700">
+                        @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
+                        {
+                            if (client.IsMasked)
+                            {
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                    <tr class="hover:bg-slate-700/30 transition-colors">
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center">
+                                                <span class="mr-2 text-yellow-500" title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                                                    <i class="ph ph-mask-happy text-lg"></i>
+                                                </span>
+                                                <a href="/client/@client.ClientId" class="font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                                                    <ColorCode Value="@client.Name" />
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-900/50">
+                                                @(AppState.Loc($"GAME_{client.Game}"))
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-right text-slate-400 text-sm">
+                                            @client.LastConnection.Humanize()
+                                        </td>
+                                    </tr>
+                                </AuthorizeView>
+                            }
+                            else
+                            {
+                                <tr class="hover:bg-slate-700/30 transition-colors">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <a href="/client/@client.ClientId" class="font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                                                <ColorCode Value="@client.Name" />
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-900/50">
+                                            @(AppState.Loc($"GAME_{client.Game}"))
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-400 text-sm">
+                                        @client.LastConnection.Humanize()
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Mobile Stack -->
+                <div class="md:hidden divide-y divide-slate-700">
+                    @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
+                    {
+                        if (client.IsMasked)
+                        {
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                <div class="p-4 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-yellow-500" title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                                                <i class="ph ph-mask-happy text-lg"></i>
+                                            </span>
+                                            <a href="/client/@client.ClientId" class="font-medium text-blue-400 hover:text-blue-300">
+                                                <ColorCode Value="@client.Name" />
+                                            </a>
+                                        </div>
+                                        <span class="text-xs text-slate-500">@client.LastConnection.Humanize()</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-900/50">
+                                            @(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))
+                                        </span>
+                                    </div>
+                                </div>
+                            </AuthorizeView>
+                        }
+                        else
+                        {
+                            <div class="p-4 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <a href="/client/@client.ClientId" class="font-medium text-blue-400 hover:text-blue-300">
+                                            <ColorCode Value="@client.Name" />
+                                        </a>
+                                    </div>
+                                    <span class="text-xs text-slate-500">@client.LastConnection.Humanize()</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-900/30 text-blue-400 border border-blue-900/50">
+                                        @(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))
+                                    </span>
+                                </div>
+                            </div>
+                        }
                     }
-                }
-                </tbody>
-            </table>
+                </div>
+            </div>
         }
     }
     else
     {
-        <div class="text-center p-20">
-            <span class="oi oi-loop-circular rotating font-size-24 text-primary"></span>
+        <div class="flex justify-center items-center py-20">
+            <i class="ph ph-spinner animate-spin text-4xl text-blue-500"></i>
         </div>
     }
 </div>

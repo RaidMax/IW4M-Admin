@@ -20,8 +20,7 @@ namespace IW4MAdmin.Plugins.Stats
             public double Sigma { get; set; }
         }
 
-        // todo: REVERT
-        public static DateTime FifteenDaysAgo() => DateTime.UtcNow.AddDays(-1500);
+        public static DateTime FifteenDaysAgo() => DateTime.UtcNow.AddDays(-15);
 
         public static double? WeightValueByPlaytime(this IEnumerable<EFClientStatistics> stats, string propertyName, 
             int minTimePlayed, Func<EFClientStatistics, bool> validation = null)

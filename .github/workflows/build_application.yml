@@ -2,7 +2,7 @@ name: Application build
 
 on:
   push:
-    branches: [ develop, release/pre, master ]
+    branches: [ develop, release/pre, master, feature/ui-update ]
     paths:
       - Application/**
       - WebfrontCore/**
@@ -121,7 +121,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Restore NuGet packages
         run: dotnet restore ${{ env.solution }}

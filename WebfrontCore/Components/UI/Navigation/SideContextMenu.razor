@@ -1,52 +1,53 @@
-<div class="d-none d-lg-flex col-3">
-    <div class="on-this-page-nav pt-0" style="margin-left: 3rem;">
-        <div>
-            <div class="title">@Model.MenuTitle</div>
+<div class="h-full overflow-y-auto bg-slate-800 border-l border-slate-700 w-72 flex-shrink-0 hidden xl:block p-4">
+    <div class="text-lg font-semibold text-slate-100 mb-4">@Model.MenuTitle</div>
+    
+    <div class="space-y-1">
+        @{
+            var groupedItems = Model.Items.Where(item => item.IsCollapse)
+                .GroupBy(item => item.Meta)
+                .ToList();
+            var index = 0;
+        }
 
-            @{
-                var groupedItems = Model.Items.Where(item => item.IsCollapse)
-                    .GroupBy(item => item.Meta)
-                    .ToList();
-                var index = 0;
-            }
+        @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
+        {
+            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" 
+               class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors @(item.IsActive ? "bg-slate-700 text-white" : "")"
+               @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
+               @onclick:preventDefault="@(!item.IsLink)">
+                <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
+                     data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-slate-400"></i>
+                    <span class="truncate">@item.Title</span>
+                </div>
+            </a>
+        }
 
-            @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
-            {
-                <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" class="@(item.IsLink ? "" : "blazor-action")"
-                   @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
-                   @onclick:preventDefault="@(!item.IsLink)">
-                    <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left"
-                         data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                        <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
-                        <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
-                    </div>
-                </a>
-            }
-
-            @foreach (var group in groupedItems)
-            {
-                <details class="collapse-panel mt-0 pb-10 pt-10 pl-20 border-left" open="@(index == 0)">
-                    <summary class="collapse-header">
-                        @(AppState.Loc($"GAME_{group.Key}"))
-                    </summary>
-                    <div class="collapse-content" style="overflow: scroll; max-height: 30rem; max-width:350px;">
-                        @foreach (var item in group)
-                        {
-                            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" style="border: 0; padding: 0;"
-                               class="@(item.IsLink ? "" : "blazor-action")"
-                               @onclick='(e) => OnActionClick(item, e)'
-                               @onclick:preventDefault="@(!item.IsLink)">
-                                <div class="@(item.IsButton ? "btn btn-block" : "")" data-title="@item.Tooltip" data-placement="left"
-                                     data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"oi {item.Icon}") mr-5 font-size-12"></i>
-                                    <span class="@(item.IsActive ? "text-primary" : "") text-truncate">@item.Title</span>
-                                </div>
-                            </a>
-                        }
-                    </div>
-                </details>
-                index++;
-            }
-        </div>
+        @foreach (var group in groupedItems)
+        {
+            <details class="group mt-4" open="@(index == 0)">
+                <summary class="list-none flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 cursor-pointer hover:text-slate-300">
+                    <span>@(AppState.Loc($"GAME_{group.Key}"))</span>
+                    <i class="ph ph-caret-down ml-2 transition-transform group-open:rotate-180"></i>
+                </summary>
+                
+                <div class="space-y-1 pl-2 border-l-2 border-slate-700">
+                    @foreach (var item in group)
+                    {
+                         <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" 
+                           class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors @(item.IsActive ? "bg-slate-700 text-white" : "")"
+                           @onclick='(e) => OnActionClick(item, e)'
+                           @onclick:preventDefault="@(!item.IsLink)">
+                            <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
+                                 data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-slate-400"></i>
+                                <span class="truncate">@item.Title</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </details>
+            index++;
+        }
     </div>
 </div>

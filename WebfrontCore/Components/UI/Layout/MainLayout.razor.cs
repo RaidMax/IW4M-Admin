@@ -15,6 +15,12 @@ public partial class MainLayout
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private bool _isInitialized = false;
     private bool _halfmoonInitialized = false;
+    private bool _sidebarOpen = false;
+
+    private void ToggleSidebar()
+    {
+        _sidebarOpen = !_sidebarOpen;
+    }
 
     protected override async Task OnInitializedAsync()
     {

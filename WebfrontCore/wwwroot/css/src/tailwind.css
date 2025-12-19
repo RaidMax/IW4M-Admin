@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@source "../../../";
+
+@theme {
+    --color-slate-900: #191c20;
+    --color-slate-800: #25282c;
+    --color-blue-500: #117ac0;
+    --color-blue-600: #117ac0;
+    --color-green-500: #8cc982;
+    --color-red-500: #ff6060;
+
+    /* Custom aliases if needed */
+    --color-primary: #117ac0;
+    --color-surface: #25282c;
+    --color-background: #191c20;
+}

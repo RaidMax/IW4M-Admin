@@ -103,7 +103,7 @@ else
                             <span class="text-light-dm text-dark-lm">
                                 @if (AppState.User != null && !string.IsNullOrEmpty(Meta.AutomatedOffense) && Meta.PenaltyType != EFPenalty.PenaltyType.Warning)
                                 {
-                                    <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)&nbsp;</span>
+                                    <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)</span>
                                     <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed cursor-pointer"
                                           title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"
                                           @onclick="@(() => TogglePenaltyDetails(Meta))"></span>
@@ -122,7 +122,7 @@ else
                                                     foreach (var kvp in snapshot)
                                                     {
                                                         <span class="text-light-dm text-dark-lm font-weight-bold">@kvp.Key</span>
-                                                        <span>&mdash; <ColorCode Value="@kvp.Value"/></span>
+                                                        <span> &mdash; <ColorCode Value="@kvp.Value"/></span>
                                                         <br/>
                                                     }
                                                     <hr class="mt-10 mb-10 border-secondary"/>
@@ -139,13 +139,14 @@ else
                         }
                         else if (match.MatchValue == "time")
                         {
-                            <span class="text-light-dm text-dark-lm">@Meta.LengthText&nbsp;</span>
+                            <span class="text-light-dm text-dark-lm">@Meta.LengthText</span>
                         }
                     }
                     else
                     {
-                        <span>@match.MatchValue&nbsp;</span>
+                        <span>@match.MatchValue</span>
                     }
+                    <span>&nbsp;</span>
                 }
             </div>
         </span>
@@ -165,7 +166,7 @@ else
                     {
                         if (match.MatchValue == "action")
                         {
-                            <span class="penalties-color-@Meta.PenaltyType.ToString().ToLower()">@match.TranslationValue&nbsp;</span>
+                            <span class="penalties-color-@Meta.PenaltyType.ToString().ToLower()">@match.TranslationValue</span>
                         }
                         else if (match.MatchValue == "punisher")
                         {
@@ -173,7 +174,6 @@ else
                                 <a href="/client/@Meta.PunisherClientId">
                                     <ColorCode Value="@Meta.PunisherName"/>
                                 </a>
-                                &nbsp;
                             </span>
                         }
                         else if (match.MatchValue == "reason")
@@ -181,9 +181,9 @@ else
                             <span class="text-white-dm text-black-lm">
                                 @if (AppState.User != null && !string.IsNullOrEmpty(Meta.AutomatedOffense) && Meta.PenaltyType != EFPenalty.PenaltyType.Warning && Meta.PenaltyType != EFPenalty.PenaltyType.Kick)
                                 {
-                                    <span>@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)&nbsp;</span>
+                                    <span class="mr-2">@string.Format(AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION"), Meta.AutomatedOffense)</span>
                                     <span class="oi oi-list-rich align-top text-primary automated-penalty-info-detailed"
-                                          title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")">&nbsp;</span>
+                                          title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"></span>
                                 }
                                 else
                                 {
@@ -193,13 +193,14 @@ else
                         }
                         else if (match.MatchValue == "time")
                         {
-                            <span class="text-light-dm text-dark-lm">@Meta.LengthText&nbsp;</span>
+                            <span class="text-light-dm text-dark-lm">@Meta.LengthText</span>
                         }
                     }
                     else
                     {
-                        <span>@match.MatchValue&nbsp;</span>
+                        <span>@match.MatchValue</span>
                     }
+                    <span>&nbsp;</span>
                 }
 
                 @if (Meta.ClientId != Meta.OffenderClientId)
@@ -209,15 +210,15 @@ else
                     {
                         if (!helperResult.IsInterpolation)
                         {
-                            <span>@helperResult.MatchValue&nbsp;</span>
+                            <span>@helperResult.MatchValue</span>
                         }
                         else
                         {
                             <a class="link-inverse" href="/client/@Meta.OffenderClientId">
                                 <ColorCode Value="@Meta.OffenderName"/>
-                                &nbsp;
                             </a>
                         }
+                        <span>&nbsp;</span>
                     }
                 }
             </div>
@@ -230,7 +231,6 @@ else
         }
         <div @onclick="@(() => ToggleMessageContext(Meta))" style="cursor: pointer" class="d-inline">
             <span class="oi oi-chevron-@(state.IsOpen ? "bottom" : "right") font-size-12 mr-5"></span>
-
             <span class="text-white-dm text-black-lm text-break">
                 <ColorCode Value="@Meta.Message"/>&nbsp;
             </span>
@@ -264,7 +264,8 @@ else
                                  </span>
                                 &mdash;
                                 <span class="@(message.IsQuickMessage ? "font-italic" : "") text-light-dm text-dark-lm">
-                                     <ColorCode Value="@message.Message"/>
+                                    <ColorCode Value="@message.Message"/>
+                                    &nbsp;
                                  </span>
                                 <span class="text-muted font-size-12 ml-5">@message.When.ToString("T")</span>
                             </div>
@@ -295,15 +296,15 @@ else
                              <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                   [@Meta.IPAddress]
                              </AuthorizeView>
-                             &nbsp;
                         </span>
                         break;
                 }
             }
             else
             {
-                <span class="text-muted">@token.MatchValue&nbsp;</span>
+                <span class="text-muted">@token.MatchValue</span>
             }
+            <span>&nbsp;</span>
         }
         </span>
     </text>;
@@ -322,20 +323,20 @@ else
                     {
                         case "action":
                             <span
-                                class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-secondary")">@token.TranslationValue&nbsp;</span>
+                                class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-light-green" : "text-secondary")">@token.TranslationValue</span>
                             break;
                         case "server":
                             <span class="text-light-dm text-dark-lm">
-                            <ColorCode Value="@Meta.ServerName"/>
-                            &nbsp;
-                        </span>
+                                <ColorCode Value="@Meta.ServerName"/>
+                            </span>
                             break;
                     }
                 }
                 else
                 {
-                    <span class="text-muted">@token.MatchValue&nbsp;</span>
+                    <span class="text-muted">@token.MatchValue</span>
                 }
+                <span>&nbsp;</span>
             }
         </span>
     </text>;
@@ -370,6 +371,7 @@ else
             {
                 <span class="text-muted">@token.MatchValue</span>
             }
+            <span>&nbsp;</span>
         }
         </span>
     </text>;

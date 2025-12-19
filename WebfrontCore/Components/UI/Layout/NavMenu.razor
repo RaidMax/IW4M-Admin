@@ -240,7 +240,7 @@
                 @if (AppState.User is not null)
                 {
                     var format = Loc("WEBFRONT_NAV_LOGIN_YES_FORMAT");
-                    @foreach (var match in SharedLibraryCore.Utilities.SplitTranslationTokens(format))
+                    @foreach (var match in Utilities.SplitTranslationTokens(format))
                     {
                         if (match.IsInterpolation && match.MatchValue == "username")
                         {
@@ -250,6 +250,7 @@
                         {
                             <span>@match.MatchValue</span>
                         }
+                        <span>&nbsp;</span>
                     }
                 }
                 else

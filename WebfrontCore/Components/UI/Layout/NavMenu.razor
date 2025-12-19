@@ -48,20 +48,25 @@
             {
                 foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Main")))
                 {
-                    <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
-                        <i class="oi @interaction.DisplayMeta mr-5"></i>
-                        <span class="name">@interaction.Name</span>
-                    </NavLink>
+                    <AuthorizeView
+                        Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
+                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                            <i class="oi @interaction.DisplayMeta mr-5"></i>
+                            <span class="name">@interaction.Name</span>
+                        </NavLink>
+                    </AuthorizeView>
                 }
             }
 
             <!-- profile -->
             @if (AppState.User is not null)
             {
-                <NavLink href="@($"client/{AppState.User.ClientId}")" class="sidebar-link">
-                    <i class="oi oi-person mr-5"></i>
-                    <span class="name">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
-                </NavLink>
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ProfilePage}.{WebfrontPermission.Read}")">
+                    <NavLink href="@($"client/{AppState.User.ClientId}")" class="sidebar-link">
+                        <i class="oi oi-person mr-5"></i>
+                        <span class="name">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
+                    </NavLink>
+                </AuthorizeView>
             }
 
             <br/>
@@ -120,10 +125,14 @@
                     {
                         if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
                         {
-                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
-                                <i class="oi @interaction.DisplayMeta mr-5"></i>
-                                <span class="name">@interaction.Name</span>
-                            </NavLink>
+                            <AuthorizeView
+                                Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
+                                <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")"
+                                         class="sidebar-link">
+                                    <i class="oi @interaction.DisplayMeta mr-5"></i>
+                                    <span class="name">@interaction.Name</span>
+                                </NavLink>
+                            </AuthorizeView>
                         }
                     }
                 }
@@ -136,7 +145,8 @@
                 <div class="sidebar-divider"></div>
 
                 <!-- Console -->
-                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")" Context="consoleContext">
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")"
+                               Context="consoleContext">
                     <NavLink href="console" class="sidebar-link">
                         <i class="oi oi-terminal mr-5"></i>
                         <span class="name">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
@@ -144,7 +154,8 @@
                 </AuthorizeView>
 
                 <!-- Ban Management -->
-                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")" Context="banContext">
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")"
+                               Context="banContext">
                     <NavLink href="manage-bans" class="sidebar-link">
                         <i class="oi oi-ban mr-5"></i>
                         <span class="name">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
@@ -183,10 +194,13 @@
                 {
                     if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
                     {
-                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
-                            <i class="oi @interaction.DisplayMeta mr-5"></i>
-                            <span class="name">@interaction.Name</span>
-                        </NavLink>
+                        <AuthorizeView
+                            Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
+                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="sidebar-link">
+                                <i class="oi @interaction.DisplayMeta mr-5"></i>
+                                <span class="name">@interaction.Name</span>
+                            </NavLink>
+                        </AuthorizeView>
                     }
                 }
             }
@@ -202,11 +216,12 @@
 
                 <!-- Logout -->
                 <form action="/Account/Logout" method="post" style="margin: 0; padding: 0;">
-                     <AntiforgeryToken />
-                     <button type="submit" class="sidebar-link" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: inherit; font-size: inherit; font-family: inherit;">
+                    <AntiforgeryToken/>
+                    <button type="submit" class="sidebar-link"
+                            style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: inherit; font-size: inherit; font-family: inherit;">
                         <i class="oi oi-account-logout mr-5"></i>
                         <span class="name">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
-                     </button>
+                    </button>
                 </form>
             }
             else

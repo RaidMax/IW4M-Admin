@@ -212,10 +212,9 @@ jobs:
           rsync -ar ${{ github.workspace }}/GameFiles/ ${{ env.outputFolder }}/GameFiles
           mkdir -p ${{ env.outputFolder }}/wwwroot/images/
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/images/ ${{ env.outputFolder }}/wwwroot/images/
-          rsync -ar ${{ github.workspace }}/BUILD/Plugins/wwwroot/ ${{ env.outputFolder }}/wwwroot/
           cp ${{ github.workspace }}/DeploymentFiles/UpdateIW4MAdmin.ps1 ${{ env.outputFolder }}/UpdateIW4MAdmin.ps1
           cp ${{ github.workspace }}/DeploymentFiles/UpdateIW4MAdmin.sh ${{ env.outputFolder }}/UpdateIW4MAdmin.sh
-
+        # rsync -ar ${{ github.workspace }}/BUILD/Plugins/wwwroot/ ${{ env.outputFolder }}/wwwroot/
       - name: Upload artifact for analysis
         uses: actions/upload-artifact@v4
         with:

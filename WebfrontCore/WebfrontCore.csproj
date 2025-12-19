@@ -35,6 +35,10 @@
         <Content Update="Views\*.*" CopyToPublishDirectory="Never"/>
         <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest"/>
         <None Remove="Properties\launchSettings.json"/>
+        <Content Update="tailwind.config.js">
+          <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+          <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
@@ -79,6 +83,6 @@
     </Target>
 
     <Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="DownloadTailwind">
-        <Exec Command="$(ProjectDir)Tools\tailwindcss.exe -c wwwroot\css\src\tailwind.config.js -i wwwroot\css\src\tailwind.scss -o wwwroot\lib\tailwindcss\tailwind.css" />
+        <Exec Command="$(ProjectDir)Tools\tailwindcss.exe -i wwwroot\css\src\tailwind.css -o wwwroot\css\tailwind.css" />
     </Target>
 </Project>

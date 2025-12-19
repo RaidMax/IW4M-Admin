@@ -1,22 +1,22 @@
-<div class="d-none d-md-block">
+<div class="hidden md:block">
     @if (_navData != null)
     {
-        <div class="badge-group ml-20" role="group" aria-label="...">
-            <span class="badge badge-primary">@(_navData.TotalClientCount)</span>
-            <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE")</span>
+        <div class="inline-flex items-center shadow-sm ml-6" role="group" aria-label="...">
+            <span class="px-2.5 py-0.5 text-xs font-semibold bg-blue-600 text-white rounded-l-md">@(_navData.TotalClientCount)</span>
+            <span class="px-2.5 py-0.5 text-xs font-semibold bg-slate-700 text-slate-200 rounded-r-md">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE")</span>
         </div>
 
         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
-            <div class="badge-group ml-10" role="group" aria-label="...">
-                <span class="badge badge-success">@(_navData.TotalAdminCount)</span>
-                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")</span>
+            <div class="inline-flex items-center shadow-sm ml-4" role="group" aria-label="...">
+                <span class="px-2.5 py-0.5 text-xs font-semibold bg-green-500 text-white rounded-l-md">@(_navData.TotalAdminCount)</span>
+                <span class="px-2.5 py-0.5 text-xs font-semibold bg-slate-700 text-slate-200 rounded-r-md">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")</span>
             </div>
         </AuthorizeView>
 
         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
-            <div class="badge-group ml-10" role="group" @onclick="ShowReports" style="cursor: pointer">
-                <span class="badge badge-danger">@(_navData.TotalReportCount)</span>
-                <span class="badge bg-dark-dm bg-light-lm">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
+            <div class="inline-flex items-center shadow-sm ml-4 cursor-pointer hover:opacity-80 transition-opacity" role="group" @onclick="ShowReports">
+                <span class="px-2.5 py-0.5 text-xs font-semibold bg-red-500 text-white rounded-l-md">@(_navData.TotalReportCount)</span>
+                <span class="px-2.5 py-0.5 text-xs font-semibold bg-slate-700 text-slate-200 rounded-r-md">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")</span>
             </div>
         </AuthorizeView>
     }

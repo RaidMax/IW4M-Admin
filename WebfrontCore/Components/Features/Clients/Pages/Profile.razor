@@ -1,6 +1,7 @@
 @page "/Client/Profile/{Id:int}"
 @page "/client/{Id:int}"
 @rendermode InteractiveServer
+@attribute [Authorize(Policy = "Permissions.ProfilePage.Read")]
 
 @if (_isLoading)
 {
@@ -42,13 +43,13 @@ else
     var imageUrl = !string.IsNullOrEmpty(gravatarUrl) ? $"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg" : "";
 
     <HeadContent>
-        <meta property="og:title" content="@Client.Name.StripColors() | IW4MAdmin" />
-        <meta property="og:description" content="@description" />
-        <meta property="og:type" content="profile" />
-        <meta property="og:url" content="@NavManager.Uri" />
+        <meta property="og:title" content="@Client.Name.StripColors() | IW4MAdmin"/>
+        <meta property="og:description" content="@description"/>
+        <meta property="og:type" content="profile"/>
+        <meta property="og:url" content="@NavManager.Uri"/>
         @if (!string.IsNullOrEmpty(imageUrl))
         {
-            <meta property="og:image" content="@imageUrl" />
+            <meta property="og:image" content="@imageUrl"/>
         }
         <meta name="theme-color" content="#007bff">
     </HeadContent>

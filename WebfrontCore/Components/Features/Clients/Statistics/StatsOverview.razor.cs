@@ -1,5 +1,6 @@
 ﻿using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web.Virtualization;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -7,124 +8,55 @@ using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
 
-public partial class StatsOverview
+public partial class StatsOverview : IAsyncDisposable
 {
     [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JsInterop { get; set; }
-    [SupplyParameterFromQuery] public string serverId { get; set; }
+    [Parameter]
+    public string serverId { get; set; }
 
-    private List<TopStatsInfo> TopPlayers;
-    private long TotalRankedClients;
-    private ServerInfo SelectedServer;
-    private SideContextMenuItems MenuItems;
-    private int Offset = 0;
-    private const int Count = 25;
+    // public for tests
+    public List<TopStatsInfo> TopPlayers { get; set; }
+    public SideContextMenuItems MenuItems { get; set; }
+
+    private long _totalRankedClients;
+
+    public long TotalRankedClients
+    {
+        get => _totalRankedClients;
+        set => _totalRankedClients = value;
+    }
+
+    public ServerInfo SelectedServer { get; set; }
+ 
     private bool IsLoading = false;
     private bool HasMore = true;
-    private ElementReference _loadMoreTrigger;
-    private DotNetObjectReference<StatsOverview> _objRef;
-    private bool _observerSetup;
+    private bool _hasLoaded = false;
     private string _previousServerId;
-    private bool _chartsInitialized;
     private bool _firstLoad = true;
     private bool _localizationInitialized;
+    private Virtualize<TopStatsInfo> _virtualizeComponent;
 
     protected override async Task OnParametersSetAsync()
     {
-        // Load on first load OR when serverId changes
+        // Refresh grid when serverId changes
         if (_firstLoad || _previousServerId != serverId)
         {
             _firstLoad = false;
             _previousServerId = serverId;
-            Offset = 0;
             TopPlayers = null;
-            HasMore = true;
-            _observerSetup = false;
-            _chartsInitialized = false;
-
-            await LoadData();
-            await GenerateMenu();
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // Setup infinite scroll
-        if (TopPlayers != null && TopPlayers.Any() && HasMore && !_observerSetup)
-        {
-            _objRef = DotNetObjectReference.Create(this);
-            await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _objRef);
-            _observerSetup = true;
-        }
-
-        // Initialize performance charts for each player
-        if (TopPlayers != null && TopPlayers.Any() && !_chartsInitialized)
-        {
-            await Task.Delay(100); // Delay to ensure DOM is ready
-            _chartsInitialized = true;
+            _hasLoaded = false;
             
-            if (!_localizationInitialized)
+            if (_virtualizeComponent != null)
             {
-                var localization = new Dictionary<string, string>
-                {
-                    { "WEBFRONT_ADV_STATS_RANKING_METRIC", AppState.Loc("WEBFRONT_ADV_STATS_RANKING_METRIC") },
-                    { "PLUGINS_STATS_COMMANDS_PERFORMANCE", AppState.Loc("PLUGINS_STATS_COMMANDS_PERFORMANCE") }
-                };
-                try 
-                {
-                    await Runtime.InvokeVoidAsync("eval", $"window._localization = {System.Text.Json.JsonSerializer.Serialize(localization)};");
-                    _localizationInitialized = true;
-                }
-                catch (Exception ex)
-                {
-                    System.Console.WriteLine($"Error initializing localization: {ex.Message}");
-                }
+                await _virtualizeComponent.RefreshDataAsync();
             }
 
-            try
-            {
-                await JsInterop.InitTopPlayersCharts();
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"Error initializing charts: {ex.Message}");
-            }
-        }
-    }
-
-    private async Task LoadData()
-    {
-        IsLoading = true;
-        StateHasChanged();
-
-        try
-        {
-            var response = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
-            {
-                Count = Count,
-                Offset = Offset,
-                ServerId = serverId
-            });
-            var newPlayers = response.Players;
-            TotalRankedClients = response.TotalRankedClients;
-
-            if (newPlayers.Count < Count)
-            {
-                HasMore = false;
-            }
-
-            if (TopPlayers == null)
-            {
-                TopPlayers = newPlayers;
-            }
-            else
-            {
-                TopPlayers.AddRange(newPlayers);
-            }
-
-            if (serverId != null)
+            await GenerateMenu();
+            
+             if (serverId != null)
             {
                 var servers = await DataService.GetServersAsync();
                 SelectedServer = servers.FirstOrDefault(s => s.Endpoint == serverId);
@@ -134,34 +66,63 @@ public partial class StatsOverview
                 SelectedServer = null;
             }
         }
-        catch (Exception)
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_localizationInitialized)
         {
-            HasMore = false;
-        }
-        finally
-        {
-            IsLoading = false;
+            var localization = new Dictionary<string, string>
+            {
+                { "WEBFRONT_ADV_STATS_RANKING_METRIC", AppState.Loc("WEBFRONT_ADV_STATS_RANKING_METRIC") },
+                { "PLUGINS_STATS_COMMANDS_PERFORMANCE", AppState.Loc("PLUGINS_STATS_COMMANDS_PERFORMANCE") }
+            };
+            try 
+            {
+                await Runtime.InvokeVoidAsync("eval", $"window._localization = {System.Text.Json.JsonSerializer.Serialize(localization)};");
+                _localizationInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"Error initializing localization: {ex.Message}");
+            }
         }
     }
 
-    [JSInvokable]
-    public async Task LoadMore()
+    private async ValueTask<ItemsProviderResult<TopStatsInfo>> LoadPlayerStats(ItemsProviderRequest request)
     {
-        if (IsLoading || !HasMore) return;
+        // Calculate offset and count from the request
+        var count = Math.Min(request.Count, 50); // Limit chunk size
+        var offset = request.StartIndex;
 
-        Offset += Count;
-        await LoadData();
-        StateHasChanged();
-
-        // Initialize charts for newly loaded items after DOM updates
-        await Task.Delay(150); // Give DOM time to render new elements
         try
         {
-            await JsInterop.InitTopPlayersCharts();
+            var response = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
+            {
+                Count = count,
+                Offset = offset,
+                ServerId = serverId
+            });
+
+            // Update total count if it changed, but don't force re-render just for this significantly
+            if (_totalRankedClients != response.TotalRankedClients)
+            {
+                TotalRankedClients = response.TotalRankedClients;
+                _hasLoaded = true;
+                StateHasChanged(); 
+            }
+            else if (!_hasLoaded)
+            {
+                _hasLoaded = true;
+                StateHasChanged();
+            }
+
+            return new ItemsProviderResult<TopStatsInfo>(response.Players, (int)response.TotalRankedClients);
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error initializing charts after load more: {ex.Message}");
+            System.Console.WriteLine($"Error loading stats: {ex.Message}");
+            return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), 0);
         }
     }
 
@@ -228,17 +189,6 @@ public partial class StatsOverview
 
     public async ValueTask DisposeAsync()
     {
-        if (_observerSetup)
-        {
-            try
-            {
-                await JsInterop.RemoveInfiniteScroll(_loadMoreTrigger);
-            }
-            catch
-            {
-            }
-        }
-
-        _objRef?.Dispose();
+        await Task.CompletedTask;
     }
 }

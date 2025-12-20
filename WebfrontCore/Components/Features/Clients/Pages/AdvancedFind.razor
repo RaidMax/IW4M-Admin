@@ -4,155 +4,155 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE") | IW4MAdmin</PageTitle>
 
-<div class="content mt-0">
-    <h2 class="content-title mt-20">@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE")</h2>
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    <div class="flex items-center mb-6">
+         <h2 class="text-2xl font-bold text-slate-100">@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE")</h2>
+    </div>
 
-    <table class="table">
-        <thead>
-        <tr class="bg-primary text-light d-none d-md-table-row">
-            <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</td>
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</td>
-                <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</td>
-            </AuthorizeView>
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                <td>@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</td>
-            </AuthorizeView>
-            <td>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</td>
-            <td class="text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</td>
-            <td class="text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</td>
-        </tr>
-        </thead>
-        <tbody id="searchResultContainer">
-            @if (_isLoading && Results.Count == 0)
-            {
-                <tr>
-                    <td colspan="7" class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </td>
-                </tr>
-            }
-            else if (Results.Count == 0)
-            {
-                <tr>
-                    <td colspan="7" class="text-center text-muted">
-                        No results found
-                    </td>
-                </tr>
-            }
-            else
-            {
-                @foreach (var client in Results)
-                {
-                    <!-- Desktop Row -->
-                    <tr class="bg-dark-dm bg-light-lm d-none d-md-table-row">
-                        <td>
-                            <a href="/client/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
-                                <ColorCode Value="@client.CurrentClientName" />
-                            </a>
-                        </td>
+    <div class="bg-slate-800 rounded-lg border border-slate-700/50 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+             <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-900/50 hidden md:table-header-group">
+                    <tr>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</th>
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                            <td>@FormatIp(client.CurrentClientIp)</td>
-                            <td>
-                                <div class="d-flex">
-                                    @if (string.IsNullOrEmpty(client.ClientCountryCode))
-                                    {
-                                        <div class="d-flex">
-                                            <i class="oi oi-question-mark ml-5 mr-20"></i>
-                                            <div class="font-size-12 font-weight-light">Unknown</div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <img src="https://flagcdn.com/32x24/@(client.ClientCountryCode.ToLower()).png" class="mr-10 rounded align-self-center" alt="@client.ClientCountryDisplayName"/>
-                                        <div class="font-size-12 font-weight-light">@client.ClientCountryDisplayName</div>
-                                    }
-                                </div>
-                            </td>
+                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</th>
+                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</th>
                         </AuthorizeView>
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                            <td>@client.ClientLevel</td>
+                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</th>
                         </AuthorizeView>
-                        <td>
-                            <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
-                                <span class="badge">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
-                            </div>
-                        </td>
-                        <td class="text-right">@client.FirstConnection.Humanize()</td>
-                        <td class="text-right">@client.LastConnection.Humanize()</td>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</th>
                     </tr>
-
-                    <!-- Mobile Row -->
-                    <tr class="d-table-row d-md-none d-flex border-bottom">
-                        <td class="bg-primary text-light text-right d-flex flex-column w-quarter">
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</div>
-                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</div>
-                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</div>
-                            </AuthorizeView>
-                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
-                            </AuthorizeView>
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</div>
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</div>
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</div>
-                        </td>
-                        <td class="d-flex flex-column w-three-quarter">
-                            <div class="mt-5 mb-5">
-                                <a href="/client/@client.ClientId" class="level-color-@((int)client.ClientLevelValue)">
-                                    <ColorCode Value="@client.CurrentClientName" />
-                                </a>
-                            </div>
-                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                <div class="mt-5 mb-5">@FormatIp(client.CurrentClientIp)</div>
-                                <div class="mt-5 mb-5">
-                                    <div class="d-flex">
-                                        @if (string.IsNullOrEmpty(client.ClientCountryCode))
-                                        {
-                                            <div class="mr-5">Unknown</div>
-                                        }
-                                        else
-                                        {
-                                            <div class="mr-5">@client.ClientCountryDisplayName</div>
-                                            <img src="https://flagcdn.com/24x18/@(client.ClientCountryCode.ToLower()).png" class="rounded align-self-center" alt="@client.ClientCountryDisplayName"/>
-                                        }
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                    @if (_isLoading && Results.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="p-12 text-center text-slate-400">
+                                <i class="ph ph-spinner animate-spin text-4xl text-blue-500 mx-auto mb-4"></i>
+                                <div class="text-lg">Loading results...</div>
+                            </td>
+                        </tr>
+                    }
+                    else if (Results.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="p-12 text-center text-slate-400">
+                                <i class="ph ph-magnifying-glass text-4xl mb-4 text-slate-500 mx-auto"></i>
+                                <div class="text-lg">No results found</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var client in Results)
+                        {
+                            <!-- Desktop Row -->
+                            <tr class="hidden md:table-row hover:bg-slate-700/30 transition-colors group">
+                                <td class="p-4">
+                                    <a href="/client/@client.ClientId" class="font-medium hover:underline decoration-blue-400 underline-offset-2 level-color-@((int)client.ClientLevelValue)">
+                                        <ColorCode Value="@client.CurrentClientName" />
+                                    </a>
+                                </td>
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                    <td class="p-4 text-sm font-mono text-slate-300">@FormatIp(client.CurrentClientIp)</td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-2">
+                                            @if (string.IsNullOrEmpty(client.ClientCountryCode))
+                                            {
+                                                <i class="ph ph-question text-slate-500"></i>
+                                                <span class="text-sm text-slate-500">Unknown</span>
+                                            }
+                                            else
+                                            {
+                                                <img src="https://flagcdn.com/24x18/@(client.ClientCountryCode.ToLower()).png" class="rounded shadow-sm" alt="@client.ClientCountryDisplayName"/>
+                                                <span class="text-sm text-slate-300">@client.ClientCountryDisplayName</span>
+                                            }
+                                        </div>
+                                    </td>
+                                </AuthorizeView>
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                    <td class="p-4 text-sm text-slate-300">@client.ClientLevel</td>
+                                </AuthorizeView>
+                                <td class="p-4">
+                                    <div class="group/tooltip relative inline-block">
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-700 text-slate-300 border border-slate-600/50">
+                                            @MakeAbbreviation(AppState.Loc("GAME_" + client.Game))
+                                        </span>
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all whitespace-nowrap z-10">
+                                            @AppState.Loc("GAME_" + client.Game)
+                                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                                        </div>
                                     </div>
-                                </div>
-                            </AuthorizeView>
-                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                <div class="mt-5 mb-5">@client.ClientLevel</div>
-                            </AuthorizeView>
-                            <div class="mt-5 mb-5">
-                                <div data-toggle="tooltip" data-title="@AppState.Loc("GAME_" + client.Game)">
-                                    <span class="badge font-size-12">@MakeAbbreviation(AppState.Loc("GAME_" + client.Game))</span>
-                                </div>
-                            </div>
-                            <div class="mt-5 mb-5">@client.FirstConnection.Humanize()</div>
-                            <div class="mt-5 mb-5">@client.LastConnection.Humanize()</div>
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
+                                </td>
+                                <td class="p-4 text-sm text-slate-400 text-right">@client.FirstConnection.Humanize()</td>
+                                <td class="p-4 text-sm text-slate-400 text-right">@client.LastConnection.Humanize()</td>
+                            </tr>
 
-    <div class="text-center">
+                            <!-- Mobile Card -->
+                            <tr class="md:hidden block p-4 space-y-3">
+                                <td class="block p-0">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <a href="/client/@client.ClientId" class="text-lg font-bold level-color-@((int)client.ClientLevelValue)">
+                                             <ColorCode Value="@client.CurrentClientName" />
+                                        </a>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-300 border border-slate-600/50">
+                                            @MakeAbbreviation(AppState.Loc("GAME_" + client.Game))
+                                        </span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                            <div class="col-span-2 flex items-center gap-2 font-mono text-slate-300">
+                                                 <i class="ph ph-globe text-slate-500"></i>
+                                                 @FormatIp(client.CurrentClientIp)
+                                                 @if (!string.IsNullOrEmpty(client.ClientCountryCode))
+                                                 {
+                                                     <span class="text-slate-500">•</span>
+                                                     <img src="https://flagcdn.com/16x12/@(client.ClientCountryCode.ToLower()).png" class="rounded shadow-sm" alt="@client.ClientCountryDisplayName"/>
+                                                 }
+                                            </div>
+                                        </AuthorizeView>
+                                        
+                                        <div class="text-slate-500">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
+                                        <div class="text-slate-300 text-right">@client.ClientLevel</div>
+
+                                        <div class="text-slate-500">First Seen</div>
+                                        <div class="text-slate-300 text-right">@client.FirstConnection.Humanize()</div>
+
+                                        <div class="text-slate-500">Last Seen</div>
+                                        <div class="text-slate-300 text-right">@client.LastConnection.Humanize()</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Load More / Status -->
+    <div class="mt-6 flex justify-center">
         @if (_isLoading && Results.Count > 0)
         {
-            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                <span class="sr-only">Loading...</span>
+            <div class="flex items-center gap-2 text-slate-400 animate-pulse">
+                <i class="ph ph-spinner animate-spin text-xl"></i>
+                <span>Loading more...</span>
             </div>
         }
-        
-        @if (_hasMore)
+        else if (_hasMore)
         {
-            <i @ref="_loadMoreTrigger" class="oi oi-chevron-bottom loader-load-more text-primary @(_isLoading ? "d-none" : "")" aria-hidden="true"></i>
+            <button @onclick="LoadMore" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md transition-colors font-medium flex items-center gap-2 shadow-sm border border-slate-600">
+                <span>Load More</span>
+                <i class="ph ph-caret-down"></i>
+            </button>
         }
         else if (Results.Count > 0)
         {
-            <span class="text-muted">No more results to display</span>
+            <div class="text-slate-500 italic text-sm">No more results</div>
         }
     </div>
 </div>

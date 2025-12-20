@@ -16,10 +16,10 @@
 }
 
 function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
-    const primaryColor = $('.text-primary').css('color');
-    const rgb = primaryColor.match(/\d+/g);
-    const fillColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.66)`;
-    const offlineFillColor = 'rgba(255, 96, 96, 0.55)';
+    // Solid Slate-Purple for graph
+    const primaryColor = 'rgba(139, 92, 246, 1)'; // Violet-500
+    const fillColor = 'rgba(139, 92, 246, 0.2)'; // Violet-500 low opacity
+    const offlineFillColor = 'rgba(239, 68, 68, 0.55)'; // Red-500
 
     const onlineTime = [];
     const offlineTime = [];
@@ -69,14 +69,14 @@ function getPlayerHistoryChart(playerHistory, i, width, maxClients) {
                 hoverBorderColor: 'white',
                 hoverBorderWidth: 2
             },
-                {
-                    data: offlineTime.map(history => history.cc),
-                    backgroundColor: createDiagonalPattern(offlineFillColor),
-                    borderColor: offlineFillColor,
-                    borderWidth: 2,
-                    hoverBorderColor: 'white',
-                    hoverBorderWidth: 2
-                }],
+            {
+                data: offlineTime.map(history => history.cc),
+                backgroundColor: createDiagonalPattern(offlineFillColor),
+                borderColor: offlineFillColor,
+                borderWidth: 2,
+                hoverBorderColor: 'white',
+                hoverBorderWidth: 2
+            }],
             lineAtIndexes: mapChange,
         },
         options: {

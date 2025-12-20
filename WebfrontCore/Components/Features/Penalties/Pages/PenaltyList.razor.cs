@@ -18,9 +18,8 @@ public partial class PenaltyList
     private EFPenalty.PenaltyType ShowOnly { get; set; } = EFPenalty.PenaltyType.Any;
     private bool HasMoreResults { get; set; } = true;
     private bool _isLoading = false;
-    private ElementReference _loadMoreTrigger;
+    // Removed unused _loadMoreTrigger
     private DotNetObjectReference<PenaltyList> _dotNetRef;
-    private IJSObjectReference _jsModule;
 
     protected override async Task OnInitializedAsync()
     {
@@ -32,10 +31,8 @@ public partial class PenaltyList
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/blazor_lib.js");
-
-            // Set up intersection observer for infinite scroll
-            await JS.InvokeVoidAsync("blazorInfiniteScroll.setup", _loadMoreTrigger, _dotNetRef);
+            // Use the new global infinite scroll helper
+             await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
         }
     }
 
@@ -119,10 +116,8 @@ public partial class PenaltyList
 
     public async ValueTask DisposeAsync()
     {
-        if (_jsModule != null)
-        {
-            await _jsModule.DisposeAsync();
-        }
+         // Disconnect infinite scroll
+        await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
 
         _dotNetRef?.Dispose();
     }

@@ -249,5 +249,5 @@ launchSettings.json
 /Data/IW4MAdmin_Migration.db-shm
 /Data/IW4MAdmin_Migration.db-wal
 bundle/
-Tools/tailwindcss.exe
+WebfrontCore/Tools/*
 !WebfrontCore/wwwroot/css/src/tailwind.css

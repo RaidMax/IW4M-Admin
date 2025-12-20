@@ -5,10 +5,9 @@
 {
     <PageTitle>@AppState.Loc("WEBFRONT_ABOUT_TITLE") | IW4MAdmin</PageTitle>
 
-    <div class="text-center mt-20">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
+    <div class="flex flex-col items-center justify-center py-20 text-slate-500 animate-pulse">
+        <i class="ph ph-spinner animate-spin text-4xl mb-4 text-blue-500"></i>
+        <span class="text-sm">Loading community info...</span>
     </div>
 }
 else
@@ -20,96 +19,114 @@ else
         <meta property="og:description" content="@AboutInfo.CommunityInformation.Description.StripColors()" />
         <meta property="og:type" content="website" />
          <meta property="og:url" content="@NavManager.Uri" />
-        <meta name="theme-color" content="#007bff">
+        <meta name="theme-color" content="#3b82f6">
     </HeadContent>
 
-    <div class="content text-wrap mt-20">
-        @* Community Banner *@
-        @if (AboutInfo.CommunityInformation?.EnableBanner == true)
-        {
-            <img class="img-fluid mb-20" style="max-height: 250px" src="images/community/banner.png"
-                 alt="@AboutInfo.CommunityInformation?.Name"/>
-        }
-
-        @* Community Name *@
-        @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Name))
-        {
-            <h2 class="content-title">
-                <ColorCode Value="@AboutInfo.CommunityInformation.Name"/>
-            </h2>
-        }
-
-        <div class="card m-0 rounded">
-            @* About Title and Description *@
-            @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Description))
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <!-- Banner & Header -->
+        <div class="mb-8">
+            @if (AboutInfo.CommunityInformation?.EnableBanner == true)
             {
-                <h5 class="text-primary mt-0">@AppState.Loc("WEBFRONT_ABOUT_TITLE")</h5>
-                <div class="text-md-justify">
-                    <ColorCode Value="@AboutInfo.CommunityInformation.Description"/>
+                <div class="w-full h-64 md:h-80 overflow-hidden rounded-lg mb-8 shadow-lg ring-1 ring-slate-700/50">
+                    <img class="w-full h-full object-cover" src="images/community/banner.png"
+                         alt="@AboutInfo.CommunityInformation?.Name"/>
                 </div>
+            }
 
-                @* Social Links *@
-                @if (AboutInfo.CommunityInformation.SocialAccounts?.Any() == true)
-                {
-                    <div class="mt-10">
-                        @foreach (var social in AboutInfo.CommunityInformation.SocialAccounts)
-                        {
-                            <div>
-                                <a href="@social.Url" target="_blank" title="@social.Title" class="d-flex no-decoration">
-                                    @if (!string.IsNullOrWhiteSpace(social.IconId))
-                                    {
-                                        <i class="oi @social.IconId mr-5" style="width: 1.6rem;"></i>
-                                    }
-                                    else if (!string.IsNullOrWhiteSpace(social.IconUrl))
-                                    {
-                                        var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
-                                            ? parsedUrl.AbsoluteUri
-                                            : $"images/community/{social.IconUrl}";
-                                        <img class="img-fluid mr-5" style="width: 1.6rem; fill: white" src="@url" alt="@social.Title"/>
-                                    }
-                                    <div class="ml-1">@social.Title</div>
-                                </a>
-                            </div>
-                        }
-                    </div>
-                }
+            @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Name))
+            {
+                <h1 class="text-4xl font-bold text-slate-100 mb-4 tracking-tight">
+                    <ColorCode Value="@AboutInfo.CommunityInformation.Name"/>
+                </h1>
             }
         </div>
 
-        @* Rules Section *@
-        @if (AllRules.Any(rule => rule.Rules.Any()))
-        {
-            <h2 class="content-title mt-20">@AppState.Loc("WEBFRONT_ABOUT_COMMUNITY_GUIDELINES")</h2>
-        }
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Left Column: Description & Socials -->
+            <div class="md:col-span-2 space-y-8">
+                <!-- Description Card -->
+                 @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Description))
+                 {
+                    <div class="bg-slate-800 border border-slate-700/50 rounded-lg p-6 shadow-sm">
+                        <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                            <i class="ph ph-info text-blue-500"></i>
+                             @AppState.Loc("WEBFRONT_ABOUT_TITLE")
+                        </h2>
+                        <div class="prose prose-invert max-w-none text-slate-300">
+                             <ColorCode Value="@AboutInfo.CommunityInformation.Description"/>
+                        </div>
 
-        <div class="card m-0 rounded">
-            @foreach (var ruleSet in AllRules)
-            {
-                if (!ruleSet.Rules.Any())
-                {
-                    continue;
-                }
-
-                var start = 1;
-                <h5 class="text-primary mt-0 mb-0">
-                    <ColorCode Value="@ruleSet.ServerName"/>
-                </h5>
-                @foreach (var rule in ruleSet.Rules)
-                {
-                    <div class="rule">
-                        @if (!rule.StartsWith("#") && !Regex.IsMatch(rule.StripColors(), @"^(Rule ?#?)?\d+(\.|\))"))
+                        <!-- Social Links -->
+                        @if (AboutInfo.CommunityInformation.SocialAccounts?.Any() == true)
                         {
-                            <span>@start.</span>
+                            <div class="mt-8 pt-6 border-t border-slate-700/50">
+                                <h3 class="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Connect</h3>
+                                <div class="flex flex-wrap gap-4">
+                                    @foreach (var social in AboutInfo.CommunityInformation.SocialAccounts)
+                                    {
+                                        <a href="@social.Url" target="_blank" title="@social.Title" 
+                                           class="flex items-center gap-3 px-4 py-3 bg-slate-900/50 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all group">
+                                            @if (!string.IsNullOrWhiteSpace(social.IconId))
+                                            {
+                                                <i class="@social.IconId.Replace("oi ", "ph ph-") text-xl text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                                            }
+                                            else if (!string.IsNullOrWhiteSpace(social.IconUrl))
+                                            {
+                                                 var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
+                                                    ? parsedUrl.AbsoluteUri
+                                                    : $"images/community/{social.IconUrl}";
+                                                <img class="w-6 h-6 object-contain filter grayscale group-hover:grayscale-0 transition-all" src="@url" alt="@social.Title"/>
+                                            }
+                                            <span class="text-sm font-medium text-slate-200 group-hover:text-white">@social.Title</span>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
                         }
-                        <span class="text-muted">
-                            <ColorCode Value="@rule"/>
-                        </span>
                     </div>
-                    start++;
-                }
+                 }
+            </div>
 
-                <div class="mb-20"></div>
-            }
+            <!-- Right Column: Rules -->
+             <div class="md:col-span-1">
+                @if (AllRules.Any(rule => rule.Rules.Any()))
+                {
+                    <div class="bg-slate-800 border border-slate-700/50 rounded-lg p-6 shadow-sm sticky top-8">
+                         <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+                             <i class="ph ph-book-open-text text-yellow-500"></i>
+                             @AppState.Loc("WEBFRONT_ABOUT_COMMUNITY_GUIDELINES")
+                         </h2>
+                        
+                        <div class="space-y-6">
+                            @foreach (var ruleSet in AllRules)
+                            {
+                                if (!ruleSet.Rules.Any()) continue;
+
+                                <div>
+                                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-700/50">
+                                        <ColorCode Value="@ruleSet.ServerName"/>
+                                    </h3>
+                                    <ol class="space-y-3">
+                                        @{ var imgStart = 1; }
+                                        @foreach (var rule in ruleSet.Rules)
+                                        {
+                                            <li class="flex gap-3 text-sm text-slate-300">
+                                                @if (!rule.StartsWith("#") && !Regex.IsMatch(rule.StripColors(), @"^(Rule ?#?)?\d+(\.|\))"))
+                                                {
+                                                    <span class="font-mono text-slate-500 select-none">@(imgStart++).</span>
+                                                }
+                                                <span class="flex-1">
+                                                    <ColorCode Value="@rule"/>
+                                                </span>
+                                            </li>
+                                        }
+                                    </ol>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 }

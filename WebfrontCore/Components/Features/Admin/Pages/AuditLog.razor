@@ -1,129 +1,183 @@
 @page "/Admin/AuditLog"
 @page "/audit"
 @attribute [Authorize(Policy = "Permissions.AuditPage.Read")]
-@implements IAsyncDisposable
 @rendermode InteractiveServer
 
 <PageTitle>Audit Log | IW4MAdmin</PageTitle>
 
-<div class="content mt-0">
-    <h2 class="content-title mt-20 mb-10">@AppState.Loc("WEBFRONT_NAV_AUDIT_LOG")</h2>
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-slate-100 mb-2">@AppState.Loc("WEBFRONT_NAV_AUDIT_LOG")</h2>
+        <p class="text-slate-400">View recent administrative actions and events.</p>
+    </div>
 
     @if (!string.IsNullOrEmpty(_error))
     {
-        <div class="alert alert-danger" role="alert">
-            @_error
+        <div class="p-4 mb-4 text-sm text-red-200 rounded-lg bg-red-900/50 border border-red-800" role="alert">
+            <div class="flex items-center gap-2">
+                <i class="ph ph-warning-circle text-lg"></i>
+                <span class="font-medium">Error:</span>
+                <span>@_error</span>
+            </div>
         </div>
     }
     else if (Results == null)
     {
-        <div class="text-center mt-20">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
+        <!-- Loading State -->
+        <div class="flex flex-col items-center justify-center py-20 text-slate-500 animate-pulse">
+            <i class="ph ph-spinner animate-spin text-4xl mb-4 text-blue-500"></i>
+            <span class="text-sm">Loading audit logs...</span>
         </div>
     }
     else
     {
-        <table class="table">
-            <thead class="d-none d-lg-table-header-group">
-            <tr class="bg-primary text-light pt-2 pb-2">
-                <th scope="col">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
-                <th scope="col">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
-                <th scope="col">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
-                <th scope="col">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</th>
-                <AuthorizeView Policy="@DataDetailsPolicy">
-                    <th scope="col">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</th>
-                </AuthorizeView>
-                <th scope="col" class="text-right">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</th>
-            </tr>
-            </thead>
-            <tbody class="border-bottom bg-dark">
+        <!-- Desktop Table -->
+        <div class="bg-slate-800 border border-slate-700/50 rounded-lg overflow-hidden shadow-sm hidden md:block ring-1 ring-slate-700/50">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-400">
+                    <thead class="text-xs text-slate-400 uppercase bg-slate-900/30 border-b border-slate-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 font-medium">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
+                            <th scope="col" class="px-6 py-3 font-medium">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
+                            <th scope="col" class="px-6 py-3 font-medium">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
+                            <th scope="col" class="px-6 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</th>
+                            <AuthorizeView Policy="@DataDetailsPolicy">
+                                <th scope="col" class="px-6 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</th>
+                            </AuthorizeView>
+                            <th scope="col" class="px-6 py-3 font-medium text-right">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700">
+                        @foreach (var info in Results)
+                        {
+                            <tr class="hover:bg-slate-700/30 transition-colors">
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(info.Action)">
+                                        @info.Action
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="/client/@info.OriginId" class="text-blue-400 hover:text-blue-300 hover:underline font-medium">
+                                        <ColorCode Value="@info.OriginName"/>
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if (info.TargetId != null)
+                                    {
+                                        <a href="/client/@info.TargetId" class="text-blue-400 hover:text-blue-300 hover:underline font-medium">
+                                            <ColorCode Value="@info.TargetName"/>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-slate-600">&ndash;</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 font-mono text-xs text-slate-300 truncate max-w-xs" title="@info.Data">
+                                    @info.Data
+                                </td>
+                                <AuthorizeView Policy="@DataDetailsPolicy">
+                                    <td class="px-6 py-4 font-mono text-xs text-slate-500 truncate max-w-xs" title="@info.NewValue">
+                                        @info.NewValue
+                                    </td>
+                                </AuthorizeView>
+                                <td class="px-6 py-4 text-right whitespace-nowrap text-slate-400 text-xs">
+                                    @info.When.ToLocalTime().ToString("g")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="space-y-4 md:hidden">
             @foreach (var info in Results)
             {
-                <!-- desktop -->
-                <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
-                    <td class="font-weight-bold">@info.Action</td>
-                    <td>
-                        <a href="/client/@info.OriginId">
-                            <ColorCode Value="@info.OriginName"/>
-                        </a>
-                    </td>
-                    <td>
-                        @if (info.TargetId != null)
-                        {
-                            <a href="/client/@info.TargetId">
-                                <ColorCode Value="@info.TargetName"/>
-                            </a>
-                        }
-                        else
-                        {
-                            <span>&ndash;</span>
-                        }
-                    </td>
-                    <td>@info.Data</td>
-                    <AuthorizeView Policy="@DataDetailsPolicy">
-                        <td class="text-force-break font-weight-light">@info.NewValue</td>
-                    </AuthorizeView>
-                    <td class="text-right">@info.When.ToLocalTime().ToString("g")</td>
-                </tr>
-
-                <!-- mobile -->
-                <tr class="d-table-row d-lg-none d-flex bg-dark-dm bg-light-lm">
-                    <td class="bg-primary text-light text-right flex-grow-0 w-quarter d-flex flex-column">
-                        <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</div>
-                        <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</div>
-                        <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</div>
-                        <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</div>
-                        <AuthorizeView Policy="@DataDetailsPolicy">
-                            <div class="mt-5 mb-5">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</div>
-                        </AuthorizeView>
-                        <div class="mt-5 mb-5 mt-auto">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</div>
-                    </td>
-                    <td class="w-three-quarter d-flex flex-column">
-                        <div class="mt-5 mb-5">@info.Action</div>
-                        <div class="mt-5 mb-5">
-                            <a href="/client/@info.OriginId" class="link-inverse">
+                <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-700 pb-3">
+                         <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(info.Action)">
+                            @info.Action
+                        </span>
+                        <span class="text-xs text-slate-500">@info.When.ToLocalTime().ToString("g")</span>
+                    </div>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN"):</span>
+                            <a href="/client/@info.OriginId" class="text-blue-400 hover:underline text-right">
                                 <ColorCode Value="@info.OriginName"/>
                             </a>
                         </div>
-                        @if (info.TargetId != null)
-                        {
-                            <div class="mt-5 mb-5">
-                                <a href="/client/@info.TargetId">
+                        
+                        <div class="flex justify-between">
+                             <span class="text-slate-500">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME"):</span>
+                            @if (info.TargetId != null)
+                            {
+                                <a href="/client/@info.TargetId" class="text-blue-400 hover:underline text-right">
                                     <ColorCode Value="@info.TargetName"/>
                                 </a>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="mt-5 mb-5">&ndash;</div>
-                        }
-                        <div class="mt-5 mb-5">@info.Data</div>
-                        <AuthorizeView Policy="@DataDetailsPolicy">
-                            <div class="mt-5 mb-5 text-force-break">@info.NewValue</div>
-                        </AuthorizeView>
-                        <div class="mt-5 mb-5 text-muted">@info.When.ToLocalTime().ToString("g")</div>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
+                            }
+                            else
+                            {
+                                <span class="text-slate-600">&ndash;</span>
+                            }
+                        </div>
 
-        @if (HasMoreResults)
-        {
-            <div @ref="loadMoreTrigger" class="text-center mt-10">
-                @if (IsLoading)
-                {
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                        <span class="sr-only">Loading...</span>
+                        <div class="pt-2 border-t border-slate-700">
+                             <span class="block text-xs text-slate-500 mb-1">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO"):</span>
+                             <div class="text-slate-300 font-mono text-xs bg-slate-900/50 p-2 rounded break-words border border-slate-700/50">@info.Data</div>
+                        </div>
+                        
+                        <AuthorizeView Policy="@DataDetailsPolicy">
+                             <div class="pt-2">
+                                 <span class="block text-xs text-slate-500 mb-1">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"):</span>
+                                 <div class="text-slate-300 font-mono text-xs bg-slate-900/50 p-2 rounded break-words border border-slate-700/50">@info.NewValue</div>
+                            </div>
+                        </AuthorizeView>
                     </div>
-                }
-                else
-                {
-                    <i class="loader-load-more oi oi-chevron-bottom text-primary"></i>
-                }
-            </div>
-        }
+                </div>
+            }
+        </div>
+
+        <!-- Load More Section -->
+        <div class="w-full text-center mt-8 pb-8">
+            @if (HasMoreResults)
+            {
+                <button @onclick="LoadMore" disabled="@IsLoading" 
+                        class="px-6 py-3 text-sm font-medium text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-full border border-slate-600 transition-all flex items-center justify-center mx-auto space-x-2 shadow-lg">
+                    @if (IsLoading)
+                    {
+                        <i class="ph ph-spinner animate-spin"></i>
+                        <span>Loading...</span>
+                    }
+                    else
+                    {
+                        <span>Load More Logs</span>
+                        <i class="ph ph-caret-down"></i>
+                    }
+                </button>
+            }
+        </div>
     }
 </div>
+
+@code {
+    private string GetBadgeClass(string action)
+    {
+        var upperAction = action?.ToUpperInvariant() ?? "";
+        
+        if (upperAction.Contains("BAN") && !upperAction.Contains("UNBAN")) return "bg-red-900/30 text-red-400 border-red-900/50";
+        if (upperAction.Contains("KICK")) return "bg-orange-900/30 text-orange-400 border-orange-900/50";
+        if (upperAction.Contains("FLAG") && !upperAction.Contains("UNFLAG")) return "bg-yellow-900/30 text-yellow-400 border-yellow-900/50";
+        if (upperAction.Contains("WARN")) return "bg-yellow-900/30 text-yellow-400 border-yellow-900/50";
+        
+        if (upperAction.Contains("UNBAN") || upperAction.Contains("UNFLAG")) return "bg-green-900/30 text-green-400 border-green-900/50";
+        
+        if (upperAction.Contains("COMMAND") || upperAction.Contains("LOGIN")) return "bg-blue-900/30 text-blue-400 border-blue-900/50";
+        
+        return "bg-slate-700/30 text-slate-400 border-slate-700/50";
+    }
+}

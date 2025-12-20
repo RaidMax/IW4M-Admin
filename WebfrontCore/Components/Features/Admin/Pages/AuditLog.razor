@@ -58,14 +58,14 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <a href="/client/@info.OriginId" class="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                                    <a href="/client/@info.OriginId" class="hover:text-blue-400 font-medium transition-colors">
                                         <ColorCode Value="@info.OriginName"/>
                                     </a>
                                 </td>
                                 <td class="px-6 py-4">
                                     @if (info.TargetId != null)
                                     {
-                                        <a href="/client/@info.TargetId" class="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                                        <a href="/client/@info.TargetId" class="hover:text-blue-400 font-medium transition-colors">
                                             <ColorCode Value="@info.TargetName"/>
                                         </a>
                                     }
@@ -107,7 +107,7 @@
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-slate-500">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN"):</span>
-                            <a href="/client/@info.OriginId" class="text-blue-400 hover:text-blue-300 transition-colors text-right">
+                            <a href="/client/@info.OriginId" class="hover:text-blue-400 transition-colors text-right">
                                 <ColorCode Value="@info.OriginName"/>
                             </a>
                         </div>
@@ -116,7 +116,7 @@
                              <span class="text-slate-500">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME"):</span>
                             @if (info.TargetId != null)
                             {
-                                <a href="/client/@info.TargetId" class="text-blue-400 hover:text-blue-300 transition-colors text-right">
+                                <a href="/client/@info.TargetId" class="hover:text-blue-400 transition-colors text-right">
                                     <ColorCode Value="@info.TargetName"/>
                                 </a>
                             }

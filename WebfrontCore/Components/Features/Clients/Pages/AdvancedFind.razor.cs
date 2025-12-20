@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
+using Microsoft.JSInterop;
 
 namespace WebfrontCore.Components.Features.Clients.Pages;
 
@@ -55,6 +56,19 @@ public partial class AdvancedFind
         await LoadDataAsync();
     }
 
+    [Inject] public required IJSRuntime JS { get; set; }
+    private DotNetObjectReference<AdvancedFind>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
+        }
+    }
+
+    [JSInvokable]
     public async Task LoadMore()
     {
         if (_isLoading || !_hasMore)
@@ -130,17 +144,21 @@ public partial class AdvancedFind
         }
     }
 
-    private static string FormatIp(int? ip) =>
-        ip.HasValue ? SharedLibraryCore.Utilities.ConvertIPtoString(ip.Value) : "-";
 
-    private static string MakeAbbreviation(string? text)
+
+
+
+    public async ValueTask DisposeAsync()
     {
-        if (string.IsNullOrEmpty(text))
-            return text ?? string.Empty;
-
-        var words = text.Split(' ');
-        return words.Length == 1
-            ? text
-            : string.Concat(words.Where(w => w.Length > 0).Select(w => w[0]));
+        try
+        {
+            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Allowed
+        }
+        
+        _dotNetRef?.Dispose();
     }
 }

@@ -13,4 +13,14 @@
     --color-primary: #117ac0;
     --color-surface: #25282c;
     --color-background: #191c20;
+
+    /* Permission Level Colors */
+    --color-level-console: #ff6060;
+    --color-level-banned: #ff6060;
+    --color-level-flagged: #fd9c38;
+    --color-level-trusted: #749363;
+    --color-level-moderator: #f0de8b;
+    --color-level-administrator: #f1a8e8;
+    --color-level-senioradmin: #50bcc3;
+    --color-level-owner: #007acc;
 }

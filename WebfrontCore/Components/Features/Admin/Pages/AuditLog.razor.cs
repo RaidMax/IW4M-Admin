@@ -37,6 +37,8 @@ public partial class AuditLog : IAsyncDisposable
         return "bg-slate-700/30 text-slate-400 border-slate-700/50";
     }
 
+
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();

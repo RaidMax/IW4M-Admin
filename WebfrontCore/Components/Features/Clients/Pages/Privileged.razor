@@ -19,12 +19,12 @@
         <h1 class="text-2xl font-bold text-slate-100">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h1>
     </div>
 
-    @if (PrivilegedClients != null)
+@if (PrivilegedClients != null)
     {
         @foreach (var key in PrivilegedClients.Keys)
         {
             <div class="mb-8 overflow-hidden bg-slate-800 rounded-lg shadow ring-1 ring-slate-700/50">
-                <div class="px-4 py-3 bg-slate-900/50 border-b border-slate-700 font-semibold text-slate-200">
+                <div class="px-4 py-3 border-b border-slate-700 font-semibold text-slate-200 @GetHeaderClass(key)">
                     @(key.ToLocalizedLevelName())
                 </div>
 
@@ -42,12 +42,12 @@
                         {
                             if (client.IsMasked)
                             {
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                     <tr class="hover:bg-slate-700/30 transition-colors">
                                         <td class="px-4 py-3">
                                             <div class="flex items-center">
                                                 <span class="mr-2 text-yellow-500" title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
                                                     <i class="ph ph-mask-happy text-lg"></i>
+                                                    @* Optional: Use ph-spy or ph-shield-check if preferred *@
                                                 </span>
                                                 <a href="/client/@client.ClientId" class="font-medium text-blue-400 hover:text-blue-300 transition-colors">
                                                     <ColorCode Value="@client.Name" />
@@ -63,7 +63,6 @@
                                             @client.LastConnection.Humanize()
                                         </td>
                                     </tr>
-                                </AuthorizeView>
                             }
                             else
                             {
@@ -95,7 +94,6 @@
                     {
                         if (client.IsMasked)
                         {
-                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <div class="p-4 space-y-2">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-2">
@@ -114,7 +112,6 @@
                                         </span>
                                     </div>
                                 </div>
-                            </AuthorizeView>
                         }
                         else
                         {
@@ -146,3 +143,17 @@
         </div>
     }
 </div>
+
+@code {
+    private string GetHeaderClass(Data.Models.Client.EFClient.Permission permission) => permission switch
+    {
+        Data.Models.Client.EFClient.Permission.Console or Data.Models.Client.EFClient.Permission.Owner => "bg-fuchsia-900/50 text-fuchsia-200",
+        Data.Models.Client.EFClient.Permission.Creator => "bg-purple-900/50 text-purple-200",
+        Data.Models.Client.EFClient.Permission.SeniorAdmin => "bg-orange-900/50 text-orange-200",
+        Data.Models.Client.EFClient.Permission.Administrator => "bg-emerald-900/50 text-emerald-200",
+        Data.Models.Client.EFClient.Permission.Moderator => "bg-yellow-900/50 text-yellow-200",
+        Data.Models.Client.EFClient.Permission.Trusted => "bg-cyan-900/50 text-cyan-200",
+        Data.Models.Client.EFClient.Permission.Flagged => "bg-slate-800 text-slate-400",
+        _ => "bg-blue-900/50 text-blue-200"
+    };
+}

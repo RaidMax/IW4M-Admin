@@ -4,10 +4,12 @@
 
 @if (_servers != null)
 {
-    foreach (var serverInfo in _servers)
-    {
-        <ServerCard Model="serverInfo" OnChat="OpenChat"/>
-    }
+    <div class="space-y-4">
+        @foreach (var serverInfo in _servers)
+        {
+            <ServerCard Model="serverInfo" OnChat="OpenChat"/>
+        }
+    </div>
 }
 else
 {

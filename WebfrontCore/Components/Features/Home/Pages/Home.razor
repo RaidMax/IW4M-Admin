@@ -31,23 +31,30 @@
 
         @if (Model != null)
         {
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm flex flex-col justify-center">
-                    <div class="text-sm text-slate-400 mb-1">Max Players Today</div>
-                    <div class="text-2xl font-bold text-blue-500" data-toggle="tooltip" data-title="@Model.MaxConcurrentClientsTime.Humanize().Titleize()">@Model.MaxConcurrentClients.ToString("#,##0")</div>
+            <!-- Compact Stats Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-0 bg-slate-800 rounded-lg border border-slate-700/50 shadow-sm overflow-hidden mb-6 divide-y md:divide-y-0 md:divide-x divide-slate-700/50">
+                <!-- Max Players -->
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-slate-700/20 transition-colors group">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 group-hover:text-slate-400 transition-colors">Peak Today</span>
+                    <span class="text-lg font-bold text-slate-200 group-hover:text-slate-100 transition-colors" title="@Model.MaxConcurrentClientsTime.Humanize().Titleize()">@Model.MaxConcurrentClients.ToString("#,##0")</span>
                 </div>
-                <!-- ... other stats ... (simplifying for brevity, but I should keep original logic) -->
-                 <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm flex flex-col justify-center">
-                    <div class="text-sm text-slate-400 mb-1">Clients Online</div>
-                    <div class="text-2xl font-bold text-green-500">@((MarkupString)FormatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</div>
+                
+                <!-- Online -->
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-slate-700/20 transition-colors group">
+                     <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 group-hover:text-slate-400 transition-colors">Online</span>
+                     <span class="text-lg font-bold text-slate-200 group-hover:text-slate-100 transition-colors">@((MarkupString)FormatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</span>
                 </div>
-                 <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm flex flex-col justify-center">
-                    <div class="text-sm text-slate-400 mb-1">Recent Clients</div>
-                    <div class="text-2xl font-bold text-purple-500">@Model.RecentClientCount.ToString("#,##0")</div>
+                
+                <!-- Recent -->
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-slate-700/20 transition-colors group">
+                     <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 group-hover:text-slate-400 transition-colors">Recent (24h)</span>
+                     <span class="text-lg font-bold text-slate-200 group-hover:text-slate-100 transition-colors">@Model.RecentClientCount.ToString("#,##0")</span>
                 </div>
-                 <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 shadow-sm flex flex-col justify-center">
-                    <div class="text-sm text-slate-400 mb-1">Total Clients</div>
-                    <div class="text-2xl font-bold text-slate-100">@Model.TotalClientCount.ToString("#,##0")</div>
+
+                <!-- Total -->
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-slate-700/20 transition-colors group">
+                     <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 group-hover:text-slate-400 transition-colors">Total Players</span>
+                     <span class="text-lg font-bold text-slate-200 group-hover:text-slate-100 transition-colors">@Model.TotalClientCount.ToString("#,##0")</span>
                 </div>
             </div>
             

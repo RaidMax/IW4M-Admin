@@ -6,14 +6,6 @@ if (-not (Test-Path "$SolutionDir/WebfrontCore/wwwroot/font")) {
     Set-Location "$SolutionDir/WebfrontCore"
     libman restore
     Set-Location $SolutionDir
-    Copy-Item -Recurse -Force -Path "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/fonts" "$SolutionDir/WebfrontCore/wwwroot/font"
-}
-
-if (-not (Test-Path "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss")) {
-    Write-Output "load external resources"
-    New-Item -ItemType Directory -Force -Path "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css"
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss" -OutFile "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss"
-    (Get-Content "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss") -replace '../fonts/', '/font/' | Set-Content "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss"
 }
 
 Write-Output "checking for Excubo.WebCompiler..."
@@ -46,7 +38,6 @@ if ($toolExists) {
 Write-Output "compiling scss files"
 
 webcompiler -r "$SolutionDir/WebfrontCore/wwwroot/css/src" -o WebfrontCore/wwwroot/css/ -m disable -z disable
-webcompiler "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss" -o "$SolutionDir/WebfrontCore/wwwroot/css/" -m disable -z disable
 
 if (-not (Test-Path "$SolutionDir/bundle/dotnet-bundle.dll")) {
     New-Item -ItemType Directory -Force -Path "$SolutionDir/bundle"

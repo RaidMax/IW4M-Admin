@@ -235,7 +235,7 @@ public class Plugin : IPluginV2
         {
             EntityId = targetClientId,
             Name = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MUTE"],
-            DisplayMeta = "oi-volume-off",
+            DisplayMeta = "ph-speaker-simple-x",
             ActionPath = "DynamicAction",
             ActionMeta = new Dictionary<string, string>
             {
@@ -303,7 +303,7 @@ public class Plugin : IPluginV2
         {
             EntityId = targetClientId,
             Name = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_UNMUTE"],
-            DisplayMeta = "oi-volume-high",
+            DisplayMeta = "ph-speaker-x",
             ActionPath = "DynamicAction",
             ActionMeta = new Dictionary<string, string>
             {

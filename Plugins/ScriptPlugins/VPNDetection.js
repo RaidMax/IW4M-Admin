@@ -74,14 +74,14 @@ const plugin = {
 
             if (vpnExceptionIds.includes(targetId)) {
                 interactionData.name = plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']; // text for the profile button
-                interactionData.displayMeta = 'oi-circle-x';
+                interactionData.displayMeta = 'ph-x-circle';
 
                 interactionData.actionMeta.add('Data', `disallowvpn`); // command to execute
                 interactionData.actionMeta.add('ActionButtonLabel', plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM']); // confirm button on the dialog
                 interactionData.actionMeta.add('Name', plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']); // title on the confirm dialog
             } else {
                 interactionData.name = plugin.translations['WEBFRONT_VPN_ACTION_ALLOW']; // text for the profile button
-                interactionData.displayMeta = 'oi-circle-check';
+                interactionData.displayMeta = 'ph-check-circle';
 
                 interactionData.actionMeta.add('Data', `whitelistvpn`); // command to execute
                 interactionData.actionMeta.add('ActionButtonLabel', plugin.translations['WEBFRONT_VPN_ACTION_ALLOW_CONFIRM']); // confirm button on the dialog
@@ -99,7 +99,7 @@ const plugin = {
 
                 interactionData.name = plugin.translations['WEBFRONT_NAV_VPN_TITLE']; // navigation link name
                 interactionData.description = plugin.translations['WEBFRONT_NAV_VPN_DESC']; // alt and title
-                interactionData.displayMeta = 'oi-circle-check'; // nav icon
+                interactionData.displayMeta = 'ph-check-circle'; // nav icon
                 interactionData.interactionId = vpnAllowListKey;
                 interactionData.minimumPermission = 3; // moderator
                 interactionData.interactionType = 2; // 1 is RawContent for apis etc..., 2 is 
@@ -130,7 +130,7 @@ const plugin = {
                                         <a href="#" class="profile-action no-decoration float-right" data-action="DynamicAction" data-action-id="${client.clientId}"
                                            data-action-meta="${encodeURI(JSON.stringify(disallowInteraction))}">
                                             <div class="btn">
-                                                <i class="oi oi-circle-x mr-5 font-size-12"></i>
+                                                <i class="ph ph-x-circle mr-5 font-size-12"></i>
                                                 <span class="text-truncate">${plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']}</span>
                                             </div>
                                         </a>

@@ -34,7 +34,7 @@
 
     <!-- Right: Actions -->
     <div class="flex items-center gap-2 md:gap-4 shrink-0">
-        <div class="relative">
+        <div class="relative hidden md:block">
              <SearchResourceForm />
         </div>
 
@@ -54,7 +54,9 @@
 @code {
     private void ToggleMobile()
     {
+        Console.WriteLine("TopBar: ToggleMobile clicked. Current State: " + AppState.IsMobileNavOpen);
         AppState.IsMobileNavOpen = !AppState.IsMobileNavOpen;
+        Console.WriteLine("TopBar: New State: " + AppState.IsMobileNavOpen);
     }
 
     private void ToggleDesktop()

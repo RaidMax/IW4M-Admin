@@ -15,12 +15,6 @@ public partial class MainLayout
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private bool _isInitialized = false;
     private bool _halfmoonInitialized = false;
-    private bool _sidebarOpen = false;
-
-    private void ToggleSidebar()
-    {
-        _sidebarOpen = !_sidebarOpen;
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,11 +73,9 @@ public partial class MainLayout
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_isInitialized && !_halfmoonInitialized)
+        if (_isInitialized)
         {
-            _halfmoonInitialized = true;
-            await JS.InitializeHalfmoon();
-            StateHasChanged();
+             StateHasChanged();
         }
     }
 

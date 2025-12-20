@@ -20,6 +20,34 @@ public class AppState
             }
         }
     }
+
+    private bool _sidebarCollapsed = false;
+    public bool SidebarCollapsed
+    {
+        get => _sidebarCollapsed;
+        set
+        {
+            if (_sidebarCollapsed != value)
+            {
+                _sidebarCollapsed = value;
+                NotifyStateChanged();
+            }
+        }
+    }
+
+    private bool _isMobileNavOpen;
+    public bool IsMobileNavOpen
+    {
+        get => _isMobileNavOpen;
+        set
+        {
+            if (_isMobileNavOpen != value)
+            {
+                _isMobileNavOpen = value;
+                NotifyStateChanged();
+            }
+        }
+    }
         
     private string _activeServerId;
     public string ActiveServerId

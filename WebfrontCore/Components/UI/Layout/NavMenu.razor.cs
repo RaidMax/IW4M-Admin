@@ -41,11 +41,6 @@ public partial class NavMenu
         AppState.OnChange -= StateHasChanged;
     }
 
-    private async Task ToggleSidebar()
-    {
-        await JS.ToggleSidebar();
-    }
-
     private string Loc(string key)
     {
         return AppState.Loc(key);

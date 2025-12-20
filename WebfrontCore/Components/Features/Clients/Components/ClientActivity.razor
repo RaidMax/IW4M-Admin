@@ -4,62 +4,111 @@
 @using WebfrontCore.Core.Auth
 
 <!-- Main Container: 2 Columns on Desktop, Stacked on Mobile -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 text-xs">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-slate-700/50 bg-slate-900 min-h-[200px]">
     
-    <!-- Left Column: Chat & Events -->
-    <div class="space-y-0.5 font-mono overflow-hidden">
-        @if (Model?.ChatHistory?.Any() == true)
+    <!-- Left Column: Live Feed (Chat & Events) -->
+    <div class="flex flex-col bg-slate-950/30">
+        <!-- Header -->
+        <div class="px-3 py-2 border-b border-slate-700/50 text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none bg-slate-800/20">
+            Recent Activity
+        </div>
+        
+        <div class="p-4 space-y-1 font-mono text-[11px] overflow-y-auto max-h-[200px] custom-scrollbar flex-1">
+            @if (Model?.ChatHistory?.Any() == true)
         {
              @foreach (var chat in Model.ChatHistory)
             {
                 var message = chat.IsHidden && (AppState.User == null /* || Check Auth */) ? chat.HiddenMessage : chat.Message;
                 var stateIcon = GetIconForState(chat.Message);
+                var isEvent = !string.IsNullOrEmpty(stateIcon);
 
-                <div class="flex items-center space-x-2 h-5 truncate opacity-90 hover:opacity-100 transition-opacity">
-                    @if (!string.IsNullOrEmpty(stateIcon))
+                <div class="flex items-start space-x-2 opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-slate-500" : "text-slate-300")">
+                    @if (isEvent)
                     {
-                        <!-- Connection/Event Icon -->
-                        <i class="ph-bold @stateIcon text-slate-500 w-4 text-center"></i>
+                         <i class="@stateIcon text-[10px] self-center shrink-0 w-3"></i>
+                         <span class="truncate flex-1">
+                            <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
+                         </span>
+                         <span class="text-slate-600 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                     }
-                    
-                    <span class="font-bold text-slate-200">
-                         <ColorCode Value="@chat.Name"/>
-                    </span>
-                    
-                    @if (string.IsNullOrEmpty(stateIcon))
+                    else
                     {
-                        <!-- Chat Message -->
-                        <span class="text-slate-600">&mdash;</span>
-                        <span class="truncate text-slate-400">
-                            <ColorCode Value="@(message.CapClientName(64))"/>
-                        </span>
+                        <!-- Timestamp for chat -->
+                        <span class="text-slate-600 select-none shrink-0">@chat.Time.ToString("HH:mm")</span>
+                         <div class="flex-1 min-w-0 break-words leading-tight">
+                            <span class="font-bold text-slate-400 mr-1 cursor-pointer hover:text-slate-300 transition-colors">
+                                <ColorCode Value="@chat.Name"/>:
+                            </span>
+                            <span class="text-slate-200">
+                                <ColorCode Value="@(message.CapClientName(128))"/>
+                            </span>
+                        </div>
                     }
                 </div>
             }
         }
-    </div>
-
-    <!-- Right Column: Player Grid (2 Columns) -->
-    <div class="grid grid-cols-2 gap-x-4 gap-y-0.5 content-start">
-        @if (Model?.Players != null)
+        else
         {
-            @foreach (var client in Model.Players)
-            {
-                var levelColorClass = (AppState.User == null || client.LevelInt == 0) ? "text-slate-400" : $"level-color-{client.LevelInt}";
-                
-                <div class="flex items-center justify-between group/player hover:bg-slate-800/50 rounded px-1 h-5 transition-colors">
-                    <a href="/client/@client.ClientId" class="font-medium truncate @levelColorClass hover:underline decoration-slate-600 underline-offset-2">
-                         <ColorCode Value="@client.Name"/>
-                    </a>
-
-                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
-                        <button @onclick:preventDefault @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, null, null))"
-                           class="opacity-0 group-hover/player:opacity-100 p-0 text-red-500 hover:text-red-400 hover:bg-red-900/30 rounded transition-all ml-1" title="Kick">
-                            <i class="ph-bold ph-x-circle text-[10px]"></i>
-                        </button>
-                    </AuthorizeView>
-                </div>
-            }
+            <div class="flex flex-col items-center justify-center h-full text-slate-600 italic">
+                <span>No recent activity</span>
+            </div>
         }
     </div>
 </div>
+
+    <!-- Right Column: Scoreboard -->
+    <div class="flex flex-col bg-slate-900/50">
+        <!-- Header -->
+        <div class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 px-3 py-2 border-b border-slate-700/50 text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none bg-slate-800/20">
+            <div class="pl-1">Player</div>
+            <div class="text-center" title="Score">Scr</div>
+            <div class="text-center" title="Kills">K</div>
+            <div class="text-center" title="Deaths">D</div>
+            <div class="text-center" title="Ping">Ping</div>
+            <div class="text-center"></div> <!-- Action Column -->
+        </div>
+
+        <!-- Scrollable List -->
+        <div class="overflow-y-auto max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-px">
+            @if (Model?.Players != null)
+            {
+                @foreach (var client in Model.Players.OrderByDescending(p => p.Score))
+                {
+                    var isSelf = AppState.User?.ClientId == client.ClientId;
+                    var pingColor = client.Ping < 100 ? "bg-emerald-500" : client.Ping < 200 ? "bg-amber-500" : "bg-rose-500";
+                    
+                    <div class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 py-1.5 rounded text-[11px] font-mono group hover:bg-slate-800/80 transition-colors @(isSelf ? "bg-purple-500/10 border border-purple-500/20" : "")">
+                        <!-- Player -->
+                        <div class="flex items-center min-w-0 pr-2">
+                             <div class="w-1.5 h-1.5 rounded-full @pingColor mr-2 shrink-0 animate-pulse"></div>
+                             <a href="/client/@client.ClientId" class="font-bold text-slate-300 truncate hover:text-white hover:underline decoration-slate-600 underline-offset-2 transition-colors">
+                                 <ColorCode Value="@client.Name"/>
+                             </a>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="text-center text-slate-400 group-hover:text-slate-200">@client.Score</div>
+                        <div class="text-center text-emerald-500/80 group-hover:text-emerald-400 font-bold">@client.Kills</div>
+                        <div class="text-center text-rose-500/80 group-hover:text-rose-400 font-bold">@client.Deaths</div>
+                        <div class="text-center text-slate-500 group-hover:text-slate-300">@client.Ping</div>
+                        
+                        <!-- Action -->
+                         <div class="flex justify-center">
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
+                                <button @onclick:preventDefault @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, null, null))"
+                                        class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded transition-all" 
+                                        title="Kick Player">
+                                    <i class="ph-bold ph-trash text-xs"></i>
+                                </button>
+                            </AuthorizeView>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    
+}

@@ -135,25 +135,40 @@ public class WebfrontDataService : IWebfrontDataService
                         .ToList() ?? []
                 },
                 Players = server.GetClientsAsList()
-                    .Select(client => new PlayerInfo
+                    .Select(client => new
                     {
-                        Name = client.Name,
-                        ClientId = client.ClientId,
-                        Level = client.Level.ToLocalizedLevelName(),
-                        LevelInt = (int)client.Level,
-                        Tag = client.Tag,
-                        ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY)?.ZScore
+                        client,
+                        stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY)
                     })
                     .Select(p =>
                     {
+                        var playerInfo = new PlayerInfo
+                        {
+                            Name = p.client.Name,
+                            ClientId = p.client.ClientId,
+                            TimeOnline = (DateTime.UtcNow - p.client.LastConnection).HumanizeForCurrentCulture(),
+                            Level = p.client.Level.ToLocalizedLevelName(),
+                            LevelInt = (int)p.client.Level,
+                            Tag = p.client.Tag,
+                            IPAddress = p.client.IPAddressString,
+                            NetworkId = p.client.NetworkId,
+                            Online = true,
+                            LastConnection = p.client.LastConnection,
+                            Score = p.client.Score,
+                            Kills = p.stats?.MatchData?.Kills ?? 0,
+                            Deaths = p.stats?.MatchData?.Deaths ?? 0,
+                            Ping = p.client.Ping,
+                            ZScore = p.stats?.ZScore
+                        };
+
                         if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
                         {
-                            return p;
+                            return playerInfo;
                         }
 
-                        p.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
-                        p.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
-                        return p;
+                        playerInfo.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+                        playerInfo.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
+                        return playerInfo;
                     })
                     .ToList(),
                 ChatHistory = server.ChatHistory.ToList(),
@@ -191,26 +206,40 @@ public class WebfrontDataService : IWebfrontDataService
                 ClientCounts = server.ClientHistory.ClientCounts.ToList()
             },
             Players = server.GetClientsAsList()
-                .Select(client => new PlayerInfo
+                .Select(client => new
                 {
-                    Name = client.Name,
-                    ClientId = client.ClientId,
-                    Level = client.Level.ToLocalizedLevelName(),
-                    LevelInt = (int)client.Level,
-                    Tag = client.Tag,
-                    ZScore = client.GetAdditionalProperty<EFClientStatistics>(StatManager
-                        .CLIENT_STATS_KEY)?.ZScore
+                    client,
+                    stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY)
                 })
                 .Select(p =>
                 {
+                    var playerInfo = new PlayerInfo
+                    {
+                        Name = p.client.Name,
+                        ClientId = p.client.ClientId,
+                        TimeOnline = (DateTime.UtcNow - p.client.LastConnection).HumanizeForCurrentCulture(),
+                        Level = p.client.Level.ToLocalizedLevelName(),
+                        LevelInt = (int)p.client.Level,
+                        Tag = p.client.Tag,
+                        IPAddress = p.client.IPAddressString,
+                        NetworkId = p.client.NetworkId,
+                        Online = true,
+                        LastConnection = p.client.LastConnection,
+                        Score = p.client.Score,
+                        Kills = p.stats?.MatchData?.Kills ?? 0,
+                        Deaths = p.stats?.MatchData?.Deaths ?? 0,
+                        Ping = p.client.Ping,
+                        ZScore = p.stats?.ZScore
+                    };
+
                     if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
                     {
-                        return p;
+                        return playerInfo;
                     }
 
-                    p.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
-                    p.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
-                    return p;
+                    playerInfo.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
+                    playerInfo.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
+                    return playerInfo;
                 })
                 .ToList(),
             ChatHistory = server.ChatHistory.ToList(),

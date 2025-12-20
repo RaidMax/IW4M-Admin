@@ -1,5 +1,6 @@
 @page "/Help"
 @page "/commands"
+@rendermode InteractiveServer
 @inject NavigationManager NavManager
 
 <PageTitle>@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE") | IW4MAdmin</PageTitle>
@@ -12,119 +13,165 @@
     <meta name="theme-color" content="#007bff">
 </HeadContent>
 
-@if (CommandGroups == null)
-{
-     <div class="text-center mt-20">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    @if (CommandGroups == null)
+    {
+        <div class="flex justify-center items-center mt-20">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-    </div>
-}
-else
-{
-    <div class="content mt-20">
-        @foreach (var group in CommandGroups)
+    }
+    else
+    {
+        <!-- Search Input -->
+        <div class="mb-8">
+            <div class="relative max-w-md mx-auto md:mx-0">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <i class="ph ph-magnifying-glass text-xl text-gray-400"></i>
+                </div>
+                <input @bind="SearchTerm" @bind:event="oninput" 
+                       type="text" 
+                       class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                       placeholder="Search commands..." />
+            </div>
+        </div>
+
+        @if (!FilteredCommandGroups.Any())
         {
-            <div class="command-assembly-container">
-                <h2 class="content-title mb-lg-20 mt-20">@group.Name</h2>
+             <div class="text-center text-slate-500 dark:text-slate-400 mt-10">
+                @AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")
+            </div>
+        }
+
+        @foreach (var group in FilteredCommandGroups)
+        {
+            <div class="mb-10">
+                <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                    @group.Name
+                </h2>
 
                 <!-- Desktop Table -->
-                <table class="table rounded">
-                    <thead>
-                        <tr class="bg-primary text-light d-none d-lg-table-row">
-                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_NAME")</th>
-                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_ALIAS")</th>
-                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION")</th>
-                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET")</th>
-                            <th>@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</th>
-                            <th>@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</th>
-                            <th class="text-right">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL")</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var command in group.Commands)
-                        {
-                            <!-- Desktop Row -->
-                            <tr class="d-none d-lg-table-row bg-dark-dm bg-light-lm">
-                                <td class="font-weight-bold">@command.Name</td>
-                                <td>@command.Alias</td>
-                                <td class="text-muted">@command.Description</td>
-                                <td class="@(command.RequiresTarget ? "text-success" : "text-danger")">@command.RequiresTarget</td>
-                                <td class="text-muted">@CommandPrefix@command.Syntax</td>
-                                <td>
+                <div class="hidden lg:block overflow-x-auto rounded-lg shadow ring-1 ring-black ring-opacity-5">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_NAME")</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_ALIAS")</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-1/3">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION")</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">Target?</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-1/4">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL")</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                            @foreach (var command in group.Commands)
+                            {
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-slate-100">@command.Name</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">@command.Alias</td>
+                                    <td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 break-words">@command.Description</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        @if (command.RequiresTarget)
+                                        {
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                                Yes
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
+                                                No
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-mono text-slate-600 dark:text-slate-300">
+                                        <span class="bg-slate-50 dark:bg-slate-900/50 rounded px-1.5 py-0.5 whitespace-pre-wrap break-all">@CommandPrefix@command.Syntax</span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                        @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                                        {
+                                            <div class="flex flex-wrap gap-1">
+                                                @foreach (var game in command.SupportedGames)
+                                                {
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
+                                                        @game.ToString()
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
+                                                All
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium @GetLevelColorClass(command.Permission)">
+                                        @command.Permission.ToLocalizedLevelName()
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="lg:hidden space-y-4">
+                    @foreach (var command in group.Commands)
+                    {
+                        <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-4 border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">@command.Name</h3>
+                                    <div class="text-sm text-slate-500 dark:text-slate-400">Alias: <span class="font-mono">@command.Alias</span></div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-medium @GetLevelColorClass(command.Permission)">
+                                        @command.Permission.ToLocalizedLevelName()
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <p class="text-sm text-slate-700 dark:text-slate-300 mb-3">@command.Description</p>
+                            
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50">
+                                    <span class="text-slate-500 dark:text-slate-400">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</span>
+                                    <span class="font-mono text-slate-700 dark:text-slate-300 break-all">@CommandPrefix@command.Syntax</span>
+                                </div>
+                                
+                                <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700/50">
+                                    <span class="text-slate-500 dark:text-slate-400">Target?</span>
+                                    <span class="@(command.RequiresTarget ? "text-green-600 dark:text-green-400" : "text-slate-600 dark:text-slate-400")">
+                                        @(command.RequiresTarget ? "Yes" : "No")
+                                    </span>
+                                </div>
+                                
+                                <div class="py-1">
+                                    <span class="block text-slate-500 dark:text-slate-400 mb-1">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</span>
                                     @if (command.SupportedGames is not null && command.SupportedGames.Any())
                                     {
-                                        <div class="d-flex">
+                                        <div class="flex flex-wrap gap-1">
                                             @foreach (var game in command.SupportedGames)
                                             {
-                                                <div class="mr-5" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
-                                                    <div class="badge">@game.ToString()</div>
-                                                </div>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    @game.ToString()
+                                                </span>
                                             }
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="badge">@AppState.Loc("WEBFRONT_HELP_ALL_GAMES")</div>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">
+                                            All
+                                        </span>
                                     }
-                                </td>
-                                <td class="text-right level-color-@((int)command.Permission)">@command.Permission.ToLocalizedLevelName()</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-
-                <!-- Mobile Table -->
-                <table class="table d-lg-none rounded no-cell-divider bg-dark-dm bg-light-lm" style="border-collapse: collapse">
-                    @foreach (var command in group.Commands)
-                    {
-                        <tr>
-                            <th class="bg-primary text-right text-light first-row" style="width:40%">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_NAME")</th>
-                            <td class="first-row font-weight-bold">@command.Name</td>
-                        </tr>
-                        <tr>
-                            <th class="bg-primary text-right text-light">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_ALIAS")</th>
-                            <td>@command.Alias</td>
-                        </tr>
-                        <tr>
-                            <th class="bg-primary text-right text-light align-top">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION")</th>
-                            <td class="text-muted">@command.Description</td>
-                        </tr>
-                        <tr>
-                            <th class="bg-primary text-right text-light">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRES_TARGET")</th>
-                            <td class="@(command.RequiresTarget ? "text-success" : "text-danger") align-top">@command.RequiresTarget</td>
-                        </tr>
-                        <tr>
-                            <th class="bg-primary text-right text-light align-top">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</th>
-                            <td class="text-muted">@CommandPrefix@command.Syntax</td>
-                        </tr>
-                        <tr>
-                            <th class="bg-primary text-right text-light">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</th>
-                            <td>
-                                @if (command.SupportedGames is not null && command.SupportedGames.Any())
-                                {
-                                    <div class="d-flex">
-                                        @foreach (var game in command.SupportedGames)
-                                        {
-                                            <div class="mr-5" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
-                                                <div class="badge">@game.ToString()</div>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="badge">@AppState.Loc("WEBFRONT_HELP_ALL_GAMES")</div>
-                                }
-                            </td>
-                        </tr>
-                        <tr class="border-bottom">
-                            <th class="bg-primary text-right text-light last-row">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL")</th>
-                            <td class="level-color-@((int)command.Permission) last-row">@command.Permission.ToLocalizedLevelName()</td>
-                        </tr>
+                                </div>
+                            </div>
+                        </div>
                     }
-                </table>
+                </div>
             </div>
         }
-    </div>
-}
+    }
+</div>

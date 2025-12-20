@@ -9,43 +9,32 @@ public partial class BanManagement
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop JsInterop { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    
+    // JS Interop removed as we are using a native Load More button now.
+    
     private BanInfoRequest Request { get; set; } = new() { Count = 10, Offset = 0 };
     private List<BanInfo> Results { get; set; }
+    private bool HasSearched { get; set; }
     private bool HasMoreResults { get; set; } = true;
     private bool IsLoading { get; set; }
-    private ElementReference LoadMoreTrigger;
-    private DotNetObjectReference<BanManagement> _objRef;
-    private bool _observerSetup;
 
     protected override async Task OnInitializedAsync()
     {
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Results != null && HasMoreResults && !_observerSetup)
-        {
-            _objRef = DotNetObjectReference.Create(this);
-            await JsInterop.SetupInfiniteScroll(LoadMoreTrigger, _objRef);
-            _observerSetup = true;
-        }
-    }
-
     private async Task Search()
     {
+        HasSearched = true;
         Results = null; // Show loading spinner
         Request.Offset = 0;
         var result = await DataService.GetBansAsync(Request);
         Results = result.Results.ToList();
         HasMoreResults = Results.Count >= Request.Count;
-        _observerSetup = false; // Reset observer so it re-initializes for new list
         StateHasChanged();
     }
 
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (IsLoading || !HasMoreResults) return;
 
@@ -65,7 +54,6 @@ public partial class BanManagement
         if (result.RetrievedResultCount < Request.Count)
         {
             HasMoreResults = false;
-            await DisposeAsync(); // Cleanup if no more results
         }
 
         StateHasChanged();
@@ -73,13 +61,7 @@ public partial class BanManagement
 
     public async ValueTask DisposeAsync()
     {
-        if (_observerSetup)
-        {
-            await JsInterop.RemoveInfiniteScroll(LoadMoreTrigger);
-            _observerSetup = false;
-        }
-
-        _objRef?.Dispose();
+        // No more JS references to dispose
     }
 
     private int _unbanTargetId;

@@ -21,9 +21,9 @@
         <p class="text-slate-400">View and manage server penalties.</p>
     </div>
     
-    <div class="bg-slate-800 rounded-lg shadow-sm border border-slate-700/50 overflow-hidden ring-1 ring-slate-700/50">
+    <div class="bg-slate-800 rounded-lg shadow ring-1 ring-slate-700/50 overflow-hidden">
         <!-- Filters Header -->
-        <div class="p-4 border-b border-slate-700 bg-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="p-4 bg-slate-800/50 border-b border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
              <!-- Hide Automated Toggle -->
             <div class="flex items-center">
                 <label class="relative inline-flex items-center cursor-pointer">
@@ -73,7 +73,7 @@
                             <!-- Desktop Row -->
                             <tr class="hidden md:table-row hover:bg-slate-700/30 transition-colors group">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="/client/@penalty.OffenderId" class="text-sm font-medium hover:underline text-white nav-link-active:text-blue-400 level-color-@((int)penalty.OffenderLevel)">
+                                    <a href="/client/@penalty.OffenderId" class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
                                         <ColorCode Value="@penalty.OffenderName" />
                                     </a>
                                 </td>
@@ -86,7 +86,7 @@
                                     <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="/client/@penalty.PunisherId" class="text-sm hover:underline text-slate-300 level-color-@((int)penalty.PunisherLevel)">
+                                    <a href="/client/@penalty.PunisherId" class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
                                         <ColorCode Value="@penalty.PunisherName" />
                                     </a>
                                 </td>
@@ -107,7 +107,7 @@
                                 <td class="p-4 block">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="flex items-center space-x-2">
-                                             <a href="/client/@penalty.OffenderId" class="font-bold text-white hover:underline level-color-@((int)penalty.OffenderLevel)">
+                                             <a href="/client/@penalty.OffenderId" class="font-bold text-blue-400 hover:text-blue-300">
                                                 <ColorCode Value="@penalty.OffenderName" />
                                             </a>
                                         </div>
@@ -123,7 +123,7 @@
                                     <div class="flex justify-between items-center text-xs text-slate-400">
                                         <div class="flex items-center space-x-1">
                                             <span class="uppercase tracking-wide font-semibold text-slate-500">By</span>
-                                            <a href="/client/@penalty.PunisherId" class="hover:underline text-slate-300 level-color-@((int)penalty.PunisherLevel)">
+                                            <a href="/client/@penalty.PunisherId" class="text-blue-400 hover:text-blue-300">
                                                 <ColorCode Value="@penalty.PunisherName" />
                                             </a>
                                         </div>
@@ -148,16 +148,15 @@
     </div>
     
     <!-- Infinite scroll trigger element -->
-    <div id="loadMoreTrigger" @ref="_loadMoreTrigger" class="w-full text-center py-8">
+    <!-- Infinite scroll trigger element -->
+    <div id="loadMoreTrigger" class="w-full text-center py-8">
         @if (_isLoading && Penalties.Count > 0)
         {
             <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
         }
         else if (HasMoreResults)
         {
-            <button class="text-blue-500 hover:text-blue-400 transition-colors" title="Load More">
-                 <i class="ph ph-caret-down text-2xl animate-bounce"></i>
-            </button>
+            <div class="h-10"></div> <!-- Sentinel spacer -->
         }
         else if (Penalties.Count > 0)
         {
@@ -166,3 +165,6 @@
     </div>
 
 </div>
+
+@code {
+}

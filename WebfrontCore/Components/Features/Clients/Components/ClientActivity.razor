@@ -1,57 +1,65 @@
+@using IW4MAdmin.Plugins.Stats.Web.Dtos
+@using SharedLibraryCore.Dtos
+@using SharedLibraryCore
+@using WebfrontCore.Core.Auth
 
-<div class="pt-10 pl-15 pr-15 d-flex flex-wrap flex-column flex-md-row w-full w-auto-lg">
-    @if (GroupedClients.Count > 0)
-    {
-        <div class="flex-fill flex-lg-grow-0 w-full w-md-half">
-            @foreach (var chat in Model?.ChatHistory ?? [])
+<!-- Main Container: 2 Columns on Desktop, Stacked on Mobile -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 text-xs">
+    
+    <!-- Left Column: Chat & Events -->
+    <div class="space-y-0.5 font-mono overflow-hidden">
+        @if (Model?.ChatHistory?.Any() == true)
+        {
+             @foreach (var chat in Model.ChatHistory)
             {
                 var message = chat.IsHidden && (AppState.User == null /* || Check Auth */) ? chat.HiddenMessage : chat.Message;
                 var stateIcon = GetIconForState(chat.Message);
 
-                <div class="text-truncate">
-                    <i class="oi @stateIcon"></i>
-                    <span>
-                        <ColorCode Value="@chat.Name"/>
+                <div class="flex items-center space-x-2 h-5 truncate opacity-90 hover:opacity-100 transition-opacity">
+                    @if (!string.IsNullOrEmpty(stateIcon))
+                    {
+                        <!-- Connection/Event Icon -->
+                        <i class="ph-bold @stateIcon text-slate-500 w-4 text-center"></i>
+                    }
+                    
+                    <span class="font-bold text-slate-200">
+                         <ColorCode Value="@chat.Name"/>
                     </span>
+                    
                     @if (string.IsNullOrEmpty(stateIcon))
                     {
-                        <span class="text-truncate">
-                            &mdash;
-                            <span class="text-white-dm text-black-lm">
-                                <ColorCode Value="@(CapClientName(message, 48))"/>
-                            </span>
+                        <!-- Chat Message -->
+                        <span class="text-slate-600">&mdash;</span>
+                        <span class="truncate text-slate-400">
+                            <ColorCode Value="@(message.CapClientName(64))"/>
                         </span>
                     }
                 </div>
             }
-            <hr class="d-block d-md-none"/>
-        </div>
-    }
-
-    <div class="d-flex flex-row w-full w-md-half">
-        @foreach (var clientIndex in GroupedClients)
-        {
-            <div class="w-half">
-                @foreach (var client in clientIndex.Group)
-                {
-                    var levelColorClass = (AppState.User == null || client.Client.LevelInt == 0) ? "text-light-dm text-dark-lm" : $"level-color-{client.Client.LevelInt}";
-                    <div class="d-flex @(clientIndex.Index == 1 ? "justify-content-start flex-row-reverse" : "")">
-                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
-                            <a href="#" class="profile-action" aria-hidden="true" @onclick:preventDefault
-                               @onclick="@(() => ActionService.OpenAction("Kick", client.Client.ClientId, null, null))">
-                                <i class="oi oi-circle-x font-size-12 @levelColorClass"></i>
-                            </a>
-                        </AuthorizeView>
-                        <a href="/client/@client.Client.ClientId" class="@levelColorClass no-decoration text-truncate ml-5 mr-5">
-                            <ColorCode Value="@client.Client.Name"/>
-                        </a>
-                    </div>
-                }
-            </div>
         }
-        @if (GroupedClients.Count > 0)
+    </div>
+
+    <!-- Right Column: Player Grid (2 Columns) -->
+    <div class="grid grid-cols-2 gap-x-4 gap-y-0.5 content-start">
+        @if (Model?.Players != null)
         {
-            <br/>
+            @foreach (var client in Model.Players)
+            {
+                var levelColorClass = (AppState.User == null || client.LevelInt == 0) ? "text-slate-400" : $"level-color-{client.LevelInt}";
+                
+                <div class="flex items-center justify-between group/player hover:bg-slate-800/50 rounded px-1 h-5 transition-colors">
+                    <a href="/client/@client.ClientId" class="font-medium truncate @levelColorClass hover:underline decoration-slate-600 underline-offset-2">
+                         <ColorCode Value="@client.Name"/>
+                    </a>
+
+                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
+                        <button @onclick:preventDefault @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, null, null))"
+                           class="opacity-0 group-hover/player:opacity-100 p-0 text-red-500 hover:text-red-400 hover:bg-red-900/30 rounded transition-all ml-1" title="Kick">
+                            <i class="ph-bold ph-x-circle text-[10px]"></i>
+                        </button>
+                    </AuthorizeView>
+                </div>
+            }
         }
     </div>
 </div>

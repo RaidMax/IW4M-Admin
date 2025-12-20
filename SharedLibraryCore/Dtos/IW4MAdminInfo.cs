@@ -1,9 +1,7 @@
 ﻿using System;
 using Data.Models;
 
-namespace SharedLibraryCore.Dtos
-{
-    public class IW4MAdminInfo
+public class IW4MAdminInfo
     {
         public int TotalClientCount { get; set; }
         public int RecentClientCount { get; set; }
@@ -11,6 +9,7 @@ namespace SharedLibraryCore.Dtos
         public int TotalAvailableClientSlots { get; set; }
         public int MaxConcurrentClients { get; set; }
         public DateTime MaxConcurrentClientsTime { get; set; }
+        public int TotalServerCount { get; set; }
 
         /// <summary>
         ///     specifies the game name filter
@@ -27,4 +26,3 @@ namespace SharedLibraryCore.Dtos
         /// </summary>
         public string CommandPrefix { get; set; }
     }
-}

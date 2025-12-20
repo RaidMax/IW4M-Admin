@@ -15,12 +15,20 @@
 <div class="flex flex-col xl:flex-row h-full">
     <div class="flex-1 p-6 space-y-6 overflow-y-auto">
         <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-bold text-slate-100">@(AppState.Loc("WEBFRONT_SERVERS_TITLE"))</h2>
+            <div>
+                <h2 class="text-2xl font-bold text-slate-100">@(AppState.Loc("WEBFRONT_SERVERS_TITLE"))</h2>
+                @if (Model != null)
+                {
+                    <div class="text-sm text-slate-400 font-medium mt-1">
+                        @Model.TotalServerCount.ToString("#,##0") @(Model.TotalServerCount == 1 ? "Server" : "Servers") Monitored
+                    </div>
+                }
+            </div>
             @if (Model != null)
             {
                 @if (Model.Game.HasValue)
                 {
-                    <span class="px-3 py-1 rounded-full bg-slate-800 text-sm text-slate-400 border border-slate-700">@(AppState.Loc($"GAME_{Model.Game.Value}"))</span>
+                    <span class="px-3 py-1 rounded-full bg-slate-800 text-sm text-slate-400 border border-slate-700">@(AppState.Loc($"GAME_{Model.Game}"))</span>
                 }
                 else
                 {

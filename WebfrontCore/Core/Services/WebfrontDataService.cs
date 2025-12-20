@@ -275,7 +275,8 @@ public class WebfrontDataService : IWebfrontDataService
             Game = game,
             ActiveServerGames = _manager.GetServers().Select(server => (Reference.Game)server.GameName).Distinct()
                 .ToArray(),
-            CommandPrefix = _manager.GetApplicationSettings().Configuration().CommandPrefix
+            CommandPrefix = _manager.GetApplicationSettings().Configuration().CommandPrefix,
+            TotalServerCount = servers.Count
         };
     }
 

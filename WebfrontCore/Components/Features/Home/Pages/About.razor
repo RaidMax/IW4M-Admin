@@ -27,10 +27,7 @@ else
         <div class="mb-8">
             @if (AboutInfo.CommunityInformation?.EnableBanner == true)
             {
-                <div class="w-full h-64 md:h-80 overflow-hidden rounded-lg mb-8 shadow-lg ring-1 ring-slate-700/50">
-                    <img class="w-full h-full object-cover" src="images/community/banner.png"
-                         alt="@AboutInfo.CommunityInformation?.Name"/>
-                </div>
+               <!-- Banner Removed -->
             }
 
             @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Name))

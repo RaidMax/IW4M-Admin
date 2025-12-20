@@ -6,7 +6,7 @@
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"))
             </label>
             <input type="text" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                   class="block w-full rounded-md bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
                    id="clientName" 
                    placeholder="Unknown Soldier" 
                    @bind="Model.ClientName" />
@@ -27,7 +27,7 @@
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_IP"))
             </label>
             <input type="text" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                   class="block w-full rounded-md bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
                    id="clientIP" 
                    placeholder="1.1.1.1" 
                    @bind="Model.ClientIp" />
@@ -47,7 +47,7 @@
             GUID <span class="text-blue-500">&bull;</span> XUID <span class="text-blue-500">&bull;</span> NetworkID
         </label>
         <input type="text" 
-               class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+               class="block w-full rounded-md bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
                id="clientGuid" 
                placeholder="110000100000001" 
                @bind="Model.ClientGuid" />
@@ -59,7 +59,7 @@
             <label for="clientLevel" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_PERMISSION"))
             </label>
-            <select class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+            <select class="block w-full rounded-md bg-slate-900 border border-slate-700 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
                     id="clientLevel" 
                     @bind="Model.ClientLevel">
                 <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
@@ -73,7 +73,7 @@
             <label for="clientGameName" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"))
             </label>
-            <select class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+            <select class="block w-full rounded-md bg-slate-900 border border-slate-700 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
                     id="clientGameName" 
                     @bind="Model.GameName">
                 <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
@@ -93,7 +93,7 @@
             </label>
             <!-- [color-scheme:dark] ensures the native calendar popup is dark -->
             <input type="datetime-local" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 [color-scheme:dark]" 
+                   class="block w-full rounded-md bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 [color-scheme:dark]" 
                    id="clientConnected" 
                    @bind="Model.ClientConnected" />
         </div>

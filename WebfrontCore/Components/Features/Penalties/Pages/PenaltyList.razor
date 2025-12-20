@@ -73,12 +73,12 @@
                             <!-- Desktop Row -->
                             <tr class="hidden md:table-row hover:bg-slate-700/30 transition-colors group">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="/client/@penalty.OffenderId" class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                                    <a href="/client/@penalty.OffenderId" class="text-sm font-medium hover:text-blue-400 transition-colors @AppState.GetLevelColorClass(penalty.OffenderLevel)">
                                         <ColorCode Value="@penalty.OffenderName" />
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-700 text-slate-300 border border-slate-600 penalties-color-@penalty.PenaltyTypeText.ToLower()">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
                                         @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
                                     </span>
                                 </td>
@@ -86,18 +86,18 @@
                                     <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="/client/@penalty.PunisherId" class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                                    <a href="/client/@penalty.PunisherId" class="text-sm font-medium hover:text-blue-400 transition-colors @AppState.GetLevelColorClass(penalty.PunisherLevel)">
                                         <ColorCode Value="@penalty.PunisherName" />
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-slate-400">
                                     @if (penalty.Expired)
                                     {
-                                        <span class="text-slate-500">@penalty.TimePunishedString</span>
+                                        <span>@penalty.TimePunishedString</span>
                                     }
                                     else
                                     {
-                                        <span class="text-yellow-500 font-medium">@penalty.TimeRemaining</span>
+                                        <span>@penalty.TimeRemaining</span>
                                     }
                                 </td>
                             </tr>
@@ -107,11 +107,11 @@
                                 <td class="p-4 block">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="flex items-center space-x-2">
-                                             <a href="/client/@penalty.OffenderId" class="font-bold text-blue-400 hover:text-blue-300">
+                                             <a href="/client/@penalty.OffenderId" class="font-bold hover:text-blue-400 transition-colors @AppState.GetLevelColorClass(penalty.OffenderLevel)">
                                                 <ColorCode Value="@penalty.OffenderName" />
                                             </a>
                                         </div>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-700 text-slate-300 border border-slate-600 penalties-color-@penalty.PenaltyTypeText.ToLower()">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
                                             @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
                                         </span>
                                     </div>
@@ -123,7 +123,7 @@
                                     <div class="flex justify-between items-center text-xs text-slate-400">
                                         <div class="flex items-center space-x-1">
                                             <span class="uppercase tracking-wide font-semibold text-slate-500">By</span>
-                                            <a href="/client/@penalty.PunisherId" class="text-blue-400 hover:text-blue-300">
+                                            <a href="/client/@penalty.PunisherId" class="hover:text-blue-400 transition-colors @AppState.GetLevelColorClass(penalty.PunisherLevel)">
                                                 <ColorCode Value="@penalty.PunisherName" />
                                             </a>
                                         </div>

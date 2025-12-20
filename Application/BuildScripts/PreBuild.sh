@@ -10,14 +10,6 @@ if [ ! -d "$SolutionDir/WebfrontCore/wwwroot/lib/font" ]; then
     cd "$SolutionDir/WebfrontCore" || exit
     libman restore
     cd "$SolutionDir" || exit
-    cp -r "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/fonts" "$SolutionDir/WebfrontCore/wwwroot/font"
-fi
-
-if [ ! -f "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss" ]; then
-    echo load external resources
-    mkdir -p "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css"
-    curl -o "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss" https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss
-    sed -i 's#../fonts/#/font/#g' "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss"
 fi
 
 echo "checking for Excubo.WebCompiler..."
@@ -45,7 +37,6 @@ fi
 echo "compiling scss files"
 
 webcompiler -r "$SolutionDir/WebfrontCore/wwwroot/css/src" -o "$SolutionDir/WebfrontCore/wwwroot/css/" -m disable -z disable
-webcompiler "$SolutionDir/WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss" -o "$SolutionDir/WebfrontCore/wwwroot/css/" -m disable -z disable
 
 if [ ! -f "$SolutionDir/bundle/dotnet-bundle.dll" ]; then
     mkdir -p "$SolutionDir/bundle"

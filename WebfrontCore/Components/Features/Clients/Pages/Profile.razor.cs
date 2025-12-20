@@ -97,7 +97,7 @@ public partial class Profile
                 Reference = Client.ConnectProtocolUrl,
                 Tooltip = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TOOLTIP_JOIN")
                     .FormatExt(Client.CurrentServerName?.StripColors() ?? ""),
-                Icon = "oi-play-circle",
+                Icon = "ph-play-circle",
             });
         }
 
@@ -109,7 +109,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_LEVEL"),
                 IsButton = true,
                 Reference = "edit",
-                Icon = "oi-cog",
+                Icon = "ph-gear",
                 EntityId = Client.ClientId
             });
         }
@@ -122,7 +122,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TAG"),
                 IsButton = true,
                 Reference = "SetClientTag",
-                Icon = "oi-tag",
+                Icon = "ph-tag",
                 EntityId = Client.ClientId
             });
         }
@@ -135,7 +135,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_NOTE"),
                 IsButton = true,
                 Reference = "AddClientNote",
-                Icon = "oi-clipboard",
+                Icon = "ph-clipboard-text",
                 EntityId = Client.ClientId
             });
         }
@@ -148,7 +148,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MESSAGE"),
                 IsButton = true,
                 Reference = "OfflineMessage",
-                Icon = "oi oi-envelope-closed",
+                Icon = "ph-envelope-simple",
                 EntityId = Client.ClientId
             });
         }
@@ -160,7 +160,7 @@ public partial class Profile
             IsButton = true,
             IsLink = true,
             Reference = $"/client/{Id}/stats",
-            Icon = "oi-graph",
+            Icon = "ph-chart-line",
         });
 
         // Flag/Unflag (if authorized + not perm banned)
@@ -173,7 +173,7 @@ public partial class Profile
                     : AppState.Loc("WEBFRONT_ACTION_FLAG_NAME"),
                 IsButton = true,
                 Reference = isFlagged ? "unflag" : "flag",
-                Icon = "oi-flag",
+                Icon = "ph-flag",
                 EntityId = Client.ClientId
             });
         }
@@ -186,7 +186,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_ACTION_KICK_NAME"),
                 IsButton = true,
                 Reference = "kick",
-                Icon = "oi-circle-x",
+                Icon = "ph-x-circle",
                 EntityId = Client.ClientId
             });
         }
@@ -199,7 +199,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_ACTION_BAN_NAME"),
                 IsButton = true,
                 Reference = "ban",
-                Icon = "oi-lock-unlocked",
+                Icon = "ph-lock",
                 EntityId = Client.ClientId
             });
         }
@@ -212,7 +212,7 @@ public partial class Profile
                 Title = AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME"),
                 IsButton = true,
                 Reference = "unban",
-                Icon = "oi-lock-locked",
+                Icon = "ph-lock-open",
                 EntityId = Client.ClientId
             });
         }

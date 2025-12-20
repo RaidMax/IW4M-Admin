@@ -53,7 +53,7 @@
                                     <a href="@data.Data" class="no-decoration">@data.Value</a>
                                     break;
                                 case ColumnType.Icon:
-                                    <span class="oi @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
+                                    <span class="ph @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
                                     break;
                                 case ColumnType.Button:
                                     <div class="btn profile-action" data-action="@data.Data" data-action-id="@data.Id">@data.Value</div>
@@ -91,7 +91,7 @@
                             }
                             @if (data.Type == ColumnType.Icon)
                             {
-                                <span class="oi @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
+                                <span class="ph @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
                             }
                             <!-- Template handling for mobile omitted for brevity, adding if needed -->
                         </div>
@@ -107,7 +107,7 @@
     {
         <!-- Slide Logic needs JS or Blazor state (Expanded/ collapsed) -->
         <button class="btn btn-block table-slide" @onclick="@ToggleExpand">
-            <span class="oi @(IsExpanded ? "oi-chevron-top" : "oi-chevron-bottom")"></span>
+            <span class="ph @(IsExpanded ? "ph-caret-up" : "ph-caret-down")"></span>
         </button>
     }
 }

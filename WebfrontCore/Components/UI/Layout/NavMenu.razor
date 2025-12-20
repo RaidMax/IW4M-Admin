@@ -23,7 +23,7 @@
             <!-- penalties -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
                 <NavLink href="penalties" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph ph-lock-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-lock-simple mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_PENALTIES"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -144,7 +144,7 @@
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")"
                                Context="consoleContext">
                     <NavLink href="console" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                        <i class="ph ph-terminal-window mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph ph-terminal mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
                     </NavLink>
                 </AuthorizeView>

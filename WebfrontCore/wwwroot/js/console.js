@@ -10,12 +10,12 @@
     $.get('/Console/Execute', { serverId: serverId, command: command })
         .done(function (response) {
             $('#console_command_response pre').html('');
-            
+
             hideLoader();
             response.map(r => r.response).forEach(item => {
                 $('#console_command_response').append(`<div>${escapeHtml(item)}</div>`);
             })
-            
+
             $('#console_command_response').append('<hr/>')
             $('#console_command_value').val("");
         })
@@ -23,7 +23,7 @@
             $('#console_command_response pre').html('');
             errorLoader();
             hideLoader();
-            
+
             if (response.status < 500) {
                 response.responseJSON.map(r => r.response).forEach(item => {
                     $('#console_command_response').append(`<div class="text-danger">${escapeHtml(item)}</div>`);

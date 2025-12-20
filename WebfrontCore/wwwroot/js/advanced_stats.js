@@ -32,7 +32,7 @@ $(document).ready(function () {
         $(this).attr('data-title', '');
         $(this).attr('data-toggle', '');
 
-        $(this).children('span').toggleClass('oi-chevron-top oi-chevron-bottom');
+        $(this).children('span').toggleClass('ph-caret-up ph-caret-down');
     });
 
     // If legacy page loads with data embedded

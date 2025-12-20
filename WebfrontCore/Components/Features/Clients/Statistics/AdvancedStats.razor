@@ -5,319 +5,359 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_ADV_STATS_TITLE") | IW4MAdmin</PageTitle>
 
-@if (Stats != null)
-{
-     <HeadContent>
-        <meta property="og:title" content="@Stats.ClientName.StripColors() - @AppState.Loc("WEBFRONT_ADV_STATS_TITLE")" />
-        <meta property="og:description" content="@AppState.Loc("WEBFRONT_ADV_STATS_HITS"): @Stats.Aggregate.HitCount &mdash; @AppState.Loc("WEBFRONT_ADV_STATS_KILLS"): @Stats.Aggregate.KillCount &mdash; @AppState.Loc("WEBFRONT_ADV_STATS_DEATHS"): @Stats.Aggregate.DeathCount" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="@Nav.Uri" />
-         @if (Stats.ZScore != null)
-        {
-            <meta property="og:image" content="@($"{Nav.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(Stats.ZScore)}.png")" />
-        }
-        <meta name="theme-color" content="#007bff">
-    </HeadContent>
-}
-
-@if (Stats == null)
-{
-    <div class="text-center p-20">
-        <span class="oi oi-loop-circular rotating font-size-24 text-primary"></span>
-    </div>
-}
-else
-{
-    var config = DefaultConfig.GameStrings;
-    // Helper Variables and logic ported from View
-    var weapons = Stats.ByWeapon
-        .Where(hit => hit.DamageInflicted > 0 || hit is { DamageInflicted: 0, HitCount: > 0 })
-        .GroupBy(hit => new { hit.WeaponId })
-        .Select(group =>
-        {
-            var withoutAttachments = group.FirstOrDefault(hit => hit.WeaponAttachmentComboId == null);
-            var mostUsedAttachment = group.Except([withoutAttachments])
-                .OrderByDescending(g => g.DamageInflicted)
-                .GroupBy(g => g.WeaponAttachmentComboId)
-                .FirstOrDefault()
-                ?.FirstOrDefault();
-
-            if (withoutAttachments == null || mostUsedAttachment == null)
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    @if (Stats != null)
+    {
+         <HeadContent>
+            <meta property="og:title" content="@Stats.ClientName.StripColors() - @AppState.Loc("WEBFRONT_ADV_STATS_TITLE")" />
+            <meta property="og:description" content="@AppState.Loc("WEBFRONT_ADV_STATS_HITS"): @Stats.Aggregate.HitCount &mdash; @AppState.Loc("WEBFRONT_ADV_STATS_KILLS"): @Stats.Aggregate.KillCount &mdash; @AppState.Loc("WEBFRONT_ADV_STATS_DEATHS"): @Stats.Aggregate.DeathCount" />
+            <meta property="og:type" content="website" />
+            <meta property="og:url" content="@Nav.Uri" />
+             @if (Stats.ZScore != null)
             {
-                return withoutAttachments;
+                <meta property="og:image" content="@($"{Nav.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(Stats.ZScore)}.png")" />
             }
-
-            withoutAttachments.WeaponAttachmentComboId = mostUsedAttachment.WeaponAttachmentComboId;
-            withoutAttachments.WeaponAttachmentCombo = mostUsedAttachment.WeaponAttachmentCombo;
-
-            return withoutAttachments;
-        })
-        .Where(hit => hit != null)
-        .OrderByDescending(hit => hit.KillCount)
-        .ToList();
-
-    var allPerServer = Stats.All.Where(hit => hit.ServerId == Stats.ServerId).ToList();
-    var aggregate = Stats.ServerId == null
-        ? Stats.Aggregate
-        : allPerServer.Where(hit => hit.WeaponId == null)
-            .Where(hit => hit.HitLocation == null)
-            .Where(hit => hit.ServerId == Stats.ServerId)
-            .Where(hit => hit.WeaponAttachmentComboId == null)
-            .FirstOrDefault(hit => hit.MeansOfDeathId == null);
-
-    var filteredHitLocations = Stats.ByHitLocation
-        .Where(hit => hit.HitCount > 0)
-        .Where(hit => hit.HitLocation.Name != "none")
-        .Where(hit => hit.HitLocation.Name != "neck")
-        .Where(hit => hit.ServerId == Stats.ServerId)
-        .OrderByDescending(hit => hit.HitCount)
-        .ThenBy(hit => hit.HitLocationId)
-        .ToList();
-
-    var uniqueWeapons = allPerServer.Any()
-        ? Stats.ByWeapon.Where(hit => hit.ServerId == Stats.ServerId)
-            .Where(weapon => weapon.DamageInflicted > 0)
-            .GroupBy(weapon => weapon.WeaponId)
-            .Count()
-        : (int?)null;
-
-    var activeTime = weapons.Any()
-        ? TimeSpan.FromSeconds(weapons.Sum(weapon => weapon.UsageSeconds ?? 0))
-        : (TimeSpan?)null;
-
-    var kdr = aggregate == null
-        ? null
-        : Math.Round(aggregate.KillCount / (float)aggregate.DeathCount, 2).ToString(SharedLibraryCore.Utilities.CurrentLocalization.Culture);
-
-    var serverLegacyStat = Stats.LegacyStats.FirstOrDefault(stat => stat.ServerId == Stats.ServerId);
-
-    var performance = Stats.Performance;
-    var skill = Stats.ServerId != null ? serverLegacyStat?.Skill.ToNumericalString() : Stats.LegacyStats.WeightValueByPlaytime("Skill", 0).ToNumericalString();
-    var elo = Stats.ServerId != null ? serverLegacyStat?.EloRating.ToNumericalString() : Stats.LegacyStats.WeightValueByPlaytime("EloRating", 0).ToNumericalString();
-    var spm = Stats.ServerId != null ? serverLegacyStat?.SPM.ToNumericalString() : Stats.LegacyStats.WeightValueByPlaytime("SPM", 0).ToNumericalString();
-
-    // Performance History
-    var performanceHistory = Stats.Ratings
-        .OrderBy(rating => rating.CreatedDateTime)
-        .Select(rating => new PerformanceHistory { Performance = rating.PerformanceMetric, OccurredAt = rating.CreatedDateTime });
-
-    var historyList = performanceHistory.ToList(); // Convert to list to append
-    if (performance != null && performance != Stats.Ratings.FirstOrDefault()?.PerformanceMetric)
-    {
-        historyList.Add(new PerformanceHistory { Performance = performance.Value, OccurredAt = Stats.Ratings.FirstOrDefault()?.CreatedDateTime ?? DateTime.UtcNow });
+            <meta name="theme-color" content="#1e293b">
+        </HeadContent>
     }
-
-    var score = allPerServer.Any() ? allPerServer.Sum(stat => stat.Score) : (long?)null;
-
-    // keys
-    const string headshotKey = "MOD_HEAD_SHOT";
-    const string headshotKey2 = "headshot";
-    const string meleeKey = "MOD_MELEE";
-    var suicideKeys = new[] { "MOD_SUICIDE", "MOD_FALLING" };
-
-    var headShots = allPerServer.Any()
-        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey || hit.HitLocation?.Name == headshotKey2).Sum(hit => hit.HitCount)
-        : (int?)null;
-
-    var meleeKills = allPerServer.Any()
-        ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == meleeKey).Sum(hit => hit.KillCount)
-        : (int?)null;
-
-    var suicides = allPerServer.Any()
-        ? allPerServer.Where(hit => suicideKeys.Contains(hit.MeansOfDeath?.Name ?? "")).Sum(hit => hit.KillCount)
-        : (int?)null;
-
-    var hitLocationProjection = filteredHitLocations.Select(loc => new
+    
+    @if (Stats == null)
     {
-        name = loc.HitLocation.Name,
-        percentage = (loc.HitLocation.Name == "head"
-            ? (filteredHitLocations.FirstOrDefault(c => c.HitLocation.Name == "neck")?.HitCount ?? 0) + loc.HitCount
-            : loc.HitCount) / (float)(filteredHitLocations.Sum(h => h.HitCount) > 0 ? filteredHitLocations.Sum(h => h.HitCount) : 1)
-    }).ToList();
-
-    var maxPercentage = hitLocationProjection.Any() ? hitLocationProjection.Max(p => p.percentage) : 0;
-
-    // Prepare data for JS
-    HitLocationData = hitLocationProjection;
-    MaxPercentage = maxPercentage;
-    HistoryData = historyList;
-
-    <div class="content row mt-20">
-        <!-- main content -->
-        <div class="col-12 col-lg-9 mt-0">
-            <h2 class="content-title mb-0">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
-            <span class="text-muted">
-                <ColorCode
-                    Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
-            </span>
-
-            <!-- top card -->
-            <div class="card p-20 m-0 mt-15 mb-15">
-                <div class="align-self-center d-flex flex-column flex-lg-row flex-fill mb-15">
-                    <!-- rank icon via generic helper? Model.ZScore.RankIconIndexForZScore() extension -->
-                    <!-- Assuming IW4MAdmin.Plugins.Stats.Helpers is available/used -->
-                    <!-- I'll use a hardcoded helper or try to use the extension if namespace is imported -->
-                    <!-- Namespace: IW4MAdmin.Plugins.Stats.Helpers -->
-
-                    <img class="img-fluid align-self-center w-75" id="rank_icon"
-                         src="/images/stats/ranks/rank_@(GetRankIconIndex(Stats.ZScore)).png" alt="@performance"/>
-
-                    <div class="d-flex flex-column align-self-center m-10 text-center text-lg-left" id="client_stats_summary">
-                        <div class="font-size-20 mb-0 font-weight-bold">
-                            <a href="/client/@Stats.ClientId" class="no-decoration">
-                                <ColorCode Value="@Stats.ClientName"/>
-                            </a>
-                        </div>
-                        @if (Stats.Level == EFClient.Permission.Banned)
-                        {
-                            <div class="h5 mb-0 text-danger">@AppState.Loc("GLOBAL_PERMISSION_BANNED")</div>
-                        }
-                        else if (Stats.ZScore != null)
-                        {
-                            if (Stats.Ranking > 0)
-                            {
-                                <div
-                                    class="h5 mb-0">@(AppState.Loc("WEBFRONT_ADV_STATS_RANKED_V2").FormatExt(Stats.Ranking?.ToString("#,##0"), Stats.TotalRankedClients.ToString("#,##0")))</div>
-                            }
-                            else
-                            {
-                                <div class="h5 mb-0">@AppState.Loc("WEBFRONT_ADV_STATS_EXPIRED")</div>
-                            }
-
-                            if (Stats.ServerId != null)
-                            {
-                                <div
-                                    class="h5 mb-0">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary\">{performance.ToNumericalString()}</span>"))</div>
-                            }
-                            else
-                            {
-                                <div
-                                    class="h5 mb-0">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary\">{Stats.Rating.ToNumericalString()}</span>"))</div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="h5 mb-0">@AppState.Loc("WEBFRONT_STATS_INDEX_UNRANKED")</div>
-                        }
-                    </div>
-
-                    @if (historyList.Count > 5)
-                    {
-                        <div class="w-full w-lg-half m-auto ml-lg-auto" id="client_performance_history_container">
-                            <canvas id="client_performance_history"></canvas>
-                        </div>
-                    }
-                </div>
-                <hr class="m-10"/>
-
-                <!-- Stat Cards Grid -->
-                <div class="d-flex flex-row flex-wrap rounded">
-                    @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KILLS").Titleize(), aggregate?.KillCount.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_DEATHS").Titleize(), aggregate?.DeathCount.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KDR").Titleize(), kdr)
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_SCORE").Titleize(), score?.ToString("N0") ?? "-")
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE"), Stats.ZScore.ToNumericalString(2))
-                    @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_SKILL").ToLower().Titleize(), skill)
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_ELO").Titleize(), elo)
-                    @RenderStatCard(AppState.Loc("PLUGINS_STATS_META_SPM").Titleize(), spm)
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_DAMAGE"), aggregate?.DamageInflicted.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_SUICIDES"), suicides.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_HEADSHOTS"), headShots.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_MELEES"), meleeKills.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_FAV_WEAP"), GetWeaponNameForHit(weapons.FirstOrDefault(), config))
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_FAV_ATTACHMENTS"), GetWeaponAttachmentName(weapons.FirstOrDefault()?.WeaponAttachmentCombo, config))
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_WEAPONS_USED"), uniqueWeapons.ToNumericalString())
-                    @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"), activeTime?.HumanizeForCurrentCulture())
-                </div>
-            </div>
-
-            <div class="d-flex flex-wrap flex-column-reverse flex-xl-row">
-                <!-- Hit Locations -->
-                <div class="mr-0 mr-xl-20 flex-fill flex-xl-grow-1">
-                    <h4 class="content-title mb-15 mt-15">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h4>
-                    <table class="table">
-                        <thead>
-                        <tr class="bg-primary text-light">
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_LOCATION")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_PERCENTAGE")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @{
-                            var totalHits = filteredHitLocations.Sum(hit => hit.HitCount);
-                        }
-                        @foreach (var hit in filteredHitLocations.Take(5))
-                        {
-                            <tr class="bg-dark-dm bg-light-lm">
-                                <td>@config.GetStringForGame(hit.HitLocation.Name, hit.HitLocation.Game)</td>
-                                <td>@hit.HitCount</td>
-                                <td>@(Math.Round((hit.HitCount / (float)(totalHits > 0 ? totalHits : 1)) * 100.0).ToString("N0"))%</td>
-                                <td>@hit.DamageInflicted.ToNumericalString()</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                    <div class="h-250 p-15 card m-0 d-flex justify-content-center rounded-bottom" id="hitlocation_container">
-                        <canvas id="hitlocation_model"></canvas>
-                    </div>
-                </div>
-
-                <!-- Weapons Used -->
-                <div class="flex-fill flex-xl-grow-1">
-                    <h4 class="content-title mb-15 mt-15">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h4>
-                    <table class="table">
-                        <thead>
-                        <tr class="bg-primary text-light">
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_WEAPON")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_FAV_ATTACHMENTS")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_KILLS")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
-                            <th>@AppState.Loc("WEBFRONT_ADV_STATS_USAGE")</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var weapon in weapons.Take(10))
-                        {
-                            <tr class="bg-dark-dm bg-light-lm">
-                                <td>@GetWeaponNameForHit(weapon, config)</td>
-                                <td>@(GetWeaponAttachmentName(weapon.WeaponAttachmentCombo, config) ?? "--")</td>
-                                <td>@weapon.KillCount.ToNumericalString()</td>
-                                <td>@weapon.HitCount.ToNumericalString()</td>
-                                <td>@weapon.DamageInflicted.ToNumericalString()</td>
-                                <td>@TimeSpan.FromSeconds(weapon.UsageSeconds ?? 0).HumanizeForCurrentCulture(minUnit: TimeUnit.Second)</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                </div>
+         <div class="flex justify-center p-20">
+            <div class="relative">
+                <div class="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
+                <i class="ph ph-spinner animate-spin text-5xl text-blue-400 relative z-10"></i>
             </div>
         </div>
+    }
+    else
+    {
+        var config = DefaultConfig.GameStrings;
+        // Helper Variables
+        var weapons = Stats.ByWeapon
+            .Where(hit => hit.DamageInflicted > 0 || hit is { DamageInflicted: 0, HitCount: > 0 })
+            .GroupBy(hit => new { hit.WeaponId })
+            .Select(group =>
+            {
+                var withoutAttachments = group.FirstOrDefault(hit => hit.WeaponAttachmentComboId == null);
+                var mostUsedAttachment = group.Except([withoutAttachments])
+                    .OrderByDescending(g => g.DamageInflicted)
+                    .GroupBy(g => g.WeaponAttachmentComboId)
+                    .FirstOrDefault()
+                    ?.FirstOrDefault();
+    
+                if (withoutAttachments == null || mostUsedAttachment == null)
+                {
+                    return withoutAttachments;
+                }
+    
+                withoutAttachments.WeaponAttachmentComboId = mostUsedAttachment.WeaponAttachmentComboId;
+                withoutAttachments.WeaponAttachmentCombo = mostUsedAttachment.WeaponAttachmentCombo;
+    
+                return withoutAttachments;
+            })
+            .Where(hit => hit != null)
+            .OrderByDescending(hit => hit.KillCount)
+            .ToList();
+    
+        var allPerServer = Stats.All.Where(hit => hit.ServerId == Stats.ServerId).ToList();
+        var aggregate = Stats.ServerId == null
+            ? Stats.Aggregate
+            : allPerServer.Where(hit => hit.WeaponId == null)
+                .Where(hit => hit.HitLocation == null)
+                .Where(hit => hit.ServerId == Stats.ServerId)
+                .Where(hit => hit.WeaponAttachmentComboId == null)
+                .FirstOrDefault(hit => hit.MeansOfDeathId == null);
+    
+        var filteredHitLocations = Stats.ByHitLocation
+            .Where(hit => hit.HitCount > 0)
+            .Where(hit => hit.HitLocation.Name != "none")
+            .Where(hit => hit.HitLocation.Name != "neck")
+            .Where(hit => hit.ServerId == Stats.ServerId)
+            .OrderByDescending(hit => hit.HitCount)
+            .ThenBy(hit => hit.HitLocationId)
+            .ToList();
+    
+        var uniqueWeapons = allPerServer.Any()
+            ? Stats.ByWeapon.Where(hit => hit.ServerId == Stats.ServerId)
+                .Where(weapon => weapon.DamageInflicted > 0)
+                .GroupBy(weapon => weapon.WeaponId)
+                .Count()
+            : (int?)null;
+    
+        var activeTime = weapons.Any()
+            ? TimeSpan.FromSeconds(weapons.Sum(weapon => weapon.UsageSeconds ?? 0))
+            : (TimeSpan?)null;
+    
+        var kdr = aggregate == null
+            ? null
+            : Math.Round(aggregate.KillCount / (float)aggregate.DeathCount, 2).ToString(SharedLibraryCore.Utilities.CurrentLocalization.Culture);
+    
+         var serverLegacyStat = Stats.LegacyStats.FirstOrDefault(stat => stat.ServerId == Stats.ServerId);
+    
+        var performance = Stats.Performance;
+        var skill = Stats.ServerId != null ? serverLegacyStat?.Skill.ToNumericalString() : Stats.LegacyStats.WeightValueByPlaytime("Skill", 0).ToNumericalString();
+        var elo = Stats.ServerId != null ? serverLegacyStat?.EloRating.ToNumericalString() : Stats.LegacyStats.WeightValueByPlaytime("EloRating", 0).ToNumericalString();
+        var spm = Stats.ServerId != null ? serverLegacyStat?.SPM.ToNumericalString() : Stats.LegacyStats.WeightValueByPlaytime("SPM", 0).ToNumericalString();
+    
+        // Performance History
+        var performanceHistory = Stats.Ratings
+            .OrderBy(rating => rating.CreatedDateTime)
+            .Select(rating => new PerformanceHistory { Performance = rating.PerformanceMetric, OccurredAt = rating.CreatedDateTime });
+    
+        var historyList = performanceHistory.ToList();
+        if (performance != null && performance != Stats.Ratings.FirstOrDefault()?.PerformanceMetric)
+        {
+            historyList.Add(new PerformanceHistory { Performance = performance.Value, OccurredAt = Stats.Ratings.FirstOrDefault()?.CreatedDateTime ?? DateTime.UtcNow });
+        }
+    
+        var score = allPerServer.Any() ? allPerServer.Sum(stat => stat.Score) : (long?)null;
+    
+        // keys
+        const string headshotKey = "MOD_HEAD_SHOT";
+        const string headshotKey2 = "headshot";
+        const string meleeKey = "MOD_MELEE";
+        var suicideKeys = new[] { "MOD_SUICIDE", "MOD_FALLING" };
+    
+        var headShots = allPerServer.Any()
+            ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == headshotKey || hit.HitLocation?.Name == headshotKey2).Sum(hit => hit.HitCount)
+            : (int?)null;
+    
+        var meleeKills = allPerServer.Any()
+            ? allPerServer.Where(hit => hit.MeansOfDeath?.Name == meleeKey).Sum(hit => hit.KillCount)
+            : (int?)null;
+    
+        var suicides = allPerServer.Any()
+            ? allPerServer.Where(hit => suicideKeys.Contains(hit.MeansOfDeath?.Name ?? "")).Sum(hit => hit.KillCount)
+            : (int?)null;
+    
+        var hitLocationProjection = filteredHitLocations.Select(loc => new
+        {
+            name = loc.HitLocation.Name,
+            percentage = (loc.HitLocation.Name == "head"
+                ? (filteredHitLocations.FirstOrDefault(c => c.HitLocation.Name == "neck")?.HitCount ?? 0) + loc.HitCount
+                : loc.HitCount) / (float)(filteredHitLocations.Sum(h => h.HitCount) > 0 ? filteredHitLocations.Sum(h => h.HitCount) : 1)
+        }).ToList();
+    
+        var maxPercentage = hitLocationProjection.Any() ? hitLocationProjection.Max(p => p.percentage) : 0;
+    
+        // Prepare data for JS
+        HitLocationData = hitLocationProjection;
+        MaxPercentage = maxPercentage;
+        HistoryData = historyList;
+        
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-3 space-y-8">
+                
+                <!-- Header -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h2 class="text-3xl font-bold text-slate-100">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
+                    <span class="px-4 py-2 rounded-lg bg-slate-800/50 text-slate-400 border border-slate-700/50 backdrop-blur-sm">
+                        <ColorCode Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
+                    </span>
+                 </div>
 
-        <!-- side menu -->
-        <div class="col-12 col-lg-3">
-            <SideContextMenu Model="MenuItems"/>
+                 <!-- Hero Panel -->
+                 <div class="glass-panel border-l-4 border-l-indigo-500 relative overflow-hidden group">
+                     <div class="absolute top-0 right-0 p-32 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+                     <div class="p-8 flex flex-col items-center xl:flex-row gap-12 relative z-10">
+                         
+                         <!-- Rank & User Info -->
+                         <div class="flex flex-col md:flex-row items-center gap-8 shrink-0">
+                             <!-- Rank Icon with Glow -->
+                             <div class="relative">
+                                 <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-white/20 rounded-full blur-xl animate-pulse"></div>
+                                 <img class="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl relative z-10 filter" id="rank_icon"
+                                      src="/images/stats/ranks/rank_@(GetRankIconIndex(Stats.ZScore)).png" alt="@performance"/>
+                             </div>
+
+                             <div class="text-center md:text-left space-y-2">
+                                 <a href="/client/@Stats.ClientId" class="text-3xl md:text-5xl font-black text-slate-100 hover:text-white transition-colors tracking-tight">
+                                     <ColorCode Value="@Stats.ClientName"/>
+                                 </a>
+                                 
+                                 <div class="flex flex-col gap-1">
+                                     @if (Stats.Level == EFClient.Permission.Banned)
+                                     {
+                                         <span class="text-rose-500 text-lg font-bold flex items-center gap-2 justify-center md:justify-start">
+                                             <i class="ph ph-prohibit"></i> @AppState.Loc("GLOBAL_PERMISSION_BANNED")
+                                         </span>
+                                     }
+                                     else if (Stats.ZScore != null)
+                                     {
+                                         if (Stats.Ranking > 0)
+                                         {
+                                              <span class="text-slate-400 text-lg">
+                                                  @(AppState.Loc("WEBFRONT_ADV_STATS_RANKED_V2").FormatExt(Stats.Ranking?.ToString("#,##0"), Stats.TotalRankedClients.ToString("#,##0")))
+                                              </span>
+                                         }
+                                         else
+                                         {
+                                              <span class="text-amber-500/80 font-medium">@AppState.Loc("WEBFRONT_ADV_STATS_EXPIRED")</span>
+                                         }
+ 
+                                         <div class="flex items-center gap-2 justify-center md:justify-start mt-1">
+                                              @if (Stats.ServerId != null)
+                                             {
+                                                 <span class="text-slate-300">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-indigo-400 font-bold font-mono text-xl\">{performance.ToNumericalString()}</span>"))</span>
+                                             }
+                                             else
+                                             {
+                                                 <span class="text-slate-300">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-indigo-400 font-bold font-mono text-xl\">{Stats.Rating.ToNumericalString()}</span>"))</span>
+                                             }
+                                         </div>
+                                     }
+                                     else
+                                     {
+                                         <span class="text-slate-500 italic">@AppState.Loc("WEBFRONT_STATS_INDEX_UNRANKED")</span>
+                                     }
+                                 </div>
+                             </div>
+                         </div>
+ 
+                         <!-- Performance Graph Area -->
+                        <div class="w-full flex-grow relative h-48 xl:h-40" id="client_performance_history_container">
+                             @if (historyList.Count > 5)
+                             {
+                                 <canvas id="client_performance_history" class="w-full h-full"></canvas>
+                             }
+                             else
+                             {
+                                 <div class="absolute inset-0 flex items-center justify-center text-slate-600 border border-dashed border-slate-700/50 rounded-xl">
+                                     <span>Not enough data for graph</span>
+                                 </div>
+                             }
+                         </div>
+                     </div>
+                 </div>
+                 
+                 <!-- Stat Cards Grid -->
+                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KILLS").Titleize(), aggregate?.KillCount.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_DEATHS").Titleize(), aggregate?.DeathCount.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KDR").Titleize(), kdr, kdr != null && double.TryParse(kdr, out var k) && k >= 2.0 ? "text-emerald-400" : null)
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_SCORE").Titleize(), score?.ToString("N0") ?? "-")
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE"), Stats.ZScore.ToNumericalString(2))
+                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_SKILL").ToLower().Titleize(), skill)
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_ELO").Titleize(), elo)
+                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_META_SPM").Titleize(), spm)
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_DAMAGE"), aggregate?.DamageInflicted.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_SUICIDES"), suicides.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_HEADSHOTS"), headShots.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_MELEES"), meleeKills.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_FAV_WEAP"), GetWeaponNameForHit(weapons.FirstOrDefault(), config))
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_FAV_ATTACHMENTS"), GetWeaponAttachmentName(weapons.FirstOrDefault()?.WeaponAttachmentCombo, config))
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_WEAPONS_USED"), uniqueWeapons.ToNumericalString())
+                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"), activeTime?.HumanizeForCurrentCulture())
+                 </div>
+                 
+                 <!-- Bottom Section: Models & Tables -->
+                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                     <!-- Hit Locations -->
+                     <div class="glass-panel rounded-xl overflow-hidden flex flex-col">
+                         <div class="p-6 border-b border-white/5 bg-slate-800/50">
+                             <h4 class="text-lg font-bold text-slate-200">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h4>
+                         </div>
+                         
+                         <div class="p-0 overflow-x-auto">
+                             <table class="w-full text-left text-sm text-slate-400">
+                                 <thead class="bg-slate-900/50 text-xs uppercase font-medium text-slate-500">
+                                     <tr>
+                                         <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_LOCATION")</th>
+                                         <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
+                                         <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_PERCENTAGE")</th>
+                                         <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody class="divide-y divide-slate-800/50">
+                                     @{ var totalHits = filteredHitLocations.Sum(hit => hit.HitCount); }
+                                     @foreach (var hit in filteredHitLocations.Take(5))
+                                     {
+                                         <tr class="hover:bg-slate-700/30 transition-colors">
+                                             <td class="px-6 py-3 font-medium text-slate-300">@config.GetStringForGame(hit.HitLocation.Name, hit.HitLocation.Game)</td>
+                                             <td class="px-6 py-3 font-mono">@hit.HitCount</td>
+                                             <td class="px-6 py-3">
+                                                 <div class="flex items-center gap-2">
+                                                     <div class="w-12 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                                         <div class="bg-indigo-500 h-full rounded-full" style="width: @(Math.Round((hit.HitCount / (float)(totalHits > 0 ? totalHits : 1)) * 100.0))%"></div>
+                                                     </div>
+                                                     <span class="text-xs">@(Math.Round((hit.HitCount / (float)(totalHits > 0 ? totalHits : 1)) * 100.0).ToString("N0"))%</span>
+                                                 </div>
+                                             </td>
+                                             <td class="px-6 py-3 text-right font-mono text-slate-300">@hit.DamageInflicted.ToNumericalString()</td>
+                                         </tr>
+                                     }
+                                 </tbody>
+                             </table>
+                         </div>
+                         
+                         <!-- Hit Location Model Canvas -->
+                         <div class="relative h-64 bg-gradient-to-t from-slate-900/50 to-transparent flex items-center justify-center p-4" id="hitlocation_container">
+                             <canvas id="hitlocation_model" class="w-full h-full object-contain"></canvas>
+                         </div>
+                     </div>
+ 
+                     <!-- Weapons Used -->
+                     <div class="glass-panel rounded-xl overflow-hidden flex flex-col h-full">
+                         <div class="p-6 border-b border-white/5 bg-slate-800/50">
+                             <h4 class="text-lg font-bold text-slate-200">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h4>
+                         </div>
+                         
+                         <div class="overflow-x-auto flex-grow">
+                             <table class="w-full text-left text-sm text-slate-400">
+                                 <thead class="bg-slate-900/50 text-xs uppercase font-medium text-slate-500">
+                                     <tr>
+                                         <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_WEAPON")</th>
+                                         <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_KILLS")</th>
+                                         <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
+                                         <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody class="divide-y divide-slate-800/50">
+                                     @foreach (var weapon in weapons.Take(10))
+                                     {
+                                         <tr class="hover:bg-slate-700/30 transition-colors">
+                                             <td class="px-6 py-3">
+                                                 <div class="flex flex-col">
+                                                     <span class="font-medium text-slate-200">@GetWeaponNameForHit(weapon, config)</span>
+                                                     <span class="text-xs text-slate-500">@(GetWeaponAttachmentName(weapon.WeaponAttachmentCombo, config) ?? "--")</span>
+                                                 </div>
+                                             </td>
+                                             <td class="px-6 py-3 text-right font-mono">@weapon.KillCount.ToNumericalString()</td>
+                                             <td class="px-6 py-3 text-right font-mono">@weapon.HitCount.ToNumericalString()</td>
+                                             <td class="px-6 py-3 text-right font-mono text-slate-300">@weapon.DamageInflicted.ToNumericalString()</td>
+                                         </tr>
+                                     }
+                                 </tbody>
+                             </table>
+                         </div>
+                     </div>
+                 </div>
+
+            </div>
+            
+            <!-- Side Menu -->
+            <div class="lg:col-span-1">
+                <SideContextMenu Model="MenuItems"/>
+            </div>
         </div>
-    </div>
-}
+    }
+</div>
 
 @code {
-
-    private RenderFragment RenderStatCard(string name, string value) => __builder =>
+    private RenderFragment RenderStatCard(string name, string value, string valueColor = null) => __builder =>
     {
-        <div class="stat-card bg-very-dark-dm bg-light-ex-lm p-15 m-md-5 w-half w-md-200 rounded flex-fill">
-            @if (string.IsNullOrWhiteSpace(value))
+        <div class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 p-4 rounded-xl flex flex-col justify-between h-auto hover:bg-slate-800/60 transition-colors group">
+            <span class="text-slate-500 text-[10px] uppercase tracking-wider font-bold mb-1 group-hover:text-indigo-400 transition-colors">@name</span>
+             @if (string.IsNullOrWhiteSpace(value))
             {
-                <div class="m-0">&mdash;</div>
+                <span class="text-slate-600 font-mono text-lg">&mdash;</span>
             }
             else
             {
-                <div class="m-0 font-size-16 text-primary">@value</div>
+                <span class="@(valueColor ?? "text-slate-200") font-mono font-bold text-xl tracking-tight truncate" title="@value">@value</span>
             }
-            <div class="font-size-12 text-muted">@name</div>
         </div>
     };
-
 }

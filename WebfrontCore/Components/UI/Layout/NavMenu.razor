@@ -12,32 +12,32 @@
             
             <!-- servers -->
             <NavLink href="servers" Match="NavLinkMatch.All" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                <i class="ph-fill ph-hard-drives mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                <i class="ph ph-hard-drives mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_SERVERS"))</span>
             </NavLink>
             <!-- about -->
             <NavLink href="about" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                <i class="ph-fill ph-info mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                <i class="ph ph-info mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_ABOUT"))</span>
             </NavLink>
             <!-- penalties -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
                 <NavLink href="penalties" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph-fill ph-lock-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-lock-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_PENALTIES"))</span>
                 </NavLink>
             </AuthorizeView>
             <!-- privileged -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
                 <NavLink href="privileged-clients" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph-fill ph-users mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-users mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_PRIVILEGED"))</span>
                 </NavLink>
             </AuthorizeView>
             <!-- help -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.HelpPage}.{WebfrontPermission.Read}")">
                 <NavLink href="commands" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph-fill ph-question mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-question mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_HELP"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -49,7 +49,7 @@
                     <AuthorizeView
                         Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
                         <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                            <i class="ph-fill @interaction.DisplayMeta mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                            <i class="ph @interaction.DisplayMeta mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                             <span class="truncate">@interaction.Name</span>
                         </NavLink>
                     </AuthorizeView>
@@ -61,7 +61,7 @@
             {
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ProfilePage}.{WebfrontPermission.Read}")">
                     <NavLink href="@($"client/{AppState.User.ClientId}")" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                        <i class="ph-fill ph-user mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph ph-user mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
                     </NavLink>
                 </AuthorizeView>
@@ -78,7 +78,7 @@
                 foreach (var pageLink in NavData.Pages)
                 {
                     <a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white" href="@pageLink.Location">
-                        <i class="ph-fill @(pageLink.Location.EndsWith("Radar") ? "ph-wifi-high" : "ph-chart-bar") mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph @(pageLink.Location.EndsWith("Radar") ? "ph-wifi-high" : "ph-chart-bar") mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@pageLink.Name</span>
                     </a>
                 }
@@ -86,7 +86,7 @@
 
             <!-- scoreboard -->
             <NavLink href="scoreboard" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                <i class="ph-fill ph-table mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                <i class="ph ph-table mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_SCOREBOARD"))</span>
             </NavLink>
 
@@ -102,7 +102,7 @@
                         <div class="flex items-center w-full">
                             @if (!string.IsNullOrWhiteSpace(social.IconId))
                             {
-                                <i class="ph-fill @social.IconId mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                                <i class="ph @social.IconId mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                             }
                             else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                             {
@@ -126,7 +126,7 @@
                                 Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
                                 <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")"
                                          class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                                    <i class="ph-fill @interaction.DisplayMeta mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                                    <i class="ph @interaction.DisplayMeta mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                                     <span class="truncate">@interaction.Name</span>
                                 </NavLink>
                             </AuthorizeView>
@@ -144,7 +144,7 @@
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")"
                                Context="consoleContext">
                     <NavLink href="console" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                        <i class="ph-fill ph-terminal-window mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph ph-terminal-window mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
                     </NavLink>
                 </AuthorizeView>
@@ -153,7 +153,7 @@
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")"
                                Context="banContext">
                     <NavLink href="manage-bans" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                        <i class="ph-fill ph-prohibit mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph ph-prohibit mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
                     </NavLink>
                 </AuthorizeView>
@@ -162,7 +162,7 @@
             <!-- Configuration (Owner only) -->
             <AuthorizeView Roles="Owner">
                 <NavLink href="configuration" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph-fill ph-gear mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-gear mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -170,7 +170,7 @@
             <!-- Audit Log -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AuditPage}.{WebfrontPermission.Read}")">
                 <NavLink href="audit" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph-fill ph-books mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-books mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -178,7 +178,7 @@
             <!-- Recent Clients -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.RecentPlayersPage}.{WebfrontPermission.Read}")">
                 <NavLink href="find-client?direction=1&sortColumn=FirstConnection" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                    <i class="ph-fill ph-clock mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                    <i class="ph ph-clock mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                     <span class="truncate">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -193,7 +193,7 @@
                         <AuthorizeView
                             Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
                             <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                                <i class="ph-fill @interaction.DisplayMeta mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                                <i class="ph @interaction.DisplayMeta mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                                 <span class="truncate">@interaction.Name</span>
                             </NavLink>
                         </AuthorizeView>
@@ -207,7 +207,7 @@
                 {
                     <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("GenerateLoginToken")'
                        class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors mb-2">
-                        <i class="ph-fill ph-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph ph-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
                     </a>
 
@@ -215,7 +215,7 @@
                     <form action="/Account/Logout" method="post" class="w-full">
                         <AntiforgeryToken/>
                         <button type="submit" class="w-full group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-left bg-transparent border-none cursor-pointer">
-                            <i class="ph-fill ph-sign-out mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                            <i class="ph ph-sign-out mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                             <span class="truncate">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
                         </button>
                     </form>
@@ -224,7 +224,7 @@
                 {
                     <!-- Login (for unauthenticated users) -->
                     <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("Login")' class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white transition-colors [&.active]:bg-blue-600 [&.active]:text-white">
-                        <i class="ph-fill ph-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
+                        <i class="ph ph-key mr-3 text-lg text-slate-400 group-hover:text-white"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>
                     </a>
                 }

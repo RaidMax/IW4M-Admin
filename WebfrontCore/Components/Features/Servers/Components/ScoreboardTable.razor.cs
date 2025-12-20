@@ -59,9 +59,12 @@ public partial class ScoreboardTable
 
     private string GetTeamBackgroundColorClass(ClientScoreboardInfo client)
     {
-        // mapping EFClient.TeamType
-        // Assuming EFClient namespace available
-        return
-            $"team-{client.Team.ToString().ToLower()}-bg {(client.Team == EFClient.TeamType.Unknown ? "bg-dark-dm bg-light-lm" : string.Empty)}";
+         return client.Team.ToString() switch
+        {
+            "Axis" => "bg-rose-900/10 hover:bg-rose-900/20",
+            "Allies" => "bg-sky-900/10 hover:bg-sky-900/20",
+            "Spectator" => "bg-slate-700/30 hover:bg-slate-700/50",
+            _ => "hover:bg-slate-700/30"
+        };
     }
 }

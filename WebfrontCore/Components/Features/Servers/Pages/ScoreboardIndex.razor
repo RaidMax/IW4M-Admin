@@ -6,17 +6,16 @@
 
 @if (Loading)
 {
-    <div class="text-center mt-20">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
-        </div>
+    <div class="flex justify-center mt-20">
+        <i class="ph ph-spinner animate-spin text-4xl text-blue-500"></i>
     </div>
 }
 else if (NoServers)
 {
-    <div class="content mt-20">
-        <div class="alert alert-warning">
-            No servers available.
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <div class="bg-amber-900/20 border-l-4 border-amber-500 text-amber-200 p-4 rounded bg-slate-800" role="alert">
+            <p class="font-bold">No Servers</p>
+            <p>No servers are currently available.</p>
         </div>
     </div>
 }

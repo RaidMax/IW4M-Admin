@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
@@ -10,14 +9,11 @@ public partial class AuditLog
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop JS { get; set; }
+    
     private PaginationRequest Request { get; } = new() { Count = 50, Offset = 0 };
     private List<AuditInfo> Results { get; set; }
     private bool HasMoreResults { get; set; } = true;
     private bool IsLoading { get; set; }
-    private ElementReference loadMoreTrigger;
-    private DotNetObjectReference<AuditLog> objRef;
-    private bool observerSetUp = false;
     private string _error;
 
     private static string DataDetailsPolicy => $"Permissions.{WebfrontEntity.AuditLogDataDetails}.{WebfrontPermission.Read}";
@@ -25,17 +21,6 @@ public partial class AuditLog
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // Set up observer after first data load, not on firstRender
-        if (!observerSetUp && HasMoreResults && Results != null)
-        {
-            observerSetUp = true;
-            objRef = DotNetObjectReference.Create(this);
-            await JS.SetupInfiniteScroll(loadMoreTrigger, objRef);
-        }
     }
 
     private async Task LoadData()
@@ -70,21 +55,11 @@ public partial class AuditLog
         }
     }
 
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (!HasMoreResults || IsLoading) return;
         Request.Offset += Request.Count;
         await LoadData();
         StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (objRef != null)
-        {
-            await JS.RemoveInfiniteScroll(loadMoreTrigger);
-            objRef.Dispose();
-        }
     }
 }

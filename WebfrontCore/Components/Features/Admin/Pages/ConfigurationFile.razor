@@ -1,47 +1,97 @@
 @page "/Configuration/Files"
 @page "/configuration"
-@attribute [Authorize(Policy = "Permissions.ConfigurationPage.Read")]
+@attribute [Authorize(Roles = "Owner")]
 @rendermode InteractiveServer
 
 <PageTitle>@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE") | IW4MAdmin</PageTitle>
 
-<div class="content mt-0">
-    <h4 class="content-title mt-20 mb-0">@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE")</h4>
-    <span class="text-muted">@AppState.Loc("WEBFRONT_CONFIGURATION_SAVING_CHANGES")</span>
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-slate-100 mb-2">@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE")</h2>
+        <p class="text-slate-400">@AppState.Loc("WEBFRONT_CONFIGURATION_SAVING_CHANGES")</p>
+    </div>
 
     @if (ConfigurationFiles == null)
     {
-         <div class="text-center mt-20">
-            <div class="spinner-border text-primary" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
+        <!-- Loading State -->
+        <div class="flex flex-col items-center justify-center py-20 text-slate-500 animate-pulse">
+            <i class="ph ph-spinner animate-spin text-4xl mb-4 text-blue-500"></i>
+            <span class="text-sm">Loading configuration files...</span>
         </div>
     }
     else
     {
-        foreach (var file in ConfigurationFiles.OrderByDescending(f => f.FileName.Contains("IW4MAdmin")))
-        {
-             <div class="card m-0 p-0 mt-20 mb-20">
-                <div class="bg-primary p-10 rounded-top text-light d-flex justify-content-between align-items-center" @onclick="@(() => ToggleFile(file))" style="cursor: pointer;">
-                    <div>
-                        <i class="oi oi-expand-down mr-5" ></i>
-                        <span>@file.FileName</span>
-                    </div>
-                </div>
-                @if (ExpandedFiles.Contains(file.FileName))
-                {
-                    <div class="edit-file d-flex flex-column p-0">
-                        <textarea class="form-control bg-dark-dm bg-light-lm border-0 font-size-12" style="font-family: monospace; min-height: 300px;" @bind="file.FileContent"></textarea>
-                        <div class="d-flex justify-content-between p-15">
-                             <button type="button" class="btn btn-primary" @onclick="() => SaveFile(file)">@AppState.Loc("WEBFRONT_CONFIGURATION_BUTTON_SAVE")</button>
-                             @if (!string.IsNullOrEmpty(SaveStatus[file.FileName]))
-                             {
-                                 <span class="text-success align-self-center">@SaveStatus[file.FileName]</span>
-                             }
+        <div class="space-y-4">
+            @foreach (var file in ConfigurationFiles.OrderByDescending(f => f.FileName.Contains("IW4MAdmin")))
+            {
+                var isExpanded = ExpandedFiles.Contains(file.FileName);
+                
+                <div class="bg-slate-900 border border-slate-700/50 rounded-lg overflow-hidden transition-all shadow-sm @(isExpanded ? "ring-1 ring-blue-500/20" : "")">
+                    <!-- File Header (Clickable) -->
+                    <button @onclick="@(() => ToggleFile(file))" 
+                            class="w-full flex items-center justify-between px-6 py-4 bg-slate-800/50 hover:bg-slate-800 transition-colors text-left focus:outline-none focus:bg-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded bg-slate-900/50 text-blue-400 border border-slate-700/50">
+                                <i class="ph ph-file-code text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-slate-200">@file.FileName</h3>
+                                <p class="text-xs text-slate-500 font-mono">JSON Configuration</p>
+                            </div>
                         </div>
-                    </div>
-                }
-            </div>
-        }
+                        <div class="flex items-center gap-4">
+                            @if (!string.IsNullOrEmpty(SaveStatus[file.FileName]))
+                            {
+                                <span class="@(SaveStatus[file.FileName].Contains("Error") ? "text-red-400" : "text-green-400") text-sm font-medium animate-fade-in-out">
+                                    @SaveStatus[file.FileName]
+                                </span>
+                            }
+                            <i class="ph ph-caret-down text-slate-500 transition-transform duration-200 text-lg @(isExpanded ? "rotate-180" : "")"></i>
+                        </div>
+                    </button>
+
+                    <!-- Editor Area (Collapsible) -->
+                    @if (isExpanded)
+                    {
+                        <div class="border-t border-slate-700/50">
+                            <!-- Toolbar -->
+                            <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 flex justify-end">
+                                <button class="px-3 py-1 text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                                        title="Format JSON (Not implemented)">
+                                    <i class="ph ph-brackets-curly"></i>
+                                    <span>JSON</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Editing Textarea -->
+                            <div class="relative group">
+                                <textarea @bind="file.FileContent"
+                                          class="w-full h-[500px] p-4 bg-slate-950 text-slate-300 font-mono text-sm border-none focus:ring-0 resize-y leading-relaxed scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900"
+                                          spellcheck="false"></textarea>
+                            </div>
+                            
+                            <!-- Footer Actions -->
+                            <div class="px-6 py-4 bg-slate-900 border-t border-slate-800 flex justify-between items-center">
+                                <div class="text-xs text-slate-500">
+                                    Last modified details not available
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button class="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                                            @onclick="@(() => ToggleFile(file))">
+                                        Cancel
+                                    </button>
+                                    <button class="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg hover:shadow-blue-500/20 transition-all flex items-center gap-2"
+                                            @onclick="() => SaveFile(file)">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        @AppState.Loc("WEBFRONT_CONFIGURATION_BUTTON_SAVE")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     }
 </div>

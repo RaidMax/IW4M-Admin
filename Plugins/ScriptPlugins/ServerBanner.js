@@ -361,7 +361,7 @@ const plugin = {
             interactionData.source = plugin.name;
             interactionData.name = 'Banners';
             interactionData.description = interactionData.name;
-            interactionData.displayMeta = 'oi-image';
+            interactionData.displayMeta = 'ph-image';
 
             interactionData.scriptAction = (_, __, ___, ____, _____) => {
                 if (Object.keys(serverOrderCache).length === 0) {

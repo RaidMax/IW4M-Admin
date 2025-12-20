@@ -247,9 +247,9 @@ function updatePlayerData() {
                                     <div class="pr-5 align-self-center">${player.kills}</div>
                                     <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/death.png')"></div>
                                     <div class="pr-10 align-self-center">${player.deaths}</div>
-                                    <span class="align-self-center oi oi-target pr-5"></span>
+                                    <span class="align-self-center ph ph-target pr-5"></span>
                                     <div class="pr-10 align-self-center">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
-                                    <span class="align-self-center oi oi-graph pr-5"></span>
+                                    <span class="align-self-center ph ph-chart-line pr-5"></span>
                                     <div>${player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
                                 </div>
                               </div>

@@ -45,8 +45,8 @@ public partial class ClientActivity
     {
         return messageState switch
         {
-            "CONNECTED" => "oi-account-login text-success mr-5",
-            "DISCONNECTED" => "oi-account-logout text-danger mr-5",
+            "CONNECTED" => "ph ph-sign-in text-success mr-5",
+            "DISCONNECTED" => "ph ph-sign-out text-danger mr-5",
             _ => ""
         };
     }

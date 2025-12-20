@@ -71,6 +71,14 @@
         <Content Remove="wwwroot\lib\**" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.eot" />
+      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.otf" />
+      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.ttf" />
+      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.woff" />
+    </ItemGroup>
+
     <ProjectExtensions>
         <VisualStudio>
             <UserProperties/>

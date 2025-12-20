@@ -68,7 +68,7 @@ else
                                            class="flex items-center gap-3 px-4 py-3 bg-slate-900/50 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all group">
                                             @if (!string.IsNullOrWhiteSpace(social.IconId))
                                             {
-                                                <i class="@social.IconId.Replace("oi ", "ph ph-") text-xl text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                                                <i class="ph @social.IconId text-xl text-slate-400 group-hover:text-blue-400 transition-colors"></i>
                                             }
                                             else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                                             {

@@ -15,7 +15,7 @@
             {
                 Title = "IW4MAdmin Website",
                 Url = "https://raidmax.org/IW4MAdmin",
-                IconId = "oi-globe"
+                IconId = "ph-globe-simple"
             },
             new SocialAccountConfiguration
             {

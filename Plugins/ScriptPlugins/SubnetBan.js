@@ -84,7 +84,7 @@ const plugin = {
 
             interactionData.name = 'Subnet Banlist'; // navigation link name
             interactionData.description = `List of banned subnets (${subnetList.length} Total)`; // alt and title
-            interactionData.displayMeta = 'oi-circle-x'; // nav icon
+            interactionData.displayMeta = 'ph-x-circle'; // nav icon
             interactionData.interactionId = subnetBanlistKey;
             interactionData.minimumPermission = 3;
             interactionData.interactionType = 2;
@@ -110,7 +110,7 @@ const plugin = {
                                         <a href="#" class="profile-action no-decoration float-right" data-action="DynamicAction"
                                            data-action-meta="${encodeURI(JSON.stringify(unbanSubnetInteraction))}"> 
                                             <div class="btn">
-                                                <i class="oi oi-circle-x mr-5 font-size-12"></i>
+                                                <i class="ph ph-x-circle mr-5 font-size-12"></i>
                                                 <span class="text-truncate">Unban Subnet</span>
                                             </div>
                                         </a>

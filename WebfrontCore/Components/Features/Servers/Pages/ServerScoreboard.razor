@@ -5,25 +5,22 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_TITLE_SCOREBOARD") | IW4MAdmin</PageTitle>
 
-<div class="content mt-20 row">
-    <div class="col-12 col-lg-9">
+<div class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="lg:col-span-3">
         @if (ScoreboardModel != null)
         {
-            <div class="scoreboard-container" data-server-id="@Id">
-                @* Using the shared component *@
+            <div data-server-id="@Id">
                 <ScoreboardTable Model="ScoreboardModel" />
             </div>
         }
         else
         {
-             <div class="text-center mt-20">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
+             <div class="flex justify-center mt-20">
+                <i class="ph ph-spinner animate-spin text-4xl text-blue-500"></i>
             </div>
         }
     </div>
-    <div class="col-12 col-lg-3">
+    <div class="lg:col-span-1">
         @if (ContextItems != null)
         {
            <SideContextMenu Model="ContextItems" />

@@ -1,19 +1,17 @@
 ﻿using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Pages;
 
-public partial class AdvancedFind : IAsyncDisposable
+public partial class AdvancedFind
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [Inject] public required IZeroJsInterop JsInterop { get; set; }
 
     [SupplyParameterFromQuery(Name = "clientName")]
     public string? ClientName { get; set; }
@@ -50,9 +48,6 @@ public partial class AdvancedFind : IAsyncDisposable
     private const int PageSize = 30;
     private bool _hasMore = true;
     private bool _isLoading;
-    private bool _observerSetup;
-    private ElementReference _loadMoreTrigger;
-    private DotNetObjectReference<AdvancedFind>? _dotNetRef;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -60,17 +55,6 @@ public partial class AdvancedFind : IAsyncDisposable
         await LoadDataAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (_hasMore && !_observerSetup && Results.Count > 0)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _dotNetRef);
-            _observerSetup = true;
-        }
-    }
-
-    [JSInvokable]
     public async Task LoadMore()
     {
         if (_isLoading || !_hasMore)
@@ -81,18 +65,11 @@ public partial class AdvancedFind : IAsyncDisposable
         StateHasChanged();
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        _dotNetRef?.Dispose();
-        await Task.CompletedTask;
-    }
-
     private void ResetState()
     {
         Results.Clear();
         _offset = 0;
         _hasMore = true;
-        _observerSetup = false;
     }
 
     private ClientResourceRequest BuildRequest()

@@ -21,7 +21,7 @@
                @onclick:preventDefault="@(!item.IsLink)">
                 <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
                      data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph-fill {item.Icon} text-lg") mr-3 text-slate-400"></i>
+                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-slate-400"></i>
                     <span class="truncate">@item.Title</span>
                 </div>
             </a>
@@ -32,7 +32,7 @@
             <details class="group mt-4" open="@(index == 0)">
                 <summary class="list-none flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 cursor-pointer hover:text-slate-300">
                     <span>@(AppState.Loc($"GAME_{group.Key}"))</span>
-                    <i class="ph-fill ph-caret-down ml-2 transition-transform group-open:rotate-180"></i>
+                    <i class="ph ph-caret-down ml-2 transition-transform group-open:rotate-180"></i>
                 </summary>
                 
                 <div class="space-y-1 pl-2 border-l-2 border-slate-700">
@@ -44,7 +44,7 @@
                            @onclick:preventDefault="@(!item.IsLink)">
                             <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
                                  data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph-fill {item.Icon} text-lg") mr-3 text-slate-400"></i>
+                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-slate-400"></i>
                                 <span class="truncate">@item.Title</span>
                             </div>
                         </a>

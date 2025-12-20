@@ -5,7 +5,9 @@
       "wwwroot/css/tailwind.css",
       "wwwroot/lib/halfmoon/css/halfmoon-variables.min.css",
       "wwwroot/lib/chart.js/dist/Chart.min.css",
-      "wwwroot/css/open-iconic-bootstrap-override.css",
+      "wwwroot/lib/phosphor-icons/src/regular/style.css",
+      "wwwroot/lib/phosphor-icons/src/bold/style.css",
+      "wwwroot/lib/phosphor-icons/src/fill/style.css",
       "wwwroot/css/main.css"
     ]
   },

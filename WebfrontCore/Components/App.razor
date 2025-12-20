@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
     <ResourcePreloader/>
-    <script src="https://unpkg.com/@@phosphor-icons/web"></script>
     @* ReSharper disable once Razor.UnresolvedComponent *@
     <Environment include="Development">
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/regular/style.css" />
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/bold/style.css" />
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/fill/style.css" />
         <link rel="stylesheet" href="/css/tailwind.css"/>
-        <!-- <link rel="stylesheet" href="/lib/halfmoon/css/halfmoon-variables.css"/>
-        <link rel="stylesheet" href="/css/src/main.css"/>
-        <link rel="stylesheet" href="/css/open-iconic-bootstrap-override.css"/>-->
     </Environment>
     @* ReSharper disable once Razor.UnresolvedComponent *@
     <Environment include="Production">
-        <!--<link rel="stylesheet" href="~/css/global.min.css"/>-->
+        <link rel="stylesheet" href="~/css/global.min.css"/>
     </Environment>
     <link rel="icon" type="image/png" href="images/icon.png"/>
     <ImportMap/>

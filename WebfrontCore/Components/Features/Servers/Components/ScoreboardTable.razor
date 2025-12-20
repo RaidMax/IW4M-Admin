@@ -1,88 +1,142 @@
-<h4 class="content-title mb-0">
-    @(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))
-</h4>
-<span class="text-muted">
-    <ColorCode Value="@Model.ServerName"/>
-</span>
+<div class="mb-6 flex items-center gap-3">
+    <h4 class="text-2xl font-bold text-slate-100">
+        @(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))
+    </h4>
+    <span class="text-slate-400 text-lg">
+        <ColorCode Value="@Model.ServerName"/>
+    </span>
+</div>
 
 @if (!Model.ClientInfo.Any())
 {
-    <div class="mt-20">@(AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS"))</div>
+    <div class="bg-slate-800 rounded-lg p-12 text-center border border-slate-700/50">
+        <i class="ph ph-users text-4xl text-slate-600 mb-4"></i>
+        <div class="text-slate-400 text-lg">@(AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS"))</div>
+    </div>
 }
 else
 {
-    <table class="table table-sort mt-15">
-        <tr class="bg-dark-dm bg-white-lm d-none d-lg-table-row">
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("ClientName"))">
-                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PLAYER")) @(GetSortIndicator("ClientName"))
-            </th>
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Score"))">
-                @(AppState.Loc("WEBFRONT_ADV_STATS_SCORE")) @(GetSortIndicator("Score"))
-            </th>
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Kills"))">
-                @(AppState.Loc("WEBFRONT_ADV_STATS_KILLS")) @(GetSortIndicator("Kills"))
-            </th>
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Deaths"))">
-                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_DEATHS")) @(GetSortIndicator("Deaths"))
-            </th>
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("Kdr"))">
-                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_RATIO")) @(GetSortIndicator("Kdr"))
-            </th>
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("ScorePerMinute"))">
-                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_SPM")) @(GetSortIndicator("ScorePerMinute"))
-            </th>
-            <th class="table-sort-column cursor-pointer" @onclick="@(() => Sort("ZScore"))">
-                @(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE")) @(GetSortIndicator("ZScore"))
-            </th>
-            <th class="text-right table-sort-column cursor-pointer" @onclick="@(() => Sort("Ping"))">
-                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PING")) @(GetSortIndicator("Ping"))
-            </th>
-        </tr>
-        @foreach (var client in SortedClients)
-        {
-            var teamClass = GetTeamBackgroundColorClass(client);
-            <!-- desktop -->
-            <tr class="@teamClass d-none d-lg-table-row">
-                <td>
-                    <a href="/client/@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
-                        <ColorCode Value="@client.ClientName"/>
-                    </a>
-                </td>
-                <td>@client.Score</td>
-                <td>@(client.Kills ?? 0)</td>
-                <td>@(client.Deaths ?? 0)</td>
-                <td>@Math.Round(client.Kdr ?? 0, 2)</td>
-                <td>@Math.Round(client.ScorePerMinute ?? 0)</td>
-                <td>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</td>
-                <td class="text-right">@client.Ping</td>
-            </tr>
+    <div class="bg-slate-800 rounded-lg border border-slate-700/50 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-900/50 hidden lg:table-header-group">
+                    <tr>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("ClientName"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PLAYER")) 
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("ClientName"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("Score"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_ADV_STATS_SCORE"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("Score"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("Kills"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_ADV_STATS_KILLS"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("Kills"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("Deaths"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_DEATHS"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("Deaths"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("Kdr"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_RATIO"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("Kdr"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("ScorePerMinute"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_SPM"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("ScorePerMinute"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors group" @onclick="@(() => Sort("ZScore"))">
+                            <div class="flex items-center gap-1">
+                                @(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("ZScore"))</span>
+                            </div>
+                        </th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 cursor-pointer hover:text-white transition-colors text-right group" @onclick="@(() => Sort("Ping"))">
+                            <div class="flex items-center justify-end gap-1">
+                                @(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PING"))
+                                <span class="text-slate-500 group-hover:text-slate-300">@(GetSortIndicator("Ping"))</span>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                    @foreach (var client in SortedClients)
+                    {
+                        var teamClass = GetTeamBackgroundColorClass(client);
+                        <!-- desktop -->
+                        <tr class="@teamClass hidden lg:table-row hover:bg-slate-700/30 transition-colors">
+                            <td class="p-4">
+                                <a href="/client/@client.ClientId" class="font-medium hover:underline decoration-blue-400 underline-offset-2 text-slate-200">
+                                    <ColorCode Value="@client.ClientName"/>
+                                </a>
+                            </td>
+                            <td class="p-4 text-slate-300">@client.Score</td>
+                            <td class="p-4 text-emerald-400 font-mono">@(client.Kills ?? 0)</td>
+                            <td class="p-4 text-rose-400 font-mono">@(client.Deaths ?? 0)</td>
+                            <td class="p-4 text-slate-300 font-mono">@Math.Round(client.Kdr ?? 0, 2)</td>
+                            <td class="p-4 text-slate-300 font-mono">@Math.Round(client.ScorePerMinute ?? 0)</td>
+                            <td class="p-4 text-slate-300 font-mono">@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</td>
+                            <td class="p-4 text-right">
+                                <span class="@(client.Ping < 100 ? "text-emerald-400" : client.Ping < 200 ? "text-amber-400" : "text-rose-400") font-mono">
+                                    @client.Ping
+                                </span>
+                            </td>
+                        </tr>
 
-            <!-- mobile -->
-            <tr class="d-table-row d-lg-none d-flex">
-                <td class="text-right bg-primary text-light flex-grow-0">
-                    <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PLAYER"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_ADV_STATS_SCORE"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_ADV_STATS_KILLS"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_DEATHS"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_RATIO"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_SPM"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE"))</div>
-                    <div>@(AppState.Loc("WEBFRONT_SCOREBOARD_TABLE_PING"))</div>
-                </td>
-
-                <td class="@teamClass flex-fill">
-                    <a href="/client/@client.ClientId" class="no-decoration text-light-dm text-dark-lm">
-                        <ColorCode Value="@client.ClientName"/>
-                    </a>
-                    <div>@client.Score</div>
-                    <div>@(client.Kills ?? 0)</div>
-                    <div>@(client.Deaths ?? 0)</div>
-                    <div>@Math.Round(client.Kdr ?? 0, 2)</div>
-                    <div>@Math.Round(client.ScorePerMinute ?? 0)</div>
-                    <div>@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</div>
-                    <div>@client.Ping</div>
-                </td>
-            </tr>
-        }
-    </table>
+                        <!-- mobile -->
+                        <tr class="lg:hidden block border-b border-slate-700/50 last:border-0">
+                            <td class="block p-0">
+                                <div class="flex items-center justify-between p-4 bg-slate-900/30 border-b border-slate-700/30">
+                                     <a href="/client/@client.ClientId" class="font-bold text-lg text-slate-200">
+                                        <ColorCode Value="@client.ClientName"/>
+                                    </a>
+                                    <span class="@(client.Ping < 100 ? "text-emerald-400" : client.Ping < 200 ? "text-amber-400" : "text-rose-400") font-mono text-sm font-bold">
+                                        @client.Ping ms
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 p-4 text-center">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-500 uppercase">Score</span>
+                                        <span class="text-slate-200 font-bold">@client.Score</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-500 uppercase">Kills</span>
+                                        <span class="text-emerald-400 font-bold">@(client.Kills ?? 0)</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-500 uppercase">Deaths</span>
+                                        <span class="text-rose-400 font-bold">@(client.Deaths ?? 0)</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-500 uppercase">KDR</span>
+                                        <span class="text-slate-300">@Math.Round(client.Kdr ?? 0, 2)</span>
+                                    </div>
+                                      <div class="flex flex-col">
+                                        <span class="text-xs text-slate-500 uppercase">SPM</span>
+                                        <span class="text-slate-300">@Math.Round(client.ScorePerMinute ?? 0)</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-500 uppercase">Z-Score</span>
+                                        <span class="text-slate-300">@(client.ZScore is null or 0 ? "--" : Math.Round(client.ZScore.Value, 2).ToString(CultureInfo.CurrentCulture))</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }

@@ -4,9 +4,10 @@
 <aside class="flex flex-col h-full z-30 flex-1 md:w-full">
     <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
             <!-- Search Form Placeholder -->
-            @* <div class="pr-20 pl-20 mb-20 d-block d-lg-none">
-                    <SearchResourceForm Model="Compact"/>
-                </div> *@
+            <!-- Search Form Mobile -->
+            <div class="mb-4 px-1 md:hidden">
+                <SearchResourceForm />
+            </div>
 
             <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</div>
             

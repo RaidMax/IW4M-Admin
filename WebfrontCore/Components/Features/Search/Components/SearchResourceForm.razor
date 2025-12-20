@@ -1,25 +1,26 @@
 <div class="relative inline-block text-left w-full max-w-sm ml-auto">
     <div class="flex items-center gap-2">
-        <!-- Advanced Search Toggle (Desktop & Mobile) -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
-            <button type="button" 
-                    class="p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500 transition-colors" 
-                    @onclick="ToggleAdvancedSearch"
-                    title="@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))">
-                <i class="ph ph-caret-down text-lg"></i>
-            </button>
-        </AuthorizeView>
-
-        <!-- Basic Search Input Group -->
-        <form @onsubmit="BasicSubmit" class="flex-1 flex items-center relative">
+        <!-- Search Input Group -->
+        <form @onsubmit="BasicSubmit" class="flex-1 flex items-center relative w-full">
             <input @bind="ClientName" 
                    type="text" 
-                   class="block w-full rounded-l-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2"
+                   class="block w-full h-10 rounded-l-md bg-slate-900 border border-slate-700 border-r-0 text-white placeholder-slate-400 focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 min-w-0"
                    placeholder="@(AppState.Loc("WEBFRONT_NAV_SEARCH"))" 
                    required />
+
+            <!-- Advanced Search Toggle (Inside Input Group) -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
+                <button type="button" 
+                        class="h-10 px-3 bg-slate-900 border-y border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors border-l-0" 
+                        @onclick="ToggleAdvancedSearch"
+                        title="@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))">
+                    <i class="ph ph-caret-down text-lg"></i>
+                </button>
+            </AuthorizeView>
+
             <button type="button" 
                     @onclick="BasicSubmit"
-                    class="inline-flex items-center px-3 py-2 border border-l-0 border-slate-600 rounded-r-md bg-slate-700 text-slate-400 hover:text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-blue-500 transition-colors">
+                    class="inline-flex items-center px-3 py-2 h-10 border border-slate-700 border-l-0 rounded-r-md bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-500 transition-colors">
                 <i class="ph ph-magnifying-glass text-lg"></i>
             </button>
         </form>

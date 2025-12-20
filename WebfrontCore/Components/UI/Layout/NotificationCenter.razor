@@ -1,62 +1,97 @@
-<div class="dropdown with-arrow" data-toggle="dropdown" id="alert-toggle" aria-haspopup="true" aria-expanded="false">
-    <div data-toggle="tooltip" data-title="@(Alerts.Any() ? AppState.Loc("WEBFRONT_ALERTS_SOME_TOOLTIP") : AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP"))" data-placement="bottom">
-        <i class="ph ph-bell-simple mt-5"></i>
-    </div>
-    @if (Alerts.Any())
+@implements IDisposable
+@using SharedLibraryCore.Alerts
+
+<div class="relative">
+    <button class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors relative" 
+            @onclick="ToggleDropdown" 
+            @onclick:stopPropagation
+            title="@(Alerts.Any() ? AppState.Loc("WEBFRONT_ALERTS_SOME_TOOLTIP") : AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP"))">
+        <i class="ph ph-bell-simple text-xl"></i>
+        @if (Alerts.Any())
+        {
+            <span class="absolute top-2 right-2 flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border-2 border-slate-800"></span>
+            </span>
+        }
+    </button>
+
+    @if (_isOpen)
     {
-        <div class="position-absolute bg-danger rounded-circle ml-10" style="width: 0.5em;height: 0.5em;top: 0;"></div>
-        <div class="dropdown-menu dropdown-menu-right w-250 w-md-400" aria-labelledby="alert-toggle">
-            <div class="d-flex">
-                <h6 class="dropdown-header">@(AppState.Loc("WEBFRONT_ALERTS_POPOVER_COUNT").FormatExt(Alerts.Count))</h6>
-                <i class="ph ph-x-circle font-size-12 text-danger align-self-center profile-action" @onclick="DismissAll" @onclick:stopPropagation style="cursor: pointer"></i>
+        <div class="absolute right-0 mt-2 w-80 md:w-96 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden ring-1 ring-black/5">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-800/50">
+                <h6 class="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                    @(AppState.Loc("WEBFRONT_ALERTS_POPOVER_COUNT").FormatExt(Alerts.Count))
+                </h6>
+                <button class="text-slate-400 hover:text-red-400 transition-colors" @onclick="DismissAll" title="Dismiss All">
+                    <i class="ph ph-trash"></i>
+                </button>
             </div>
-            <div class="dropdown-divider"></div>
-            <div style="max-height: 50vh; overflow: scroll" >
-                @foreach (var alert in Alerts)
+            
+            <div class="max-h-[50vh] overflow-y-auto">
+                @if (Alerts.Count == 0)
                 {
-                    <div class="d-flex p-5 pl-10 pr-10">
-                        <div class="align-self-center">
-                            @if (alert.Category == Alert.AlertCategory.Error)
-                            {
-                                <i class="ph ph-warning text-danger font-size-12 mr-5"></i>
-                            }
-                            @if (alert.Category == Alert.AlertCategory.Warning)
-                            {
-                                <i class="ph ph-warning text-secondary font-size-12 mr-5"></i>
-                            }
-                            @if (alert.Category == Alert.AlertCategory.Information)
-                            {
-                                <i class="ph ph-check-circle font-size-12 mr-5 text-primary"></i>
-                            }
-                            @if (alert.Category == Alert.AlertCategory.Message)
-                            {
-                                <i class="ph ph-envelope-simple font-size-12 mr-5 text-primary"></i>
-                            }
-                        </div>
-                        <div class="font-size-12 p-5 w-full">
-                            <span class="text-force-break">@alert.Message</span>
-                            <div class="text-muted d-flex">
-                                <span>@alert.OccuredAt.HumanizeForCurrentCulture()</span>
-                                @if (!string.IsNullOrEmpty(alert.Source))
-                                {
-                                    <span class="ml-5 mr-5">&#8226;</span>
-                                    @if (alert.SourceId is null)
+                    <div class="p-8 text-center text-slate-500">
+                        <i class="ph ph-bell-slash text-3xl mb-2 opacity-50 block mx-auto"></i>
+                        <span class="text-sm">@AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP")</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="divide-y divide-slate-700/50">
+                        @foreach (var alert in Alerts)
+                        {
+                            <div class="flex gap-3 p-4 hover:bg-slate-700/30 transition-colors group">
+                                <div class="shrink-0 mt-0.5">
+                                    @switch (alert.Category)
                                     {
-                                        <div class="text-white font-weight-light">@alert.Source.StripColors()</div>
+                                        case Alert.AlertCategory.Error:
+                                            <i class="ph ph-warning-circle text-lg text-rose-500"></i>
+                                            break;
+                                        case Alert.AlertCategory.Warning:
+                                            <i class="ph ph-warning text-lg text-amber-500"></i>
+                                            break;
+                                        case Alert.AlertCategory.Information:
+                                            <i class="ph ph-info text-lg text-blue-500"></i>
+                                            break;
+                                        case Alert.AlertCategory.Message:
+                                            <i class="ph ph-envelope-simple text-lg text-indigo-500"></i>
+                                            break;
                                     }
-                                    else
-                                    {
-                                        <a href="/client/@alert.SourceId" class="no-decoration">@alert.Source</a>
-                                    } 
-                                }
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-slate-300 break-words mb-1">
+                                        @alert.Message
+                                    </div>
+                                    <div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs text-slate-500">
+                                        <span>@alert.OccuredAt.HumanizeForCurrentCulture()</span>
+                                        @if (!string.IsNullOrEmpty(alert.Source))
+                                        {
+                                            <span>&bull;</span>
+                                            @if (alert.SourceId is null)
+                                            {
+                                                <span class="text-slate-400"><ColorCode Value="@alert.Source" /></span>
+                                            }
+                                            else
+                                            {
+                                                <a href="/client/@alert.SourceId" class="text-blue-400 hover:text-blue-300 transition-colors"><ColorCode Value="@alert.Source" /></a>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                                <button class="shrink-0 text-slate-500 hover:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity self-start -mt-1 -mr-1" 
+                                        @onclick="() => Dismiss(alert.AlertId)" title="Dismiss">
+                                    <i class="ph ph-x"></i>
+                                </button>
                             </div>
-                        </div>
-                        <div class="ml-auto">
-                            <i class="ph ph-x-circle font-size-12 ml-5 align-self-center profile-action" @onclick="() => Dismiss(alert.AlertId)" @onclick:stopPropagation style="cursor: pointer"></i>
-                        </div>
+                        }
                     </div>
                 }
             </div>
         </div>
+        
+        <div class="fixed inset-0 z-40 bg-transparent" @onclick="ToggleDropdown"></div>
     }
 </div>
+
+

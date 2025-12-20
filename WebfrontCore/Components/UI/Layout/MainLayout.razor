@@ -14,59 +14,14 @@ else
 {
     <div class="flex flex-col h-screen w-full bg-slate-900 text-slate-100 font-sans">
         <AntiforgeryToken />
+        <ActionModal @rendermode="InteractiveServer" />
         
-        <!-- Top Menu Bar (Full Width) -->
-        <header class="h-16 flex items-center justify-between px-6 bg-slate-800 border-b border-slate-700 shadow-sm z-20 flex-shrink-0">
-             <!-- Left: Toggle & Brand -->
-            <div class="flex items-center space-x-4">
-                <!-- Mobile Toggle -->
-                <button id="toggle-sidebar-btn" class="md:hidden text-slate-400 hover:text-white transition-colors" type="button" @onclick="ToggleSidebar">
-                     <i class="ph ph-list text-2xl"></i>
-                </button>
-                
-                <!-- Branding -->
-                <a href="/" class="text-xl font-bold tracking-wide text-slate-100 hover:text-white transition-colors">
-                    @if (string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding))
-                    {
-                        <span>IW4MAdmin</span>
-                    }
-                    else
-                    {
-                        <span>@AppConfig.WebfrontCustomBranding</span>
-                    }
-                </a>
-            </div>
-
-             <!-- Center: Client Badges -->
-            <div class="hidden md:flex flex-1 justify-center px-4">
-                 <ClientBadges @rendermode="InteractiveServer" />
-            </div>
-
-            <!-- Right: Actions -->
-            <div class="flex items-center space-x-4">
-                <div class="flex items-center">
-                     <NotificationCenter/>
-                </div>
-                
-                <button class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors" 
-                        @onclick="@ToggleDarkMode" title="Toggle Dark Mode">
-                    <i class="ph ph-moon text-xl"></i>
-                </button>
-                
-                <div class="relative">
-                     <SearchResourceForm @rendermode="InteractiveServer"/>
-                </div>
-            </div>
-        </header>
+        <!-- Top Menu Bar (Interactive) -->
+        <TopBar />
 
         <div class="flex flex-1 overflow-hidden relative">
-            <!-- Mobile Overlay -->
-            <div class="@(_sidebarOpen ? "fixed inset-0 bg-black/50 z-30 md:hidden" : "hidden")" @onclick="ToggleSidebar"></div>
-            
-            <!-- Sidebar / NavMenu -->
-            <div class="@(_sidebarOpen ? "absolute inset-y-0 left-0 w-64 z-40" : "hidden") md:block md:static md:h-full">
-                <NavMenu />
-            </div>
+            <!-- Sidebar / NavMenu (Interactive Container) -->
+            <SidebarContainer />
 
             <!-- Main Content Area -->
             <main class="flex-1 overflow-auto relative bg-slate-900">

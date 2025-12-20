@@ -20,10 +20,12 @@
             </div>
         }
     </div>
-    <div class="lg:col-span-1">
+   <div class="lg:col-span-1">
         @if (ContextItems != null)
         {
-           <SideContextMenu Model="ContextItems" />
+           <div class="sticky top-6">
+               <SideContextMenu Model="ContextItems" />
+           </div>
         }
     </div>
 </div>

@@ -4,12 +4,18 @@ using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.UI.Layout;
 
-public partial class NotificationCenter
+public partial class NotificationCenter : IDisposable
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     private List<Alert.AlertState> Alerts = [];
+    private bool _isOpen = false;
+
+    private void ToggleDropdown()
+    {
+        _isOpen = !_isOpen;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -49,5 +55,11 @@ public partial class NotificationCenter
         {
             await ToastService.ShowErrorAsync($"Failed to dismiss alerts: {ex.Message}");
         }
+    }
+
+    public void Dispose()
+    {
+        // Dispose logic if needed, e.g. unsubscribe events or timers
+        // _updateTimer?.Dispose();
     }
 }

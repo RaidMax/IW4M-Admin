@@ -42,7 +42,7 @@
                 <!-- Online -->
                 <div class="flex flex-col items-center justify-center p-3 hover:bg-slate-700/20 transition-colors group">
                      <span class="text-[10px] uppercase tracking-wider font-bold text-slate-500 group-hover:text-slate-400 transition-colors">Online</span>
-                     <span class="text-lg font-bold text-slate-200 group-hover:text-slate-100 transition-colors">@((MarkupString)FormatTranslation("WEBFRONT_HOME_CLIENTS_ONLINE", Model.TotalOccupiedClientSlots, Model.TotalAvailableClientSlots))</span>
+                     <span class="text-lg font-bold text-slate-200 group-hover:text-slate-100 transition-colors">@Model.TotalOccupiedClientSlots/@Model.TotalAvailableClientSlots</span>
                 </div>
                 
                 <!-- Recent -->
@@ -82,6 +82,10 @@
             }).ToList()
         };
         
-        <SideContextMenu Model="menuItems" />
+        <div class="hidden xl:block xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
+             <div class="sticky top-6">
+                <SideContextMenu Model="menuItems" />
+             </div>
+        </div>
     }
 </div>

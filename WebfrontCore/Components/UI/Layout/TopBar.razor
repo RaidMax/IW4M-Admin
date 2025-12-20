@@ -1,0 +1,69 @@
+@using WebfrontCore.Components.Features.Clients.Components
+@using WebfrontCore.Components.Features.Search.Components
+@using WebfrontCore.Core.Services
+@inject AppState AppState
+@inject ApplicationConfiguration AppConfig
+@rendermode InteractiveServer
+
+<header class="h-16 flex items-center justify-between px-4 bg-slate-800 border-b border-slate-700 shadow-sm z-20 flex-shrink-0 gap-4">
+     <!-- Left: Toggle & Brand -->
+    <div class="flex items-center gap-3">
+        <button class="md:hidden text-slate-400 hover:text-white transition-colors p-2 -ml-2 rounded-lg hover:bg-slate-700" type="button" @onclick="ToggleMobile" title="Toggle Navigation">
+             <i class="ph ph-list text-2xl"></i>
+        </button>
+        <button class="hidden md:block text-slate-400 hover:text-white transition-colors p-2 -ml-2 rounded-lg hover:bg-slate-700" type="button" @onclick="ToggleDesktop" title="Toggle Sidebar">
+             <i class="ph ph-list text-2xl"></i>
+        </button>
+        
+        <a href="/" class="text-xl font-bold tracking-wide text-slate-100 hover:text-white transition-colors truncate">
+            @if (string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding))
+            {
+                <span>IW4MAdmin</span>
+            }
+            else
+            {
+                <span>@AppConfig.WebfrontCustomBranding</span>
+            }
+        </a>
+    </div>
+
+     <!-- Center: Client Badges -->
+    <div class="hidden md:flex flex-1 justify-center px-4 min-w-0">
+         <ClientBadges />
+    </div>
+
+    <!-- Right: Actions -->
+    <div class="flex items-center gap-2 md:gap-4 shrink-0">
+        <div class="relative">
+             <SearchResourceForm />
+        </div>
+
+        <div class="h-6 w-px bg-slate-700 hidden md:block"></div>
+
+        <div class="flex items-center gap-1">
+             <NotificationCenter/>
+        
+            <button class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors" 
+                    @onclick="@ToggleDarkMode" title="Toggle Dark Mode">
+                <i class="ph ph-moon text-xl"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+@code {
+    private void ToggleMobile()
+    {
+        AppState.IsMobileNavOpen = !AppState.IsMobileNavOpen;
+    }
+
+    private void ToggleDesktop()
+    {
+        AppState.SidebarCollapsed = !AppState.SidebarCollapsed;
+    }
+
+    private void ToggleDarkMode()
+    {
+        AppState.IsDarkMode = !AppState.IsDarkMode;
+    }
+}

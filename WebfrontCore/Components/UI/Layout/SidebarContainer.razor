@@ -1,0 +1,39 @@
+@using WebfrontCore.Core.Services
+@inject AppState AppState
+@implements IDisposable
+@rendermode InteractiveServer
+
+<!-- Desktop Sidebar (hidden on mobile) -->
+<div class="hidden md:flex flex-col h-full bg-slate-800 border-r border-slate-700 transition-all duration-300 flex-shrink-0 @(AppState.SidebarCollapsed ? "w-0 overflow-hidden border-none" : "w-64")">
+    <NavMenu />
+</div>
+
+<!-- Mobile Sidebar (hidden on desktop) -->
+<div class="md:hidden">
+    <!-- Overlay -->
+    @if (AppState.IsMobileNavOpen)
+    {
+        <div class="fixed inset-0 bg-black/50 z-30" @onclick="ToggleMobile"></div>
+    }
+    <!-- Sliding Panel -->
+    <div class="fixed inset-y-0 left-0 w-64 z-40 bg-slate-900 border-r border-slate-700 transition-transform duration-300 transform @(AppState.IsMobileNavOpen ? "translate-x-0" : "-translate-x-full")">
+        <NavMenu />
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= StateHasChanged;
+    }
+    
+    private void ToggleMobile()
+    {
+        AppState.IsMobileNavOpen = false;
+    }
+}

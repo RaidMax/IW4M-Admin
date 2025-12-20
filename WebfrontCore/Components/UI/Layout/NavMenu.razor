@@ -1,7 +1,7 @@
-@rendermode InteractiveServer
+
 
 <!-- left side navigation -->
-<aside class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col h-full flex-shrink-0 z-30">
+<aside class="flex flex-col h-full z-30 flex-1 md:w-full">
     <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
             <!-- Search Form Placeholder -->
             @* <div class="pr-20 pl-20 mb-20 d-block d-lg-none">
@@ -201,7 +201,8 @@
                 }
             }
 
-            <div class="mt-auto border-t border-slate-700 pt-4 px-3 pb-4">
+    </div>
+    <div class="border-t border-slate-700 pt-4 px-3 pb-4">
                  <!-- Login Token (for authenticated users) -->
                 @if (AppState.User is not null)
                 {
@@ -259,6 +260,6 @@
                     </div>
                 </div>
             </div>
-    </div>
+
 </aside>
 <ActionModal @ref="ActionModal"/>

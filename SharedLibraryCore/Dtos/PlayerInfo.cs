@@ -37,5 +37,11 @@ namespace SharedLibraryCore.Dtos
         public ClientNoteMetaResponse NoteMeta { get; set; }
         
         public List<InteractionInfo> Interactions { get; set; }
+        
+        // Added for Server Card Scoreboard
+        public int? Score { get; set; }
+        public int? Kills { get; set; }
+        public int? Deaths { get; set; }
+        public int Ping { get; set; }
     }
 }

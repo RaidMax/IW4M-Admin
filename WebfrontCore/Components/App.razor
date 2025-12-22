@@ -5,40 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
     <ResourcePreloader/>
-    @* ReSharper disable once Razor.UnresolvedComponent *@
-    <Environment include="Development">
-        <link rel="stylesheet" href="/lib/phosphor-icons/src/regular/style.css" />
-        <link rel="stylesheet" href="/lib/phosphor-icons/src/bold/style.css" />
-        <link rel="stylesheet" href="/lib/phosphor-icons/src/fill/style.css" />
-        <link rel="stylesheet" href="/css/tailwind.css"/>
-    </Environment>
-    @* ReSharper disable once Razor.UnresolvedComponent *@
-    <Environment include="Production">
-        <link rel="stylesheet" href="~/css/global.min.css"/>
-    </Environment>
+    <link rel="stylesheet" href="/lib/phosphor-icons/src/regular/style.css"/>
+    <link rel="stylesheet" href="/lib/phosphor-icons/src/bold/style.css"/>
+    <link rel="stylesheet" href="/lib/phosphor-icons/src/fill/style.css"/>
+    <link rel="stylesheet" href="/css/tailwind.css"/>
     <link rel="icon" type="image/png" href="images/icon.png"/>
+    <script>
+        // Apply saved theme BEFORE first paint to prevent flash
+        (function() {
+            try {
+                var saved = localStorage.getItem('themeSettings');
+                if (!saved) return;
+                var s = JSON.parse(saved);
+                var doc = document.documentElement;
+                
+                // Palette HSL map (500 shade)
+                var p = {
+                    'slate':[215,16,47],'gray':[220,9,46],'zinc':[240,4,46],'neutral':[0,0,45],
+                    'stone':[28,6,44],'red':[0,84,60],'orange':[25,95,53],'amber':[38,92,50],
+                    'yellow':[48,96,53],'lime':[84,81,44],'green':[142,76,36],'emerald':[160,84,39],
+                    'teal':[173,58,39],'cyan':[189,94,43],'sky':[199,89,48],'blue':[217,91,60],
+                    'indigo':[239,84,67],'violet':[258,57,66],'purple':[271,91,65],'fuchsia':[292,84,61],
+                    'pink':[335,78,60],'rose':[343,89,56]
+                };
+                
+                if (s.preset) doc.setAttribute('data-theme', s.preset);
+                
+                // Primary
+                if (s.primaryColorMode === 1 && s.primaryPalette) {
+                    doc.setAttribute('data-primary-palette', s.primaryPalette);
+                    var h = p[s.primaryPalette] || p['blue'];
+                    doc.style.setProperty('--color-primary-h', h[0]);
+                    doc.style.setProperty('--color-primary-s', h[1] + '%');
+                    doc.style.setProperty('--color-primary-l', h[2] + '%');
+                } else if (s.primaryColorMode === 0) {
+                    doc.style.setProperty('--color-primary-h', s.primaryHue);
+                    doc.style.setProperty('--color-primary-s', s.primarySaturation + '%');
+                    doc.style.setProperty('--color-primary-l', s.primaryLightness + '%');
+                }
+                
+                // Secondary
+                if (s.secondaryColorMode === 1 && s.secondaryPalette) {
+                    doc.setAttribute('data-secondary-palette', s.secondaryPalette);
+                    var h2 = p[s.secondaryPalette] || p['purple'];
+                    doc.style.setProperty('--color-secondary-h', h2[0]);
+                    doc.style.setProperty('--color-secondary-s', h2[1] + '%');
+                    doc.style.setProperty('--color-secondary-l', h2[2] + '%');
+                } else if (s.secondaryColorMode === 0) {
+                    doc.style.setProperty('--color-secondary-h', s.secondaryHue);
+                    doc.style.setProperty('--color-secondary-s', s.secondarySaturation + '%');
+                    doc.style.setProperty('--color-secondary-l', s.secondaryLightness + '%');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <ImportMap/>
     <HeadOutlet/>
 </head>
-<body class="h-full bg-slate-900 text-slate-100 dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars">
+<body class="h-full bg-background text-foreground dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars">
 
 <Routes/>
 <ReconnectModal/>
-@* ReSharper disable once Razor.UnresolvedComponent *@
-<Environment include="Development">
-    <script src="/lib/jquery/dist/jquery.js"></script>
-    <script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
-    <script src="/lib/moment.js/min/moment-with-locales.js"></script>
-    <script src="/js/blazor_lib.js"></script>
-    <script src="/js/stats.js"></script>
-    <script src="/js/advanced_stats.js"></script>
-    <script src="/js/liveradar.js"></script>
-    <script src="/js/infinite-scroll.js"></script>
-</Environment>
-@* ReSharper disable once Razor.UnresolvedComponent *@
-<Environment include="Production">
-    <script type="text/javascript" src="~/js/global.min.js"></script>
-</Environment>
-<script src="@Assets["_framework/blazor.web.js"]"></script>
+
 </body>
+
+@* ReSharper disable once Razor.UnresolvedComponent *@
+<script src="/lib/jquery/dist/jquery.js"></script>
+<script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
+<script src="/lib/moment.js/min/moment-with-locales.js"></script>
+<script src="/js/blazor_lib.js"></script>
+<script src="/js/stats.js"></script>
+<script src="/js/advanced_stats.js"></script>
+<script src="/js/liveradar.js"></script>
+<script src="/js/infinite-scroll.js"></script>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
 </html>

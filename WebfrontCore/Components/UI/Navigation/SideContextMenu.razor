@@ -1,5 +1,5 @@
-
-<div class="bg-slate-800 border-l border-y border-slate-700 w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl shadow-2xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto">
+<div
+    class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto">
     <div class="space-y-1">
         @{
             var groupedItems = Model.Items.Where(item => item.IsCollapse)
@@ -10,13 +10,13 @@
 
         @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
         {
-            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" 
-               class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors @(item.IsActive ? "bg-slate-700 text-white" : "")"
+            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
+               class="block px-3 py-2 rounded-md text-sm font-medium text-subtle hover:bg-surface-hover hover:text-foreground transition-colors @(item.IsActive ? "bg-action-primary text-foreground" : "")"
                @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
                @onclick:preventDefault="@(!item.IsLink)">
                 <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
                      data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-slate-400"></i>
+                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-accent"></i>
                     <span class="truncate">@item.Title</span>
                 </div>
             </a>
@@ -25,21 +25,22 @@
         @foreach (var group in groupedItems)
         {
             <details class="group mt-4" open="@(index == 0)">
-                <summary class="list-none flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 cursor-pointer hover:text-slate-300">
+                <summary
+                    class="list-none flex items-center justify-between text-xs font-semibold text-accent uppercase tracking-wider mb-2 cursor-pointer hover:text-foreground">
                     <span>@(AppState.Loc($"GAME_{group.Key}"))</span>
                     <i class="ph ph-caret-down ml-2 transition-transform group-open:rotate-180"></i>
                 </summary>
-                
-                <div class="space-y-1 pl-2 border-l-2 border-slate-700">
+
+                <div class="space-y-1 pl-2 border-l-2 border-line">
                     @foreach (var item in group)
                     {
-                         <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")" 
-                           class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors @(item.IsActive ? "bg-slate-700 text-white" : "")"
+                        <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
+                           class="block px-3 py-2 rounded-md text-sm font-medium text-subtle hover:bg-surface-hover hover:text-foreground transition-colors @(item.IsActive ? "bg-action-primary text-foreground" : "")"
                            @onclick='(e) => OnActionClick(item, e)'
                            @onclick:preventDefault="@(!item.IsLink)">
                             <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
                                  data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-slate-400"></i>
+                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-accent"></i>
                                 <span class="truncate">@item.Title</span>
                             </div>
                         </a>
@@ -50,3 +51,4 @@
         }
     </div>
 </div>
+

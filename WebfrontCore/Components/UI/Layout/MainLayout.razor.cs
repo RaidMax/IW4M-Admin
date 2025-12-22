@@ -14,7 +14,6 @@ public partial class MainLayout
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private bool _isInitialized = false;
-    private bool _halfmoonInitialized = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,10 +72,8 @@ public partial class MainLayout
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_isInitialized)
-        {
-             StateHasChanged();
-        }
+        // Theme is now handled entirely by JS in blazor_lib.js
+        await Task.CompletedTask;
     }
 
 

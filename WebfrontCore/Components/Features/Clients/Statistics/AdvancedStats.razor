@@ -25,8 +25,8 @@
     {
          <div class="flex justify-center p-20">
             <div class="relative">
-                <div class="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
-                <i class="ph ph-spinner animate-spin text-5xl text-blue-400 relative z-10"></i>
+                <div class="absolute inset-0 bg-primary blur-xl opacity-20 animate-pulse rounded-full"></div>
+                <i class="ph ph-spinner animate-spin text-5xl text-primary relative z-10"></i>
             </div>
         </div>
     }
@@ -152,15 +152,15 @@
                 
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h2 class="text-3xl font-bold text-slate-100">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
-                    <span class="px-4 py-2 rounded-lg bg-slate-800/50 text-slate-400 border border-slate-700/50 backdrop-blur-sm">
+                    <h2 class="text-3xl font-bold text-foreground">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
+                    <span class="px-4 py-2 rounded-lg bg-surface-alt/50 text-muted border border-line backdrop-blur-sm">
                         <ColorCode Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
                     </span>
                  </div>
 
                  <!-- Hero Panel -->
-                 <div class="glass-panel border-l-4 border-l-indigo-500 relative overflow-hidden group">
-                     <div class="absolute top-0 right-0 p-32 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+                 <div class="bg-surface-alt/70 backdrop-blur-md border border-line border-l-4 border-l-primary relative overflow-hidden group rounded-xl">
+                     <div class="absolute top-0 right-0 p-32 bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
                      <div class="p-8 flex flex-col items-center xl:flex-row gap-12 relative z-10">
                          
                          <!-- Rank & User Info -->
@@ -173,14 +173,14 @@
                              </div>
 
                              <div class="text-center md:text-left space-y-2">
-                                 <a href="/client/@Stats.ClientId" class="text-3xl md:text-5xl font-black text-slate-100 hover:text-white transition-colors tracking-tight">
+                                 <a href="/client/@Stats.ClientId" class="text-3xl md:text-5xl font-black text-foreground hover:text-white transition-colors tracking-tight">
                                      <ColorCode Value="@Stats.ClientName"/>
                                  </a>
                                  
                                  <div class="flex flex-col gap-1">
                                      @if (Stats.Level == EFClient.Permission.Banned)
                                      {
-                                         <span class="text-rose-500 text-lg font-bold flex items-center gap-2 justify-center md:justify-start">
+                                         <span class="text-error text-lg font-bold flex items-center gap-2 justify-center md:justify-start">
                                              <i class="ph ph-prohibit"></i> @AppState.Loc("GLOBAL_PERMISSION_BANNED")
                                          </span>
                                      }
@@ -188,29 +188,29 @@
                                      {
                                          if (Stats.Ranking > 0)
                                          {
-                                              <span class="text-slate-400 text-lg">
+                                              <span class="text-muted text-lg">
                                                   @(AppState.Loc("WEBFRONT_ADV_STATS_RANKED_V2").FormatExt(Stats.Ranking?.ToString("#,##0"), Stats.TotalRankedClients.ToString("#,##0")))
                                               </span>
                                          }
                                          else
                                          {
-                                              <span class="text-amber-500/80 font-medium">@AppState.Loc("WEBFRONT_ADV_STATS_EXPIRED")</span>
+                                              <span class="text-accent/80 font-medium">@AppState.Loc("WEBFRONT_ADV_STATS_EXPIRED")</span>
                                          }
  
                                          <div class="flex items-center gap-2 justify-center md:justify-start mt-1">
                                               @if (Stats.ServerId != null)
                                              {
-                                                 <span class="text-slate-300">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-indigo-400 font-bold font-mono text-xl\">{performance.ToNumericalString()}</span>"))</span>
+                                                 <span class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{performance.ToNumericalString()}</span>"))</span>
                                              }
                                              else
                                              {
-                                                 <span class="text-slate-300">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-indigo-400 font-bold font-mono text-xl\">{Stats.Rating.ToNumericalString()}</span>"))</span>
+                                                 <span class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Rating.ToNumericalString()}</span>"))</span>
                                              }
                                          </div>
                                      }
                                      else
                                      {
-                                         <span class="text-slate-500 italic">@AppState.Loc("WEBFRONT_STATS_INDEX_UNRANKED")</span>
+                                         <span class="text-muted italic">@AppState.Loc("WEBFRONT_STATS_INDEX_UNRANKED")</span>
                                      }
                                  </div>
                              </div>
@@ -224,7 +224,7 @@
                              }
                              else
                              {
-                                 <div class="absolute inset-0 flex items-center justify-center text-slate-600 border border-dashed border-slate-700/50 rounded-xl">
+                                 <div class="absolute inset-0 flex items-center justify-center text-muted border border-dashed border-line rounded-xl">
                                      <span>Not enough data for graph</span>
                                  </div>
                              }
@@ -236,7 +236,7 @@
                  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                      @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KILLS").Titleize(), aggregate?.KillCount.ToNumericalString())
                      @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_DEATHS").Titleize(), aggregate?.DeathCount.ToNumericalString())
-                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KDR").Titleize(), kdr, kdr != null && double.TryParse(kdr, out var k) && k >= 2.0 ? "text-emerald-400" : null)
+                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KDR").Titleize(), kdr, kdr != null && double.TryParse(kdr, out var k) && k >= 2.0 ? "text-success" : null)
                      @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_SCORE").Titleize(), score?.ToString("N0") ?? "-")
                      @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_ZSCORE"), Stats.ZScore.ToNumericalString(2))
                      @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_SKILL").ToLower().Titleize(), skill)
@@ -255,14 +255,14 @@
                  <!-- Bottom Section: Models & Tables -->
                  <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
                      <!-- Hit Locations -->
-                     <div class="glass-panel rounded-xl overflow-hidden flex flex-col">
-                         <div class="p-6 border-b border-white/5 bg-slate-800/50">
-                             <h4 class="text-lg font-bold text-slate-200">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h4>
+                     <div class="bg-surface-alt/70 backdrop-blur-md border border-line rounded-xl overflow-hidden flex flex-col">
+                         <div class="p-6 border-b border-line bg-surface-alt/50">
+                             <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h4>
                          </div>
                          
                          <div class="p-0 overflow-x-auto">
-                             <table class="w-full text-left text-sm text-slate-400">
-                                 <thead class="bg-slate-900/50 text-xs uppercase font-medium text-slate-500">
+                             <table class="w-full text-left text-sm text-muted">
+                                 <thead class="bg-surface-alt text-xs uppercase font-medium text-muted">
                                      <tr>
                                          <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_LOCATION")</th>
                                          <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
@@ -270,22 +270,22 @@
                                          <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
                                      </tr>
                                  </thead>
-                                 <tbody class="divide-y divide-slate-800/50">
+                                 <tbody class="divide-y divide-line">
                                      @{ var totalHits = filteredHitLocations.Sum(hit => hit.HitCount); }
                                      @foreach (var hit in filteredHitLocations.Take(5))
                                      {
-                                         <tr class="hover:bg-slate-700/30 transition-colors">
-                                             <td class="px-6 py-3 font-medium text-slate-300">@config.GetStringForGame(hit.HitLocation.Name, hit.HitLocation.Game)</td>
+                                         <tr class="hover:bg-surface-hover/30 transition-colors">
+                                             <td class="px-6 py-3 font-medium text-subtle">@config.GetStringForGame(hit.HitLocation.Name, hit.HitLocation.Game)</td>
                                              <td class="px-6 py-3 font-mono">@hit.HitCount</td>
                                              <td class="px-6 py-3">
                                                  <div class="flex items-center gap-2">
-                                                     <div class="w-12 bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                                         <div class="bg-indigo-500 h-full rounded-full" style="width: @(Math.Round((hit.HitCount / (float)(totalHits > 0 ? totalHits : 1)) * 100.0))%"></div>
+                                                     <div class="w-12 bg-surface rounded-full h-1.5 overflow-hidden">
+                                                         <div class="bg-primary h-full rounded-full" style="width: @(Math.Round((hit.HitCount / (float)(totalHits > 0 ? totalHits : 1)) * 100.0))%"></div>
                                                      </div>
                                                      <span class="text-xs">@(Math.Round((hit.HitCount / (float)(totalHits > 0 ? totalHits : 1)) * 100.0).ToString("N0"))%</span>
                                                  </div>
                                              </td>
-                                             <td class="px-6 py-3 text-right font-mono text-slate-300">@hit.DamageInflicted.ToNumericalString()</td>
+                                             <td class="px-6 py-3 text-right font-mono text-subtle">@hit.DamageInflicted.ToNumericalString()</td>
                                          </tr>
                                      }
                                  </tbody>
@@ -293,20 +293,20 @@
                          </div>
                          
                          <!-- Hit Location Model Canvas -->
-                         <div class="relative h-64 bg-gradient-to-t from-slate-900/50 to-transparent flex items-center justify-center p-4" id="hitlocation_container">
+                         <div class="relative h-64 bg-gradient-to-t from-surface-alt to-transparent flex items-center justify-center p-4" id="hitlocation_container">
                              <canvas id="hitlocation_model" class="w-full h-full object-contain"></canvas>
                          </div>
                      </div>
  
                      <!-- Weapons Used -->
-                     <div class="glass-panel rounded-xl overflow-hidden flex flex-col h-full">
-                         <div class="p-6 border-b border-white/5 bg-slate-800/50">
-                             <h4 class="text-lg font-bold text-slate-200">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h4>
+                     <div class="bg-surface-alt/70 backdrop-blur-md border border-line rounded-xl overflow-hidden flex flex-col h-full">
+                         <div class="p-6 border-b border-line bg-surface-alt/50">
+                             <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h4>
                          </div>
                          
                          <div class="overflow-x-auto flex-grow">
-                             <table class="w-full text-left text-sm text-slate-400">
-                                 <thead class="bg-slate-900/50 text-xs uppercase font-medium text-slate-500">
+                             <table class="w-full text-left text-sm text-subtle">
+                                 <thead class="bg-surface-alt text-xs uppercase font-medium text-muted">
                                      <tr>
                                          <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_WEAPON")</th>
                                          <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_KILLS")</th>
@@ -314,19 +314,19 @@
                                          <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
                                      </tr>
                                  </thead>
-                                 <tbody class="divide-y divide-slate-800/50">
+                                 <tbody class="divide-y divide-line">
                                      @foreach (var weapon in weapons.Take(10))
                                      {
-                                         <tr class="hover:bg-slate-700/30 transition-colors">
+                                         <tr class="hover:bg-surface-hover/30 transition-colors">
                                              <td class="px-6 py-3">
                                                  <div class="flex flex-col">
-                                                     <span class="font-medium text-slate-200">@GetWeaponNameForHit(weapon, config)</span>
-                                                     <span class="text-xs text-slate-500">@(GetWeaponAttachmentName(weapon.WeaponAttachmentCombo, config) ?? "--")</span>
+                                                     <span class="font-medium text-foreground">@GetWeaponNameForHit(weapon, config)</span>
+                                                     <span class="text-xs text-muted">@(GetWeaponAttachmentName(weapon.WeaponAttachmentCombo, config) ?? "--")</span>
                                                  </div>
                                              </td>
                                              <td class="px-6 py-3 text-right font-mono">@weapon.KillCount.ToNumericalString()</td>
                                              <td class="px-6 py-3 text-right font-mono">@weapon.HitCount.ToNumericalString()</td>
-                                             <td class="px-6 py-3 text-right font-mono text-slate-300">@weapon.DamageInflicted.ToNumericalString()</td>
+                                             <td class="px-6 py-3 text-right font-mono text-subtle">@weapon.DamageInflicted.ToNumericalString()</td>
                                          </tr>
                                      }
                                  </tbody>
@@ -350,15 +350,15 @@
 @code {
     private RenderFragment RenderStatCard(string name, string value, string valueColor = null) => __builder =>
     {
-        <div class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 p-4 rounded-xl flex flex-col justify-between h-auto hover:bg-slate-800/60 transition-colors group">
-            <span class="text-slate-500 text-[10px] uppercase tracking-wider font-bold mb-1 group-hover:text-indigo-400 transition-colors">@name</span>
+        <div class="bg-surface-alt/40 backdrop-blur-sm border border-line p-4 rounded-xl flex flex-col justify-between h-auto hover:bg-surface-alt/60 transition-colors group">
+            <span class="text-muted text-[10px] uppercase tracking-wider font-bold mb-1 group-hover:text-primary transition-colors">@name</span>
              @if (string.IsNullOrWhiteSpace(value))
             {
-                <span class="text-slate-600 font-mono text-lg">&mdash;</span>
+                <span class="text-subtle font-mono text-lg">&mdash;</span>
             }
             else
             {
-                <span class="@(valueColor ?? "text-slate-200") font-mono font-bold text-xl tracking-tight truncate" title="@value">@value</span>
+                <span class="@(valueColor ?? "text-foreground") font-mono font-bold text-xl tracking-tight truncate" title="@value">@value</span>
             }
         </div>
     };

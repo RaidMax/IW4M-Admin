@@ -8,15 +8,15 @@
 <div class="max-w-7xl mx-auto p-4 md:p-8">
     <!-- Header -->
     <div class="mb-8">
-        <h2 class="text-3xl font-bold text-slate-100 mb-2">@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE")</h2>
-        <p class="text-slate-400">@AppState.Loc("WEBFRONT_CONFIGURATION_SAVING_CHANGES")</p>
+        <h2 class="text-2xl font-bold text-foreground">@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE")</h2>
+        <div class="text-sm text-muted font-medium mt-1">@AppState.Loc("WEBFRONT_CONFIGURATION_SAVING_CHANGES")</div>
     </div>
 
     @if (ConfigurationFiles == null)
     {
         <!-- Loading State -->
-        <div class="flex flex-col items-center justify-center py-20 text-slate-500 animate-pulse">
-            <i class="ph ph-spinner animate-spin text-4xl mb-4 text-blue-500"></i>
+        <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
+            <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
             <span class="text-sm">Loading configuration files...</span>
         </div>
     }
@@ -27,37 +27,37 @@
             {
                 var isExpanded = ExpandedFiles.Contains(file.FileName);
                 
-                <div class="bg-slate-900 border border-slate-700/50 rounded-lg overflow-hidden transition-all shadow-sm @(isExpanded ? "ring-1 ring-blue-500/20" : "")">
+                <div class="bg-surface border border-line rounded-lg overflow-hidden transition-all shadow-sm @(isExpanded ? "ring-1 ring-primary/20" : "")">
                     <!-- File Header (Clickable) -->
                     <button @onclick="@(() => ToggleFile(file))" 
-                            class="w-full flex items-center justify-between px-6 py-4 bg-slate-800/50 hover:bg-slate-800 transition-colors text-left focus:outline-none focus:bg-slate-800">
+                            class="w-full flex items-center justify-between px-6 py-4 bg-surface/50 hover:bg-surface-hover transition-colors text-left focus:outline-none focus:bg-surface">
                         <div class="flex items-center gap-3">
-                            <div class="p-2 rounded bg-slate-900/50 text-blue-400 border border-slate-700/50">
+                            <div class="p-2 rounded bg-surface-alt/50 text-primary border border-line">
                                 <i class="ph ph-file-code text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="font-medium text-slate-200">@file.FileName</h3>
-                                <p class="text-xs text-slate-500 font-mono">JSON Configuration</p>
+                                <h3 class="font-medium text-foreground">@file.FileName</h3>
+                                <p class="text-xs text-subtle font-mono">JSON Configuration</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-4">
                             @if (!string.IsNullOrEmpty(SaveStatus[file.FileName]))
                             {
-                                <span class="@(SaveStatus[file.FileName].Contains("Error") ? "text-red-400" : "text-green-400") text-sm font-medium animate-fade-in-out">
+                                <span class="@(SaveStatus[file.FileName].Contains("Error") ? "text-error" : "text-success") text-sm font-medium animate-fade-in-out">
                                     @SaveStatus[file.FileName]
                                 </span>
                             }
-                            <i class="ph ph-caret-down text-slate-500 transition-transform duration-200 text-lg @(isExpanded ? "rotate-180" : "")"></i>
+                            <i class="ph ph-caret-down text-muted transition-transform duration-200 text-lg @(isExpanded ? "rotate-180" : "")"></i>
                         </div>
                     </button>
 
                     <!-- Editor Area (Collapsible) -->
                     @if (isExpanded)
                     {
-                        <div class="border-t border-slate-700/50">
+                        <div class="border-t border-line">
                             <!-- Toolbar -->
-                            <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 flex justify-end">
-                                <button class="px-3 py-1 text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                            <div class="px-4 py-2 bg-surface-alt border-b border-line flex justify-end">
+                                <button class="px-3 py-1 text-xs text-muted hover:text-foreground transition-colors flex items-center gap-1"
                                         title="Format JSON (Not implemented)">
                                     <i class="ph ph-brackets-curly"></i>
                                     <span>JSON</span>
@@ -67,21 +67,21 @@
                             <!-- Editing Textarea -->
                             <div class="relative group">
                                 <textarea @bind="file.FileContent"
-                                          class="w-full h-[500px] p-4 bg-slate-950 text-slate-300 font-mono text-sm border-none focus:ring-0 resize-y leading-relaxed scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900"
+                                          class="w-full h-[500px] p-4 bg-surface-alt text-subtle font-mono text-sm border-none focus:ring-0 resize-y leading-relaxed scrollbar-thin scrollbar-thumb-line scrollbar-track-surface-alt"
                                           spellcheck="false"></textarea>
                             </div>
                             
                             <!-- Footer Actions -->
-                            <div class="px-6 py-4 bg-slate-900 border-t border-slate-800 flex justify-between items-center">
-                                <div class="text-xs text-slate-500">
+                            <div class="px-6 py-4 bg-surface border-t border-line flex justify-between items-center">
+                                <div class="text-xs text-muted">
                                     Last modified details not available
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <button class="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                                    <button class="px-4 py-2 text-sm text-muted hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
                                             @onclick="@(() => ToggleFile(file))">
                                         Cancel
                                     </button>
-                                    <button class="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg hover:shadow-blue-500/20 transition-all flex items-center gap-2"
+                                    <button class="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg shadow-lg hover:shadow-primary/20 transition-all flex items-center gap-2"
                                             @onclick="() => SaveFile(file)">
                                         <i class="ph ph-floppy-disk"></i>
                                         @AppState.Loc("WEBFRONT_CONFIGURATION_BUTTON_SAVE")

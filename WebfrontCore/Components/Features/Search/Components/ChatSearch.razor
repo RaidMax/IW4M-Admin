@@ -1,12 +1,12 @@
-<div id="chatSearchWrapper" class="space-y-4 text-slate-200">
+<div id="chatSearchWrapper" class="space-y-4 text-foreground">
     <!-- Message & Exact Match -->
     <div class="flex flex-col md:flex-row md:items-end gap-4">
         <div class="flex-1 space-y-1">
-            <label for="messageContains" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label for="messageContains" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ACTION_LABEL_MESSAGE"))
             </label>
             <input type="text" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-input-border-focus focus:ring-input-border-focus sm:text-sm px-3 py-2" 
                    id="messageContains" 
                    placeholder="Contains" 
                    @bind="Model.MessageContains" />
@@ -14,8 +14,8 @@
         <div class="flex items-center pb-2">
             <label class="relative inline-flex items-center cursor-pointer group">
                 <input type="checkbox" id="isExactMatch" class="sr-only peer" @bind="Model.IsExactMatch">
-                <div class="w-9 h-5 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 flex-shrink-0"></div>
-                <span class="ml-3 text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</span>
+                <div class="w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
+                <span class="ml-3 text-sm font-medium text-muted group-hover:text-foreground transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</span>
             </label>
         </div>
     </div>
@@ -23,20 +23,20 @@
     <!-- Client ID & Server Select -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="md:col-span-1 space-y-1">
-            <label for="clientId" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label for="clientId" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID"))
             </label>
             <input type="text" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-input-border-focus focus:ring-input-border-focus sm:text-sm px-3 py-2" 
                    id="clientId" 
                    placeholder="Id" 
                    @bind="Model.ClientId" />
         </div>
         <div class="md:col-span-3 space-y-1">
-            <label for="serverId" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label for="serverId" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER"))
             </label>
-            <select class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2" 
+            <select class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-input-border-focus focus:ring-input-border-focus sm:text-sm px-3 py-2" 
                     id="serverId" 
                     @bind="Model.ServerId">
                 <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
@@ -51,27 +51,27 @@
     <!-- Time Range -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="space-y-1">
-            <label for="sentAfter" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label for="sentAfter" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_AFTER"))
             </label>
             <input type="datetime-local" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 [color-scheme:dark]" 
+                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-input-border-focus focus:ring-input-border-focus sm:text-sm px-3 py-2 [color-scheme:dark]" 
                    id="sentAfter" 
                    @bind="LocalSentAfter" />
         </div>
         <div class="space-y-1">
-            <label for="sentBefore" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label for="sentBefore" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_BEFORE"))
             </label>
             <input type="datetime-local" 
-                   class="block w-full rounded-md bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 [color-scheme:dark]" 
+                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-input-border-focus focus:ring-input-border-focus sm:text-sm px-3 py-2 [color-scheme:dark]" 
                    id="sentBefore" 
                    @bind="LocalSentBefore" />
         </div>
     </div>
 
     <div class="pt-2">
-        <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-900 transition-colors" 
+        <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-input-border-focus focus:ring-offset-input-bg transition-colors" 
                 @onclick="Submit">
             @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))
         </button>

@@ -2,37 +2,37 @@
 @implements IDisposable
 
 
-<div class="relative overflow-hidden rounded-lg bg-slate-900 border border-slate-700/50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-slate-600 group flex flex-col">
+<div class="relative overflow-hidden rounded-lg bg-surface-alt border border-line shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-line-hover group flex flex-col">
     
     <!-- Compact Header -->
-    <div class="relative h-10 px-4 flex items-center justify-between bg-slate-800 border-b border-slate-700/50 z-20" id="server_header_@Model.Id">
+    <div class="relative h-10 px-4 flex items-center justify-between bg-surface border-b border-line z-20" id="server_header_@Model.Id">
         
         <!-- Left: Basic Info -->
         <div class="flex items-center space-x-3 overflow-hidden">
-             <span class="px-1.5 py-0.5 rounded bg-slate-700 text-[10px] font-mono text-slate-300 border border-slate-600 uppercase tracking-widest shrink-0">
+             <span class="px-1.5 py-0.5 rounded bg-surface text-[10px] font-mono text-muted border border-line uppercase tracking-widest shrink-0">
                 @Model.Game
             </span>
-            <h3 class="text-sm font-bold text-slate-100 truncate max-w-[200px]">
+            <h3 class="text-sm font-bold text-foreground truncate max-w-[200px]">
                 <ColorCode Value="@Model.Name"/>
             </h3>
             
              <!-- Actions (Always Visible) -->
             <div class="flex items-center space-x-1">
                 <a href="@Model.ConnectProtocolUrl" 
-                   class="flex items-center justify-center w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-foreground transition-colors"
                    title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
                     <i class="ph-fill ph-play text-xs"></i>
                 </a>
                 
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
                     <button @onclick:preventDefault @onclick="() => OnChat.InvokeAsync(Model.Endpoint)" 
-                            class="flex items-center justify-center w-6 h-6 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors">
+                            class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors">
                         <i class="ph-bold ph-chat-circle-text text-xs"></i>
                     </button>
                 </AuthorizeView>
                 
                 <a href="scoreboard/@Model.Id" 
-                   class="flex items-center justify-center w-6 h-6 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors"
+                   class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors"
                    title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))">
                     <i class="ph-bold ph-list text-xs"></i>
                 </a>
@@ -40,27 +40,27 @@
         </div>
 
         <!-- Right: Map & Stats -->
-        <div class="flex items-center space-x-4 text-xs font-medium text-slate-300">
+        <div class="flex items-center space-x-4 text-xs font-medium text-subtle">
              <div class="hidden md:flex items-center space-x-1">
-                <span class="text-slate-200">@Model.Map</span>
+                <span class="text-foreground">@Model.Map</span>
                 @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
                 {
-                    <span class="text-slate-600">&bull;</span>
-                    <span class="text-slate-400">@Model.GameType</span>
+                    <span class="text-muted">&bull;</span>
+                    <span class="text-subtle">@Model.GameType</span>
                 }
             </div>
 
-            <div class="flex items-center space-x-3 pl-3 border-l border-slate-700/50">
+            <div class="flex items-center space-x-3 pl-3 border-l border-line">
                  @if (Model.LobbyZScore != null)
                 {
                     <div class="flex items-center space-x-0.5 " title="@(AppState.Loc("WEBFRONT_HOME_RATING_DESC"))">
                         <span>@(Model.LobbyZScore ?? 0)</span>
-                        <i class="ph-fill ph-lightning text-amber-400"></i>
+                        <i class="ph-fill ph-lightning text-accent"></i>
                     </div>
                 }
                 
                 <!-- Player Count Badge -->
-                <div class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-200 font-mono text-xs border border-slate-600 shadow-sm">
+                <div class="px-2 py-0.5 rounded-full bg-surface text-foreground font-mono text-xs border border-line shadow-sm">
                     <span class="font-bold">@Model.ClientCount</span>
                     <span class="opacity-50 mx-0.5">/</span>
                     <span class="opacity-75">@(Model.MaxClients - Model.PrivateClientSlots)</span>
@@ -70,17 +70,17 @@
     </div>
 
     <!-- Body: Player List -->
-    <div  class="relative z-10 flex-1 min-h-[120px] bg-slate-900">
+    <div class="relative z-10 flex-1 @(Model.ClientCount == 0 ? "min-h-[60px]" : "min-h-[120px]") bg-surface-alt">
         <div id="server_clientactivity_@Model.Id">
              <ClientActivity Model="@Model"/>
         </div>
     </div>
 
     <!-- Separator -->
-    <div class="h-px w-full bg-slate-700/50"></div>
+    <div class="h-px w-full bg-line"></div>
 
     <!-- Bottom Graph (Overlaid slightly or bottom stacked) -->
-    <div class="server-history relative h-[50px] w-full mt-auto mb-0 bg-slate-900">
+    <div class="server-history relative h-[50px] w-full mt-auto mb-0 bg-surface-alt">
         <div class="server-history-row w-full h-full" id="server_history_@Model.Id">
              <!-- Canvas managed by JS -->
             <canvas id="server_history_canvas_@Model.Id" class="w-full h-full block"></canvas>

@@ -7,34 +7,37 @@
 <PageTitle>@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE") | IW4MAdmin</PageTitle>
 
 <div class="max-w-7xl mx-auto p-4 md:p-8">
-    <div class="flex items-center mb-6">
-         <h2 class="text-2xl font-bold text-slate-100">@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE")</h2>
+    <div class="mb-6">
+         <h2 class="text-2xl font-bold text-foreground">@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE")</h2>
+         <div class="text-sm text-muted font-medium mt-1">
+             @Results.Count.ToString("#,##0") resources found
+         </div>
     </div>
 
-    <div class="bg-slate-800 rounded-lg border border-slate-700/50 shadow-sm overflow-hidden">
+    <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
              <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-900/50 hidden md:table-header-group">
+                <thead class="bg-surface-alt/50 hidden md:table-header-group">
                     <tr>
-                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</th>
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</th>
-                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</th>
+                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_IP")</th>
+                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_COUNTRY")</th>
                         </AuthorizeView>
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</th>
+                            <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</th>
                         </AuthorizeView>
-                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</th>
-                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</th>
-                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME")</th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted text-right">@AppState.Loc("WEBFRONT_PROFILE_META_FIRST_SEEN").Replace("{{time}} ", "")</th>
+                        <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted text-right">@AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED")</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-700/50">
+                <tbody class="divide-y divide-line">
                     @if (_isLoading && Results.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="p-12 text-center text-slate-400">
-                                <i class="ph ph-spinner animate-spin text-4xl text-blue-500 mx-auto mb-4"></i>
+                            <td colspan="7" class="p-12 text-center text-muted">
+                                <i class="ph ph-spinner animate-spin text-4xl text-primary mx-auto mb-4"></i>
                                 <div class="text-lg">Loading results...</div>
                             </td>
                         </tr>
@@ -42,8 +45,8 @@
                     else if (Results.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="p-12 text-center text-slate-400">
-                                <i class="ph ph-magnifying-glass text-4xl mb-4 text-slate-500 mx-auto"></i>
+                            <td colspan="7" class="p-12 text-center text-muted">
+                                <i class="ph ph-magnifying-glass text-4xl mb-4 text-subtle mx-auto"></i>
                                 <div class="text-lg">No results found</div>
                             </td>
                         </tr>
@@ -53,45 +56,45 @@
                         @foreach (var client in Results)
                         {
                             <!-- Desktop Row -->
-                            <tr class="hidden md:table-row hover:bg-slate-700/30 transition-colors group">
+                            <tr class="hidden md:table-row hover:bg-surface-hover/30 transition-colors group">
                                 <td class="p-4">
-                                    <a href="/client/@client.ClientId" class="font-medium hover:text-blue-400 transition-colors @AppState.GetLevelColorClass(client.ClientLevelValue)">
+                                    <a href="/client/@client.ClientId" class="font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(client.ClientLevelValue)">
                                         <ColorCode Value="@client.CurrentClientName" />
                                     </a>
                                 </td>
                                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                    <td class="p-4 text-sm font-mono text-slate-300">@(client.CurrentClientIp.HasValue ? global::SharedLibraryCore.Utilities.ConvertIPtoString(client.CurrentClientIp.Value) : "-")</td>
+                                    <td class="p-4 text-sm font-mono text-subtle">@(client.CurrentClientIp.HasValue ? global::SharedLibraryCore.Utilities.ConvertIPtoString(client.CurrentClientIp.Value) : "-")</td>
                                     <td class="p-4">
                                         <div class="flex items-center gap-2">
                                             @if (string.IsNullOrEmpty(client.ClientCountryCode))
                                             {
-                                                <i class="ph ph-question text-slate-500"></i>
-                                                <span class="text-sm text-slate-500">Unknown</span>
+                                                <i class="ph ph-question text-muted"></i>
+                                                <span class="text-sm text-muted">Unknown</span>
                                             }
                                             else
                                             {
                                                 <img src="https://flagcdn.com/24x18/@(client.ClientCountryCode.ToLower()).png" class="rounded shadow-sm" alt="@client.ClientCountryDisplayName"/>
-                                                <span class="text-sm text-slate-300">@client.ClientCountryDisplayName</span>
+                                                <span class="text-sm text-subtle">@client.ClientCountryDisplayName</span>
                                             }
                                         </div>
                                     </td>
                                 </AuthorizeView>
                                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                    <td class="p-4 text-sm text-slate-300">@client.ClientLevel</td>
+                                    <td class="p-4 text-sm text-subtle">@client.ClientLevel</td>
                                 </AuthorizeView>
                                 <td class="p-4">
                                     <div class="group/tooltip relative inline-block">
-                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-700 text-slate-300 border border-slate-600/50">
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
                                             @(global::SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc("GAME_" + client.Game)))
                                         </span>
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all whitespace-nowrap z-10">
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-surface-alt text-foreground text-xs rounded shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all whitespace-nowrap z-10 border border-line">
                                             @AppState.Loc("GAME_" + client.Game)
-                                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-line"></div>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="p-4 text-sm text-slate-400 text-right">@client.FirstConnection.Humanize()</td>
-                                <td class="p-4 text-sm text-slate-400 text-right">@client.LastConnection.Humanize()</td>
+                                <td class="p-4 text-sm text-muted text-right">@client.FirstConnection.Humanize()</td>
+                                <td class="p-4 text-sm text-muted text-right">@client.LastConnection.Humanize()</td>
                             </tr>
 
                             <!-- Mobile Card -->
@@ -101,31 +104,31 @@
                                         <a href="/client/@client.ClientId" class="text-lg font-bold @AppState.GetLevelColorClass(client.ClientLevelValue)">
                                              <ColorCode Value="@client.CurrentClientName" />
                                         </a>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-300 border border-slate-600/50">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
                                             @(global::SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc("GAME_" + client.Game)))
                                         </span>
                                     </div>
                                     <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                            <div class="col-span-2 flex items-center gap-2 font-mono text-slate-300">
-                                                 <i class="ph ph-globe text-slate-500"></i>
+                                            <div class="col-span-2 flex items-center gap-2 font-mono text-subtle">
+                                                 <i class="ph ph-globe text-muted"></i>
                                                  @(client.CurrentClientIp.HasValue ? global::SharedLibraryCore.Utilities.ConvertIPtoString(client.CurrentClientIp.Value) : "-")
                                                  @if (!string.IsNullOrEmpty(client.ClientCountryCode))
                                                  {
-                                                     <span class="text-slate-500">•</span>
+                                                     <span class="text-muted">•</span>
                                                      <img src="https://flagcdn.com/16x12/@(client.ClientCountryCode.ToLower()).png" class="rounded shadow-sm" alt="@client.ClientCountryDisplayName"/>
                                                  }
                                             </div>
                                         </AuthorizeView>
                                         
-                                        <div class="text-slate-500">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
-                                        <div class="text-slate-300 text-right">@client.ClientLevel</div>
+                                        <div class="text-muted">@AppState.Loc("WEBFRONT_PROFILE_LEVEL")</div>
+                                        <div class="text-subtle text-right">@client.ClientLevel</div>
 
-                                        <div class="text-slate-500">First Seen</div>
-                                        <div class="text-slate-300 text-right">@client.FirstConnection.Humanize()</div>
+                                        <div class="text-muted">First Seen</div>
+                                        <div class="text-subtle text-right">@client.FirstConnection.Humanize()</div>
 
-                                        <div class="text-slate-500">Last Seen</div>
-                                        <div class="text-slate-300 text-right">@client.LastConnection.Humanize()</div>
+                                        <div class="text-muted">Last Seen</div>
+                                        <div class="text-subtle text-right">@client.LastConnection.Humanize()</div>
                                     </div>
                                 </td>
                             </tr>
@@ -140,7 +143,7 @@
     <div id="loadMoreTrigger" class="mt-6 flex justify-center py-4">
         @if (_isLoading && Results.Count > 0)
         {
-            <div class="flex items-center gap-2 text-slate-400 animate-pulse">
+            <div class="flex items-center gap-2 text-muted animate-pulse">
                 <i class="ph ph-spinner animate-spin text-xl"></i>
                 <span>Loading more...</span>
             </div>
@@ -151,7 +154,7 @@
         }
         else if (Results.Count > 0)
         {
-            <div class="text-slate-500 italic text-sm">No more results</div>
+            <div class="text-muted italic text-sm">No more results</div>
         }
     </div>
 </div>

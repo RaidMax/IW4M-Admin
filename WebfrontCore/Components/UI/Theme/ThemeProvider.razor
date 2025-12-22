@@ -1,0 +1,142 @@
+@namespace WebfrontCore.Components.UI.Theme
+
+@inject IJSRuntime JSRuntime
+
+@code {
+    /// <summary>
+    /// Available theme presets
+    /// </summary>
+    public enum ThemePreset
+    {
+        Minimal,
+        Balanced,
+        HighContrast
+    }
+
+    /// <summary>
+    /// Color mode - Custom HSL or Tailwind Palette
+    /// </summary>
+    public enum ColorMode
+    {
+        Custom,
+        Palette
+    }
+
+    /// <summary>
+    /// Available palette names (match the data-*-palette attribute values in CSS)
+    /// </summary>
+    public static readonly string[] AvailablePalettes = 
+    [
+        "blue", "sky", "cyan", "teal", "emerald", "green", "lime", "yellow", 
+        "amber", "orange", "red", "rose", "pink", "fuchsia", "purple", 
+        "violet", "indigo", "slate", "gray", "zinc", "neutral", "stone"
+    ];
+
+    // Theme preset
+    [Parameter] public ThemePreset Preset { get; set; } = ThemePreset.Minimal;
+    
+    // Primary color settings
+    [Parameter] public ColorMode PrimaryColorMode { get; set; } = ColorMode.Palette;
+    [Parameter] public string PrimaryPalette { get; set; } = "blue";
+    [Parameter] public int PrimaryHue { get; set; } = 217;
+    [Parameter] public int PrimarySaturation { get; set; } = 91;
+    [Parameter] public int PrimaryLightness { get; set; } = 60;
+    
+    // Secondary color settings
+    [Parameter] public ColorMode SecondaryColorMode { get; set; } = ColorMode.Palette;
+    [Parameter] public string SecondaryPalette { get; set; } = "purple";
+    [Parameter] public int SecondaryHue { get; set; } = 280;
+    [Parameter] public int SecondarySaturation { get; set; } = 65;
+    [Parameter] public int SecondaryLightness { get; set; } = 60;
+
+    // Callbacks
+    [Parameter] public EventCallback<ThemePreset> PresetChanged { get; set; }
+
+    private string ThemeDataAttribute => Preset switch
+    {
+        ThemePreset.Minimal => "minimal",
+        ThemePreset.Balanced => "balanced",
+        ThemePreset.HighContrast => "high-contrast",
+        _ => "minimal"
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ApplyThemeAsync();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ApplyThemeAsync();
+    }
+
+    public async Task ApplyThemeAsync()
+    {
+        try
+        {
+            var settings = new
+            {
+                preset = ThemeDataAttribute,
+                primaryColorMode = (int)PrimaryColorMode,
+                primaryPalette = PrimaryPalette,
+                primaryHue = PrimaryHue,
+                primarySaturation = PrimarySaturation,
+                primaryLightness = PrimaryLightness,
+                secondaryColorMode = (int)SecondaryColorMode,
+                secondaryPalette = SecondaryPalette,
+                secondaryHue = SecondaryHue,
+                secondarySaturation = SecondarySaturation,
+                secondaryLightness = SecondaryLightness
+            };
+
+            await JSRuntime.InvokeVoidAsync("themeManager.apply", settings);
+            await JSRuntime.InvokeVoidAsync("themeManager.save", settings);
+        }
+        catch
+        {
+            // Silently fail if JS interop not available
+        }
+    }
+
+    public async Task SetPresetAsync(ThemePreset preset)
+    {
+        Preset = preset;
+        await PresetChanged.InvokeAsync(preset);
+        await ApplyThemeAsync();
+    }
+
+    public async Task SetPrimaryPaletteAsync(string palette)
+    {
+        PrimaryColorMode = ColorMode.Palette;
+        PrimaryPalette = palette;
+        await ApplyThemeAsync();
+    }
+
+    public async Task SetPrimaryColorAsync(int hue, int saturation, int lightness)
+    {
+        PrimaryColorMode = ColorMode.Custom;
+        PrimaryHue = hue;
+        PrimarySaturation = saturation;
+        PrimaryLightness = lightness;
+        await ApplyThemeAsync();
+    }
+
+    public async Task SetSecondaryPaletteAsync(string palette)
+    {
+        SecondaryColorMode = ColorMode.Palette;
+        SecondaryPalette = palette;
+        await ApplyThemeAsync();
+    }
+
+    public async Task SetSecondaryColorAsync(int hue, int saturation, int lightness)
+    {
+        SecondaryColorMode = ColorMode.Custom;
+        SecondaryHue = hue;
+        SecondarySaturation = saturation;
+        SecondaryLightness = lightness;
+        await ApplyThemeAsync();
+    }
+}

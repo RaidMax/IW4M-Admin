@@ -3,24 +3,24 @@
     {
         <div class="inline-flex items-center gap-2">
              <!-- Online Clients -->
-            <div class="flex items-center border border-slate-700/50 rounded-lg overflow-hidden">
-                <span class="px-3 py-1 text-xs font-bold text-blue-400 bg-blue-500/10 border-r border-slate-700/50">@(_navData.TotalClientCount)</span>
-                <span class="px-3 py-1 text-xs font-medium text-slate-400 bg-slate-800/50">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE").ToUpper()</span>
+            <div class="flex items-center border border-line rounded-lg overflow-hidden">
+                <span class="px-3 py-1 text-xs font-bold text-primary bg-primary/10 border-r border-line">@(_navData.TotalClientCount)</span>
+                <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE").ToUpper()</span>
             </div>
 
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
                  <!-- Admins -->
-                <div class="flex items-center border border-slate-700/50 rounded-lg overflow-hidden">
-                    <span class="px-3 py-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 border-r border-slate-700/50">@(_navData.TotalAdminCount)</span>
-                    <span class="px-3 py-1 text-xs font-medium text-slate-400 bg-slate-800/50">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE").ToUpper()</span>
+                <div class="flex items-center border border-line rounded-lg overflow-hidden">
+                    <span class="px-3 py-1 text-xs font-bold text-success bg-success/10 border-r border-line">@(_navData.TotalAdminCount)</span>
+                    <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE").ToUpper()</span>
                 </div>
             </AuthorizeView>
 
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
                  <!-- Reports -->
-                <button type="button" class="flex items-center border border-slate-700/50 rounded-lg overflow-hidden cursor-pointer hover:border-slate-600 transition-colors group" @onclick="ShowReports">
-                    <span class="px-3 py-1 text-xs font-bold text-rose-400 bg-rose-500/10 border-r border-slate-700/50 group-hover:bg-rose-500/20 transition-colors">@(_navData.TotalReportCount)</span>
-                    <span class="px-3 py-1 text-xs font-medium text-slate-400 bg-slate-800/50 group-hover:text-slate-300 transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS").ToUpper()</span>
+                <button type="button" class="flex items-center border border-line rounded-lg overflow-hidden cursor-pointer hover:border-line-hover transition-colors group" @onclick="ShowReports">
+                    <span class="px-3 py-1 text-xs font-bold text-error bg-error/10 border-r border-line group-hover:bg-error/20 transition-colors">@(_navData.TotalReportCount)</span>
+                    <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS").ToUpper()</span>
                 </button>
             </AuthorizeView>
         </div>

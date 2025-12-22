@@ -12,7 +12,7 @@
 }
 else
 {
-    <div class="flex flex-col h-screen w-full bg-slate-900 text-slate-100 font-sans">
+    <div class="flex flex-col h-screen w-full bg-background text-primay-100 font-sans">
         <AntiforgeryToken />
         <ActionModal @rendermode="InteractiveServer" />
         
@@ -24,9 +24,9 @@ else
             <SidebarContainer />
 
             <!-- Main Content Area -->
-            <main class="flex-1 overflow-auto relative bg-slate-900">
+            <main class="flex-1 overflow-auto relative bg-background">
                  <div id="target_id"></div>
-                 <div id="mainLoadingBar" class="h-1 w-full bg-blue-600 fixed top-0 left-0 z-50 hidden"></div>
+                 <div id="mainLoadingBar" class="h-1 w-full bg-primary fixed top-0 left-0 z-50 hidden"></div>
                  
                 <!-- Toast Container -->
                 <div class="absolute top-4 right-4 z-50 flex flex-col space-y-2 sticky-alerts"></div>

@@ -5,7 +5,7 @@
 
 <!-- Desktop Sidebar (hidden on mobile) -->
 <div
-    class="hidden md:flex flex-col h-full bg-slate-800 border-r border-slate-700 transition-all duration-300 flex-shrink-0 @(AppState.SidebarCollapsed ? "w-0 overflow-hidden border-none" : "w-64")">
+    class="hidden md:flex flex-col h-full bg-surface border-r border-divider transition-all duration-300 flex-shrink-0 @(AppState.SidebarCollapsed ? "w-0 overflow-hidden border-none" : "w-64")">
     <NavMenu/>
 </div>
 
@@ -18,7 +18,8 @@
     }
     <!-- Sliding Panel -->
     <div
-        class="fixed inset-y-0 left-0 w-64 z-40 bg-slate-900 border-r border-slate-700 transition-transform duration-300 transform @(AppState.IsMobileNavOpen ? "translate-x-0" : "-translate-x-full")">
+        class="fixed inset-y-0 left-0 w-64 z-40 bg-surface border-r border-divider transition-transform duration-300 transform @(AppState.IsMobileNavOpen ? "translate-x-0" : "-translate-x-full")">
         <NavMenu/>
     </div>
 </div>
+

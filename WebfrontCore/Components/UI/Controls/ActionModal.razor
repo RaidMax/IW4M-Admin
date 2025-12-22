@@ -3,13 +3,13 @@
     <div class="fixed inset-0 bg-black/50 transition-opacity" @onclick="Close"></div>
 
     <!-- Modal Content -->
-    <div class="relative bg-slate-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-lg overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
         <!-- Header -->
-        <div class="bg-slate-700/50 px-6 py-4 flex items-center justify-between border-b border-slate-700 flex-shrink-0">
-            <h5 class="text-lg font-medium text-white">
+        <div class="bg-surface-alt px-6 py-4 flex items-center justify-between border-b border-line flex-shrink-0">
+            <h5 class="text-lg font-medium text-foreground">
                 @(_actionInfo?.Name ?? (_childContent != null ? _customTitle : (_isLogin ? AppState.Loc("WEBFRONT_NAV_TITLE_LOGIN") : "Action")))
             </h5>
-            <button type="button" class="text-slate-400 hover:text-white transition-colors focus:outline-none" @onclick="Close">
+            <button type="button" class="text-muted hover:text-foreground transition-colors focus:outline-none" @onclick="Close">
                 <i class="ph ph-x text-xl"></i>
             </button>
         </div>
@@ -19,12 +19,12 @@
             @if (_isLoading)
             {
                 <div class="flex justify-center items-center py-8">
-                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             }
             else if (_error != null)
             {
-                <div class="bg-red-900/20 border border-red-900/50 text-red-400 p-4 rounded-lg text-sm">
+                <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm">
                     @_error
                 </div>
             }
@@ -76,20 +76,20 @@
             {
                 <div class="flex items-center">
                     <input type="checkbox" name="@input.Name" id="@inputId"
-                           class="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-600 ring-offset-slate-800"
+                           class="w-4 h-4 text-primary bg-input-bg border-input-border rounded focus:ring-primary ring-offset-surface"
                            checked="@(_formData.ContainsKey(input.Name) && _formData[input.Name] is true)"
                            @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)">
-                    <label class="ml-2 text-sm font-medium text-slate-300" for="@inputId">@input.Label</label>
+                    <label class="ml-2 text-sm font-medium text-subtle" for="@inputId">@input.Label</label>
                 </div>
             }
             else
             {
                 <div class="space-y-1">
-                    <label for="@inputId" class="block text-sm font-medium text-slate-300">@input.Label</label>
+                    <label for="@inputId" class="block text-sm font-medium text-subtle">@input.Label</label>
 
                     @if (inputType == "select")
                     {
-                        <select name="@input.Name" id="@inputId" class="bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                        <select name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
                                 value="@_formData[input.Name]"
                                 @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)">
                             @foreach (var kvp in input.Values)
@@ -101,12 +101,12 @@
                     }
                     else if (inputType == "textarea")
                     {
-                        <textarea name="@input.Name" id="@inputId" class="bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="@input.Placeholder"
+                        <textarea name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5" placeholder="@input.Placeholder"
                                   value="@_formData[input.Name]" @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)"></textarea>
                     }
                     else
                     {
-                        <input type="@inputType" name="@input.Name" class="bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" id="@inputId" placeholder="@input.Placeholder"
+                        <input type="@inputType" name="@input.Name" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5" id="@inputId" placeholder="@input.Placeholder"
                                value="@_formData[input.Name]" @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)"
                                required="@input.Required"/>
                     }
@@ -117,11 +117,11 @@
 
     private RenderFragment RenderSubmitButton() => __builder =>
     {
-        <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-slate-700">
-            <button type="button" class="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 rounded-lg hover:bg-slate-600 focus:ring-4 focus:outline-none focus:ring-slate-800 transition-colors" @onclick="Close">
+        <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-line">
+            <button type="button" class="px-4 py-2 text-sm font-medium text-subtle bg-surface-alt rounded-lg hover:bg-surface-hover focus:ring-4 focus:outline-none focus:ring-ring transition-colors" @onclick="Close">
                 @AppState.Loc("WEBFRONT_ACTION_MODAL_BUTTON_CLOSE")
             </button>
-            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 transition-colors">
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-action-primary rounded-lg hover:bg-action-primary-hover focus:ring-4 focus:outline-none focus:ring-primary/50 transition-colors">
                 @(_actionInfo.ActionButtonLabel ?? "Submit")
             </button>
         </div>

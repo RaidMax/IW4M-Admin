@@ -58,7 +58,7 @@ else
     <div class="max-w-[1920px] mx-auto flex flex-col xl:flex-row min-h-screen">
         
         @* Main Content *@
-        <div class="flex-1 min-w-0 p-6 space-y-6">
+        <div class="flex-1 min-w-0 p-4 md:p-8 space-y-6">
             
             @* Active Penalty Banner *@
             @if (Client.ActivePenalty != null)
@@ -99,12 +99,16 @@ else
             }
 
             @* Header & Titles *@
-            <div class="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
-                <div>
-                    <h2 class="text-3xl font-bold tracking-tight text-foreground">@AppState.Loc("WEBFRONT_PROFILE_TITLE")</h2>
-                    <div class="flex items-center gap-2 mt-1 text-muted">
-                        <i class="ph ph-game-controller text-lg"></i>
-                        <span class="text-sm font-medium uppercase tracking-wider">@AppState.Loc($"GAME_{Client.Game}")</span>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                        <i class="ph ph-user text-xl text-primary"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold tracking-tight text-gradient-title">@AppState.Loc("WEBFRONT_PROFILE_TITLE")</h2>
+                        <div class="flex items-center gap-2 mt-0.5 text-subtle">
+                            <span class="text-xs font-medium uppercase tracking-wider">@AppState.Loc($"GAME_{Client.Game}")</span>
+                        </div>
                     </div>
                 </div>
             </div>

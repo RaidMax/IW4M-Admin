@@ -3,7 +3,6 @@
     "outputFileName": "wwwroot/css/global.min.css",
     "inputFiles": [
       "wwwroot/css/tailwind.css",
-      "wwwroot/lib/halfmoon/css/halfmoon-variables.min.css",
       "wwwroot/lib/chart.js/dist/Chart.min.css",
       "wwwroot/lib/phosphor-icons/src/regular/style.css",
       "wwwroot/lib/phosphor-icons/src/bold/style.css",
@@ -14,9 +13,6 @@
   {
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
-      "wwwroot/lib/jquery/dist/jquery.js",
-      "wwwroot/lib/moment.js/min/moment-with-locales.min.js",
-      "wwwroot/lib/moment-timezone/moment-timezone.min.js",
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
       "wwwroot/lib/halfmoon/js/halfmoon.min.js",
       "wwwroot/lib/canvas.js/canvasjs.js",

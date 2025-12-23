@@ -152,8 +152,15 @@
                 
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h2 class="text-3xl font-bold text-foreground">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
-                    <span class="px-4 py-2 rounded-lg bg-surface-alt/50 text-muted border border-line backdrop-blur-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                            <i class="ph ph-chart-line-up text-xl text-primary"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gradient-title">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
+                        </div>
+                    </div>
+                    <span class="px-4 py-2 rounded-lg bg-surface-alt/50 text-muted border border-line backdrop-blur-sm shadow-sm">
                         <ColorCode Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
                     </span>
                  </div>

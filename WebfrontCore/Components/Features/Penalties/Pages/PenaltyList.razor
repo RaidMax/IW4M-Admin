@@ -16,10 +16,15 @@
 </HeadContent>
 
 <div class="max-w-7xl mx-auto p-4 md:p-8">
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold text-foreground">@AppState.Loc("WEBFRONT_PENALTY_TITLE")</h2>
-        <div class="text-sm text-muted font-medium mt-1">
-            @Penalties.Count.ToString("#,##0") bans found
+    <div class="flex items-center gap-3 mb-8">
+        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+            <i class="ph ph-lock-simple text-xl text-primary"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_PENALTY_TITLE")</h2>
+            <div class="text-sm text-subtle font-medium mt-0.5">
+                @Penalties.Count.ToString("#,##0") bans found
+            </div>
         </div>
     </div>
     
@@ -47,10 +52,10 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Desktop Table -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left border-collapse">
-                <!-- Table Header (Desktop) -->
-                <thead class="bg-surface-alt/30 text-xs text-muted uppercase border-b border-line hidden md:table-header-group">
+                <thead class="bg-surface-alt/30 text-xs text-muted uppercase border-b border-line">
                 <tr>
                     <th class="px-6 py-3 font-medium w-[20%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
                     <th class="px-6 py-3 font-medium w-[10%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
@@ -72,8 +77,7 @@
                     {
                         foreach (var penalty in Penalties)
                         {
-                            <!-- Desktop Row -->
-                            <tr class="hidden md:table-row hover:bg-surface-hover/30 transition-colors group">
+                            <tr class="hover:bg-surface-hover/30 transition-colors group">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="/client/@penalty.OffenderId" class="text-sm font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(penalty.OffenderLevel)">
                                         <ColorCode Value="@penalty.OffenderName" />
@@ -103,49 +107,62 @@
                                     }
                                 </td>
                             </tr>
-
-                             <!-- Mobile Card -->
-                             <tr class="md:hidden border-b border-line last:border-none">
-                                <td class="p-4 block">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <div class="flex items-center space-x-2">
-                                             <a href="/client/@penalty.OffenderId" class="font-bold hover:text-primary transition-colors @AppState.GetLevelColorClass(penalty.OffenderLevel)">
-                                                <ColorCode Value="@penalty.OffenderName" />
-                                            </a>
-                                        </div>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
-                                            @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="mb-3 text-sm text-subtle break-words bg-surface-alt/50 p-2 rounded border border-line">
-                                        <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
-                                    </div>
-                                    
-                                    <div class="flex justify-between items-center text-xs text-muted">
-                                        <div class="flex items-center space-x-1">
-                                            <span class="uppercase tracking-wide font-semibold text-muted">By</span>
-                                            <a href="/client/@penalty.PunisherId" class="hover:text-primary transition-colors @AppState.GetLevelColorClass(penalty.PunisherLevel)">
-                                                <ColorCode Value="@penalty.PunisherName" />
-                                            </a>
-                                        </div>
-                                        <div>
-                                            @if (penalty.Expired)
-                                            {
-                                                <span>@penalty.TimePunishedString</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-warning font-medium">@penalty.TimeRemaining</span>
-                                            }
-                                        </div>
-                                    </div>
-                                </td>
-                             </tr>
                         }
                     }
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile List -->
+        <div class="md:hidden space-y-4 p-4">
+             @if (_isLoading && Penalties.Count == 0)
+             {
+                 <div class="text-center py-8">
+                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                 </div>
+             }
+             else
+             {
+                 foreach (var penalty in Penalties)
+                 {
+                     <div class="bg-surface border border-line rounded-lg p-4 shadow-sm">
+                         <!-- Header: Name & Badge -->
+                         <div class="flex justify-between items-start mb-3">
+                             <a href="/client/@penalty.OffenderId" class="font-bold hover:text-primary transition-colors text-lg @AppState.GetLevelColorClass(penalty.OffenderLevel)">
+                                 <ColorCode Value="@penalty.OffenderName" />
+                             </a>
+                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
+                                 @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
+                             </span>
+                         </div>
+
+                         <!-- Reason Box -->
+                         <div class="mb-4 text-sm text-subtle break-words bg-surface-alt/30 p-3 rounded border border-line/50">
+                             <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")" />
+                         </div>
+
+                         <!-- Footer: Admin & Time -->
+                         <div class="flex items-center justify-between text-xs text-muted border-t border-line pt-3">
+                             <div class="flex items-center gap-1.5">
+                                 <span class="uppercase tracking-wide font-semibold text-muted text-[10px]">By</span>
+                                 <a href="/client/@penalty.PunisherId" class="hover:text-primary transition-colors font-medium @AppState.GetLevelColorClass(penalty.PunisherLevel)">
+                                     <ColorCode Value="@penalty.PunisherName" />
+                                 </a>
+                             </div>
+                             <div>
+                                 @if (penalty.Expired)
+                                 {
+                                     <span>@penalty.TimePunishedString</span>
+                                 }
+                                 else
+                                 {
+                                     <span class="text-warning font-medium">@penalty.TimeRemaining</span>
+                                 }
+                             </div>
+                         </div>
+                     </div>
+                 }
+             }
         </div>
     </div>
     

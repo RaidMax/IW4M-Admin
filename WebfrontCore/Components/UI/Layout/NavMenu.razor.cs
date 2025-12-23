@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
 using WebfrontCore.Core.Services;
-using WebfrontCore.Components.UI.Controls;
 using WebfrontCore.Components.UI.Navigation.Models;
 
 namespace WebfrontCore.Components.UI.Layout;
@@ -10,7 +9,7 @@ public partial class NavMenu
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IZeroJsInterop JS { get; set; }
-    public ActionModal ActionModal { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
     private NavigationInfo? NavData;
 
     protected override async Task OnInitializedAsync()

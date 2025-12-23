@@ -1,5 +1,6 @@
 ﻿@import "tailwindcss";
 @import "./palette.css";
+
 @source "../../../";
 
 @theme {
@@ -34,4 +35,69 @@
     -webkit-mask-composite: source-in;
     mask-image: linear-gradient(to bottom, black 70%, transparent), linear-gradient(to right, transparent, black 15%, black 85%, transparent);
     mask-composite: intersect;
+}
+
+/* ============================================
+   RECONNECT MODAL
+   ============================================ */
+#components-reconnect-modal {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 20vh auto;
+    width: fit-content;
+    max-width: calc(100% - 2rem);
+    opacity: 0;
+    transition: display 0.4s allow-discrete, overlay 0.4s allow-discrete;
+}
+
+#components-reconnect-modal[open] {
+    opacity: 1;
+    animation: modal-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#components-reconnect-modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    opacity: 1;
+    transition: opacity 0.4s;
+}
+
+/* Visibility State Handling (Blazor Classes) 
+   We ensure states are mutually exclusive to prevent overlapping text */
+.reconnect-state-msg {
+    display: none;
+}
+
+/* Base "show" state is active unless a more specific state is present */
+#components-reconnect-modal.components-reconnect-show:not(.components-reconnect-retrying):not(.components-reconnect-failed) .reconnect-on-show {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-retrying .reconnect-on-retrying {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-failed .reconnect-on-failed {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-paused .reconnect-on-paused {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-resume-failed .reconnect-on-resume-failed {
+    display: flex;
+}
+
+@keyframes modal-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }

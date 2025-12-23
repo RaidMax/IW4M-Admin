@@ -8,10 +8,9 @@ public partial class App
 
     private string GetThemeColor()
     {
-        // todo: less magic
-        var primaryColor = AppConfig.WebfrontPrimaryColor;
-
-        // Map common palette names to their HEX values (500 shade)
+        var primaryColor = !string.IsNullOrEmpty(AppConfig.Webfront.PrimaryColor)
+            ? AppConfig.Webfront.PrimaryColor
+            : AppConfig.Webfront.SecondaryColor;
         return primaryColor?.ToLowerInvariant() switch
         {
             "slate" => "#64748b",

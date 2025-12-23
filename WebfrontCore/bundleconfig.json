@@ -2,12 +2,11 @@
   {
     "outputFileName": "wwwroot/css/global.min.css",
     "inputFiles": [
-      "wwwroot/css/tailwind.css",
+      "wwwroot/css/app.css",
       "wwwroot/lib/chart.js/dist/Chart.min.css",
       "wwwroot/lib/phosphor-icons/src/regular/style.css",
       "wwwroot/lib/phosphor-icons/src/bold/style.css",
-      "wwwroot/lib/phosphor-icons/src/fill/style.css",
-      "wwwroot/css/main.css"
+      "wwwroot/lib/phosphor-icons/src/fill/style.css"
     ]
   },
   {

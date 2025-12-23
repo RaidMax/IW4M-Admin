@@ -99,16 +99,16 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                 pointHoverRadius: 4,
                 pointBackgroundColor: onlineBorderColor
             },
-                {
-                    data: offlineTime.map(history => history.cc),
-                    backgroundColor: createDiagonalPattern(offlinePatternColor),
-                    borderColor: offlineBorderColor,
-                    borderWidth: 1.5,
-                    hoverBorderColor: 'white',
-                    hoverBorderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 0
-                }],
+            {
+                data: offlineTime.map(history => history.cc),
+                backgroundColor: createDiagonalPattern(offlinePatternColor),
+                borderColor: offlineBorderColor,
+                borderWidth: 1.5,
+                hoverBorderColor: 'white',
+                hoverBorderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 0
+            }],
             lineAtIndexes: mapChange,
         },
         options: {
@@ -343,7 +343,7 @@ window.blazorInfiniteScroll = {
 // Toast notification wrapper for Blazor
 window.blazorToast = {
     show: function (content, title, alertType, fillType, timeShown) {
-        console.log('blazorToast.show called', {content, title, alertType, fillType, timeShown});
+        console.log('blazorToast.show called', { content, title, alertType, fillType, timeShown });
 
         if (typeof halfmoon === 'undefined') {
             console.error('halfmoon is not defined');
@@ -391,6 +391,30 @@ window.themeManager = {
         'blue': [217, 91, 60], 'indigo': [239, 84, 67], 'violet': [258, 57, 66],
         'purple': [271, 91, 65], 'fuchsia': [292, 84, 61], 'pink': [335, 78, 60],
         'rose': [343, 89, 56]
+    },
+
+    // Helper: HEX to HSL
+    hexToHSL: function (hex) {
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return null;
+        let r = parseInt(result[1], 16);
+        let g = parseInt(result[2], 16);
+        let b = parseInt(result[3], 16);
+        r /= 255; g /= 255; b /= 255;
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+        if (max === min) { h = s = 0; }
+        else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
     },
 
     load: function () {
@@ -460,11 +484,64 @@ window.themeManager = {
     },
 
     // Initialize and listen for navigation
-    init: function () {
+    init: function (serverSettings) {
         const self = this;
+        let settings = self.load();
 
-        // Apply on load
-        const settings = self.load();
+        const parseServerColor = (colorName) => {
+            if (!colorName) return { mode: 1, palette: 'blue' };
+            // Check if it's a known palette key
+            if (self.paletteHSL[colorName.toLowerCase()]) {
+                return { mode: 1, palette: colorName.toLowerCase() };
+            }
+            // Check if it's a HEX code
+            if (colorName.startsWith('#')) {
+                const hsl = self.hexToHSL(colorName);
+                if (hsl) {
+                    return {
+                        mode: 0,
+                        hue: hsl[0],
+                        sat: hsl[1],
+                        lit: hsl[2]
+                    };
+                }
+            }
+            // Fallback for unparsed or standard "blue"
+            return { mode: 1, palette: 'blue' };
+        };
+
+        const createSettingsFromServer = (srv) => {
+            const primary = parseServerColor(srv.primaryColor);
+            const secondary = parseServerColor(srv.secondaryColor);
+
+            return {
+                preset: srv.preset || 'minimal',
+                primaryColorMode: primary.mode,
+                primaryPalette: primary.mode === 1 ? primary.palette : undefined,
+                primaryHue: primary.mode === 0 ? primary.hue : undefined,
+                primarySaturation: primary.mode === 0 ? primary.sat : undefined,
+                primaryLightness: primary.mode === 0 ? primary.lit : undefined,
+
+                secondaryColorMode: secondary.mode,
+                secondaryPalette: secondary.mode === 1 ? secondary.palette : undefined,
+                secondaryHue: secondary.mode === 0 ? secondary.hue : undefined,
+                secondarySaturation: secondary.mode === 0 ? secondary.sat : undefined,
+                secondaryLightness: secondary.mode === 0 ? secondary.lit : undefined
+            };
+        };
+
+        if (serverSettings) {
+            if (serverSettings.preventUserCustomization) {
+                // Locked: Force server settings
+                settings = createSettingsFromServer(serverSettings);
+            }
+            else if (!settings) {
+                // No local customization: Use server defaults as starting point
+                settings = createSettingsFromServer(serverSettings);
+            }
+        }
+
+        // Apply
         if (settings) self.apply(settings);
 
         if (this._initialized) return;
@@ -473,7 +550,13 @@ window.themeManager = {
         // Use Blazor's enhancedload event (fires AFTER DOM patching completes)
         if (typeof Blazor !== 'undefined') {
             Blazor.addEventListener('enhancedload', () => {
-                const s = self.load();
+                const srv = window.serverThemeSettings;
+                let s = self.load();
+
+                if (srv && srv.preventUserCustomization) {
+                    s = createSettingsFromServer(srv);
+                }
+
                 if (s) self.apply(s);
             });
         }
@@ -483,7 +566,14 @@ window.themeManager = {
             for (const mutation of mutations) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
                     const current = document.documentElement.getAttribute('data-theme');
-                    const saved = self.load();
+                    let saved = self.load();
+
+                    // Respect lock in observer too
+                    const srv = window.serverThemeSettings;
+                    if (srv && srv.preventUserCustomization) {
+                        saved = createSettingsFromServer(srv);
+                    }
+
                     if (saved && saved.preset && current !== saved.preset) {
                         self.apply(saved);
                     }
@@ -500,7 +590,14 @@ window.themeManager = {
 
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => window.themeManager.init());
+    // Note: serverThemeSettings might not be ready if script is deferred, 
+    // but in App.razor it's immediate. 
+    // We rely on the inline script in App.razor calling init() explicitly.
+    // We KEEP this listener just in case but usually the inline script runs first? 
+    // Actually inline runs after parsing. 
+    // We will remove the auto-init here to avoid double-init race conditions 
+    // since App.razor now calls it explicitly with args.
+    // document.addEventListener('DOMContentLoaded', () => window.themeManager.init());
 } else {
-    window.themeManager.init();
+    // window.themeManager.init();
 }

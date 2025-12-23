@@ -76,7 +76,7 @@
             {
                 <div class="flex items-center">
                     <input type="checkbox" name="@input.Name" id="@inputId"
-                           class="w-4 h-4 text-primary bg-input-bg border-input-border rounded focus:ring-primary ring-offset-surface"
+                           class="w-4 h-4 text-primary bg-input-bg border-input-border rounded focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 focus:outline-none transition-all duration-200"
                            checked="@(_formData.ContainsKey(input.Name) && _formData[input.Name] is true)"
                            @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)">
                     <label class="ml-2 text-sm font-medium text-subtle" for="@inputId">@input.Label</label>
@@ -89,7 +89,7 @@
 
                     @if (inputType == "select")
                     {
-                        <select name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+                        <select name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5"
                                 value="@_formData[input.Name]"
                                 @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)">
                             @foreach (var kvp in input.Values)
@@ -101,12 +101,12 @@
                     }
                     else if (inputType == "textarea")
                     {
-                        <textarea name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5" placeholder="@input.Placeholder"
+                        <textarea name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" placeholder="@input.Placeholder"
                                   value="@_formData[input.Name]" @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)"></textarea>
                     }
                     else
                     {
-                        <input type="@inputType" name="@input.Name" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5" id="@inputId" placeholder="@input.Placeholder"
+                        <input type="@inputType" name="@input.Name" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" id="@inputId" placeholder="@input.Placeholder"
                                value="@_formData[input.Name]" @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)"
                                required="@input.Required"/>
                     }
@@ -118,10 +118,10 @@
     private RenderFragment RenderSubmitButton() => __builder =>
     {
         <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-line">
-            <button type="button" class="px-4 py-2 text-sm font-medium text-subtle bg-surface-alt rounded-lg hover:bg-surface-hover focus:ring-4 focus:outline-none focus:ring-ring transition-colors" @onclick="Close">
+            <button type="button" class="px-4 py-2 text-sm font-medium text-subtle bg-surface-alt rounded-lg hover:bg-surface-hover focus:ring-2 focus:outline-none focus:ring-primary/20 transition-all duration-200" @onclick="Close">
                 @AppState.Loc("WEBFRONT_ACTION_MODAL_BUTTON_CLOSE")
             </button>
-            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-action-primary rounded-lg hover:bg-action-primary-hover focus:ring-4 focus:outline-none focus:ring-primary/50 transition-colors">
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-action-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:outline-none focus:ring-primary/50 transition-all duration-200">
                 @(_actionInfo.ActionButtonLabel ?? "Submit")
             </button>
         </div>

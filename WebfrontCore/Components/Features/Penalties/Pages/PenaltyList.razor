@@ -35,7 +35,7 @@
             <div class="flex items-center">
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="hide_automated_penalties_checkbox" checked="@IgnoreAutomated" @onchange="@OnIgnoreAutomatedChanged" class="sr-only peer" />
-                    <div class="w-11 h-6 bg-surface-alt peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div class="w-11 h-6 bg-surface-alt peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
                 <label for="hide_automated_penalties_checkbox" class="ml-3 text-sm font-medium text-foreground select-none cursor-pointer">@AppState.Loc("WEBFRONT_PENALTY_HIDE_AUTOMATED")</label>
             </div>
@@ -43,7 +43,7 @@
             <!-- Show Only Dropdown -->
              <div class="flex items-center w-full md:w-auto">
                  <span class="text-sm font-medium text-muted mr-3 whitespace-nowrap">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_SHOWONLY")</span>
-                 <select class="bg-surface-alt border border-line text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full md:w-48 p-2.5 transition-colors" @onchange="@OnShowOnlyChanged">
+                 <select class="bg-surface-alt border border-line text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none block w-full md:w-48 p-2.5 transition-all duration-200" @onchange="@OnShowOnlyChanged">
                     @foreach (var penaltyType in Enum.GetValues(typeof(EFPenalty.PenaltyType)).Cast<EFPenalty.PenaltyType>().OrderByDescending(p => p == EFPenalty.PenaltyType.Any))
                     {
                         <option value="@((int)penaltyType)" selected="@(penaltyType == ShowOnly)">@AppState.Loc($"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}")</option>

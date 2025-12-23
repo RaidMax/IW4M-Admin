@@ -45,19 +45,19 @@
                         @AppState.Loc("WEBFRONT_ACTION_LABEL_REASON")
                     </label>
                     <input type="text" id="unbanReason" @bind="_unbanReason"
-                           class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block p-2.5 placeholder-input-placeholder"
+                           class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block p-2.5 placeholder-input-placeholder"
                            placeholder="@AppState.Loc("WEBFRONT_PENALTY_LIST_BAN_REVOKED_REASON")" />
                 </div>
                 
                 <!-- Modal Footer -->
                 <div class="px-6 py-4 bg-surface-alt/50 border-t border-line flex justify-end space-x-2">
                     <button type="button" 
-                            class="px-4 py-2 text-sm font-medium text-muted bg-surface rounded-lg hover:bg-surface-hover focus:ring-2 focus:ring-line transition-colors"
+                            class="px-4 py-2 text-sm font-medium text-muted bg-surface rounded-lg hover:bg-surface-hover focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200"
                             @onclick="CloseUnbanModal">
                         @AppState.Loc("WEBFRONT_MODAL_BUTTON_CANCEL")
                     </button>
                     <button type="button" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:ring-primary transition-colors"
+                            class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
                             @onclick="ConfirmUnban">
                         @AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME")
                     </button>
@@ -75,7 +75,7 @@
                     <i class="ph ph-user"></i>
                 </div>
                 <InputText @bind-Value="Request.ClientName" 
-                           class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 p-2.5 placeholder-input-placeholder" 
+                           class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder" 
                            placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_NAME")" />
             </div>
 
@@ -86,7 +86,7 @@
                         <i class="ph ph-fingerprint"></i>
                     </div>
                     <InputText @bind-Value="Request.ClientGuid" 
-                               class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 p-2.5 placeholder-input-placeholder" 
+                               class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder" 
                                placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_GUID")" />
                 </div>
             </AuthorizeView>
@@ -98,7 +98,7 @@
                         <i class="ph ph-globe"></i>
                     </div>
                     <InputText @bind-Value="Request.ClientIP" 
-                               class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 p-2.5 placeholder-input-placeholder" 
+                               class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder" 
                                placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_IP")" />
                 </div>
             </AuthorizeView>
@@ -109,7 +109,7 @@
                     <i class="ph ph-identification-card"></i>
                 </div>
                 <InputNumber @bind-Value="Request.ClientId" 
-                             class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pl-10 p-2.5 placeholder-input-placeholder appearance-none" 
+                             class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder appearance-none" 
                              placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")" />
                 
                 <!-- Search Button (Inside the last grid item on desktop, or separate) -->

@@ -29,14 +29,6 @@ namespace SharedLibraryCore.Configuration
         public string ManualWebfrontUrl { get; set; }
 
         [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRIMARY_COLOR")]
-        public string WebfrontPrimaryColor { get; set; }
-
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SECONDARY_COLOR")]
-        public string WebfrontSecondaryColor { get; set; }
-
-        [ConfigurationOptional]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_BRANDING")]
         public string WebfrontCustomBranding { get; set; }
 
@@ -116,7 +108,7 @@ namespace SharedLibraryCore.Configuration
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
         public bool EnableColorCodes { get; set; }
-        
+
         [ConfigurationIgnore] public string IngameAccentColorKey { get; set; } = "Cyan";
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]

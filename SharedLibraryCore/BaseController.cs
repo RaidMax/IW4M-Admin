@@ -146,7 +146,6 @@ namespace SharedLibraryCore
             ViewBag.EnableColorCodes = AppConfig.EnableColorCodes;
             ViewBag.EnablePrivilegedUserPrivacy = AppConfig.EnablePrivilegedUserPrivacy;
             ViewBag.Configuration = AppConfig;
-            ViewBag.ScriptInjection = AppConfig.Webfront?.ScriptInjection;
             ViewBag.CommunityInformation = AppConfig.CommunityInformation;
             ViewBag.ClientCount = Manager.GetServers().Sum(server => server.ClientNum);
             ViewBag.AdminCount = Manager.GetServers().Sum(server =>

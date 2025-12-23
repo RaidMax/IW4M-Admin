@@ -19,7 +19,7 @@
         {
              @foreach (var chat in Model.ChatHistory)
             {
-                var message = chat.IsHidden && (AppState.User == null /* || Check Auth */) ? chat.HiddenMessage : chat.Message;
+                var message = chat.IsHidden && (AppState.User == null /* || TODO: Check Auth */) ? chat.HiddenMessage : chat.Message;
                 var stateIcon = GetIconForState(chat.Message);
                 var isEvent = !string.IsNullOrEmpty(stateIcon);
 

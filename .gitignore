@@ -208,7 +208,6 @@ FakesAssemblies/
 
 project.lock.json
 **/wwwroot/lib/
-**/wwwroot/lib/
 **/wwwroot/lib/*
 __pycache__/
 

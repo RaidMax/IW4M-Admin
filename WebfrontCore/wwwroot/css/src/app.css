@@ -13,3 +13,25 @@
     --color-level-senioradmin: #50bcc3;
     --color-level-owner: #007acc;
 }
+
+.profile-banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 300px;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.4;
+    filter: blur(4px) brightness(0.75);
+    transition: opacity 1s;
+
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent), linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, black 70%, transparent), linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    mask-composite: intersect;
+}

@@ -4,7 +4,7 @@
 
 <div class="relative">
     <!-- Theme Toggle Button -->
-    <button class="p-2 text-accent hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
+    <button class="p-2 text-secondary hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
             @onclick="ToggleDropdown" 
             @onclick:stopPropagation
             title="Theme Settings">
@@ -214,8 +214,8 @@
 
     private string GetPresetButtonClass(string preset) =>
         _preset == preset
-            ? "bg-action-primary text-white"
-            : "bg-action-secondary text-subtle hover:bg-action-secondary-hover";
+            ? "bg-action-primary text-foreground"
+            : "bg-action-secondary text-foreground hover:bg-action-secondary-hover";
 
     private async Task SetPreset(string preset)
     {

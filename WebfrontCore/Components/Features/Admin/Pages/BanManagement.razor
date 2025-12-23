@@ -10,14 +10,20 @@
 
 <div class="max-w-7xl mx-auto p-4 md:p-8">
     <!-- Header & Title -->
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold text-foreground">@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT")</h2>
-        @if (Results != null)
-        {
-            <div class="text-sm text-muted font-medium mt-1">
-                @Results.Count.ToString("#,##0") bans found
-            </div>
-        }
+    <!-- Header & Title -->
+    <div class="flex items-center gap-3 mb-8">
+        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+            <i class="ph ph-prohibit text-xl text-primary"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT")</h2>
+            @if (Results != null)
+            {
+                <div class="text-sm text-muted font-medium mt-0.5">
+                    @Results.Count.ToString("#,##0") bans found
+                </div>
+            }
+        </div>
     </div>
 
     <!-- Unban Modal -->
@@ -51,7 +57,7 @@
                         @AppState.Loc("WEBFRONT_MODAL_BUTTON_CANCEL")
                     </button>
                     <button type="button" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover focus:ring-2 focus:ring-primary transition-colors"
+                            class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:ring-primary transition-colors"
                             @onclick="ConfirmUnban">
                         @AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME")
                     </button>
@@ -107,7 +113,7 @@
                              placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")" />
                 
                 <!-- Search Button (Inside the last grid item on desktop, or separate) -->
-                <button type="submit" class="absolute inset-y-0 right-0 px-4 text-white bg-primary rounded-r-lg hover:bg-primary-hover transition-colors flex items-center justify-center">
+                <button type="submit" class="absolute inset-y-0 right-0 px-4 text-white bg-primary rounded-r-lg hover:bg-action-primary-hover transition-colors flex items-center justify-center">
                     <i class="ph ph-magnifying-glass text-lg"></i>
                 </button>
             </div>
@@ -155,7 +161,7 @@
                         <!-- Left Side: Offender Info -->
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2">
-                                <a href="/client/@ban.ClientId" class="text-lg font-semibold text-primary hover:text-primary/25 hover:underline truncate">
+                                <a href="/client/@ban.ClientId" class="text-lg font-semibold text-primary hover:text-foreground truncate transition-colors">
                                     <ColorCode Value="@ban.ClientName" />
                                 </a>
                                 <span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line" title="@AppState.Loc($"GAME_{ban.Game}")">
@@ -192,7 +198,7 @@
                                             </div>
                                         </div>
                                         <button @onclick="() => OpenUnbanModal(ban.ClientId)" 
-                                                class="px-3 py-1.5 text-xs font-medium text-white bg-success/80 rounded hover:bg-success transition-colors flex items-center gap-1">
+                                                class="px-3 py-1.5 text-xs font-medium text-white bg-action-primary rounded hover:bg-action-primary-hover transition-colors flex items-center gap-1">
                                             <i class="ph ph-arrow-u-up-left"></i>
                                             @AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")
                                         </button>
@@ -219,7 +225,7 @@
                                 {
                                     <div class="p-4 bg-surface-alt/20 border border-line rounded-lg text-sm hover:border-line-hover transition-colors">
                                         <div class="flex items-center justify-between mb-2">
-                                            <a href="/client/@associatedEntity.OffenderInfo.ClientId" class="font-medium text-primary hover:underline truncate max-w-[140px]">
+                                            <a href="/client/@associatedEntity.OffenderInfo.ClientId" class="font-medium text-primary hover:text-foreground truncate max-w-[140px] transition-colors">
                                                 <ColorCode Value="@associatedEntity.OffenderInfo.ClientName" />
                                             </a>
                                             <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-surface-alt text-muted uppercase">
@@ -252,7 +258,7 @@
                                         </div>
 
                                         <button @onclick="() => OpenUnbanModal(associatedEntity.OffenderInfo.ClientId ?? 0)" 
-                                                class="w-full py-2 text-xs font-bold text-white bg-success/80 hover:bg-success rounded-md transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                                class="w-full py-2 text-xs font-bold text-white bg-action-primary hover:bg-action-primary-hover rounded-md transition-colors flex items-center justify-center gap-2 shadow-sm">
                                              <i class="ph ph-arrow-u-up-left"></i>
                                             @AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")
                                         </button>

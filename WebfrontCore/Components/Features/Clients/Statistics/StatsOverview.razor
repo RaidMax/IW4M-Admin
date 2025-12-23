@@ -18,18 +18,21 @@
 <div class="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
     <div class="lg:col-span-3 space-y-8">
         <!-- Header Section -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-line pb-6">
-            <div>
-                 <h2 class="text-4xl font-black text-foreground flex items-center gap-3 tracking-tight">
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div class="flex items-center gap-4">
+                 <div class="flex items-center justify-center p-3 rounded-xl bg-surface-alt/50 border border-line shadow-sm">
+                    <i class="ph ph-chart-bar text-2xl text-primary"></i>
+                </div>
+                <div>
+                     <h2 class="text-2xl font-black text-gradient-title tracking-tight text-left">
                         @(AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE"))
-                    </span>
-                </h2>
-                <div class="text-muted mt-2 font-medium flex items-center gap-2">
-                     <i class="ph ph-globe text-muted"></i>
-                    <ColorCode Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))" />
-                    <span class="text-subtle">|</span>
-                    <span class="text-primary font-bold">@TotalRankedClients.ToString("#,##0")</span> @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE").ToString().ToLower())
+                    </h2>
+                    <div class="text-muted mt-1 font-medium flex items-center gap-2 text-sm">
+                         <i class="ph ph-globe text-subtle"></i>
+                        <ColorCode Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))" />
+                        <span class="text-subtle">•</span>
+                        <span class="text-primary font-bold">@TotalRankedClients.ToString("#,##0")</span> @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE").ToString().ToLower())
+                    </div>
                 </div>
             </div>
         </div>

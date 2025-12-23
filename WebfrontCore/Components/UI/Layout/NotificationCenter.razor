@@ -1,8 +1,5 @@
-@implements IDisposable
-@using SharedLibraryCore.Alerts
-
 <div class="relative">
-    <button class="p-2 text-accent hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors relative" 
+    <button class="p-2 text-secondary hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors relative" 
             @onclick="ToggleDropdown" 
             @onclick:stopPropagation
             title="@(Alerts.Any() ? AppState.Loc("WEBFRONT_ALERTS_SOME_TOOLTIP") : AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP"))">

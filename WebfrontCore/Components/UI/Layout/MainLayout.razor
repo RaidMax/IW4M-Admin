@@ -14,7 +14,6 @@ else
 {
     <div class="flex flex-col h-screen w-full bg-background text-primay-100 font-sans">
         <AntiforgeryToken />
-        <ActionModal @rendermode="InteractiveServer" />
         
         <!-- Top Menu Bar (Interactive) -->
         <TopBar />
@@ -33,7 +32,7 @@ else
 
                 @Body
                 
-                <ActionModal />
+                <ActionModal @rendermode="InteractiveServer"/>
             </main>
         </div>
     </div>

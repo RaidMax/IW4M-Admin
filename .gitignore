@@ -236,7 +236,8 @@ launchSettings.json
 /Plugins/ScriptPlugins/VpnDetectionPrivate.js
 **/Master/env_master
 /GameLogServer/log_env
-**/*.css
+/WebfrontCore/wwwroot/css/*.css
+Application/WebfrontCore/*
 /Master/master/persistence
 /WebfrontCore/wwwroot/fonts
 /WebfrontCore/wwwroot/font

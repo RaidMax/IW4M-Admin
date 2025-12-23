@@ -15,33 +15,36 @@ else
     <PageTitle>@AboutInfo.CommunityInformation.Name | IW4MAdmin</PageTitle>
 
     <HeadContent>
-        <meta property="og:title" content="@($"{AboutInfo.CommunityInformation.Name} | {AppState.Loc("WEBFRONT_ABOUT_TITLE")}")" />
-        <meta property="og:description" content="@AboutInfo.CommunityInformation.Description.StripColors()" />
-        <meta property="og:type" content="website" />
-         <meta property="og:url" content="@NavManager.Uri" />
+        <meta property="og:title"
+              content="@($"{AboutInfo.CommunityInformation.Name} | {AppState.Loc("WEBFRONT_ABOUT_TITLE")}")"/>
+        <meta property="og:description" content="@AboutInfo.CommunityInformation.Description.StripColors()"/>
+        <meta property="og:type" content="website"/>
+        <meta property="og:url" content="@NavManager.Uri"/>
         <meta name="theme-color" content="#3b82f6">
     </HeadContent>
 
     <div class="max-w-7xl mx-auto p-4 md:p-8">
         <!-- Banner & Header -->
         <div class="mb-8">
-            @if (AboutInfo.CommunityInformation?.EnableBanner == true)
-            {
-               <!-- Banner Removed -->
-            }
-
             @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Name))
             {
-                <h1 class="text-2xl font-bold text-foreground mb-1 tracking-tight">
-                    <ColorCode Value="@AboutInfo.CommunityInformation.Name"/>
-                </h1>
-                
-                @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Tagline))
-                {
-                    <div class="text-sm text-muted font-medium">
-                        <ColorCode Value="@AboutInfo.CommunityInformation.Tagline"/>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                        <i class="ph ph-info text-xl text-primary"></i>
                     </div>
-                }
+                    <div>
+                        <h1 class="text-2xl font-bold text-gradient-title mb-0.5 tracking-tight">
+                            <ColorCode Value="@AboutInfo.CommunityInformation.Name"/>
+                        </h1>
+
+                        @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Tagline))
+                        {
+                            <div class="text-sm text-subtle font-medium">
+                                <ColorCode Value="@AboutInfo.CommunityInformation.Tagline"/>
+                            </div>
+                        }
+                    </div>
+                </div>
             }
         </div>
 
@@ -49,15 +52,15 @@ else
             <!-- Left Column: Description & Socials -->
             <div class="md:col-span-2 space-y-8">
                 <!-- Description Card -->
-                 @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Description))
-                 {
+                @if (!string.IsNullOrWhiteSpace(AboutInfo.CommunityInformation?.Description))
+                {
                     <div class="bg-surface border border-line rounded-lg p-6 shadow-sm">
                         <h2 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                            <i class="ph ph-info text-primary"></i>
-                             @AppState.Loc("WEBFRONT_ABOUT_TITLE")
+                            <i class="ph ph-info text-secondary"></i>
+                            @AppState.Loc("WEBFRONT_ABOUT_TITLE")
                         </h2>
                         <div class="prose prose-invert max-w-none text-subtle">
-                             <ColorCode Value="@AboutInfo.CommunityInformation.Description"/>
+                            <ColorCode Value="@AboutInfo.CommunityInformation.Description"/>
                         </div>
 
                         <!-- Social Links -->
@@ -68,7 +71,7 @@ else
                                 <div class="flex flex-wrap gap-4">
                                     @foreach (var social in AboutInfo.CommunityInformation.SocialAccounts)
                                     {
-                                        <a href="@social.Url" target="_blank" title="@social.Title" 
+                                        <a href="@social.Url" target="_blank" title="@social.Title"
                                            class="flex items-center gap-3 px-4 py-3 bg-surface-alt hover:bg-surface-hover border border-line rounded-lg transition-all group">
                                             @if (!string.IsNullOrWhiteSpace(social.IconId))
                                             {
@@ -76,35 +79,39 @@ else
                                             }
                                             else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                                             {
-                                                 var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
+                                                var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
                                                     ? parsedUrl.AbsoluteUri
                                                     : $"images/community/{social.IconUrl}";
-                                                <img class="w-6 h-6 object-contain filter grayscale group-hover:grayscale-0 transition-all" src="@url" alt="@social.Title"/>
+                                                <img
+                                                    class="w-6 h-6 object-contain filter grayscale group-hover:grayscale-0 transition-all"
+                                                    src="@url" alt="@social.Title"/>
                                             }
-                                            <span class="text-sm font-medium text-foreground group-hover:text-foreground">@social.Title</span>
+                                            <span
+                                                class="text-sm font-medium text-foreground group-hover:text-foreground">@social.Title</span>
                                         </a>
                                     }
                                 </div>
                             </div>
                         }
                     </div>
-                 }
+                }
             </div>
 
             <!-- Right Column: Rules -->
-             <div class="md:col-span-1">
+            <div class="md:col-span-1">
                 @if (AllRules.Any(rule => rule.Rules.Any()))
                 {
                     <div class="bg-surface border border-line rounded-lg p-6 shadow-sm sticky top-8">
-                         <h2 class="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
-                             <i class="ph ph-book-open-text text-accent"></i>
-                             @AppState.Loc("WEBFRONT_ABOUT_COMMUNITY_GUIDELINES")
-                         </h2>
-                        
+                        <h2 class="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+                            <i class="ph ph-book-open-text text-secondary"></i>
+                            @AppState.Loc("WEBFRONT_ABOUT_COMMUNITY_GUIDELINES")
+                        </h2>
+
                         <div class="space-y-6">
                             @foreach (var ruleSet in AllRules)
                             {
-                                if (!ruleSet.Rules.Any()) continue;
+                                if (!ruleSet.Rules.Any())
+                                    continue;
 
                                 <div>
                                     <h3 class="text-sm font-bold text-primary uppercase tracking-wider mb-3 pb-2 border-b border-line">
@@ -117,7 +124,7 @@ else
                                             <li class="flex gap-3 text-sm text-subtle">
                                                 @if (!rule.StartsWith("#") && !Regex.IsMatch(rule.StripColors(), @"^(Rule ?#?)?\d+(\.|\))"))
                                                 {
-                                                    <span class="font-mono text-muted select-none">@(imgStart++).</span>
+                                                    <span class="font-mono text-secondary select-none">@(imgStart++).</span>
                                                 }
                                                 <span class="flex-1">
                                                     <ColorCode Value="@rule"/>

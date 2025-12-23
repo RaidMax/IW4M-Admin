@@ -22,11 +22,16 @@
     }
     else
     {
-        <div class="mb-8">
-            <h2 class="text-2xl font-bold text-foreground">@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE")</h2>
-             <div class="text-sm text-muted font-medium mt-1">
-                 @(FilteredCommandGroups.Sum(g => g.Commands.Count()).ToString("#,##0")) total commands
-             </div>
+        <div class="flex items-center gap-3 mb-8">
+            <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                <i class="ph ph-question text-xl text-primary"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE")</h2>
+                 <div class="text-sm text-subtle font-medium mt-0.5">
+                     @(FilteredCommandGroups.Sum(g => g.Commands.Count()).ToString("#,##0")) total commands
+                 </div>
+            </div>
         </div>
 
         <!-- Search Input -->
@@ -128,54 +133,52 @@
                     {
                         <div class="bg-surface rounded-lg shadow p-4 ring-1 ring-line">
                             <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h3 class="text-lg font-bold text-foreground">@command.Name</h3>
-                                    <div class="text-sm text-muted">Alias: <span class="font-mono text-subtle">@command.Alias</span></div>
-                                </div>
+                                <h3 class="text-lg font-bold text-foreground">@command.Name</h3>
                                 <div class="text-right">
-                                    <span class="text-sm font-medium @GetLevelColorClass(command.Permission)">
+                                    <span class="text-xs font-medium px-2 py-0.5 rounded @GetLevelColorClass(command.Permission) bg-surface-alt border border-line">
                                         @command.Permission.ToLocalizedLevelName()
                                     </span>
                                 </div>
                             </div>
                             
-
+                            <p class="text-sm text-muted mb-3">@command.Description</p>
                             
-                            <p class="text-sm text-subtle mb-3">@command.Description</p>
+                            <!-- Syntax Box -->
+                            <div class="bg-surface-alt/50 p-2 rounded border border-line mb-3 font-mono text-xs text-subtle break-all">
+                                @CommandPrefix@command.Syntax
+                            </div>
                             
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between py-1 border-b border-line">
-                                    <span class="text-muted">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</span>
-                                    <span class="font-mono text-subtle break-all">@CommandPrefix@command.Syntax</span>
-                                </div>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle">
+                                @if (!string.IsNullOrWhiteSpace(command.Alias))
+                                {
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-muted">Alias</span>
+                                        <span class="font-mono bg-surface-alt px-1 rounded border border-line">@command.Alias</span>
+                                    </div>
+                                }
                                 
-                                <div class="flex justify-between py-1 border-b border-line">
-                                    <span class="text-muted">Target?</span>
-                                    <span class="@(command.RequiresTarget ? "text-success" : "text-muted")">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-muted">Target</span>
+                                    <span class="@(command.RequiresTarget ? "text-success" : "text-muted") font-medium">
                                         @(command.RequiresTarget ? "Yes" : "No")
                                     </span>
                                 </div>
-                                
-                                <div class="py-1">
-                                    <span class="block text-muted mb-1">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</span>
+
+                                <div class="flex items-center gap-1">
+                                    <span class="text-muted">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</span>
                                     @if (command.SupportedGames is not null && command.SupportedGames.Any())
                                     {
                                         <div class="flex flex-wrap gap-1">
                                             @foreach (var game in command.SupportedGames)
                                             {
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                                                    @game.ToString()
-                                                </span>
+                                                <span class="font-medium text-foreground">@game.ToString()</span>
                                             }
                                         </div>
                                     }
                                     else
                                     {
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
-                                            All
-                                        </span>
+                                        <span class="text-foreground">All</span>
                                     }
-
                                 </div>
                             </div>
                         </div>

@@ -91,6 +91,6 @@
     </Target>
 
     <Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="DownloadTailwind">
-        <Exec Command="$(ProjectDir)Tools\tailwindcss.exe -i wwwroot\css\src\tailwind.css -o wwwroot\css\tailwind.css" />
+        <Exec Command="$(ProjectDir)Tools\tailwindcss.exe -i wwwroot\css\src\app.css -o wwwroot\css\app.css" />
     </Target>
 </Project>

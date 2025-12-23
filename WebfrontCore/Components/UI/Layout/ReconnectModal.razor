@@ -1,31 +1,62 @@
 <script type="module" src="/js/reconnect-modal.js"></script>
 
 <dialog id="components-reconnect-modal" data-nosnippet>
-    <div class="components-reconnect-container">
-        <div class="components-rejoining-animation" aria-hidden="true">
-            <div></div>
-            <div></div>
+    <div class="flex flex-col items-center justify-center gap-6 p-8 text-center bg-surface border border-line rounded-2xl shadow-2xl overflow-hidden min-w-[340px] max-w-[400px]">
+        
+        @* Status Icon / Animation *@
+        <div class="relative flex items-center justify-center h-16 w-16">
+            <div class="reconnect-state-msg reconnect-on-show reconnect-on-retrying items-center justify-center w-full h-full">
+                <div class="p-3 rounded-full bg-primary/10 border border-primary/20">
+                    <i class="ph-bold ph-spinner animate-spin text-4xl text-primary"></i>
+                </div>
+            </div>
+            <div class="reconnect-state-msg reconnect-on-failed reconnect-on-resume-failed items-center justify-center w-full h-full">
+                <div class="p-3 rounded-full bg-error/10 border border-error/20">
+                    <i class="ph-bold ph-warning-circle text-4xl text-error"></i>
+                </div>
+            </div>
+            <div class="reconnect-state-msg reconnect-on-paused items-center justify-center w-full h-full">
+                <div class="p-3 rounded-full bg-warning/10 border border-warning/20">
+                    <i class="ph-bold ph-pause-circle text-4xl text-warning"></i>
+                </div>
+            </div>
         </div>
-        <p class="components-reconnect-first-attempt-visible">
-            Rejoining the server...
-        </p>
-        <p class="components-reconnect-repeated-attempt-visible">
-            Rejoin failed... trying again in <span id="components-seconds-to-next-attempt"></span> seconds.
-        </p>
-        <p class="components-reconnect-failed-visible">
-            Failed to rejoin.<br/>Please retry or reload the page.
-        </p>
-        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Retry
-        </button>
-        <p class="components-pause-visible">
-            The session has been paused by the server.
-        </p>
-        <button id="components-resume-button" class="components-pause-visible">
-            Resume
-        </button>
-        <p class="components-resume-failed-visible">
-            Failed to resume the session.<br/>Please reload the page.
-        </p>
+
+        @* Message Content *@
+        <div class="space-y-3">
+            <h3 class="text-xl font-bold tracking-tight text-foreground justify-center flex">
+                <span class="reconnect-state-msg reconnect-on-show leading-tight">Reconnecting</span>
+                <span class="reconnect-state-msg reconnect-on-retrying leading-tight">Retrying Connection</span>
+                <span class="reconnect-state-msg reconnect-on-failed leading-tight">Connection Failed</span>
+                <span class="reconnect-state-msg reconnect-on-paused leading-tight">Session Paused</span>
+                <span class="reconnect-state-msg reconnect-on-resume-failed leading-tight">Resume Failed</span>
+            </h3>
+            
+            <p class="text-subtle text-sm leading-relaxed mx-auto px-2">
+                <span class="reconnect-state-msg reconnect-on-show">Attempting to re-establish connection to the server.</span>
+                <span class="reconnect-state-msg reconnect-on-retrying">
+                    Rejoin failed. Next attempt in <span id="components-seconds-to-next-attempt" class="font-bold text-primary px-1"></span> seconds.
+                </span>
+                <span class="reconnect-state-msg reconnect-on-failed text-error/80 font-medium">We couldn't reconnect you. Please try manual reload.</span>
+                <span class="reconnect-state-msg reconnect-on-paused">The session has been paused by the server.</span>
+                <span class="reconnect-state-msg reconnect-on-resume-failed text-error/80 font-medium">We couldn't resume your session. A reload is required.</span>
+            </p>
+        </div>
+
+        @* Actions *@
+        <div class="w-full pt-2 flex flex-col gap-2.5">
+            <button id="components-reconnect-button" 
+                    class="reconnect-state-msg reconnect-on-failed w-full py-2.5 px-4 bg-primary hover:bg-primary-600 text-white font-semibold rounded-lg transition-all shadow-sm active:scale-[0.98]">
+                Retry Connection
+            </button>
+            <button id="components-resume-button" 
+                    class="reconnect-state-msg reconnect-on-paused w-full py-2.5 px-4 bg-primary hover:bg-primary-600 text-white font-semibold rounded-lg transition-all shadow-sm active:scale-[0.98]">
+                Resume Session
+            </button>
+            <button onclick="window.location.reload()" 
+                    class="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 text-foreground font-medium rounded-lg border border-line transition-all active:scale-[0.98]">
+                Reload Page
+            </button>
+        </div>
     </div>
 </dialog>

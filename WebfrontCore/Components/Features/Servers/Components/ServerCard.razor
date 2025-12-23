@@ -5,7 +5,7 @@
 <div class="relative overflow-hidden rounded-lg bg-surface-alt border border-line shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-line-hover group flex flex-col">
     
     <!-- Compact Header -->
-    <div class="relative h-10 px-4 flex items-center justify-between bg-surface border-b border-line z-20" id="server_header_@Model.Id">
+    <div class="relative h-10 px-4 flex items-center justify-between bg-surface border-b border-line z-10" id="server_header_@Model.Id">
         
         <!-- Left: Basic Info -->
         <div class="flex items-center space-x-3 overflow-hidden">
@@ -70,8 +70,8 @@
     </div>
 
     <!-- Body: Player List -->
-    <div class="relative z-10 flex-1 @(Model.ClientCount == 0 ? "min-h-[60px]" : "min-h-[120px]") bg-surface-alt">
-        <div id="server_clientactivity_@Model.Id">
+    <div class="relative z-10 flex-1 flex @(Model.ClientCount == 0 ? "min-h-[60px] items-center" : "min-h-[120px]") bg-surface-alt">
+        <div id="server_clientactivity_@Model.Id" class="w-full">
              <ClientActivity Model="@Model"/>
         </div>
     </div>

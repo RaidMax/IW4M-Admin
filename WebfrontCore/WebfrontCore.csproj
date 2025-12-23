@@ -55,6 +55,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="wwwroot\images\banners\" />
         <Folder Include="wwwroot\lib\canvas.js\"/>
     </ItemGroup>
 

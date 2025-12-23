@@ -35,14 +35,14 @@ public partial class Privileged
 
     private static string GetHeaderClass(EFClient.Permission permission) => permission switch
     {
-        EFClient.Permission.Console => "bg-level-console/25 text-level-console border-level-console/40",
-        EFClient.Permission.Owner => "bg-level-owner/25 text-level-owner border-level-owner/40",
-        EFClient.Permission.Creator => "bg-level-owner/25 text-level-owner border-level-owner/40",
-        EFClient.Permission.SeniorAdmin => "bg-level-senioradmin/25 text-level-senioradmin border-level-senioradmin/40",
-        EFClient.Permission.Administrator => "bg-level-administrator/25 text-level-administrator border-level-administrator/40",
-        EFClient.Permission.Moderator => "bg-level-moderator/25 text-level-moderator border-level-moderator/40",
-        EFClient.Permission.Trusted => "bg-level-trusted/25 text-level-trusted border-level-trusted/40",
-        EFClient.Permission.Flagged => "bg-level-flagged/25 text-level-flagged border-level-flagged/40",
+        EFClient.Permission.Console => "bg-level-console/40 text-level-console border-level-console/60",
+        EFClient.Permission.Owner => "bg-level-owner/40 text-level-owner border-level-owner/60",
+        EFClient.Permission.Creator => "bg-level-owner/40 text-level-owner border-level-owner/60",
+        EFClient.Permission.SeniorAdmin => "bg-level-senioradmin/40 text-level-senioradmin border-level-senioradmin/60",
+        EFClient.Permission.Administrator => "bg-level-administrator/40 text-level-administrator border-level-administrator/60",
+        EFClient.Permission.Moderator => "bg-level-moderator/40 text-level-moderator border-level-moderator/60",
+        EFClient.Permission.Trusted => "bg-level-trusted/40 text-level-trusted border-level-trusted/60",
+        EFClient.Permission.Flagged => "bg-level-flagged/40 text-level-flagged border-level-flagged/60",
         _ => "bg-blue-500/10 text-blue-500 border-blue-500/20"
     };
 }

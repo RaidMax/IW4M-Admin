@@ -1,0 +1,15 @@
+﻿@import "tailwindcss";
+@import "./palette.css";
+@source "../../../";
+
+@theme {
+    /* Permission Level Colors */
+    --color-level-console: #ff6060;
+    --color-level-banned: #ff6060;
+    --color-level-flagged: #fd9c38;
+    --color-level-trusted: #749363;
+    --color-level-moderator: #f0de8b;
+    --color-level-administrator: #f1a8e8;
+    --color-level-senioradmin: #50bcc3;
+    --color-level-owner: #007acc;
+}

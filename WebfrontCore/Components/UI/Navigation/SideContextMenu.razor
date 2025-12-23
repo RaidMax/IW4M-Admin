@@ -11,14 +11,13 @@
         @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
         {
             <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
-               class="block px-3 py-2 rounded-md text-sm font-medium text-subtle hover:bg-surface-hover hover:text-foreground transition-colors @(item.IsActive ? "bg-action-primary text-foreground" : "")"
+               class="group flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors @(item.IsActive ? "bg-action-primary text-foreground hover:bg-action-primary-hover" : "text-subtle hover:bg-surface-hover hover:text-foreground")"
                @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
-               @onclick:preventDefault="@(!item.IsLink)">
-                <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
-                     data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-accent"></i>
-                    <span class="truncate">@item.Title</span>
-                </div>
+               @onclick:preventDefault="@(!item.IsLink)"
+               data-title="@item.Tooltip" data-placement="left"
+               data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 @(item.IsActive ? "text-foreground" : "text-secondary group-hover:text-foreground")"></i>
+                <span class="truncate">@item.Title</span>
             </a>
         }
 
@@ -35,14 +34,13 @@
                     @foreach (var item in group)
                     {
                         <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
-                           class="block px-3 py-2 rounded-md text-sm font-medium text-subtle hover:bg-surface-hover hover:text-foreground transition-colors @(item.IsActive ? "bg-action-primary text-foreground" : "")"
+                           class="group flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors @(item.IsActive ? "bg-action-primary text-foreground hover:bg-action-primary-hover" : "text-subtle hover:bg-surface-hover hover:text-foreground")"
                            @onclick='(e) => OnActionClick(item, e)'
-                           @onclick:preventDefault="@(!item.IsLink)">
-                            <div class="flex items-center" data-title="@item.Tooltip" data-placement="left"
-                                 data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
-                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 text-accent"></i>
-                                <span class="truncate">@item.Title</span>
-                            </div>
+                           @onclick:preventDefault="@(!item.IsLink)"
+                           data-title="@item.Tooltip" data-placement="left"
+                           data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                            <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 @(item.IsActive ? "text-foreground" : "text-secondary group-hover:text-foreground")"></i>
+                            <span class="truncate">@item.Title</span>
                         </a>
                     }
                 </div>

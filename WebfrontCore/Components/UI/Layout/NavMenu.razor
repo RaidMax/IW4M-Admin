@@ -1,5 +1,17 @@
 
 
+@using WebfrontCore.Core.Services
+
+@code {
+    private void CloseMobileMenu()
+    {
+        if (AppState.IsMobileNavOpen)
+        {
+            AppState.IsMobileNavOpen = false;
+        }
+    }
+}
+
 <!-- left side navigation -->
 <aside class="flex flex-col h-full z-30 flex-1 md:w-full">
     <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -9,36 +21,36 @@
                 <SearchResourceForm />
             </div>
 
-            <div class="text-xs font-semibold text-accent uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</div>
+            <div class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</div>
             
             <!-- servers -->
-            <NavLink href="servers" Match="NavLinkMatch.All" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                <i class="ph ph-hard-drives mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+            <NavLink href="servers" Match="NavLinkMatch.All" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                <i class="ph ph-hard-drives mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_SERVERS"))</span>
             </NavLink>
             <!-- about -->
-            <NavLink href="about" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                <i class="ph ph-info mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+            <NavLink href="about" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                <i class="ph ph-info mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_ABOUT"))</span>
             </NavLink>
             <!-- penalties -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
-                <NavLink href="penalties" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                    <i class="ph ph-lock-simple mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                <NavLink href="penalties" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                    <i class="ph ph-lock-simple mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_PENALTIES"))</span>
                 </NavLink>
             </AuthorizeView>
             <!-- privileged -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
-                <NavLink href="privileged-clients" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                    <i class="ph ph-users mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                <NavLink href="privileged-clients" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                    <i class="ph ph-users mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_PRIVILEGED"))</span>
                 </NavLink>
             </AuthorizeView>
             <!-- help -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.HelpPage}.{WebfrontPermission.Read}")">
-                <NavLink href="commands" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                    <i class="ph ph-question mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                <NavLink href="commands" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                    <i class="ph ph-question mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_HELP"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -49,8 +61,8 @@
                 {
                     <AuthorizeView
                         Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
-                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                            <i class="ph @interaction.DisplayMeta mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                            <i class="ph @interaction.DisplayMeta mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                             <span class="truncate">@interaction.Name</span>
                         </NavLink>
                     </AuthorizeView>
@@ -61,8 +73,8 @@
             @if (AppState.User is not null)
             {
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ProfilePage}.{WebfrontPermission.Read}")">
-                    <NavLink href="@($"client/{AppState.User.ClientId}")" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                        <i class="ph ph-user mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                    <NavLink href="@($"client/{AppState.User.ClientId}")" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                        <i class="ph ph-user mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
                     </NavLink>
                 </AuthorizeView>
@@ -71,23 +83,23 @@
             <div class="my-4 border-t border-divider"></div>
 
             <!-- stats -->
-            <div class="text-xs font-semibold text-accent uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_STATS"))</div>
+            <div class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_STATS"))</div>
 
             <!-- dynamically registered pages -->
             @if (NavData?.Pages is not null && NavData.Pages.Any())
             {
                 foreach (var pageLink in NavData.Pages)
                 {
-                    <a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground" href="@pageLink.Location">
-                        <i class="ph @(pageLink.Location.EndsWith("Radar") ? "ph-wifi-high" : "ph-chart-bar") mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                    <a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover" href="@pageLink.Location" @onclick="CloseMobileMenu">
+                        <i class="ph @(pageLink.Location.EndsWith("Radar") ? "ph-wifi-high" : "ph-chart-bar") mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                         <span class="truncate">@pageLink.Name</span>
                     </a>
                 }
             }
 
             <!-- scoreboard -->
-            <NavLink href="scoreboard" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground">
-                <i class="ph ph-table mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+            <NavLink href="scoreboard" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                <i class="ph ph-table mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_SCOREBOARD"))</span>
             </NavLink>
 
@@ -95,15 +107,15 @@
             @if (NavData?.CommunityInformation?.IsEnabled == true && NavData.CommunityInformation.SocialAccounts?.Any() == true)
             {
                  <div class="my-4 border-t border-divider"></div>
-                <div class="text-xs font-semibold text-accent uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_SOCIALS"))</div>
+                <div class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_SOCIALS"))</div>
 
                 @foreach (var social in NavData.CommunityInformation.SocialAccounts)
                 {
-                    <a href="@social.Url" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white" target="_blank" title="@social.Title">
+                    <a href="@social.Url" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover" target="_blank" title="@social.Title">
                         <div class="flex items-center w-full">
                             @if (!string.IsNullOrWhiteSpace(social.IconId))
                             {
-                                <i class="ph @social.IconId mr-3 text-lg text-accent group-hover:text-foreground group-[.active]:text-foreground"></i>
+                                <i class="ph @social.IconId mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                             }
                             else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                             {
@@ -125,9 +137,9 @@
                         {
                             <AuthorizeView
                                 Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
-                                <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")"
-                                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                                    <i class="ph @interaction.DisplayMeta mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                                <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" @onclick="CloseMobileMenu"
+                                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                                    <i class="ph @interaction.DisplayMeta mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                                     <span class="truncate">@interaction.Name</span>
                                 </NavLink>
                             </AuthorizeView>
@@ -139,13 +151,13 @@
             <!-- Admin Section -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
                  <div class="my-4 border-t border-primary/10"></div>
-                <div class="text-xs font-semibold text-accent uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_ADMIN"))</div>
+                <div class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_ADMIN"))</div>
 
                 <!-- Console -->
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")"
                                Context="consoleContext">
-                    <NavLink href="console" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                        <i class="ph ph-terminal mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                    <NavLink href="console" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                        <i class="ph ph-terminal mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
                     </NavLink>
                 </AuthorizeView>
@@ -153,8 +165,8 @@
                 <!-- Ban Management -->
                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")"
                                Context="banContext">
-                    <NavLink href="manage-bans" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                        <i class="ph ph-prohibit mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                    <NavLink href="manage-bans" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                        <i class="ph ph-prohibit mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
                     </NavLink>
                 </AuthorizeView>
@@ -162,24 +174,24 @@
 
             <!-- Configuration (Owner only) -->
             <AuthorizeView Roles="Owner">
-                <NavLink href="configuration" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                    <i class="ph ph-gear mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                <NavLink href="configuration" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                    <i class="ph ph-gear mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
                 </NavLink>
             </AuthorizeView>
 
             <!-- Audit Log -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AuditPage}.{WebfrontPermission.Read}")">
-                <NavLink href="audit" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                    <i class="ph ph-books mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                <NavLink href="audit" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                    <i class="ph ph-books mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
                 </NavLink>
             </AuthorizeView>
 
             <!-- Recent Clients -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.RecentPlayersPage}.{WebfrontPermission.Read}")">
-                <NavLink href="find-client?direction=1&sortColumn=FirstConnection" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                    <i class="ph ph-clock mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                <NavLink href="find-client?direction=1&sortColumn=FirstConnection" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                    <i class="ph ph-clock mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
                 </NavLink>
             </AuthorizeView>
@@ -193,8 +205,8 @@
                     {
                         <AuthorizeView
                             Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
-                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-primary/25 hover:text-white transition-colors [&.active]:bg-primary [&.active]:text-white [&.active_i]:text-white">
-                                <i class="ph @interaction.DisplayMeta mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
+                                <i class="ph @interaction.DisplayMeta mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                                 <span class="truncate">@interaction.Name</span>
                             </NavLink>
                         </AuthorizeView>
@@ -207,9 +219,9 @@
                  <!-- Login Token (for authenticated users) -->
                 @if (AppState.User is not null)
                 {
-                    <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("GenerateLoginToken")'
+                    <a href="#" @onclick:preventDefault @onclick='() => { ActionService.OpenAction("GenerateLoginToken", null, null); CloseMobileMenu(); }'
                        class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors mb-2">
-                        <i class="ph ph-key mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                        <i class="ph ph-key mr-3 text-lg text-secondary group-hover:text-foreground"></i>
                         <span class="truncate">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
                     </a>
 
@@ -217,7 +229,7 @@
                     <form action="/Account/Logout" method="post" class="w-full">
                         <AntiforgeryToken/>
                         <button type="submit" class="w-full group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors text-left bg-transparent border-none cursor-pointer">
-                            <i class="ph ph-sign-out mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                            <i class="ph ph-sign-out mr-3 text-lg text-secondary group-hover:text-foreground"></i>
                             <span class="truncate">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
                         </button>
                     </form>
@@ -225,8 +237,8 @@
                 else
                 {
                     <!-- Login (for unauthenticated users) -->
-                    <a href="#" @onclick:preventDefault @onclick='() => ActionModal.Open("Login")' class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors">
-                        <i class="ph ph-key mr-3 text-lg text-accent group-hover:text-foreground"></i>
+                    <a href="#" @onclick:preventDefault @onclick='() => { ActionService.OpenAction("Login", null, null); CloseMobileMenu(); }' class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors">
+                        <i class="ph ph-key mr-3 text-lg text-secondary group-hover:text-foreground"></i>
                         <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>
                     </a>
                 }
@@ -240,7 +252,7 @@
                         {
                             if (match.IsInterpolation && match.MatchValue == "username")
                             {
-                                <span class="font-bold text-accent">@AppState.User.Name</span>
+                                <span class="font-bold text-primary">@AppState.User.Name</span>
                             }
                             else
                             {
@@ -256,11 +268,10 @@
                     
                     <div class="mt-1">
                         <a href="https://github.com/RaidMax/IW4M-Admin/releases" class="hover:text-subtle transition-colors" target="_blank">
-                             IW4MAdmin <span class="text-accent">@Program.Manager.Version</span>
+                             IW4MAdmin <span class="text-primary">@Program.Manager.Version</span>
                         </a>
                     </div>
                 </div>
             </div>
 
 </aside>
-<ActionModal @ref="ActionModal"/>

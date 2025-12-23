@@ -23,11 +23,32 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
     const width = card ? card.clientWidth : canvas.parentElement.clientWidth;
     canvas.setAttribute('width', width);
 
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary') || '#007bff';
-    const rgb = [0, 123, 255]; // fallback
+    // Get theme colors from CSS variables
+    const styles = getComputedStyle(document.documentElement);
+    const primaryColor = styles.getPropertyValue('--color-primary').trim() || 'hsl(217 91% 60%)';
+    const mutedColor = styles.getPropertyValue('--color-muted').trim() || 'hsl(0 0% 55%)';
 
-    const fillColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.66)`;
-    const offlineFillColor = 'rgba(255, 96, 96, 0.55)';
+    // Helper to convert CSS color to rgba
+    const colorToRgba = (color, alpha) => {
+        // Create a temporary element to compute the color
+        const temp = document.createElement('div');
+        temp.style.color = color;
+        document.body.appendChild(temp);
+        const computed = getComputedStyle(temp).color;
+        document.body.removeChild(temp);
+
+        // Parse rgb(r, g, b) format
+        const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (match) {
+            return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+        }
+        return color;
+    };
+
+    const onlineBorderColor = colorToRgba(primaryColor, 1);
+    const onlineFillColor = colorToRgba(primaryColor, 0.1);
+    const offlineBorderColor = colorToRgba(mutedColor, 0.5);
+    const offlinePatternColor = colorToRgba(mutedColor, 0.2);
 
     const onlineTime = [];
     const offlineTime = [];
@@ -69,25 +90,25 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
             labels: playerHistory.map(history => history.ts),
             datasets: [{
                 data: onlineTime.map(history => history.cc),
-                backgroundColor: 'rgba(56, 189, 248, 0.1)', // Sky-400/10
-                borderColor: 'rgba(56, 189, 248, 1)',       // Sky-400
+                backgroundColor: onlineFillColor,
+                borderColor: onlineBorderColor,
                 borderWidth: 1.5,
                 hoverBorderColor: 'white',
                 hoverBorderWidth: 2,
                 pointRadius: 0,
                 pointHoverRadius: 4,
-                pointBackgroundColor: 'rgba(56, 189, 248, 1)'
+                pointBackgroundColor: onlineBorderColor
             },
-            {
-                data: offlineTime.map(history => history.cc),
-                backgroundColor: createDiagonalPattern('rgba(148, 163, 184, 0.2)'), // Slate-400/20
-                borderColor: 'rgba(148, 163, 184, 0.5)',                            // Slate-400/50
-                borderWidth: 1.5,
-                hoverBorderColor: 'white',
-                hoverBorderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 0
-            }],
+                {
+                    data: offlineTime.map(history => history.cc),
+                    backgroundColor: createDiagonalPattern(offlinePatternColor),
+                    borderColor: offlineBorderColor,
+                    borderWidth: 1.5,
+                    hoverBorderColor: 'white',
+                    hoverBorderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }],
             lineAtIndexes: mapChange,
         },
         options: {
@@ -105,14 +126,19 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                     // Tooltip Element
                     var tooltipEl = document.getElementById('chartjs-tooltip');
 
+                    // Get theme colors
+                    const tooltipStyles = getComputedStyle(document.documentElement);
+                    const surfaceColor = tooltipStyles.getPropertyValue('--color-surface').trim() || 'hsl(0 0% 13%)';
+                    const lineColor = tooltipStyles.getPropertyValue('--color-line').trim() || 'hsl(0 0% 25%)';
+                    const foregroundColor = tooltipStyles.getPropertyValue('--color-foreground').trim() || 'hsl(0 0% 98%)';
+                    const subtleColor = tooltipStyles.getPropertyValue('--color-subtle').trim() || 'hsl(0 0% 75%)';
+
                     // Create element on first render
                     if (!tooltipEl) {
                         tooltipEl = document.createElement('div');
                         tooltipEl.id = 'chartjs-tooltip';
                         tooltipEl.style.position = 'absolute';
-                        tooltipEl.style.background = 'rgba(15, 23, 42, 0.95)'; // Slate-900
-                        tooltipEl.style.border = '1px solid rgba(51, 65, 85, 0.5)'; // Slate-700
-                        tooltipEl.style.borderRadius = '4px';
+                        tooltipEl.style.borderRadius = '6px';
                         tooltipEl.style.pointerEvents = 'none';
                         tooltipEl.style.zIndex = '9999';
                         tooltipEl.style.transition = 'all .1s ease';
@@ -120,6 +146,10 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                         tooltipEl.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
                         document.body.appendChild(tooltipEl);
                     }
+
+                    // Update colors dynamically (in case theme changed)
+                    tooltipEl.style.background = surfaceColor;
+                    tooltipEl.style.border = `1px solid ${lineColor}`;
 
                     // Hide if no tooltip
                     if (tooltipModel.opacity === 0) {
@@ -149,7 +179,7 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                         titleLines.forEach(function (title) {
                             // Format Title (Date)
                             var formattedTitle = moment(title).local().calendar();
-                            innerHtml += '<div style="color: #f1f5f9; font-size: 11px; font-weight: 600; margin-bottom: 4px; font-family: ui-sans-serif, system-ui, sans-serif;">' + formattedTitle + '</div>';
+                            innerHtml += `<div style="color: ${foregroundColor}; font-size: 11px; font-weight: 600; margin-bottom: 4px; font-family: ui-sans-serif, system-ui, sans-serif;">` + formattedTitle + '</div>';
                         });
 
                         bodyLines.forEach(function (body, i) {
@@ -160,13 +190,13 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                             var label = "";
 
                             if (datasetIndex !== 1) {
-                                label = `${value} ${strings.players} | ${playerHistory[dataIndex].ma}`;
+                                label = `${value} ${strings.players} • ${playerHistory[dataIndex].ma}`;
                             } else {
                                 label = value === 0 ? '' : strings.unreachable;
                             }
 
                             if (label) {
-                                innerHtml += '<div style="color: #cbd5e1; font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif;">' + label + '</div>';
+                                innerHtml += `<div style="color: ${subtleColor}; font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif;">` + label + '</div>';
                             }
                         });
                         innerHtml += '</div>';
@@ -313,7 +343,7 @@ window.blazorInfiniteScroll = {
 // Toast notification wrapper for Blazor
 window.blazorToast = {
     show: function (content, title, alertType, fillType, timeShown) {
-        console.log('blazorToast.show called', { content, title, alertType, fillType, timeShown });
+        console.log('blazorToast.show called', {content, title, alertType, fillType, timeShown});
 
         if (typeof halfmoon === 'undefined') {
             console.error('halfmoon is not defined');
@@ -350,37 +380,6 @@ window.blazorToast = {
     }
 };
 
-window.initHalfmoon = function () {
-    console.log('initHalfmoon called');
-    if (typeof halfmoon === 'undefined') {
-        console.error('halfmoon is undefined');
-        return;
-    }
-
-    // Try standard initialization
-    if (halfmoon.onDOMContentLoaded) {
-        halfmoon.onDOMContentLoaded();
-    }
-
-    // Manual fallback: check if pageWrapper is set
-    if (!halfmoon.pageWrapper) {
-        console.warn('halfmoon.pageWrapper is missing after init. Attempting manual set.');
-        halfmoon.pageWrapper = document.getElementsByClassName("page-wrapper")[0];
-
-        if (halfmoon.pageWrapper) {
-            console.log('halfmoon.pageWrapper set manually');
-            // Re-initialize sidebar if needed
-            if (halfmoon.sidebar) {
-                // If sidebar object exists (should exist if halfmoon loaded), we might need to reset its state or it just uses the wrapper reference
-            }
-        } else {
-            console.error('Could not find .page-wrapper');
-        }
-    } else {
-        console.log('halfmoon.pageWrapper was found correctly');
-    }
-}
-
 window.themeManager = {
     // HSL values for standard Tailwind palettes (500 shade base)
     paletteHSL: {
@@ -406,7 +405,8 @@ window.themeManager = {
     save: function (settings) {
         try {
             localStorage.setItem('themeSettings', JSON.stringify(settings));
-        } catch (e) { }
+        } catch (e) {
+        }
     },
 
     apply: function (settings) {
@@ -434,7 +434,13 @@ window.themeManager = {
         }
 
         // Apply secondary color
-        if (settings.secondaryColorMode === 1) { // Palette
+        // For minimal preset, force grey (no saturation) to maintain monochrome look
+        if (settings.preset === 'minimal') {
+            doc.removeAttribute('data-secondary-palette');
+            doc.style.setProperty('--color-secondary-h', '0');
+            doc.style.setProperty('--color-secondary-s', '0%');
+            doc.style.setProperty('--color-secondary-l', '60%');
+        } else if (settings.secondaryColorMode === 1) { // Palette
             const palette = settings.secondaryPalette || 'purple';
             doc.setAttribute('data-secondary-palette', palette);
             const hsl = this.paletteHSL[palette] || this.paletteHSL['purple'];
@@ -443,9 +449,13 @@ window.themeManager = {
             doc.style.setProperty('--color-secondary-l', hsl[2] + '%');
         } else { // Custom
             doc.removeAttribute('data-secondary-palette');
-            doc.style.setProperty('--color-secondary-h', settings.secondaryHue);
-            doc.style.setProperty('--color-secondary-s', settings.secondarySaturation + '%');
-            doc.style.setProperty('--color-secondary-l', settings.secondaryLightness + '%');
+            // Ensure custom values have fallbacks
+            const hue = settings.secondaryHue ?? 271;
+            const sat = settings.secondarySaturation ?? 91;
+            const lit = settings.secondaryLightness ?? 65;
+            doc.style.setProperty('--color-secondary-h', hue);
+            doc.style.setProperty('--color-secondary-s', sat + '%');
+            doc.style.setProperty('--color-secondary-l', lit + '%');
         }
     },
 
@@ -456,6 +466,9 @@ window.themeManager = {
         // Apply on load
         const settings = self.load();
         if (settings) self.apply(settings);
+
+        if (this._initialized) return;
+        this._initialized = true;
 
         // Use Blazor's enhancedload event (fires AFTER DOM patching completes)
         if (typeof Blazor !== 'undefined') {

@@ -15,14 +15,19 @@
 
 
 <div class="mt-4 md:mt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-foreground">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h1>
-            @if (PrivilegedClients != null)
-            {
-                 <div class="text-sm text-muted font-medium mt-1">
-                     @PrivilegedClients.Sum(x => x.Value.Count).ToString("#,##0") total
-                 </div>
-            }
+        <div class="flex items-center gap-3 mb-6">
+            <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                <i class="ph ph-users text-xl text-primary"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gradient-title">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h1>
+                @if (PrivilegedClients != null)
+                {
+                     <div class="text-sm text-subtle font-medium mt-0.5">
+                         @PrivilegedClients.Sum(x => x.Value.Count).ToString("#,##0") privileged clients
+                     </div>
+                }
+            </div>
         </div>
 
     @if (PrivilegedClients != null)
@@ -57,7 +62,7 @@
                                                     @* Optional: Use ph-spy or ph-shield-check if preferred *@
                                                 </span>
                                         <a href="/client/@client.ClientId"
-                                           class="font-medium text-primary hover:text-primary/25 transition-colors">
+                                           class="font-medium text-foreground hover:text-primary transition-colors">
                                             <ColorCode Value="@client.Name"/>
                                         </a>
                                     </div>
@@ -79,7 +84,7 @@
                                 <td class="px-4 py-3">
                                     <div class="flex items-center">
                                         <a href="/client/@client.ClientId"
-                                           class="font-medium text-primary hover:text-primary/25 transition-colors">
+                                           class="font-medium text-foreground hover:text-primary transition-colors">
                                             <ColorCode Value="@client.Name"/>
                                         </a>
                                     </div>
@@ -99,54 +104,29 @@
                     </tbody>
                 </table>
 
-                <!-- Mobile Stack -->
                 <div class="md:hidden divide-y divide-line">
                     @foreach (var client in PrivilegedClients[key].OrderByDescending(c => c.LastConnection))
                     {
-                        if (client.IsMasked)
-                        {
-                            <div class="p-4 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                            <span class="text-warning"
-                                                  title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
-                                                <i class="ph ph-mask-happy text-lg"></i>
-                                            </span>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-medium text-primary hover:text-primary/25">
-                                            <ColorCode Value="@client.Name"/>
-                                        </a>
-                                    </div>
-                                    <span class="text-xs text-muted">@client.LastConnection.Humanize()</span>
-                                </div>
-                                <div class="flex items-center justify-between text-sm">
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                                            @(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))
-                                        </span>
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="p-4 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <a href="/client/@client.ClientId"
-                                           class="font-medium text-primary hover:text-primary/25">
-                                            <ColorCode Value="@client.Name"/>
-                                        </a>
-                                    </div>
-                                    <span class="text-xs text-muted">@client.LastConnection.Humanize()</span>
-                                </div>
-                                <div class="flex items-center justify-between text-sm">
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                                        @(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))
+                        <div class="p-4 flex items-center justify-between gap-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                @if (client.IsMasked)
+                                {
+                                    <span class="text-warning flex-shrink-0"
+                                          title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                                        <i class="ph ph-mask-happy text-lg"></i>
                                     </span>
-                                </div>
+                                }
+                                <a href="/client/@client.ClientId"
+                                   class="font-medium text-foreground hover:text-primary transition-colors">
+                                    <ColorCode Value="@client.Name"/>
+                                </a>
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                                    @(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))
+                                </span>
                             </div>
-                        }
+                            <span class="text-xs text-muted whitespace-nowrap flex-shrink-0">@client.LastConnection.Humanize()</span>
+                        </div>
                     }
                 </div>
             </div>

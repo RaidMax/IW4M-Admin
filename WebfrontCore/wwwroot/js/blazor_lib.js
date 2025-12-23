@@ -45,10 +45,12 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
         return color;
     };
 
+    const secondaryColor = styles.getPropertyValue('--color-secondary').trim() || 'hsl(271 91% 65%)';
+
     const onlineBorderColor = colorToRgba(primaryColor, 1);
     const onlineFillColor = colorToRgba(primaryColor, 0.1);
-    const offlineBorderColor = colorToRgba(mutedColor, 0.5);
-    const offlinePatternColor = colorToRgba(mutedColor, 0.2);
+    const offlineBorderColor = colorToRgba(secondaryColor, 0.5);
+    const offlinePatternColor = colorToRgba(secondaryColor, 0.2);
 
     const onlineTime = [];
     const offlineTime = [];

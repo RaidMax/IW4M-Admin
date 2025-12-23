@@ -418,6 +418,7 @@ namespace IW4MAdmin
 
                         ChatHistory.Add(new ChatInfo()
                         {
+                            ClientId = E.Origin.ClientId,
                             Name = E.Origin.Name,
                             Message = "CONNECTED",
                             Time = DateTime.UtcNow
@@ -658,6 +659,7 @@ namespace IW4MAdmin
                 {
                     ChatHistory.Add(new ChatInfo()
                     {
+                        ClientId = E.Origin.ClientId,
                         Name = E.Origin.Name,
                         Message = "DISCONNECTED",
                         Time = DateTime.UtcNow
@@ -737,6 +739,7 @@ namespace IW4MAdmin
 
                         ChatHistory.Add(new ChatInfo
                         {
+                            ClientId = E.Origin.ClientId,
                             Name = E.Origin.Name,
                             Message = message,
                             Time = DateTime.UtcNow,

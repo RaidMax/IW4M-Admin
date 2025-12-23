@@ -11,7 +11,7 @@
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
                  <!-- Admins -->
                 <div class="flex items-center border border-line rounded-lg overflow-hidden">
-                    <span class="px-3 py-1 text-xs font-bold text-secondary bg-success/10 border-r border-line">@(_navData.TotalAdminCount)</span>
+                    <span class="px-3 py-1 text-xs font-bold text-success bg-success/10 border-r border-line">@(_navData.TotalAdminCount)</span>
                     <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE").ToUpper()</span>
                 </div>
             </AuthorizeView>

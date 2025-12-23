@@ -16,6 +16,7 @@ public partial class ServerCard
     private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _cts = new();
     private bool _chartInitialized;
+    private bool _showMobileDetails;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

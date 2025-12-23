@@ -55,10 +55,22 @@ else
 
     </HeadContent>
 
-    <div class="max-w-[1920px] mx-auto flex flex-col xl:flex-row min-h-screen">
+    <div class="max-w-[1920px] mx-auto flex flex-col xl:flex-row min-h-screen relative overflow-hidden">
         
+        @* Game Background Banner *@
+        @{
+            var bannerGameCode = Client.Game.ToString().ToLower();
+            var bannerImageUrl = $"/images/banners/{bannerGameCode}.png";
+        }
+        @if (Client.Game != Reference.Game.UKN)
+        {
+            <div class="profile-banner"
+                 style="background-image: url('@bannerImageUrl');">
+            </div>
+        }
+
         @* Main Content *@
-        <div class="flex-1 min-w-0 p-4 md:p-8 space-y-6">
+        <div class="flex-1 min-w-0 p-4 md:p-8 space-y-6 relative z-10">
             
             @* Active Penalty Banner *@
             @if (Client.ActivePenalty != null)

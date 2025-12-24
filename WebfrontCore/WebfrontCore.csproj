@@ -70,6 +70,9 @@
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
         <Content Remove="wwwroot\lib\**" />
+        <Content Include="wwwroot\font\phosphor\**\*.*">
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
@@ -104,5 +107,39 @@
             <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(ProjectDir)Tools/tailwindcss</TailwindExe>
         </PropertyGroup>
         <Exec Command="$(TailwindExe) -i wwwroot/css/src/app.css -o wwwroot/css/app.css" />
+    </Target>
+
+    <Target Name="CopyPhosphorFonts" AfterTargets="Build">
+        <MakeDir Directories="wwwroot/font/phosphor" />
+        <ItemGroup>
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/regular/Phosphor.*" />
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/bold/Phosphor-Bold.*" />
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/fill/Phosphor-Fill.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(PhosphorFontFiles)" DestinationFolder="wwwroot/font/phosphor" SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="PatchPhosphorCss" BeforeTargets="Build">
+        <!-- Patch regular style.css -->
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" 
+              Command="powershell -Command &quot;(Get-Content 'wwwroot/lib/phosphor-icons/src/regular/style.css') -replace 'url\(\&quot;Phosphor', 'url(\&quot;/font/phosphor/Phosphor' | Set-Content 'wwwroot/lib/phosphor-icons/src/regular/style.css'&quot;" 
+              IgnoreExitCode="true" />
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" 
+              Command="sed -i 's|url(&quot;Phosphor|url(&quot;/font/phosphor/Phosphor|g' wwwroot/lib/phosphor-icons/src/regular/style.css" 
+              IgnoreExitCode="true" />
+        <!-- Patch bold style.css -->
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" 
+              Command="powershell -Command &quot;(Get-Content 'wwwroot/lib/phosphor-icons/src/bold/style.css') -replace 'url\(\&quot;Phosphor', 'url(\&quot;/font/phosphor/Phosphor' | Set-Content 'wwwroot/lib/phosphor-icons/src/bold/style.css'&quot;" 
+              IgnoreExitCode="true" />
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" 
+              Command="sed -i 's|url(&quot;Phosphor|url(&quot;/font/phosphor/Phosphor|g' wwwroot/lib/phosphor-icons/src/bold/style.css" 
+              IgnoreExitCode="true" />
+        <!-- Patch fill style.css -->
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" 
+              Command="powershell -Command &quot;(Get-Content 'wwwroot/lib/phosphor-icons/src/fill/style.css') -replace 'url\(\&quot;Phosphor', 'url(\&quot;/font/phosphor/Phosphor' | Set-Content 'wwwroot/lib/phosphor-icons/src/fill/style.css'&quot;" 
+              IgnoreExitCode="true" />
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" 
+              Command="sed -i 's|url(&quot;Phosphor|url(&quot;/font/phosphor/Phosphor|g' wwwroot/lib/phosphor-icons/src/fill/style.css" 
+              IgnoreExitCode="true" />
     </Target>
 </Project>

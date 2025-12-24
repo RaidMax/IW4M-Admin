@@ -12,11 +12,15 @@
   {
     "outputFileName": "wwwroot/js/global.min.js",
     "inputFiles": [
+      "wwwroot/lib/jquery/jqery.js",
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",
       "wwwroot/lib/vanillajs-datepicker/dist/js/datepicker.min.js",
+      "wwwroot/lib/moment.js/min/moment-with-locales.js",
       "wwwroot/js/stats.js",
       "wwwroot/js/advanced_stats.js",
-      "wwwroot/js/liveradar.js"
+      "wwwroot/js/liveradar.js",
+      "wwwroot/js/infinite-scroll.js",
+      "wwwroot/js/blazor_lib.js"
     ],
     "minify": {
       "enabled": true,

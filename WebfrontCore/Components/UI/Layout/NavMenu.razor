@@ -97,11 +97,7 @@
                 }
             }
 
-            <!-- scoreboard -->
-            <NavLink href="scoreboard" @onclick="CloseMobileMenu" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-table mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_SCOREBOARD"))</span>
-            </NavLink>
+
 
             <!-- socials -->
             @if (NavData?.CommunityInformation?.IsEnabled == true && NavData.CommunityInformation.SocialAccounts?.Any() == true)

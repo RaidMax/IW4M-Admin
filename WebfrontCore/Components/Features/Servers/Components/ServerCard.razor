@@ -51,11 +51,11 @@
                     </button>
                 </AuthorizeView>
                 
-                <a href="scoreboard/@Model.Id" 
+                <button @onclick:preventDefault @onclick="OpenScoreboard" 
                    class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors"
                    title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))">
                     <i class="ph-bold ph-list text-xs"></i>
-                </a>
+                </button>
 
                 <a href="@Model.ConnectProtocolUrl" 
                    class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:block"

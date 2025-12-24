@@ -9,9 +9,11 @@ public partial class ServerCard
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Parameter] public ServerInfo Model { get; set; }
     [Parameter] public EventCallback<string> OnChat { get; set; }
+
     
     private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _cts = new();
@@ -74,9 +76,22 @@ public partial class ServerCard
         }
     }
 
+    private void OpenScoreboard()
+    {
+        ActionService.OpenCustom(ScoreboardContent(Model.Id), AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"), "max-w-5xl");
+    }
+
+    private RenderFragment ScoreboardContent(string serverId) => builder =>
+    {
+        builder.OpenComponent(0, typeof(ScoreboardModalWrapper));
+        builder.AddAttribute(1, nameof(ScoreboardModalWrapper.ServerId), serverId);
+        builder.CloseComponent();
+    };
+
     public void Dispose()
     {
         _cts.Cancel();
         _timer?.Dispose();
     }
+
 }

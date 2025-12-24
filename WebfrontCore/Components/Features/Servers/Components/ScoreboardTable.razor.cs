@@ -9,6 +9,10 @@ public partial class ScoreboardTable
 {
     [Inject] public required AppState AppState { get; set; }
     [Parameter] public ScoreboardInfo Model { get; set; }
+    [Parameter] public bool DualColumnMode { get; set; }
+    [Parameter] public bool ShowHeader { get; set; } = true;
+
+
     private string OrderByKey = nameof(ClientScoreboardInfo.Score);
     private bool Descending = true;
     private IEnumerable<ClientScoreboardInfo> SortedClients => GetSortedClients();

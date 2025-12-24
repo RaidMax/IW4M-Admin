@@ -15,21 +15,20 @@ public partial class ServerCard
     
     private PeriodicTimer? _timer;
     private readonly CancellationTokenSource _cts = new();
-    private bool _chartInitialized;
     private bool _showMobileDetails;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (Model?.ClientHistory?.ClientCounts != null && !_chartInitialized)
+        if (Model?.ClientHistory?.ClientCounts != null)
         {
             var strings = new
             {
                 players = AppState.Loc("WEBFRONT_SCRIPT_SERVER_PLAYERS"),
                 unreachable = AppState.Loc("WEBFRONT_SCRIPT_SERVER_UNREACHABLE")
             };
-            await JS.InvokeVoidAsync("initServerChart", $"server_history_canvas_{Model.Id}",
+            // Always update the chart with latest data
+            await JS.InvokeVoidAsync("updateServerChart", $"server_history_canvas_{Model.Id}",
                 Model.ClientHistory.ClientCounts, Model.MaxClients, strings);
-            _chartInitialized = true;
         }
 
         if (firstRender)

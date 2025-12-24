@@ -44,5 +44,12 @@ public partial class NavMenu
     {
         return AppState.Loc(key);
     }
-    
+
+    private void CloseMobileMenu()
+    {
+        if (AppState.IsMobileNavOpen)
+        {
+            AppState.IsMobileNavOpen = false;
+        }
+    }
 }

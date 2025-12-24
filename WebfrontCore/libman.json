@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "3.0",
   "defaultProvider": "jsdelivr",
   "libraries": [
     {
@@ -21,10 +21,6 @@
     {
       "library": "chart.js@2.9.4",
       "destination": "wwwroot/lib/chart.js"
-    },
-    {
-      "library": "halfmoon@1.1.1",
-      "destination": "wwwroot/lib/halfmoon"
     },
     {
       "library": "vanillajs-datepicker@1.2.0",

@@ -341,46 +341,8 @@ window.blazorInfiniteScroll = {
         }
     }
 };
-
-// Toast notification wrapper for Blazor
-window.blazorToast = {
-    show: function (content, title, alertType, fillType, timeShown) {
-        console.log('blazorToast.show called', { content, title, alertType, fillType, timeShown });
-
-        if (typeof halfmoon === 'undefined') {
-            console.error('halfmoon is not defined');
-            return;
-        }
-
-        if (!halfmoon.initStickyAlert) {
-            console.error('halfmoon.initStickyAlert is not available');
-            return;
-        }
-
-        // Ensure stickyAlerts is initialized (required for Blazor)
-        if (!halfmoon.stickyAlerts) {
-            halfmoon.stickyAlerts = document.getElementsByClassName('sticky-alerts')[0];
-            if (!halfmoon.stickyAlerts) {
-                console.error('Could not find .sticky-alerts element');
-                return;
-            }
-        }
-
-        try {
-            halfmoon.initStickyAlert({
-                content: content,
-                title: title,
-                alertType: alertType || '',
-                fillType: fillType || '',
-                hasDismissButton: true,
-                timeShown: timeShown || 5000
-            });
-            console.log('Toast shown successfully');
-        } catch (error) {
-            console.error('Error showing toast:', error);
-        }
-    }
-};
+// Toast notification wrapper for Blazor (Shimmed for Native)
+// Removed: window.toastContainerRef, halfmoon.initStickyAlert, and blazorToast are no longer needed
 
 window.themeManager = {
     // HSL values for standard Tailwind palettes (500 shade base)

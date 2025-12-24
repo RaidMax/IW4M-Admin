@@ -1,44 +1,53 @@
-using Microsoft.JSInterop;
-
 namespace WebfrontCore.Core.Services;
 
 public class ToastService : IToastService
 {
-    private readonly IJSRuntime _jsRuntime;
     private readonly AppState _appState;
+    public event Action<ToastMessage> OnShow;
 
-    public ToastService(IJSRuntime jsRuntime, AppState appState)
+    public ToastService(AppState appState)
     {
-        _jsRuntime = jsRuntime;
         _appState = appState;
     }
 
-    public async Task ShowSuccessAsync(string message, string title = null, int? duration = null)
+    public Task ShowSuccessAsync(string message, string title = null, int? duration = null)
     {
         title ??= _appState.Loc("WEBFRONT_SCRIPT_ACTION_SUCCESS");
-        await ShowToastAsync(message, title, "alert-success", "filled", duration);
+        ShowToast(message, title, ToastType.Success, duration);
+        return Task.CompletedTask;
     }
 
-    public async Task ShowErrorAsync(string message, string title = null, int? duration = null)
+    public Task ShowErrorAsync(string message, string title = null, int? duration = null)
     {
         title ??= "Error";
-        await ShowToastAsync(message, title, "alert-danger", "filled", duration);
+        ShowToast(message, title, ToastType.Error, duration);
+        return Task.CompletedTask;
     }
 
-    public async Task ShowWarningAsync(string message, string title = null, int? duration = null)
+    public Task ShowWarningAsync(string message, string title = null, int? duration = null)
     {
         title ??= "Warning";
-        await ShowToastAsync(message, title, "alert-warning", "filled", duration);
+        ShowToast(message, title, ToastType.Warning, duration);
+        return Task.CompletedTask;
     }
 
-    public async Task ShowInfoAsync(string message, string title = null, int? duration = null)
+    public Task ShowInfoAsync(string message, string title = null, int? duration = null)
     {
         title ??= "Info";
-        await ShowToastAsync(message, title, "alert-primary", "filled", duration);
+        ShowToast(message, title, ToastType.Info, duration);
+        return Task.CompletedTask;
     }
 
-    private async Task ShowToastAsync(string content, string title, string alertType, string fillType, int? timeShown)
+    private void ShowToast(string content, string title, ToastType type, int? duration)
     {
-        await _jsRuntime.InvokeVoidAsync("blazorToast.show", content, title, alertType, fillType, timeShown);
+        var toast = new ToastMessage
+        {
+            Title = title,
+            Message = content,
+            Type = type,
+            Duration = duration ?? 5000
+        };
+
+        OnShow?.Invoke(toast);
     }
 }

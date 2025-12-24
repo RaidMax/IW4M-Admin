@@ -6,23 +6,20 @@
     <meta name="theme-color" content="@GetThemeColor()"/>
     <base href="/"/>
     <ResourcePreloader/>
-    <link rel="stylesheet" href="/lib/phosphor-icons/src/regular/style.css"/>
-    <link rel="stylesheet" href="/lib/phosphor-icons/src/bold/style.css"/>
-    <link rel="stylesheet" href="/lib/phosphor-icons/src/fill/style.css"/>
-    <link rel="stylesheet" href="/css/app.css"/>
+    @if (Utilities.IsDevelopment)
+    {
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/regular/style.css"/>
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/bold/style.css"/>
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/fill/style.css"/>
+        <link rel="stylesheet" href="/css/app.css"/>
+    }
+    else
+    {
+        <link rel="stylesheet" href="css/global.min.css"/>
+    }
     <link rel="stylesheet" href="/css/user.css"/>
     <link rel="icon" type="image/png" href="images/icon.png"/>
-    <script src="/js/blazor_lib.js"></script>
 
-    <script>
-        window.serverThemeSettings = {
-            primaryColor: '@(AppConfig.Webfront.PrimaryColor)',
-            secondaryColor: '@(AppConfig.Webfront.SecondaryColor)',
-            preset: '@(AppConfig.Webfront.ThemePreset)',
-            preventUserCustomization: @(AppConfig.Webfront.PreventUserCustomization.ToString().ToLower())
-        };
-        window.themeManager.init(window.serverThemeSettings);
-    </script>
     <ImportMap/>
     <HeadOutlet/>
 </head>
@@ -34,15 +31,33 @@
 </body>
 
 @* ReSharper disable once Razor.UnresolvedComponent *@
-<script src="/lib/jquery/dist/jquery.js"></script>
-<script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
-<script src="/lib/moment.js/min/moment-with-locales.js"></script>
+@if (Utilities.IsDevelopment)
+{
+    <script src="/lib/jquery/dist/jquery.js"></script>
+    <script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="/lib/moment.js/min/moment-with-locales.js"></script>
 
-<script src="/js/stats.js"></script>
-<script src="/js/advanced_stats.js"></script>
-<script src="/js/liveradar.js"></script>
-<script src="/js/infinite-scroll.js"></script>
+    <script src="/js/stats.js"></script>
+    <script src="/js/advanced_stats.js"></script>
+    <script src="/js/liveradar.js"></script>
+    <script src="/js/infinite-scroll.js"></script>
+    <script src="/js/blazor_lib.js"></script>
+}
+else
+{
+    <script src="/js/global.min.js"></script>
+}
 <script src="js/user.js"></script>
+
+<script>
+    window.serverThemeSettings = {
+        primaryColor: '@(AppConfig.Webfront.PrimaryColor)',
+        secondaryColor: '@(AppConfig.Webfront.SecondaryColor)',
+        preset: '@(AppConfig.Webfront.ThemePreset)',
+        preventUserCustomization: @(AppConfig.Webfront.PreventUserCustomization.ToString().ToLower())
+    };
+    window.themeManager.init(window.serverThemeSettings);
+</script>
 <script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
 <script>
     (function () {
@@ -68,5 +83,5 @@
 
         Blazor.start(startOptions);
     })();
-</script>r
+</script>
 </html>

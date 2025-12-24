@@ -28,9 +28,9 @@
         </div>
     </div>
     
-    <div class="bg-surface rounded-lg shadow ring-1 ring-line overflow-hidden">
+    <div class="md:bg-surface md:rounded-lg md:shadow md:ring-1 md:ring-line md:overflow-hidden">
         <!-- Filters Header -->
-        <div class="p-4 bg-background border-b border-line flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="p-4 bg-surface md:bg-background border border-line md:border-0 md:border-b md:border-line rounded-lg md:rounded-none shadow-sm md:shadow-none mb-4 md:mb-0 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
              <!-- Hide Automated Toggle -->
             <div class="flex items-center">
                 <label class="relative inline-flex items-center cursor-pointer">
@@ -114,7 +114,7 @@
         </div>
 
         <!-- Mobile List -->
-        <div class="md:hidden space-y-4 p-4">
+        <div class="md:hidden space-y-4">
              @if (_isLoading && Penalties.Count == 0)
              {
                  <div class="text-center py-8">

@@ -112,54 +112,46 @@
         <div class="space-y-4 md:hidden">
             @foreach (var info in Results)
             {
-                <div class="bg-surface rounded-lg p-4 shadow ring-1 ring-line">
-                    <div class="flex items-center justify-between mb-3 border-b border-line pb-3">
-                         <span
-                             class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(info.Action)">
-                            @info.Action
-                        </span>
-                        <span class="text-xs text-muted">@info.When.ToLocalTime().ToString("g")</span>
-                    </div>
-
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-muted">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN"):</span>
-                            <a href="/client/@info.OriginId" class="text-foreground hover:text-primary transition-colors text-right">
+                <div class="bg-surface border border-line rounded-lg p-4 shadow-sm">
+                    <!-- Header: Actors (Left) & Meta (Right) -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="text-sm flex flex-wrap items-center gap-1 leading-snug font-bold pr-2">
+                            <a href="/client/@info.OriginId" class="text-foreground hover:text-primary transition-colors">
                                 <ColorCode Value="@info.OriginName"/>
                             </a>
-                        </div>
-
-                        <div class="flex justify-between">
-                            <span class="text-muted">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME"):</span>
+                            
                             @if (info.TargetId != null)
                             {
-                                <a href="/client/@info.TargetId"
-                                   class="text-foreground hover:text-primary transition-colors text-right">
+                                <span class="text-muted text-xs"><i class="ph ph-caret-right"></i></span>
+                                <a href="/client/@info.TargetId" class="text-foreground hover:text-primary transition-colors">
                                     <ColorCode Value="@info.TargetName"/>
                                 </a>
                             }
-                            else
-                            {
-                                <span class="text-subtle">&ndash;</span>
-                            }
                         </div>
 
-                        <div class="pt-2 border-t border-line">
-                            <span
-                                class="block text-xs text-muted mb-1">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO"):</span>
-                            <div
-                                class="text-subtle font-mono text-xs bg-surface-alt/50 p-2 rounded break-words border border-line">@info.Data</div>
+                        <div class="flex flex-col items-end gap-1 shrink-0">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider @GetBadgeClass(info.Action)">
+                                @info.Action
+                            </span>
+                            <span class="text-[10px] text-muted">@info.When.ToLocalTime().ToString("g")</span>
                         </div>
-
-                        <AuthorizeView Policy="@DataDetailsPolicy">
-                            <div class="pt-2">
-                                <span
-                                    class="block text-xs text-muted mb-1">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT"):</span>
-                                <div
-                                    class="text-subtle font-mono text-xs bg-surface-alt/50 p-2 rounded break-words border border-line">@info.NewValue</div>
-                            </div>
-                        </AuthorizeView>
                     </div>
+
+                    <!-- Data Content -->
+                    <div class="text-xs font-mono bg-surface-alt/50 p-2.5 rounded border border-line break-words text-subtle">
+                        @info.Data
+                    </div>
+
+                    <!-- New Value (Optional) -->
+                    <AuthorizeView Policy="@DataDetailsPolicy">
+                        @if (!string.IsNullOrWhiteSpace(info.NewValue))
+                        {
+                            <div class="mt-2 text-xs font-mono bg-surface-alt/50 p-2.5 rounded border border-line break-words text-subtle">
+                                <span class="block text-[10px] text-muted uppercase tracking-wider mb-1">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</span>
+                                @info.NewValue
+                            </div>
+                        }
+                    </AuthorizeView>
                 </div>
             }
         </div>

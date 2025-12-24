@@ -1,20 +1,26 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using WebfrontCore.Core.Services;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Controllers.API.Models;
 
 namespace WebfrontCore.Components.UI.Display;
 
-public partial class Render
+public partial class Render : IAsyncDisposable
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavigationManager { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
+    [Inject] public required IJSRuntime JsRuntime { get; set; }
+    [Inject] public required IToastService ToastService { get; set; }
+    
     [Parameter] public string InteractionName { get; set; }
     private InteractionResponse InteractionData;
     protected InteractionType ParsedInteractionType;
     private bool IsLoading = true;
     private string ErrorMessage;
+    private DotNetObjectReference<Render> _dotNetRef;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -46,5 +52,32 @@ public partial class Render
         {
             IsLoading = false;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!IsLoading && InteractionData != null)
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("setupDynamicActionHandlers", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void HandleDynamicAction(string action, int? actionId, string actionMeta)
+    {
+        if (action?.Equals("DynamicAction", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            ActionService.OpenAction("DynamicAction", actionId, actionMeta);
+        }
+        else
+        {
+            ActionService.OpenAction(action, actionId, actionMeta);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
     }
 }

@@ -181,7 +181,7 @@ function fixRollAngles(oldAngles, newAngles) {
         newY = newAngles.y - (Math.PI * 2);
     }
 
-    return {x: newX, y: newY};
+    return { x: newX, y: newY };
 }
 
 function toRadians(deg) {
@@ -232,33 +232,29 @@ function updatePlayerData() {
         }
 
         column.append(`
-<div class="card m-0 p-0 mb-15">
-        <div class="progress h-25">
-                       <div class="position-absolute ml-10 text-dark" style="top: 1.2rem;">${player.name}</div>
-                                 <div class="progress-bar bg-success ${greenProgressClass} h-25" role="progressbar" style="min-width: 0px; width: ${player.health}%" aria-valuenow="${player.health}" aria-valuemin="0" aria-valuemax="100"></div>
-                                <div class="progress-bar bg-danger ${redProgressClass} h-25" role="progressbar" style="min-width: 0px; border-right: 0px; width: ${100 - player.health}%" aria-valuenow="${100 - player.health}" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            <div class="ml-10 mr-10 pt-5 pb-5">
-                               <div class="d-flex flex-row bg-dark-dm bg-light-lm rounded-bottom">
-                                 <div style="width: 3rem; height: 1.5rem; background-image:url(${weaponImageForWeapon(player.weapon)}); background-size: 3rem 1.5rem;" class="mr-auto text-left align-self-center" data-toggle="tooltip" data-title="${player.weapon}">
-                                 </div>
-                                 <div class="d-flex">
-                                    <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/kills.png')"></div>
-                                    <div class="pr-5 align-self-center">${player.kills}</div>
-                                    <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/death.png')"></div>
-                                    <div class="pr-10 align-self-center">${player.deaths}</div>
-                                    <span class="align-self-center ph ph-target pr-5"></span>
-                                    <div class="pr-10 align-self-center">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
-                                    <span class="align-self-center ph ph-chart-line pr-5"></span>
-                                    <div>${player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
-                                </div>
-                              </div>
-                          </div>
+<div class="bg-surface rounded-lg border border-line shadow-sm mb-4 overflow-hidden group hover:border-primary/50 transition-colors">
+    <div class="relative h-6 w-full bg-surface-alt">
+        <div class="absolute inset-0 flex">
+             <div class="h-full bg-emerald-500/80 transition-all duration-300" style="width: ${player.health}%"></div>
+             <div class="h-full bg-red-500/80 transition-all duration-300" style="width: ${100 - player.health}%"></div>
+        </div>
+        <div class="absolute inset-0 flex items-center px-2 text-xs font-bold text-shadow-sm text-white z-10 drop-shadow-md truncate">${player.name}</div>
+    </div>
+    
+    <div class="p-2 flex items-center justify-between text-xs text-foreground/90 bg-surface">
+         <div class="w-12 h-6 bg-contain bg-no-repeat bg-left opacity-80" style="background-image:url(${weaponImageForWeapon(player.weapon)})" title="${player.weapon}"></div>
+         <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1" title="Kills"><i class="ph ph-skull text-muted"></i> <span class="font-mono">${player.kills}</span></div>
+            <div class="flex items-center gap-1" title="Deaths"><i class="ph ph-skull text-muted opacity-50"></i> <span class="font-mono">${player.deaths}</span></div>
+            <div class="flex items-center gap-1" title="K/D Ratio"><i class="ph ph-crosshair text-muted"></i> <span class="font-mono">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</span></div>
+            <div class="flex items-center gap-1" title="Score/Min"><i class="ph ph-chart-line-up text-muted"></i> <span class="font-mono">${player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</span></div>
+         </div>
+    </div>
 </div>`);
     });
 
-    $('.player-data-left').delay(1000).animate({opacity: 1}, 500);
-    $('.player-data-right').delay(1000).animate({opacity: 1}, 500);
+    $('.player-data-left').delay(1000).animate({ opacity: 1 }, 500);
+    $('.player-data-right').delay(1000).animate({ opacity: 1 }, 500);
 }
 
 function updateRadarData() {
@@ -384,9 +380,9 @@ function updateMap() {
 
         drawCircle(ctx, currentX, currentY, teamColor);
         drawTriangle(ctx,
-            {x: currentX, y: currentY},
-            {x: currentX + firstVertex.x, y: currentY + firstVertex.y},
-            {x: currentX + secondVertex.x, y: currentY + secondVertex.y},
+            { x: currentX, y: currentY },
+            { x: currentX + firstVertex.x, y: currentY + firstVertex.y },
+            { x: currentX + secondVertex.x, y: currentY + secondVertex.y },
             fovColor);
         drawText(ctx, currentX, currentY - (textOffset * stateInfo.imageScaler), value.name, 16, 'white', teamColor, 'center')
     });

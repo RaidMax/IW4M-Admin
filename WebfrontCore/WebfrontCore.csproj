@@ -70,7 +70,7 @@
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
         <Content Remove="wwwroot\lib\**" />
-        <Content Include="wwwroot\font\phosphor\**\*.*">
+        <Content Update="wwwroot\font\phosphor\**\*.*">
             <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         </Content>
     </ItemGroup>

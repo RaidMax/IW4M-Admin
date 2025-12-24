@@ -184,13 +184,16 @@ public class WebfrontDataService : IWebfrontDataService
             }).ToList();
     }
 
-    public Task<ServerInfo?> GetServer(string id)
+    public async Task<ServerInfo?> GetServer(string id)
     {
         var server = _manager.GetServers().FirstOrDefault(s => s.Id == id);
         if (server == null)
-            return Task.FromResult<ServerInfo?>(null);
+            return null;
 
-        return Task.FromResult<ServerInfo?>(new ServerInfo
+        // Get complete history (saved + live data)
+        var clientHistory = await GetClientHistoryAsync(id);
+
+        return new ServerInfo
         {
             Name = server.Hostname,
             Id = server.Id,
@@ -203,7 +206,7 @@ public class WebfrontDataService : IWebfrontDataService
             GameType = server.GametypeName,
             ClientHistory = new ClientHistoryInfo
             {
-                ClientCounts = server.ClientHistory.ClientCounts.ToList()
+                ClientCounts = clientHistory.ToList()
             },
             Players = server.GetClientsAsList()
                 .Select(client => new
@@ -251,7 +254,7 @@ public class WebfrontDataService : IWebfrontDataService
             ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                 server.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : server.ListenAddress,
                 server.ListenPort)
-        });
+        };
     }
 
     public async Task<IW4MAdminInfo> GetStatusAsync(Reference.Game? game = null)

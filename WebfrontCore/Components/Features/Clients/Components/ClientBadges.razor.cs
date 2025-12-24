@@ -12,6 +12,9 @@ public partial class ClientBadges : IDisposable
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
 
+    [Parameter]
+    public bool IconOnly { get; set; }
+
     private NavigationInfo? _navData;
     private PeriodicTimer? _badgeRefreshTimer;
     private CancellationTokenSource? _cts;

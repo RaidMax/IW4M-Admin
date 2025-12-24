@@ -1,36 +1,49 @@
-<div class="row">
-    <div class="col-12">
-        <div class="text-muted mb-10">@AppState.Loc("WEBFRONT_MODAL_REPORTS_SUBTITLE")</div>
+<div class="space-y-4">
+    <div class="text-sm text-subtle mb-4">@AppState.Loc("WEBFRONT_MODAL_REPORTS_SUBTITLE")</div>
 
-        @if (!ReportsList.Any())
-        {
-            <div class="alert alert-info">No recent reports found.</div>
-        }
+    @if (!ReportsList.Any())
+    {
+        <div class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
+             <i class="ph ph-check-circle text-4xl text-success mb-3 opacity-80"></i>
+             <span class="text-muted font-medium">No recent reports found</span>
+        </div>
+    }
 
-        @foreach (var server in ReportsList)
-        {
-            <div class="rounded bg-very-dark-dm bg-light-ex-lm mt-10 mb-10 p-10">
-                <h5 class="mt-0 mb-5 text-truncate">
-                    <ColorCode Value="@server.Name"/>
-                </h5>
+    @foreach (var server in ReportsList)
+    {
+        <div class="bg-surface rounded-lg shadow-sm border border-line overflow-hidden mb-4">
+            <div class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
+                 <i class="ph ph-hard-drives text-primary"></i>
+                 <span class="truncate"><ColorCode Value="@server.Name"/></span>
+            </div>
+            <div class="divide-y divide-line">
                 @foreach (var report in server.Reports)
                 {
-                    <div class="font-weight-bold">@report.ReportedOn.HumanizeForCurrentCulture()</div>
-                    <div class="font-size-12">
-                        <a href="/client/@report.Target.ClientId" class="transition-colors">
-                            <ColorCode Value="@report.Target.Name"/>
-                        </a>
-
-                        <span> (@report.Target.ClientId) was reported by </span>
-
-                        <a href="/client/@report.Origin.ClientId" class="transition-colors">
-                            <ColorCode Value="@report.Origin.Name"/>
-                        </a>
-                        <span> (@report.Origin.ClientId) for @report.Reason</span>
+                    <div class="p-4 hover:bg-surface-hover/30 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                             <div class="flex items-center gap-1.5 text-xs text-muted">
+                                 <i class="ph ph-clock"></i>
+                                 <span>@report.ReportedOn.HumanizeForCurrentCulture()</span>
+                             </div>
+                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-error/10 text-error border border-error/20 uppercase tracking-wider">Report</span>
+                        </div>
+                        
+                        <div class="mb-2 text-sm leading-snug">
+                             <a href="/client/@report.Target.ClientId" class="font-bold text-foreground hover:text-primary transition-colors">
+                                <ColorCode Value="@report.Target.Name"/>
+                            </a>
+                            <span class="text-muted text-xs mx-1">reported by</span>
+                            <a href="/client/@report.Origin.ClientId" class="font-medium text-foreground hover:text-primary transition-colors">
+                                <ColorCode Value="@report.Origin.Name"/>
+                            </a>
+                        </div>
+                        
+                        <div class="text-xs font-mono bg-surface-alt/50 p-2.5 rounded border border-line text-subtle break-words">
+                            <span class="font-bold text-muted select-none mr-1">$</span> @report.Reason
+                        </div>
                     </div>
-                    <hr/>
                 }
             </div>
-        }
-    </div>
+        </div>
+    }
 </div>

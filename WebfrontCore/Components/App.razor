@@ -43,5 +43,30 @@
 <script src="/js/liveradar.js"></script>
 <script src="/js/infinite-scroll.js"></script>
 <script src="js/user.js"></script>
-<script src="@Assets["_framework/blazor.web.js"]"></script>
+<script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
+<script>
+    (function () {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        const startOptions = {
+            circuit: {
+                reconnectionHandler: {
+                    onConnectionDown: () => console.log("Connection lost... reconnecting"),
+                    onConnectionUp: () => console.log("Connection restored")
+                },
+                // Force Long Polling for iOS to bypass the Safari WebSocket bug
+                configureSignalR: function (builder) {
+                    if (isIOS) {
+                        console.warn("iOS Detected: Forcing Long Polling transport.");
+                        builder.withUrl("_blazor", {
+                            transport: 4 // 4 is the enum value for HttpTransportType.LongPolling
+                        });
+                    }
+                }
+            }
+        };
+
+        Blazor.start(startOptions);
+    })();
+</script>
 </html>

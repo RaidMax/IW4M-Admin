@@ -133,15 +133,15 @@ jobs:
           cd WebfrontCore
           ../tailwindcss -i wwwroot/css/src/app.css -o wwwroot/css/app.css --minify
 
+      - name: Build webfront
+        run: dotnet build WebfrontCore/WebfrontCore.csproj -c ${{ env.buildConfiguration }} /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64"
+
       - name: Patch Phosphor CSS font paths
         run: |
           cd WebfrontCore/wwwroot/lib/phosphor-icons/src
           sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' regular/style.css
           sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' bold/style.css
           sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' fill/style.css
-
-      - name: Build webfront
-        run: dotnet build WebfrontCore/WebfrontCore.csproj -c ${{ env.buildConfiguration }} /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64"
 
       - name: Compile SCSS files
         run: |

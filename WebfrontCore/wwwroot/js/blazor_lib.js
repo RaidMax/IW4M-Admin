@@ -622,3 +622,53 @@ if (document.readyState === 'loading') {
 } else {
     // window.themeManager.init();
 }
+
+// Dynamic action handler for ScriptPlugin interactions
+// This intercepts clicks on .profile-action elements that have data-action="DynamicAction"
+// and routes them to Blazor's ActionService instead of the legacy jQuery/HalfMoon modal
+window.setupDynamicActionHandlers = function (dotNetRef) {
+    console.log('[DynamicAction] Setting up handlers, dotNetRef:', !!dotNetRef);
+
+    // Use event delegation on document to catch dynamically added elements
+    const handler = function (e) {
+        const target = e.target.closest('.profile-action');
+        if (!target) return;
+
+        console.log('[DynamicAction] Click detected on:', target);
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const action = target.dataset.action;
+        const actionId = target.dataset.actionId ? parseInt(target.dataset.actionId) : null;
+        let actionMeta = target.dataset.actionMeta;
+
+        console.log('[DynamicAction] action:', action, 'actionId:', actionId, 'meta:', actionMeta);
+
+        // Decode the meta if it was URI encoded
+        if (actionMeta) {
+            try {
+                actionMeta = decodeURIComponent(actionMeta);
+            } catch (ex) {
+                // Already decoded or invalid
+            }
+        }
+
+        // Call Blazor to handle the action
+        console.log('[DynamicAction] Invoking Blazor HandleDynamicAction');
+        dotNetRef.invokeMethodAsync('HandleDynamicAction', action, actionId, actionMeta)
+            .then(() => console.log('[DynamicAction] Blazor invocation succeeded'))
+            .catch(err => console.error('[DynamicAction] Blazor invocation failed:', err));
+
+        return false;
+    };
+
+    // Remove any existing handler to prevent duplicates
+    if (window._dynamicActionHandler) {
+        document.removeEventListener('click', window._dynamicActionHandler, true);
+    }
+    window._dynamicActionHandler = handler;
+    document.addEventListener('click', handler, true);
+    console.log('[DynamicAction] Handler attached');
+};

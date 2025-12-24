@@ -45,35 +45,35 @@ const plugin = {
             gameEvent.origin.tell(`Added ${input} to subnet banlist`);
         }
     },
-        {
-            name: 'unbansubnet',
-            description: 'unbans an IPv4 subnet',
-            alias: 'ubs',
-            permission: 'SeniorAdmin',
-            targetRequired: false,
-            arguments: [{
-                name: 'subnet in IPv4 CIDR notation',
-                required: true
-            }],
-            execute: (gameEvent) => {
-                const input = String(gameEvent.data).trim();
+    {
+        name: 'unbansubnet',
+        description: 'unbans an IPv4 subnet',
+        alias: 'ubs',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [{
+            name: 'subnet in IPv4 CIDR notation',
+            required: true
+        }],
+        execute: (gameEvent) => {
+            const input = String(gameEvent.data).trim();
 
-                if (!validCIDR(input)) {
-                    gameEvent.origin.tell('Invalid CIDR input');
-                    return;
-                }
-
-                if (!subnetList.includes(input)) {
-                    gameEvent.origin.tell('Subnet is not banned');
-                    return;
-                }
-
-                subnetList = subnetList.filter(item => item !== input);
-                plugin.config.setValue('SubnetBanList', subnetList);
-
-                gameEvent.origin.tell(`Removed ${input} from subnet banlist`);
+            if (!validCIDR(input)) {
+                gameEvent.origin.tell('Invalid CIDR input');
+                return;
             }
+
+            if (!subnetList.includes(input)) {
+                gameEvent.origin.tell('Subnet is not banned');
+                return;
+            }
+
+            subnetList = subnetList.filter(item => item !== input);
+            plugin.config.setValue('SubnetBanList', subnetList);
+
+            gameEvent.origin.tell(`Removed ${input} from subnet banlist`);
         }
+    }
     ],
 
     interactions: [{
@@ -91,7 +91,7 @@ const plugin = {
             interactionData.source = plugin.name;
 
             interactionData.ScriptAction = (sourceId, targetId, game, meta, token) => {
-                let table = '<table class="table bg-dark-dm bg-light-lm">';
+                let table = '<table class="w-full text-left border-collapse">';
 
                 const unbanSubnetInteraction = {
                     InteractionId: 'command',
@@ -100,20 +100,24 @@ const plugin = {
                     Name: 'Unban Subnet'
                 };
 
+                if (subnetList.length === 0) {
+                    table += `<tr><td colspan="2" class="px-6 py-8 text-center text-muted">No subnets are banned.</td></tr>`;
+                }
+
                 subnetList.forEach(subnet => {
-                    unbanSubnetInteraction.Data += ' ' + subnet;
-                    table += `<tr>
-                                    <td>
-                                        <p>${subnet}</p>
+                    unbanSubnetInteraction.Data = 'unbansubnet ' + subnet;
+                    table += `<tr class="border-t border-line hover:bg-surface-hover/30 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-mono text-sm text-foreground">${subnet}</span>
                                     </td>
-                                    <td>
-                                        <a href="#" class="profile-action no-decoration float-right" data-action="DynamicAction"
-                                           data-action-meta="${encodeURI(JSON.stringify(unbanSubnetInteraction))}"> 
-                                            <div class="btn">
-                                                <i class="ph ph-x-circle mr-5 font-size-12"></i>
-                                                <span class="text-truncate">Unban Subnet</span>
+                                    <td class="px-6 py-4 text-right">
+                                        <button type="button" class="profile-action cursor-pointer" data-action="DynamicAction"
+                                           data-action-meta="${encodeURI(JSON.stringify(unbanSubnetInteraction))}">
+                                            <div class="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 transition-colors text-sm font-medium">
+                                                <i class="ph ph-x-circle mr-2 text-sm"></i>
+                                                <span class="truncate">Unban Subnet</span>
                                             </div>
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>`;
                 });

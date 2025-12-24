@@ -133,6 +133,13 @@ jobs:
           cd WebfrontCore
           ../tailwindcss -i wwwroot/css/src/app.css -o wwwroot/css/app.css --minify
 
+      - name: Patch Phosphor CSS font paths
+        run: |
+          cd WebfrontCore/wwwroot/lib/phosphor-icons/src
+          sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' regular/style.css
+          sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' bold/style.css
+          sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' fill/style.css
+
       - name: Build webfront
         run: dotnet build WebfrontCore/WebfrontCore.csproj -c ${{ env.buildConfiguration }} /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64"
 
@@ -202,9 +209,9 @@ jobs:
           cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/
           cp ${{ github.workspace }}/BUILD/Plugins/*.dll ${{ env.outputFolder }}/Plugins/
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/global.min.css ${{ env.outputFolder }}/wwwroot/css/global.min.css
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css
           mkdir -p ${{ env.outputFolder }}/wwwroot/js
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/global.min.js ${{ env.outputFolder }}/wwwroot/js/global.min.js
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
           mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/font/phosphor/ ${{ env.outputFolder }}/wwwroot/font/phosphor/

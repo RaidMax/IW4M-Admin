@@ -25,6 +25,8 @@ public partial class ActionModal
     [Parameter] public string ModalId { get; set; } = "action-modal";
     private RenderFragment _childContent;
     private string _customTitle;
+    private string _modalClass = "max-w-lg";
+
     
     protected override void OnInitialized()
     {
@@ -39,13 +41,14 @@ public partial class ActionModal
         ActionService.OnOpenCustomAction -= OnOpenCustomAction;
     }
 
-    private async void OnOpenCustomAction(RenderFragment content, string title)
+    private async void OnOpenCustomAction(RenderFragment content, string title, string? modalClass)
     {
         _childContent = content;
         _customTitle = title;
+        _modalClass = modalClass ?? "max-w-lg";
+
         _actionInfo = null; // Clear standard action info
         _error = null;
-        _isLoading = false;
         _isLoading = false;
         _isVisible = true;
         await InvokeAsync(StateHasChanged);
@@ -54,9 +57,11 @@ public partial class ActionModal
     private async void OnOpenAction(string actionName, int? targetId, string meta, string? serverId)
     {
         _childContent = null;
+        _modalClass = "max-w-lg";
         await Open(actionName, targetId, meta, serverId);
         await InvokeAsync(StateHasChanged);
     }
+
 
     public async Task Open(string actionName, int? targetId = null, string meta = null, string? serverId = null)
     {

@@ -14,9 +14,11 @@ namespace WebfrontCore.Core.Services;
 public interface IActionService
 {
     event Action<string, int?, string, string?> OnOpenAction;
-    event Action<Microsoft.AspNetCore.Components.RenderFragment, string> OnOpenCustomAction;
+    event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction;
+
     void OpenAction(string actionName, int? targetId, string meta, string? serverId = null);
-    void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title);
+    void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null);
+
     Task<ActionInfo> GetActionInfoAsync(string actionName, int? targetId, string meta, string? serverId = null);
 
     Task<(bool Success, string Message)> ExecuteActionAsync(string actionName, int? targetId,
@@ -33,17 +35,19 @@ public class ActionService : IActionService
     private readonly IInteractionRegistration _interactionRegistration;
 
     public event Action<string, int?, string, string?> OnOpenAction;
-    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string> OnOpenCustomAction;
+    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction;
+
 
     public void OpenAction(string actionName, int? targetId, string meta, string? serverId = null)
     {
         OnOpenAction?.Invoke(actionName, targetId, meta, serverId);
     }
 
-    public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title)
+    public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null)
     {
-        OnOpenCustomAction?.Invoke(content, title);
+        OnOpenCustomAction?.Invoke(content, title, modalClass);
     }
+
 
     // Command Names
     private readonly string _banCommandName;

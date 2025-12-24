@@ -5,7 +5,7 @@
 <div class="relative overflow-hidden rounded-lg bg-surface-alt border border-line shadow-lg transition-all duration-300 hover:shadow-2xl hover:border-line-hover group flex flex-col">
     
     <!-- Compact Header -->
-    <div class="relative min-h-[40px] px-4 flex flex-col md:flex-row md:items-center justify-center md:justify-between bg-surface border-b border-line z-10 cursor-pointer md:cursor-default py-2 md:py-0 space-y-2 md:space-y-0" 
+    <div class="relative min-h-[40px] px-4 flex flex-col md:flex-row md:items-center justify-center md:justify-between bg-surface border-b border-line cursor-pointer md:cursor-default py-2 md:py-0 space-y-2 md:space-y-0" 
          id="server_header_@Model.Id"
          @onclick="() => _showMobileDetails = !_showMobileDetails">
         
@@ -58,7 +58,7 @@
                 </a>
 
                 <a href="@Model.ConnectProtocolUrl" 
-                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors"
+                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:block"
                    title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
                     <i class="ph-fill ph-play text-xs"></i>
                 </a>
@@ -101,7 +101,7 @@
     </div>
 
     <!-- Body: Player List -->
-    <div class="relative z-10 flex-1 flex @(Model.ClientCount == 0 ? "min-h-[60px] items-center" : "min-h-[120px]") bg-surface-alt">
+    <div class="relative flex-1 flex @(Model.ClientCount == 0 ? "min-h-[60px] items-center" : "min-h-[120px]") bg-surface-alt">
         <div id="server_clientactivity_@Model.Id" class="w-full">
              <ClientActivity Model="@Model"/>
         </div>

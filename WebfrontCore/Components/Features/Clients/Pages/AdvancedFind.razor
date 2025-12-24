@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
+    <div class="md:bg-surface md:rounded-lg md:border md:border-line md:shadow-sm md:overflow-hidden">
         <!-- Desktop Table -->
         <div class="hidden md:block overflow-x-auto">
              <table class="w-full text-left border-collapse">
@@ -108,7 +108,7 @@
         </div>
 
         <!-- Mobile List -->
-        <div class="md:hidden space-y-4 p-4">
+        <div class="md:hidden space-y-4">
              @if (_isLoading && Results.Count == 0)
              {
                  <div class="text-center py-8">

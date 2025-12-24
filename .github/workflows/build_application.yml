@@ -206,8 +206,8 @@ jobs:
           mkdir -p ${{ env.outputFolder }}/wwwroot/js
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/global.min.js ${{ env.outputFolder }}/wwwroot/js/global.min.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
-          mkdir -p ${{ env.outputFolder }}/wwwroot/lib/phosphor-icons/src
-          rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/lib/phosphor-icons/src/ ${{ env.outputFolder }}/wwwroot/lib/phosphor-icons/src/
+          mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor
+          rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/font/phosphor/ ${{ env.outputFolder }}/wwwroot/font/phosphor/
           mkdir -p ${{ env.outputFolder }}/GameFiles
           rsync -ar ${{ github.workspace }}/GameFiles/ ${{ env.outputFolder }}/GameFiles
           mkdir -p ${{ env.outputFolder }}/wwwroot/images/

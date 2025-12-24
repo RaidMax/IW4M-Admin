@@ -126,6 +126,13 @@ jobs:
       - name: Restore NuGet packages
         run: dotnet restore ${{ env.solution }}
 
+      - name: Generate Tailwind CSS
+        run: |
+          curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -o tailwindcss
+          chmod +x tailwindcss
+          cd WebfrontCore
+          ../tailwindcss -i wwwroot/css/src/app.css -o wwwroot/css/app.css --minify
+
       - name: Build webfront
         run: dotnet build WebfrontCore/WebfrontCore.csproj -c ${{ env.buildConfiguration }} /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64"
 

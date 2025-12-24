@@ -72,6 +72,20 @@ public class Program
             cfg.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
         });
 
+        builder.Services.AddServerSideBlazor(options =>
+        {
+            // Speed up detection of a dropped mobile connection
+            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+            options.DetailedErrors = Utilities.IsDevelopment;
+        });
+
+        builder.Services.AddSignalR(options =>
+        {
+            options.KeepAliveInterval = TimeSpan.FromSeconds(5); // Default is 15
+            options.ClientTimeoutInterval = TimeSpan.FromSeconds(10); // Default is 30
+            options.EnableDetailedErrors = Utilities.IsDevelopment;
+        });
+
         registerDependenciesAction(builder.Services);
         ConfigureServices(builder.Services);
 

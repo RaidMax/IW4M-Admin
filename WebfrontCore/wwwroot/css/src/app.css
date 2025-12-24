@@ -101,3 +101,9 @@
         transform: translateY(0) scale(1);
     }
 }
+
+/* Misc */
+button, a, html, body {
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+}

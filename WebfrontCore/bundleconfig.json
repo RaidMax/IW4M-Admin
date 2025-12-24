@@ -1,6 +1,6 @@
 ﻿[
   {
-    "outputFileName": "wwwroot/css/global.min.css",
+    "outputFileName": "wwwroot/css/app.min.css",
     "inputFiles": [
       "wwwroot/css/app.css",
       "wwwroot/lib/chart.js/dist/Chart.min.css",
@@ -10,7 +10,7 @@
     ]
   },
   {
-    "outputFileName": "wwwroot/js/global.min.js",
+    "outputFileName": "wwwroot/js/app.min.js",
     "inputFiles": [
       "wwwroot/lib/jquery/dist/jquery.js",
       "wwwroot/lib/chart.js/dist/Chart.bundle.min.js",

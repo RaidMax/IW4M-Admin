@@ -118,28 +118,4 @@
         </ItemGroup>
         <Copy SourceFiles="@(PhosphorFontFiles)" DestinationFolder="wwwroot/font/phosphor" SkipUnchangedFiles="true" />
     </Target>
-
-    <Target Name="PatchPhosphorCss" BeforeTargets="Build">
-        <!-- Patch regular style.css -->
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" 
-              Command="powershell -Command &quot;(Get-Content 'wwwroot/lib/phosphor-icons/src/regular/style.css') -replace 'url\(\&quot;Phosphor', 'url(\&quot;/font/phosphor/Phosphor' | Set-Content 'wwwroot/lib/phosphor-icons/src/regular/style.css'&quot;" 
-              IgnoreExitCode="true" />
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" 
-              Command="sed -i 's|url(&quot;Phosphor|url(&quot;/font/phosphor/Phosphor|g' wwwroot/lib/phosphor-icons/src/regular/style.css" 
-              IgnoreExitCode="true" />
-        <!-- Patch bold style.css -->
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" 
-              Command="powershell -Command &quot;(Get-Content 'wwwroot/lib/phosphor-icons/src/bold/style.css') -replace 'url\(\&quot;Phosphor', 'url(\&quot;/font/phosphor/Phosphor' | Set-Content 'wwwroot/lib/phosphor-icons/src/bold/style.css'&quot;" 
-              IgnoreExitCode="true" />
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" 
-              Command="sed -i 's|url(&quot;Phosphor|url(&quot;/font/phosphor/Phosphor|g' wwwroot/lib/phosphor-icons/src/bold/style.css" 
-              IgnoreExitCode="true" />
-        <!-- Patch fill style.css -->
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" 
-              Command="powershell -Command &quot;(Get-Content 'wwwroot/lib/phosphor-icons/src/fill/style.css') -replace 'url\(\&quot;Phosphor', 'url(\&quot;/font/phosphor/Phosphor' | Set-Content 'wwwroot/lib/phosphor-icons/src/fill/style.css'&quot;" 
-              IgnoreExitCode="true" />
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" 
-              Command="sed -i 's|url(&quot;Phosphor|url(&quot;/font/phosphor/Phosphor|g' wwwroot/lib/phosphor-icons/src/fill/style.css" 
-              IgnoreExitCode="true" />
-    </Target>
 </Project>

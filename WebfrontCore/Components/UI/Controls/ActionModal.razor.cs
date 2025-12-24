@@ -10,9 +10,8 @@ public partial class ActionModal
 {
     [Inject] public required NavigationManager Nav { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop Js { get; set; }
-    [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
+    [Inject] public required IToastService ToastService { get; set; }
     private bool _isLoading;
     private bool _isLegacy;
     private bool _isLogin;
@@ -165,34 +164,21 @@ public partial class ActionModal
 
             var (success, message) = await ActionService.ExecuteActionAsync(_actionInfo.Action, _targetId, _formData, origin, _serverId);
 
-            // Show toast/alert
-            string alertType;
-            string title;
-
             if (!success)
             {
-                alertType = "alert-danger";
-                title = AppState.Loc("WEBFRONT_SCRIPT_ACTION_ERROR");
+                await ToastService.ShowErrorAsync(message, AppState.Loc("WEBFRONT_SCRIPT_ACTION_ERROR"));
             }
             else
             {
-                alertType = _actionInfo.ShouldRefresh ? "alert-success" : "alert-primary";
-                title = _actionInfo.ShouldRefresh
-                    ? AppState.Loc("WEBFRONT_SCRIPT_ACTION_SUCCESS")
-                    : AppState.Loc("WEBFRONT_SCRIPT_ACTION_EXECUTED");
+                if (_actionInfo.ShouldRefresh)
+                {
+                    await ToastService.ShowSuccessAsync(message, AppState.Loc("WEBFRONT_SCRIPT_ACTION_SUCCESS"));
+                }
+                else
+                {
+                    await ToastService.ShowInfoAsync(message, AppState.Loc("WEBFRONT_SCRIPT_ACTION_EXECUTED"));
+                }
             }
-
-            // Fix Halfmoon stickyAlerts reference if missing
-            try
-            {
-                await Runtime.InvokeVoidAsync("eval",
-                    "if(typeof halfmoon !== 'undefined' && !halfmoon.stickyAlerts) { halfmoon.stickyAlerts = document.getElementsByClassName('sticky-alerts')[0]; }");
-            }
-            catch
-            {
-            }
-
-            await Js.InitStickyAlert(title, message, alertType);
 
             if (success && _actionInfo.ShouldRefresh)
             {
@@ -204,7 +190,7 @@ public partial class ActionModal
         }
         catch (Exception ex)
         {
-            await Js.InitStickyAlert(AppState.Loc("WEBFRONT_SCRIPT_ACTION_ERROR"), ex.Message, "alert-danger");
+            await ToastService.ShowErrorAsync(ex.Message, AppState.Loc("WEBFRONT_SCRIPT_ACTION_ERROR"));
             _error = ex.Message;
         }
         finally

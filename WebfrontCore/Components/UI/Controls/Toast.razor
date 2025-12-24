@@ -1,0 +1,107 @@
+@using WebfrontCore.Core.Services
+@implements IDisposable
+
+<div class="@GetClass() @((_isClosing || !_isVisible) ? "opacity-0" : "opacity-100") pointer-events-auto flex w-full max-w-sm overflow-hidden rounded-lg bg-surface shadow-lg ring-1 ring-black/5 dark:ring-white/10 transition-opacity duration-500"
+     role="alert">
+    <div class="p-4">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="@GetIcon() h-6 w-6 text-xl"></i>
+            </div>
+            <div class="ml-3 flex-1 pt-0.5 min-w-0">
+                <p class="text-sm font-medium text-foreground">
+                    @Message.Title
+                </p>
+                <p class="mt-1 text-sm text-subtle">
+                    @Message.Message
+                </p>
+            </div>
+            <div class="ml-4 flex flex-shrink-0">
+                <button type="button" 
+                        class="inline-flex rounded-md bg-transparent text-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" 
+                        @onclick="Close">
+                    <span class="sr-only">Close</span>
+                    <i class="ph ph-x h-5 w-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Progress bar could go here -->
+</div>
+
+@code {
+    [Parameter] public required ToastMessage Message { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private System.Threading.Timer? _timer;
+    private bool _isClosing;
+    private bool _isVisible;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Threading.Timer(_ =>
+        {
+            _ = Close();
+        }, null, Message.Duration, Timeout.Infinite);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Trigger fade-in after a tiny delay to ensure CSS transition works
+            await Task.Delay(10);
+            _isVisible = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task Close()
+    {
+        if (_isClosing) return;
+        _isClosing = true;
+        
+        // Trigger exit animation
+        await InvokeAsync(StateHasChanged);
+        
+        // Wait for fade-out to complete (500ms)
+        await Task.Delay(500);
+        
+        // Now actually remove the toast
+        await InvokeAsync(async () =>
+        {
+            await OnClose.InvokeAsync();
+        });
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+
+    private string GetClass()
+    {
+        var baseClass = "bg-surface border-l-4";
+        return Message.Type switch
+        {
+            ToastType.Success => $"{baseClass} border-success",
+            ToastType.Error => $"{baseClass} border-error",
+            ToastType.Warning => $"{baseClass} border-warning",
+            ToastType.Info => $"{baseClass} border-primary",
+            _ => $"{baseClass} border-primary"
+        };
+    }
+
+    private string GetIcon()
+    {
+        var iconClass = Message.Type switch
+        {
+            ToastType.Success => "ph ph-check-circle",
+            ToastType.Error => "ph ph-warning-circle",
+            ToastType.Warning => "ph ph-warning",
+            ToastType.Info => "ph ph-info",
+            _ => "ph ph-info"
+        };
+        return $"{iconClass} text-secondary";
+    }
+}

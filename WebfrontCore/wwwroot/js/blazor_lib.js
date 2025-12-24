@@ -260,6 +260,63 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
     });
 }
 
+// Store chart instances for updates
+window.serverCharts = window.serverCharts || {};
+
+// Update existing chart with new data
+window.updateServerChart = function (elementId, playerHistory, maxClients, strings) {
+    const chart = window.serverCharts[elementId];
+    if (!chart) {
+        // Chart doesn't exist yet, initialize it
+        window.serverCharts[elementId] = window.initServerChart(elementId, playerHistory, maxClients, strings);
+        return;
+    }
+
+    // Prepare data same way as init
+    const onlineTime = [];
+    const offlineTime = [];
+    const mapChange = [];
+    let lastMap = '';
+
+    playerHistory.forEach((elem, i) => {
+        if (elem.ma !== lastMap) {
+            mapChange.push(i);
+            lastMap = elem;
+        }
+
+        if (elem.ci) {
+            offlineTime.push({
+                cc: maxClients,
+                ts: elem.ts
+            });
+
+            onlineTime.push({
+                cc: 0,
+                ts: elem.ts
+            })
+        } else {
+            offlineTime.push({
+                cc: 0,
+                ts: elem.ts
+            });
+
+            onlineTime.push(elem)
+        }
+    });
+
+    // Update chart data
+    chart.data.labels = playerHistory.map(history => history.ts);
+    chart.data.datasets[0].data = onlineTime.map(history => history.cc);
+    chart.data.datasets[1].data = offlineTime.map(history => history.cc);
+    chart.data.lineAtIndexes = mapChange;
+
+    // Update chart (with minimal animation for smooth transitions)
+    chart.update({
+        duration: 200,
+        easing: 'easeInOutQuad'
+    });
+}
+
 window.processLogin = function (url) {
     return fetch(url)
         .then(response => {

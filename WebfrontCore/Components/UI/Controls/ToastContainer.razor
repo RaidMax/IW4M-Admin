@@ -1,0 +1,10 @@
+@inject IToastService ToastService
+@implements IDisposable
+@rendermode InteractiveServer
+
+<div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm pointer-events-none p-4 md:p-0">
+    @foreach (var message in _messages)
+    {
+        <Toast Message="@message" OnClose="() => Remove(message)" />
+    }
+</div>

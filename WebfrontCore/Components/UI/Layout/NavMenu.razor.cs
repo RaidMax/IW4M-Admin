@@ -8,7 +8,6 @@ public partial class NavMenu
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop JS { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
     private NavigationInfo? NavData;
 

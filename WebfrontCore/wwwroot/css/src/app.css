@@ -103,7 +103,7 @@
 }
 
 /* Misc */
-button, a, html, body {
+button, a {
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
 }

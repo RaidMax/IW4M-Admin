@@ -13,7 +13,6 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop JsInterop { get; set; }
     [Parameter]
     public string serverId { get; set; }
 

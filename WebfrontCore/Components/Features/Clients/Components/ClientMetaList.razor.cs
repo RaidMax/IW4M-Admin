@@ -10,7 +10,7 @@ public partial class ClientMetaList : IAsyncDisposable
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop JsInterop { get; set; }
+    [Inject] public required IJSRuntime JS { get; set; }
 
     [Parameter] public int ClientId { get; set; }
     [Parameter] public MetaType? MetaFilterType { get; set; }
@@ -26,7 +26,6 @@ public partial class ClientMetaList : IAsyncDisposable
     private MetaType? _previousMetaFilter;
     private DotNetObjectReference<ClientMetaList> _objRef;
     private bool _observerSetup;
-    private ElementReference _loadMoreTrigger;
 
     // State container for individual meta items (expansion, loading, extra data)
     private Dictionary<object, MetaItemState> _itemStates = new();
@@ -67,7 +66,7 @@ public partial class ClientMetaList : IAsyncDisposable
         if (MetaItems.Any() && HasMore && !_observerSetup)
         {
             _objRef = DotNetObjectReference.Create(this);
-            await JsInterop.SetupInfiniteScroll(_loadMoreTrigger, _objRef);
+            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _objRef, "loadMoreMetaTrigger");
             _observerSetup = true;
         }
     }
@@ -155,8 +154,11 @@ public partial class ClientMetaList : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_observerSetup)
+        {
+            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+        }
         _objRef?.Dispose();
-        await Task.CompletedTask;
     }
 
     // --- Item Logic ---

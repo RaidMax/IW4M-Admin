@@ -8,7 +8,6 @@ namespace WebfrontCore.Components.UI.Navigation;
 public partial class SideContextMenu
 {
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IZeroJsInterop JS { get; set; }
 
     [Parameter] public SideContextMenuItems Model { get; set; }
     [Parameter] public EventCallback<SideContextMenuItem> OnActionSelect { get; set; }

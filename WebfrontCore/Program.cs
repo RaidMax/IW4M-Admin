@@ -167,7 +167,6 @@ public class Program
             .AddInteractiveServerComponents(options => { options.DetailedErrors = Utilities.IsDevelopment; });
 
         services.AddScoped<AppState>();
-        services.AddScoped<IZeroJsInterop, ZeroJsInterop>();
         services.AddScoped<IToastService, ToastService>();
         services.AddTransient<CookieForwardingHandler>();
 

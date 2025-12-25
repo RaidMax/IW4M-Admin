@@ -1,6 +1,7 @@
 ﻿using Data.Models.Client.Stats;
 using Data.Models.Client.Stats.Reference;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
@@ -16,7 +17,7 @@ public partial class AdvancedStats
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required DefaultSettings DefaultConfig { get; set; }
-    [Inject] public required IZeroJsInterop JsInterop { get; set; }
+    [Inject] public required IJSRuntime JS { get; set; }
 
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string serverId { get; set; }
@@ -51,7 +52,7 @@ public partial class AdvancedStats
             await Task.Delay(200);
             try
             {
-                await JsInterop.InitAdvancedStats(HistoryData, HitLocationData, MaxPercentage);
+                await JS.InvokeVoidAsync("initAdvancedStats", HistoryData, HitLocationData, MaxPercentage);
             }
             catch (Exception ex)
             {

@@ -13,6 +13,10 @@ function getStatsChart(id) {
         return;
     }
 
+    // Get theme colors from shared utility
+    const theme = window.chartTheme.getChartColors();
+    const tooltipConfig = window.chartTheme.getTooltipConfig();
+
     const labels = [];
     const values = [];
 
@@ -43,7 +47,7 @@ function getStatsChart(id) {
             pointBackgroundColor: 'rgba(255, 255, 255, 0)',
             pointBorderColor: 'rgba(255, 255, 255, 0)',
             pointHoverRadius: 5,
-            pointHoverBackgroundColor: 'rgba(255, 255, 255, 1)',
+            pointHoverBackgroundColor: theme.lineColor,
         }]
     };
 
@@ -53,15 +57,11 @@ function getStatsChart(id) {
         maintainAspectRatio: false,
         legend: false,
         tooltips: {
+            ...tooltipConfig,
             callbacks: {
                 label: context => moment.utc(context.label).local().calendar(),
                 title: items => Math.round(items[0].yLabel) + ' ' + _localization['WEBFRONT_ADV_STATS_RANKING_METRIC']
-            },
-            mode: 'nearest',
-            intersect: false,
-            animationDuration: 0,
-            cornerRadius: 0,
-            displayColors: false
+            }
         },
         hover: {
             mode: 'nearest',
@@ -70,7 +70,7 @@ function getStatsChart(id) {
         elements: {
             line: {
                 fill: false,
-                borderColor: halfmoon.getPreferredMode() === 'light-mode' ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.75)',
+                borderColor: theme.lineColor,
                 borderWidth: 2
             },
             point: {

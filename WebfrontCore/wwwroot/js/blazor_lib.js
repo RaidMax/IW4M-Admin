@@ -154,16 +154,16 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                 pointHoverRadius: 4,
                 pointBackgroundColor: onlineBorderColor
             },
-            {
-                data: offlineTime.map(history => history.cc),
-                backgroundColor: createDiagonalPattern(offlinePatternColor),
-                borderColor: offlineBorderColor,
-                borderWidth: 1.5,
-                hoverBorderColor: 'white',
-                hoverBorderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 0
-            }],
+                {
+                    data: offlineTime.map(history => history.cc),
+                    backgroundColor: createDiagonalPattern(offlinePatternColor),
+                    borderColor: offlineBorderColor,
+                    borderWidth: 1.5,
+                    hoverBorderColor: 'white',
+                    hoverBorderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }],
             lineAtIndexes: mapChange,
         },
         options: {
@@ -178,8 +178,7 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
             tooltips: {
                 enabled: false, // Disable default canvas tooltip
                 custom: function (tooltipModel) {
-                    // Tooltip Element
-                    var tooltipEl = document.getElementById('chartjs-tooltip');
+                    let tooltipEl = document.getElementById('chartjs-tooltip');
 
                     // Get theme colors
                     const tooltipStyles = getComputedStyle(document.documentElement);
@@ -208,7 +207,7 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
 
                     // Hide if no tooltip
                     if (tooltipModel.opacity === 0) {
-                        tooltipEl.style.opacity = 0;
+                        tooltipEl.style.opacity = '0';
                         return;
                     }
 
@@ -226,23 +225,23 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
 
                     // Set Text
                     if (tooltipModel.body) {
-                        var titleLines = tooltipModel.title || [];
-                        var bodyLines = tooltipModel.body.map(getBody);
+                        const titleLines = tooltipModel.title || [];
+                        const bodyLines = tooltipModel.body.map(getBody);
 
-                        var innerHtml = '<div style="padding: 8px 12px;">';
+                        let innerHtml = '<div style="padding: 8px 12px;">';
 
                         titleLines.forEach(function (title) {
                             // Format Title (Date)
-                            var formattedTitle = moment(title).local().calendar();
+                            const formattedTitle = moment(title).local().calendar();
                             innerHtml += `<div style="color: ${foregroundColor}; font-size: 11px; font-weight: 600; margin-bottom: 4px; font-family: ui-sans-serif, system-ui, sans-serif;">` + formattedTitle + '</div>';
                         });
 
                         bodyLines.forEach(function (body, i) {
                             // Custom Label Logic
-                            var dataIndex = tooltipModel.dataPoints[i].index;
-                            var datasetIndex = tooltipModel.dataPoints[i].datasetIndex;
-                            var value = tooltipModel.dataPoints[i].yLabel;
-                            var label = "";
+                            const dataIndex = tooltipModel.dataPoints[i].index;
+                            const datasetIndex = tooltipModel.dataPoints[i].datasetIndex;
+                            const value = tooltipModel.dataPoints[i].yLabel;
+                            let label;
 
                             if (datasetIndex !== 1) {
                                 label = `${value} ${strings.players} • ${playerHistory[dataIndex].ma}`;
@@ -260,12 +259,12 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                     }
 
                     // `this._chart.canvas`
-                    var position = this._chart.canvas.getBoundingClientRect();
+                    const position = this._chart.canvas.getBoundingClientRect();
 
                     // Display, position, and set styles for font
-                    tooltipEl.style.opacity = 1;
-                    tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
-                    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - tooltipEl.clientHeight - 10 + 'px'; // Shift up by height + padding
+                    tooltipEl.style.opacity = '1';
+                    tooltipEl.style.left = position.left + window.scrollX + tooltipModel.caretX + 'px';
+                    tooltipEl.style.top = position.top + window.scrollY + tooltipModel.caretY - tooltipEl.clientHeight - 10 + 'px'; // Shift up by height + padding
                     tooltipEl.style.fontFamily = tooltipModel._bodyFontFamily;
                     tooltipEl.style.fontSize = tooltipModel.bodyFontSize + 'px';
                     tooltipEl.style.fontStyle = tooltipModel._bodyFontStyle;
@@ -422,37 +421,6 @@ window.processLoginPost = function (url, body) {
         });
 }
 
-// Infinite scroll support for Blazor components using IntersectionObserver
-window.blazorInfiniteScroll = {
-    setup: function (element, dotNetRef) {
-        if (!element) return;
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    dotNetRef.invokeMethodAsync('LoadMore');
-                }
-            });
-        }, {
-            root: null,
-            rootMargin: '100px',
-            threshold: 0.1
-        });
-
-        observer.observe(element);
-
-        // Store observer reference for cleanup
-        element._infiniteScrollObserver = observer;
-    },
-    remove: function (element) {
-        if (element && element._infiniteScrollObserver) {
-            element._infiniteScrollObserver.disconnect();
-            delete element._infiniteScrollObserver;
-        }
-    }
-};
-// Toast notification wrapper for Blazor (Shimmed for Native)
-// Removed: window.toastContainerRef, halfmoon.initStickyAlert, and blazorToast are no longer needed
 
 window.themeManager = {
     // HSL values for standard Tailwind palettes (500 shade base)
@@ -474,17 +442,26 @@ window.themeManager = {
         let r = parseInt(result[1], 16);
         let g = parseInt(result[2], 16);
         let b = parseInt(result[3], 16);
-        r /= 255; g /= 255; b /= 255;
+        r /= 255;
+        g /= 255;
+        b /= 255;
         let max = Math.max(r, g, b), min = Math.min(r, g, b);
         let h, s, l = (max + min) / 2;
-        if (max === min) { h = s = 0; }
-        else {
+        if (max === min) {
+            h = s = 0;
+        } else {
             let d = max - min;
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
             switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
             }
             h /= 6;
         }
@@ -563,10 +540,10 @@ window.themeManager = {
         let settings = self.load();
 
         const parseServerColor = (colorName) => {
-            if (!colorName) return { mode: 1, palette: 'blue' };
+            if (!colorName) return {mode: 1, palette: 'blue'};
             // Check if it's a known palette key
             if (self.paletteHSL[colorName.toLowerCase()]) {
-                return { mode: 1, palette: colorName.toLowerCase() };
+                return {mode: 1, palette: colorName.toLowerCase()};
             }
             // Check if it's a HEX code
             if (colorName.startsWith('#')) {
@@ -581,7 +558,7 @@ window.themeManager = {
                 }
             }
             // Fallback for unparsed or standard "blue"
-            return { mode: 1, palette: 'blue' };
+            return {mode: 1, palette: 'blue'};
         };
 
         const createSettingsFromServer = (srv) => {
@@ -608,8 +585,7 @@ window.themeManager = {
             if (serverSettings.preventUserCustomization) {
                 // Locked: Force server settings
                 settings = createSettingsFromServer(serverSettings);
-            }
-            else if (!settings) {
+            } else if (!settings) {
                 // No local customization: Use server defaults as starting point
                 settings = createSettingsFromServer(serverSettings);
             }

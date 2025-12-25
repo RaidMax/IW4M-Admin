@@ -8,7 +8,6 @@ namespace WebfrontCore.Components.UI.Layout;
 
 public partial class MainLayout
 {
-    [Inject] public required IZeroJsInterop JS { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }

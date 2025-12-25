@@ -139,9 +139,9 @@ jobs:
       - name: Patch Phosphor CSS font paths
         run: |
           cd WebfrontCore/wwwroot/lib/phosphor-icons/src
-          sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' regular/style.css
-          sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' bold/style.css
-          sed -i 's|url("Phosphor|url("/font/phosphor/Phosphor|g' fill/style.css
+          sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' regular/style.css
+          sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' bold/style.css
+          sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' fill/style.css
 
       - name: Compile SCSS files
         run: |

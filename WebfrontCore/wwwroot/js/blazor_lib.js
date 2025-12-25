@@ -1,3 +1,76 @@
+// ============================================
+// Chart Theme Utility
+// ============================================
+window.chartTheme = (function () {
+    // Helper to convert CSS color to rgba
+    const colorToRgba = (color, alpha) => {
+        const temp = document.createElement('div');
+        temp.style.color = color;
+        document.body.appendChild(temp);
+        const computed = getComputedStyle(temp).color;
+        document.body.removeChild(temp);
+        const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (match) {
+            return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+        }
+        return color;
+    };
+
+    // Get current theme colors from CSS variables
+    const getColors = () => {
+        const styles = getComputedStyle(document.documentElement);
+        return {
+            primary: styles.getPropertyValue('--color-primary').trim() || 'hsl(217 91% 60%)',
+            secondary: styles.getPropertyValue('--color-secondary').trim() || 'hsl(271 91% 65%)',
+            muted: styles.getPropertyValue('--color-muted').trim() || 'hsl(0 0% 55%)',
+            surface: styles.getPropertyValue('--color-surface').trim() || 'hsl(0 0% 13%)',
+            line: styles.getPropertyValue('--color-line').trim() || 'hsl(0 0% 25%)',
+            foreground: styles.getPropertyValue('--color-foreground').trim() || 'hsl(0 0% 98%)',
+            subtle: styles.getPropertyValue('--color-subtle').trim() || 'hsl(0 0% 75%)'
+        };
+    };
+
+    // Get chart-ready colors with alpha values
+    const getChartColors = () => {
+        const colors = getColors();
+        return {
+            lineColor: colorToRgba(colors.primary, 0.85),
+            fillColor: colorToRgba(colors.primary, 0.1),
+            tickColor: colorToRgba(colors.muted, 0.35),
+            surfaceColor: colorToRgba(colors.surface, 1),
+            borderColor: colorToRgba(colors.line, 1),
+            foregroundColor: colorToRgba(colors.foreground, 1),
+            subtleColor: colorToRgba(colors.subtle, 1)
+        };
+    };
+
+    // Get standard tooltip config for Chart.js
+    const getTooltipConfig = () => {
+        const chartColors = getChartColors();
+        return {
+            mode: 'nearest',
+            intersect: false,
+            animationDuration: 0,
+            cornerRadius: 6,
+            displayColors: false,
+            backgroundColor: chartColors.surfaceColor,
+            borderColor: chartColors.borderColor,
+            borderWidth: 1,
+            titleFontColor: chartColors.foregroundColor,
+            bodyFontColor: chartColors.subtleColor,
+            xPadding: 12,
+            yPadding: 8
+        };
+    };
+
+    return {
+        colorToRgba,
+        getColors,
+        getChartColors,
+        getTooltipConfig
+    };
+})();
+
 function createDiagonalPattern(color = 'black') {
     let shape = document.createElement('canvas');
     shape.width = 10;
@@ -23,34 +96,14 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
     const width = card ? card.clientWidth : canvas.parentElement.clientWidth;
     canvas.setAttribute('width', width);
 
-    // Get theme colors from CSS variables
-    const styles = getComputedStyle(document.documentElement);
-    const primaryColor = styles.getPropertyValue('--color-primary').trim() || 'hsl(217 91% 60%)';
-    const mutedColor = styles.getPropertyValue('--color-muted').trim() || 'hsl(0 0% 55%)';
+    // Get theme colors from shared utility
+    const colors = window.chartTheme.getColors();
+    const colorToRgba = window.chartTheme.colorToRgba;
 
-    // Helper to convert CSS color to rgba
-    const colorToRgba = (color, alpha) => {
-        // Create a temporary element to compute the color
-        const temp = document.createElement('div');
-        temp.style.color = color;
-        document.body.appendChild(temp);
-        const computed = getComputedStyle(temp).color;
-        document.body.removeChild(temp);
-
-        // Parse rgb(r, g, b) format
-        const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-        if (match) {
-            return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
-        }
-        return color;
-    };
-
-    const secondaryColor = styles.getPropertyValue('--color-secondary').trim() || 'hsl(271 91% 65%)';
-
-    const onlineBorderColor = colorToRgba(primaryColor, 1);
-    const onlineFillColor = colorToRgba(primaryColor, 0.1);
-    const offlineBorderColor = colorToRgba(secondaryColor, 0.5);
-    const offlinePatternColor = colorToRgba(secondaryColor, 0.2);
+    const onlineBorderColor = colorToRgba(colors.primary, 1);
+    const onlineFillColor = colorToRgba(colors.primary, 0.1);
+    const offlineBorderColor = colorToRgba(colors.secondary, 0.5);
+    const offlinePatternColor = colorToRgba(colors.secondary, 0.2);
 
     const onlineTime = [];
     const offlineTime = [];

@@ -7,13 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Plugins\AutomessageFeed\AutomessageFeed.csproj" />
-      <ProjectReference Include="..\Plugins\LiveRadar\LiveRadar.csproj" />
-      <ProjectReference Include="..\Plugins\Login\Login.csproj" />
-      <ProjectReference Include="..\Plugins\Mute\Mute.csproj" />
-      <ProjectReference Include="..\Plugins\ProfanityDeterment\ProfanityDeterment.csproj" />
-      <ProjectReference Include="..\Plugins\Stats\Stats.csproj" />
-      <ProjectReference Include="..\Plugins\Welcome\Welcome.csproj" />
+      <ProjectReference Include="..\Plugins\AutomessageFeed\AutomessageFeed.csproj" ReferenceOutputAssembly="false" Private="false" />
+      <ProjectReference Include="..\Plugins\LiveRadar\LiveRadar.csproj" ReferenceOutputAssembly="false" Private="false" />
+      <ProjectReference Include="..\Plugins\Login\Login.csproj" ReferenceOutputAssembly="false" Private="false" />
+      <ProjectReference Include="..\Plugins\Mute\Mute.csproj" ReferenceOutputAssembly="false" Private="false" />
+      <ProjectReference Include="..\Plugins\ProfanityDeterment\ProfanityDeterment.csproj" ReferenceOutputAssembly="false" Private="false" />
+      <ProjectReference Include="..\Plugins\Stats\Stats.csproj" ReferenceOutputAssembly="false" Private="false" />
+      <ProjectReference Include="..\Plugins\Welcome\Welcome.csproj" ReferenceOutputAssembly="false" Private="false" />
     </ItemGroup>
 
 </Project>

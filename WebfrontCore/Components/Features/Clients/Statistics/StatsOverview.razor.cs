@@ -13,8 +13,9 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Parameter]
-    public string serverId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "serverId")]
+    public string? serverId { get; set; }
 
     // public for tests
     public List<TopStatsInfo> TopPlayers { get; set; }
@@ -29,7 +30,7 @@ public partial class StatsOverview : IAsyncDisposable
     }
 
     public ServerInfo SelectedServer { get; set; }
- 
+
     private bool IsLoading = false;
     private bool HasMore = true;
     private bool _hasLoaded = false;
@@ -47,15 +48,15 @@ public partial class StatsOverview : IAsyncDisposable
             _previousServerId = serverId;
             TopPlayers = null;
             _hasLoaded = false;
-            
+
             if (_virtualizeComponent != null)
             {
                 await _virtualizeComponent.RefreshDataAsync();
             }
 
             await GenerateMenu();
-            
-             if (serverId != null)
+
+            if (serverId != null)
             {
                 var servers = await DataService.GetServersAsync();
                 SelectedServer = servers.FirstOrDefault(s => s.Endpoint == serverId);
@@ -76,9 +77,10 @@ public partial class StatsOverview : IAsyncDisposable
                 { "WEBFRONT_ADV_STATS_RANKING_METRIC", AppState.Loc("WEBFRONT_ADV_STATS_RANKING_METRIC") },
                 { "PLUGINS_STATS_COMMANDS_PERFORMANCE", AppState.Loc("PLUGINS_STATS_COMMANDS_PERFORMANCE") }
             };
-            try 
+            try
             {
-                await Runtime.InvokeVoidAsync("eval", $"window._localization = {System.Text.Json.JsonSerializer.Serialize(localization)};");
+                await Runtime.InvokeVoidAsync("eval",
+                    $"window._localization = {System.Text.Json.JsonSerializer.Serialize(localization)};");
                 _localizationInitialized = true;
             }
             catch (Exception ex)
@@ -108,7 +110,7 @@ public partial class StatsOverview : IAsyncDisposable
             {
                 TotalRankedClients = response.TotalRankedClients;
                 _hasLoaded = true;
-                StateHasChanged(); 
+                StateHasChanged();
             }
             else if (!_hasLoaded)
             {

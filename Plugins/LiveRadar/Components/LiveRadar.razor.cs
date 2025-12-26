@@ -62,4 +62,12 @@ public partial class LiveRadar
     {
         return server.ToString() == ServerId;
     }
+
+    private bool _mobileMenuOpen;
+
+    private void ToggleMobileServerMenu()
+    {
+        _mobileMenuOpen = !_mobileMenuOpen;
+        StateHasChanged();
+    }
 }

@@ -8,57 +8,150 @@
 @inject IManager Manager
 @inject IJSRuntime JS
 
-<div class="max-w-7xl mx-auto p-4 md:p-8">
-    <div class="flex flex-col lg:flex-row gap-6">
-        <!-- Main Radar Content -->
-        <div class="flex-1">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-                    <i class="ph ph-crosshair text-xl text-primary"></i>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-gradient-title">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_LIVE_RADAR_TITLE"]</h2>
-                    <div class="text-sm text-subtle">
-                        <span>@SelectedServerName.StripColors()</span>
-                    </div>
+<div class="flex flex-col xl:flex-row h-full">
+    <!-- Main Radar Content -->
+    <div class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                <i class="ph ph-crosshair text-xl text-primary"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-gradient-title">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_LIVE_RADAR_TITLE"]</h2>
+                <div class="text-sm text-subtle">
+                    <span>@SelectedServerName.StripColors()</span>
                 </div>
             </div>
-            
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="player-data-left w-full md:w-1/4 opacity-0">
-                </div>
-                <div class="flex-1">
-                    <div id="map_name" class="bg-surface-alt text-center py-3 px-4 rounded-t-lg border border-line text-foreground font-medium">&mdash;</div>
-                    <div id="map_list" class="relative rounded-b-lg border border-t-0 border-line bg-surface bg-cover" style="padding-bottom: 100% !important;">
-                        <canvas id="map_canvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+        
+        <!-- 3-Column Layout: Left Players | Map | Right Players -->
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-4 items-start">
+            <!-- Left Team Players -->
+            <div class="hidden lg:block">
+                <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
+                    <div class="px-4 py-2 border-b border-line bg-surface-alt/50">
+                        <h5 class="text-xs font-semibold text-muted uppercase tracking-wider">Team 1</h5>
                     </div>
+                    <div class="player-data-left divide-y divide-line max-h-[500px] overflow-y-auto"></div>
                 </div>
-                <div class="player-data-right w-full md:w-1/4 opacity-0">
+            </div>
+
+            <!-- Map Area -->
+            <div class="min-w-0">
+                <div id="map_name" class="bg-surface-alt text-center py-3 px-4 rounded-t-lg border border-line text-foreground font-medium">&mdash;</div>
+                <div id="map_list" class="relative rounded-b-lg border border-t-0 border-line bg-surface bg-cover w-full" style="padding-bottom: 100% !important;">
+                    <canvas id="map_canvas" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Team Players -->
+            <div class="hidden lg:block">
+                <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
+                    <div class="px-4 py-2 border-b border-line bg-surface-alt/50">
+                        <h5 class="text-xs font-semibold text-muted uppercase tracking-wider">Team 2</h5>
+                    </div>
+                    <div class="player-data-right divide-y divide-line max-h-[500px] overflow-y-auto"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Server Selection Sidebar -->
-        <div class="w-full lg:w-72 shrink-0">
+        <!-- Mobile Player Lists (shown on smaller screens) -->
+        <div class="lg:hidden grid grid-cols-2 gap-4">
             <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
-                <div class="px-4 py-3 border-b border-line bg-surface-alt/50">
-                    <h5 class="font-semibold text-foreground">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"]</h5>
+                <div class="px-4 py-2 border-b border-line bg-surface-alt/50">
+                    <h5 class="text-xs font-semibold text-muted uppercase tracking-wider">Team 1</h5>
                 </div>
-                <div class="divide-y divide-line">
+                <div class="player-data-left-mobile divide-y divide-line max-h-[300px] overflow-y-auto"></div>
+            </div>
+            <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
+                <div class="px-4 py-2 border-b border-line bg-surface-alt/50">
+                    <h5 class="text-xs font-semibold text-muted uppercase tracking-wider">Team 2</h5>
+                </div>
+                <div class="player-data-right-mobile divide-y divide-line max-h-[300px] overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Selection Sidebar (matching SideContextMenu style) -->
+    <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
+        <div class="sticky top-6">
+            <!-- Desktop Sidebar -->
+            <div class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto">
+                <div class="space-y-1">
                     @foreach (var server in Servers)
                     {
-                        <a href="/radar/@server.Id"
-                           class="block px-4 py-3 transition-colors @(IsSelected(server) ? "bg-primary text-white" : "text-foreground hover:bg-surface-hover")">
-                            <div class="flex justify-between items-center gap-2">
-                                <span class="text-sm font-medium truncate">@server.Hostname.StripColors()</span>
-                                <span class="px-2 py-0.5 rounded text-xs font-mono shrink-0 @(IsSelected(server) ? "bg-white/20 text-white" : "bg-surface-alt text-muted border border-line")">@server.GameName</span>
-                            </div>
+                        <a href="/radar/@server"
+                           class="group flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 @(IsSelected(server) ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-subtle hover:bg-surface-hover hover:text-foreground")">
+                            <i class="ph ph-hard-drive text-lg mr-3 @(IsSelected(server) ? "text-white" : "text-muted group-hover:text-primary")"></i>
+                            <span class="truncate">@server.Hostname.StripColors()</span>
+                            @if (IsSelected(server))
+                            {
+                                <i class="ph ph-check ml-auto text-white/80"></i>
+                            }
                         </a>
                     }
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- todo: replace with shared component with lib refactor -->
+    <!-- Mobile FAB for server selection -->
+    @if (Servers.Count > 1)
+    {
+        <button type="button" 
+                @onclick="ToggleMobileServerMenu"
+                @onclick:stopPropagation="true"
+                class="fixed bottom-6 right-6 z-[60] xl:hidden w-14 h-14 rounded-full shadow-2xl 
+                       @(_mobileMenuOpen ? "bg-secondary" : "bg-primary") text-white
+                       active:scale-95 
+                       focus:outline-none focus:ring-4 focus:ring-primary/30
+                       transition-all duration-300 ease-out
+                       flex items-center justify-center">
+            <i class="ph @(_mobileMenuOpen ? "ph-x" : "ph-hard-drives") text-2xl transition-transform duration-200 @(_mobileMenuOpen ? "rotate-90" : "rotate-0")"></i>
+        </button>
+
+        <!-- Mobile Server Drawer -->
+        <div class="fixed inset-0 z-[55] xl:hidden @(_mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none")">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 @(_mobileMenuOpen ? "opacity-100" : "opacity-0")" 
+                 @onclick="ToggleMobileServerMenu"></div>
+            
+            <div class="fixed right-0 top-0 h-full w-80 max-w-[85vw] bg-surface/95 backdrop-blur-xl border-l border-line/50 shadow-2xl 
+                        overflow-y-auto transform transition-transform duration-300 ease-out
+                        @(_mobileMenuOpen ? "translate-x-0" : "translate-x-full")">
+                
+                <div class="sticky top-0 z-10 bg-surface/90 backdrop-blur-lg border-b border-line/50 px-5 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <i class="ph ph-hard-drives text-primary"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-foreground uppercase tracking-wider">@Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"]</h3>
+                        </div>
+                        <button type="button" @onclick="ToggleMobileServerMenu" 
+                                class="w-8 h-8 rounded-full bg-surface-alt hover:bg-line flex items-center justify-center text-muted hover:text-foreground transition-all duration-200">
+                            <i class="ph ph-x text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4 space-y-1">
+                    @foreach (var server in Servers)
+                    {
+                        <a href="/radar/@server"
+                           class="group flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 @(IsSelected(server) ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-subtle hover:bg-surface-hover hover:text-foreground")">
+                            <i class="ph ph-hard-drive text-lg mr-3 @(IsSelected(server) ? "text-white" : "text-muted group-hover:text-primary")"></i>
+                            <span class="truncate">@server.Hostname.StripColors()</span>
+                            @if (IsSelected(server))
+                            {
+                                <i class="ph ph-check ml-auto text-white/80"></i>
+                            }
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 
     <img class="hidden" id="hud_death" src="/images/radar/death.png"/>
 </div>

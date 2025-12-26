@@ -884,7 +884,8 @@ public class WebfrontDataService : IWebfrontDataService
                 ClientId = client.ClientId,
                 Level = client.Level,
                 LastConnection = client.LastConnection,
-                Game = client.GameName
+                Game = client.GameName,
+                IsMasked = client.Masked
             })
             .GroupBy(client => client.Level)
             .ToDictionary(folder => folder.Key, IList<ClientInfo> (folder) => folder.ToList());

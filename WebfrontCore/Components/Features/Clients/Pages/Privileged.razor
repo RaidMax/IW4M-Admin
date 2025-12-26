@@ -56,11 +56,11 @@
                             <tr class="hover:bg-surface-hover/30 transition-colors">
                                 <td class="px-4 py-3">
                                     <div class="flex items-center">
-                                                <span class="mr-2 text-warning"
-                                                      title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
-                                                    <i class="ph ph-mask-happy text-lg"></i>
-                                                    @* Optional: Use ph-spy or ph-shield-check if preferred *@
-                                                </span>
+                                            <span class="mr-2 text-warning inline-flex items-center"
+                                                  title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                                                <i class="ph ph-mask-happy text-lg"></i>
+                                                @* Optional: Use ph-spy or ph-shield-check if preferred *@
+                                            </span>
                                         <a href="/client/@client.ClientId"
                                            class="font-medium text-foreground hover:text-primary transition-colors">
                                             <ColorCode Value="@client.Name"/>
@@ -111,7 +111,7 @@
                             <div class="flex flex-wrap items-center gap-2">
                                 @if (client.IsMasked)
                                 {
-                                    <span class="text-warning flex-shrink-0"
+                                    <span class="text-warning flex-shrink-0 inline-flex items-center"
                                           title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
                                         <i class="ph ph-mask-happy text-lg"></i>
                                     </span>

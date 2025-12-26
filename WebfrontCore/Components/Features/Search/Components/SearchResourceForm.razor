@@ -2,23 +2,23 @@
     <div class="flex items-center gap-2">
         <!-- Search Input Group -->
         <form @onsubmit="BasicSubmit" class="flex-1 flex items-center relative w-full">
-            <input @bind="ClientName" 
-                   type="text" 
+            <input @bind="ClientName"
+                   type="text"
                    class="block w-full h-10 rounded-l-md bg-input-bg border border-input-border border-r-0 text-foreground placeholder-muted focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2 min-w-0"
-                   placeholder="@(AppState.Loc("WEBFRONT_NAV_SEARCH"))" 
-                   required />
+                   placeholder="@(AppState.Loc("WEBFRONT_NAV_SEARCH"))"
+                   required/>
 
             <!-- Advanced Search Toggle (Inside Input Group) -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
-                <button type="button" 
-                        class="h-10 px-3 bg-input-bg border-y border-input-border text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 border-l-0" 
+                <button type="button"
+                        class="h-10 px-3 bg-input-bg border-y border-input-border text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 border-l-0"
                         @onclick="ToggleAdvancedSearch"
                         title="@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))">
-                    <i class="ph ph-caret-down text-lg"></i>
+                    <i class="ph ph-sliders text-lg"></i>
                 </button>
             </AuthorizeView>
 
-            <button type="button" 
+            <button type="button"
                     @onclick="BasicSubmit"
                     class="inline-flex items-center px-3 py-2 h-10 border border-input-border border-l-0 rounded-r-md bg-input-bg text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
                 <i class="ph ph-magnifying-glass text-lg"></i>
@@ -26,57 +26,12 @@
         </form>
     </div>
 
-    <!-- Advanced Search Dropdown -->
-    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
-        @if (_showAdvanced)
-        {
-            <div class="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg bg-surface ring-1 ring-black/5 ring-opacity-5 focus:outline-none z-50 border border-line">
-                <div class="p-4">
-                    <div class="flex items-center justify-between mb-4 border-b border-line pb-2">
-                         <h3 class="text-sm font-bold text-foreground uppercase tracking-wider">
-                            @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))
-                        </h3>
-                        <button type="button" @onclick="ToggleAdvancedSearch" class="text-muted hover:text-foreground">
-                            <i class="ph ph-x"></i>
-                        </button>
-                    </div>
 
-                    <div class="space-y-4">
-                        <div class="space-y-1">
-                            <label for="searchType" class="block text-xs font-semibold text-muted uppercase tracking-wider">
-                                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_FOR"))
-                            </label>
-                            <select id="searchType" 
-                                    class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2" 
-                                    @bind="SearchType">
-                                <option value="client">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_PLAYERS"))</option>
-                                <option value="chat">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT"))</option>
-                            </select>
-                        </div>
-
-                        @if (SearchType == "client")
-                        {
-                            <ClientSearch />
-                        }
-                        else
-                        {
-                            <ChatSearch />
-                        }
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Backdrop for mobile to close on click outside -->
-            <div class="fixed inset-0 z-40 bg-transparent" @onclick="ToggleAdvancedSearch"></div>
-        }
-    </AuthorizeView>
 </div>
 
 @code {
-    private bool _showAdvanced = false;
-
     private void ToggleAdvancedSearch()
     {
-        _showAdvanced = !_showAdvanced;
+        AppState.IsAdvancedSearchOpen = !AppState.IsAdvancedSearchOpen;
     }
 }

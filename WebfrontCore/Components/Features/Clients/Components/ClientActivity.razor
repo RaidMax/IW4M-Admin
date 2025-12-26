@@ -25,7 +25,8 @@
                             @if (isEvent)
                             {
                                 <i class="@stateIcon text-[10px] self-center shrink-0 w-3"></i>
-                                <a href="/client/@chat.ClientId" class="truncate flex-1 hover:text-foreground transition-colors">
+                                <a href="/client/@chat.ClientId"
+                                   class="truncate flex-1 hover:text-foreground transition-colors">
                                     <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
                                 </a>
                                 <span
@@ -37,8 +38,8 @@
                                 <span class="text-muted/75 select-none shrink-0">@chat.Time.ToString("HH:mm")</span>
                                 <div class="flex-1 min-w-0 break-words leading-tight">
                                     <a href="/client/@chat.ClientId"
-                                        class="font-bold text-subtle mr-1 hover:text-foreground transition-colors">
-                                        <ColorCode Value="@chat.Name"/>:
+                                       class="font-bold text-subtle mr-1 hover:text-foreground transition-colors">
+                                        <ColorCode Value="@chat.Name"/>
                                     </a>
                                     <span class="text-foreground">
                                         <ColorCode Value="@(message.CapClientName(128))"/>
@@ -117,6 +118,6 @@ else
     <!-- Empty Server State: Single header line -->
     <div class="flex items-center justify-center gap-2 px-4 py-3 h-full bg-surface-alt/50 text-muted text-xs">
         <i class="ph ph-users-three text-base text-secondary"></i>
-        <span>Server is empty</span>
+        <span>@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</span>
     </div>
 }

@@ -317,9 +317,19 @@ window.serverCharts = window.serverCharts || {};
 
 // Update existing chart with new data
 window.updateServerChart = function (elementId, playerHistory, maxClients, strings) {
+    const canvas = document.getElementById(elementId);
+    if (!canvas) return; // Canvas not in DOM
+
     const chart = window.serverCharts[elementId];
-    if (!chart) {
-        // Chart doesn't exist yet, initialize it
+
+    // Check if the cached chart's canvas is still the same element in the DOM
+    // Blazor navigation can create new canvas elements with the same ID
+    if (!chart || chart.canvas !== canvas) {
+        // Chart doesn't exist or canvas was replaced, initialize new chart
+        if (chart) {
+            // Destroy old chart to prevent memory leaks
+            chart.destroy();
+        }
         window.serverCharts[elementId] = window.initServerChart(elementId, playerHistory, maxClients, strings);
         return;
     }

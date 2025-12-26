@@ -43,11 +43,19 @@ if [ -d "$SourceDir/BUILD/Plugins" ]; then
 fi
 
 # Move DLLs to Lib, excluding plugin assemblies (they go to Plugins/ folder)
+# Exception: Stats.dll should go to Lib as it's tightly integrated with the application
 for dll in "$PublishDir"/*.dll; do
     if [ ! -f "$dll" ]; then
         continue
     fi
     dllName=$(basename "$dll")
+    
+    # Stats.dll is an exception - it goes to Lib, not Plugins
+    if [ "$dllName" = "Stats.dll" ]; then
+        mv "$dll" "$PublishDir/Lib/"
+        continue
+    fi
+    
     isPlugin=false
     for plugin in "${pluginDllNames[@]}"; do
         if [ "$dllName" = "$plugin" ]; then

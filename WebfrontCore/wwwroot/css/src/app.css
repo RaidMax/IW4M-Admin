@@ -107,3 +107,48 @@ button, a {
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
 }
+
+/* ============================================
+   CUSTOM SCROLLBARS (Chromium/WebKit)
+   ============================================ */
+/* Scrollbar dimensions */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+/* Track (the background) */
+::-webkit-scrollbar-track {
+    background: var(--color-surface-alt, hsl(0 0% 10%));
+    border-radius: 8px;
+}
+
+/* Handle (the draggable part) */
+::-webkit-scrollbar-thumb {
+    background: var(--color-line, hsl(0 0% 20%));
+    border-radius: 8px;
+    border: 2px solid var(--color-surface-alt, hsl(0 0% 10%));
+    transition: background 0.2s ease;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted, hsl(0 0% 45%));
+}
+
+/* Handle when actively dragging */
+::-webkit-scrollbar-thumb:active {
+    background: var(--color-primary, hsl(217 91% 60%));
+}
+
+/* Corner where horizontal and vertical scrollbars meet */
+::-webkit-scrollbar-corner {
+    background: var(--color-surface-alt, hsl(0 0% 10%));
+}
+
+/* Firefox scrollbar styling */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line, hsl(0 0% 20%)) var(--color-surface-alt, hsl(0 0% 10%));
+}
+

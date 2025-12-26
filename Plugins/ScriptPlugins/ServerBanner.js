@@ -310,7 +310,7 @@ const plugin = {
                                         </div> 
                                     </div>
                                     <script>
-                                        const serverNameElem = document.getElementById('serverName');
+                                        let serverNameElem = document.getElementById('serverName');
                                         serverNameElem.textContent = '${server.serverName.stripColors()}';
                                     </script>
                                 </body>
@@ -340,7 +340,7 @@ const plugin = {
                                         </div>
                                 </div>
                                 <script>
-                                    const serverNameElem = document.getElementById('serverName');
+                                    let serverNameElem = document.getElementById('serverName');
                                     serverNameElem.textContent = '${server.serverName.stripColors()}';
                                 </script>
                             </body>
@@ -408,7 +408,7 @@ const plugin = {
                                             &lt;/iframe&gt;</div>
                                     </div>
                                     <script>
-                                        const serverNameElem = document.getElementById('serverName');
+                                        let serverNameElem = document.getElementById('serverName');
                                         serverNameElem.textContent = '${eachServer.serverName.stripColors()}';
                                     </script>`;
                     }

@@ -48,6 +48,7 @@ public interface IWebfrontDataService
     Task<string> UnbanClientAsync(int clientId, string reason);
     Task<List<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>> GetChatContextAsync(string serverId, long when);
     Task<List<Dictionary<string, string>>> GetAutomatedPenaltyContextAsync(int penaltyId);
+    Task<ResourceQueryHelperResult<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>> SearchMessagesAsync(ChatSearchQuery request);
     Task<SystemInfo> GetSystemInfoAsync();
     Task<IEnumerable<ClientCountSnapshot>> GetClientHistoryAsync(string serverId);
 }

@@ -1,68 +1,64 @@
-<div id="clientSearchWrapper" class="space-y-4 text-foreground">
-    <!-- Name & Exact Match -->
-    <div class="flex flex-col md:flex-row md:items-end gap-4">
-        <div class="flex-1 space-y-1">
-            <label for="clientName" class="block text-xs font-semibold text-muted uppercase tracking-wider">
-                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"))
-            </label>
-            <input type="text" 
-                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2" 
-                   id="clientName" 
-                   placeholder="Unknown Soldier" 
-                   @bind="Model.ClientName" />
-        </div>
-        <div class="flex items-center pb-2">
-            <label class="relative inline-flex items-center cursor-pointer group">
-                <input type="checkbox" id="isExactClientName" class="sr-only peer" @bind="Model.IsExactClientName">
-                <div class="relative w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
-                <span class="ml-3 text-sm font-medium text-muted group-hover:text-foreground transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</span>
-            </label>
+<div id="clientSearchWrapper" class="space-y-3 text-foreground">
+    <!-- Name Search -->
+    <div class="space-y-1">
+        <label for="clientName" class="block text-xs font-semibold text-muted uppercase tracking-wider">
+            @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_NAME"))
+        </label>
+        <div class="relative">
+            <input type="text"
+                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2 pr-16"
+                   id="clientName"
+                   placeholder="Player name..."
+                   @bind="Model.ClientName"/>
+            <button type="button"
+                    @onclick="() => Model.IsExactClientName = !Model.IsExactClientName"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-xs font-medium transition-colors @(Model.IsExactClientName ? "bg-primary text-white" : "bg-surface-hover text-muted hover:text-foreground")">
+                Exact
+            </button>
         </div>
     </div>
 
-    <!-- IP & Exact Match -->
-    <div class="flex flex-col md:flex-row md:items-end gap-4">
-        <div class="flex-1 space-y-1">
-            <label for="clientIP" class="block text-xs font-semibold text-muted uppercase tracking-wider">
-                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_IP"))
-            </label>
-            <input type="text" 
-                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2" 
-                   id="clientIP" 
-                   placeholder="1.1.1.1" 
-                   @bind="Model.ClientIp" />
-        </div>
-        <div class="flex items-center pb-2">
-            <label class="relative inline-flex items-center cursor-pointer group">
-                <input type="checkbox" id="isExactClientIP" class="sr-only peer" @bind="Model.IsExactClientIp">
-                <div class="relative w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
-                <span class="ml-3 text-sm font-medium text-muted group-hover:text-foreground transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_EXACT"))</span>
-            </label>
+    <!-- IP Search -->
+    <div class="space-y-1">
+        <label for="clientIP" class="block text-xs font-semibold text-muted uppercase tracking-wider">
+            @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_IP"))
+        </label>
+        <div class="relative">
+            <input type="text"
+                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2 pr-16"
+                   id="clientIP"
+                   placeholder="1.1.1.1"
+                   @bind="Model.ClientIp"/>
+            <button type="button"
+                    @onclick="() => Model.IsExactClientIp = !Model.IsExactClientIp"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-xs font-medium transition-colors @(Model.IsExactClientIp ? "bg-primary text-white" : "bg-surface-hover text-muted hover:text-foreground")">
+                Exact
+            </button>
         </div>
     </div>
 
-    <!-- IDs -->
+    <!-- GUID/Network ID -->
     <div class="space-y-1">
         <label for="clientGuid" class="block text-xs font-semibold text-muted uppercase tracking-wider">
-            GUID <span class="text-primary">&bull;</span> XUID <span class="text-primary">&bull;</span> NetworkID
+            GUID / XUID / Network ID
         </label>
-        <input type="text" 
-               class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2" 
-               id="clientGuid" 
-               placeholder="110000100000001" 
-               @bind="Model.ClientGuid" />
+        <input type="text"
+               class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2"
+               id="clientGuid"
+               placeholder="110000100000001"
+               @bind="Model.ClientGuid"/>
     </div>
 
     <!-- Level & Game -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-2 gap-3">
         <div class="space-y-1">
             <label for="clientLevel" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_PERMISSION"))
             </label>
-            <select class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2" 
-                    id="clientLevel" 
+            <select class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-sm px-2 py-2"
+                    id="clientLevel"
                     @bind="Model.ClientLevel">
-                <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
+                <option value="">Any</option>
                 @foreach (EFClient.Permission permission in Enum.GetValues(typeof(EFClient.Permission)))
                 {
                     <option value="@permission">@permission.ToString()</option>
@@ -73,10 +69,10 @@
             <label for="clientGameName" class="block text-xs font-semibold text-muted uppercase tracking-wider">
                 @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_GAME"))
             </label>
-            <select class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2" 
-                    id="clientGameName" 
+            <select class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-sm px-2 py-2"
+                    id="clientGameName"
                     @bind="Model.GameName">
-                <option value="">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_PERMISSIONS_ANY"))</option>
+                <option value="">Any</option>
                 @foreach (Reference.Game game in Enum.GetValues(typeof(Reference.Game)))
                 {
                     <option value="@game">@game.ToString()</option>
@@ -85,30 +81,27 @@
         </div>
     </div>
 
-    <!-- Connected & Order -->
-    <div class="flex flex-col md:flex-row md:items-end gap-4">
-        <div class="flex-1 space-y-1">
-            <label for="clientConnected" class="block text-xs font-semibold text-muted uppercase tracking-wider">
-                @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"))
-            </label>
-            <!-- [color-scheme:dark] ensures the native calendar popup is dark -->
-            <input type="datetime-local" 
-                   class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2 [color-scheme:dark]" 
-                   id="clientConnected" 
-                   @bind="Model.ClientConnected" />
-        </div>
-        <div class="flex items-center">
-            <label class="relative inline-flex items-center cursor-pointer group">
-                <input type="checkbox" id="resultOrder" class="sr-only peer" @bind="IsAscending">
-                <div class="relative w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
-                <span class="ml-3 text-sm font-medium text-muted group-hover:text-foreground transition-colors">@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_OLDEST_FIRST"))</span>
-            </label>
-        </div>
+    <!-- Last Connected -->
+    <div class="space-y-1">
+        <label for="clientConnected" class="block text-xs font-semibold text-muted uppercase tracking-wider">
+            @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_CONNECTED_SINCE"))
+        </label>
+        <input type="datetime-local"
+               class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-sm px-3 py-2 [color-scheme:dark]"
+               id="clientConnected"
+               @bind="Model.ClientConnected"/>
     </div>
 
-    <div class="pt-2">
-        <button class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+    <!-- Options & Submit -->
+    <div class="flex items-center justify-between pt-1">
+        <label class="relative inline-flex items-center cursor-pointer group">
+            <input type="checkbox" id="resultOrder" class="sr-only peer" @bind="IsAscending">
+            <div class="w-8 h-4 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
+            <span class="ml-2 text-sm text-muted group-hover:text-foreground transition-colors">Oldest first</span>
+        </label>
+        <button class="flex items-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-white bg-primary hover:bg-action-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                 @onclick="Submit">
+            <i class="ph ph-magnifying-glass"></i>
             @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_BUTTON_SUBMIT"))
         </button>
     </div>

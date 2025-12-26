@@ -53,6 +53,21 @@ public class AppState
         }
     }
 
+    private bool _isAdvancedSearchOpen;
+
+    public bool IsAdvancedSearchOpen
+    {
+        get => _isAdvancedSearchOpen;
+        set
+        {
+            if (_isAdvancedSearchOpen != value)
+            {
+                _isAdvancedSearchOpen = value;
+                NotifyStateChanged();
+            }
+        }
+    }
+
     private string _activeServerId;
 
     public string ActiveServerId

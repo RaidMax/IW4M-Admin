@@ -15,7 +15,7 @@
 @if (!Model.ClientInfo.Any())
 {
     <div class="bg-surface rounded-lg p-12 text-center border border-line">
-        <i class="ph ph-users text-4xl text-subtle mb-4"></i>
+        <i class="ph ph-users text-4xl text-secondary mb-4"></i>
         <div class="text-muted text-lg">@(AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS"))</div>
     </div>
 }
@@ -162,4 +162,3 @@ else
         </table>
     };
 }
-

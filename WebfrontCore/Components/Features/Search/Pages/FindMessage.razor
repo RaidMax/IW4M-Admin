@@ -1,0 +1,222 @@
+@page "/Stats/FindMessage"
+@page "/find-message"
+@rendermode InteractiveServer
+
+<PageTitle>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT") | IW4MAdmin</PageTitle>
+
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+            <i class="ph ph-chat-circle-text text-xl text-primary"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT")</h2>
+            <div class="text-sm text-subtle font-medium mt-0.5">
+                @Results.Count.ToString("#,##0") messages found
+            </div>
+        </div>
+    </div>
+
+    <div class="md:bg-surface md:rounded-lg md:border md:border-line md:shadow-sm md:overflow-hidden">
+        <!-- Desktop Table -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-surface-alt/50">
+                <tr>
+                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</th>
+                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ACTION_LABEL_MESSAGE")</th>
+                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER")</th>
+                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted text-right">@AppState.Loc("WEBFRONT_SEARCH_TIME")</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                @if (_isLoading && Results.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="p-12 text-center text-muted">
+                            <i class="ph ph-spinner animate-spin text-4xl text-primary mx-auto mb-4"></i>
+                            <div class="text-lg">Loading results...</div>
+                        </td>
+                    </tr>
+                }
+                else if (Results.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="p-12 text-center text-muted">
+                            <i class="ph ph-chat-circle-text text-4xl mb-4 text-subtle mx-auto"></i>
+                            <div class="text-lg">No messages found</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var message in Results)
+                    {
+                        <tr class="hover:bg-surface-hover/30 transition-colors group cursor-pointer"
+                            @onclick="() => OpenContextModal(message)">
+                            <td class="p-4">
+                                <a href="/client/@message.ClientId"
+                                   class="font-medium hover:text-primary transition-colors text-foreground"
+                                   @onclick:stopPropagation="true">
+                                    <ColorCode Value="@message.ClientName"/>
+                                </a>
+                            </td>
+                            <td class="p-4 text-sm text-subtle max-w-md truncate">
+                                <ColorCode Value="@message.Message"/>
+                            </td>
+                            <td class="p-4 text-sm text-muted">
+                                <ColorCode Value="@message.ServerName"/>
+                            </td>
+                            <td class="p-4 text-sm text-muted text-right">@message.When.HumanizeForCurrentCulture()</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile List -->
+        <div class="md:hidden space-y-4">
+            @if (_isLoading && Results.Count == 0)
+            {
+                <div class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            }
+            else if (Results.Count == 0)
+            {
+                <div class="text-center py-12 text-muted bg-surface rounded-lg border border-line border-dashed">
+                    <i class="ph ph-chat-circle-text text-4xl mb-3 text-subtle mx-auto"></i>
+                    <div>No messages found</div>
+                </div>
+            }
+            else
+            {
+                foreach (var message in Results)
+                {
+                    <div
+                        class="bg-surface border border-line rounded-lg p-4 shadow-sm cursor-pointer hover:bg-surface-hover/30 transition-colors"
+                        @onclick="() => OpenContextModal(message)">
+                        <div class="flex justify-between items-start mb-2">
+                            <a href="/client/@message.ClientId"
+                               class="font-bold text-foreground hover:text-primary transition-colors"
+                               @onclick:stopPropagation="true">
+                                <ColorCode Value="@message.ClientName"/>
+                            </a>
+                            <span class="text-xs text-muted">@message.When.HumanizeForCurrentCulture()</span>
+                        </div>
+                        <div class="text-sm text-subtle mb-2">
+                            <ColorCode Value="@message.Message"/>
+                        </div>
+                        <div class="text-xs text-muted">
+                            <ColorCode Value="@message.ServerName"/>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Load More / Status -->
+    <div id="loadMoreMessageTrigger" class="mt-6 flex justify-center py-4">
+        @if (_isLoading && Results.Count > 0)
+        {
+            <div class="flex items-center gap-2 text-muted animate-pulse">
+                <i class="ph ph-spinner animate-spin text-xl"></i>
+                <span>Loading more...</span>
+            </div>
+        }
+        else if (_hasMore)
+        {
+            <div class="h-10"></div>
+            <!-- Sentinel spacer -->
+        }
+        else if (Results.Count > 0)
+        {
+            <div class="text-muted italic text-sm">No more results</div>
+        }
+    </div>
+</div>
+
+<!-- Chat Context Modal -->
+@if (_showContextModal && _selectedMessage != null)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @onclick="CloseContextModal"></div>
+
+        <!-- Modal -->
+        <div
+            class="relative bg-surface rounded-lg shadow-xl border border-line max-w-2xl w-full max-h-[80vh] flex flex-col z-10">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b border-line">
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-chat-circle-text text-secondary"></i>
+                    <h3 class="font-semibold text-foreground">Chat Context</h3>
+                    <span class="text-xs text-muted">±5 minutes</span>
+                </div>
+                <button @onclick="CloseContextModal" class="text-muted hover:text-foreground transition-colors">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto p-4 bg-surface-alt/20">
+                @if (_contextLoading)
+                {
+                    <div class="flex items-center justify-center py-8">
+                        <i class="ph ph-spinner animate-spin text-3xl text-primary"></i>
+                    </div>
+                }
+                else if (_contextMessages != null && _contextMessages.Count > 0)
+                {
+                    <div class="space-y-1">
+                        @foreach (var msg in _contextMessages)
+                        {
+                            var isSelected = msg.When == _selectedMessage.When && msg.ClientId == _selectedMessage.ClientId && msg.Message == _selectedMessage.Message;
+                            <div
+                                class="group rounded-md px-3 py-2 transition-colors @(isSelected ? "bg-primary/15 ring-1 ring-primary/30" : "hover:bg-surface-hover/50")">
+                                <div class="flex items-start gap-3">
+                                    <!-- Timestamp -->
+                                    <span class="text-[11px] font-mono text-muted/70 pt-0.5 shrink-0 w-14">
+                                        @msg.When.ToString("HH:mm:ss")
+                                    </span>
+
+                                    <!-- Message Content -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-baseline gap-2 flex-wrap">
+                                            <a href="/client/@msg.ClientId"
+                                               class="font-semibold text-sm text-primary shrink-0">
+                                                <ColorCode Value="@msg.ClientName"/>
+                                            </a>
+                                            <span class="text-sm text-foreground/90 break-words">
+                                                <ColorCode Value="@msg.Message"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-8 text-muted">
+                        <i class="ph ph-chat-circle-text text-3xl mb-2"></i>
+                        <div>No context messages found</div>
+                    </div>
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-line bg-surface-alt/30">
+                <div class="flex items-center justify-between text-xs text-muted">
+                    <span>
+                        <ColorCode Value="@_selectedMessage.ServerName"/>
+                    </span>
+                    <span>@_selectedMessage.When.ToString("g")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}

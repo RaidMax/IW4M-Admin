@@ -1338,6 +1338,11 @@ public class WebfrontDataService : IWebfrontDataService
         return claimsPrincipal;
     }
 
+    public async Task<ResourceQueryHelperResult<MessageResponse>> SearchMessagesAsync(ChatSearchQuery request)
+    {
+        return await _chatQueryHelper.QueryResource(request);
+    }
+
     private bool HasPermission(WebfrontEntity entity, WebfrontPermission permission)
     {
         var role = GetRequestingPermission();

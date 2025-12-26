@@ -1,4 +1,5 @@
 @rendermode InteractiveServer
+@using Data.Models
 @inject IWebfrontDataService DataService
 @inject IActionService ActionService
 
@@ -17,17 +18,25 @@ else
 }
 
 @code {
-    private List<ServerInfo>? _servers;
+    [Parameter] public Reference.Game? Game { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private List<ServerInfo>? _servers;
+    private Reference.Game? _lastGame;
+
+    protected override async Task OnParametersSetAsync()
     {
-        try
+        // Only reload if game filter changed
+        if (_servers == null || _lastGame != Game)
         {
-            _servers = await DataService.GetServersAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[ServerList] ERROR in OnInitializedAsync: {ex}");
+            _lastGame = Game;
+            try
+            {
+                _servers = await DataService.GetServersAsync(Game);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ServerList] ERROR in OnParametersSetAsync: {ex}");
+            }
         }
     }
 
@@ -35,4 +44,5 @@ else
     {
         ActionService.OpenAction("Chat", serverId: serverId, targetId: null, meta: null);
     }
+
 }

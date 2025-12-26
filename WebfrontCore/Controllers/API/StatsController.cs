@@ -86,6 +86,14 @@ namespace WebfrontCore.Controllers.API
             return Ok(messages);
         }
 
+        [HttpGet("message/search")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchMessages([FromQuery] Stats.Dtos.ChatSearchQuery request)
+        {
+            var result = await dataService.SearchMessagesAsync(request);
+            return Ok(result);
+        }
+
         [HttpGet("penalty/{penaltyId:int}/context")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

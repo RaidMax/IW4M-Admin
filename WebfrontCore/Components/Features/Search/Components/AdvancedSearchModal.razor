@@ -1,0 +1,49 @@
+@inject AppState AppState
+@implements IDisposable
+
+@if (AppState.IsAdvancedSearchOpen)
+{
+    <!-- Backdrop -->
+    <div class="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm" @onclick="Close"></div>
+    
+    <!-- Modal -->
+    <div class="fixed left-0 right-0 top-1/2 -translate-y-1/2 mx-4 z-[101] md:left-1/2 md:-translate-x-1/2 md:mx-0 md:w-[32rem] rounded-lg shadow-xl bg-surface ring-1 ring-black/10 border border-line max-h-[85vh] overflow-y-auto">
+        <div class="p-4">
+            <div class="flex items-center justify-between mb-4 border-b border-line pb-2">
+                <h3 class="text-sm font-bold text-foreground uppercase tracking-wider">
+                    @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))
+                </h3>
+                <button type="button" @onclick="Close" class="text-muted hover:text-foreground p-1 transition-colors">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Tab Navigation -->
+                <div class="flex border-b border-line">
+                    <button type="button"
+                            @onclick="@(() => _searchType = "client")"
+                            class="@GetTabClass("client")">
+                        <i class="ph ph-user mr-1.5"></i>
+                        @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_PLAYERS"))
+                    </button>
+                    <button type="button"
+                            @onclick="@(() => _searchType = "chat")"
+                            class="@GetTabClass("chat")">
+                        <i class="ph ph-chat-circle-text mr-1.5"></i>
+                        @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT"))
+                    </button>
+                </div>
+
+                @if (_searchType == "client")
+                {
+                    <ClientSearch/>
+                }
+                else
+                {
+                    <ChatSearch/>
+                }
+            </div>
+        </div>
+    </div>
+}

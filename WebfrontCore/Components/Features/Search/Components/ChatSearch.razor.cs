@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
@@ -14,6 +15,7 @@ public partial class ChatSearch
     [Parameter] public ChatResourceRequest Model { get; set; } = new();
     private DateTime LocalSentAfter { get; set; }
     private DateTime LocalSentBefore { get; set; }
+    private bool _oldestFirst { get; set; }
 
     protected override void OnInitialized()
     {
@@ -38,10 +40,11 @@ public partial class ChatSearch
             { "sentAfter", Model.SentAfter?.ToString("s", CultureInfo.InvariantCulture) },
             { "sentAfterTime", Model.SentAfterTime },
             { "sentBefore", Model.SentBefore.ToString("s", CultureInfo.InvariantCulture) },
-            { "sentBeforeTime", Model.SentBeforeTime }
+            { "sentBeforeTime", Model.SentBeforeTime },
+            { "direction", _oldestFirst ? (int)SortDirection.Ascending : (int)SortDirection.Descending }
         };
 
-        var url = NavManager.GetUriWithQueryParameters("/Stats/FindMessage", query);
+        var url = NavManager.GetUriWithQueryParameters("find-message", query);
         NavManager.NavigateTo(url, forceLoad: true);
     }
 }

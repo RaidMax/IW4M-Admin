@@ -73,7 +73,7 @@ else
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="text-xs font-bold uppercase tracking-wider text-amber-500">Admin Notice</span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-amber-500">@AppState.Loc("WEBFRONT_ACTION_NOTE_FORM_NOTE")</span>
                             </div>
                             <div class="text-sm text-amber-200/90 leading-relaxed">
                                 @foreach (var line in Client.NoteMeta.Note.Split("\n"))
@@ -161,8 +161,8 @@ else
                     <div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-transparent rounded-2xl overflow-hidden"></div>
                 }
                 
-                <div class="relative p-6 md:p-8">
-                    <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                <div class="relative p-4 md:p-6 lg:p-8">
+                    <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
                         
                         @* Avatar *@
                         <div class="relative shrink-0 flex justify-center lg:justify-start">
@@ -177,7 +177,7 @@ else
                                 }
                                 
                                 @* Avatar Image *@
-                                <div class="w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-surface-alt bg-cover bg-center shadow-2xl flex items-center justify-center overflow-hidden border-4 @(isPermBanned || isTempBanned ? "border-error" : "border-line") @ClassForProfileBackground()"
+                                <div class="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-2xl bg-surface-alt bg-cover bg-center shadow-2xl flex items-center justify-center overflow-hidden border-4 @(isPermBanned || isTempBanned ? "border-error" : "border-line") @ClassForProfileBackground()"
                                      style="background-image:url('@($"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg")')">
                                     @if (string.IsNullOrEmpty(gravatarUrl))
                                     {
@@ -200,12 +200,12 @@ else
                                     <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.MetaAliasUpdate}.{WebfrontPermission.Read}")">
                                         @if (Client.Aliases?.Any() == true)
                                         {
-                                            <div class="relative group">
+                                            <div class="relative group" tabindex="0">
                                                 <button class="flex items-center justify-center w-8 h-8 rounded-full bg-surface-alt hover:bg-line text-muted hover:text-foreground transition-all">
                                                     <i class="ph ph-clock-counter-clockwise text-lg"></i>
                                                 </button>
                                                 
-                                                <div class="absolute left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 mt-2 w-72 bg-surface-alt border border-line rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                                                <div class="absolute left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 mt-2 w-72 bg-surface-alt border border-line rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50 overflow-hidden">
                                                     <div class="px-4 py-2 bg-surface border-b border-line">
                                                         <span class="text-xs font-bold uppercase tracking-wider text-muted">Previous Names</span>
                                                     </div>
@@ -218,7 +218,7 @@ else
                                                                     <span class="text-sm truncate"><ColorCode Value="@alias.Value"/></span>
                                                                     <span class="text-[10px] text-muted">@alias.Date.HumanizeForCurrentCulture()</span>
                                                                 </div>
-                                                                <i class="ph ph-arrow-right text-muted"></i>
+                                                                <i class="ph ph-magnifying-glass text-muted"></i>
                                                             </a>
                                                         }
                                                     </div>
@@ -278,12 +278,12 @@ else
                             @* Quick Info Pills *@
                             <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm">
                                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
-                                    <div class="relative group">
+                                    <div class="relative group" tabindex="0">
                                         <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-alt/50 border border-line text-muted hover:text-foreground hover:border-line-hover transition-all cursor-pointer">
                                             <i class="ph ph-fingerprint"></i>
                                             <span class="font-mono text-xs">@Client.NetworkId.ToString("X")</span>
                                         </span>
-                                        <div class="absolute left-0 mt-2 px-3 py-2 bg-surface-alt border border-line rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 whitespace-nowrap">
+                                        <div class="absolute left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 mt-2 px-3 py-2 bg-surface-alt border border-line rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 whitespace-nowrap">
                                             <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Decimal</div>
                                             <div class="font-mono text-sm select-all">@((ulong)Client.NetworkId)</div>
                                         </div>
@@ -291,14 +291,14 @@ else
                                 </AuthorizeView>
                                 
                                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                    <div class="relative group">
+                                    <div class="relative group" tabindex="0">
                                         <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-alt/50 border border-line text-muted hover:text-foreground hover:border-line-hover transition-all cursor-pointer">
                                             <i class="ph ph-globe"></i>
                                             <span class="font-mono text-xs">@Client.IPAddress</span>
                                         </span>
                                         @if (Client.IPs?.Any(ip => !string.IsNullOrEmpty(ip.Value)) == true)
                                         {
-                                            <div class="absolute left-0 mt-2 w-64 bg-surface-alt border border-line rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                                            <div class="absolute left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 mt-2 w-64 bg-surface-alt border border-line rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 overflow-hidden">
                                                 <div class="px-3 py-2 bg-surface border-b border-line">
                                                     <span class="text-[10px] font-bold uppercase tracking-wider text-muted">IP History</span>
                                                 </div>

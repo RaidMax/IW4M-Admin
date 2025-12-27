@@ -103,7 +103,8 @@
 }
 
 /* Misc */
-button, a {
+button,
+a {
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
 }
@@ -152,3 +153,45 @@ button, a {
     scrollbar-color: var(--color-line, hsl(0 0% 20%)) var(--color-surface-alt, hsl(0 0% 10%));
 }
 
+/* ============================================
+   MARQUEE TEXT ANIMATIONS
+   For long text that scrolls on hover
+   ============================================ */
+@keyframes marquee {
+
+    0%,
+    15% {
+        transform: translateX(0);
+    }
+
+    85%,
+    100% {
+        transform: translateX(calc(-100% + 80px));
+    }
+}
+
+/* Base text style for marquee items */
+.marquee-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+/* Menu item marquee - triggers on container hover */
+.menu-item-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.marquee-enabled .menu-item-text {
+    animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}
+
+/* Meta card marquee - always on for long values, duration from CSS variable */
+.meta-value-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.meta-value-text.marquee-enabled {
+    animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}

@@ -98,40 +98,53 @@ public class InteractionRegistration : IInteractionRegistration
             throw new ArgumentException($"Interaction with ID {interactionId} has not been registered");
         }
 
+        using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+        tokenSource.CancelAfter(5000);
+
         try
         {
-            var interaction = await _interactions[interactionId](targetId, game, token);
-
-            if (interaction.Action is not null)
+            // Run on background thread with timeout to prevent blocking UI
+            return await Task.Run(async () =>
             {
-                return await interaction.Action(originId, targetId, game, meta, token);
-            }
+                var interaction = await _interactions[interactionId](targetId, game, tokenSource.Token);
 
-            if (interaction.ScriptAction is not null)
-            {
-                foreach (var plugin in _serviceProvider.GetRequiredService<IEnumerable<IPlugin>>())
+                if (interaction.Action is not null)
                 {
-                    if (plugin is not ScriptPlugin scriptPlugin || scriptPlugin.Name != interaction.Source)
-                    {
-                        continue;
-                    }
+                    return await interaction.Action(originId, targetId, game, meta, tokenSource.Token);
+                }
 
-                    return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, token, originId, targetId, game, meta,
-                        token);
+                if (interaction.ScriptAction is not null)
+                {
+                    foreach (var plugin in _serviceProvider.GetRequiredService<IEnumerable<IPlugin>>())
+                    {
+                        if (plugin is not ScriptPlugin scriptPlugin || scriptPlugin.Name != interaction.Source)
+                        {
+                            continue;
+                        }
+
+                        return scriptPlugin.ExecuteAction<string>(interaction.ScriptAction, tokenSource.Token, originId, targetId, game, meta,
+                            tokenSource.Token);
+                    }
+                    
+                    foreach (var plugin in _serviceProvider.GetRequiredService<IEnumerable<IPluginV2>>())
+                    {
+                        if (plugin is not ScriptPluginV2 scriptPlugin || scriptPlugin.Name != interaction.Source)
+                        {
+                            continue;
+                        }
+
+                        return scriptPlugin
+                            .QueryWithErrorHandling(interaction.ScriptAction, originId, targetId, game, meta, tokenSource.Token)
+                            ?.ToString();
+                    }
                 }
                 
-                foreach (var plugin in _serviceProvider.GetRequiredService<IEnumerable<IPluginV2>>())
-                {
-                    if (plugin is not ScriptPluginV2 scriptPlugin || scriptPlugin.Name != interaction.Source)
-                    {
-                        continue;
-                    }
-
-                    return scriptPlugin
-                        .QueryWithErrorHandling(interaction.ScriptAction, originId, targetId, game, meta, token)
-                        ?.ToString();
-                }
-            }
+                return null;
+            }, tokenSource.Token).WaitAsync(tokenSource.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("ProcessInteraction {InteractionName} timed out after 5 seconds", interactionId);
         }
         catch (Exception ex)
         {
@@ -146,13 +159,24 @@ public class InteractionRegistration : IInteractionRegistration
     private async Task<IEnumerable<IInteractionData>> GetInteractionsInternal(string prefix = null,
         int? clientId = null, Reference.Game? game = null, CancellationToken token = default)
     {
+        using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+        tokenSource.CancelAfter(5000);
+        
         var interactions = _interactions
             .Where(interaction => string.IsNullOrWhiteSpace(prefix) || interaction.Key.StartsWith(prefix)).Select(
                 async kvp =>
                 {
                     try
                     {
-                        return await kvp.Value(clientId, game, token);
+                        // Run on a background thread so synchronous blocking calls don't freeze the main thread
+                        // WaitAsync ensures we abandon the task after 5 seconds regardless
+                        return await Task.Run(() => kvp.Value(clientId, game, tokenSource.Token), tokenSource.Token)
+                            .WaitAsync(tokenSource.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogWarning("Interaction {InteractionName} timed out after 5 seconds", kvp.Key);
+                        return null;
                     }
                     catch (Exception ex)
                     {

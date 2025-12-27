@@ -32,21 +32,22 @@ else if (_groupedMeta.Any())
                         var isLongValue = valueLength > 15;
                         // Scale duration: ~0.5s per character over 15, minimum 5s
                         var marqueeDuration = isLongValue ? Math.Max(5, (valueLength - 15) * 0.5 + 5) : 0;
-                        <div class="meta-card relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")"
-                             title="@(string.IsNullOrEmpty(item.ToolTipText) ? $"{item.Key}: {item.Value}" : item.ToolTipText)">
-                            @if (isHighlight)
-                            {
-                                <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent rounded-t-xl"></div>
-                            }
-                            <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
-                                <span class="meta-value-text @(isLongValue ? "marquee-enabled" : "")" style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
-                                    <ColorCode Value="@item.Value" />
-                                </span>
+                        <Tooltip Text="@item.ToolTipText">
+                            <div class="meta-card relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")">
+                                @if (isHighlight)
+                                {
+                                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent rounded-t-xl"></div>
+                                }
+                                <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
+                                    <span class="meta-value-text @(isLongValue ? "marquee-enabled" : "")" style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
+                                        <ColorCode Value="@item.Value" />
+                                    </span>
+                                </div>
+                                <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">
+                                    @item.Key.Titleize()
+                                </div>
                             </div>
-                            <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">
-                                @item.Key.Titleize()
-                            </div>
-                        </div>
+                        </Tooltip>
                     }
                 </div>
             </div>

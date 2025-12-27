@@ -54,23 +54,6 @@
     @RenderMenuContent()
 </div>
 
-@* Marquee animation styles *@
-<style>
-    @@keyframes marquee {
-        0% { transform: translateX(0); }
-        15% { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-    }
-    
-    .menu-item-text {
-        display: inline-block;
-        white-space: nowrap;
-    }
-    
-    .marquee-enabled .menu-item-text {
-        animation: marquee 5s linear infinite alternate;
-    }
-</style>
 
 @code {
     private RenderFragment RenderMobileMenuContent() => __builder =>

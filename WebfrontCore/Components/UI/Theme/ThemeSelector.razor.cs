@@ -21,6 +21,8 @@ public partial class ThemeSelector
     private int _secondarySaturation;
     private int _secondaryLightness;
 
+    private bool _isLoading = true;
+
     // Computed defaults from server config
     private string DefaultPreset => AppConfig?.Webfront?.ThemePreset ?? "minimal";
     private string DefaultPrimaryColor => AppConfig?.Webfront?.PrimaryColor ?? "blue";
@@ -37,13 +39,23 @@ public partial class ThemeSelector
         "indigo", "slate", "gray", "zinc", "neutral", "stone"
     };
 
+    protected override void OnInitialized()
+    {
+        // Set defaults synchronously so UI can render immediately
+        ApplyServerDefaults();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            NavigationManager.LocationChanged += OnLocationChanged;
+            
+            // Load user preferences and apply theme in background
             await LoadFromStorage();
             await ApplyTheme();
-            NavigationManager.LocationChanged += OnLocationChanged;
+            
+            _isLoading = false;
             StateHasChanged();
         }
     }

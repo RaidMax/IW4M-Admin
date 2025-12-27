@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Web;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
@@ -19,13 +20,39 @@ public partial class ChatSearch
 
     protected override void OnInitialized()
     {
+        // Parse query params from current URL to pre-populate form
+        var uri = new Uri(NavManager.Uri);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+
+        if (!string.IsNullOrEmpty(query["messageContains"]))
+            Model.MessageContains = query["messageContains"];
+        if (bool.TryParse(query["isExactMatch"], out var exact))
+            Model.IsExactMatch = exact;
+        if (int.TryParse(query["clientId"], out var clientId))
+            Model.ClientId = clientId;
+        if (!string.IsNullOrEmpty(query["serverId"]))
+            Model.ServerId = query["serverId"];
+        if (DateTime.TryParse(query["sentAfter"], out var after))
+            Model.SentAfter = after;
+        if (!string.IsNullOrEmpty(query["sentAfterTime"]))
+            Model.SentAfterTime = query["sentAfterTime"];
+        if (DateTime.TryParse(query["sentBefore"], out var before))
+            Model.SentBefore = before;
+        if (!string.IsNullOrEmpty(query["sentBeforeTime"]))
+            Model.SentBeforeTime = query["sentBeforeTime"];
+        if (int.TryParse(query["direction"], out var dir))
+            _oldestFirst = dir == (int)SortDirection.Ascending;
+
         LocalSentAfter = Model.SentAfterDateTime ?? DateTime.UtcNow.AddHours(-1);
         LocalSentBefore = Model.SentBeforeDateTime ?? DateTime.UtcNow;
     }
 
     private void Submit()
     {
-        // Update model properties (optional, mainly for query building)
+        // Close the modal
+        AppState.IsAdvancedSearchOpen = false;
+
+        // Update model properties
         Model.SentAfter = LocalSentAfter.Date;
         Model.SentAfterTime = LocalSentAfter.ToString("HH:mm");
         Model.SentBefore = LocalSentBefore.Date;

@@ -373,7 +373,7 @@ const plugin = {
                     }
                 }
 
-                let response = '<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">';
+                let response = '<div class="grid grid-cols-1 gap-6">';
                 Object.keys(serverOrderCache).forEach(key => {
                     const servers = serverOrderCache[key];
                     for (let i = 0; i < servers.length; i++) {

@@ -666,7 +666,8 @@ public class WebfrontDataService : IWebfrontDataService
                     ZScore = clientData.stats?.ZScore == null || clientData.stats.ZScore == 0
                         ? null
                         : clientData.stats.ZScore,
-                    Team = clientData.client.Team
+                    Team = clientData.client.Team,
+                    Level = clientData.client.Level
                 })
                 .ToList()
         });
@@ -1066,6 +1067,11 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<IEnumerable<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request)
     {
+        if (!request.HasData)
+        {
+            return [];
+        }
+
         var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
         var canViewLevel = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
 

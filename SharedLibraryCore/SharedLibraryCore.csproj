@@ -22,6 +22,7 @@
         <PackageVersion>2025.12.24.1</PackageVersion>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
+        <ImplicitUsings>true</ImplicitUsings>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Prerelease|AnyCPU'">

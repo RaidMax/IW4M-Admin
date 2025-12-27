@@ -276,7 +276,8 @@ public class Plugin : IPluginV2
                         ),
                     Column = 0,
                     Order = 0,
-                    Type = MetaType.Information
+                    Type = MetaType.Information,
+                    Category = "Statistics"
                 },
                 new InformationResponse
                 {
@@ -285,7 +286,8 @@ public class Plugin : IPluginV2
                         new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Column = 0,
                     Order = 1,
-                    Type = MetaType.Information
+                    Type = MetaType.Information,
+                    Category = "Statistics"
                 },
                 new InformationResponse
                 {
@@ -294,7 +296,8 @@ public class Plugin : IPluginV2
                         new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Column = 0,
                     Order = 2,
-                    Type = MetaType.Information
+                    Type = MetaType.Information,
+                    Category = "Statistics"
                 },
                 new InformationResponse
                 {
@@ -303,7 +306,8 @@ public class Plugin : IPluginV2
                         new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Column = 0,
                     Order = 3,
-                    Type = MetaType.Information
+                    Type = MetaType.Information,
+                    Category = "Statistics"
                 },
                 new InformationResponse
                 {
@@ -312,7 +316,8 @@ public class Plugin : IPluginV2
                         new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Column = 0,
                     Order = 4,
-                    Type = MetaType.Information
+                    Type = MetaType.Information,
+                    Category = "Statistics"
                 },
                 new InformationResponse
                 {
@@ -321,7 +326,8 @@ public class Plugin : IPluginV2
                         new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                     Column = 0,
                     Order = 5,
-                    Type = MetaType.Information
+                    Type = MetaType.Information,
+                    Category = "Statistics"
                 }
             };
         }
@@ -395,7 +401,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 100,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM1"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 },
                 new InformationResponse()
                 {
@@ -405,7 +412,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 101,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM2"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 },
                 new InformationResponse()
                 {
@@ -415,7 +423,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 102,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM3"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 },
                 new InformationResponse()
                 {
@@ -425,7 +434,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 103,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM4"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 },
                 new InformationResponse()
                 {
@@ -436,7 +446,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 104,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM5"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 },
                 new InformationResponse()
                 {
@@ -446,7 +457,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 105,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM6"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 },
                 new InformationResponse()
                 {
@@ -456,7 +468,8 @@ public class Plugin : IPluginV2
                     Type = MetaType.Information,
                     Order = 106,
                     ToolTipText = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_TITLE_ACM7"],
-                    IsSensitive = true
+                    IsSensitive = true,
+                    Category = "AntiCheat"
                 }
             };
         }

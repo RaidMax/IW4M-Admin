@@ -3,7 +3,7 @@
             @onclick="ToggleDropdown" 
             @onclick:stopPropagation
             title="@(Alerts.Any() ? AppState.Loc("WEBFRONT_ALERTS_SOME_TOOLTIP") : AppState.Loc("WEBFRONT_ALERTS_NONE_TOOLTIP"))">
-        <i class="ph ph-bell-simple text-xl"></i>
+        <i class="ph ph-bell-simple text-xl flex justify-center"></i>
         @if (Alerts.Any())
         {
             <span class="absolute top-2 right-2 flex h-2.5 w-2.5">
@@ -21,7 +21,7 @@
                     @(AppState.Loc("WEBFRONT_ALERTS_POPOVER_COUNT").FormatExt(Alerts.Count))
                 </h6>
                 <button class="text-muted hover:text-error transition-colors" @onclick="DismissAll" title="Dismiss All">
-                    <i class="ph ph-trash"></i>
+                    <i class="ph ph-trash flex justify-center"></i>
                 </button>
             </div>
             

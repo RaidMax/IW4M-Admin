@@ -36,8 +36,8 @@
         <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest"/>
         <None Remove="Properties\launchSettings.json"/>
         <Content Update="tailwind.config.js">
-          <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-          <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         </Content>
     </ItemGroup>
 
@@ -55,7 +55,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="wwwroot\images\banners\" />
+        <Folder Include="wwwroot\images\banners\"/>
         <Folder Include="wwwroot\lib\canvas.js\"/>
     </ItemGroup>
 
@@ -69,18 +69,18 @@
         <Content Update="libman.json">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
-        <Content Remove="wwwroot\lib\**" />
+        <Content Remove="wwwroot\lib\**"/>
         <Content Update="wwwroot\font\phosphor\**\*.*">
             <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.eot" />
-      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.otf" />
-      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.svg" />
-      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.ttf" />
-      <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.woff" />
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.eot"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.otf"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.svg"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.ttf"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.woff"/>
     </ItemGroup>
 
     <ProjectExtensions>
@@ -96,9 +96,9 @@
             <TailwindUrl Condition="$([MSBuild]::IsOSPlatform('Windows'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-windows-x64.exe</TailwindUrl>
             <TailwindUrl Condition="$([MSBuild]::IsOSPlatform('Linux'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64</TailwindUrl>
         </PropertyGroup>
-        <MakeDir Directories="Tools" />
-        <Exec Command="curl -sL $(TailwindUrl) -o $(TailwindExe)" />
-        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" Command="chmod +x $(TailwindExe)" />
+        <MakeDir Directories="Tools"/>
+        <Exec Command="curl -sL $(TailwindUrl) -o $(TailwindExe)"/>
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" Command="chmod +x $(TailwindExe)"/>
     </Target>
 
     <Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="DownloadTailwind" Condition="'$(Configuration)' == 'Debug' OR '$(RunTailwind)' == 'true'">
@@ -106,16 +106,16 @@
             <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(ProjectDir)Tools\tailwindcss.exe</TailwindExe>
             <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(ProjectDir)Tools/tailwindcss</TailwindExe>
         </PropertyGroup>
-        <Exec Command="$(TailwindExe) -i wwwroot/css/src/app.css -o wwwroot/css/app.css" />
+        <Exec Command="$(TailwindExe) -i wwwroot/css/src/app.css -o wwwroot/css/app.css"/>
     </Target>
 
     <Target Name="CopyPhosphorFonts" AfterTargets="Build">
-        <MakeDir Directories="wwwroot/font/phosphor" />
+        <MakeDir Directories="wwwroot/font/phosphor"/>
         <ItemGroup>
-            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/regular/Phosphor.*" />
-            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/bold/Phosphor-Bold.*" />
-            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/fill/Phosphor-Fill.*" />
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/regular/Phosphor.*"/>
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/bold/Phosphor-Bold.*"/>
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/fill/Phosphor-Fill.*"/>
         </ItemGroup>
-        <Copy SourceFiles="@(PhosphorFontFiles)" DestinationFolder="wwwroot/font/phosphor" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(PhosphorFontFiles)" DestinationFolder="wwwroot/font/phosphor" SkipUnchangedFiles="true"/>
     </Target>
 </Project>

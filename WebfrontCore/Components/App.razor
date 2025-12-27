@@ -69,12 +69,12 @@ else
                     onConnectionDown: () => console.log("Connection lost... reconnecting"),
                     onConnectionUp: () => console.log("Connection restored")
                 },
-                // Force Long Polling for iOS to bypass the Safari WebSocket bug
                 configureSignalR: function (builder) {
                     if (isIOS) {
-                        console.warn("iOS Detected: Forcing Long Polling transport.");
+                        console.log("iOS Detected: Forcing WebSockets (Skip Negotiation)");
                         builder.withUrl("_blazor", {
-                            transport: 4 // 4 is the enum value for HttpTransportType.LongPolling
+                            transport: 1, // WebSockets
+                            skipNegotiation: true // Bypass negotiation to avoid fallback/proxy issues
                         });
                     }
                 }

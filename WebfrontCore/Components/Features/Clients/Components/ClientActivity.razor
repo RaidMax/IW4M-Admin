@@ -35,7 +35,8 @@
                             else
                             {
                                 <!-- Timestamp for chat -->
-                                <span class="text-muted/75 select-none shrink-0">@chat.Time.ToString("HH:mm")</span>
+                                <span
+                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                                 <div class="flex-1 min-w-0 break-words leading-tight">
                                     <a href="/client/@chat.ClientId"
                                        class="font-bold text-subtle mr-1 hover:text-foreground transition-colors">
@@ -83,10 +84,25 @@
                         <!-- Player -->
                         <div class="flex items-center min-w-0 pr-2">
                             <div class="w-1.5 h-1.5 rounded-full @pingColor mr-2 shrink-0 animate-pulse"></div>
-                            <a href="/client/@client.ClientId"
-                               class="font-bold text-subtle truncate hover:text-foreground transition-colors">
-                                <ColorCode Value="@client.Name"/>
-                            </a>
+                            <AuthorizeView
+                                Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                <Authorized>
+                                    <a href="/client/@client.ClientId"
+                                       class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((Data.Models.Client.EFClient.Permission)client.LevelInt)">
+                                        <ColorCode Value="@client.Name"/>
+                                    </a>
+                                </Authorized>
+                                <NotAuthorized>
+                                    <a href="/client/@client.ClientId"
+                                       class="font-bold text-subtle truncate hover:text-foreground transition-colors">
+                                        <ColorCode Value="@client.Name"/>
+                                    </a>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                            @if (client.ZScore != null && client.ZScore != 0)
+                            {
+                                <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs" title="Ranked"></i>
+                            }
                         </div>
 
                         <!-- Stats -->

@@ -154,16 +154,16 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
                 pointHoverRadius: 4,
                 pointBackgroundColor: onlineBorderColor
             },
-                {
-                    data: offlineTime.map(history => history.cc),
-                    backgroundColor: createDiagonalPattern(offlinePatternColor),
-                    borderColor: offlineBorderColor,
-                    borderWidth: 1.5,
-                    hoverBorderColor: 'white',
-                    hoverBorderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 0
-                }],
+            {
+                data: offlineTime.map(history => history.cc),
+                backgroundColor: createDiagonalPattern(offlinePatternColor),
+                borderColor: offlineBorderColor,
+                borderWidth: 1.5,
+                hoverBorderColor: 'white',
+                hoverBorderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 0
+            }],
             lineAtIndexes: mapChange,
         },
         options: {
@@ -172,7 +172,7 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
             legend: false,
             layout: {
                 padding: {
-                    top: 25
+                    top: 5
                 }
             },
             tooltips: {
@@ -550,10 +550,10 @@ window.themeManager = {
         let settings = self.load();
 
         const parseServerColor = (colorName) => {
-            if (!colorName) return {mode: 1, palette: 'blue'};
+            if (!colorName) return { mode: 1, palette: 'blue' };
             // Check if it's a known palette key
             if (self.paletteHSL[colorName.toLowerCase()]) {
-                return {mode: 1, palette: colorName.toLowerCase()};
+                return { mode: 1, palette: colorName.toLowerCase() };
             }
             // Check if it's a HEX code
             if (colorName.startsWith('#')) {
@@ -568,7 +568,7 @@ window.themeManager = {
                 }
             }
             // Fallback for unparsed or standard "blue"
-            return {mode: 1, palette: 'blue'};
+            return { mode: 1, palette: 'blue' };
         };
 
         const createSettingsFromServer = (srv) => {

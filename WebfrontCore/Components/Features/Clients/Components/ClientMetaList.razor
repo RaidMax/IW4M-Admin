@@ -444,17 +444,6 @@ else
         </div>
     </text>;
 
-    RenderFragment<InformationResponse> InformationTemplate => (Meta) => @<text>
-         <div class="p-3 rounded-lg bg-surface-alt border border-line hover:border-line-hover transition-colors h-full">
-             <div class="text-foreground font-mono text-sm break-all">
-                 <ColorCode Value="@Meta.Value" />
-             </div>
-             <div class="text-muted text-[10px] font-bold uppercase tracking-wider mt-1">
-                 @Meta.Key.Titleize()
-             </div>
-         </div>
-    </text>;
-
     RenderFragment<ClientNoteMetaResponse> ClientNoteTemplate => (Meta) => @<text>
         <div class="text-sm flex gap-2 items-center" title="@Meta.When.ToString("G")">
             <span class="text-muted uppercase text-xs font-bold tracking-wider">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>

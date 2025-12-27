@@ -26,8 +26,8 @@ namespace SharedLibraryCore.Dtos
         public EFPenalty ActivePenalty { get; set; }
         public bool Online { get; set; }
         public string TimeOnline { get; set; }
+        public DateTime FirstConnection { get; set; }
         public DateTime LastConnection { get; set; }
-        public string LastConnectionText => (DateTime.UtcNow - LastConnection).HumanizeForCurrentCulture();
         public IDictionary<int, long> LinkedAccounts { get; set; }
         public MetaType? MetaFilterType { get; set; }
         public double? ZScore { get; set; }

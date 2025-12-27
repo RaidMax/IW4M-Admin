@@ -438,6 +438,8 @@ public class WebfrontDataService : IWebfrontDataService
         {
             Name = client.Name,
             Game = client.GameName,
+            FirstConnection = client.FirstConnection,
+            LastConnection = client.LastConnection,
             Level = displayLevel,
             LevelInt = displayLevelInt,
             ClientId = client.ClientId,

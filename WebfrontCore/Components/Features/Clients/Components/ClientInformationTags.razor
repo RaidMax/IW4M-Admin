@@ -1,0 +1,58 @@
+@* Elegant Information Display - Categories horizontal, cards inside *@
+@if (_isLoading)
+{
+    <div class="flex justify-center py-6">
+        <i class="ph ph-spinner animate-spin text-2xl text-primary"></i>
+    </div>
+}
+else if (_groupedMeta.Any())
+{
+    @* Horizontal layout for category sections with dividers *@
+    <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-line">
+        @foreach (var group in _groupedMeta)
+        {
+            var (icon, title, accentClass) = GetCategoryDisplay(group.Key);
+            var items = group.OrderBy(i => i.Order).ToList();
+            
+            <div class="space-y-3 py-4 lg:py-0 lg:px-4 first:pt-0 first:lg:pl-0 last:pb-0 last:lg:pr-0">
+                @* Category Header *@
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg @accentClass flex items-center justify-center">
+                        <i class="ph @icon text-white text-xs"></i>
+                    </div>
+                    <h3 class="text-xs font-bold text-foreground">@title</h3>
+                </div>
+                
+                @* Stats cards grid within this category *@
+                <div class="grid grid-cols-2 gap-2">
+                    @foreach (var item in items)
+                    {
+                        var isHighlight = group.Key == "Statistics" && (item.Key.Contains("Ranking") || item.Key.Contains("Kills"));
+                        <div class="relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")"
+                             title="@(string.IsNullOrEmpty(item.ToolTipText) ? $"{item.Key}: {item.Value}" : item.ToolTipText)">
+                            @if (isHighlight)
+                            {
+                                <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent rounded-t-xl"></div>
+                            }
+                            <div class="text-base font-bold text-foreground mb-0.5 truncate">
+                                <ColorCode Value="@item.Value" />
+                            </div>
+                            <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">
+                                @item.Key.Titleize()
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-8 text-muted">
+        <div class="w-12 h-12 rounded-full bg-surface-alt flex items-center justify-center mx-auto mb-3">
+            <i class="ph ph-info text-xl"></i>
+        </div>
+        <p class="text-sm">No information available</p>
+    </div>
+}

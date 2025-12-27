@@ -11,32 +11,29 @@
                 Recent Activity
             </div>
 
-            <div class="p-4 space-y-1 font-mono text-[11px] overflow-y-auto max-h-[200px] custom-scrollbar flex-1">
+            <div class="px-3 py-1 font-mono text-[11px] overflow-y-auto max-h-[200px] custom-scrollbar flex-1 flex flex-col-reverse">
                 @if (Model?.ChatHistory?.Any() == true)
                 {
-                    @foreach (var chat in Model.ChatHistory)
+                    @foreach (var chat in Model.ChatHistory.AsEnumerable().Reverse())
                     {
                         var message = chat.IsHidden && (AppState.User == null /* || TODO: Check Auth */) ? chat.HiddenMessage : chat.Message;
                         var stateIcon = GetIconForState(chat.Message);
                         var isEvent = !string.IsNullOrEmpty(stateIcon);
 
                         <div
-                            class="flex items-start space-x-2 opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-muted" : "text-subtle")">
+                            class="flex items-start opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-muted" : "text-subtle")">
                             @if (isEvent)
                             {
-                                <i class="@stateIcon text-[10px] self-center shrink-0 w-3"></i>
+                                <i class="@stateIcon text-[10px] self-center shrink-0 mr-1.5"></i>
                                 <a href="/client/@chat.ClientId"
                                    class="truncate flex-1 hover:text-foreground transition-colors">
                                     <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
                                 </a>
-                                <span
-                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                <span class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                             }
                             else
                             {
-                                <!-- Timestamp for chat -->
-                                <span
-                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                @* Chat message: Name, Message, then timestamp on right *@
                                 <div class="flex-1 min-w-0 break-words leading-tight">
                                     <a href="/client/@chat.ClientId"
                                        class="font-bold text-subtle mr-1 hover:text-foreground transition-colors">
@@ -46,6 +43,7 @@
                                         <ColorCode Value="@(message.CapClientName(128))"/>
                                     </span>
                                 </div>
+                                <span class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                             }
                         </div>
                     }
@@ -73,17 +71,22 @@
             </div>
 
             <!-- Scrollable List -->
-            <div class="overflow-y-auto max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-px">
+            <div class="overflow-y-auto max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5">
                 @foreach (var client in Model.Players.OrderByDescending(p => p.Score))
                 {
                     var isSelf = AppState.User?.ClientId == client.ClientId;
-                    var pingColor = client.Ping < 100 ? "bg-success" : client.Ping < 200 ? "bg-warning" : "bg-error";
+                    var pingIcon = client.Ping < 50 ? "ph-fill ph-cell-signal-full" :
+                                   client.Ping < 100 ? "ph-fill ph-cell-signal-high" :
+                                   client.Ping < 150 ? "ph-fill ph-cell-signal-medium" :
+                                   client.Ping < 200 ? "ph-fill ph-cell-signal-low" :
+                                   "ph-fill ph-cell-signal-none";
+                    var pingColor = client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error";
 
                     <div
-                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 py-1.5 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : "")">
+                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
                         <!-- Player -->
                         <div class="flex items-center min-w-0 pr-2">
-                            <div class="w-1.5 h-1.5 rounded-full @pingColor mr-2 shrink-0 animate-pulse"></div>
+                            <i class="@pingIcon @pingColor text-[10px] mr-1.5 shrink-0"></i>
                             <AuthorizeView
                                 Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <Authorized>

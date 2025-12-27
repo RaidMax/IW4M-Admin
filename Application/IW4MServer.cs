@@ -856,7 +856,7 @@ namespace IW4MAdmin
 
                 lock (ChatHistory)
                 {
-                    while (ChatHistory.Count > Math.Ceiling(ClientNum / 2.0))
+                    while (ChatHistory.Count > ClientNum * 5)
                     {
                         ChatHistory.RemoveAt(0);
                     }
@@ -864,7 +864,7 @@ namespace IW4MAdmin
 
                 // the last client hasn't fully disconnected yet
                 // so there will still be at least 1 client left
-                if (ClientNum < 2)
+                if (ClientNum == 0)
                 {
                     ChatHistory.Clear();
                 }

@@ -6,7 +6,7 @@
 }
 else
 {
-    string lastHeader = null;
+    string? lastHeader = null;
 
     <div class="relative">
         @* Timeline vertical line *@
@@ -48,7 +48,7 @@ else
                 </div>
                 
                 @* Content *@
-                <div class="min-w-0 break-all">
+                <div class="min-w-0 break-normal overflow-wrap-anywhere">
                     @switch (item)
                     {
                         case AdministeredPenaltyResponse penalized:
@@ -322,22 +322,26 @@ else
             }
             else if (state.ContextMessages != null)
             {
-                <div class="mt-2 mb-2 ml-6 rounded-lg overflow-hidden border border-line shadow-lg">
+                <div class="mt-2 mb-2 ml-6 mr-0 rounded-lg overflow-hidden border border-line shadow-lg">
                     <div class="bg-primary/20 px-3 py-1.5 border-b border-primary/20 text-xs text-primary font-mono">
                         @Meta.When.HumanizeForCurrentCulture()
                     </div>
-                    <div class="bg-surface p-3 space-y-1">
+                    <div class="bg-surface p-2 md:p-3 space-y-0.5">
                         @foreach (var message in state.ContextMessages)
                         {
                             var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
-                            <div class="text-xs flex gap-2 p-1.5 rounded @(isOriginalMessage ? "bg-primary/10 border-l-2 border-primary -ml-[1px]" : "opacity-75")">
-                                <span class="font-bold text-subtle whitespace-nowrap">
-                                     <ColorCode Value="@message.ClientName"/>
-                                </span>
-                                <span class="@(message.IsQuickMessage ? "italic text-muted" : "text-muted") break-all">
+                            <div class="text-xs flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 p-1.5 md:p-2 rounded @(isOriginalMessage ? "bg-primary/10 border-l-2 border-primary -ml-[1px]" : "hover:bg-surface-alt/50")">
+                                @* Timestamp + Name row *@
+                                <div class="flex items-baseline gap-2 shrink-0">
+                                    <span class="text-muted/60 font-mono text-[10px] tabular-nums">@message.When.ToString("HH:mm:ss")</span>
+                                    <span class="font-semibold text-foreground text-xs whitespace-nowrap">
+                                        <ColorCode Value="@message.ClientName"/>
+                                    </span>
+                                </div>
+                                @* Message *@
+                                <span class="@(message.IsQuickMessage ? "italic text-muted" : "text-subtle") break-words text-xs">
                                     <ColorCode Value="@message.Message"/>
                                 </span>
-                                <span class="text-subtle ml-auto whitespace-nowrap">@message.When.ToString("T")</span>
                             </div>
                         }
                     </div>

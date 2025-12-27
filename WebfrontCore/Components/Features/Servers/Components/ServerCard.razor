@@ -44,6 +44,15 @@
                     <span class="opacity-50 mx-0.5">/</span>
                     <span class="opacity-75">@(Model.MaxClients - Model.PrivateClientSlots)</span>
                 </div>
+                
+                <!-- 5. Lobby Z-Score Badge -->
+                @if (Model.LobbyZScore != null)
+                {
+                    <div class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20" title="Lobby Rating">
+                        <i class="ph-fill ph-lightning text-xs"></i>
+                        <span class="font-mono font-bold">@Model.LobbyZScore</span>
+                    </div>
+                }
             </div>
 
             <!-- 5. Actions (Always Visible, prevent propagation) -->

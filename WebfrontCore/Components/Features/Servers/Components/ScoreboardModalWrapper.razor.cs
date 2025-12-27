@@ -13,11 +13,15 @@ public partial class ScoreboardModalWrapper
     private string? _error;
     private ScoreboardInfo? _scoreboardInfo;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender)
+        {
+            return;
+        }
+        
         try
         {
-            _isLoading = true;
             _scoreboardInfo = await ServerDataService.GetServerScoreboardAsync(ServerId);
         }
         catch (Exception ex)
@@ -28,6 +32,7 @@ public partial class ScoreboardModalWrapper
         finally
         {
             _isLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 }

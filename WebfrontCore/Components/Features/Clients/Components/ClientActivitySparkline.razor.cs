@@ -29,21 +29,49 @@ public partial class ClientActivitySparkline
     {
         try
         {
-            // Fetch connection history for last 30 days
-            var meta = await DataService.GetClientMetaAsync(new Controllers.API.Models.ClientMetaRequest
-            {
-                ClientId = ClientId,
-                Count = 200,
-                MetaType = MetaType.ConnectionHistory
-            });
+            const int pageSize = 200;
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+            var allConnections = new List<ConnectionHistoryResponse>();
+            int offset = 0;
+            bool hasMoreData = true;
 
-            var connections = meta.OfType<ConnectionHistoryResponse>()
-                .Where(c => c.ConnectionType == Data.Models.Reference.ConnectionType.Connect)
-                .Where(c => c.When >= DateTime.UtcNow.AddDays(-30))
-                .ToList();
+            // Keep fetching until we have all data within 30 days or run out of results
+            while (hasMoreData)
+            {
+                var meta = await DataService.GetClientMetaAsync(new Controllers.API.Models.ClientMetaRequest
+                {
+                    ClientId = ClientId,
+                    Count = pageSize,
+                    Offset = offset,
+                    MetaType = MetaType.ConnectionHistory
+                });
+
+                var pageResults = meta.OfType<ConnectionHistoryResponse>()
+                    .Where(c => c.ConnectionType == Data.Models.Reference.ConnectionType.Connect)
+                    .ToList();
+
+                if (pageResults.Count == 0)
+                {
+                    // No more results
+                    hasMoreData = false;
+                }
+                else
+                {
+                    // Add connections within our date range
+                    var validConnections = pageResults.Where(c => c.When >= thirtyDaysAgo).ToList();
+                    allConnections.AddRange(validConnections);
+
+                    // Check if we should continue:
+                    // 1. Got a full page (might be more data)
+                    // 2. Oldest item in this page is still within 30 days (need to check further back)
+                    var oldestInPage = pageResults.Min(c => c.When);
+                    hasMoreData = pageResults.Count == pageSize && oldestInPage >= thirtyDaysAgo;
+                    offset += pageSize;
+                }
+            }
 
             // Group by day and count
-            var grouped = connections
+            var grouped = allConnections
                 .GroupBy(c => c.When.Date)
                 .ToDictionary(g => g.Key, g => (double)g.Count());
 
@@ -56,7 +84,7 @@ public partial class ClientActivitySparkline
             }
 
             _maxValue = _activityData.Max() is var max && max > 0 ? max : 1;
-            _totalConnections = connections.Count;
+            _totalConnections = allConnections.Count;
         }
         catch (Exception ex)
         {

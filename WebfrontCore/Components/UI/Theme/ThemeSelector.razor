@@ -14,7 +14,13 @@
         <!-- Dropdown Panel -->
         <div
             class="absolute right-0 mt-2 w-80 bg-surface border border-line rounded-lg shadow-xl z-50 p-4 space-y-4 max-h-[80vh] overflow-y-auto">
-            @if (AppConfig.Webfront.PreventUserCustomization)
+            @if (_isLoading)
+            {
+                <div class="flex justify-center items-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+            }
+            else if (AppConfig.Webfront.PreventUserCustomization)
             {
                 <div class="flex flex-col items-center justify-center py-4 text-center space-y-2 text-muted">
                     <i class="ph ph-lock-key text-3xl text-primary"></i>

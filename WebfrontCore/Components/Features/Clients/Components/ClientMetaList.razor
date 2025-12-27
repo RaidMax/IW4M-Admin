@@ -8,55 +8,80 @@ else
 {
     string lastHeader = null;
 
-    foreach (var item in MetaItems)
-    {
-        var currentHeader = item.When.HumanizeForCurrentCulture();
+    <div class="relative">
+        @* Timeline vertical line *@
+        <div class="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-line via-line to-transparent"></div>
 
-        if (currentHeader != lastHeader && item.Type != MetaType.Information)
+        @foreach (var item in MetaItems)
         {
-            <div class="flex items-center gap-4 mt-8 mb-4">
-                <div class="h-px flex-1 bg-line"></div>
-                <span class="text-muted font-medium text-xs uppercase tracking-wider">@currentHeader</span>
-                <div class="h-px flex-1 bg-line"></div>
-            </div>
-            lastHeader = currentHeader;
-        }
+            var currentHeader = item.When.HumanizeForCurrentCulture();
 
-        <div class="group py-2">
-            @switch (item)
+            @* Skip Information type items - handled by separate component *@
+            if (item.Type == MetaType.Information)
             {
-                case AdministeredPenaltyResponse penalized:
-                    @AdministeredPenaltyTemplate(penalized)
-                    break;
-                case ReceivedPenaltyResponse received:
-                    @ReceivedPenaltyTemplate(received)
-                    break;
-                case MessageResponse message:
-                    @MessageTemplate(message)
-                    break;
-                case UpdatedAliasResponse alias:
-                    @UpdatedAliasTemplate(alias)
-                    break;
-                case ConnectionHistoryResponse connection:
-                    @ConnectionHistoryTemplate(connection)
-                    break;
-                case PermissionLevelChangedResponse permission:
-                    @PermissionLevelChangedTemplate(permission)
-                    break;
-                case InformationResponse info:
-                    @InformationTemplate(info)
-                    break;
-                case ClientNoteMetaResponse note:
-                    @ClientNoteTemplate(note)
-                    break;
-                default:
-                    <div class="bg-warning/10 border border-warning/20 text-warning p-2 rounded text-sm">
-                        Unknown Meta Type: @item.GetType().Name (@item.Type)
-                    </div>
-                    break;
+                continue;
             }
-        </div>
-    }
+
+            @* Time header *@
+            if (currentHeader != lastHeader)
+            {
+                <div class="relative flex items-center gap-3 py-3">
+                    @* Timeline dot for header *@
+                    <div class="relative z-10 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-line">
+                        <i class="ph ph-clock text-xs text-muted"></i>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-muted bg-surface px-2 py-1 rounded">
+                        @currentHeader
+                    </span>
+                </div>
+                lastHeader = currentHeader;
+            }
+
+            @* Timeline item *@
+            <div class="relative flex gap-3 py-1.5 group items-start">
+                @* Timeline dot *@
+                <div class="relative z-10 flex items-center justify-center w-6 shrink-0 mt-1">
+                    @{
+                        var (dotColor, dotIcon) = GetItemStyle(item);
+                    }
+                    <div class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125"></div>
+                </div>
+                
+                @* Content *@
+                <div class="flex-1 min-w-0 pb-2">
+                    @switch (item)
+                    {
+                        case AdministeredPenaltyResponse penalized:
+                            @AdministeredPenaltyTemplate(penalized)
+                            break;
+                        case ReceivedPenaltyResponse received:
+                            @ReceivedPenaltyTemplate(received)
+                            break;
+                        case MessageResponse message:
+                            @MessageTemplate(message)
+                            break;
+                        case UpdatedAliasResponse alias:
+                            @UpdatedAliasTemplate(alias)
+                            break;
+                        case ConnectionHistoryResponse connection:
+                            @ConnectionHistoryTemplate(connection)
+                            break;
+                        case PermissionLevelChangedResponse permission:
+                            @PermissionLevelChangedTemplate(permission)
+                            break;
+                        case ClientNoteMetaResponse note:
+                            @ClientNoteTemplate(note)
+                            break;
+                        default:
+                            <div class="bg-warning/10 border border-warning/20 text-warning p-2 rounded text-sm">
+                                Unknown Meta Type: @item.GetType().Name (@item.Type)
+                            </div>
+                            break;
+                    }
+                </div>
+            </div>
+        }
+    </div>
 
     @if (HasMore)
     {
@@ -82,6 +107,36 @@ else
         "unban" => "text-success",
         _ => "text-muted"
     };
+
+    private (string DotColor, string Icon) GetItemStyle(IClientMeta item)
+    {
+        return item switch
+        {
+            AdministeredPenaltyResponse p => p.PenaltyType switch
+            {
+                EFPenalty.PenaltyType.Ban => ("bg-error", "ph-prohibit"),
+                EFPenalty.PenaltyType.TempBan => ("bg-warning", "ph-clock"),
+                EFPenalty.PenaltyType.Kick => ("bg-warning", "ph-x"),
+                EFPenalty.PenaltyType.Unban => ("bg-success", "ph-check"),
+                _ => ("bg-muted", "ph-gavel")
+            },
+            ReceivedPenaltyResponse r => r.PenaltyType switch
+            {
+                EFPenalty.PenaltyType.Ban => ("bg-error", "ph-prohibit"),
+                EFPenalty.PenaltyType.TempBan => ("bg-warning", "ph-clock"),
+                EFPenalty.PenaltyType.Kick => ("bg-warning", "ph-x"),
+                _ => ("bg-muted", "ph-gavel")
+            },
+            MessageResponse => ("bg-primary/60", "ph-chat"),
+            UpdatedAliasResponse => ("bg-subtle", "ph-user"),
+            ConnectionHistoryResponse c => c.ConnectionType == Reference.ConnectionType.Connect 
+                ? ("bg-success", "ph-sign-in") 
+                : ("bg-muted", "ph-sign-out"),
+            PermissionLevelChangedResponse => ("bg-primary", "ph-shield"),
+            ClientNoteMetaResponse => ("bg-primary/60", "ph-note"),
+            _ => ("bg-muted", "ph-circle")
+        };
+    }
 
     // --- RenderFragments ---
     // @formatter:off
@@ -248,7 +303,7 @@ else
                 <div class="mt-0.5 text-muted group-hover/msg:text-primary transition-colors">
                     <i class="ph @(state.IsOpen ? "ph-caret-down" : "ph-caret-right")"></i>
                 </div>
-                <div>
+                <div class="flex-1 min-w-0">
                     <span class="text-foreground break-words hover:text-white transition-colors">
                         <ColorCode Value="@Meta.Message"/>
                     </span>
@@ -261,13 +316,13 @@ else
         {
             if (state.IsLoading)
             {
-                <div class="flex justify-center py-2">
+                <div class="flex justify-center py-2 ml-6">
                     <i class="ph ph-spinner animate-spin text-primary"></i>
                 </div>
             }
             else if (state.ContextMessages != null)
             {
-                <div class="mt-2 mb-4 ml-6 rounded-lg overflow-hidden border border-line shadow-lg">
+                <div class="mt-2 mb-2 ml-6 rounded-lg overflow-hidden border border-line shadow-lg">
                     <div class="bg-primary/20 px-3 py-1.5 border-b border-primary/20 text-xs text-primary font-mono">
                         @Meta.When.HumanizeForCurrentCulture()
                     </div>

@@ -84,7 +84,8 @@ namespace IW4MAdmin.Application.Meta
                     Value = lastMapMeta.Value,
                     ShouldDisplay = true,
                     Type = MetaType.Information,
-                    Order = 6
+                    Order = 6,
+                    Category = "General"
                 });
             }
 
@@ -101,7 +102,8 @@ namespace IW4MAdmin.Application.Meta
                     Value = lastServerMeta.Value,
                     ShouldDisplay = true,
                     Type = MetaType.Information,
-                    Order = 7
+                    Order = 7,
+                    Category = "General"
                 });
             }
 
@@ -122,7 +124,8 @@ namespace IW4MAdmin.Application.Meta
                 ToolTipText = friendlyTime.HumanizeForCurrentCulture(maxUnit: TimeUnit.Hour),
                 ShouldDisplay = true,
                 Order = 8,
-                Type = MetaType.Information
+                Type = MetaType.Information,
+                Category = "General"
             });
 
             metaList.Add(new InformationResponse()
@@ -132,7 +135,8 @@ namespace IW4MAdmin.Application.Meta
                 Value = (DateTime.UtcNow - client.FirstConnection).HumanizeForCurrentCulture(),
                 ShouldDisplay = true,
                 Order = 9,
-                Type = MetaType.Information
+                Type = MetaType.Information,
+                Category = "General"
             });
 
             metaList.Add(new InformationResponse()
@@ -142,7 +146,8 @@ namespace IW4MAdmin.Application.Meta
                 Value = (DateTime.UtcNow - client.LastConnection).HumanizeForCurrentCulture(),
                 ShouldDisplay = true,
                 Order = 10,
-                Type = MetaType.Information
+                Type = MetaType.Information,
+                Category = "General"
             });
 
             metaList.Add(new InformationResponse()
@@ -153,7 +158,8 @@ namespace IW4MAdmin.Application.Meta
                     new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName)),
                 ShouldDisplay = true,
                 Order = 11,
-                Type = MetaType.Information
+                Type = MetaType.Information,
+                Category = "General"
             });
 
             metaList.Add(new InformationResponse()
@@ -165,7 +171,8 @@ namespace IW4MAdmin.Application.Meta
                     : Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_FALSE"],
                 IsSensitive = true,
                 Order = 12,
-                Type = MetaType.Information
+                Type = MetaType.Information,
+                Category = "General"
             });
 
             return metaList;

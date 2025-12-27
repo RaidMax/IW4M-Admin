@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Components.Web;
 using SharedLibraryCore.Dtos;
 using System.Security.Claims;
@@ -7,7 +8,7 @@ using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Core.Auth;
 
-public class PersistingAuthenticationStateProvider : AuthenticationStateProvider, IDisposable
+public class PersistingAuthenticationStateProvider : ServerAuthenticationStateProvider, IDisposable
 {
     private readonly PersistentComponentState _persistentComponentState;
     private readonly PersistingComponentStateSubscription _subscription;
@@ -25,16 +26,16 @@ public class PersistingAuthenticationStateProvider : AuthenticationStateProvider
         _subscription = _persistentComponentState.RegisterOnPersisting(OnPersistingAsync, RenderMode.InteractiveServer);
     }
 
-    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        return _authenticationStateTask ??= CreateAuthenticationStateAsync();
+        return await (_authenticationStateTask ??= CreateAuthenticationStateAsync());
     }
 
     private async Task<AuthenticationState> CreateAuthenticationStateAsync()
     {
         await Task.Yield();
 
-        // 1. Try to restore from persisted state (Interactive mode)
+        // 1. Try to restore from persisted state (Interactive mode optimization)
         if (_persistentComponentState.TryTakeFromJson<ClientInfo>("UserInfo", out var userInfo) && userInfo != null)
         {
             // Restore global AppState from the persisted info
@@ -54,7 +55,19 @@ public class PersistingAuthenticationStateProvider : AuthenticationStateProvider
                 // Return the state directly from the HttpContext user (or reconstructed)
                 return new AuthenticationState(httpContextUser);
             }
-          
+        }
+        
+        // 3. Fallback to base ServerAuthenticationStateProvider (Standard Circuit Auth)
+        // This handles cases like iOS Long Polling where persisted state transfer fails but the circuit is authenticated
+        var baseState = await base.GetAuthenticationStateAsync();
+        if (baseState.User.Identity?.IsAuthenticated == true)
+        {
+             var clientInfo = ParseClientInfo(baseState.User);
+             if (clientInfo != null)
+             {
+                 _appState.SetUser(clientInfo);
+             }
+             return baseState;
         }
 
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));

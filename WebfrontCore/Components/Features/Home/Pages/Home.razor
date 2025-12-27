@@ -54,22 +54,22 @@
             <!-- Compact Stats Bar -->
             <div
                 class="grid grid-cols-2 md:grid-cols-4 gap-0 bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-6 divide-y md:divide-y-0 md:divide-x divide-divider">
-                <!-- Max Players -->
-                <div
-                    class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
-                    <span
-                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Peak Today</span>
-                    <span class="text-lg font-bold text-primary group-hover:text-primary transition-colors"
-                          title="@Model.MaxConcurrentClientsTime.Humanize().Titleize()">@Model.MaxConcurrentClients.ToString("#,##0")</span>
-                </div>
-
-                <!-- Online -->
+                <!-- Online (Current Players - First) -->
                 <div
                     class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
                     <span
                         class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Online</span>
                     <span
                         class="text-lg font-bold text-primary group-hover:text-primary transition-colors">@Model.TotalOccupiedClientSlots/@Model.TotalAvailableClientSlots</span>
+                </div>
+
+                <!-- Peak Today -->
+                <div
+                    class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
+                    <span
+                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Peak Today</span>
+                    <span class="text-lg font-bold text-primary group-hover:text-primary transition-colors"
+                          title="@Model.MaxConcurrentClientsTime.Humanize().Titleize()">@Model.MaxConcurrentClients.ToString("#,##0")</span>
                 </div>
 
                 <!-- Recent -->
@@ -90,6 +90,7 @@
                         class="text-lg font-bold text-primary group-hover:text-primary transition-colors">@Model.TotalClientCount.ToString("#,##0")</span>
                 </div>
             </div>
+
 
             <ServerList Game="Model.Game"/>
         }

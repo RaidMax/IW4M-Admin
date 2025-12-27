@@ -1368,7 +1368,7 @@ namespace IW4MAdmin
             var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version", token: Manager.CancellationToken);
             Version = version.Value;
             GameName = Utilities.GetGame(version.Value ?? RconParser.Version);
-
+            
             if (GameName == Game.UKN)
             {
                 GameName = RconParser.GameName;

@@ -11,19 +11,25 @@ public partial class ColorCode
     private bool _allow = true;
     private string RenderedHtml => ProcessColorCodes();
 
+    // Regex to match icon placeholders like :dpad_right:, :xboxx:, etc.
+    private static readonly Regex IconPlaceholderRegex = new(@":[a-zA-Z0-9_]+:", RegexOptions.Compiled);
+
     private string ProcessColorCodes()
     {
         if (string.IsNullOrEmpty(Value)) return string.Empty;
 
+        // First strip any icon placeholders
+        var cleanValue = StripIconPlaceholders(Value);
+
         if (!_allow)
         {
-            return StripColors(Value);
+            return StripColors(cleanValue);
         }
 
-        var matches = Regex.Matches(Value, @"\^([0-9]|\:)([^\^]*)");
+        var matches = Regex.Matches(cleanValue, @"\^([0-9]|\:)([^\^]*)");
         if (matches.Count <= 1)
         {
-            return StripColors(Value);
+            return StripColors(cleanValue);
         }
 
         var sb = new System.Text.StringBuilder();
@@ -44,4 +50,11 @@ public partial class ColorCode
         // Simple strip implementation matching shared lib if possible
         return Regex.Replace(input, @"\^[0-9:]", "");
     }
+
+    private static string StripIconPlaceholders(string input)
+    {
+        // Strip emoji-style icon placeholders like :dpad_right:, :xboxx:, etc.
+        return IconPlaceholderRegex.Replace(input, "");
+    }
 }
+

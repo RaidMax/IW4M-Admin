@@ -38,17 +38,17 @@ else
             }
 
             @* Timeline item *@
-            <div class="relative flex gap-3 py-1.5 group items-start">
+            <div class="flex gap-3 py-1.5 items-center justify-items-start">
                 @* Timeline dot *@
-                <div class="relative z-10 flex items-center justify-center w-6 shrink-0 mt-1">
+                <div class="z-10 min-w-6">
                     @{
-                        var (dotColor, dotIcon) = GetItemStyle(item);
+                        var (dotColor, _) = GetItemStyle(item);
                     }
-                    <div class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125"></div>
+                    <div class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125 m-auto"></div>
                 </div>
                 
                 @* Content *@
-                <div class="flex-1 min-w-0 pb-2">
+                <div class="min-w-0 break-all">
                     @switch (item)
                     {
                         case AdministeredPenaltyResponse penalized:

@@ -58,30 +58,5 @@ else
     };
     window.themeManager.init(window.serverThemeSettings);
 </script>
-<script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
-<script>
-    (function () {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        const startOptions = {
-            circuit: {
-                reconnectionHandler: {
-                    onConnectionDown: () => console.log("Connection lost... reconnecting"),
-                    onConnectionUp: () => console.log("Connection restored")
-                },
-                configureSignalR: function (builder) {
-                    if (isIOS) {
-                        console.log("iOS Detected: Forcing WebSockets (Skip Negotiation)");
-                        builder.withUrl("_blazor", {
-                            transport: 1, // WebSockets
-                            skipNegotiation: true // Bypass negotiation to avoid fallback/proxy issues
-                        });
-                    }
-                }
-            }
-        };
-
-        Blazor.start(startOptions);
-    })();
-</script>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
 </html>

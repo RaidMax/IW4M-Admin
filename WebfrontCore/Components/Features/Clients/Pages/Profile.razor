@@ -1,12 +1,27 @@
 @page "/Client/Profile/{Id:int}"
 @page "/client/{Id:int}"
+@attribute [StreamRendering]
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Permissions.ProfilePage.Read")]
 
+@* ================================================================ *@
+@* OpenGraph / Meta Tags - Always render for crawlers (StreamRendering ensures data is available) *@
+@* ================================================================ *@
+<PageTitle>@(Client?.Name.StripColors() ?? AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")) | IW4MAdmin</PageTitle>
+
+<HeadContent>
+    <meta property="og:title" content="@(Client?.Name.StripColors() ?? "Client Profile") | IW4MAdmin"/>
+    <meta property="og:description" content="@GetOpenGraphDescription()"/>
+    <meta property="og:type" content="profile"/>
+    <meta property="og:url" content="@NavManager.Uri"/>
+    @if (!string.IsNullOrEmpty(GetGravatarUrl()))
+    {
+        <meta property="og:image" content="@GetGravatarUrl()"/>
+    }
+</HeadContent>
+
 @if (_isLoading)
 {
-    <PageTitle>@AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE") | IW4MAdmin</PageTitle>
-
     <div class="flex flex-col items-center justify-center min-h-[50vh] text-muted">
         <i class="ph ph-spinner animate-spin text-4xl text-primary mb-4"></i>
         <p class="font-medium">Loading profile for client @Id...</p>
@@ -35,25 +50,10 @@ else if (Client == null)
 }
 else
 {
-    <PageTitle>@Client.Name.StripColors() | IW4MAdmin</PageTitle>
-
     var gravatarUrl = Client.Meta?.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
     var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
     var isPermBanned = Client.LevelInt == (int)Data.Models.Client.EFClient.Permission.Banned;
     var shortCode = GetShortCode(Client.Name);
-    var description = $"{AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")} - {AppState.Loc($"GAME_{Client.Game}")} - {Client.LastConnection.HumanizeForCurrentCulture()}";
-    var imageUrl = !string.IsNullOrEmpty(gravatarUrl) ? $"https://gravatar.com/avatar/{gravatarUrl}?size=168&default=blank&rating=pg" : "";
-
-    <HeadContent>
-        <meta property="og:title" content="@Client.Name.StripColors() | IW4MAdmin"/>
-        <meta property="og:description" content="@description"/>
-        <meta property="og:type" content="profile"/>
-        <meta property="og:url" content="@NavManager.Uri"/>
-        @if (!string.IsNullOrEmpty(imageUrl))
-        {
-            <meta property="og:image" content="@imageUrl"/>
-        }
-    </HeadContent>
 
     <div class="flex flex-col xl:flex-row h-full">
 

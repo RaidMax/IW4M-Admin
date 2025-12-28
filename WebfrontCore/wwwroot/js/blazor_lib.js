@@ -28,18 +28,16 @@ window.visibilityObserver = {
 // Chart Theme Utility
 // ============================================
 window.chartTheme = (function () {
-    // Helper to convert CSS color to rgba
+    // Helper to convert CSS color to rgba (handles oklch, hsl, etc.)
     const colorToRgba = (color, alpha) => {
-        const temp = document.createElement('div');
-        temp.style.color = color;
-        document.body.appendChild(temp);
-        const computed = getComputedStyle(temp).color;
-        document.body.removeChild(temp);
-        const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-        if (match) {
-            return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
-        }
-        return color;
+        // Use canvas 2D context - it always outputs rgb() format regardless of input
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
 
     // Get current theme colors from CSS variables

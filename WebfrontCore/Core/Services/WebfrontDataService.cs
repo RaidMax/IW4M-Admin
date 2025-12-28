@@ -123,7 +123,8 @@ public class WebfrontDataService : IWebfrontDataService
                 GameType = server.GametypeName,
                 ClientHistory = new ClientHistoryInfo
                 {
-                    ClientCounts = history?.ClientCounts?.Select(historyItem => new ClientCountSnapshot
+                    ClientCounts = GetCombinedClientHistory(
+                        history?.ClientCounts?.Select(historyItem => new ClientCountSnapshot
                         {
                             Time = historyItem.Time,
                             ClientCount = historyItem.ClientCount,
@@ -131,8 +132,10 @@ public class WebfrontDataService : IWebfrontDataService
                             Map = historyItem.Map,
                             MapAlias = server.Maps.FirstOrDefault(map => map.Name == historyItem.Map)?.Alias ??
                                        historyItem.Map
-                        })
-                        .ToList() ?? []
+                        }).ToList(),
+                        server.ClientHistory.ClientCounts,
+                        _manager.GetApplicationSettings().Configuration().MaxClientHistoryTime
+                    )
                 },
                 Players = server.GetClientsAsList()
                     .Select(client => new
@@ -1229,33 +1232,22 @@ public class WebfrontDataService : IWebfrontDataService
             return [];
         }
 
-        var clientHistory =
+        var savedHistory =
             (await _serverDataViewer.ClientHistoryAsync(_appConfig.MaxClientHistoryTime, CancellationToken.None))?
-            .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId) ??
-            new ClientHistoryInfo
+            .FirstOrDefault(history => history.ServerId == foundServer.LegacyDatabaseId);
+
+        var clientCountSnapshots = GetCombinedClientHistory(
+            savedHistory?.ClientCounts,
+            foundServer.ClientHistory.ClientCounts,
+            _appConfig.MaxClientHistoryTime);
+
+        // Resolve map aliases
+        if (foundServer.Maps.Count > 0)
+        {
+            foreach (var count in clientCountSnapshots)
             {
-                ServerId = foundServer.LegacyDatabaseId,
-                ClientCounts = []
-            };
-
-        var counts = clientHistory.ClientCounts?.AsEnumerable() ?? [];
-
-        if (foundServer.ClientHistory.ClientCounts.Count is not 0)
-        {
-            counts = counts.Union(foundServer.ClientHistory.ClientCounts.Where(history =>
-                    history.Time > (clientHistory.ClientCounts?.LastOrDefault()?.Time ?? DateTime.MinValue)))
-                .Where(history => history.Time >= DateTime.UtcNow - _appConfig.MaxClientHistoryTime);
-        }
-
-        var clientCountSnapshots = counts.ToList();
-        if (foundServer.Maps.Count <= 0)
-        {
-            return clientCountSnapshots;
-        }
-
-        foreach (var count in clientCountSnapshots)
-        {
-            count.MapAlias = foundServer.Maps.FirstOrDefault(map => map.Name == count.Map)?.Alias ?? count.Map;
+                count.MapAlias = foundServer.Maps.FirstOrDefault(map => map.Name == count.Map)?.Alias ?? count.Map;
+            }
         }
 
         return clientCountSnapshots;
@@ -1386,5 +1378,29 @@ public class WebfrontDataService : IWebfrontDataService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Combines saved client history with in-memory server history, avoiding duplicates.
+    /// </summary>
+    private static List<ClientCountSnapshot> GetCombinedClientHistory(
+        List<ClientCountSnapshot>? savedHistory,
+        List<ClientCountSnapshot>? liveHistory,
+        TimeSpan maxHistoryTime)
+    {
+        var counts = savedHistory?.AsEnumerable() ?? [];
+
+        if (liveHistory is { Count: > 0 })
+        {
+            var lastSavedTime = savedHistory?.LastOrDefault()?.Time ?? DateTime.MinValue;
+
+            // Union with live data that's newer than the last saved entry
+            counts = counts.Union(liveHistory.Where(h => h.Time > lastSavedTime));
+        }
+
+        // Filter to max history time window
+        return counts
+            .Where(h => h.Time >= DateTime.UtcNow - maxHistoryTime)
+            .ToList();
     }
 }

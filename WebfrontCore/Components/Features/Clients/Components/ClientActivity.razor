@@ -24,26 +24,28 @@
                             class="flex items-start opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-muted" : "text-subtle")">
                             @if (isEvent)
                             {
-                                <i class="@stateIcon text-[10px] self-center shrink-0 mr-1.5"></i>
+                                <i class="@stateIcon text-[10px] self-center shrink-0 mr-1.5 leading-none"></i>
                                 <a href="/client/@chat.ClientId"
-                                   class="truncate flex-1 hover:text-foreground transition-colors">
+                                   class="truncate flex-1 hover:text-foreground transition-colors leading-tight">
                                     <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
                                 </a>
-                                <span class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                <span
+                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                             }
                             else
                             {
                                 @* Chat message: Name, Message, then timestamp on right *@
                                 <div class="flex-1 min-w-0 break-words leading-tight">
                                     <a href="/client/@chat.ClientId"
-                                       class="font-bold text-subtle mr-1 hover:text-foreground transition-colors">
+                                       class="font-bold text-subtle hover:text-foreground transition-colors italic">
                                         <ColorCode Value="@chat.Name"/>
                                     </a>
                                     <span class="text-foreground">
                                         <ColorCode Value="@(message.CapClientName(128))"/>
                                     </span>
                                 </div>
-                                <span class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                <span
+                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                             }
                         </div>
                     }
@@ -71,27 +73,21 @@
             </div>
 
             <!-- Scrollable List -->
-            <div class="overflow-y-auto max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5">
+            <div class="max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5 overflow-y-auto">
                 @foreach (var client in Model.Players.OrderByDescending(p => p.Score))
                 {
                     var isSelf = AppState.User?.ClientId == client.ClientId;
-                    var pingIcon = client.Ping < 50 ? "ph-fill ph-cell-signal-full" :
-                                   client.Ping < 100 ? "ph-fill ph-cell-signal-high" :
-                                   client.Ping < 150 ? "ph-fill ph-cell-signal-medium" :
-                                   client.Ping < 200 ? "ph-fill ph-cell-signal-low" :
-                                   "ph-fill ph-cell-signal-none";
-                    var pingColor = client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error";
-
-                    <div
-                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
+                    var ping = GetPingIconAndColor(client.Ping);
+                    
+                    <div class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
                         <!-- Player -->
                         <div class="flex items-center min-w-0 pr-2">
-                            <i class="@pingIcon @pingColor text-[10px] mr-1.5 shrink-0"></i>
+                            <i class="@ping.Icon @ping.Color text-[10px] mr-1.5 shrink-0"></i>
                             <AuthorizeView
                                 Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <Authorized>
                                     <a href="/client/@client.ClientId"
-                                       class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((Data.Models.Client.EFClient.Permission)client.LevelInt)">
+                                       class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((EFClient.Permission)client.LevelInt)">
                                         <ColorCode Value="@client.Name"/>
                                     </a>
                                 </Authorized>
@@ -109,10 +105,10 @@
                         </div>
 
                         <!-- Stats -->
-                        <div class="text-center text-muted group-hover:text-foreground">@client.Score</div>
-                        <div class="text-center text-success/80 group-hover:text-success font-bold">@client.Kills</div>
-                        <div class="text-center text-error/80 group-hover:text-error font-bold">@client.Deaths</div>
-                        <div class="text-center text-muted group-hover:text-subtle">@client.Ping</div>
+                        <div class="text-center text-muted">@client.Score</div>
+                        <div class="text-center text-success/80 font-bold">@client.Kills</div>
+                        <div class="text-center text-error/80 font-bold">@client.Deaths</div>
+                        <div class="text-center text-muted">@client.Ping</div>
 
                         <!-- Action -->
                         <div class="flex justify-center">

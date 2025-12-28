@@ -8,14 +8,39 @@ retryButton.addEventListener("click", retry);
 const resumeButton = document.getElementById("components-resume-button");
 resumeButton.addEventListener("click", resume);
 
+// All possible state classes that can be applied to the modal
+const stateClasses = [
+    "components-reconnect-show",
+    "components-reconnect-retrying",
+    "components-reconnect-failed",
+    "components-reconnect-paused",
+    "components-reconnect-resume-failed"
+];
+
+function setModalState(state) {
+    // Remove all state classes first
+    reconnectModal.classList.remove(...stateClasses);
+    
+    // Add the new state class if it's a valid state
+    const stateClass = `components-reconnect-${state}`;
+    if (stateClasses.includes(stateClass)) {
+        reconnectModal.classList.add(stateClass);
+    }
+}
+
 function handleReconnectStateChanged(event) {
-    if (event.detail.state === "show") {
+    const state = event.detail.state;
+    
+    // Apply the state class to toggle visibility of appropriate elements
+    setModalState(state);
+    
+    if (state === "show") {
         reconnectModal.showModal();
-    } else if (event.detail.state === "hide") {
+    } else if (state === "hide") {
         reconnectModal.close();
-    } else if (event.detail.state === "failed") {
+    } else if (state === "failed") {
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
-    } else if (event.detail.state === "rejected") {
+    } else if (state === "rejected") {
         location.reload();
     }
 }

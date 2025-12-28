@@ -1,0 +1,59 @@
+<div class="space-y-4">
+    <div class="text-sm text-subtle mb-4">@AppState.Loc("WEBFRONT_MODAL_ADMINS_SUBTITLE")</div>
+
+    @if (!AdminsList.Any())
+    {
+        <div class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
+             <i class="ph ph-user-circle text-4xl text-success mb-3 opacity-80"></i>
+             <span class="text-muted font-medium">No admins currently online</span>
+        </div>
+    }
+
+    @foreach (var server in AdminsList)
+    {
+        <div class="bg-surface rounded-lg shadow-sm border border-line overflow-hidden mb-4">
+            <div class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
+                 <i class="ph ph-hard-drives text-primary"></i>
+                 <span class="truncate"><ColorCode Value="@server.Name"/></span>
+            </div>
+            <div class="divide-y divide-line">
+                @foreach (var admin in server.Admins)
+                {
+                    <div class="px-4 py-3 hover:bg-surface-hover/30 transition-colors flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <a href="/client/@admin.ClientId" class="font-bold text-foreground hover:text-primary transition-colors">
+                                <ColorCode Value="@admin.Name"/>
+                            </a>
+                        </div>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/10 text-success border border-success/20 uppercase tracking-wider">
+                            @admin.Level
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] public required IWebfrontDataService DataService { get; set; }
+    [Inject] public required AppState AppState { get; set; }
+    private List<ServerAdminsInfo> AdminsList = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAdmins();
+    }
+
+    private async Task LoadAdmins()
+    {
+        try
+        {
+            AdminsList = (await DataService.GetOnlineAdminsAsync()).ToList();
+        }
+        catch
+        {
+            AdminsList = [];
+        }
+    }
+}

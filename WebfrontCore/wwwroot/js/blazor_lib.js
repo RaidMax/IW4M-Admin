@@ -339,6 +339,15 @@ window.initServerChart = function (elementId, playerHistory, maxClients, strings
 // Store chart instances for updates
 window.serverCharts = window.serverCharts || {};
 
+// Destroy a chart instance and remove from cache
+window.destroyServerChart = function (elementId) {
+    const chart = window.serverCharts[elementId];
+    if (chart) {
+        chart.destroy();
+        delete window.serverCharts[elementId];
+    }
+};
+
 // Update existing chart with new data
 window.updateServerChart = function (elementId, playerHistory, maxClients, strings) {
     const canvas = document.getElementById(elementId);

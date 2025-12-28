@@ -98,7 +98,7 @@
                                     </a>
                                 </NotAuthorized>
                             </AuthorizeView>
-                            @if (client.ZScore.HasValue)
+                            @if (client.ZScore.HasValue && client.ZScore.Value != 0)
                             {
                                 <Tooltip Text="@($"Rating: {client.ZScore:F2}")">
                                     <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>

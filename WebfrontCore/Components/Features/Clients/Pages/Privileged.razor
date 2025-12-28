@@ -1,6 +1,7 @@
 @page "/Client/Privileged"
 @page "/privileged-clients"
 @attribute [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
+@attribute [StreamRendering]
 @rendermode InteractiveServer
 
 <PageTitle>@AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE") | IW4MAdmin</PageTitle>

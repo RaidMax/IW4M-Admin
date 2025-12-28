@@ -1,14 +1,14 @@
 @page "/"
 @page "/servers"
+@attribute [StreamRendering]
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 
-<PageTitle>@AppState.Loc("WEBFRONT_HOME_TITLE") | IW4MAdmin</PageTitle>
+<PageTitle>@GetLocalizedString("WEBFRONT_HOME_TITLE") | IW4MAdmin</PageTitle>
 
 <HeadContent>
-    <meta property="og:title" content="@AppState.Loc("WEBFRONT_SERVERS_TITLE") | IW4MAdmin"/>
-    <meta property="og:description"
-          content="@((MarkupString)FormatTranslation("WEBFRONT_HOME_DESCRIPTION", Model?.TotalClientCount.ToString("#,##0") ?? "0", Model?.RecentClientCount.ToString("#,##0") ?? "0"))"/>
+    <meta property="og:title" content="@GetLocalizedString("WEBFRONT_SERVERS_TITLE") | IW4MAdmin"/>
+    <meta property="og:description" content="@GetOpenGraphDescription()"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="@NavManager.Uri"/>
 </HeadContent>

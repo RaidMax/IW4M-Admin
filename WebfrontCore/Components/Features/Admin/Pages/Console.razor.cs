@@ -22,25 +22,24 @@ public partial class Console
     private ElementReference ScrollAnchor { get; set; }
     private ElementReference InputElement { get; set; }
     private int _lastOutputCount;
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (AppState.User is null)
-        {
-            await ToastService.ShowErrorAsync(AppState.Loc("WEBFRONT_chain_error_permission"), AppState.Loc("WEBFRONT_modal_title_error"));
-            return;
-        }
-
-        Servers = await DataService.GetServersAsync();
-        if (Servers.Any())
-        {
-            SelectedServerId = Servers.First().Id;
-        }
-    }
+    private bool _initialized;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender || CommandOutput.Count > _lastOutputCount)
+        if (firstRender)
+        {
+            // Load servers on first render after the interactive circuit is established
+            Servers = await DataService.GetServersAsync();
+            if (Servers.Any())
+            {
+                SelectedServerId = Servers.First().Id;
+            }
+            
+            _initialized = true;
+            StateHasChanged();
+        }
+        
+        if (_initialized && CommandOutput.Count > _lastOutputCount)
         {
             _lastOutputCount = CommandOutput.Count;
             await ScrollToBottomAsync();

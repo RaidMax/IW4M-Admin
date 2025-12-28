@@ -12,177 +12,341 @@
     <meta property="og:url" content="@NavManager.Uri" />
 </HeadContent>
 
-<div class="relative max-w-7xl mx-auto p-4 md:p-8">
+<div class="w-full p-4 md:p-8">
     @if (CommandGroups == null)
     {
-        <div class="flex justify-center items-center mt-20">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
+            <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
+            <span class="text-sm">Loading commands...</span>
         </div>
     }
     else
     {
-        <div class="flex items-center gap-3 mb-8">
-            <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-                <i class="ph ph-question text-xl text-primary"></i>
+        <!-- Hero Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between gap-3 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                        <i class="ph ph-terminal-window text-xl text-primary"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE")</h1>
+                        <div class="text-sm text-subtle font-medium mt-0.5">
+                            Explore all available server commands
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View Toggle -->
+                <div class="flex items-center bg-surface border border-line rounded-lg p-1 shadow-sm">
+                    <button @onclick="() => ViewMode = ViewModeType.Cards"
+                            class="@(ViewMode == ViewModeType.Cards ? "bg-primary text-white" : "text-muted hover:text-foreground") px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5"
+                            title="Card View">
+                        <i class="ph ph-squares-four"></i>
+                        <span class="hidden sm:inline">Cards</span>
+                    </button>
+                    <button @onclick="() => ViewMode = ViewModeType.Table"
+                            class="@(ViewMode == ViewModeType.Table ? "bg-primary text-white" : "text-muted hover:text-foreground") px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5"
+                            title="Table View">
+                        <i class="ph ph-table"></i>
+                        <span class="hidden sm:inline">Table</span>
+                    </button>
+                </div>
             </div>
-            <div>
-                <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE")</h2>
-                 <div class="text-sm text-subtle font-medium mt-0.5">
-                     @(FilteredCommandGroups.Sum(g => g.Commands.Count()).ToString("#,##0")) total commands
-                 </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-0 bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-6 divide-y md:divide-y-0 md:divide-x divide-divider">
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Total Commands</span>
+                    <span class="text-lg font-bold text-primary">@CommandGroups.Sum(g => g.Commands.Count).ToString("#,##0")</span>
+                </div>
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Categories</span>
+                    <span class="text-lg font-bold text-primary">@CommandGroups.Count</span>
+                </div>
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">User Commands</span>
+                    <span class="text-lg font-bold text-success">@CommandGroups.Sum(g => g.Commands.Count(c => c.Permission == Data.Models.Client.EFClient.Permission.User))</span>
+                </div>
+                <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Admin Commands</span>
+                    <span class="text-lg font-bold text-warning">@CommandGroups.Sum(g => g.Commands.Count(c => c.Permission >= Data.Models.Client.EFClient.Permission.Moderator))</span>
+                </div>
             </div>
         </div>
 
-        <!-- Search Input -->
-        <div class="mb-12 md:mb-0 flex justify-center md:absolute md:top-8 md:right-8">
-            <div class="relative max-w-md w-full md:w-80">
+        <!-- Search and Filters -->
+        <div class="flex flex-col lg:flex-row lg:justify-between gap-4 mb-8">
+            <!-- Search Input -->
+            <div class="relative flex-1 max-w-md">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                     <i class="ph ph-magnifying-glass text-xl text-muted"></i>
+                    <i class="ph ph-magnifying-glass text-xl text-muted"></i>
                 </div>
                 <input @bind="SearchTerm" @bind:event="oninput" 
                        type="text" 
-                       class="block w-full pl-10 pr-3 py-2 border border-input-border rounded-md leading-5 bg-input-bg text-foreground placeholder-input-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 sm:text-sm"
-                       placeholder="Search commands..." />
+                       class="block w-full pl-10 pr-3 py-2.5 border border-input-border rounded-lg leading-5 bg-input-bg text-foreground placeholder-input-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 sm:text-sm"
+                       placeholder="Search commands... (fuzzy matching enabled)" />
+            </div>
+
+            <!-- Permission Filter Chips -->
+            <div class="flex flex-wrap gap-2 items-center">
+                @foreach (var permission in AvailablePermissions)
+                {
+                    var isActive = SelectedPermissions.Contains(permission);
+                    <button @onclick="() => TogglePermissionFilter(permission)"
+                            class="@GetPermissionChipClass(permission, isActive)">
+                        @permission.ToLocalizedLevelName()
+                    </button>
+                }
+                @if (SelectedPermissions.Any())
+                {
+                    <button @onclick="ClearPermissionFilters" 
+                            class="px-2 py-1 text-xs font-medium text-muted hover:text-foreground transition-colors">
+                        <i class="ph ph-x"></i> Clear
+                    </button>
+                }
             </div>
         </div>
 
-         @if (!FilteredCommandGroups.Any())
+        @if (!FilteredCommandGroups.Any())
         {
-             <div class="text-center text-muted mt-10">
-                @AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="p-4 rounded-full bg-surface-alt/50 border border-line mb-4">
+                    <i class="ph ph-magnifying-glass text-3xl text-muted"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-foreground mb-2">No commands found</h3>
+                <p class="text-sm text-muted max-w-sm">
+                    @AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")
+                </p>
             </div>
         }
-
-        @foreach (var group in FilteredCommandGroups)
+        else if (ViewMode == ViewModeType.Cards)
         {
-            <div class="mb-10">
-                <h2 class="text-2xl font-bold text-foreground mb-4">
-                    @group.Name
-                </h2>
-
-                <!-- Desktop Table -->
-                <div class="hidden lg:block overflow-x-auto bg-surface rounded-lg shadow ring-1 ring-line">
-                    <table class="min-w-full divide-y divide-line">
-                        <thead class="bg-surface-alt/50 border-b border-line">
-                            <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_NAME")</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_ALIAS")</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider w-1/3">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_DESCRIPTION")</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider whitespace-nowrap">Target?</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider w-1/4">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_SYNTAX")</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-muted uppercase tracking-wider whitespace-nowrap">@AppState.Loc("WEBFRONT_HELP_COMMAND_DESC_REQUIRED_LEVEL")</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-line">
-                            @foreach (var command in group.Commands)
-                            {
-                                <tr class="hover:bg-surface-hover/30 transition-colors">
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-foreground">@command.Name</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-subtle">@command.Alias</td>
-                                    <td class="px-4 py-3 text-sm text-subtle break-words">@command.Description</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                        @if (command.RequiresTarget)
-                                        {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success border border-success/20">
-                                                Yes
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
-                                                No
-                                            </span>
-                                        }
-                                    </td>
-                                    <td class="px-4 py-3 text-sm font-mono text-subtle">
-                                        <span class="bg-surface-alt border border-line rounded px-1.5 py-0.5 whitespace-pre-wrap break-all text-xs">@CommandPrefix@command.Syntax</span>
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-muted">
-                                        @if (command.SupportedGames is not null && command.SupportedGames.Any())
-                                        {
-                                            <div class="flex flex-wrap gap-1">
-                                                @foreach (var game in command.SupportedGames)
-                                                {
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
-                                                        @game.ToString()
-                                                    </span>
-                                                }
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
-                                                All
-                                            </span>
-                                        }
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium @GetLevelColorClass(command.Permission)">
-                                        @command.Permission.ToLocalizedLevelName()
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Mobile Cards -->
-                <div class="lg:hidden space-y-4">
-                    @foreach (var command in group.Commands)
-                    {
-                        <div class="bg-surface rounded-lg shadow p-4 ring-1 ring-line">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="text-lg font-bold text-foreground">@command.Name</h3>
-                                <div class="text-right">
-                                    <span class="text-xs font-medium px-2 py-0.5 rounded @GetLevelColorClass(command.Permission) bg-surface-alt border border-line">
-                                        @command.Permission.ToLocalizedLevelName()
-                                    </span>
+            <!-- CARD VIEW: Command Groups Accordion -->
+            <div class="space-y-4">
+                @foreach (var group in FilteredCommandGroups)
+                {
+                    var isExpanded = ExpandedGroups.Contains(group.Name);
+                    var groupIcon = GetGroupIcon(group.Name);
+                    
+                    <div class="bg-surface rounded-xl border border-line shadow-sm overflow-hidden transition-all duration-200">
+                        <!-- Accordion Header -->
+                        <button @onclick="() => ToggleGroup(group.Name)"
+                                class="w-full flex items-center justify-between p-4 hover:bg-surface-hover/50 transition-colors group">
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/15 transition-colors">
+                                    <i class="ph @groupIcon text-lg text-primary"></i>
+                                </div>
+                                <div class="text-left">
+                                    <h2 class="text-lg font-bold text-foreground">@group.Name</h2>
+                                    <span class="text-xs text-muted">@group.Commands.Count() command@(group.Commands.Count() != 1 ? "s" : "")</span>
                                 </div>
                             </div>
-                            
-                            <p class="text-sm text-muted mb-3">@command.Description</p>
-                            
-                            <!-- Syntax Box -->
-                            <div class="bg-surface-alt/50 p-2 rounded border border-line mb-3 font-mono text-xs text-subtle break-all">
-                                @CommandPrefix@command.Syntax
-                            </div>
-                            
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle">
-                                @if (!string.IsNullOrWhiteSpace(command.Alias))
-                                {
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-muted">Alias</span>
-                                        <span class="font-mono bg-surface-alt px-1 rounded border border-line">@command.Alias</span>
-                                    </div>
-                                }
-                                
-                                <div class="flex items-center gap-1">
-                                    <span class="text-muted">Target</span>
-                                    <span class="@(command.RequiresTarget ? "text-success" : "text-muted") font-medium">
-                                        @(command.RequiresTarget ? "Yes" : "No")
-                                    </span>
-                                </div>
-
-                                <div class="flex items-center gap-1">
-                                    <span class="text-muted">@AppState.Loc("WEBFRONT_HELP_SUPPORTED_GAMES")</span>
-                                    @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                            <div class="flex items-center gap-2">
+                                <div class="hidden md:flex flex-wrap gap-1">
+                                    @foreach (var perm in group.Commands.Select(c => c.Permission).Distinct().OrderBy(p => p))
                                     {
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach (var game in command.SupportedGames)
-                                            {
-                                                <span class="font-medium text-foreground">@game.ToString()</span>
-                                            }
+                                        <span class="@GetPermissionBadgeClass(perm) text-[10px] px-1.5 py-0.5 rounded">
+                                            @perm.ToLocalizedLevelName()
+                                        </span>
+                                    }
+                                </div>
+                                <i class="ph @(isExpanded ? "ph-caret-up" : "ph-caret-down") text-lg text-muted group-hover:text-foreground transition-all duration-200"></i>
+                            </div>
+                        </button>
+
+                        <!-- Accordion Content -->
+                        @if (isExpanded)
+                        {
+                            <div class="border-t border-line">
+                                <div class="p-4 grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+                                    @foreach (var command in group.Commands)
+                                    {
+                                        <div class="bg-surface-alt/30 rounded-lg border border-line p-4 hover:border-primary/30 hover:bg-surface-alt/50 transition-all duration-200 group/card">
+                                            <!-- Command Header -->
+                                            <div class="flex items-start justify-between mb-3">
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <h3 class="font-bold text-foreground">@command.Name</h3>
+                                                    @if (!string.IsNullOrWhiteSpace(command.Alias))
+                                                    {
+                                                        <span class="px-1.5 py-0.5 text-[10px] font-mono bg-surface border border-line rounded text-muted">
+                                                            @command.Alias
+                                                        </span>
+                                                    }
+                                                </div>
+                                                <span class="@GetPermissionBadgeClass(command.Permission) text-[10px] font-medium px-2 py-0.5 rounded shrink-0">
+                                                    @command.Permission.ToLocalizedLevelName()
+                                                </span>
+                                            </div>
+
+                                            <!-- Description -->
+                                            <p class="text-sm text-subtle mb-3 line-clamp-2">@command.Description</p>
+
+                                            <!-- Syntax Block -->
+                                            <div class="relative mb-3">
+                                                <div class="flex items-center gap-2 bg-background/50 border border-line rounded-lg p-2.5 font-mono text-xs text-subtle group/syntax">
+                                                    <code class="flex-1 break-all">@command.Syntax</code>
+                                                    <button @onclick="@(() => CopyToClipboard($"{CommandPrefix}{command.Syntax}"))"
+                                                            @onclick:stopPropagation="true"
+                                                            title="Copy to clipboard"
+                                                            class="opacity-0 group-hover/syntax:opacity-100 p-1 rounded hover:bg-surface-hover text-muted hover:text-primary transition-all">
+                                                        <i class="ph ph-copy text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Footer Info -->
+                                            <div class="flex items-center justify-between text-[10px] text-muted">
+                                                <div class="flex items-center gap-3">
+                                                    @if (command.RequiresTarget)
+                                                    {
+                                                        <span class="flex items-center gap-1 text-success">
+                                                            <i class="ph ph-user-focus"></i> Target
+                                                        </span>
+                                                    }
+                                                    @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                                                    {
+                                                        <div class="flex gap-1">
+                                                            @foreach (var game in command.SupportedGames.Take(2))
+                                                            {
+                                                                <span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
+                                                                    @game.ToString()
+                                                                </span>
+                                                            }
+                                                            @if (command.SupportedGames.Length > 2)
+                                                            {
+                                                                <Tooltip Text="@string.Join(", ", command.SupportedGames.Skip(2).Select(g => g.ToString()))">
+                                                                    <span class="px-1.5 py-0.5 rounded bg-surface-alt text-muted border border-line cursor-help">
+                                                                        +@(command.SupportedGames.Length - 2)
+                                                                    </span>
+                                                                </Tooltip>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="flex items-center gap-1">
+                                                            <i class="ph ph-globe"></i> All Games
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
                                         </div>
                                     }
-                                    else
-                                    {
-                                        <span class="text-foreground">All</span>
-                                    }
                                 </div>
                             </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- TABLE VIEW -->
+            <div class="space-y-6">
+                @foreach (var group in FilteredCommandGroups)
+                {
+                    var groupIcon = GetGroupIcon(group.Name);
+                    
+                    <div class="bg-surface rounded-xl border border-line shadow-sm overflow-hidden">
+                        <!-- Group Header -->
+                        <div class="flex items-center gap-3 p-4 bg-surface-alt/30 border-b border-line">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20">
+                                <i class="ph @groupIcon text-primary"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-foreground">@group.Name</h2>
+                                <span class="text-xs text-muted">@group.Commands.Count() command@(group.Commands.Count() != 1 ? "s" : "")</span>
+                            </div>
                         </div>
-                    }
-                </div>
+                        
+                        <!-- Table -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-line">
+                                <thead class="bg-surface-alt/50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">Command</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider hidden md:table-cell">Description</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">Syntax</th>
+                                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider hidden sm:table-cell">Target</th>
+                                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider hidden lg:table-cell">Games</th>
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-muted uppercase tracking-wider">Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-line">
+                                    @foreach (var command in group.Commands)
+                                    {
+                                        <tr class="hover:bg-surface-hover/30 transition-colors">
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-semibold text-foreground">@command.Name</span>
+                                                    @if (!string.IsNullOrWhiteSpace(command.Alias))
+                                                    {
+                                                        <span class="px-1.5 py-0.5 text-[10px] font-mono bg-surface-alt border border-line rounded text-muted">
+                                                            @command.Alias
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-subtle hidden md:table-cell">
+                                                @command.Description
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <code class="bg-background/50 border border-line rounded px-2 py-1 text-xs font-mono text-subtle">
+                                                    @command.Syntax
+                                                </code>
+                                            </td>
+                                            <td class="px-4 py-3 text-center hidden sm:table-cell">
+                                                @if (command.RequiresTarget)
+                                                {
+                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success/10 text-success">
+                                                        <i class="ph ph-check text-sm"></i>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-surface-alt text-muted">
+                                                        <i class="ph ph-minus text-sm"></i>
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="px-4 py-3 text-center hidden lg:table-cell">
+                                                @if (command.SupportedGames is not null && command.SupportedGames.Any())
+                                                {
+                                                    <div class="flex justify-center gap-1">
+                                                        @foreach (var game in command.SupportedGames.Take(2))
+                                                        {
+                                                            <span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 text-[10px]" title="@AppState.Loc($"GAME_{game.ToString().ToUpper()}")">
+                                                                @game.ToString()
+                                                            </span>
+                                                        }
+                                                        @if (command.SupportedGames.Length > 2)
+                                                        {
+                                                            <Tooltip Text="@string.Join(", ", command.SupportedGames.Skip(2).Select(g => g.ToString()))">
+                                                                <span class="px-1.5 py-0.5 rounded bg-surface-alt text-muted border border-line text-[10px] cursor-help">
+                                                                    +@(command.SupportedGames.Length - 2)
+                                                                </span>
+                                                            </Tooltip>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-xs text-muted">All</span>
+                                                }
+                                            </td>
+                                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                                <span class="@GetPermissionBadgeClass(command.Permission) text-[10px] font-medium px-2 py-0.5 rounded whitespace-nowrap">
+                                                    @command.Permission.ToLocalizedLevelName()
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
             </div>
         }
     }

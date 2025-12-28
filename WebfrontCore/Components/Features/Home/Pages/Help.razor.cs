@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using SharedLibraryCore;
 using WebfrontCore.Components.Features.Console.Models;
 using WebfrontCore.Core.Services;
 
@@ -14,7 +15,11 @@ public partial class Help
     private List<CommandGroupInfo>? CommandGroups { get; set; }
     private string CommandPrefix { get; set; } = "!";
     
-    // State for accordion expansion
+    // View mode toggle
+    public enum ViewModeType { Cards, Table }
+    private ViewModeType ViewMode { get; set; } = ViewModeType.Table;
+    
+    // State for accordion expansion (card view)
     private HashSet<string> ExpandedGroups { get; set; } = new();
     
     // State for permission filtering
@@ -53,20 +58,21 @@ public partial class Help
 
             var groups = CommandGroups.AsEnumerable();
 
-            // Apply search filter
+            // Apply fuzzy search filter
             if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
-                var term = SearchTerm.Trim();
+                var term = SearchTerm.Trim().ToLowerInvariant();
                 
                 groups = groups
                     .Select(group => new CommandGroupInfo
                     {
                         Name = group.Name,
                         Commands = group.Commands.Where(c => 
-                            c.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                            c.Alias.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                            c.Description.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                            c.Syntax.Contains(term, StringComparison.OrdinalIgnoreCase)
+                            FuzzyMatch(c.Name, term) ||
+                            FuzzyMatch(c.Alias, term) ||
+                            FuzzyMatch(c.Description, term) ||
+                            FuzzyMatch(c.Syntax, term) ||
+                            FuzzyMatch(c.Permission.ToLocalizedLevelName(), term)
                         ).ToList()
                     })
                     .Where(group => group.Commands.Any());
@@ -90,12 +96,115 @@ public partial class Help
         }
     }
 
+    /// <summary>
+    /// Fuzzy string matching - supports partial matches, word boundaries, and typo tolerance
+    /// </summary>
+    private static bool FuzzyMatch(string? source, string searchTerm)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(searchTerm))
+            return false;
+
+        var sourceLower = source.ToLowerInvariant();
+        
+        // Exact substring match (highest priority)
+        if (sourceLower.Contains(searchTerm))
+            return true;
+        
+        // Word starts-with match (e.g., "ban" matches "tempban", "banuser")
+        var words = sourceLower.Split([' ', '-', '_', '.'], StringSplitOptions.RemoveEmptyEntries);
+        if (words.Any(word => word.StartsWith(searchTerm)))
+            return true;
+        
+        // Fuzzy character sequence match (characters appear in order, with gaps allowed)
+        // e.g., "tmpbn" matches "tempban"
+        if (searchTerm.Length >= 3 && FuzzySequenceMatch(sourceLower, searchTerm))
+            return true;
+        
+        // Levenshtein distance for short terms (typo tolerance)
+        // Only use for small words to avoid false positives
+        if (searchTerm.Length is >= 3 and <= 8)
+        {
+            // Check each word in the source
+            if (words.Any(word => 
+                word.Length >= searchTerm.Length - 2 && 
+                word.Length <= searchTerm.Length + 2 &&
+                LevenshteinDistance(word, searchTerm) <= Math.Max(1, searchTerm.Length / 4)))
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Check if all characters in search term appear in source in order
+    /// </summary>
+    private static bool FuzzySequenceMatch(string source, string searchTerm)
+    {
+        var sourceIndex = 0;
+        var matchCount = 0;
+        
+        foreach (var c in searchTerm)
+        {
+            while (sourceIndex < source.Length)
+            {
+                if (source[sourceIndex] == c)
+                {
+                    matchCount++;
+                    sourceIndex++;
+                    break;
+                }
+                sourceIndex++;
+            }
+        }
+        
+        // Require at least 70% of characters to match in sequence
+        return matchCount >= searchTerm.Length * 0.7;
+    }
+
+    /// <summary>
+    /// Compute Levenshtein edit distance between two strings
+    /// </summary>
+    private static int LevenshteinDistance(string source, string target)
+    {
+        if (string.IsNullOrEmpty(source)) return target?.Length ?? 0;
+        if (string.IsNullOrEmpty(target)) return source.Length;
+
+        var sourceLength = source.Length;
+        var targetLength = target.Length;
+
+        // Use a single-row optimization for memory efficiency
+        var previousRow = new int[targetLength + 1];
+        var currentRow = new int[targetLength + 1];
+
+        for (var j = 0; j <= targetLength; j++)
+            previousRow[j] = j;
+
+        for (var i = 1; i <= sourceLength; i++)
+        {
+            currentRow[0] = i;
+
+            for (var j = 1; j <= targetLength; j++)
+            {
+                var cost = source[i - 1] == target[j - 1] ? 0 : 1;
+                currentRow[j] = Math.Min(
+                    Math.Min(currentRow[j - 1] + 1, previousRow[j] + 1),
+                    previousRow[j - 1] + cost);
+            }
+
+            (previousRow, currentRow) = (currentRow, previousRow);
+        }
+
+        return previousRow[targetLength];
+    }
+
     protected override async Task OnInitializedAsync()
     {
         CommandGroups = await DataService.GetHelpCommandsAsync();
         
-        // Expand first group by default for better UX
-        if (CommandGroups?.Any() == true)
+        // Expand first group by default for better UX (card view)
+        if (CommandGroups.Count != 0)
         {
             ExpandedGroups.Add(CommandGroups.First().Name);
         }

@@ -10,7 +10,7 @@ public partial class ClientActivity
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
     [Parameter] public ServerInfo? Model { get; set; }
-    
+
     private List<ClientGroup> GroupedClients => GetGroupedClients();
 
     public class ClientGroup
@@ -29,7 +29,7 @@ public partial class ClientActivity
     {
         if (Model == null) return [];
         var half = Model.ClientCount == 0 || Model.Players.Count == 0 ? 0 : (int)Math.Ceiling(Model.ClientCount / 2.0);
-        
+
         return Model.Players
             .Select((client, i) => new ClientItem { Index = i, Client = client })
             .OrderBy(c => c.Client.Name)
@@ -49,6 +49,19 @@ public partial class ClientActivity
             "DISCONNECTED" => "ph-bold ph-sign-out text-rose-500",
             _ => ""
         };
+    }
+
+    private (string Icon, string Color) GetPingIconAndColor(int ping)
+    {
+        var (icon, color) = ping switch
+        {
+            < 50 => ("ph-fill ph-cell-signal-full", "text-emerald-500"),
+            < 100 => ("ph-fill ph-cell-signal-high", "text-lime-500"),
+            < 150 => ("ph-fill ph-cell-signal-medium", "text-amber-500"),
+            < 200 => ("ph-fill ph-cell-signal-low", "text-orange-500"),
+            _ => ("ph-fill ph-cell-signal-none", "text-red-500")
+        };
+        return (icon, color);
     }
 
     private string CapClientName(string? message, int length)

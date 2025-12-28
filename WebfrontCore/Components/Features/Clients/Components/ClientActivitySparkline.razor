@@ -1,7 +1,7 @@
 @* Activity Sparkline - Compact visual of recent activity over last 30 days *@
 <div class="flex items-center gap-3 p-3 bg-surface-alt rounded-lg border border-line">
     <div class="flex items-center gap-2 text-muted">
-        <i class="ph ph-activity text-lg"></i>
+        <i class="ph ph-activity text-lg text-secondary"></i>
         <span class="text-xs font-bold uppercase tracking-wider">Activity</span>
     </div>
     
@@ -9,7 +9,7 @@
         @foreach (var value in _activityData)
         {
             var height = value > 0 ? Math.Max(4, (int)(value / _maxValue * 32)) : 2;
-            var colorClass = value > 0 ? "bg-primary" : "bg-line";
+            var colorClass = value > 0 ? "bg-success" : "bg-line";
             
             <div class="flex-1 rounded-t transition-all hover:opacity-80 @colorClass"
                  style="height: @(height)px;">

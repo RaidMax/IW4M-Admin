@@ -1,13 +1,14 @@
 @* Tooltip component - hover on desktop, tap on mobile *@
 @if (!string.IsNullOrEmpty(Text))
 {
-    <div class="tooltip-wrapper group/tooltip relative" @onclick="ToggleTooltip" @onclick:stopPropagation>
+    <div class="tooltip-wrapper group/tooltip relative z-[9999]" @onclick="ToggleTooltip" @onclick:stopPropagation>
         @ChildContent
         <div class="@TooltipClasses">
-            <div class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line max-w-[200px] text-center">
+            <div
+                class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line max-w-[200px] text-center whitespace-nowrap">
                 @Text
             </div>
-            <div class="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-surface-alt border-r border-b border-line rotate-45"></div>
+            <div class="@ArrowClasses"></div>
         </div>
     </div>
 }
@@ -17,16 +18,42 @@ else
 }
 
 @code {
+
+    public enum TooltipDirection
+    {
+        Up,
+        Down,
+        Left,
+        Right
+    }
+
     [Parameter] public string Text { get; set; }
     [Parameter] public RenderFragment ChildContent { get; set; }
-    
+    [Parameter] public TooltipDirection Direction { get; set; } = TooltipDirection.Up;
+
     private bool _showMobile;
-    
-    private string TooltipClasses => $"absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 " +
-        // Desktop: show on hover
+
+    private string TooltipClasses => Direction switch
+    {
+        TooltipDirection.Up => $"absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 " + BaseVisibilityClasses,
+        TooltipDirection.Down => $"absolute z-[9999] top-full left-1/2 -translate-x-1/2 mt-2 " + BaseVisibilityClasses,
+        TooltipDirection.Left => $"absolute z-[9999] right-full top-1/2 -translate-y-1/2 mr-2 " + BaseVisibilityClasses,
+        TooltipDirection.Right => $"absolute z-[9999] left-full top-1/2 -translate-y-1/2 ml-2 " + BaseVisibilityClasses,
+        _ => $"absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 " + BaseVisibilityClasses
+    };
+
+    private string ArrowClasses => Direction switch
+    {
+        TooltipDirection.Up => "absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-surface-alt border-r border-b border-line rotate-45",
+        TooltipDirection.Down => "absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-surface-alt border-l border-t border-line rotate-45",
+        TooltipDirection.Left => "absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-surface-alt border-t border-r border-line rotate-45",
+        TooltipDirection.Right => "absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-surface-alt border-b border-l border-line rotate-45",
+        _ => "absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-surface-alt border-r border-b border-line rotate-45"
+    };
+
+    private string BaseVisibilityClasses =>
         "opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible " +
-        // Mobile: show on tap (controlled by _showMobile)
-        $"{(_showMobile ? "!opacity-100 !visible" : "")} " +
+        (_showMobile ? "!opacity-100 !visible " : "") +
         "transition-all duration-200 pointer-events-none";
 
     private void ToggleTooltip()
@@ -34,4 +61,5 @@ else
         // Only toggle on touch devices (mobile)
         _showMobile = !_showMobile;
     }
+
 }

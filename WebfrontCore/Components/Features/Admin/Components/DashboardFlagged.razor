@@ -15,6 +15,9 @@
             <div class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
                  <i class="ph ph-hard-drives text-primary"></i>
                  <span class="truncate"><ColorCode Value="@server.Name"/></span>
+                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 ml-auto">
+                     @(AppState.Loc($"GAME_{server.Game}"))
+                 </span>
             </div>
             <div class="divide-y divide-line">
                 @foreach (var client in server.FlaggedClients)
@@ -35,7 +38,7 @@
                         </div>
                         
                         <div class="text-xs font-mono bg-surface-alt/50 p-2.5 rounded border border-line text-subtle break-words">
-                            <span class="font-bold text-muted select-none mr-1">$</span> @client.Reason
+                            @client.Reason
                         </div>
                     </div>
                 }

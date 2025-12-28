@@ -110,6 +110,19 @@ public partial class AdvancedStats
         return attachmentText;
     }
 
+    /// <summary>
+    /// Gets the OpenGraph description for the stats page.
+    /// Null-safe for StreamRendering - returns fallback during loading.
+    /// </summary>
+    private string GetOpenGraphDescription()
+    {
+        if (Stats?.Aggregate == null)
+            return AppState.Loc("WEBFRONT_ADV_STATS_TITLE");
+        
+        return $"{AppState.Loc("WEBFRONT_ADV_STATS_HITS")}: {Stats.Aggregate.HitCount:N0} — {AppState.Loc("WEBFRONT_ADV_STATS_KILLS")}: {Stats.Aggregate.KillCount:N0} — {AppState.Loc("WEBFRONT_ADV_STATS_DEATHS")}: {Stats.Aggregate.DeathCount:N0}";
+    }
+
+
     private int GetRankIconIndex(double? zScore)
     {
         // Logic from IW4MAdmin.Plugins.Stats.Extensions.RankIconIndexForZScore

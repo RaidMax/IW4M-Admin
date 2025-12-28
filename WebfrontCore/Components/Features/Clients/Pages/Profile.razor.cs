@@ -74,6 +74,32 @@ public partial class Profile
         return string.IsNullOrEmpty(match) ? "?" : match;
     }
 
+    /// <summary>
+    /// Gets the OpenGraph description for the profile page.
+    /// Null-safe for StreamRendering - returns fallback during loading.
+    /// </summary>
+    private string GetOpenGraphDescription()
+    {
+        if (Client == null)
+            return AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE");
+        
+        return $"{AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")} - {AppState.Loc($"GAME_{Client.Game}")} - {Client.LastConnection.HumanizeForCurrentCulture()}";
+    }
+
+    /// <summary>
+    /// Gets the Gravatar URL for the OpenGraph image.
+    /// Returns null if no Gravatar is available.
+    /// </summary>
+    private string? GetGravatarUrl()
+    {
+        var gravatarHash = Client?.Meta?.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
+        if (string.IsNullOrEmpty(gravatarHash))
+            return null;
+        
+        return $"https://gravatar.com/avatar/{gravatarHash}?size=168&default=blank&rating=pg";
+    }
+
+
     private void BuildContextMenu()
     {
         var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;

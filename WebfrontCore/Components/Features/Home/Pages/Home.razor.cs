@@ -35,4 +35,33 @@ public partial class Home
             ? $"<span class='font-weight-bold text-primary'>{split[0].FormatExt(values)}</span><span>{split[1]}</span>"
             : translation;
     }
+
+    /// <summary>
+    /// Safe localization that returns a fallback if AppState isn't ready.
+    /// </summary>
+    private string GetLocalizedString(string key)
+    {
+        try
+        {
+            var result = AppState?.Loc(key);
+            return string.IsNullOrEmpty(result) || result == key ? "Server Overview" : result;
+        }
+        catch
+        {
+            return "Server Overview";
+        }
+    }
+
+    /// <summary>
+    /// Gets OpenGraph description with real data when available.
+    /// </summary>
+    private string GetOpenGraphDescription()
+    {
+        if (Model == null)
+            return "View server status and player information";
+        
+        var total = Model.TotalClientCount.ToString("#,##0");
+        var recent = Model.RecentClientCount.ToString("#,##0");
+        return $"{total} total players • {recent} recently active";
+    }
 }

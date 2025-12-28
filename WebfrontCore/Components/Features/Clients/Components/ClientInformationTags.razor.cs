@@ -64,9 +64,9 @@ public partial class ClientInformationTags
     {
         return category switch
         {
-            "General" => ("ph-info", "General Information", "bg-gradient-to-br from-blue-500 to-blue-600"),
-            "Statistics" => ("ph-chart-bar", "Game Statistics", "bg-gradient-to-br from-emerald-500 to-emerald-600"),
-            "AntiCheat" => ("ph-shield-check", "AntiCheat Metrics", "bg-gradient-to-br from-amber-500 to-amber-600"),
+            "General" => ("ph-info", "General Information", "text-primary"),
+            "Statistics" => ("ph-chart-bar", "Game Statistics", "text-success"),
+            "AntiCheat" => ("ph-shield-check", "AntiCheat Metrics", "text-warning"),
             _ => ("ph-tag", category, "bg-gradient-to-br from-gray-500 to-gray-600")
         };
     }

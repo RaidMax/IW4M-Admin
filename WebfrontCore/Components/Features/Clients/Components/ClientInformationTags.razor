@@ -17,8 +17,8 @@ else if (_groupedMeta.Any())
             <div class="space-y-3 py-4 lg:py-0 lg:px-4 first:pt-0 first:lg:pl-0 last:pb-0 last:lg:pr-0">
                 @* Category Header *@
                 <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg @accentClass flex items-center justify-center">
-                        <i class="ph @icon text-white text-xs"></i>
+                    <div class="w-7 h-7 flex items-center justify-center">
+                        <i class="ph @icon text-lg @accentClass"></i>
                     </div>
                     <h3 class="text-xs font-bold text-foreground">@title</h3>
                 </div>
@@ -39,7 +39,7 @@ else if (_groupedMeta.Any())
                                     <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent rounded-t-xl"></div>
                                 }
                                 <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
-                                    <span class="meta-value-text @(isLongValue ? "marquee-enabled" : "")" style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
+                                    <span class="meta-value-text text-primary @(isLongValue ? "marquee-enabled" : "")" style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
                                         <ColorCode Value="@item.Value" />
                                     </span>
                                 </div>

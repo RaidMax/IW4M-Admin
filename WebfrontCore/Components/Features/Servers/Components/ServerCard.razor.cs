@@ -5,7 +5,7 @@ using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Servers.Components;
 
-public partial class ServerCard
+public partial class ServerCard : IAsyncDisposable
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
@@ -14,9 +14,11 @@ public partial class ServerCard
     [Parameter] public ServerInfo Model { get; set; }
     [Parameter] public EventCallback<string> OnChat { get; set; }
 
-    
+    private ElementReference _cardElement;
+    private DotNetObjectReference<ServerCard>? _dotNetRef;
     private PeriodicTimer? _timer;
-    private readonly CancellationTokenSource _cts = new();
+    private CancellationTokenSource _cts = new();
+    private bool _isVisible = true; // Default to visible for initial render
     private bool _showMobileDetails;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -35,18 +37,33 @@ public partial class ServerCard
 
         if (firstRender)
         {
+            // Set up visibility observer
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("visibilityObserver.observe", _cardElement, _dotNetRef);
+
+            // Start the refresh timer
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
-            RunTimer();
+            _ = RunTimerAsync();
         }
     }
 
-    private async void RunTimer()
+    [JSInvokable]
+    public void OnVisibilityChanged(bool isVisible)
+    {
+        _isVisible = isVisible;
+    }
+
+    private async Task RunTimerAsync()
     {
         try
         {
             while (await _timer!.WaitForNextTickAsync(_cts.Token))
             {
-                await Refresh();
+                // Only refresh when visible
+                if (_isVisible)
+                {
+                    await Refresh();
+                }
             }
         }
         catch (OperationCanceledException)
@@ -55,7 +72,7 @@ public partial class ServerCard
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"[ServerCard] ERROR in RunTimer: {ex}");
+            System.Console.WriteLine($"[ServerCard] ERROR in RunTimerAsync: {ex}");
         }
     }
 
@@ -88,10 +105,21 @@ public partial class ServerCard
         builder.CloseComponent();
     };
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         _cts.Cancel();
+        _cts.Dispose();
         _timer?.Dispose();
-    }
 
+        try
+        {
+            await JS.InvokeVoidAsync("visibilityObserver.unobserve", _cardElement);
+        }
+        catch
+        {
+            // JS interop may fail during app shutdown
+        }
+
+        _dotNetRef?.Dispose();
+    }
 }

@@ -37,6 +37,8 @@ public interface IWebfrontDataService
     Task DismissAlertAsync(Guid alertId);
     Task DismissAllAlertsAsync();
     Task<IEnumerable<ServerReportsInfo>> GetReportsAsync();
+    Task<IEnumerable<ServerAdminsInfo>> GetOnlineAdminsAsync();
+    Task<IEnumerable<ServerFlaggedInfo>> GetOnlineFlaggedAsync();
     Task<AboutInfo> GetAboutInfoAsync();
     Task<List<CommandGroupInfo>> GetHelpCommandsAsync();
 

@@ -127,13 +127,13 @@ else
                 EFPenalty.PenaltyType.Kick => ("bg-warning", "ph-x"),
                 _ => ("bg-muted", "ph-gavel")
             },
-            MessageResponse => ("bg-primary/60", "ph-chat"),
+            MessageResponse => ("bg-primary", "ph-chat"),
             UpdatedAliasResponse => ("bg-subtle", "ph-user"),
             ConnectionHistoryResponse c => c.ConnectionType == Reference.ConnectionType.Connect 
                 ? ("bg-success", "ph-sign-in") 
                 : ("bg-muted", "ph-sign-out"),
             PermissionLevelChangedResponse => ("bg-primary", "ph-shield"),
-            ClientNoteMetaResponse => ("bg-primary/60", "ph-note"),
+            ClientNoteMetaResponse => ("bg-primary", "ph-note"),
             _ => ("bg-muted", "ph-circle")
         };
     }

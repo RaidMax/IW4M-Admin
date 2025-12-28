@@ -1,4 +1,5 @@
-﻿using Data.Models.Client;
+﻿using Data.Models;
+using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
@@ -12,25 +13,67 @@ public partial class Privileged
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
 
-    private Dictionary<EFClient.Permission, IList<ClientInfo>> PrivilegedClients;
+    [SupplyParameterFromQuery] public string? Game { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private Reference.Game? SelectedGame { get; set; }
+    private IEnumerable<Reference.Game> ActiveGames { get; set; } = [];
+    private Dictionary<EFClient.Permission, IList<ClientInfo>>? AllPrivilegedClients;
+    private Dictionary<EFClient.Permission, IList<ClientInfo>>? FilteredPrivilegedClients;
+
+    protected override async Task OnParametersSetAsync()
     {
-        try
+        // Parse game filter from query string
+        if (!string.IsNullOrEmpty(Game) && Enum.TryParse<Reference.Game>(Game, out var g))
         {
-            PrivilegedClients = await DataService.GetPrivilegedClientsAsync();
+            SelectedGame = g;
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        else
         {
-            // If privacy enabled and not logged in, user might be forbidden
-            // However, the menu link should probably be hidden or we redirect?
-            // MVC redirects to Index.
-            NavManager.NavigateTo("/");
+            SelectedGame = null;
         }
-        catch (Exception)
+
+        // Fetch data if not already loaded
+        if (AllPrivilegedClients is null)
         {
-            // Handle error
+            try
+            {
+                AllPrivilegedClients = await DataService.GetPrivilegedClientsAsync();
+                ActiveGames = AllPrivilegedClients.Values
+                    .SelectMany(clients => clients)
+                    .Select(c => c.Game)
+                    .Distinct()
+                    .OrderBy(g => g.ToString());
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                NavManager.NavigateTo("/");
+                return;
+            }
+            catch (Exception)
+            {
+                return;
+            }
         }
+
+        // Apply filter
+        FilteredPrivilegedClients = ApplyGameFilter(AllPrivilegedClients, SelectedGame);
+    }
+
+    private static Dictionary<EFClient.Permission, IList<ClientInfo>>? ApplyGameFilter(
+        Dictionary<EFClient.Permission, IList<ClientInfo>>? clients,
+        Reference.Game? game)
+    {
+        if (clients is null) return null;
+        if (!game.HasValue) return clients;
+
+        return clients
+            .Select(kvp => new
+            {
+                kvp.Key,
+                Value = kvp.Value.Where(c => c.Game == game.Value).ToList()
+            })
+            .Where(x => x.Value.Count > 0)
+            .ToDictionary(x => x.Key, x => (IList<ClientInfo>)x.Value);
     }
 
     private static string GetHeaderClass(EFClient.Permission permission) => permission switch

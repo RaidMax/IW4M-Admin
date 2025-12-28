@@ -1,7 +1,7 @@
 @* Tooltip component - hover on desktop, tap on mobile *@
 @if (!string.IsNullOrEmpty(Text))
 {
-    <div class="tooltip-wrapper group/tooltip relative z-[9999]" @onclick="ToggleTooltip" @onclick:stopPropagation>
+    <div class="tooltip-wrapper group/tooltip relative" @onclick="ToggleTooltip" @onclick:stopPropagation>
         @ChildContent
         <div class="@TooltipClasses">
             <div

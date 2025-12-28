@@ -13,4 +13,5 @@ public class NavigationInfo
     public int TotalClientCount { get; set; }
     public int? TotalAdminCount { get; set; }
     public int? TotalReportCount { get; set; }
+    public int? TotalFlaggedCount { get; set; }
 }

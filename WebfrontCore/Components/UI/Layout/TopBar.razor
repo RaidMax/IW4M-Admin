@@ -29,11 +29,14 @@
                 <span>@AppConfig.WebfrontCustomBranding</span>
             }
         </a>
-    </div>
-
-    <!-- Center: Client Badges -->
-    <div class="hidden md:flex flex-1 justify-center px-4 min-w-0">
-        <ClientBadges/>
+        
+        <!-- Divider -->
+        <div class="h-8 w-px bg-divider hidden md:block"></div>
+        
+        <!-- Client Badges (Desktop) -->
+        <div class="hidden md:flex">
+            <ClientBadges/>
+        </div>
     </div>
 
     <!-- Right: Actions -->

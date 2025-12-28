@@ -360,6 +360,11 @@ public class WebfrontDataService : IWebfrontDataService
                 ? _manager.GetServers().Sum(server =>
                     server.Reports.Count(report =>
                         DateTime.UtcNow - report.ReportedOn <= TimeSpan.FromHours(24)))
+                : null,
+            TotalFlaggedCount = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)
+                ? _manager.GetServers().Sum(server =>
+                    server.GetClientsAsList()
+                        .Count(client => client.Level == Data.Models.Client.EFClient.Permission.Flagged))
                 : null
         };
     }
@@ -937,6 +942,72 @@ public class WebfrontDataService : IWebfrontDataService
             .Where(s => s.Reports.Any())
             .ToList();
         return Task.FromResult<IEnumerable<ServerReportsInfo>>(reports);
+    }
+
+    public Task<IEnumerable<ServerAdminsInfo>> GetOnlineAdminsAsync()
+    {
+        var admins = _manager.GetServers()
+            .Select(server => new ServerAdminsInfo
+            {
+                Id = server.LegacyDatabaseId,
+                Name = server.Hostname,
+                Admins = server.GetClientsAsList()
+                    .Where(client => client.Level > Data.Models.Client.EFClient.Permission.Flagged)
+                    .Select(client => new AdminInfo
+                    {
+                        Name = client.Name,
+                        ClientId = client.ClientId,
+                        Level = client.Level.ToLocalizedLevelName(),
+                        LevelInt = (int)client.Level
+                    })
+                    .OrderByDescending(a => a.LevelInt)
+                    .ToList()
+            })
+            .Where(s => s.Admins.Any())
+            .ToList();
+        return Task.FromResult<IEnumerable<ServerAdminsInfo>>(admins);
+    }
+
+    public async Task<IEnumerable<ServerFlaggedInfo>> GetOnlineFlaggedAsync()
+    {
+        var flagged = new List<ServerFlaggedInfo>();
+        
+        foreach (var server in _manager.GetServers())
+        {
+            var flaggedClients = server.GetClientsAsList()
+                .Where(client => client.Level == Data.Models.Client.EFClient.Permission.Flagged)
+                .ToList();
+
+            if (!flaggedClients.Any()) continue;
+
+            var flaggedInfos = new List<FlaggedClientInfo>();
+            foreach (var client in flaggedClients)
+            {
+                // Get the flag penalty to retrieve the reason
+                var flagPenalty = await _manager.GetPenaltyService()
+                    .GetActivePenaltiesAsync(client.AliasLinkId, client.CurrentAliasId, 
+                        client.NetworkId, client.GameName, client.IPAddress);
+                
+                var flag = flagPenalty.FirstOrDefault(p => p.Type == EFPenalty.PenaltyType.Flag);
+                
+                flaggedInfos.Add(new FlaggedClientInfo
+                {
+                    Name = client.Name,
+                    ClientId = client.ClientId,
+                    Reason = flag?.Offense ?? "Unknown",
+                    FlaggedOn = flag?.When ?? DateTime.UtcNow
+                });
+            }
+
+            flagged.Add(new ServerFlaggedInfo
+            {
+                Id = server.LegacyDatabaseId,
+                Name = server.Hostname,
+                FlaggedClients = flaggedInfos.OrderByDescending(f => f.FlaggedOn).ToList()
+            });
+        }
+
+        return flagged;
     }
 
     public Task<AboutInfo> GetAboutInfoAsync()

@@ -83,4 +83,22 @@ public partial class ClientBadges : IDisposable
             builder.CloseComponent();
         }, AppState.Loc("WEBFRONT_MODAL_REPORTS_TITLE"));
     }
+
+    private void ShowAdmins()
+    {
+        ActionService.OpenCustom(builder =>
+        {
+            builder.OpenComponent<DashboardAdmins>(0);
+            builder.CloseComponent();
+        }, AppState.Loc("WEBFRONT_MODAL_ADMINS_TITLE"));
+    }
+
+    private void ShowFlagged()
+    {
+        ActionService.OpenCustom(builder =>
+        {
+            builder.OpenComponent<DashboardFlagged>(0);
+            builder.CloseComponent();
+        }, AppState.Loc("WEBFRONT_MODAL_FLAGGED_TITLE"));
+    }
 }

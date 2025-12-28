@@ -114,6 +114,12 @@ public partial class ServerCard : IAsyncDisposable
         try
         {
             await JS.InvokeVoidAsync("visibilityObserver.unobserve", _cardElement);
+            
+            // Clean up cached chart instance to prevent overlay issues on game filter change
+            if (Model?.Id != null)
+            {
+                await JS.InvokeVoidAsync("destroyServerChart", $"server_history_canvas_{Model.Id}");
+            }
         }
         catch
         {

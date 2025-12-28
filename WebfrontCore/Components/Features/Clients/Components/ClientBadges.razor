@@ -3,7 +3,7 @@
     @if (_navData?.TotalReportCount > 0)
     {
         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
-            <button class="relative text-subtle hover:text-foreground transition-colors p-2 rounded-lg hover:bg-surface-hover"
+            <button class="relative text-subtle hover:text-foreground transition-colors p-2 rounded-lg hover:bg-surface-hover flex justify-center"
                     type="button" @onclick="ShowReports" title="@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")">
                 <i class="ph ph-warning-circle text-2xl text-error"></i>
                 <span class="absolute top-0 right-0 -mt-1 -mr-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-error text-white border border-background shadow-sm">
@@ -15,7 +15,7 @@
     @if (_navData?.TotalFlaggedCount > 0)
     {
         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
-            <button class="relative text-subtle hover:text-foreground transition-colors p-2 rounded-lg hover:bg-surface-hover"
+            <button class="relative text-subtle hover:text-foreground transition-colors p-2 rounded-lg hover:bg-surface-hover flex justify-center"
                     type="button" @onclick="ShowFlagged" title="Flagged Players">
                 <i class="ph ph-flag text-2xl text-level-flagged"></i>
                 <span class="absolute top-0 right-0 -mt-1 -mr-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-level-flagged text-white border border-background shadow-sm">
@@ -32,33 +32,35 @@ else
         {
             <AuthorizeView>
                 <Authorized>
-                    @* Logged in: 2x2 Grid Layout *@
-                    <div class="grid grid-cols-2 gap-1">
-                        @* Row 1: Clients + Admins *@
+                    @* Logged in: Horizontal layout *@
+                    <div class="inline-flex items-center gap-2">
+                        @* Clients *@
                         <div class="flex items-center border border-line rounded-lg overflow-hidden">
-                            <span class="px-2 py-0.5 text-[10px] font-bold text-primary bg-primary/10 border-r border-line">@(_navData.TotalClientCount)</span>
-                            <span class="px-2 py-0.5 text-[10px] font-medium text-muted bg-surface-alt/50">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE").ToUpper()</span>
+                            <span class="px-3 py-1 text-xs font-bold text-primary bg-primary/10 border-r border-line">@(_navData.TotalClientCount)</span>
+                            <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50">@AppState.Loc("WEBFRONT_LAYOUT_CLIENTS_ONLINE").ToUpper()</span>
                         </div>
                         
+                        @* Admins *@
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")" Context="adminsContext">
                             <button type="button" class="flex items-center border border-line rounded-lg overflow-hidden cursor-pointer hover:border-line-hover transition-colors group" @onclick="ShowAdmins">
-                                <span class="px-2 py-0.5 text-[10px] font-bold text-success bg-success/10 border-r border-line group-hover:bg-success/20 transition-colors">@(_navData.TotalAdminCount ?? 0)</span>
-                                <span class="px-2 py-0.5 text-[10px] font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE").ToUpper()</span>
+                                <span class="px-3 py-1 text-xs font-bold text-success bg-success/10 border-r border-line group-hover:bg-success/20 transition-colors">@(_navData.TotalAdminCount ?? 0)</span>
+                                <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE").ToUpper()</span>
                             </button>
                         </AuthorizeView>
                         
-                        @* Row 2: Reports + Flagged *@
+                        @* Reports *@
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")" Context="reportsContext">
                             <button type="button" class="flex items-center border border-line rounded-lg overflow-hidden cursor-pointer hover:border-line-hover transition-colors group" @onclick="ShowReports">
-                                <span class="px-2 py-0.5 text-[10px] font-bold text-error bg-error/10 border-r border-line group-hover:bg-error/20 transition-colors">@(_navData.TotalReportCount ?? 0)</span>
-                                <span class="px-2 py-0.5 text-[10px] font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS").ToUpper()</span>
+                                <span class="px-3 py-1 text-xs font-bold text-error bg-error/10 border-r border-line group-hover:bg-error/20 transition-colors">@(_navData.TotalReportCount ?? 0)</span>
+                                <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS").ToUpper()</span>
                             </button>
                         </AuthorizeView>
                         
+                        @* Flagged *@
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")" Context="flaggedContext">
                             <button type="button" class="flex items-center border border-line rounded-lg overflow-hidden cursor-pointer hover:border-line-hover transition-colors group" @onclick="ShowFlagged">
-                                <span class="px-2 py-0.5 text-[10px] font-bold text-level-flagged bg-level-flagged/10 border-r border-line group-hover:bg-level-flagged/20 transition-colors">@(_navData.TotalFlaggedCount ?? 0)</span>
-                                <span class="px-2 py-0.5 text-[10px] font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">FLAGGED</span>
+                                <span class="px-3 py-1 text-xs font-bold text-level-flagged bg-level-flagged/10 border-r border-line group-hover:bg-level-flagged/20 transition-colors">@(_navData.TotalFlaggedCount ?? 0)</span>
+                                <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">FLAGGED</span>
                             </button>
                         </AuthorizeView>
                     </div>

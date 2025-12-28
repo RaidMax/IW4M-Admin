@@ -78,8 +78,9 @@
                 {
                     var isSelf = AppState.User?.ClientId == client.ClientId;
                     var ping = GetPingIconAndColor(client.Ping);
-                    
-                    <div class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
+
+                    <div
+                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
                         <!-- Player -->
                         <div class="flex items-center min-w-0 pr-2">
                             <i class="@ping.Icon @ping.Color text-[10px] mr-1.5 shrink-0"></i>
@@ -100,7 +101,7 @@
                             </AuthorizeView>
                             @if (client.ZScore.HasValue && client.ZScore.Value != 0)
                             {
-                                <Tooltip Text="@($"Rating: {client.ZScore:F2}")">
+                                <Tooltip Text="@($"Rating: {client.ZScore:F2}")" Direction="Tooltip.TooltipDirection.Right">
                                     <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
                                 </Tooltip>
                             }

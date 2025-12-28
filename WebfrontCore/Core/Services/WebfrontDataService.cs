@@ -931,6 +931,7 @@ public class WebfrontDataService : IWebfrontDataService
             {
                 Id = server.LegacyDatabaseId,
                 Name = server.Hostname,
+                Game = (Reference.Game)server.GameName,
                 Reports = server.Reports.Select(r => new ReportInfo
                 {
                     Target = new ReportEntityInfo { Name = r.Target.Name, ClientId = r.Target.ClientId },
@@ -951,6 +952,7 @@ public class WebfrontDataService : IWebfrontDataService
             {
                 Id = server.LegacyDatabaseId,
                 Name = server.Hostname,
+                Game = (Reference.Game)server.GameName,
                 Admins = server.GetClientsAsList()
                     .Where(client => client.Level > Data.Models.Client.EFClient.Permission.Flagged)
                     .Select(client => new AdminInfo
@@ -1003,6 +1005,7 @@ public class WebfrontDataService : IWebfrontDataService
             {
                 Id = server.LegacyDatabaseId,
                 Name = server.Hostname,
+                Game = (Reference.Game)server.GameName,
                 FlaggedClients = flaggedInfos.OrderByDescending(f => f.FlaggedOn).ToList()
             });
         }

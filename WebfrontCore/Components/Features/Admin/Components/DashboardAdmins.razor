@@ -15,6 +15,9 @@
             <div class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
                  <i class="ph ph-hard-drives text-primary"></i>
                  <span class="truncate"><ColorCode Value="@server.Name"/></span>
+                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 ml-auto">
+                     @(AppState.Loc($"GAME_{server.Game}"))
+                 </span>
             </div>
             <div class="divide-y divide-line">
                 @foreach (var admin in server.Admins)
@@ -25,7 +28,7 @@
                                 <ColorCode Value="@admin.Name"/>
                             </a>
                         </div>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/10 text-success border border-success/20 uppercase tracking-wider">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold @GetLevelClass(admin.LevelInt) uppercase tracking-wider">
                             @admin.Level
                         </span>
                     </div>
@@ -56,4 +59,16 @@
             AdminsList = [];
         }
     }
+
+    private static string GetLevelClass(int levelInt) => (Data.Models.Client.EFClient.Permission)levelInt switch
+    {
+        Data.Models.Client.EFClient.Permission.Console => "bg-level-console/40 text-level-console border border-level-console/60",
+        Data.Models.Client.EFClient.Permission.Owner => "bg-level-owner/40 text-level-owner border border-level-owner/60",
+        Data.Models.Client.EFClient.Permission.Creator => "bg-level-owner/40 text-level-owner border border-level-owner/60",
+        Data.Models.Client.EFClient.Permission.SeniorAdmin => "bg-level-senioradmin/40 text-level-senioradmin border border-level-senioradmin/60",
+        Data.Models.Client.EFClient.Permission.Administrator => "bg-level-administrator/40 text-level-administrator border border-level-administrator/60",
+        Data.Models.Client.EFClient.Permission.Moderator => "bg-level-moderator/40 text-level-moderator border border-level-moderator/60",
+        Data.Models.Client.EFClient.Permission.Trusted => "bg-level-trusted/40 text-level-trusted border border-level-trusted/60",
+        _ => "bg-success/10 text-success border border-success/20"
+    };
 }

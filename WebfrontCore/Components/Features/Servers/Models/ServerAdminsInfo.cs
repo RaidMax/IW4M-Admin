@@ -1,9 +1,12 @@
+using Data.Models;
+
 namespace WebfrontCore.Components.Features.Servers.Models;
 
 public class ServerAdminsInfo
 {
     public long Id { get; set; }
     public required string Name { get; set; }
+    public Reference.Game Game { get; set; }
     public required List<AdminInfo> Admins { get; set; }
 }
 

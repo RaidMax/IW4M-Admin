@@ -1,3 +1,4 @@
+using Data.Models;
 
 namespace WebfrontCore.Components.Features.Servers.Models;
 
@@ -5,6 +6,7 @@ public class ServerReportsInfo
 {
     public long Id { get; set; }
     public required string Name { get; set; }
+    public Reference.Game Game { get; set; }
     public required List<ReportInfo> Reports { get; set; }
 }
 

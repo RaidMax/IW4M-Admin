@@ -1,4 +1,30 @@
 // ============================================
+// Visibility Observer for Component Virtualization
+// ============================================
+window.visibilityObserver = {
+    observe: function (element, dotNetRef) {
+        if (!element) return;
+        const observer = new IntersectionObserver((entries) => {
+            const isVisible = entries[0].isIntersecting;
+            dotNetRef.invokeMethodAsync('OnVisibilityChanged', isVisible);
+        }, { threshold: 0 });
+        observer.observe(element);
+        element._visibilityObserver = observer;
+        element._dotNetRef = dotNetRef;
+    },
+    unobserve: function (element) {
+        if (!element) return;
+        if (element._visibilityObserver) {
+            element._visibilityObserver.disconnect();
+            element._visibilityObserver = null;
+        }
+        if (element._dotNetRef) {
+            element._dotNetRef = null;
+        }
+    }
+};
+
+// ============================================
 // Chart Theme Utility
 // ============================================
 window.chartTheme = (function () {

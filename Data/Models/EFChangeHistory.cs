@@ -24,7 +24,7 @@ namespace Data.Models
         public DateTime TimeChanged { get; set; } = DateTime.UtcNow;
         [MaxLength(128)]
         public string Comment { get; set; }
-        public string PreviousValue { get; set; }
+        public string PreviousValue { get; set; } // TODO: This is never assigned? Only ever consumed.
         public string CurrentValue { get; set; }
     }
 }

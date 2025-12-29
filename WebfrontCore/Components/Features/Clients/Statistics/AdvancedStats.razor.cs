@@ -125,7 +125,7 @@ public partial class AdvancedStats
             : "-";
         var rating = Stats.Rating?.ToString("0") ?? "-";
         
-        return $"Rating: {rating} • K/D: {kd}\nKills: {Stats.Aggregate.KillCount:N0} • Deaths: {Stats.Aggregate.DeathCount:N0}";
+        return $"{rating} rating • {kd} K/D\n{Stats.Aggregate.KillCount:N0} kills • {Stats.Aggregate.DeathCount:N0} deaths";
     }
 
     /// <summary>

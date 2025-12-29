@@ -13,7 +13,6 @@ public partial class FindMessage : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
-    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     [SupplyParameterFromQuery(Name = "messageContains")]
     public string? MessageContains { get; set; }

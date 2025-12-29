@@ -15,7 +15,6 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     [SupplyParameterFromQuery(Name = "serverId")]
     public string? ServerId { get; set; }

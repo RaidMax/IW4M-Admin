@@ -20,7 +20,6 @@ public partial class Profile
     [Inject] public required ApplicationConfiguration Config { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
 
-    // PersistentState ensures data is persisted during prerender so HeadContent has correct values
     [PersistentState]
     public PlayerInfo? Client { get; set; }
     private SideContextMenuItems ContextItems { get; set; }

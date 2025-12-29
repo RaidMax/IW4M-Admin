@@ -3,7 +3,7 @@
 @attribute [Authorize(Policy = "Permissions.AuditPage.Read")]
 @rendermode InteractiveServer
 
-<PageTitle>Audit Log | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
+<PageTitle>Audit Log | @AppState.WebfrontBranding</PageTitle>
 
 <div class="w-full p-4 md:p-8">
     <!-- Header -->

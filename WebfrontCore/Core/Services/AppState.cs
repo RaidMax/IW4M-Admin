@@ -1,12 +1,15 @@
 using Data.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 
 namespace WebfrontCore.Core.Services;
 
-public class AppState
+public class AppState(ApplicationConfiguration appConfig)
 {
     public event Action OnChange;
+
+    public string WebfrontBranding => !string.IsNullOrEmpty(appConfig.WebfrontCustomBranding) ? appConfig.WebfrontCustomBranding : "IW4MAdmin";
 
     private bool _isDarkMode;
 

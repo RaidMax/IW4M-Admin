@@ -9,7 +9,6 @@ public partial class About
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
 
     [PersistentState] public AboutInfo? AboutInfo { get; set; }

@@ -12,7 +12,6 @@ public partial class Privileged
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [Inject] public required ApplicationConfiguration Config { get; set; }
 
     [SupplyParameterFromQuery] public string? Game { get; set; }
 

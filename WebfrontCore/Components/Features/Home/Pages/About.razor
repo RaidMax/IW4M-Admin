@@ -3,9 +3,10 @@
 @* ================================================================ *@
 @* OpenGraph / Meta Tags - Always render for crawlers *@
 @* ================================================================ *@
-<PageTitle>@(AboutInfo?.CommunityInformation?.Name ?? AppState.Loc("WEBFRONT_ABOUT_TITLE")) | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
+<PageTitle>@(AboutInfo?.CommunityInformation?.Name ?? AppState.Loc("WEBFRONT_ABOUT_TITLE")) | @AppState.WebfrontBranding</PageTitle>
 
 <HeadContent>
+    <meta property="og:site_name" content="IW4MAdmin"/>
     <meta property="og:title"
           content="@(AboutInfo?.CommunityInformation?.Name ?? "Community") | @AppState.Loc("WEBFRONT_ABOUT_TITLE")"/>
     <meta property="og:description" content="@(AboutInfo?.CommunityInformation?.Description?.StripColors() ?? AppState.Loc("WEBFRONT_ABOUT_TITLE"))"/>

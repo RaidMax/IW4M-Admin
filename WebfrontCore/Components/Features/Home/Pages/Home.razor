@@ -2,10 +2,11 @@
 @page "/servers"
 @rendermode InteractiveServer
 
-<PageTitle>@GetLocalizedString("WEBFRONT_HOME_TITLE") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
+<PageTitle>@GetLocalizedString("WEBFRONT_HOME_TITLE") | @AppState.WebfrontBranding</PageTitle>
 
 <HeadContent>
-    <meta property="og:title" content="@GetLocalizedString("WEBFRONT_SERVERS_TITLE") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")"/>
+    <meta property="og:title" content="@GetLocalizedString("WEBFRONT_SERVERS_TITLE") | @AppState.WebfrontBranding"/>
+    <meta property="og:site_name" content="IW4MAdmin"/>
     <meta property="og:description" content="@GetOpenGraphDescription()"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="@NavManager.Uri"/>

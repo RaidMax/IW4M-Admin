@@ -155,37 +155,55 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Take(count)
                 .ToListAsync();
 
-            var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
+            // Fetch rankings without joins - much faster, less data transfer
+            var allRankings = await context.Set<EFClientRankingHistory>()
+                .Where(ranking => clientIdsList.Contains(ranking.ClientId))
+                .Where(ranking => ranking.ServerId == serverId)
+                .OrderByDescending(ranking => ranking.CreatedDateTime)
+                .Select(ranking => new
+                {
+                    ranking.ClientId,
+                    ranking.PerformanceMetric,
+                    ranking.ZScore,
+                    ranking.Ranking,
+                    ranking.CreatedDateTime
+                })
+                .ToListAsync();
 
-            foreach (var clientId in clientIdsList)
-            {
-                var eachRank = await context.Set<EFClientRankingHistory>()
-                    .Where(ranking => ranking.ClientId == clientId)
-                    .Where(ranking => ranking.ServerId == serverId)
-                    .OrderByDescending(ranking => ranking.CreatedDateTime)
-                    .Select(ranking => new RankingSnapshot
-                    {
-                        ClientId = ranking.ClientId,
-                        Name = ranking.Client.CurrentAlias.Name,
-                        LastConnection = ranking.Client.LastConnection,
-                        PerformanceMetric = ranking.PerformanceMetric,
-                        ZScore = ranking.ZScore,
-                        Ranking = ranking.Ranking,
-                        CreatedDateTime = ranking.CreatedDateTime
-                    })
-                    .Take(60)
-                    .ToListAsync();
-                
-                if (rankingsDict.ContainsKey(clientId))
+            // Limit to 60 most recent per client in memory
+            var limitedRankings = allRankings
+                .GroupBy(r => r.ClientId)
+                .SelectMany(g => g.OrderByDescending(r => r.CreatedDateTime).Take(60))
+                .ToList();
+
+            // Fetch client info separately (only 50 rows instead of thousands)
+            var clientInfo = await context.Set<Data.Models.Client.EFClient>()
+                .Where(c => clientIdsList.Contains(c.ClientId))
+                .Select(c => new
                 {
-                    rankingsDict[clientId] = rankingsDict[clientId].Concat(eachRank).Distinct()
-                        .OrderByDescending(ranking => ranking.CreatedDateTime).ToList();
-                }
-                else
+                    c.ClientId,
+                    Name = c.CurrentAlias.Name,
+                    c.LastConnection
+                })
+                .ToDictionaryAsync(c => c.ClientId);
+
+            // Combine the data
+            var rankingsDict = limitedRankings
+                .Select(r => new RankingSnapshot
                 {
-                    rankingsDict.Add(clientId, eachRank);
-                }
-            }
+                    ClientId = r.ClientId,
+                    Name = clientInfo[r.ClientId].Name,
+                    LastConnection = clientInfo[r.ClientId].LastConnection,
+                    PerformanceMetric = r.PerformanceMetric,
+                    ZScore = r.ZScore,
+                    Ranking = r.Ranking,
+                    CreatedDateTime = r.CreatedDateTime
+                })
+                .GroupBy(r => r.ClientId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(r => r.CreatedDateTime).ToList()
+                );
 
             var statsInfo = await context.Set<EFClientStatistics>()
                 .Where(stat => clientIdsList.Contains(stat.ClientId))

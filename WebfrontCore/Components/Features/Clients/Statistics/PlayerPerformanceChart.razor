@@ -1,46 +1,8 @@
 @inject IJSRuntime JsRuntime
+@inject AppState AppState
 
-<div class="client-rating-graph w-full h-24 md:flex-1 md:h-20 md:min-w-[200px] relative opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+<div
+    class="client-rating-graph w-full h-24 md:flex-1 md:h-20 md:min-w-[200px] relative opacity-60 group-hover:opacity-100 transition-opacity duration-500">
     <div class="absolute inset-0 bg-gradient-to-t from-surface-alt/20 to-transparent pointer-events-none"></div>
-    <canvas id="@_canvasId" class="w-full h-full drop-shadow-lg"></canvas>
+    <canvas id="@CanvasId" class="w-full h-full drop-shadow-lg"></canvas>
 </div>
-
-@code {
-    [Parameter, EditorRequired] public int ClientId { get; set; }
-    [Parameter, EditorRequired] public int Id { get; set; }
-    [Parameter, EditorRequired] public IEnumerable<PerformanceHistory> History { get; set; }
-
-    private string _canvasId => $"rating_history_{ClientId}_{Id}";
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && History != null && History.Any())
-        {
-            // Serialize data for the chart - mimicking the original data-history attribute approach 
-            // but passing it directly to JS for this specific element
-            try 
-            {
-                var historyJson = JsonSerializer.Serialize(History.OrderBy(perf => perf.OccurredAt).ToList());
-                
-                // We invoke a small inline script to set the data and call the global function
-                // This ensures it works even if getStatsChart expects the data in the DOM attribute
-                // OR we can adjust this if getStatsChart takes data as an arg.
-                // Looking at previous code, it used data-history attribute.
-                
-                await JsRuntime.InvokeVoidAsync("eval", $@"
-                    var canvas = document.getElementById('{_canvasId}');
-                    if (canvas) {{
-                        canvas.setAttribute('data-history', '{historyJson}');
-                        if (typeof getStatsChart === 'function') {{
-                            getStatsChart('{_canvasId}');
-                        }}
-                    }}
-                ");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to init chart {_canvasId}: {ex.Message}");
-            }
-        }
-    }
-}

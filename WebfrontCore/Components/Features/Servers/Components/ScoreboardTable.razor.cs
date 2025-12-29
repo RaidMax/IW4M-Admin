@@ -19,19 +19,23 @@ public partial class ScoreboardTable
     private List<ClientScoreboardInfo>? _sortedClientsCache;
     private List<ClientScoreboardInfo> SortedClientsCache => _sortedClientsCache ??= GetSortedClients().ToList();
 
-    private IEnumerable<ClientScoreboardInfo> AlliesPlayers => 
+    private IEnumerable<ClientScoreboardInfo> AlliesPlayers =>
         SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Allies);
-    
-    private IEnumerable<ClientScoreboardInfo> AxisPlayers => 
+
+    private IEnumerable<ClientScoreboardInfo> AxisPlayers =>
         SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Axis);
-    
-    private IEnumerable<ClientScoreboardInfo> UnknownPlayers => 
+
+    private IEnumerable<ClientScoreboardInfo> UnknownPlayers =>
         SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Unknown);
-    
-    private IEnumerable<ClientScoreboardInfo> SpectatorPlayers => 
+
+    private IEnumerable<ClientScoreboardInfo> SpectatorPlayers =>
         SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Spectator);
 
     private bool HasTeamPlayers => AlliesPlayers.Any() || AxisPlayers.Any();
+
+    // Team score totals
+    private int AlliesTeamScore => AlliesPlayers.Sum(c => c.Score);
+    private int AxisTeamScore => AxisPlayers.Sum(c => c.Score);
 
     protected override void OnParametersSet()
     {
@@ -42,7 +46,7 @@ public partial class ScoreboardTable
     private IEnumerable<ClientScoreboardInfo> GetSortedClients()
     {
         if (Model?.ClientInfo == null) return [];
-        
+
         Func<ClientScoreboardInfo, object> keySelector = OrderByKey switch
         {
             nameof(ClientScoreboardInfo.ClientName) => c => c.ClientName ?? "",
@@ -55,8 +59,8 @@ public partial class ScoreboardTable
             _ => c => c.Score
         };
 
-        return Descending 
-            ? Model.ClientInfo.OrderByDescending(keySelector) 
+        return Descending
+            ? Model.ClientInfo.OrderByDescending(keySelector)
             : Model.ClientInfo.OrderBy(keySelector);
     }
 
@@ -71,6 +75,7 @@ public partial class ScoreboardTable
             OrderByKey = key;
             Descending = true;
         }
+
         // Clear cache to re-sort
         _sortedClientsCache = null;
     }

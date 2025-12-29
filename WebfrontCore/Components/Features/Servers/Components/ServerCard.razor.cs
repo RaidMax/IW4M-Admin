@@ -96,8 +96,7 @@ public partial class ServerCard : IAsyncDisposable
 
     private void OpenScoreboard()
     {
-        var title = $"{AppState.Loc("WEBFRONT_TITLE_SCOREBOARD")} | {Model.Name.StripColors()}";
-        ActionService.OpenCustom(ScoreboardContent(Model.Id), title, "max-w-5xl");
+        ActionService.OpenCustom(ScoreboardContent(Model.Id), Model.Name.StripColors(), "max-w-5xl");
     }
 
     private RenderFragment ScoreboardContent(string serverId) => builder =>

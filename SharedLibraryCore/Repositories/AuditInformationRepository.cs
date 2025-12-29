@@ -45,7 +45,8 @@ public class AuditInformationRepository(IDatabaseContextFactory contextFactory) 
                 NewValue = x.CurrentValue
             });
 
-        return await iqItems.ToListAsync();
+        var result = await iqItems.ToListAsync();
+        return result;
     }
 
     /// <inheritdoc />

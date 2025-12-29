@@ -12,29 +12,52 @@ public partial class ScoreboardTable
     [Parameter] public bool DualColumnMode { get; set; }
     [Parameter] public bool ShowHeader { get; set; } = true;
 
-
     private string OrderByKey = nameof(ClientScoreboardInfo.Score);
     private bool Descending = true;
-    private IEnumerable<ClientScoreboardInfo> SortedClients => GetSortedClients();
+
+    // Cached team groupings (computed once per render)
+    private List<ClientScoreboardInfo>? _sortedClientsCache;
+    private List<ClientScoreboardInfo> SortedClientsCache => _sortedClientsCache ??= GetSortedClients().ToList();
+
+    private IEnumerable<ClientScoreboardInfo> AlliesPlayers => 
+        SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Allies);
+    
+    private IEnumerable<ClientScoreboardInfo> AxisPlayers => 
+        SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Axis);
+    
+    private IEnumerable<ClientScoreboardInfo> UnknownPlayers => 
+        SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Unknown);
+    
+    private IEnumerable<ClientScoreboardInfo> SpectatorPlayers => 
+        SortedClientsCache.Where(c => c.Team == EFClient.TeamType.Spectator);
+
+    private bool HasTeamPlayers => AlliesPlayers.Any() || AxisPlayers.Any();
+
+    protected override void OnParametersSet()
+    {
+        // Clear cache when Model changes (for live updates)
+        _sortedClientsCache = null;
+    }
 
     private IEnumerable<ClientScoreboardInfo> GetSortedClients()
     {
-        var query = Model.ClientInfo.AsQueryable(); // Just to use dynamic OrderBy if needed, or switch
-
-        // Simple switch for now
+        if (Model?.ClientInfo == null) return [];
+        
         Func<ClientScoreboardInfo, object> keySelector = OrderByKey switch
         {
-            nameof(ClientScoreboardInfo.ClientName) => c => c.ClientName,
-            nameof(ClientScoreboardInfo.Kills) => c => c.Kills,
-            nameof(ClientScoreboardInfo.Deaths) => c => c.Deaths,
-            nameof(ClientScoreboardInfo.Kdr) => c => c.Kdr,
-            nameof(ClientScoreboardInfo.ScorePerMinute) => c => c.ScorePerMinute,
-            nameof(ClientScoreboardInfo.ZScore) => c => c.ZScore,
+            nameof(ClientScoreboardInfo.ClientName) => c => c.ClientName ?? "",
+            nameof(ClientScoreboardInfo.Kills) => c => c.Kills ?? 0,
+            nameof(ClientScoreboardInfo.Deaths) => c => c.Deaths ?? 0,
+            nameof(ClientScoreboardInfo.Kdr) => c => c.Kdr ?? 0,
+            nameof(ClientScoreboardInfo.ScorePerMinute) => c => c.ScorePerMinute ?? 0,
+            nameof(ClientScoreboardInfo.ZScore) => c => c.ZScore ?? 0,
             nameof(ClientScoreboardInfo.Ping) => c => c.Ping,
             _ => c => c.Score
         };
 
-        return Descending ? Model.ClientInfo.OrderByDescending(keySelector) : Model.ClientInfo.OrderBy(keySelector);
+        return Descending 
+            ? Model.ClientInfo.OrderByDescending(keySelector) 
+            : Model.ClientInfo.OrderBy(keySelector);
     }
 
     private void Sort(string key)
@@ -48,6 +71,8 @@ public partial class ScoreboardTable
             OrderByKey = key;
             Descending = true;
         }
+        // Clear cache to re-sort
+        _sortedClientsCache = null;
     }
 
     private MarkupString GetSortIndicator(string key)
@@ -55,20 +80,24 @@ public partial class ScoreboardTable
         if (OrderByKey == key)
         {
             return new MarkupString(
-                Descending ? "<span class=\"ml-5 font-size-12\">▼</span>" : "<span class=\"ml-5 font-size-12\">▲</span>");
+                Descending ? "<span class=\"ml-1 text-[10px]\">▼</span>" : "<span class=\"ml-1 text-[10px]\">▲</span>");
         }
 
         return new MarkupString(string.Empty);
     }
 
-    private string GetTeamBackgroundColorClass(ClientScoreboardInfo client)
+    private string GetTeamColorClass(EFClient.TeamType team) => team switch
     {
-         return client.Team.ToString() switch
-        {
-            "Axis" => "bg-rose-900/10 hover:bg-rose-900/20",
-            "Allies" => "bg-sky-900/10 hover:bg-sky-900/20",
-            "Spectator" => "bg-slate-700/30 hover:bg-slate-700/50",
-            _ => "hover:bg-slate-700/30"
-        };
-    }
+        EFClient.TeamType.Allies => "text-sky-400",
+        EFClient.TeamType.Axis => "text-rose-400",
+        EFClient.TeamType.Spectator => "text-slate-500",
+        _ => "text-muted"
+    };
+
+    private string GetTeamBorderClass(EFClient.TeamType team) => team switch
+    {
+        EFClient.TeamType.Allies => "border-sky-500/30",
+        EFClient.TeamType.Axis => "border-rose-500/30",
+        _ => "border-line"
+    };
 }

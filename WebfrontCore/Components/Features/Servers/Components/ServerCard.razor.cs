@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -95,7 +96,8 @@ public partial class ServerCard : IAsyncDisposable
 
     private void OpenScoreboard()
     {
-        ActionService.OpenCustom(ScoreboardContent(Model.Id), AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"), "max-w-5xl");
+        var title = $"{AppState.Loc("WEBFRONT_TITLE_SCOREBOARD")} | {Model.Name.StripColors()}";
+        ActionService.OpenCustom(ScoreboardContent(Model.Id), title, "max-w-5xl");
     }
 
     private RenderFragment ScoreboardContent(string serverId) => builder =>

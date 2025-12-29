@@ -22,7 +22,8 @@ public partial class AdvancedStats
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string serverId { get; set; }
 
-    private AdvancedStatsInfo Stats;
+    [PersistentState]
+    public AdvancedStatsInfo? Stats { get; set; }
     private SideContextMenuItems MenuItems;
     private object HitLocationData;
     private float MaxPercentage;
@@ -112,14 +113,31 @@ public partial class AdvancedStats
 
     /// <summary>
     /// Gets the OpenGraph description for the stats page.
-    /// Null-safe for StreamRendering - returns fallback during loading.
+    /// Null-safe - returns fallback during loading.
     /// </summary>
     private string GetOpenGraphDescription()
     {
         if (Stats?.Aggregate == null)
-            return AppState.Loc("WEBFRONT_ADV_STATS_TITLE");
+            return "Player statistics and performance data";
         
-        return $"{AppState.Loc("WEBFRONT_ADV_STATS_HITS")}: {Stats.Aggregate.HitCount:N0} — {AppState.Loc("WEBFRONT_ADV_STATS_KILLS")}: {Stats.Aggregate.KillCount:N0} — {AppState.Loc("WEBFRONT_ADV_STATS_DEATHS")}: {Stats.Aggregate.DeathCount:N0}";
+        var kd = Stats.Aggregate.DeathCount > 0 
+            ? (Stats.Aggregate.KillCount / (double)Stats.Aggregate.DeathCount).ToString("0.00") 
+            : "-";
+        var rating = Stats.Rating?.ToString("0") ?? "-";
+        
+        return $"Rating: {rating} • K/D: {kd}\nKills: {Stats.Aggregate.KillCount:N0} • Deaths: {Stats.Aggregate.DeathCount:N0}";
+    }
+
+    /// <summary>
+    /// Gets the OpenGraph image - rank icon or default icon.
+    /// </summary>
+    private string GetOpenGraphImage()
+    {
+        if (Stats?.ZScore is not null)
+        {
+            return $"{NavManager.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(Stats.ZScore)}.png";
+        }
+        return $"{NavManager.BaseUri}images/icon.png";
     }
 
 

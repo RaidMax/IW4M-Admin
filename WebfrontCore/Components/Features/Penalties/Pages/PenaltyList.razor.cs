@@ -11,13 +11,16 @@ public partial class PenaltyList
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
     private List<PenaltyInfo> Penalties { get; set; } = [];
     private int Offset { get; set; } = 0;
     private int Count { get; set; } = 30;
     private bool IgnoreAutomated { get; set; } = true;
     private EFPenalty.PenaltyType ShowOnly { get; set; } = EFPenalty.PenaltyType.Any;
     private bool HasMoreResults { get; set; } = true;
+
     private bool _isLoading = false;
+
     // Removed unused _loadMoreTrigger
     private DotNetObjectReference<PenaltyList> _dotNetRef;
 
@@ -32,7 +35,7 @@ public partial class PenaltyList
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             // Use the new global infinite scroll helper
-             await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
+            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
         }
     }
 
@@ -116,7 +119,7 @@ public partial class PenaltyList
 
     public async ValueTask DisposeAsync()
     {
-         // Disconnect infinite scroll
+        // Disconnect infinite scroll
         await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
 
         _dotNetRef?.Dispose();

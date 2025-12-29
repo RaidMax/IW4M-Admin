@@ -2,7 +2,7 @@
 @page "/scoreboard"
 @rendermode InteractiveServer
 
-<PageTitle>@AppState.Loc("WEBFRONT_TITLE_SCOREBOARD") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_TITLE_SCOREBOARD") | @AppState.WebfrontBranding</PageTitle>
 
 @if (Loading)
 {

@@ -11,7 +11,6 @@ public partial class Help
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
 

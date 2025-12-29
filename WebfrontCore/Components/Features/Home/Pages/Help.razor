@@ -1,6 +1,5 @@
 @page "/Help"
 @page "/commands"
-@attribute [StreamRendering]
 @rendermode InteractiveServer
 @inject NavigationManager NavManager
 
@@ -11,6 +10,7 @@
     <meta property="og:description" content="@AppState.Loc("WEBFRONT_HELP_COMMANDS")" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@NavManager.Uri" />
+    <meta property="og:image" content="@($"{NavManager.BaseUri}images/icon.png")" />
 </HeadContent>
 
 <div class="w-full p-4 md:p-8">

@@ -7,13 +7,20 @@
 }
 else if (_groupedMeta.Any())
 {
+    var gridCols = _groupedMeta.Count() switch
+    {
+        1 => "lg:grid-cols-1",
+        2 => "lg:grid-cols-2",
+        _ => "lg:grid-cols-3"
+    };
+
     @* Horizontal layout for category sections with dividers *@
-    <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-line">
+    <div class="grid grid-cols-1 @gridCols divide-y lg:divide-y-0 lg:divide-x divide-line">
         @foreach (var group in _groupedMeta)
         {
             var (icon, title, accentClass) = GetCategoryDisplay(group.Key);
             var items = group.OrderBy(i => i.Order).ToList();
-            
+
             <div class="space-y-3 py-4 lg:py-0 lg:px-4 first:pt-0 first:lg:pl-0 last:pb-0 last:lg:pr-0">
                 @* Category Header *@
                 <div class="flex items-center gap-2">
@@ -22,9 +29,9 @@ else if (_groupedMeta.Any())
                     </div>
                     <h3 class="text-xs font-bold text-foreground">@title</h3>
                 </div>
-                
+
                 @* Stats cards grid within this category *@
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 @(_groupedMeta.Count() <= 2 ? "lg:grid-cols-3" : "") gap-2">
                     @foreach (var item in items)
                     {
                         var isHighlight = group.Key == "Statistics" && (item.Key.Contains("Ranking") || item.Key.Contains("Kills"));
@@ -33,14 +40,17 @@ else if (_groupedMeta.Any())
                         // Scale duration: ~0.5s per character over 15, minimum 5s
                         var marqueeDuration = isLongValue ? Math.Max(5, (valueLength - 15) * 0.5 + 5) : 0;
                         <Tooltip Text="@item.ToolTipText">
-                            <div class="meta-card relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")">
+                            <div
+                                class="meta-card relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")">
                                 @if (isHighlight)
                                 {
-                                    <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent rounded-t-xl"></div>
+                                    <div
+                                        class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent rounded-t-xl"></div>
                                 }
                                 <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
-                                    <span class="meta-value-text text-primary @(isLongValue ? "marquee-enabled" : "")" style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
-                                        <ColorCode Value="@item.Value" />
+                                    <span class="meta-value-text text-primary @(isLongValue ? "marquee-enabled" : "")"
+                                          style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
+                                        <ColorCode Value="@item.Value"/>
                                     </span>
                                 </div>
                                 <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">

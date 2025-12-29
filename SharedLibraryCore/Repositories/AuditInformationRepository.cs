@@ -15,7 +15,7 @@ public class AuditInformationRepository(IDatabaseContextFactory contextFactory) 
     public async Task<IList<AuditInfo>> ListAuditInformation(AuditFilterRequest request)
     {
         await using var ctx = contextFactory.CreateContext(false);
-            
+
         var query = BuildBaseQuery(ctx, request);
 
         var iqItems = query
@@ -75,7 +75,7 @@ public class AuditInformationRepository(IDatabaseContextFactory contextFactory) 
                 .Where(c => c.ClientId == admin.ClientId)
                 .Select(c => c.CurrentAlias.Name)
                 .FirstOrDefaultAsync() ?? "Unknown";
-                
+
             topAdmins.Add(new AdminActivityInfo
             {
                 ClientId = admin.ClientId,
@@ -106,8 +106,8 @@ public class AuditInformationRepository(IDatabaseContextFactory contextFactory) 
         // Filter by origin (admin) ID
         if (request.OriginId.HasValue)
         {
-            query = query.Where(x => 
-                x.OriginEntityId == request.OriginId.Value || 
+            query = query.Where(x =>
+                x.OriginEntityId == request.OriginId.Value ||
                 x.ImpersonationEntityId == request.OriginId.Value);
         }
 
@@ -128,12 +128,14 @@ public class AuditInformationRepository(IDatabaseContextFactory contextFactory) 
             query = query.Where(x => x.TimeChanged <= request.Before.Value);
         }
 
-        // Text search in comment
+        // Text search across multiple fields
         if (!string.IsNullOrWhiteSpace(request.SearchQuery))
         {
-            var searchTerm = request.SearchQuery.ToLower();
-            query = query.Where(x => 
-                x.Comment != null && x.Comment.ToLower().Contains(searchTerm));
+            var searchPattern = $"%{request.SearchQuery}%";
+            query = query.Where(x =>
+                (x.Comment != null && EF.Functions.Like(x.Comment, searchPattern)) ||
+                (x.PreviousValue != null && EF.Functions.Like(x.PreviousValue, searchPattern)) ||
+                (x.CurrentValue != null && EF.Functions.Like(x.CurrentValue, searchPattern)));
         }
 
         return query;

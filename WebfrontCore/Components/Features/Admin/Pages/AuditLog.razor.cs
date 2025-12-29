@@ -1,5 +1,6 @@
 ﻿using Data.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos;
@@ -259,6 +260,14 @@ public partial class AuditLog : IAsyncDisposable
     }
 
     private bool IsGroupCollapsed(string groupKey) => _collapsedGroups.Contains(groupKey);
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFilters();
+        }
+    }
 
     [JSInvokable]
     public async Task LoadMore()

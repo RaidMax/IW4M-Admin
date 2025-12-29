@@ -16,7 +16,7 @@ namespace WebfrontCore.Controllers.API
     {
         [HttpGet("audit")]
         [Authorize(Policy = "Permissions.AuditPage.Read")]
-        public async Task<ActionResult<IList<AuditInfo>>> GetAuditLog([FromQuery] PaginationRequest request)
+        public async Task<ActionResult<IList<AuditInfo>>> GetAuditLog([FromQuery] AuditFilterRequest request)
         {
             var auditItems = await dataService.GetAuditLogAsync(request);
             return Ok(auditItems);

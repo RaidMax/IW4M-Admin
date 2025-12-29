@@ -24,7 +24,8 @@ public interface IWebfrontDataService
     Task<IEnumerable<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request);
     Task<ScoreboardInfo?> GetServerScoreboardAsync(string serverId);
     Task<ResourceQueryHelperResult<BanInfo>?> GetBansAsync(BanInfoRequest request);
-    Task<IList<AuditInfo>> GetAuditLogAsync(PaginationRequest request);
+    Task<IList<AuditInfo>> GetAuditLogAsync(AuditFilterRequest request);
+    Task<AuditStatistics> GetAuditStatisticsAsync(AuditFilterRequest request);
     Task<List<CommandResponseInfo>> ExecuteCommandAsync(string serverId, string command);
     Task<IList<PenaltyInfo>> GetPenaltiesAsync(PenaltyRequest request);
     Task<IEnumerable<ConfigurationFileInfo>> GetConfigurationFilesAsync();

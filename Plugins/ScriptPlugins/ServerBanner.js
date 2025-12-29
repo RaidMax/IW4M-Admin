@@ -175,13 +175,12 @@ const plugin = {
                             }
                             .server-container {
                                 font-family: '${font}';
-                                background: url('https://raidmax.org/resources/images/banners/${gameCode}.jpg') no-repeat;
+                                background: url('images/banners/${gameCode}.jpg') no-repeat;
                                 align-items: center;
                             }
                             .server-container.large {
                                 padding-left: 1rem;
                                 padding-right: 1rem;
-                                width: calc(750px - 2rem);
                                 height: 120px;
                                 display: flex;
                                 background-position: center center;
@@ -199,7 +198,7 @@ const plugin = {
                                 height: 64px;
                                 border-radius: 10px;
                             }
-                            .game-icon.small {
+                            .game-icon.small { 
                                 width: 20px;
                                 height: 20px;
                                 border-radius: 5px;
@@ -380,27 +379,29 @@ const plugin = {
                         const eachServer = servers[i];
                         response += `<div class="bg-surface rounded-lg border border-line shadow-sm p-5">
                                         <div class="text-base mb-4 flex items-center justify-between">
-                                            <span id="serverName" class="font-medium text-foreground"></span>
+                                            <span class="font-medium text-foreground">${eachServer.serverName.stripColors()}</span>
                                             <span class="px-2 py-1 rounded bg-surface-alt text-sm font-mono text-muted border border-line">${eachServer.gameCode}</span>
                                         </div>
                                  
-                                        <div class="overflow-hidden rounded-lg mb-4">
+                                        <div class="overflow-hidden mb-4">
                                             <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}" width="750" 
-                                                    height="120" style="border-width: 0; overflow: hidden;" 
+                                                    height="120" style="border-width: 0; overflow: hidden;"
+                                                    class="rounded-lg" 
                                                     title="${eachServer.id}"></iframe>
                                         </div>
-                                        <button type="button" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors text-sm font-medium mb-3" onclick="document.getElementById('showCode${eachServer.id}').classList.toggle('hidden')">Show Embed</button>
+                                        <button type="button" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-action-primary-hover transition-colors text-sm font-medium mb-4" onclick="document.getElementById('showCode${eachServer.id}').classList.toggle('hidden')">Show Embed</button>
                                         <div class="hidden p-4 mb-4 bg-surface-alt rounded-lg border border-line font-mono text-xs text-muted overflow-x-auto" id="showCode${eachServer.id}">
                                             &lt;iframe 
                                             <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}" 
                                             <br/>&nbsp;width="750" height="120" style="border-width: 0; overflow: hidden;"&gt;<br/>
                                             &lt;/iframe&gt;</div>
-                                        <div class="rounded-lg overflow-hidden mb-4">
+                                        <div class="rounded-lg overflow-hidden mb-4 mt-4">
                                             <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" width="400"
                                                     height="70" style="border-width: 0; overflow: hidden;" 
+                                                    class="rounded-lg" 
                                                     title="${eachServer.id}"></iframe>
                                         </div>
-                                        <button type="button" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors text-sm font-medium mb-3" onclick="document.getElementById('showCode${eachServer.id}Small').classList.toggle('hidden')">Show Embed</button>
+                                        <button type="button" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-action-primary-hover transition-colors text-sm font-medium mb-4" onclick="document.getElementById('showCode${eachServer.id}Small').classList.toggle('hidden')">Show Embed</button>
                                         <div class="hidden p-4 bg-surface-alt rounded-lg border border-line font-mono text-xs text-muted overflow-x-auto" id="showCode${eachServer.id}Small">
                                             &lt;iframe 
 	                                        <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" 

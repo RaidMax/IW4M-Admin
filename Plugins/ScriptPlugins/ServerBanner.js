@@ -9,7 +9,7 @@ const serverOrderCache = [];
 
 const plugin = {
     author: 'RaidMax',
-    version: '1.1',
+    version: '1.2',
     name: 'Server Banner',
     serviceResolver: null,
     scriptHelper: null,
@@ -190,7 +190,7 @@ const plugin = {
                                 background-position: left center;
                             }
                             .game-icon {
-                                background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg') no-repeat;
+                                background: url('images/icons/${gameCode}.jpg') no-repeat;
                                 background-size: contain;
                             }
                             .game-icon.large {
@@ -290,7 +290,7 @@ const plugin = {
                                     <div class="server-container small" id="server">
                                         <div class="first-line small"> 
                                             <div class="game-icon small"></div>
-                                            <div class="header" id="serverName" style="${colorLeft}"></div>
+                                            <div class="header" id="serverName" style="${colorLeft}">${server.serverName.stripColors()}</div>
                                         </div>
                                         <div class="third-line game-info small">
                                             ${status}
@@ -308,10 +308,6 @@ const plugin = {
                                             </div>
                                         </div> 
                                     </div>
-                                    <script>
-                                        let serverNameElem = document.getElementById('serverName');
-                                        serverNameElem.textContent = '${server.serverName.stripColors()}';
-                                    </script>
                                 </body>
                             </html>`;
                 }
@@ -321,10 +317,10 @@ const plugin = {
                             <body>
                                 <div class="server-container large" id="server">
                                         <div class="game-icon large" 
-                                            style="background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg');">
+                                            style="background: url('images/icons/${gameCode}.jpg');">
                                         </div>
                                         <div style="flex: 1; ${colorLeft}" class="game-info large">
-                                            <div class="header" id="serverName"></div>
+                                            <div class="header" id="serverName">${server.serverName.stripColors()}</div>
                                             <div class="text-weight-lighter subtitle">${displayIp}:${server.listenPort}</div>
                                             <div class="players-flag-section">
                                                 <div class="subtitle">${server.throttled ? '-' : server.clientNum}/${server.maxClients} Players</div>
@@ -338,10 +334,6 @@ const plugin = {
                                             ${status}
                                         </div>
                                 </div>
-                                <script>
-                                    let serverNameElem = document.getElementById('serverName');
-                                    serverNameElem.textContent = '${server.serverName.stripColors()}';
-                                </script>
                             </body>
                         </html>`;
             };
@@ -372,7 +364,7 @@ const plugin = {
                     }
                 }
 
-                let response = '<div class="grid grid-cols-1 gap-6">';
+                let response = '<div class="grid grid-cols-1 gap-6"><script></script>';
                 Object.keys(serverOrderCache).forEach(key => {
                     const servers = serverOrderCache[key];
                     for (let i = 0; i < servers.length; i++) {
@@ -407,11 +399,7 @@ const plugin = {
 	                                        <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" 
                                             <br/>&nbsp;width="400" height="70" style="border-width: 0; overflow: hidden;"&gt;<br/>
                                             &lt;/iframe&gt;</div>
-                                    </div>
-                                    <script>
-                                        let serverNameElem = document.getElementById('serverName');
-                                        serverNameElem.textContent = '${eachServer.serverName.stripColors()}';
-                                    </script>`;
+                                    </div>`;
                     }
                 });
 

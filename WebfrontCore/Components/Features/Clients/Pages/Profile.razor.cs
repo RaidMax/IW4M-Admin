@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Components.UI.Navigation;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
 
@@ -20,7 +19,9 @@ public partial class Profile
     [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
 
-    private PlayerInfo Client { get; set; }
+    // PersistentState ensures data is persisted during prerender so HeadContent has correct values
+    [PersistentState]
+    public PlayerInfo? Client { get; set; }
     private SideContextMenuItems ContextItems { get; set; }
     private bool _isLoading = true;
     private string _error = null;
@@ -83,7 +84,10 @@ public partial class Profile
         if (Client == null)
             return AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE");
         
-        return $"{AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")} - {AppState.Loc($"GAME_{Client.Game}")} - {Client.LastConnection.HumanizeForCurrentCulture()}";
+        var game = AppState.Loc($"GAME_{Client.Game}");
+        var lastSeen = Client.LastConnection.HumanizeForCurrentCulture();
+        
+        return $"{game} • {lastSeen}";
     }
 
     /// <summary>

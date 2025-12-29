@@ -1,5 +1,4 @@
 @page "/About"
-@attribute [StreamRendering]
 @inject NavigationManager NavManager
 
 @* ================================================================ *@
@@ -13,6 +12,7 @@
     <meta property="og:description" content="@(AboutInfo?.CommunityInformation?.Description?.StripColors() ?? AppState.Loc("WEBFRONT_ABOUT_TITLE"))"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="@NavManager.Uri"/>
+    <meta property="og:image" content="@($"{NavManager.BaseUri}images/icon.png")"/>
 </HeadContent>
 
 @if (AboutInfo == null)

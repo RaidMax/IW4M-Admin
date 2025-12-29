@@ -1,11 +1,10 @@
 @page "/Client/Profile/{Id:int}"
 @page "/client/{Id:int}"
-@attribute [StreamRendering]
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Permissions.ProfilePage.Read")]
 
 @* ================================================================ *@
-@* OpenGraph / Meta Tags - Always render for crawlers (StreamRendering ensures data is available) *@
+@* OpenGraph / Meta Tags *@
 @* ================================================================ *@
 <PageTitle>@(Client?.Name.StripColors() ?? AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")) | IW4MAdmin</PageTitle>
 
@@ -14,10 +13,7 @@
     <meta property="og:description" content="@GetOpenGraphDescription()"/>
     <meta property="og:type" content="profile"/>
     <meta property="og:url" content="@NavManager.Uri"/>
-    @if (!string.IsNullOrEmpty(GetGravatarUrl()))
-    {
-        <meta property="og:image" content="@GetGravatarUrl()"/>
-    }
+    <meta property="og:image" content="@(GetGravatarUrl() ?? $"{NavManager.BaseUri}images/icon.png")"/>
 </HeadContent>
 
 @if (_isLoading)

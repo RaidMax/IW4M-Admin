@@ -1,19 +1,16 @@
 @page "/Client/Statistics"
 @page "/Stats/TopPlayers"
 @page "/stats/top"
-@attribute [StreamRendering]
 @rendermode InteractiveServer
-@inject NavigationManager NavManager
 
 <PageTitle>@AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE") | IW4MAdmin</PageTitle>
 
 <HeadContent>
-    <meta property="og:title" content="@AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE") | IW4MAdmin"/>
-    <meta property="og:description"
-          content="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS")) &mdash; @TotalRankedClients.ToString("#,##0") @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE"))"/>
-    <meta property="og:type" content="website"/>
-    <meta property="og:url" content="@NavManager.Uri"/>
-
+    <meta property="og:title" content="@AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE") | IW4MAdmin" />
+    <meta property="og:description" content="@GetOpenGraphDescription()" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@NavManager.Uri" />
+    <meta property="og:image" content="@GetOpenGraphImage()" />
 </HeadContent>
 
 <div class="flex flex-col xl:flex-row h-full">

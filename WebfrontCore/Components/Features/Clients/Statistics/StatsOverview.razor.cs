@@ -13,13 +13,18 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
 
     [SupplyParameterFromQuery(Name = "serverId")]
     public string? ServerId { get; set; }
 
     public required SideContextMenuItems MenuItems { get; set; }
-    private long TotalRankedClients { get; set; }
-    private ServerInfo? SelectedServer { get; set; }
+
+    [PersistentState] public long TotalRankedClients { get; set; }
+
+    [PersistentState] public ServerInfo? SelectedServer { get; set; }
+
+    [PersistentState] public List<TopStatsInfo>? TopPlayers { get; set; }
 
     private bool _hasLoaded;
     private string? _previousServerId;
@@ -55,6 +60,16 @@ public partial class StatsOverview : IAsyncDisposable
             {
                 SelectedServer = null;
             }
+
+            // Fetch top 3 players for OpenGraph
+            var topResponse = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
+            {
+                Count = 3,
+                Offset = 0,
+                ServerId = ServerId
+            });
+            TopPlayers = topResponse.Players.Take(3).ToList();
+            TotalRankedClients = topResponse.TotalRankedClients;
         }
     }
 
@@ -197,6 +212,37 @@ public partial class StatsOverview : IAsyncDisposable
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Gets the OpenGraph description with top 3 players.
+    /// </summary>
+    private string GetOpenGraphDescription()
+    {
+        var serverName = SelectedServer?.Name.StripColors() ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS");
+
+        if (TopPlayers == null || TopPlayers.Count == 0)
+            return $"{serverName} — {TotalRankedClients:N0} ranked players";
+
+        var topList = TopPlayers.Select((p, idx) =>
+            $"#{idx + 1} {p.Name.StripColors()} ({p.Performance:0} / {p.KDR:0.00})"
+        );
+
+        return $"{serverName} — {TotalRankedClients:N0} ranked\n{string.Join("\n", topList)}";
+    }
+
+    /// <summary>
+    /// Gets the OpenGraph image - top player's rank icon or default.
+    /// </summary>
+    private string GetOpenGraphImage()
+    {
+        var topPlayer = TopPlayers?.FirstOrDefault();
+        if (topPlayer?.ZScore != null)
+        {
+            return $"{NavManager.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(topPlayer.ZScore)}.png";
+        }
+
+        return $"{NavManager.BaseUri}images/icon.png";
     }
 
     public async ValueTask DisposeAsync()

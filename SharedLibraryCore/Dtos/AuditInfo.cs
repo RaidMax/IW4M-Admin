@@ -22,6 +22,11 @@ namespace SharedLibraryCore.Dtos
         public int OriginId { get; set; }
 
         /// <summary>
+        ///     IP address of the origin entity at the time of action
+        /// </summary>
+        public string OriginIPAddress { get; set; }
+
+        /// <summary>
         ///     name of the target entity
         /// </summary>
         public string TargetName { get; set; }

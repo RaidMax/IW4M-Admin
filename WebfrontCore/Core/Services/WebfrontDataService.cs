@@ -688,9 +688,14 @@ public class WebfrontDataService : IWebfrontDataService
         return await _banQueryHelper.QueryResource(request);
     }
 
-    public async Task<IList<AuditInfo>> GetAuditLogAsync(PaginationRequest request)
+    public async Task<IList<AuditInfo>> GetAuditLogAsync(AuditFilterRequest request)
     {
         return await _auditRepository.ListAuditInformation(request);
+    }
+
+    public async Task<AuditStatistics> GetAuditStatisticsAsync(AuditFilterRequest request)
+    {
+        return await _auditRepository.GetStatisticsAsync(request);
     }
 
     public async Task<List<CommandResponseInfo>> ExecuteCommandAsync(string serverId, string command)

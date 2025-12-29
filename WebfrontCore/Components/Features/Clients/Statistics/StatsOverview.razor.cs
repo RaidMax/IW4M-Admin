@@ -25,7 +25,7 @@ public partial class StatsOverview : IAsyncDisposable
     private string? _previousServerId;
     private bool _firstLoad = true;
     private Virtualize<TopStatsInfo>? _virtualizeComponent;
-    private Dictionary<int, List<TopStatsInfo>> _statsCache = new();
+    private readonly Dictionary<int, TopStatsInfo> _statsCache = new();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -35,7 +35,7 @@ public partial class StatsOverview : IAsyncDisposable
             _firstLoad = false;
             _previousServerId = ServerId;
             _hasLoaded = false;
-            
+
             // Clear cache when server changes
             _statsCache.Clear();
 
@@ -58,50 +58,83 @@ public partial class StatsOverview : IAsyncDisposable
         }
     }
 
+    private const int BatchSize = 50;
+
     private async ValueTask<ItemsProviderResult<TopStatsInfo>> LoadPlayerStats(ItemsProviderRequest request)
     {
-        // Calculate offset and count from the request
-        var count = request.Count;
-        var offset = request.StartIndex;
+        var startIndex = request.StartIndex;
+        var requestedCount = request.Count;
 
-        // Check cache first to avoid expensive backend calculations
-        if (_statsCache.TryGetValue(offset, out var cachedData) && TotalRankedClients > 0)
+        // Try to fulfill entirely from cache first
+        if (TotalRankedClients > 0)
         {
-            return new ItemsProviderResult<TopStatsInfo>(cachedData, (int)TotalRankedClients);
+            var cachedItems = new List<TopStatsInfo>();
+            var allCached = true;
+
+            var actualEnd = Math.Min(startIndex + requestedCount, (int)TotalRankedClients);
+            for (var i = startIndex; i < actualEnd; i++)
+            {
+                if (_statsCache.TryGetValue(i, out var item))
+                {
+                    cachedItems.Add(item);
+                }
+                else
+                {
+                    allCached = false;
+                    break;
+                }
+            }
+
+            if (allCached && cachedItems.Count > 0)
+            {
+                return new ItemsProviderResult<TopStatsInfo>(cachedItems, (int)TotalRankedClients);
+            }
         }
 
         try
         {
+            // Fetch a batch starting from a position that covers the request
+            var fetchCount = Math.Max(BatchSize, requestedCount);
+
             var response = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
             {
-                Count = count,
-                Offset = offset,
+                Count = fetchCount,
+                Offset = startIndex,
                 ServerId = ServerId
             });
 
-            // Update total count if it changed, but don't force re-render just for this significantly
-            if (TotalRankedClients != response.TotalRankedClients)
-            {
-                TotalRankedClients = response.TotalRankedClients;
-                _hasLoaded = true;
-                StateHasChanged();
-            }
-            else if (!_hasLoaded)
+            // Update total count
+            TotalRankedClients = response.TotalRankedClients;
+            if (!_hasLoaded)
             {
                 _hasLoaded = true;
                 StateHasChanged();
             }
 
-            // Cache the results for future scrolling
+            // Cache all fetched items
             var playersList = response.Players.ToList();
-            _statsCache[offset] = playersList;
+            for (var i = 0; i < playersList.Count; i++)
+            {
+                _statsCache[startIndex + i] = playersList[i];
+            }
 
-            return new ItemsProviderResult<TopStatsInfo>(playersList, (int)response.TotalRankedClients);
+            // Return items for the requested range
+            var result = new List<TopStatsInfo>();
+            var resultEnd = Math.Min(startIndex + requestedCount, (int)response.TotalRankedClients);
+            for (var i = startIndex; i < resultEnd; i++)
+            {
+                if (_statsCache.TryGetValue(i, out var item))
+                {
+                    result.Add(item);
+                }
+            }
+
+            return new ItemsProviderResult<TopStatsInfo>(result, (int)response.TotalRankedClients);
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading stats: {ex.Message}");
-            return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), 0);
+            System.Console.WriteLine($"[Virtualize] Error: {ex.Message}");
+            return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), (int)TotalRankedClients);
         }
     }
 

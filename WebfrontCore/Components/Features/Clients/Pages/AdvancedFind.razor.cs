@@ -14,7 +14,6 @@ public partial class AdvancedFind
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     [SupplyParameterFromQuery(Name = "clientName")]
     public string? ClientName { get; set; }

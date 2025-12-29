@@ -113,7 +113,8 @@
                         <input type="text"
                                @bind="_searchQuery"
                                @bind:event="oninput"
-                               placeholder="Search comments..."
+                               @onkeydown="HandleSearchKeyDown"
+                               placeholder="Search data, commands, values..."
                                class="w-full pl-9 pr-4 py-2 bg-surface-alt border border-line rounded-lg text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"/>
                     </div>
                 </div>
@@ -292,13 +293,13 @@
                                                 <span class="text-xs font-mono text-green-400 break-all">@info.NewValue</span>
                                             </div>
                                         }
-                                        @if (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--")
+                                        <!--@if (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--")
                                         {
                                             <div class="flex gap-2">
                                                 <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0 pt-0.5">Previous</span>
                                                 <span class="text-xs font-mono text-red-400 break-all">@info.OldValue</span>
                                             </div>
-                                        }
+                                        }-->
                                     </div>
                                 }
                             </AuthorizeView>
@@ -336,7 +337,7 @@
                     <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</th>
                     <AuthorizeView Policy="@DataDetailsPolicy">
                         <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</th>
-                        <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_PREVIOUS")</th>
+                        <!--<th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_PREVIOUS")</th>-->
                     </AuthorizeView>
                     <th scope="col" class="px-4 py-3 font-medium text-right">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</th>
                 </tr>
@@ -386,7 +387,7 @@
                                     <span class="text-muted">&ndash;</span>
                                 }
                             </td>
-                            <td class="px-4 py-3 font-mono text-xs max-w-32">
+                            <!--<td class="px-4 py-3 font-mono text-xs max-w-32">
                                 @if (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--")
                                 {
                                     <div class="truncate text-red-400" title="@info.OldValue">@info.OldValue</div>
@@ -395,7 +396,7 @@
                                 {
                                     <span class="text-muted">&ndash;</span>
                                 }
-                            </td>
+                            </td>-->
                         </AuthorizeView>
                         <td class="px-4 py-3 text-right whitespace-nowrap text-muted text-xs">
                             @info.When.ToLocalTime().ToString("g")

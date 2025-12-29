@@ -1,6 +1,3 @@
-
-@using WebfrontCore.Components.Features.Servers.Models
-
 @if (_isLoading)
 {
     <div class="flex justify-center items-center py-12">
@@ -15,8 +12,5 @@ else if (_error != null)
 }
 else if (_scoreboardInfo != null)
 {
-    <div class="mb-4 text-xl font-bold text-subtle">
-        <ColorCode Value="@_scoreboardInfo.ServerName" />
-    </div>
     <ScoreboardTable Model="_scoreboardInfo" DualColumnMode="true" ShowHeader="false" />
 }

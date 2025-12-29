@@ -6,10 +6,10 @@
 @* ================================================================ *@
 @* OpenGraph / Meta Tags *@
 @* ================================================================ *@
-<PageTitle>@(Client?.Name.StripColors() ?? AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")) | IW4MAdmin</PageTitle>
+<PageTitle>@(Client?.Name.StripColors() ?? AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE")) | @(!string.IsNullOrEmpty(Config.WebfrontCustomBranding) ? Config.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
 
 <HeadContent>
-    <meta property="og:title" content="@(Client?.Name.StripColors() ?? "Client Profile") | IW4MAdmin"/>
+    <meta property="og:title" content="@(Client?.Name.StripColors() ?? "Client Profile") | @(!string.IsNullOrEmpty(Config.WebfrontCustomBranding) ? Config.WebfrontCustomBranding : "IW4MAdmin")"/>
     <meta property="og:description" content="@GetOpenGraphDescription()"/>
     <meta property="og:type" content="profile"/>
     <meta property="og:url" content="@NavManager.Uri"/>

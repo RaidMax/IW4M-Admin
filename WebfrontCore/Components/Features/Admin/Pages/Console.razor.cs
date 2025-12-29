@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -10,6 +11,7 @@ public partial class Console
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     
     private List<ServerInfo> Servers { get; set; } = [];
     private string SelectedServerId { get; set; }

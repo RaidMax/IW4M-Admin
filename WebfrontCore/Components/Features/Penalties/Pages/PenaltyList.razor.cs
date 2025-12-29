@@ -1,6 +1,7 @@
 ﻿using Data.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.Services;
 using PenaltyInfo = SharedLibraryCore.Dtos.PenaltyInfo;
 
@@ -12,6 +13,7 @@ public partial class PenaltyList
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private List<PenaltyInfo> Penalties { get; set; } = [];
     private int Offset { get; set; } = 0;
     private int Count { get; set; } = 30;

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using WebfrontCore.Components.Features.Console.Models;
 using WebfrontCore.Core.Services;
 
@@ -10,21 +11,28 @@ public partial class Help
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
 
     private List<CommandGroupInfo>? CommandGroups { get; set; }
     private string CommandPrefix { get; set; } = "!";
-    
+
     // View mode toggle
-    public enum ViewModeType { Cards, Table }
+    public enum ViewModeType
+    {
+        Cards,
+        Table
+    }
+
     private ViewModeType ViewMode { get; set; } = ViewModeType.Table;
-    
+
     // State for accordion expansion (card view)
     private HashSet<string> ExpandedGroups { get; set; } = new();
-    
+
     // State for permission filtering
     private HashSet<Data.Models.Client.EFClient.Permission> SelectedPermissions { get; set; } = new();
-    
+
     // Available permission levels for filter chips
     private static readonly Data.Models.Client.EFClient.Permission[] AvailablePermissions =
     [
@@ -37,6 +45,7 @@ public partial class Help
     ];
 
     private string _searchTerm = string.Empty;
+
     private string SearchTerm
     {
         get => _searchTerm;
@@ -62,12 +71,12 @@ public partial class Help
             if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
                 var term = SearchTerm.Trim().ToLowerInvariant();
-                
+
                 groups = groups
                     .Select(group => new CommandGroupInfo
                     {
                         Name = group.Name,
-                        Commands = group.Commands.Where(c => 
+                        Commands = group.Commands.Where(c =>
                             FuzzyMatch(c.Name, term) ||
                             FuzzyMatch(c.Alias, term) ||
                             FuzzyMatch(c.Description, term) ||
@@ -85,7 +94,7 @@ public partial class Help
                     .Select(group => new CommandGroupInfo
                     {
                         Name = group.Name,
-                        Commands = group.Commands.Where(c => 
+                        Commands = group.Commands.Where(c =>
                             SelectedPermissions.Contains(c.Permission)
                         ).ToList()
                     })
@@ -105,35 +114,35 @@ public partial class Help
             return false;
 
         var sourceLower = source.ToLowerInvariant();
-        
+
         // Exact substring match (highest priority)
         if (sourceLower.Contains(searchTerm))
             return true;
-        
+
         // Word starts-with match (e.g., "ban" matches "tempban", "banuser")
         var words = sourceLower.Split([' ', '-', '_', '.'], StringSplitOptions.RemoveEmptyEntries);
         if (words.Any(word => word.StartsWith(searchTerm)))
             return true;
-        
+
         // Fuzzy character sequence match (characters appear in order, with gaps allowed)
         // e.g., "tmpbn" matches "tempban"
         if (searchTerm.Length >= 3 && FuzzySequenceMatch(sourceLower, searchTerm))
             return true;
-        
+
         // Levenshtein distance for short terms (typo tolerance)
         // Only use for small words to avoid false positives
         if (searchTerm.Length is >= 3 and <= 8)
         {
             // Check each word in the source
-            if (words.Any(word => 
-                word.Length >= searchTerm.Length - 2 && 
-                word.Length <= searchTerm.Length + 2 &&
-                LevenshteinDistance(word, searchTerm) <= Math.Max(1, searchTerm.Length / 4)))
+            if (words.Any(word =>
+                    word.Length >= searchTerm.Length - 2 &&
+                    word.Length <= searchTerm.Length + 2 &&
+                    LevenshteinDistance(word, searchTerm) <= Math.Max(1, searchTerm.Length / 4)))
             {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -144,7 +153,7 @@ public partial class Help
     {
         var sourceIndex = 0;
         var matchCount = 0;
-        
+
         foreach (var c in searchTerm)
         {
             while (sourceIndex < source.Length)
@@ -155,10 +164,11 @@ public partial class Help
                     sourceIndex++;
                     break;
                 }
+
                 sourceIndex++;
             }
         }
-        
+
         // Require at least 70% of characters to match in sequence
         return matchCount >= searchTerm.Length * 0.7;
     }
@@ -202,13 +212,13 @@ public partial class Help
     protected override async Task OnInitializedAsync()
     {
         CommandGroups = await DataService.GetHelpCommandsAsync();
-        
+
         // Expand first group by default for better UX (card view)
         if (CommandGroups.Count != 0)
         {
             ExpandedGroups.Add(CommandGroups.First().Name);
         }
-        
+
         // Try to get command prefix from status API
         try
         {
@@ -276,38 +286,39 @@ public partial class Help
     private string GetPermissionChipClass(Data.Models.Client.EFClient.Permission permission, bool isActive) =>
         permission switch
         {
-            Data.Models.Client.EFClient.Permission.User when isActive => 
+            Data.Models.Client.EFClient.Permission.User when isActive =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-slate-500 text-white border border-slate-400 transition-all",
-            Data.Models.Client.EFClient.Permission.User => 
+            Data.Models.Client.EFClient.Permission.User =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-slate-400 border border-line hover:border-slate-400 transition-all",
-            
-            Data.Models.Client.EFClient.Permission.Trusted when isActive => 
+
+            Data.Models.Client.EFClient.Permission.Trusted when isActive =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-green-600 text-white border border-green-500 transition-all",
-            Data.Models.Client.EFClient.Permission.Trusted => 
+            Data.Models.Client.EFClient.Permission.Trusted =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-green-500 border border-line hover:border-green-500 transition-all",
-            
-            Data.Models.Client.EFClient.Permission.Moderator when isActive => 
+
+            Data.Models.Client.EFClient.Permission.Moderator when isActive =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-yellow-600 text-white border border-yellow-500 transition-all",
-            Data.Models.Client.EFClient.Permission.Moderator => 
+            Data.Models.Client.EFClient.Permission.Moderator =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-yellow-500 border border-line hover:border-yellow-500 transition-all",
-            
-            Data.Models.Client.EFClient.Permission.Administrator when isActive => 
+
+            Data.Models.Client.EFClient.Permission.Administrator when isActive =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-pink-500 text-white border border-pink-400 transition-all",
-            Data.Models.Client.EFClient.Permission.Administrator => 
+            Data.Models.Client.EFClient.Permission.Administrator =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-pink-400 border border-line hover:border-pink-400 transition-all",
-            
-            Data.Models.Client.EFClient.Permission.SeniorAdmin when isActive => 
+
+            Data.Models.Client.EFClient.Permission.SeniorAdmin when isActive =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-cyan-600 text-white border border-cyan-500 transition-all",
-            Data.Models.Client.EFClient.Permission.SeniorAdmin => 
+            Data.Models.Client.EFClient.Permission.SeniorAdmin =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-cyan-500 border border-line hover:border-cyan-500 transition-all",
-            
-            Data.Models.Client.EFClient.Permission.Owner when isActive => 
+
+            Data.Models.Client.EFClient.Permission.Owner when isActive =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-blue-600 text-white border border-blue-500 transition-all",
-            Data.Models.Client.EFClient.Permission.Owner => 
+            Data.Models.Client.EFClient.Permission.Owner =>
                 "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-blue-500 border border-line hover:border-blue-500 transition-all",
-            
+
             _ when isActive => "px-3 py-1.5 text-xs font-medium rounded-full bg-gray-500 text-white border border-gray-400 transition-all",
-            _ => "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-gray-400 border border-line hover:border-gray-400 transition-all"
+            _ =>
+                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-gray-400 border border-line hover:border-gray-400 transition-all"
         };
 
     private string GetPermissionBadgeClass(Data.Models.Client.EFClient.Permission permission) => permission switch

@@ -1,12 +1,10 @@
 @page "/Admin/BanManagement"
 @page "/manage-bans"
-@using WebfrontCore.Core.Services
-@using SharedLibraryCore
 @implements IAsyncDisposable
 @attribute [Authorize(Policy = "Permissions.BanManagementPage.Read")]
 @rendermode InteractiveServer
 
-<PageTitle>@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT") | IW4MAdmin</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
 
 <div class="max-w-7xl mx-auto p-4 md:p-8">
     <!-- Header & Title -->

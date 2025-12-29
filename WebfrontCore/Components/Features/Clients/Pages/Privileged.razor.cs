@@ -1,6 +1,7 @@
 ﻿using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -11,7 +12,7 @@ public partial class Privileged
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
+    [Inject] public required ApplicationConfiguration Config { get; set; }
 
     [SupplyParameterFromQuery] public string? Game { get; set; }
 

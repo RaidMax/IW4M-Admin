@@ -1,12 +1,11 @@
 @page "/"
 @page "/servers"
 @rendermode InteractiveServer
-@inject NavigationManager NavManager
 
-<PageTitle>@GetLocalizedString("WEBFRONT_HOME_TITLE") | IW4MAdmin</PageTitle>
+<PageTitle>@GetLocalizedString("WEBFRONT_HOME_TITLE") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
 
 <HeadContent>
-    <meta property="og:title" content="@GetLocalizedString("WEBFRONT_SERVERS_TITLE") | IW4MAdmin"/>
+    <meta property="og:title" content="@GetLocalizedString("WEBFRONT_SERVERS_TITLE") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")"/>
     <meta property="og:description" content="@GetOpenGraphDescription()"/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="@NavManager.Uri"/>

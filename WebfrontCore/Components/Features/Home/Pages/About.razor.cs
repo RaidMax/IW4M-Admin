@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Configuration;
 using WebfrontCore.Components.Features.Home.Models;
 using WebfrontCore.Core.Services;
 
@@ -8,9 +9,10 @@ public partial class About
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    
-    [PersistentState]
-    public AboutInfo? AboutInfo { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
+
+    [PersistentState] public AboutInfo? AboutInfo { get; set; }
     private List<RuleSetInfo> AllRules { get; set; } = [];
 
     protected override async Task OnInitializedAsync()

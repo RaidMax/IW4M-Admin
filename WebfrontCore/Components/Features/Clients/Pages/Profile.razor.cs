@@ -2,6 +2,7 @@
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Auth;
@@ -16,7 +17,7 @@ public partial class Profile
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration Config { get; set; }
+    [Inject] public required ApplicationConfiguration Config { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
 
     // PersistentState ensures data is persisted during prerender so HeadContent has correct values

@@ -1,10 +1,9 @@
 @page "/About"
-@inject NavigationManager NavManager
 
 @* ================================================================ *@
 @* OpenGraph / Meta Tags - Always render for crawlers *@
 @* ================================================================ *@
-<PageTitle>@(AboutInfo?.CommunityInformation?.Name ?? AppState.Loc("WEBFRONT_ABOUT_TITLE")) | IW4MAdmin</PageTitle>
+<PageTitle>@(AboutInfo?.CommunityInformation?.Name ?? AppState.Loc("WEBFRONT_ABOUT_TITLE")) | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
 
 <HeadContent>
     <meta property="og:title"

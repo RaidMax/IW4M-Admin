@@ -1,3 +1,4 @@
+using Data.Models.Client;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using SharedLibraryCore.Configuration;
@@ -14,16 +15,24 @@ public class PermissionRequirement(WebfrontEntity entity, WebfrontPermission per
 public class PermissionAuthorizationHandler(ApplicationConfiguration config)
     : AuthorizationHandler<PermissionRequirement>
 {
-    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context,
+        PermissionRequirement requirement)
     {
         if (context.User.Identity?.IsAuthenticated != true)
         {
+            // guests assume the User permissions
+            if (config.HasPermission(EFClient.Permission.User, requirement.Entity, requirement.Permission))
+            {
+                context.Succeed(requirement);
+            }
+
             return Task.CompletedTask;
         }
 
         // The Role claim contains the Permission level (e.g. "Administrator", "Trusted")
         var levelClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role);
-        if (levelClaim == null || !Enum.TryParse<Data.Models.Client.EFClient.Permission>(levelClaim.Value, out var level))
+        if (levelClaim == null ||
+            !Enum.TryParse<EFClient.Permission>(levelClaim.Value, out var level))
         {
             return Task.CompletedTask;
         }

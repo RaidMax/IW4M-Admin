@@ -1,6 +1,7 @@
 ﻿using Data.Models;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -10,6 +11,8 @@ public partial class Home
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
     [SupplyParameterFromQuery] public string Game { get; set; }
 
     private IW4MAdminInfo Model;
@@ -59,7 +62,7 @@ public partial class Home
     {
         if (Model == null)
             return "View server status and player information";
-        
+
         var total = Model.TotalClientCount.ToString("#,##0");
         var recent = Model.RecentClientCount.ToString("#,##0");
         return $"{total} total players • {recent} recently active";

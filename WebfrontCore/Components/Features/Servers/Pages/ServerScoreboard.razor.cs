@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.Features.Servers.Models;
@@ -9,6 +10,7 @@ public partial class ServerScoreboard
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     [Parameter] public string Id { get; set; }
     private ScoreboardInfo ScoreboardModel { get; set; }
     private SideContextMenuItems ContextItems { get; set; }

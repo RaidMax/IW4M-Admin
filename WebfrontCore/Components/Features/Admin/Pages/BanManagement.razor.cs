@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
+using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 
@@ -9,6 +9,7 @@ public partial class BanManagement
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     
     // JS Interop removed as we are using a native Load More button now.

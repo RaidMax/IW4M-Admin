@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.Features.Admin.Models;
 
@@ -9,6 +10,7 @@ public partial class ConfigurationFile
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private List<ConfigurationFileInfo> ConfigurationFiles { get; set; }
     private HashSet<string> ExpandedFiles { get; set; } = new();
     private Dictionary<string, string> SaveStatus { get; set; } = new();

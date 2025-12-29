@@ -40,7 +40,26 @@
                 </div>
             </div>
 
-            <div id="topPlayersContainer" class="flex flex-col gap-4">
+            <div id="topPlayersContainer" class="flex flex-col gap-4 relative">
+                @if (!_hasLoaded)
+                {
+                    @* Initial loading skeleton - overlays content while first batch loads *@
+                    <div class="absolute inset-0 z-10 flex flex-col gap-4">
+                        @for (var i = 0; i < 8; i++)
+                        {
+                            <div class="bg-surface-alt/70 backdrop-blur-md relative rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-6 animate-pulse border border-line">
+                                <div class="flex md:flex-col items-center justify-center md:w-24 md:self-stretch bg-surface/50 shrink-0 h-24 rounded-l-xl"></div>
+                                <div class="flex-1 space-y-4 py-2">
+                                    <div class="h-6 w-48 bg-surface/50 rounded"></div>
+                                    <div class="flex gap-4">
+                                        <div class="h-10 w-24 bg-surface/50 rounded"></div>
+                                        <div class="h-10 w-64 bg-surface/50 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
                 @if (_hasLoaded && TotalRankedClients == 0)
                 {
                     <div class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-16 text-center border border-line flex flex-col items-center">
@@ -52,7 +71,7 @@
                     </div>
                 }
                 
-                <Virtualize @ref="_virtualizeComponent" Context="stat" ItemsProvider="LoadPlayerStats" OverscanCount="10" ItemSize="110">
+                <Virtualize @ref="_virtualizeComponent" Context="stat" ItemsProvider="LoadPlayerStats" OverscanCount="12" ItemSize="110">
                     <ItemContent>
                         @{
                             var isGold = stat.Ranking == 1;

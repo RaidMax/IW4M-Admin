@@ -2,14 +2,9 @@
     return Math.round(value / baseValue) * baseValue;
 }
 
-function getStatsChart(id) {
-    const data = $('#' + id).data('history');
-
-    if (data === undefined) {
-        return;
-    }
-    if (data.length <= 1) {
-        // only 0 perf
+function getStatsChart(id, rankingText, data) {
+    if (!data || data.length <= 1) {
+        // only 0 perf or no data
         return;
     }
 
@@ -25,7 +20,6 @@ function getStatsChart(id) {
         labels.push(item.OccurredAt || item.occurredAt);
         values.push(item.Performance || item.performance);
     });
-
 
     const padding = 4;
     let dataMin = Math.min(...values);
@@ -60,7 +54,7 @@ function getStatsChart(id) {
             ...tooltipConfig,
             callbacks: {
                 label: context => moment.utc(context.label).local().calendar(),
-                title: items => Math.round(items[0].yLabel) + ' ' + _localization['WEBFRONT_ADV_STATS_RANKING_METRIC']
+                title: items => Math.round(items[0].yLabel) + ' ' + rankingText
             }
         },
         hover: {
@@ -116,23 +110,3 @@ function getStatsChart(id) {
         options: options
     });
 }
-
-$(document).ready(function () {
-    $('.client-rating-graph').each(function (i, element) {
-        getStatsChart($(element).children('canvas').attr('id'));
-    });
-
-
-    $('.top-players-link').click(function (event) {
-        $($(this).attr('href')).html('');
-        initLoader('/Stats/GetTopPlayersAsync?serverId=' + $(this).data('serverid'), $(this).attr('href'), 10, 0);
-        loadMoreItems();
-    });
-});
-
-$(document).on('loaderFinished', function (event, response) {
-    const ids = $.map($(response).find('.client-rating-graph'), function (elem) { return $(elem).children('canvas').attr('id'); });
-    ids.forEach(function (item, index) {
-        getStatsChart(item);
-    });
-});

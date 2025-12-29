@@ -15,39 +15,29 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
 
     [SupplyParameterFromQuery(Name = "serverId")]
-    public string? serverId { get; set; }
+    public string? ServerId { get; set; }
 
-    // public for tests
-    public List<TopStatsInfo> TopPlayers { get; set; }
-    public SideContextMenuItems MenuItems { get; set; }
+    public required SideContextMenuItems MenuItems { get; set; }
+    private long TotalRankedClients { get; set; }
+    private ServerInfo? SelectedServer { get; set; }
 
-    private long _totalRankedClients;
-
-    public long TotalRankedClients
-    {
-        get => _totalRankedClients;
-        set => _totalRankedClients = value;
-    }
-
-    public ServerInfo SelectedServer { get; set; }
-
-    private bool IsLoading = false;
-    private bool HasMore = true;
-    private bool _hasLoaded = false;
-    private string _previousServerId;
+    private bool _hasLoaded;
+    private string? _previousServerId;
     private bool _firstLoad = true;
-    private bool _localizationInitialized;
-    private Virtualize<TopStatsInfo> _virtualizeComponent;
+    private Virtualize<TopStatsInfo>? _virtualizeComponent;
+    private Dictionary<int, List<TopStatsInfo>> _statsCache = new();
 
     protected override async Task OnParametersSetAsync()
     {
-        // Refresh grid when serverId changes
-        if (_firstLoad || _previousServerId != serverId)
+        // Refresh grid when ServerId changes
+        if (_firstLoad || _previousServerId != ServerId)
         {
             _firstLoad = false;
-            _previousServerId = serverId;
-            TopPlayers = null;
+            _previousServerId = ServerId;
             _hasLoaded = false;
+            
+            // Clear cache when server changes
+            _statsCache.Clear();
 
             if (_virtualizeComponent != null)
             {
@@ -56,10 +46,10 @@ public partial class StatsOverview : IAsyncDisposable
 
             await GenerateMenu();
 
-            if (serverId != null)
+            if (ServerId != null)
             {
                 var servers = await DataService.GetServersAsync();
-                SelectedServer = servers.FirstOrDefault(s => s.Endpoint == serverId);
+                SelectedServer = servers.FirstOrDefault(s => s.Endpoint == ServerId);
             }
             else
             {
@@ -68,33 +58,17 @@ public partial class StatsOverview : IAsyncDisposable
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_localizationInitialized)
-        {
-            var localization = new Dictionary<string, string>
-            {
-                { "WEBFRONT_ADV_STATS_RANKING_METRIC", AppState.Loc("WEBFRONT_ADV_STATS_RANKING_METRIC") },
-                { "PLUGINS_STATS_COMMANDS_PERFORMANCE", AppState.Loc("PLUGINS_STATS_COMMANDS_PERFORMANCE") }
-            };
-            try
-            {
-                await Runtime.InvokeVoidAsync("eval",
-                    $"window._localization = {System.Text.Json.JsonSerializer.Serialize(localization)};");
-                _localizationInitialized = true;
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"Error initializing localization: {ex.Message}");
-            }
-        }
-    }
-
     private async ValueTask<ItemsProviderResult<TopStatsInfo>> LoadPlayerStats(ItemsProviderRequest request)
     {
         // Calculate offset and count from the request
-        var count = Math.Min(request.Count, 50); // Limit chunk size
+        var count = request.Count;
         var offset = request.StartIndex;
+
+        // Check cache first to avoid expensive backend calculations
+        if (_statsCache.TryGetValue(offset, out var cachedData) && TotalRankedClients > 0)
+        {
+            return new ItemsProviderResult<TopStatsInfo>(cachedData, (int)TotalRankedClients);
+        }
 
         try
         {
@@ -102,11 +76,11 @@ public partial class StatsOverview : IAsyncDisposable
             {
                 Count = count,
                 Offset = offset,
-                ServerId = serverId
+                ServerId = ServerId
             });
 
             // Update total count if it changed, but don't force re-render just for this significantly
-            if (_totalRankedClients != response.TotalRankedClients)
+            if (TotalRankedClients != response.TotalRankedClients)
             {
                 TotalRankedClients = response.TotalRankedClients;
                 _hasLoaded = true;
@@ -118,7 +92,11 @@ public partial class StatsOverview : IAsyncDisposable
                 StateHasChanged();
             }
 
-            return new ItemsProviderResult<TopStatsInfo>(response.Players, (int)response.TotalRankedClients);
+            // Cache the results for future scrolling
+            var playersList = response.Players.ToList();
+            _statsCache[offset] = playersList;
+
+            return new ItemsProviderResult<TopStatsInfo>(playersList, (int)response.TotalRankedClients);
         }
         catch (Exception ex)
         {
@@ -139,7 +117,7 @@ public partial class StatsOverview : IAsyncDisposable
                 IsLink = true,
                 Reference = $"/stats/top?serverId={server.Endpoint}",
                 Title = server.Name.StripColors(),
-                IsActive = serverId == server.Endpoint,
+                IsActive = ServerId == server.Endpoint,
                 Meta = server.Game.ToString(),
                 IsCollapse = true
             }).Prepend(new SideContextMenuItem
@@ -147,7 +125,7 @@ public partial class StatsOverview : IAsyncDisposable
                 IsLink = true,
                 Reference = "/stats/top",
                 Title = AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"),
-                IsActive = serverId == null
+                IsActive = ServerId == null
             }).ToList()
         };
     }
@@ -160,15 +138,15 @@ public partial class StatsOverview : IAsyncDisposable
             return 0;
         }
 
-        const int ZScoreRange = 3;
-        const int RankIconDivisions = 24;
-        const double divisionIncrement = (ZScoreRange * 2) / (double)RankIconDivisions;
+        const int zScoreRange = 3;
+        const int rankIconDivisions = 24;
+        const double divisionIncrement = (zScoreRange * 2) / (double)rankIconDivisions;
         var rank = 1;
 
-        for (var i = rank; i <= RankIconDivisions; i++)
+        for (var i = rank; i <= rankIconDivisions; i++)
         {
-            var bottom = Math.Round(-ZScoreRange + (i - 1) * divisionIncrement, 5);
-            var top = Math.Round(-ZScoreRange + i * divisionIncrement, 5);
+            var bottom = Math.Round(-zScoreRange + (i - 1) * divisionIncrement, 5);
+            var top = Math.Round(-zScoreRange + i * divisionIncrement, 5);
 
             if (zScore > bottom && zScore <= top)
             {
@@ -177,7 +155,7 @@ public partial class StatsOverview : IAsyncDisposable
 
             if (i == 1 && zScore < bottom // catch all for really bad players
                 // catch all for very good players
-                || i == RankIconDivisions && zScore > top)
+                || i == rankIconDivisions && zScore > top)
             {
                 return i;
             }

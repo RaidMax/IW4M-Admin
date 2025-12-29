@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using Stats.Dtos;
@@ -12,6 +13,7 @@ public partial class FindMessage : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     [SupplyParameterFromQuery(Name = "messageContains")]
     public string? MessageContains { get; set; }

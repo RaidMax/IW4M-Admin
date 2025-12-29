@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
@@ -15,6 +16,7 @@ public partial class AuditLog : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager Navigation { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     // Filter state
     private string _searchQuery = "";

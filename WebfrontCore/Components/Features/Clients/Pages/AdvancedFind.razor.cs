@@ -5,6 +5,7 @@ using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 using Microsoft.JSInterop;
+using SharedLibraryCore.Configuration;
 
 namespace WebfrontCore.Components.Features.Clients.Pages;
 
@@ -13,6 +14,7 @@ public partial class AdvancedFind
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     [SupplyParameterFromQuery(Name = "clientName")]
     public string? ClientName { get; set; }
@@ -145,9 +147,6 @@ public partial class AdvancedFind
     }
 
 
-
-
-
     public async ValueTask DisposeAsync()
     {
         try
@@ -158,7 +157,7 @@ public partial class AdvancedFind
         {
             // Allowed
         }
-        
+
         _dotNetRef?.Dispose();
     }
 }

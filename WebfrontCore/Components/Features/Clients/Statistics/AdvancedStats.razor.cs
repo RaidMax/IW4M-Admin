@@ -17,6 +17,7 @@ public partial class AdvancedStats
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required DefaultSettings DefaultConfig { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
 
     [Parameter] public int ClientId { get; set; }

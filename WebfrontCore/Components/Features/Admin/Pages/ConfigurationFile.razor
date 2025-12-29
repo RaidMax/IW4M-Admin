@@ -3,7 +3,7 @@
 @attribute [Authorize(Roles = "Owner")]
 @rendermode InteractiveServer
 
-<PageTitle>@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE") | IW4MAdmin</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE") | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
 
 <div class="max-w-7xl mx-auto p-4 md:p-8">
     <!-- Header -->

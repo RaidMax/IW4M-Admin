@@ -6,7 +6,7 @@
 @* ================================================================ *@
 @* OpenGraph / Meta Tags - Always render for crawlers *@
 @* ================================================================ *@
-<PageTitle>@(Stats?.ClientName.StripColors() ?? AppState.Loc("WEBFRONT_ADV_STATS_TITLE")) | IW4MAdmin</PageTitle>
+<PageTitle>@(Stats?.ClientName.StripColors() ?? AppState.Loc("WEBFRONT_ADV_STATS_TITLE")) | @(!string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding) ? AppConfig.WebfrontCustomBranding : "IW4MAdmin")</PageTitle>
 
 <HeadContent>
     <meta property="og:title"

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Servers.Pages;
@@ -8,6 +9,7 @@ public partial class ScoreboardIndex
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private bool Loading { get; set; } = true;
     private bool NoServers { get; set; }
 

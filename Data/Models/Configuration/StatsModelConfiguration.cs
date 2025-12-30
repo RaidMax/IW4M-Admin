@@ -12,9 +12,9 @@ namespace Data.Models.Configuration
         {
             builder.Entity<EFClientStatistics>(entity =>
             {
-                entity.HasKey(cs => new {cs.ClientId, cs.ServerId});
-                entity.HasIndex(cs => new {cs.ClientId, cs.TimePlayed, PerformancePercentile = cs.ZScore});
-                entity.HasIndex(cs => new {PerformancePercentile = cs.ZScore});
+                entity.HasKey(cs => new { cs.ClientId, cs.ServerId });
+                entity.HasIndex(cs => new { cs.ClientId, cs.TimePlayed, PerformancePercentile = cs.ZScore });
+                entity.HasIndex(cs => new { PerformancePercentile = cs.ZScore });
                 entity.ToTable("EFClientStatistics");
             });
 
@@ -33,8 +33,8 @@ namespace Data.Models.Configuration
 
             builder.Entity<EFRating>(entity =>
             {
-                entity.HasIndex(p => new {p.Performance, p.Ranking, p.When});
-                entity.HasIndex(p => new {p.When, p.ServerId, p.Performance, p.ActivityAmount});
+                entity.HasIndex(p => new { p.Performance, p.Ranking, p.When });
+                entity.HasIndex(p => new { p.When, p.ServerId, p.Performance, p.ActivityAmount });
                 entity.ToTable(nameof(EFRating));
             });
 
@@ -76,7 +76,11 @@ namespace Data.Models.Configuration
             });
 
             builder.Entity<EFMap>(entity => { entity.ToTable("EFMaps"); });
-            builder.Entity<EFClientHitStatistic>(entity => { entity.ToTable("EFClientHitStatistics"); });
+            builder.Entity<EFClientHitStatistic>(entity =>
+            {
+                entity.ToTable("EFClientHitStatistics");
+                entity.HasIndex(e => new { e.ClientId, ServerId = (long)e.ServerId });
+            });
             builder.Entity<EFWeaponAttachment>(entity => { entity.ToTable("EFWeaponAttachments"); });
             builder.Entity<EFWeaponAttachmentCombo>(entity => { entity.ToTable("EFWeaponAttachmentCombos"); });
             builder.Entity<EFMeansOfDeath>(entity => { entity.ToTable("EFMeansOfDeath"); });

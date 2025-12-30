@@ -162,7 +162,7 @@ namespace Stats.Helpers
                 }
 
                 // Categorize by hit location (no weapon, no attachment combo)
-                if (hit.HitLocationId != null && hit.WeaponId == null && hit.WeaponAttachmentComboId == null)
+                if (hit is { HitLocationId: not null, WeaponId: null, WeaponAttachmentComboId: null })
                 {
                     byHitLocation.Add(hit);
                 }
@@ -245,7 +245,7 @@ namespace Stats.Helpers
 
             // Extract legacy stats values - compute weighted averages manually since we have projection
             var serverLegacyStat = legacyStats.FirstOrDefault(stat => stat.ServerId == serverId);
-            string skill, elo, spm;
+            string? skill, elo, spm;
 
             if (serverId != null)
             {
@@ -275,7 +275,7 @@ namespace Stats.Helpers
             var kills = aggregate?.KillCount ?? 0;
             var deaths = aggregate?.DeathCount ?? 0;
             var kdr = deaths > 0
-                ? Math.Round(kills / (float)deaths, 2).ToString(SharedLibraryCore.Utilities.CurrentLocalization.Culture)
+                ? Math.Round(kills / (float)deaths, 2).ToString(Utilities.CurrentLocalization.Culture)
                 : null;
 
             // Unique weapons count
@@ -284,7 +284,7 @@ namespace Stats.Helpers
                 : null;
 
             // Active time
-            var activeTime = topWeapons.Any()
+            var activeTime = topWeapons.Count != 0
                 ? TimeSpan.FromSeconds(topWeapons.Sum(w => w.UsageSeconds ?? 0))
                 : (TimeSpan?)null;
 
@@ -306,7 +306,7 @@ namespace Stats.Helpers
                 // Aggregate stats
                 Kills = kills,
                 Deaths = deaths,
-                KDR = kdr,
+                Kdr = kdr,
                 TotalDamage = aggregate?.DamageInflicted ?? 0,
                 Score = hasPerServerData ? score : null,
                 Headshots = headshots,
@@ -318,7 +318,7 @@ namespace Stats.Helpers
                 // Legacy stats
                 Skill = skill,
                 Elo = elo,
-                SPM = spm,
+                Spm = spm,
 
                 // Pre-processed lists
                 Servers = manager.GetServers()

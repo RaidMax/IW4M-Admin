@@ -54,13 +54,110 @@ namespace Data.Migrations.MySql
                 oldClrType: typeof(int),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<long>(
-                name: "ServerId",
-                table: "EFServerStatistics",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            // Patched here for better MySQL/MariaDB support
+            // 1. EFServerStatistics (required FK)
+            migrationBuilder.DropForeignKey("FK_EFServerStatistics_EFServers_ServerId", "EFServerStatistics");
+            migrationBuilder.DropIndex("IX_EFServerStatistics_ServerId", "EFServerStatistics");
 
+            // 2. EFClientKills (required FK)
+            migrationBuilder.DropForeignKey("FK_EFClientKills_EFServers_ServerId", "EFClientKills");
+            migrationBuilder.DropIndex("IX_EFClientKills_ServerId", "EFClientKills");
+
+            // 3. EFClientMessages (required FK)
+            migrationBuilder.DropForeignKey("FK_EFClientMessages_EFServers_ServerId", "EFClientMessages");
+            migrationBuilder.DropIndex("IX_EFClientMessages_ServerId", "EFClientMessages");
+
+            // 4. EFClientStatistics (required FK)
+            migrationBuilder.DropForeignKey("FK_EFClientStatistics_EFServers_ServerId", "EFClientStatistics");
+            migrationBuilder.DropIndex("IX_EFClientStatistics_ServerId", "EFClientStatistics");
+
+            // 5. EFHitLocationCounts - uses EFClientStatisticsServerId column (required FK)
+            migrationBuilder.DropForeignKey("FK_EFHitLocationCounts_EFClientStatistics_EFClientStatistics_Cli", "EFHitLocationCounts");
+            migrationBuilder.DropIndex("IX_EFHitLocationCounts_EFClientStatisticsServerId", "EFHitLocationCounts");
+
+            // 6. EFRating (nullable FK)
+            migrationBuilder.DropForeignKey("FK_EFRating_EFServers_ServerId", "EFRating");
+            migrationBuilder.DropIndex("IX_EFRating_ServerId", "EFRating");
+
+            // A. Remove AUTO_INCREMENT (Keep as INT)
+            migrationBuilder.Sql("ALTER TABLE `EFServers` MODIFY COLUMN `ServerId` INT NOT NULL;");
+
+            // B. Change Type to BIGINT
+            migrationBuilder.Sql("ALTER TABLE `EFServers` MODIFY COLUMN `ServerId` BIGINT NOT NULL;");
+
+            // C. Restore AUTO_INCREMENT (As BIGINT)
+            migrationBuilder.Sql("ALTER TABLE `EFServers` MODIFY COLUMN `ServerId` BIGINT NOT NULL AUTO_INCREMENT;");
+
+            // Required (non-nullable) ServerId columns
+            migrationBuilder.AlterColumn<long>(name: "ServerId", table: "EFServerStatistics", type: "bigint", nullable: false);
+            migrationBuilder.AlterColumn<long>(name: "ServerId", table: "EFClientKills", type: "bigint", nullable: false);
+            migrationBuilder.AlterColumn<long>(name: "ServerId", table: "EFClientMessages", type: "bigint", nullable: false);
+            migrationBuilder.AlterColumn<long>(name: "ServerId", table: "EFClientStatistics", type: "bigint", nullable: false);
+            migrationBuilder.AlterColumn<long>(name: "EFClientStatisticsServerId", table: "EFHitLocationCounts", type: "bigint", nullable: false);
+
+            // Nullable ServerId columns
+            migrationBuilder.AlterColumn<long?>(name: "ServerId", table: "EFRating", type: "bigint", nullable: true);
+
+            // 1. EFServerStatistics (required FK)
+            migrationBuilder.CreateIndex("IX_EFServerStatistics_ServerId", "EFServerStatistics", "ServerId");
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFServerStatistics_EFServers_ServerId",
+                table: "EFServerStatistics",
+                column: "ServerId",
+                principalTable: "EFServers",
+                principalColumn: "ServerId",
+                onDelete: ReferentialAction.Cascade);
+
+            // 2. EFClientKills (required FK)
+            migrationBuilder.CreateIndex("IX_EFClientKills_ServerId", "EFClientKills", "ServerId");
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFClientKills_EFServers_ServerId",
+                table: "EFClientKills",
+                column: "ServerId",
+                principalTable: "EFServers",
+                principalColumn: "ServerId",
+                onDelete: ReferentialAction.Cascade);
+
+            // 3. EFClientMessages (required FK)
+            migrationBuilder.CreateIndex("IX_EFClientMessages_ServerId", "EFClientMessages", "ServerId");
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFClientMessages_EFServers_ServerId",
+                table: "EFClientMessages",
+                column: "ServerId",
+                principalTable: "EFServers",
+                principalColumn: "ServerId",
+                onDelete: ReferentialAction.Cascade);
+
+            // 4. EFClientStatistics (required FK)
+            migrationBuilder.CreateIndex("IX_EFClientStatistics_ServerId", "EFClientStatistics", "ServerId");
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFClientStatistics_EFServers_ServerId",
+                table: "EFClientStatistics",
+                column: "ServerId",
+                principalTable: "EFServers",
+                principalColumn: "ServerId",
+                onDelete: ReferentialAction.Cascade);
+
+            // 5. EFHitLocationCounts - uses EFClientStatisticsServerId column (required FK)
+            migrationBuilder.CreateIndex("IX_EFHitLocationCounts_EFClientStatisticsServerId", "EFHitLocationCounts", "EFClientStatisticsServerId");
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFHitLocationCounts_EFServers_EFClientStatisticsServerId",
+                table: "EFHitLocationCounts",
+                column: "EFClientStatisticsServerId",
+                principalTable: "EFServers",
+                principalColumn: "ServerId",
+                onDelete: ReferentialAction.Cascade);
+
+            // 6. EFRating (nullable FK)
+            migrationBuilder.CreateIndex("IX_EFRating_ServerId", "EFRating", "ServerId");
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFRating_EFServers_ServerId",
+                table: "EFRating",
+                column: "ServerId",
+                principalTable: "EFServers",
+                principalColumn: "ServerId",
+                onDelete: ReferentialAction.SetNull);
+                    
             migrationBuilder.AlterColumn<bool>(
                 name: "Active",
                 table: "EFServerStatistics",
@@ -122,28 +219,13 @@ namespace Data.Migrations.MySql
                 oldClrType: typeof(int),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<long>(
-                name: "ServerId",
-                table: "EFServers",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
             migrationBuilder.AlterColumn<DateTime>(
                 name: "When",
                 table: "EFRating",
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<long>(
-                name: "ServerId",
-                table: "EFRating",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "INTEGER",
-                oldNullable: true);
-
+            
             migrationBuilder.AlterColumn<int>(
                 name: "RatingHistoryId",
                 table: "EFRating",
@@ -365,13 +447,6 @@ namespace Data.Migrations.MySql
                 oldClrType: typeof(int),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<long>(
-                name: "EFClientStatisticsServerId",
-                table: "EFHitLocationCounts",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
             migrationBuilder.AlterColumn<int>(
                 name: "EFClientStatisticsClientId",
                 table: "EFHitLocationCounts",
@@ -481,13 +556,6 @@ namespace Data.Migrations.MySql
 
             migrationBuilder.AlterColumn<bool>(
                 name: "Active",
-                table: "EFClientStatistics",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<long>(
-                name: "ServerId",
                 table: "EFClientStatistics",
                 nullable: false,
                 oldClrType: typeof(int),
@@ -625,13 +693,6 @@ namespace Data.Migrations.MySql
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<long>(
-                name: "ServerId",
-                table: "EFClientMessages",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
             migrationBuilder.AlterColumn<bool>(
                 name: "SentIngame",
                 table: "EFClientMessages",
@@ -701,13 +762,6 @@ namespace Data.Migrations.MySql
 
             migrationBuilder.AlterColumn<int>(
                 name: "VictimId",
-                table: "EFClientKills",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<long>(
-                name: "ServerId",
                 table: "EFClientKills",
                 nullable: false,
                 oldClrType: typeof(int),

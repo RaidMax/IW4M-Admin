@@ -15,7 +15,7 @@ namespace Data.Migrations.Sqlite
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
@@ -408,8 +408,6 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("ClientHitStatisticId");
 
-                    b.HasIndex("ClientId");
-
                     b.HasIndex("HitLocationId");
 
                     b.HasIndex("MeansOfDeathId");
@@ -419,6 +417,8 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("WeaponAttachmentComboId");
 
                     b.HasIndex("WeaponId");
+
+                    b.HasIndex("ClientId", "ServerId");
 
                     b.ToTable("EFClientHitStatistics", (string)null);
                 });

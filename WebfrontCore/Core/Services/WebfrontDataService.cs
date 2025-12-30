@@ -825,7 +825,7 @@ public class WebfrontDataService : IWebfrontDataService
             return null;
         }
 
-        IGameServer? server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId);
+        var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId);
         var matchedServerId = server?.LegacyDatabaseId;
 
         hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId);

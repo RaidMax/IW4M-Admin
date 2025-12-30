@@ -298,4 +298,17 @@ public partial class Profile
     {
         ActionService.OpenAction(item.Reference, item.EntityId, item.Meta);
     }
+
+    private void OpenIpContextModal(string ipAddress)
+    {
+        if (string.IsNullOrEmpty(ipAddress))
+            return;
+
+        ActionService.OpenCustom(builder =>
+        {
+            builder.OpenComponent<Components.IPContextModal>(0);
+            builder.AddAttribute(1, "IPAddress", ipAddress);
+            builder.CloseComponent();
+        }, "IP Information", "max-w-md");
+    }
 }

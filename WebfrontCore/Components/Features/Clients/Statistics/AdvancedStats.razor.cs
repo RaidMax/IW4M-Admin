@@ -17,7 +17,7 @@ public partial class AdvancedStats
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string serverId { get; set; }
 
-    [PersistentState] private AdvancedStatsInfo? Stats { get; set; }
+    [PersistentState] public AdvancedStatsInfo? Stats { get; set; }
     private SideContextMenuItems MenuItems;
     private bool _chartsInitialized;
 

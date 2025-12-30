@@ -825,6 +825,11 @@ public class WebfrontDataService : IWebfrontDataService
             return null;
         }
 
+        if (!HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
+        {
+            hitInfo.Level = Data.Models.Client.EFClient.Permission.User;
+        }
+
         var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId);
         var matchedServerId = server?.LegacyDatabaseId;
 

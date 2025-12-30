@@ -1,0 +1,63 @@
+<div class="space-y-5">
+    @if (_isLoading)
+    {
+        <div class="flex justify-center items-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm">
+            @_error
+        </div>
+    }
+    else
+    {
+        @* IP Address Header with Search Button *@
+        <div class="flex items-center justify-between gap-4">
+            <div class="text-2xl font-bold text-primary font-mono tracking-wide">
+                @IPAddress
+            </div>
+            <a href="/find-client?clientIP=@IPAddress"
+               class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors shrink-0"
+               title="Search for clients using this IP">
+                <i class="ph ph-magnifying-glass"></i>
+                <span class="hidden sm:inline">Search</span>
+            </a>
+        </div>
+
+        @* Geo Information - Clean Grid Layout *@
+        <div class="bg-surface-alt/30 rounded-lg border border-line p-4">
+            <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
+                @if (!string.IsNullOrEmpty(_geoData?.Isp))
+                {
+                    <span class="text-muted font-medium">@Localization["WEBFRONT_PROFILE_LOOKUP_ISP"]</span>
+                    <span class="text-foreground">@_geoData.Isp</span>
+                }
+
+                @if (!string.IsNullOrEmpty(_geoData?.Org))
+                {
+                    <span class="text-muted font-medium">@Localization["WEBFRONT_PROFILE_LOOKUP_ORG"]</span>
+                    <span class="text-foreground">@_geoData.Org</span>
+                }
+
+                @if (!string.IsNullOrEmpty(GetLocationString()))
+                {
+                    <span class="text-muted font-medium">@Localization["WEBFRONT_PROFILE_LOOKUP_LOCATION"]</span>
+                    <span class="text-foreground">@GetLocationString()</span>
+                }
+
+                @if (!string.IsNullOrEmpty(_geoData?.TimezoneGmt))
+                {
+                    <span class="text-muted font-medium">Timezone</span>
+                    <span class="text-foreground">UTC@_geoData.TimezoneGmt</span>
+                }
+            </div>
+
+            @if (_geoData == null)
+            {
+                <div class="text-muted italic text-center py-2">No geolocation information available.</div>
+            }
+        </div>
+    }
+</div>

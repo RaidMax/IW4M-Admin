@@ -143,6 +143,7 @@ public class Program
         });
 
         services.AddHttpContextAccessor();
+        services.AddHttpClient();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>

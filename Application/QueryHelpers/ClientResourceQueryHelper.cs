@@ -91,6 +91,8 @@ public class ClientResourceQueryHelper(
                 : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
         }
 
+        var totalCount = await iqGroupedClientAliases.CountAsync();
+
         var clientIds = await iqGroupedClientAliases.Select(g => g.Key.ClientId)
             .Skip(query.Offset)
             .Take(query.Count)
@@ -127,7 +129,9 @@ public class ClientResourceQueryHelper(
 
         return new ResourceQueryHelperResult<ClientResourceResponse>
         {
-            Results = clients
+            Results = clients,
+            TotalResultCount = totalCount,
+            RetrievedResultCount = clients.Count
         };
     }
 

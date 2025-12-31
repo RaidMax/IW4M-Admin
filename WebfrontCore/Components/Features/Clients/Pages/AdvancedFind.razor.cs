@@ -50,6 +50,7 @@ public partial class AdvancedFind
     private const int PageSize = 30;
     private bool _hasMore = true;
     private bool _isLoading;
+    private long _totalCount;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -85,6 +86,7 @@ public partial class AdvancedFind
         Results.Clear();
         _offset = 0;
         _hasMore = true;
+        _totalCount = 0;
     }
 
     private ClientResourceRequest BuildRequest()
@@ -124,14 +126,20 @@ public partial class AdvancedFind
 
         try
         {
-            var response = (await DataService.SearchClientsAsync(BuildRequest())).ToList();
+            var response = await DataService.SearchClientsAsync(BuildRequest());
+            var results = response.Results.ToList();
 
-            if (response.Count > 0)
+            if (_offset == 0)
             {
-                Results.AddRange(response);
+                _totalCount = response.TotalResultCount;
             }
 
-            _hasMore = response.Count >= PageSize;
+            if (results.Count > 0)
+            {
+                Results.AddRange(results);
+            }
+
+            _hasMore = results.Count >= PageSize;
         }
         catch (Exception ex)
         {

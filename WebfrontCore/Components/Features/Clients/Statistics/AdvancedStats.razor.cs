@@ -101,9 +101,13 @@ public partial class AdvancedStats
         var kd = Stats.Deaths > 0
             ? (Stats.Kills / (double)Stats.Deaths).ToString("0.00")
             : "-";
-        var rating = Stats.Rating?.ToString("0") ?? "-";
+        
+        var perfLabel = Stats.ServerId != null ? "Performance" : "Rating";
+        var perfValue = Stats.ServerId != null 
+            ? (Stats.Performance?.ToString("0") ?? "No Performance") 
+            : (Stats.Rating?.ToString("0") ?? "Unrated");
 
-        return $"{rating} rating • {kd} K/D\n{Stats.Kills:N0} kills • {Stats.Deaths:N0} deaths";
+        return $"{perfLabel}: {perfValue} • {kd} K/D\n{Stats.Kills:N0} kills • {Stats.Deaths:N0} deaths";
     }
 
     /// <summary>

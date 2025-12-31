@@ -304,6 +304,10 @@ else
                     <i class="ph @(state.IsOpen ? "ph-caret-down" : "ph-caret-right")"></i>
                 </div>
                 <div class="flex-1 min-w-0">
+                    @if (!Meta.SentIngame)
+                    {
+                        <i class="ph ph-globe text-muted text-xs mr-1 align-middle" title="@AppState.Loc("WEBFRONT_CLIENT_META_SENT_WEB")"></i>
+                    }
                     <span class="text-foreground break-words hover:text-white transition-colors">
                         <ColorCode Value="@Meta.Message"/>
                     </span>
@@ -332,8 +336,12 @@ else
                             var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
                             <div class="text-xs flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 p-1.5 md:p-2 rounded @(isOriginalMessage ? "bg-primary/10 border-l-2 border-primary -ml-[1px]" : "hover:bg-surface-alt/50")">
                                 @* Timestamp + Name row *@
-                                <div class="flex items-baseline gap-2 shrink-0">
+                                <div class="flex items-baseline gap-1 shrink-0">
                                     <span class="text-muted/60 font-mono text-[10px] tabular-nums">@message.When.ToString("HH:mm:ss")</span>
+                                    @if (!message.SentIngame)
+                                    {
+                                        <i class="ph ph-globe text-muted text-[10px] mr-0.5" title="@AppState.Loc("WEBFRONT_CLIENT_META_SENT_WEB")"></i>
+                                    }
                                     <span class="font-semibold text-foreground text-xs whitespace-nowrap">
                                         <ColorCode Value="@message.ClientName"/>
                                     </span>

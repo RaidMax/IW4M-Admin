@@ -765,6 +765,12 @@ public class WebfrontDataService : IWebfrontDataService
         }).ToList();
     }
 
+    public async Task<long> GetPenaltiesCountAsync(PenaltyRequest request)
+    {
+        return await _manager.GetPenaltyService()
+            .GetRecentPenaltiesCount(request.ShowOnly, request.IgnoreAutomated);
+    }
+
     public async Task<string> UnbanClientAsync(int clientId, string reason)
     {
         var executor = await GetExecutorAsync();
@@ -1155,11 +1161,11 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<IEnumerable<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request)
+    public async Task<ResourceQueryHelperResult<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request)
     {
         if (!request.HasData)
         {
-            return [];
+            return new ResourceQueryHelperResult<ClientResourceResponse>();
         }
 
         var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
@@ -1173,7 +1179,7 @@ public class WebfrontDataService : IWebfrontDataService
 
         var results = await _clientResourceHelper.QueryResource(request);
 
-        return results.Results.Select(r =>
+        results.Results = results.Results.Select(r =>
         {
             if (!canViewIp)
             {
@@ -1191,6 +1197,8 @@ public class WebfrontDataService : IWebfrontDataService
 
             return r;
         });
+        
+        return results;
     }
 
 

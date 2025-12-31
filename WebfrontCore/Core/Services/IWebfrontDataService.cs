@@ -21,13 +21,14 @@ public interface IWebfrontDataService
     Task<NavigationInfo> GetNavigationDataAsync();
     Task<PlayerInfo?> GetClientProfileAsync(int clientId, SharedLibraryCore.Interfaces.MetaType? metaFilterType = null);
     Task<ClientInfoResult> GetClientInfoAsync(int clientId);
-    Task<IEnumerable<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request);
+    Task<ResourceQueryHelperResult<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request);
     Task<ScoreboardInfo?> GetServerScoreboardAsync(string serverId);
     Task<ResourceQueryHelperResult<BanInfo>?> GetBansAsync(BanInfoRequest request);
     Task<IList<AuditInfo>> GetAuditLogAsync(AuditFilterRequest request);
     Task<AuditStatistics> GetAuditStatisticsAsync(AuditFilterRequest request);
     Task<List<CommandResponseInfo>> ExecuteCommandAsync(string serverId, string command);
     Task<IList<PenaltyInfo>> GetPenaltiesAsync(PenaltyRequest request);
+    Task<long> GetPenaltiesCountAsync(PenaltyRequest request);
     Task<IEnumerable<ConfigurationFileInfo>> GetConfigurationFilesAsync();
     Task SaveConfigurationFileAsync(string fileName, string content);
     Task<Dictionary<Data.Models.Client.EFClient.Permission, IList<ClientInfo>>> GetPrivilegedClientsAsync();

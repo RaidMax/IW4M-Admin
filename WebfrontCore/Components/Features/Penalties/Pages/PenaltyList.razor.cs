@@ -19,6 +19,7 @@ public partial class PenaltyList
     private bool IgnoreAutomated { get; set; } = true;
     private EFPenalty.PenaltyType ShowOnly { get; set; } = EFPenalty.PenaltyType.Any;
     private bool HasMoreResults { get; set; } = true;
+    private long _totalCount;
 
     private bool _isLoading = false;
 
@@ -73,6 +74,7 @@ public partial class PenaltyList
         Offset = 0;
         Penalties.Clear();
         HasMoreResults = true;
+        _totalCount = 0;
         StateHasChanged();
         await LoadData();
     }
@@ -86,13 +88,20 @@ public partial class PenaltyList
 
         try
         {
-            var result = await DataService.GetPenaltiesAsync(new WebfrontCore.Controllers.API.Models.PenaltyRequest
+            var request = new WebfrontCore.Controllers.API.Models.PenaltyRequest
             {
                 Offset = Offset,
                 Count = Count,
                 ShowOnly = ShowOnly,
                 IgnoreAutomated = IgnoreAutomated
-            });
+            };
+
+            if (Offset == 0)
+            {
+                _totalCount = await DataService.GetPenaltiesCountAsync(request);
+            }
+
+            var result = await DataService.GetPenaltiesAsync(request);
             if (result != null && result.Any())
             {
                 Penalties.AddRange(result);

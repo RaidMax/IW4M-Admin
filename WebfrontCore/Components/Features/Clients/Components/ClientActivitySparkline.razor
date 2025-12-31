@@ -5,15 +5,20 @@
         <span class="text-xs font-bold uppercase tracking-wider">Activity</span>
     </div>
     
-    <div class="flex-1 flex items-end gap-px h-8" title="@GetTooltip()">
-        @foreach (var value in _activityData)
+    <div class="flex-1 flex items-end gap-px h-8">
+        @for (var i = 0; i < _activityData.Length; i++)
         {
+            var value = _activityData[i];
+            var date = DateTime.UtcNow.Date.AddDays(-29 + i);
             var height = value > 0 ? Math.Max(4, (int)(value / _maxValue * 32)) : 2;
             var colorClass = value > 0 ? "bg-success" : "bg-line";
+            var tooltipText = $"{date:MMM d}: {(int)value} connection{((int)value != 1 ? "s" : "")}";
             
-            <div class="flex-1 rounded-t transition-all hover:opacity-80 @colorClass"
-                 style="height: @(height)px;">
-            </div>
+            <Tooltip Text="@tooltipText" WrapperClass="flex-1 flex items-end">
+                <div class="w-full rounded-t transition-all hover:opacity-80 @colorClass"
+                     style="height: @(height)px;">
+                </div>
+            </Tooltip>
         }
     </div>
     

@@ -93,9 +93,4 @@ public partial class ClientActivitySparkline
             _totalConnections = 0;
         }
     }
-
-    private string GetTooltip()
-    {
-        return $"Activity over last 30 days: {_totalConnections} connections";
-    }
 }

@@ -38,7 +38,7 @@ else
                 </div>
                 @if (AlliesPlayers.Any())
                 {
-                    @RenderPlayerTable(AlliesPlayers, reversed: false)
+                    @RenderPlayerTable(AlliesPlayers)
                 }
                 else
                 {
@@ -50,26 +50,16 @@ else
             <div class="bg-surface rounded-lg border @GetTeamBorderClass(EFClient.TeamType.Axis) shadow-sm overflow-hidden">
                 <!-- Mobile: left-aligned, Desktop: right-aligned for symmetry -->
                 <div class="px-4 py-2 bg-rose-900/20 border-b border-rose-500/30 flex items-center justify-between">
-                    <!-- Mobile order: Team info left, score right -->
-                    <!-- Desktop order: Score left, team info right -->
-                    <div class="flex xl:hidden items-center gap-2">
+                    <div class="flex items-center gap-2">
                         <i class="ph ph-users text-rose-400"></i>
                         <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Axis)">Axis</span>
                         <span class="text-xs text-muted">(@AxisPlayers.Count())</span>
                     </div>
-                    <span class="xl:hidden font-mono font-bold text-rose-400">@AxisTeamScore</span>
-                    
-                    <!-- Desktop only -->
-                    <span class="hidden xl:inline font-mono font-bold text-rose-400">@AxisTeamScore</span>
-                    <div class="hidden xl:flex items-center gap-2">
-                        <span class="text-xs text-muted">(@AxisPlayers.Count())</span>
-                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Axis)">Axis</span>
-                        <i class="ph ph-users text-rose-400"></i>
-                    </div>
+                    <span class="font-mono font-bold text-rose-400">@AxisTeamScore</span>
                 </div>
                 @if (AxisPlayers.Any())
                 {
-                    @RenderPlayerTable(AxisPlayers, reversed: true)
+                    @RenderPlayerTable(AxisPlayers)
                 }
                 else
                 {
@@ -82,7 +72,7 @@ else
     {
         <!-- No team players but has Unknown players - show them without header -->
         <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-4">
-            @RenderPlayerTable(UnknownPlayers, reversed: false)
+            @RenderPlayerTable(UnknownPlayers)
         </div>
     }
 
@@ -95,7 +85,7 @@ else
                 <span class="font-semibold text-muted">Unassigned</span>
                 <span class="text-xs text-muted">(@UnknownPlayers.Count())</span>
             </div>
-            @RenderPlayerTable(UnknownPlayers, reversed: false)
+            @RenderPlayerTable(UnknownPlayers)
         </div>
     }
 
@@ -108,195 +98,110 @@ else
                 <span class="font-semibold text-secondary-500">Spectators</span>
                 <span class="text-xs text-muted">(@SpectatorPlayers.Count())</span>
             </div>
-            @RenderPlayerTable(SpectatorPlayers, reversed: false, isSpectator: true)
+            @RenderPlayerTable(SpectatorPlayers, isSpectator: true)
         </div>
     }
 }
 
 @code {
 
-    private RenderFragment RenderPlayerTable(IEnumerable<ClientScoreboardInfo> clients, bool reversed = false, bool isSpectator = false) => __builder =>
+    private RenderFragment RenderPlayerTable(IEnumerable<ClientScoreboardInfo> clients, bool isSpectator = false) => __builder =>
     {
         <div class="overflow-x-auto">
             <!-- Desktop Table -->
             <table class="w-full text-sm text-left hidden md:table">
                 <thead class="text-[10px] text-muted uppercase bg-surface-alt/30 border-b border-line">
                 <tr>
-                    @if (reversed)
+                    <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground" @onclick="@(() => Sort("ClientName"))">
+                        <div class="flex items-center">Player @GetSortIndicator("ClientName")</div>
+                    </th>
+                    @if (!isSpectator)
                     {
-                        <!-- Reversed: Ping, Z, K/D, D, K, Score, Name -->
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16"
-                            @onclick="@(() => Sort("Ping"))">
-                            <div class="flex items-center">Ping @GetSortIndicator("Ping")</div>
+                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16" @onclick="@(() => Sort("Score"))">
+                            <div class="flex items-center">Score @GetSortIndicator("Score")</div>
                         </th>
-                        @if (!isSpectator)
-                        {
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14"
-                                @onclick="@(() => Sort("ZScore"))">
-                                <div class="flex items-center">Z @GetSortIndicator("ZScore")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16"
-                                @onclick="@(() => Sort("Kdr"))">
-                                <div class="flex items-center">K/D @GetSortIndicator("Kdr")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14"
-                                @onclick="@(() => Sort("Deaths"))">
-                                <div class="flex items-center">D @GetSortIndicator("Deaths")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14"
-                                @onclick="@(() => Sort("Kills"))">
-                                <div class="flex items-center">K @GetSortIndicator("Kills")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16"
-                                @onclick="@(() => Sort("Score"))">
-                                <div class="flex items-center">Score @GetSortIndicator("Score")</div>
-                            </th>
-                        }
-
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground text-right"
-                            @onclick="@(() => Sort("ClientName"))">
-                            <div class="flex items-center justify-end">Player @GetSortIndicator("ClientName")</div>
+                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("Kills"))">
+                            <div class="flex items-center">K @GetSortIndicator("Kills")</div>
+                        </th>
+                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("Deaths"))">
+                            <div class="flex items-center">D @GetSortIndicator("Deaths")</div>
+                        </th>
+                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16" @onclick="@(() => Sort("Kdr"))">
+                            <div class="flex items-center">K/D @GetSortIndicator("Kdr")</div>
+                        </th>
+                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("ZScore"))">
+                            <div class="flex items-center">Z @GetSortIndicator("ZScore")</div>
                         </th>
                     }
-                    else
-                    {
-                        <!-- Normal: Name, Score, K, D, K/D, Z, Ping -->
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground" @onclick="@(() => Sort("ClientName"))">
-                            <div class="flex items-center">Player @GetSortIndicator("ClientName")</div>
-                        </th>
-                        @if (!isSpectator)
-                        {
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16" @onclick="@(() => Sort("Score"))">
-                                <div class="flex items-center">Score @GetSortIndicator("Score")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("Kills"))">
-                                <div class="flex items-center">K @GetSortIndicator("Kills")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("Deaths"))">
-                                <div class="flex items-center">D @GetSortIndicator("Deaths")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16" @onclick="@(() => Sort("Kdr"))">
-                                <div class="flex items-center">K/D @GetSortIndicator("Kdr")</div>
-                            </th>
-                            <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("ZScore"))">
-                                <div class="flex items-center">Z @GetSortIndicator("ZScore")</div>
-                            </th>
-                        }
 
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground text-right w-16"
-                            @onclick="@(() => Sort("Ping"))">
-                            <div class="flex items-center justify-end">Ping @GetSortIndicator("Ping")</div>
-                        </th>
-                    }
+                    <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground text-right w-16"
+                        @onclick="@(() => Sort("Ping"))">
+                        <div class="flex items-center justify-end">Ping @GetSortIndicator("Ping")</div>
+                    </th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-line/50">
-                @foreach (var client in clients)
+
+                @{
+                    var clientScoreboardInfos = clients as ClientScoreboardInfo[] ?? clients.ToArray();
+                }
+                @foreach (var client in clientScoreboardInfos)
                 {
                     <tr class="hover:bg-surface-hover/30 transition-colors">
-                        @if (reversed)
-                        {
-                            <!-- Reversed order: Ping, Z, K/D, D, K, Score, Name -->
-                            <td class="px-3 py-2">
-                                <span class="@(client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error") font-mono text-xs">
-                                    @client.Ping
-                                </span>
-                            </td>
-                            @if (!isSpectator)
+                        <td class="px-3 py-2 truncate">
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                <Authorized>
+                                    <a href="/client/@client.ClientId"
+                                       class="font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(client.Level)">
+                                        <ColorCode Value="@client.ClientName"/>
+                                    </a>
+                                </Authorized>
+                                <NotAuthorized>
+                                    <a href="/client/@client.ClientId"
+                                       class="font-medium text-foreground hover:text-primary transition-colors">
+                                        <ColorCode Value="@client.ClientName"/>
+                                    </a>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                            @if (client.ZScore is not null and not 0)
                             {
-                                <td class="px-3 py-2 text-subtle font-mono text-xs">
-                                    @if (client.ZScore is not null and not 0)
-                                    {
-                                        <span class="text-accent">@Math.Round(client.ZScore.Value, 1)</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">--</span>
-                                    }
-                                </td>
-                                <td class="px-3 py-2 text-subtle font-mono text-xs">@Math.Round(client.Kdr ?? 0, 2)</td>
-                                <td class="px-3 py-2 text-error font-mono text-xs">@(client.Deaths ?? 0)</td>
-                                <td class="px-3 py-2 text-success font-mono text-xs">@(client.Kills ?? 0)</td>
-                                <td class="px-3 py-2 text-subtle font-mono text-xs">@client.Score</td>
+                                <i class="ph-fill ph-lightning text-accent ml-1 text-xs" title="Ranked"></i>
                             }
-
-                            <td class="px-3 py-2 truncate text-right">
+                        </td>
+                        @if (!isSpectator)
+                        {
+                            <td class="px-3 py-2 text-subtle font-mono text-xs">@client.Score</td>
+                            <td class="px-3 py-2 text-success font-mono text-xs">@(client.Kills ?? 0)</td>
+                            <td class="px-3 py-2 text-error font-mono text-xs">@(client.Deaths ?? 0)</td>
+                            <td class="px-3 py-2 text-subtle font-mono text-xs">@Math.Round(client.Kdr ?? 0, 2)</td>
+                            <td class="px-3 py-2 text-subtle font-mono text-xs">
                                 @if (client.ZScore is not null and not 0)
                                 {
-                                    <i class="ph-fill ph-lightning text-accent mr-1 text-xs" title="Ranked"></i>
+                                    <span class="text-accent">@Math.Round(client.ZScore.Value, 1)</span>
                                 }
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                    <Authorized>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(client.Level)">
-                                            <ColorCode Value="@client.ClientName"/>
-                                        </a>
-                                    </Authorized>
-                                    <NotAuthorized>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-medium text-foreground hover:text-primary transition-colors">
-                                            <ColorCode Value="@client.ClientName"/>
-                                        </a>
-                                    </NotAuthorized>
-                                </AuthorizeView>
-                            </td>
-                        }
-                        else
-                        {
-                            <!-- Normal order: Name, Score, K, D, K/D, Z, Ping -->
-                            <td class="px-3 py-2 truncate">
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                    <Authorized>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(client.Level)">
-                                            <ColorCode Value="@client.ClientName"/>
-                                        </a>
-                                    </Authorized>
-                                    <NotAuthorized>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-medium text-foreground hover:text-primary transition-colors">
-                                            <ColorCode Value="@client.ClientName"/>
-                                        </a>
-                                    </NotAuthorized>
-                                </AuthorizeView>
-                                @if (client.ZScore is not null and not 0)
+                                else
                                 {
-                                    <i class="ph-fill ph-lightning text-accent ml-1 text-xs" title="Ranked"></i>
+                                    <span class="text-muted">--</span>
                                 }
                             </td>
-                            @if (!isSpectator)
-                            {
-                                <td class="px-3 py-2 text-subtle font-mono text-xs">@client.Score</td>
-                                <td class="px-3 py-2 text-success font-mono text-xs">@(client.Kills ?? 0)</td>
-                                <td class="px-3 py-2 text-error font-mono text-xs">@(client.Deaths ?? 0)</td>
-                                <td class="px-3 py-2 text-subtle font-mono text-xs">@Math.Round(client.Kdr ?? 0, 2)</td>
-                                <td class="px-3 py-2 text-subtle font-mono text-xs">
-                                    @if (client.ZScore is not null and not 0)
-                                    {
-                                        <span class="text-accent">@Math.Round(client.ZScore.Value, 1)</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">--</span>
-                                    }
-                                </td>
-                            }
-
-                            <td class="px-3 py-2 text-right">
-                                <span class="@(client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error") font-mono text-xs">
-                                    @client.Ping
-                                </span>
-                            </td>
                         }
+
+                        <td class="px-3 py-2 text-right">
+                            <span
+                                class="@(client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error") font-mono text-xs">
+                                @client.Ping
+                            </span>
+                        </td>
                     </tr>
                 }
                 </tbody>
             </table>
-            
+
             <!-- Mobile Grid (like ClientActivity) -->
             <div class="md:hidden">
                 <!-- Mobile Header -->
-                <div class="grid @(isSpectator ? "grid-cols-[1fr_40px]" : "grid-cols-[1fr_repeat(4,minmax(30px,40px))]") gap-1 px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
+                <div
+                    class="grid @(isSpectator ? "grid-cols-[1fr_40px]" : "grid-cols-[1fr_repeat(4,minmax(30px,40px))]") gap-1 px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
                     <div class="pl-1">Player</div>
                     @if (!isSpectator)
                     {
@@ -306,12 +211,13 @@ else
                     }
                     <div class="text-center">Ping</div>
                 </div>
-                
+
                 <!-- Mobile Rows -->
                 <div class="p-1 space-y-0.5">
-                    @foreach (var client in clients)
+                    @foreach (var client in clientScoreboardInfos)
                     {
-                        <div class="grid @(isSpectator ? "grid-cols-[1fr_40px]" : "grid-cols-[1fr_repeat(4,minmax(30px,40px))]") gap-1 items-center px-2 rounded text-[11px] font-mono hover:bg-surface-hover/80 transition-colors">
+                        <div
+                            class="grid @(isSpectator ? "grid-cols-[1fr_40px]" : "grid-cols-[1fr_repeat(4,minmax(30px,40px))]") gap-1 items-center px-2 rounded text-[11px] font-mono hover:bg-surface-hover/80 transition-colors">
                             <!-- Player -->
                             <div class="flex items-center min-w-0 pr-2">
                                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
@@ -333,7 +239,7 @@ else
                                     <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
                                 }
                             </div>
-                            
+
                             <!-- Stats -->
                             @if (!isSpectator)
                             {
@@ -348,7 +254,6 @@ else
             </div>
         </div>
     };
-    
 
 
 }

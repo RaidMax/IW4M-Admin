@@ -20,6 +20,9 @@ public partial class AdvancedStats
     [PersistentState] public AdvancedStatsInfo? Stats { get; set; }
     private SideContextMenuItems MenuItems;
     private bool _chartsInitialized;
+    private bool _showAllHitLocations;
+    private bool _showAllWeapons;
+    private const int DefaultTableRowCount = 10;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -45,15 +48,16 @@ public partial class AdvancedStats
                 // Prepare data for JS charts
                 var hitLocationData = Stats.TopHitLocations.Select(loc => new
                 {
-                    name = loc.Name,
+                    name = loc.InternalName,
                     percentage = loc.Percentage
                 }).ToList();
 
-                var maxPercentage = Stats.TopHitLocations.Any()
+                var maxPercentage = Stats.TopHitLocations.Count != 0
                     ? Stats.TopHitLocations.Max(h => h.Percentage)
                     : 0f;
 
-                await JS.InvokeVoidAsync("initAdvancedStats", Stats.PerformanceHistory, hitLocationData, maxPercentage);
+                await JS.InvokeVoidAsync("initAdvancedStats", Stats.PerformanceHistory, hitLocationData, maxPercentage,
+                    AppState.Loc("PLUGINS_STATS_COMMANDS_PERFORMANCE"));
             }
             catch (Exception ex)
             {

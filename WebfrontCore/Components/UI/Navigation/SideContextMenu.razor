@@ -46,14 +46,13 @@
             </div>
         </div>
     </div>
-}
 
 @* Desktop Sidebar - only visible at xl breakpoint and above *@
-<div
-    class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto">
-    @RenderMenuContent()
-</div>
-
+    <div
+        class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto">
+        @RenderMenuContent()
+    </div>
+}
 
 @code {
     private RenderFragment RenderMobileMenuContent() => __builder =>

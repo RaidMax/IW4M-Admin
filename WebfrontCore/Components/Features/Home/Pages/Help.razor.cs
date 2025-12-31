@@ -286,38 +286,38 @@ public partial class Help
         permission switch
         {
             Data.Models.Client.EFClient.Permission.User when isActive =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-slate-500 text-white border border-slate-400 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg bg-slate-500 text-white shadow-lg transition-all duration-200",
             Data.Models.Client.EFClient.Permission.User =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-slate-400 border border-line hover:border-slate-400 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-500/10 transition-all duration-200",
 
             Data.Models.Client.EFClient.Permission.Trusted when isActive =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-green-600 text-white border border-green-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white shadow-lg transition-all duration-200",
             Data.Models.Client.EFClient.Permission.Trusted =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-green-500 border border-line hover:border-green-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg text-green-500 hover:bg-green-500/10 transition-all duration-200",
 
             Data.Models.Client.EFClient.Permission.Moderator when isActive =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-yellow-600 text-white border border-yellow-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg bg-yellow-600 text-white shadow-lg transition-all duration-200",
             Data.Models.Client.EFClient.Permission.Moderator =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-yellow-500 border border-line hover:border-yellow-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-all duration-200",
 
             Data.Models.Client.EFClient.Permission.Administrator when isActive =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-pink-500 text-white border border-pink-400 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg bg-pink-500 text-white shadow-lg transition-all duration-200",
             Data.Models.Client.EFClient.Permission.Administrator =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-pink-400 border border-line hover:border-pink-400 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg text-pink-400 hover:bg-pink-500/10 transition-all duration-200",
 
             Data.Models.Client.EFClient.Permission.SeniorAdmin when isActive =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-cyan-600 text-white border border-cyan-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg bg-cyan-600 text-white shadow-lg transition-all duration-200",
             Data.Models.Client.EFClient.Permission.SeniorAdmin =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-cyan-500 border border-line hover:border-cyan-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg text-cyan-500 hover:bg-cyan-500/10 transition-all duration-200",
 
             Data.Models.Client.EFClient.Permission.Owner when isActive =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-blue-600 text-white border border-blue-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white shadow-lg transition-all duration-200",
             Data.Models.Client.EFClient.Permission.Owner =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-blue-500 border border-line hover:border-blue-500 transition-all",
+                "px-4 py-2 text-sm font-medium rounded-lg text-blue-500 hover:bg-blue-500/10 transition-all duration-200",
 
-            _ when isActive => "px-3 py-1.5 text-xs font-medium rounded-full bg-gray-500 text-white border border-gray-400 transition-all",
+            _ when isActive => "px-4 py-2 text-sm font-medium rounded-lg bg-gray-500 text-white shadow-lg transition-all duration-200",
             _ =>
-                "px-3 py-1.5 text-xs font-medium rounded-full bg-surface-alt text-gray-400 border border-line hover:border-gray-400 transition-all"
+                "px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-500/10 transition-all duration-200"
         };
 
     private string GetPermissionBadgeClass(Data.Models.Client.EFClient.Permission permission) => permission switch

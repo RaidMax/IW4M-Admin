@@ -7,7 +7,7 @@ namespace WebfrontCore.Core.Services;
 
 public class AppState(ApplicationConfiguration appConfig)
 {
-    public event Action OnChange;
+    public event Action OnChange = delegate { };
 
     public string WebfrontBranding => !string.IsNullOrEmpty(appConfig.WebfrontCustomBranding) ? appConfig.WebfrontCustomBranding : "IW4MAdmin";
 
@@ -71,9 +71,9 @@ public class AppState(ApplicationConfiguration appConfig)
         }
     }
 
-    private string _activeServerId;
+    private string? _activeServerId;
 
-    public string ActiveServerId
+    public string? ActiveServerId
     {
         get => _activeServerId;
         set
@@ -87,7 +87,7 @@ public class AppState(ApplicationConfiguration appConfig)
     }
 
     public ClientInfo? User { get; private set; }
-    public System.Collections.Generic.Dictionary<string, string> Localization { get; private set; }
+    public System.Collections.Generic.Dictionary<string, string>? Localization { get; private set; }
 
     public void SetUser(ClientInfo user)
     {

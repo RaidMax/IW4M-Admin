@@ -48,7 +48,7 @@ public partial class ClientBadges : IDisposable
     {
         try
         {
-            while (await _badgeRefreshTimer.WaitForNextTickAsync(_cts.Token))
+            while (_badgeRefreshTimer != null && _cts != null && await _badgeRefreshTimer.WaitForNextTickAsync(_cts.Token))
             {
                 try
                 {

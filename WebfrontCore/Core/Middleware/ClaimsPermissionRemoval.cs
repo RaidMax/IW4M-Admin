@@ -60,7 +60,7 @@ internal class ClaimsPermissionRemoval
         await _nextRequest.Invoke(context);
     }
 
-    private void OnGameEvent(object sender, GameEvent gameEvent)
+    private void OnGameEvent(object? sender, GameEvent gameEvent)
     {
         if (gameEvent.Extra?.GetType() == typeof(SetPasswordCommand))
         {
@@ -155,8 +155,8 @@ internal class ClaimsPermissionRemoval
             // or the token is tainted or the taint event occured after the token was generated
             shouldSignOut = PrivilegedClientIds.ContainsKey(clientId) &&
                             (PrivilegedClientIds[clientId].Item1 == ClaimsState.Tainted ||
-                             PrivilegedClientIds[clientId].Item2 is not null &&
-                             PrivilegedClientIds[clientId].Item2.Value - context.Properties.IssuedUtc >
+                             PrivilegedClientIds[clientId].Item2 is { } taintedAt &&
+                             taintedAt - context.Properties.IssuedUtc >
                              TimeSpan.FromSeconds(30));
         }
 

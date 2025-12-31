@@ -8,7 +8,7 @@ public partial class SearchResourceForm
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     
-    private string ClientName { get; set; }
+    private string ClientName { get; set; } = string.Empty;
     private string SearchType { get; set; } = "client";
 
     private void BasicSubmit()

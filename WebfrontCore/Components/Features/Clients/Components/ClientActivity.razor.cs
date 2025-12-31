@@ -22,7 +22,7 @@ public partial class ClientActivity
     public class ClientItem
     {
         public int Index { get; set; }
-        public PlayerInfo Client { get; set; }
+        public required PlayerInfo Client { get; set; }
     }
 
     private List<ClientGroup> GetGroupedClients()

@@ -5,18 +5,18 @@ namespace WebfrontCore.Components.Features.Servers.Models;
 
 public class ScoreboardInfo
 {
-    public string ServerName { get; set; }
-    public string ServerId { get; set; }
+    public required string ServerName { get; set; }
+    public required string ServerId { get; set; }
     public Reference.Game GameCode { get; set; }
-    public string MapName { get; set; }
-    public string OrderByKey { get; set; }
+    public required string MapName { get; set; }
+    public required string OrderByKey { get; set; }
     public bool ShouldOrderDescending { get; set; }
-    public List<ClientScoreboardInfo> ClientInfo { get; set; }
+    public List<ClientScoreboardInfo> ClientInfo { get; set; } = [];
 }
 
 public class ClientScoreboardInfo
 {
-    public string ClientName { get; set; }
+    public required string ClientName { get; set; }
     public long ClientId { get; set; }
     public int Score { get; set; }
     public int Ping { get; set; }

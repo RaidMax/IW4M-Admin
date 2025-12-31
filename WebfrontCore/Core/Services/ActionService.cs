@@ -34,8 +34,8 @@ public class ActionService : IActionService
     private readonly IRemoteCommandService _remoteCommandService;
     private readonly IInteractionRegistration _interactionRegistration;
 
-    public event Action<string, int?, string, string?> OnOpenAction;
-    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction;
+    public event Action<string, int?, string, string?> OnOpenAction = delegate { };
+    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction = delegate { };
 
 
     public void OpenAction(string actionName, int? targetId, string meta, string? serverId = null)
@@ -50,17 +50,17 @@ public class ActionService : IActionService
 
 
     // Command Names
-    private readonly string _banCommandName;
-    private readonly string _tempbanCommandName;
-    private readonly string _unbanCommandName;
-    private readonly string _kickCommandName;
-    private readonly string _flagCommandName;
-    private readonly string _unflagCommandName;
-    private readonly string _setLevelCommandName;
-    private readonly string _offlineMessageCommandName;
-    private readonly string _setClientTagCommandName;
-    private readonly string _addClientNoteCommandName;
-    private readonly string _sayCommandName;
+    private readonly string? _banCommandName;
+    private readonly string? _tempbanCommandName;
+    private readonly string? _unbanCommandName;
+    private readonly string? _kickCommandName;
+    private readonly string? _flagCommandName;
+    private readonly string? _unflagCommandName;
+    private readonly string? _setLevelCommandName;
+    private readonly string? _offlineMessageCommandName;
+    private readonly string? _setClientTagCommandName;
+    private readonly string? _addClientNoteCommandName;
+    private readonly string? _sayCommandName;
 
     public ActionService(IManager manager, ApplicationConfiguration appConfig, ITranslationLookup localization,
         IMetaServiceV2 metaService, IRemoteCommandService remoteCommandService,
@@ -138,7 +138,7 @@ public class ActionService : IActionService
             "generatelogintoken" => GetGenerateLoginTokenInfo(),
             "dynamicaction" => GetDynamicActionInfo(targetId, meta),
             "chat" => GetChatInfo(),
-            _ => null
+            _ => throw new ArgumentException($"Unknown action: {actionName}")
         };
     }
 
@@ -171,13 +171,13 @@ public class ActionService : IActionService
     private ActionInfo GetDynamicActionInfo(int? targetId, string meta)
     {
         if (string.IsNullOrWhiteSpace(meta))
-            return null;
+            throw new ArgumentException("Meta is required for dynamic actions");
 
         try
         {
             var metaDict = JsonSerializer.Deserialize<Dictionary<string, string>>(meta.TrimEnd('"').TrimStart('"'));
             if (metaDict is null)
-                return null;
+                throw new ArgumentException("Failed to parse meta JSON");
 
             metaDict.TryGetValue(nameof(ActionInfo.ActionButtonLabel), out var label);
             metaDict.TryGetValue(nameof(ActionInfo.Name), out var name);
@@ -186,7 +186,7 @@ public class ActionService : IActionService
             metaDict.TryGetValue("InteractionId", out var interactionId);
             metaDict.TryGetValue("Inputs", out var template);
 
-            List<InputInfo> additionalInputs = null;
+            List<InputInfo>? additionalInputs = null;
             var inputKeys = string.Empty;
 
             if (!string.IsNullOrWhiteSpace(template))
@@ -236,8 +236,8 @@ public class ActionService : IActionService
 
             return new ActionInfo
             {
-                ActionButtonLabel = label,
-                Name = name,
+                ActionButtonLabel = label ?? string.Empty,
+                Name = name ?? string.Empty,
                 Action = "DynamicAction",
                 ShouldRefresh = shouldRefresh,
                 Inputs = inputs
@@ -246,7 +246,7 @@ public class ActionService : IActionService
         catch (Exception ex)
         {
             Console.WriteLine($"Error parsing dynamic action meta: {ex}");
-            return null;
+            throw new InvalidOperationException($"Error parsing dynamic action meta: {ex.Message}", ex);
         }
     }
 
@@ -270,7 +270,7 @@ public class ActionService : IActionService
                 if (formData.TryGetValue(key, out var val) && val != null &&
                     !string.IsNullOrWhiteSpace(val.ToString()))
                 {
-                    inputs[key] = val.ToString();
+                    inputs[key] = val.ToString() ?? string.Empty;
                 }
             }
         }
@@ -451,7 +451,7 @@ public class ActionService : IActionService
         {
             var response =
                 await _metaService.GetPersistentMetaValue<ClientNoteMetaResponse>("ClientNotes", targetId.Value);
-            existingNote = response?.Note;
+            existingNote = response?.Note ?? string.Empty;
         }
 
         return new ActionInfo
@@ -590,7 +590,7 @@ public class ActionService : IActionService
     private class TagMetaDto
     {
         public int Id { get; set; }
-        public string Value { get; set; }
+        public required string Value { get; set; }
     }
 
     private async Task<ActionInfo> GetSetClientTagInfo(int? targetId)
@@ -602,7 +602,7 @@ public class ActionService : IActionService
         {
             var meta = await _metaService.GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2,
                 targetId.Value, CancellationToken.None);
-            existingTag = meta?.Value;
+            existingTag = meta?.Value ?? string.Empty;
         }
 
         return new ActionInfo

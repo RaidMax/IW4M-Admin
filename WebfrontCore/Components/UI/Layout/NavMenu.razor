@@ -124,8 +124,8 @@
                         }
                         else if (!string.IsNullOrWhiteSpace(social.IconUrl))
                         {
-                            var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out Uri parsedUrl)
-                                ? parsedUrl.AbsoluteUri
+                            var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
+                                ? parsedUrl?.AbsoluteUri ?? $"/images/community/{social.IconUrl}"
                                 : $"/images/community/{social.IconUrl}";
                             <img class="h-4 w-4 mr-3 object-contain" src="@url" alt="@social.Title"/>
                         }
@@ -233,7 +233,7 @@
         @if (AppState.User is not null)
         {
             <a href="#" @onclick:preventDefault
-               @onclick='() => { ActionService.OpenAction("GenerateLoginToken", null, null); CloseMobileMenu(); }'
+               @onclick='() => { ActionService.OpenAction("GenerateLoginToken", null, string.Empty); CloseMobileMenu(); }'
                class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors mb-2">
                 <i class="ph ph-key mr-3 text-lg text-secondary group-hover:text-foreground"></i>
                 <span class="truncate">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
@@ -253,7 +253,7 @@
         {
             <!-- Login (for unauthenticated users) -->
             <a href="#" @onclick:preventDefault
-               @onclick='() => { ActionService.OpenAction("Login", null, null); CloseMobileMenu(); }'
+               @onclick='() => { ActionService.OpenAction("Login", null, string.Empty); CloseMobileMenu(); }'
                class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors">
                 <i class="ph ph-key mr-3 text-lg text-secondary group-hover:text-foreground"></i>
                 <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>

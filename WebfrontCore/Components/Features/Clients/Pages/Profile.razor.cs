@@ -22,9 +22,9 @@ public partial class Profile
 
     [PersistentState]
     public PlayerInfo? Client { get; set; }
-    private SideContextMenuItems ContextItems { get; set; }
+    private SideContextMenuItems? ContextItems { get; set; }
     private bool _isLoading = true;
-    private string _error = null;
+    private string? _error;
     private MetaType? _selectedMetaFilter = null;
     private bool IsAuthorized => AppState.User != null && (int)AppState.User.Level >= (int)EFClient.Permission.Trusted;
 
@@ -106,6 +106,8 @@ public partial class Profile
 
     private void BuildContextMenu()
     {
+        if (Client is null) return;
+        
         var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;
         var isPermBanned = Client.LevelInt == (int)EFClient.Permission.Banned;
         var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
@@ -276,7 +278,7 @@ public partial class Profile
 
     private string ClassForProfileBackground()
     {
-        return !HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)
+        return !HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) || Client is null
             ? "level-bgcolor-0"
             : $"level-bgcolor-{Client.LevelInt}";
     }

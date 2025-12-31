@@ -14,7 +14,7 @@ public partial class BanManagement
     // JS Interop removed as we are using a native Load More button now.
     
     private BanInfoRequest Request { get; set; } = new() { Count = 10, Offset = 0 };
-    private List<BanInfo> Results { get; set; }
+    private List<BanInfo> Results { get; set; } = [];
     private bool HasSearched { get; set; }
     private bool HasMoreResults { get; set; } = true;
     private bool IsLoading { get; set; }
@@ -26,10 +26,10 @@ public partial class BanManagement
     private async Task Search()
     {
         HasSearched = true;
-        Results = null; // Show loading spinner
+        Results.Clear(); // Clear existing results to show loading spinner
         Request.Offset = 0;
         var result = await DataService.GetBansAsync(Request);
-        Results = result.Results.ToList();
+        Results = result?.Results?.ToList() ?? [];
         HasMoreResults = Results.Count >= Request.Count;
         StateHasChanged();
     }
@@ -46,12 +46,12 @@ public partial class BanManagement
 
         IsLoading = false;
 
-        if (result.Results.Any())
+        if (result?.Results?.Any() == true)
         {
             Results.AddRange(result.Results);
         }
 
-        if (result.RetrievedResultCount < Request.Count)
+        if (result?.RetrievedResultCount < Request.Count)
         {
             HasMoreResults = false;
         }
@@ -65,7 +65,7 @@ public partial class BanManagement
     }
 
     private int _unbanTargetId;
-    private string _unbanReason;
+    private string _unbanReason = string.Empty;
     private bool _showUnbanModal;
 
     private void OpenUnbanModal(int clientId)

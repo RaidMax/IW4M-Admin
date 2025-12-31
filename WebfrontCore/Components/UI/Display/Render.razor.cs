@@ -15,12 +15,12 @@ public partial class Render : IAsyncDisposable
     [Inject] public required IJSRuntime JsRuntime { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     
-    [Parameter] public string InteractionName { get; set; }
-    private InteractionResponse InteractionData;
+    [Parameter, EditorRequired] public string InteractionName { get; set; } = default!;
+    private InteractionResponse? InteractionData;
     protected InteractionType ParsedInteractionType;
     private bool IsLoading = true;
-    private string ErrorMessage;
-    private DotNetObjectReference<Render> _dotNetRef;
+    private string? ErrorMessage;
+    private DotNetObjectReference<Render>? _dotNetRef;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -34,7 +34,10 @@ public partial class Render : IAsyncDisposable
             var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query)
                 .ToDictionary(k => k.Key, v => v.Value.ToString());
             InteractionData = await DataService.GetInteractionAsync(InteractionName, query);
-            Enum.TryParse(InteractionData.InteractionType, out ParsedInteractionType);
+            if (InteractionData != null)
+            {
+                Enum.TryParse(InteractionData.InteractionType, out ParsedInteractionType);
+            }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -64,13 +67,13 @@ public partial class Render : IAsyncDisposable
     }
 
     [JSInvokable]
-    public void HandleDynamicAction(string action, int? actionId, string actionMeta)
+    public void HandleDynamicAction(string? action, int? actionId, string actionMeta)
     {
         if (action?.Equals("DynamicAction", StringComparison.OrdinalIgnoreCase) == true)
         {
             ActionService.OpenAction("DynamicAction", actionId, actionMeta);
         }
-        else
+        else if (!string.IsNullOrEmpty(action))
         {
             ActionService.OpenAction(action, actionId, actionMeta);
         }

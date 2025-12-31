@@ -9,7 +9,7 @@ public partial class SideContextMenu
 {
     [Inject] public required AppState AppState { get; set; }
 
-    [Parameter] public required SideContextMenuItems Model { get; set; }
+    [Parameter, EditorRequired] public SideContextMenuItems Model { get; set; } = default!;
     [Parameter] public EventCallback<SideContextMenuItem> OnActionSelect { get; set; }
 
     private bool _isOpen;

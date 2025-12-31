@@ -15,16 +15,16 @@ public partial class ActionModal
     private bool _isLoading;
     private bool _isLegacy;
     private bool _isLogin;
-    private string _error;
-    private ActionInfo _actionInfo;
+    private string? _error;
+    private ActionInfo? _actionInfo;
     private readonly Dictionary<string, object?> _formData = new();
     private int? _targetId;
     private string? _serverId;
     private bool _isVisible;
 
     [Parameter] public string ModalId { get; set; } = "action-modal";
-    private RenderFragment _childContent;
-    private string _customTitle;
+    private RenderFragment? _childContent;
+    private string? _customTitle;
     private string _modalClass = "max-w-lg";
 
     
@@ -63,7 +63,7 @@ public partial class ActionModal
     }
 
 
-    public async Task Open(string actionName, int? targetId = null, string meta = null, string? serverId = null)
+    public async Task Open(string actionName, int? targetId = null, string? meta = null, string? serverId = null)
     {
         _isLoading = true;
         _error = null;
@@ -91,7 +91,7 @@ public partial class ActionModal
 
         try
         {
-            _actionInfo = await ActionService.GetActionInfoAsync(actionName, targetId, meta, serverId);
+            _actionInfo = await ActionService.GetActionInfoAsync(actionName, targetId, meta ?? string.Empty, serverId);
 
             if (_actionInfo != null)
             {
@@ -167,7 +167,7 @@ public partial class ActionModal
                 CurrentAlias = new EFAlias { Name = AppState.User?.Name ?? "Webfront" }
             };
 
-            var (success, message) = await ActionService.ExecuteActionAsync(_actionInfo.Action, _targetId, _formData, origin, _serverId);
+            var (success, message) = await ActionService.ExecuteActionAsync(_actionInfo!.Action, _targetId, _formData!, origin, _serverId);
 
             if (!success)
             {

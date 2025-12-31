@@ -6,7 +6,7 @@ namespace WebfrontCore.Components.Features.Servers.Components;
 
 public partial class ScoreboardModalWrapper : IAsyncDisposable
 {
-    [Parameter] public string ServerId { get; set; }
+    [Parameter, EditorRequired] public string ServerId { get; set; } = default!;
     [Inject] public required IWebfrontDataService ServerDataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     

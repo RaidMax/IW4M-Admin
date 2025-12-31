@@ -130,6 +130,17 @@ namespace SharedLibraryCore.Services
             return await iqPenalties.ToListAsync();
         }
 
+        public async Task<int> GetRecentPenaltiesCount(EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true)
+        {
+            await using var context = _contextFactory.CreateContext(false);
+            return await context.Penalties
+                .Where(p => showOnly == EFPenalty.PenaltyType.Any
+                    ? p.Type != EFPenalty.PenaltyType.Any
+                    : p.Type == showOnly)
+                .Where(_penalty => !ignoreAutomated || _penalty.PunisherId != 1)
+                .CountAsync();
+        }
+
         private static readonly List<EFPenalty.PenaltyType> LinkedPenalties =
         [
             EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.Flag, EFPenalty.PenaltyType.TempBan,

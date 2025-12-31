@@ -102,12 +102,12 @@
                                                 @if (Stats.ServerId != null)
                                                 {
                                                     <span
-                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Performance.ToNumericalString()}</span>"))</span>
+                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Performance?.ToNumericalString() ?? "No Performance"}</span>"))</span>
                                                 }
                                                 else
                                                 {
                                                     <span
-                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Rating.ToNumericalString()}</span>"))</span>
+                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Rating?.ToNumericalString() ?? "Unrated"}</span>"))</span>
                                                 }
                                             </div>
                                         }

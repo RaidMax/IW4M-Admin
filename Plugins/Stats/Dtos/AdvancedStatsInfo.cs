@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Data.Models;
 using Data.Models.Client;
 using SharedLibraryCore.Dtos;
 
@@ -64,6 +65,7 @@ namespace Stats.Dtos
     public class HitLocationStats
     {
         public required string Name { get; set; }
+        public required string InternalName { get; set; }
         public int Hits { get; set; }
         public int Damage { get; set; }
         public float Percentage { get; set; }
@@ -100,5 +102,6 @@ namespace Stats.Dtos
         public int DamageInflicted { get; set; }
         public int? Score { get; set; }
         public int? UsageSeconds { get; set; }
+        public Reference.Game? GameName { get; set; }
     }
 }

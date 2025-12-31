@@ -11,6 +11,7 @@ using IW4MAdmin.Plugins.Stats;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
@@ -22,7 +23,8 @@ namespace Stats.Helpers
     public class AdvancedClientStatsResourceQueryHelper(
         ILogger<AdvancedClientStatsResourceQueryHelper> logger,
         IDatabaseContextFactory contextFactory,
-        IManager manager)
+        IManager manager,
+        DefaultSettings defaultSettings)
         : IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>
     {
         private readonly ILogger _logger = logger;
@@ -83,7 +85,8 @@ namespace Stats.Helpers
                     HitCount = stat.HitCount,
                     DamageInflicted = stat.DamageInflicted,
                     Score = stat.Score,
-                    UsageSeconds = stat.UsageSeconds
+                    UsageSeconds = stat.UsageSeconds,
+                    GameName = stat.Weapon != null ? stat.Weapon.Game : null
                 })
                 .ToListAsync();
 
@@ -188,7 +191,7 @@ namespace Stats.Helpers
 
                     return new WeaponStats
                     {
-                        Name = primary.WeaponName ?? "Unknown",
+                        Name = GetWeaponNameForHit(primary),
                         AttachmentName = mostUsedAttachment != null
                             ? BuildAttachmentNameFromProjection(mostUsedAttachment)
                             : null,
@@ -212,10 +215,11 @@ namespace Stats.Helpers
 
             var totalHits = filteredHitLocations.Sum(h => h.HitCount);
             var topHitLocations = filteredHitLocations
-                .Take(5)
                 .Select(hit => new HitLocationStats
                 {
-                    Name = hit.HitLocationName ?? "Unknown",
+                    Name = defaultSettings.GameStrings.GetStringForGame(hit.HitLocationName ?? "Unknown",
+                        hit.GameName ?? Reference.Game.IW4),
+                    InternalName = hit.HitLocationName ?? "unknown",
                     Hits = hit.HitCount,
                     Damage = hit.DamageInflicted,
                     Percentage = totalHits > 0 ? (float)hit.HitCount / totalHits : 0
@@ -342,23 +346,49 @@ namespace Stats.Helpers
             };
         }
 
-        private static string? BuildAttachmentNameFromProjection(HitStatProjection? proj)
+        private string? BuildAttachmentNameFromProjection(HitStatProjection? proj)
         {
             if (proj == null)
                 return null;
-            var parts = new[] { proj.Attachment1Name, proj.Attachment2Name, proj.Attachment3Name }
+            var parts = new[]
+                {
+                    defaultSettings.GameStrings.GetStringForGame(proj.Attachment1Name),
+                    defaultSettings.GameStrings.GetStringForGame(proj.Attachment2Name),
+                    defaultSettings.GameStrings.GetStringForGame(proj.Attachment3Name)
+                }
                 .Where(p => !string.IsNullOrWhiteSpace(p));
             return string.Join(" + ", parts);
+        }
+
+        private string GetWeaponNameForHit(HitStatProjection? proj)
+        {
+            if (proj is null)
+            {
+                return "Unknown";
+            }
+
+            var rebuiltName = RebuildWeaponName(proj);
+            var name = defaultSettings.GameStrings.GetStringForGame(rebuiltName, proj.GameName);
+            return !rebuiltName.Equals(name, StringComparison.InvariantCultureIgnoreCase)
+                ? name
+                : defaultSettings.GameStrings.GetStringForGame(proj.WeaponName, proj.GameName);
+        }
+
+        private static string RebuildWeaponName(HitStatProjection? proj)
+        {
+            return proj is null
+                ? "Unknown"
+                : $"{proj.WeaponName}{string.Join("_", proj.Attachment1Name, proj.Attachment2Name, proj.Attachment3Name)}";
         }
 
         public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, double? zScore = null,
             long? serverId = null)
         {
-            return (stats) => (serverId == null || stats.ServerId == serverId) &&
-                              stats.UpdatedAt >= Extensions.FifteenDaysAgo() &&
-                              stats.Client.Level != EFClient.Permission.Banned &&
-                              stats.TimePlayed >= minPlayTime
-                              && (zScore == null || stats.ZScore > zScore);
+            return stats => (serverId == null || stats.ServerId == serverId) &&
+                            stats.UpdatedAt >= Extensions.FifteenDaysAgo() &&
+                            stats.Client.Level != EFClient.Permission.Banned &&
+                            stats.TimePlayed >= minPlayTime
+                            && (zScore == null || stats.ZScore > zScore);
         }
     }
 }

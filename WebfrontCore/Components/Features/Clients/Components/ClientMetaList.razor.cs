@@ -17,14 +17,14 @@ public partial class ClientMetaList : IAsyncDisposable
 
     private List<BaseMetaResponse> MetaItems { get; set; } = new();
     private bool Loading { get; set; }
-    private string _errorMessage;
+    private string? _errorMessage;
     private int Offset { get; set; } = 0;
     private int Count { get; set; } = 30;
     private long? StartAt { get; set; }
     private bool HasMore { get; set; } = true;
     private int _previousClientId;
     private MetaType? _previousMetaFilter;
-    private DotNetObjectReference<ClientMetaList> _objRef;
+    private DotNetObjectReference<ClientMetaList>? _objRef;
     private bool _observerSetup;
 
     // State container for individual meta items (expansion, loading, extra data)
@@ -35,9 +35,9 @@ public partial class ClientMetaList : IAsyncDisposable
         public bool IsOpen { get; set; }
         public bool IsLoading { get; set; }
         // For AdministeredPenalty
-        public List<Dictionary<string, string>> SnapshotInfo { get; set; }
+        public List<Dictionary<string, string>>? SnapshotInfo { get; set; }
         // For Message
-        public List<MessageResponse> ContextMessages { get; set; }
+        public List<MessageResponse>? ContextMessages { get; set; }
     }
 
     protected override async Task OnParametersSetAsync()

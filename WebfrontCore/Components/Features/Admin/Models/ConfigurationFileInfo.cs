@@ -2,6 +2,6 @@
 
 public class ConfigurationFileInfo
 { 
-    public string? FileName { get; set; }
-    public string FileContent { get; set; }
+    public required string FileName { get; set; }
+    public required string FileContent { get; set; }
 }

@@ -7,16 +7,16 @@ namespace WebfrontCore.Components.UI.Theme;
 
 public partial class ThemeSelector
 {
-    [Inject] public IJSRuntime JSRuntime { get; set; }
-    [Inject] public NavigationManager NavigationManager { get; set; }
-    [Inject] public ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required IJSRuntime JSRuntime { get; set; }
+    [Inject] public required NavigationManager NavigationManager { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
     private bool _isOpen;
-    private string _preset;
-    private string _primaryPalette;
+    private string _preset = "minimal";
+    private string _primaryPalette = "blue";
     private int _primaryHue;
     private int _primarySaturation;
     private int _primaryLightness;
-    private string _secondaryPalette;
+    private string _secondaryPalette = "purple";
     private int _secondaryHue;
     private int _secondarySaturation;
     private int _secondaryLightness;

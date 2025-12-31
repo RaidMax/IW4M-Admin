@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.UI.Controls;
 public partial class GenericTable
 {
     [Inject] public required AppState AppState { get; set; }
-    [Parameter] public TableInfo Model { get; set; }
+    [Parameter, EditorRequired] public TableInfo Model { get; set; } = default!;
     private bool IsExpanded = false;
 
     private void ToggleExpand()

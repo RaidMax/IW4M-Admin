@@ -13,8 +13,8 @@ public partial class Console
     [Inject] public required IToastService ToastService { get; set; }
     
     private List<ServerInfo> Servers { get; set; } = [];
-    private string SelectedServerId { get; set; }
-    private string Command { get; set; }
+    private string SelectedServerId { get; set; } = string.Empty;
+    private string Command { get; set; } = string.Empty;
     private List<string> CommandOutput { get; set; } = [];
     private bool IsExecuting { get; set; }
     

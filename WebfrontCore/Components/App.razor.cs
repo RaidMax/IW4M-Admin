@@ -4,7 +4,7 @@ namespace WebfrontCore.Components;
 
 public partial class App
 {
-    [Inject] public SharedLibraryCore.Configuration.ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration AppConfig { get; set; }
 
     private string GetThemeColor()
     {

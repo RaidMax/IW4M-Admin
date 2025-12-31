@@ -4,7 +4,7 @@ namespace WebfrontCore.Components.UI.Controls;
 
 public class TableInfo
 {
-    public string Header { get; set; }
+    public string? Header { get; set; }
     public List<ColumnDefinition> Columns { get; } = new();
     public List<RowDefinition> Rows { get; } = new();
     public int InitialRowCount { get; }
@@ -22,8 +22,8 @@ public class RowDefinition
 
 public class ColumnDefinition
 {
-    public string Title { get; set; }
-    public string ColumnSpan { get; set; }
+    public required string Title { get; set; }
+    public string ColumnSpan { get; set; } = string.Empty;
 }
 
 public enum ColumnType
@@ -37,9 +37,9 @@ public enum ColumnType
 public class ColumnTypeDefinition
 {
     public ColumnType Type { get; set; }
-    public string Value { get; set; }
-    public string Data { get; set; }
-    public IHtmlContent Template { get; set; }
+    public string Value { get; set; } = string.Empty;
+    public string? Data { get; set; }
+    public IHtmlContent? Template { get; set; }
     public int Id { get; set; }
 }
 

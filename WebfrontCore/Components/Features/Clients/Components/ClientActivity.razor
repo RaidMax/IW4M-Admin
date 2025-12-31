@@ -74,7 +74,7 @@
 
             <!-- Scrollable List -->
             <div class="max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5 overflow-y-auto">
-                @foreach (var client in Model.Players.OrderByDescending(p => p.Score))
+                @foreach (var client in Model!.Players!.OrderByDescending(p => p.Score))
                 {
                     var isSelf = AppState.User?.ClientId == client.ClientId;
                     var ping = GetPingIconAndColor(client.Ping);
@@ -118,7 +118,7 @@
                             <AuthorizeView
                                 Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
                                 <button @onclick:preventDefault
-                                        @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, null, null))"
+                                        @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, string.Empty, null))"
                                         class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-muted hover:text-error hover:bg-error/10 rounded transition-all"
                                         title="Kick Player">
                                     <i class="ph-bold ph-sign-out text-xs"></i>

@@ -12,7 +12,7 @@ public partial class ServerCard : IAsyncDisposable
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
-    [Parameter] public ServerInfo Model { get; set; }
+    [Parameter, EditorRequired] public ServerInfo Model { get; set; } = default!;
     [Parameter] public EventCallback<string> OnChat { get; set; }
 
     private ElementReference _cardElement;

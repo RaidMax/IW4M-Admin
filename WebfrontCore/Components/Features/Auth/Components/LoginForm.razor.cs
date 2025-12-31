@@ -9,8 +9,8 @@ public partial class LoginForm
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required AppState AppState { get; set; }
     private int ClientId { get; set; }
-    private string Password { get; set; }
-    private string ErrorMessage { get; set; }
+    private string? Password { get; set; }
+    private string? ErrorMessage { get; set; }
 
     private async Task Login()
     {

@@ -3,6 +3,7 @@ using System.Web;
 using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
+using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
@@ -47,8 +48,20 @@ public partial class ClientSearch
             Model.Direction = (SortDirection)dir;
     }
 
+    private string? _validationError;
+    [Inject] public required SharedLibraryCore.Configuration.ApplicationConfiguration AppConfig { get; set; }
+
     private void Submit()
     {
+        _validationError = null;
+
+        if (!string.IsNullOrWhiteSpace(Model.ClientName) && Model.ClientName.Length < AppConfig.MinimumNameLength)
+        {
+            _validationError = AppState.Loc("WEBFRONT_SEARCH_LENGTH_ERROR").FormatExt(AppConfig.MinimumNameLength);
+            StateHasChanged();
+            return;
+        }
+
         // Close the modal
         AppState.IsAdvancedSearchOpen = false;
         

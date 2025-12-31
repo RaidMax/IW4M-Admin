@@ -1,7 +1,7 @@
 @* Tooltip component - hover on desktop, tap on mobile *@
 @if (!string.IsNullOrEmpty(Text))
 {
-    <div class="tooltip-wrapper group/tooltip relative" @onclick="ToggleTooltip" @onclick:stopPropagation>
+    <div class="tooltip-wrapper group/tooltip relative @WrapperClass" @onclick="ToggleTooltip" @onclick:stopPropagation>
         @ChildContent
         <div class="@TooltipClasses">
             <div
@@ -30,6 +30,7 @@ else
     [Parameter] public string? Text { get; set; }
     [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
     [Parameter] public TooltipDirection Direction { get; set; } = TooltipDirection.Up;
+    [Parameter] public string? WrapperClass { get; set; }
 
     private bool _showMobile;
 

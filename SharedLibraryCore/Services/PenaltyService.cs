@@ -234,7 +234,7 @@ namespace SharedLibraryCore.Services
         }
 
         public virtual async Task RemoveActivePenalties(int aliasLinkId, long networkId, Reference.Game game, int? ipAddress = null,
-            EFPenalty.PenaltyType[] penaltyTypes = null)
+            List<EFPenalty.PenaltyType> penaltyTypes = null)
         {
             await using var context = _contextFactory.CreateContext();
             var now = DateTime.UtcNow;

@@ -38,16 +38,13 @@ function handleReconnectStateChanged(event) {
         reconnectModal.showModal();
     } else if (state === "hide") {
         reconnectModal.close();
-    } else if (state === "failed") {
-        document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     } else if (state === "rejected") {
         location.reload();
     }
+    // Note: "failed" state is now handled by the global visibility listener
 }
 
 async function retry() {
-    document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
-
     try {
         // Reconnect will asynchronously return:
         // - true to mean success
@@ -56,9 +53,10 @@ async function retry() {
         const successful = await Blazor.reconnect();
         if (!successful) {
             // We have been able to reach the server, but the circuit is no longer available.
-            // We'll reload the page so the user can continue using the app as quickly as possible.
+            // Try to resume the circuit first
             const resumeSuccessful = await Blazor.resumeCircuit();
             if (!resumeSuccessful) {
+                // Final fallback: reload the page to restore user experience
                 location.reload();
             } else {
                 reconnectModal.close();
@@ -66,7 +64,8 @@ async function retry() {
         }
     } catch (err) {
         // We got an exception, server is currently unavailable
-        document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
+        // The global visibility handler will retry when the tab becomes visible
+        console.debug("[Reconnect] Server unreachable, waiting for tab visibility or manual retry.");
     }
 }
 
@@ -81,8 +80,11 @@ async function resume() {
     }
 }
 
-async function retryWhenDocumentBecomesVisible() {
-    if (document.visibilityState === "visible") {
+// Global visibility change handler - proactively reconnect when tab becomes visible
+// This fires immediately when the user returns to the tab, regardless of current state
+document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && reconnectModal.open) {
+        console.debug("[Reconnect] Tab became visible, attempting reconnection...");
         await retry();
     }
-}
+});

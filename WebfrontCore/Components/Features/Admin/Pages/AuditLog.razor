@@ -122,12 +122,12 @@
                 <!-- Action Types -->
                 <div>
                     <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">Action Type</label>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap items-center gap-1 p-1 bg-surface rounded-xl border border-line">
                         @foreach (var actionType in AvailableActionTypes)
                         {
                             var isSelected = _selectedActionTypes.Contains(actionType);
                             <button @onclick="() => ToggleActionType(actionType)"
-                                    class="px-3 py-2 text-xs font-medium rounded-lg border transition-colors @(isSelected ? "bg-primary/20 border-primary text-primary" : "bg-surface-alt border-line text-muted hover:text-foreground")">
+                                    class="px-2 py-1 rounded-lg text-sm font-medium transition-all duration-200 @(isSelected ? "bg-primary text-on-primary shadow-lg" : "text-muted hover:text-foreground hover:bg-surface-alt")">
                                 @actionType.ToString()
                             </button>
                         }

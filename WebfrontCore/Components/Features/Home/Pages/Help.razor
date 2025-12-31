@@ -90,7 +90,7 @@
             </div>
 
             <!-- Permission Filter Chips -->
-            <div class="flex flex-wrap gap-2 items-center">
+            <div class="flex flex-wrap items-center gap-1 p-1.5 bg-surface rounded-xl border border-line">
                 @foreach (var permission in AvailablePermissions)
                 {
                     var isActive = SelectedPermissions.Contains(permission);
@@ -102,8 +102,8 @@
                 @if (SelectedPermissions.Any())
                 {
                     <button @onclick="ClearPermissionFilters" 
-                            class="px-2 py-1 text-xs font-medium text-muted hover:text-foreground transition-colors">
-                        <i class="ph ph-x"></i> Clear
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-muted hover:text-foreground hover:bg-surface-alt">
+                        <i class="ph ph-x mr-1"></i> Clear
                     </button>
                 }
             </div>

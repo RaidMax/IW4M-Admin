@@ -1,4 +1,11 @@
-<form @onsubmit="Submit" @onsubmit:preventDefault>
+<EditForm Model="Model" OnSubmit="Submit" class="space-y-4">
+    @if (!string.IsNullOrEmpty(_validationError))
+    {
+        <div class="p-3 rounded-lg bg-error/10 border border-error/20 text-error text-sm font-medium flex items-center gap-2">
+            <i class="ph ph-warning-circle text-lg"></i>
+            @_validationError
+        </div>
+    }
     <div id="chatSearchWrapper" class="space-y-3 text-foreground">
         <!-- Message Search -->
         <div class="space-y-1">
@@ -85,4 +92,4 @@
             </button>
         </div>
     </div>
-</form>
+</EditForm>

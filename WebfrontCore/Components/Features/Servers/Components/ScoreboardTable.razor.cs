@@ -8,7 +8,7 @@ namespace WebfrontCore.Components.Features.Servers.Components;
 public partial class ScoreboardTable
 {
     [Inject] public required AppState AppState { get; set; }
-    [Parameter] public ScoreboardInfo Model { get; set; }
+    [Parameter, EditorRequired] public ScoreboardInfo Model { get; set; } = default!;
     [Parameter] public bool DualColumnMode { get; set; }
     [Parameter] public bool ShowHeader { get; set; } = true;
 

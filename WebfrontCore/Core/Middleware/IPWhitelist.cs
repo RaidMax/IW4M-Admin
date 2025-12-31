@@ -30,7 +30,8 @@ internal sealed class IPWhitelist
 
         if (_whitelistedIps.Length > 0)
         {
-            isAllowed = _whitelistedIps.Any(_ip => _ip.SequenceEqual(context.Connection.RemoteIpAddress.GetAddressBytes()));
+            isAllowed = context.Connection.RemoteIpAddress != null && 
+                _whitelistedIps.Any(_ip => _ip.SequenceEqual(context.Connection.RemoteIpAddress.GetAddressBytes()));
         }
 
         if (isAllowed)

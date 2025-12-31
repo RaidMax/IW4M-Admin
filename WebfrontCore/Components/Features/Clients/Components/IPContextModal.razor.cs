@@ -9,7 +9,7 @@ public partial class IPContextModal
 {
     [Inject] public required IHttpClientFactory HttpClientFactory { get; set; }
     [Inject] public required ITranslationLookup Localization { get; set; }
-    [Parameter] public string IPAddress { get; set; }
+    [Parameter, EditorRequired] public string IPAddress { get; set; } = default!;
     private IpWhoisResponse? _geoData;
     private bool _isLoading = true;
     private string? _error;
@@ -52,11 +52,11 @@ public partial class IPContextModal
 
     private class IpWhoisResponse
     {
-        public string Isp { get; set; }
-        public string Org { get; set; }
-        public string City { get; set; }
-        public string Region { get; set; }
-        public string Country { get; set; }
-        [JsonPropertyName("Timezone_Gmt")] public string TimezoneGmt { get; set; }
+        public string? Isp { get; set; }
+        public string? Org { get; set; }
+        public string? City { get; set; }
+        public string? Region { get; set; }
+        public string? Country { get; set; }
+        [JsonPropertyName("Timezone_Gmt")] public string? TimezoneGmt { get; set; }
     }
 }

@@ -15,10 +15,10 @@ public partial class AdvancedStats
     [Inject] public required IJSRuntime JS { get; set; }
 
     [Parameter] public int ClientId { get; set; }
-    [SupplyParameterFromQuery] public string serverId { get; set; }
+    [SupplyParameterFromQuery] public string? serverId { get; set; }
 
     [PersistentState] public AdvancedStatsInfo? Stats { get; set; }
-    private SideContextMenuItems MenuItems;
+    private SideContextMenuItems? MenuItems;
     private bool _chartsInitialized;
     private bool _showAllHitLocations;
     private bool _showAllWeapons;

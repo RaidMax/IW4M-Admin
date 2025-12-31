@@ -657,6 +657,7 @@ public class WebfrontDataService : IWebfrontDataService
             ServerName = server.Hostname,
             ServerId = server.Id,
             GameCode = server.GameCode,
+            OrderByKey = "Score",
             ClientInfo = server.GetClientsAsList().Select(client =>
                     new
                     {

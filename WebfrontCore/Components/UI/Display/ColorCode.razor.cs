@@ -5,7 +5,7 @@ namespace WebfrontCore.Components.UI.Display;
 
 public partial class ColorCode
 {
-    [Parameter] public string Value { get; set; }
+    [Parameter, EditorRequired] public string Value { get; set; } = default!;
 
     // We assume enabled for now, or inject config - TODO: This seems redundant at this point.
     private bool _allow = true;

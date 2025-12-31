@@ -23,7 +23,7 @@ public partial class PenaltyList
     private bool _isLoading = false;
 
     // Removed unused _loadMoreTrigger
-    private DotNetObjectReference<PenaltyList> _dotNetRef;
+    private DotNetObjectReference<PenaltyList>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {

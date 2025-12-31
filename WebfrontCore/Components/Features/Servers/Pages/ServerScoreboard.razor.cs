@@ -10,12 +10,12 @@ public partial class ServerScoreboard
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Parameter] public string Id { get; set; }
-    private ScoreboardInfo ScoreboardModel { get; set; }
-    private SideContextMenuItems ContextItems { get; set; }
-    private PeriodicTimer _refreshTimer;
-    private CancellationTokenSource _cts;
-    private string _previousId;
+    [Parameter, EditorRequired] public string Id { get; set; } = default!;
+    private ScoreboardInfo? ScoreboardModel { get; set; }
+    private SideContextMenuItems? ContextItems { get; set; }
+    private PeriodicTimer? _refreshTimer;
+    private CancellationTokenSource? _cts;
+    private string? _previousId;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -77,7 +77,7 @@ public partial class ServerScoreboard
     {
         try
         {
-            while (await _refreshTimer.WaitForNextTickAsync(_cts.Token))
+            while (_refreshTimer != null && _cts != null && await _refreshTimer.WaitForNextTickAsync(_cts.Token))
             {
                 try
                 {

@@ -50,7 +50,7 @@ public partial class About
 
     private class RuleSetInfo
     {
-        public string ServerName { get; set; }
+        public required string ServerName { get; set; }
         public List<string> Rules { get; set; } = [];
     }
 }

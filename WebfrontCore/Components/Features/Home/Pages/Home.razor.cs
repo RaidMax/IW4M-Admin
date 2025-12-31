@@ -12,9 +12,9 @@ public partial class Home
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
-    [SupplyParameterFromQuery] public string Game { get; set; }
+    [SupplyParameterFromQuery] public string? Game { get; set; }
 
-    private IW4MAdminInfo Model;
+    private IW4MAdminInfo? Model;
 
     protected override async Task OnParametersSetAsync()
     {

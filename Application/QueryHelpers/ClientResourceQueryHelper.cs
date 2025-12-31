@@ -68,6 +68,16 @@ public class ClientResourceQueryHelper(
 
         if (!string.IsNullOrWhiteSpace(query.ClientName))
         {
+            if (query.ClientName.Length < AppConfig.MinimumNameLength)
+            {
+                return new ResourceQueryHelperResult<ClientResourceResponse>
+                {
+                    Results = Array.Empty<ClientResourceResponse>(),
+                    RetrievedResultCount = 0,
+                    TotalResultCount = 0
+                };
+            }
+            
             clientAliases = SearchByName(query, clientAliases);
         }
 

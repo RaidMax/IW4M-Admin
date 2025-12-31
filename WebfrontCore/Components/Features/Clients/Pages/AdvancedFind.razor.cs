@@ -5,6 +5,7 @@ using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 using Microsoft.JSInterop;
+using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 
 namespace WebfrontCore.Components.Features.Clients.Pages;
@@ -14,6 +15,7 @@ public partial class AdvancedFind
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     [SupplyParameterFromQuery(Name = "clientName")]
     public string? ClientName { get; set; }
@@ -116,10 +118,23 @@ public partial class AdvancedFind
         return request;
     }
 
+    private string? _validationError;
+
     private async Task LoadDataAsync()
     {
         if (_isLoading)
             return;
+
+        _validationError = null;
+        
+        if (!string.IsNullOrWhiteSpace(ClientName) && ClientName.Length < AppConfig.MinimumNameLength)
+        {
+            _validationError = AppState.Loc("WEBFRONT_SEARCH_LENGTH_ERROR").FormatExt(AppConfig.MinimumNameLength);
+            _hasMore = false;
+            Results.Clear();
+            StateHasChanged();
+            return;
+        }
 
         _isLoading = true;
         StateHasChanged();

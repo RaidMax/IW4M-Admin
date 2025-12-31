@@ -11,12 +11,23 @@
             <i class="ph ph-magnifying-glass text-xl text-primary"></i>
         </div>
         <div>
-             <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE")</h2>
+                <h2 class="text-3xl font-black text-gradient-title tracking-tight">
+                    @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))
+                </h2>
+
              <div class="text-sm text-subtle font-medium mt-0.5">
                  @_totalCount.ToString("#,##0") resources found
              </div>
         </div>
     </div>
+
+    @if (!string.IsNullOrEmpty(_validationError))
+    {
+        <div class="mb-6 p-4 rounded-lg bg-error/10 border border-error/20 text-error font-medium flex items-center shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <i class="ph ph-warning-circle text-xl mr-3"></i>
+            <span>@_validationError</span>
+        </div>
+    }
 
     <div class="md:bg-surface md:rounded-lg md:border md:border-line md:shadow-sm md:overflow-hidden">
         <!-- Desktop Table -->

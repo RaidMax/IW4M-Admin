@@ -370,17 +370,17 @@ else
                         </div>
 
                         @* Filter buttons - vertical on mobile, horizontal on desktop *@
-                        <div class="flex flex-col md:flex-row md:flex-nowrap md:overflow-x-auto items-stretch md:items-center gap-1 md:gap-2 p-1.5 bg-surface rounded-xl border border-line scrollbar-hide">
+                        <div class="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-2">
                             @foreach (var type in GetFilterableMetaTypes())
                             {
                                 var isActive = (!_selectedMetaFilter.HasValue && type == MetaType.All) ||
                                                    (_selectedMetaFilter == type);
 
                                 var activeClass = isActive
-                                    ? "bg-primary text-on-primary shadow-lg"
-                                    : "text-muted hover:text-foreground hover:bg-surface-alt";
+                                    ? "bg-primary border-primary text-on-primary shadow-sm"
+                                    : "bg-surface border-line text-muted hover:text-foreground hover:border-line-hover hover:bg-surface-alt";
 
-                                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-left md:text-center whitespace-nowrap shrink-0 @activeClass"
+                                <button class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-center border @activeClass"
                                         @onclick="() => SetMetaFilter(type)">
                                     @type.ToTranslatedName()
                                 </button>

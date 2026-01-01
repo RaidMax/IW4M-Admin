@@ -1328,7 +1328,8 @@ namespace IW4MAdmin
                 ClientCount = ClientNum,
                 ConnectionInterrupted = Throttled,
                 Time = DateTime.UtcNow,
-                Map = CurrentMap.Name
+                Map = CurrentMap.Name,
+                MapAlias = CurrentMap.Alias
             });
             
             _lastPlayerCount = DateTime.Now;

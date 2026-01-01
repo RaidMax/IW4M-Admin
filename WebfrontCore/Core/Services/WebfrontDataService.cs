@@ -990,25 +990,26 @@ public class WebfrontDataService : IWebfrontDataService
     public async Task<IEnumerable<ServerFlaggedInfo>> GetOnlineFlaggedAsync()
     {
         var flagged = new List<ServerFlaggedInfo>();
-        
+
         foreach (var server in _manager.GetServers())
         {
             var flaggedClients = server.GetClientsAsList()
                 .Where(client => client.Level == Data.Models.Client.EFClient.Permission.Flagged)
                 .ToList();
 
-            if (!flaggedClients.Any()) continue;
+            if (!flaggedClients.Any())
+                continue;
 
             var flaggedInfos = new List<FlaggedClientInfo>();
             foreach (var client in flaggedClients)
             {
                 // Get the flag penalty to retrieve the reason
                 var flagPenalty = await _manager.GetPenaltyService()
-                    .GetActivePenaltiesAsync(client.AliasLinkId, client.CurrentAliasId, 
+                    .GetActivePenaltiesAsync(client.AliasLinkId, client.CurrentAliasId,
                         client.NetworkId, client.GameName, client.IPAddress);
-                
+
                 var flag = flagPenalty.FirstOrDefault(p => p.Type == EFPenalty.PenaltyType.Flag);
-                
+
                 flaggedInfos.Add(new FlaggedClientInfo
                 {
                     Name = client.Name,
@@ -1161,7 +1162,8 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<ResourceQueryHelperResult<ClientResourceResponse>> SearchClientsAsync(ClientResourceRequest request)
+    public async Task<ResourceQueryHelperResult<ClientResourceResponse>> SearchClientsAsync(
+        ClientResourceRequest request)
     {
         if (!request.HasData)
         {
@@ -1197,7 +1199,7 @@ public class WebfrontDataService : IWebfrontDataService
 
             return r;
         });
-        
+
         return results;
     }
 
@@ -1333,15 +1335,6 @@ public class WebfrontDataService : IWebfrontDataService
             savedHistory?.ClientCounts,
             foundServer.ClientHistory.ClientCounts,
             _appConfig.MaxClientHistoryTime);
-
-        // Resolve map aliases
-        if (foundServer.Maps.Count > 0)
-        {
-            foreach (var count in clientCountSnapshots)
-            {
-                count.MapAlias = foundServer.Maps.FirstOrDefault(map => map.Name == count.Map)?.Alias ?? count.Map;
-            }
-        }
 
         return clientCountSnapshots;
     }

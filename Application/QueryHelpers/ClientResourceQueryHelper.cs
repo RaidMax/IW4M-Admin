@@ -72,12 +72,12 @@ public class ClientResourceQueryHelper(
             {
                 return new ResourceQueryHelperResult<ClientResourceResponse>
                 {
-                    Results = Array.Empty<ClientResourceResponse>(),
+                    Results = [],
                     RetrievedResultCount = 0,
                     TotalResultCount = 0
                 };
             }
-            
+
             clientAliases = SearchByName(query, clientAliases);
         }
 
@@ -87,6 +87,7 @@ public class ClientResourceQueryHelper(
         }
 
         var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection });
+        var totalCount = 0;
 
         if (query.SortColumn == "FirstConnection")
         {
@@ -99,14 +100,12 @@ public class ClientResourceQueryHelper(
             iqGroupedClientAliases = query.Direction == SortDirection.Descending
                 ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.LastConnection)
                 : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
+            totalCount = await iqGroupedClientAliases.CountAsync();
         }
 
-        var totalCount = await iqGroupedClientAliases.CountAsync();
-
-        var clientIds = await iqGroupedClientAliases.Select(g => g.Key.ClientId)
+        var clientIds = iqGroupedClientAliases.Select(g => g.Key.ClientId)
             .Skip(query.Offset)
-            .Take(query.Count)
-            .ToListAsync(); // todo: this change was for a pomelo limitation and may be addressed in future version
+            .Take(query.Count);
 
         // this pulls in more records than we need, but it's more efficient than ordering grouped entities
         var clientLookups = await clientAliases

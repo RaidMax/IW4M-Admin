@@ -314,7 +314,7 @@ public class WebfrontDataService : IWebfrontDataService
             user = new ClientInfo
             {
                 ClientId = currentUser!.ClientId,
-                Name = currentUser.CurrentAlias?.Name ?? "Unknown",
+                Name = currentUser.CurrentAlias?.Name ?? _translationLookup["WEBFRONT_UNKNOWN"],
                 Level = currentUser.Level,
                 Game = currentUser.GameName
             };
@@ -717,7 +717,7 @@ public class WebfrontDataService : IWebfrontDataService
         var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId);
         if (server is null)
         {
-            return [new CommandResponseInfo { Response = "Server not found" }];
+            return [new CommandResponseInfo { Response = _translationLookup["WEBFRONT_RESPONSE_SERVER_NOT_FOUND"] }];
         }
 
         var (_, response) = await _remoteCommandService.ExecuteWithResult(client.ClientId, null, command,
@@ -775,11 +775,11 @@ public class WebfrontDataService : IWebfrontDataService
     {
         var executor = await GetExecutorAsync();
         if (executor == null)
-            return "Unauthorized";
+            return _translationLookup["WEBFRONT_RESPONSE_UNAUTHORIZED"];
 
         var targetClient = await _clientService.Get(clientId);
         if (targetClient == null)
-            return "Client not found";
+            return _translationLookup["WEBFRONT_RESPONSE_CLIENT_NOT_FOUND"];
 
         var server = _manager.GetServers().First();
         executor.CurrentServer = server;
@@ -791,12 +791,12 @@ public class WebfrontDataService : IWebfrontDataService
         {
             return unbanEvent.Output.Count > 0
                 ? string.Join(" ", unbanEvent.Output)
-                : "Client unbanned successfully";
+                : _translationLookup["WEBFRONT_RESPONSE_UNBANNED_SUCCESS"];
         }
 
         var msg = unbanEvent.Output.Count > 0
             ? string.Join(" ", unbanEvent.Output)
-            : "Unban failed";
+            : _translationLookup["WEBFRONT_RESPONSE_UNBAN_FAILED"];
 
         return msg;
     }
@@ -1014,7 +1014,7 @@ public class WebfrontDataService : IWebfrontDataService
                 {
                     Name = client.Name,
                     ClientId = client.ClientId,
-                    Reason = flag?.Offense ?? "Unknown",
+                    Reason = flag?.Offense ?? _translationLookup["WEBFRONT_UNKNOWN"],
                     FlaggedOn = flag?.When ?? DateTime.UtcNow
                 });
             }

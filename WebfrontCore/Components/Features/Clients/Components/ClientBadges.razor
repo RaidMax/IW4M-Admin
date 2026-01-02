@@ -14,7 +14,7 @@
     }
     @if (_navData?.TotalFlaggedCount > 0)
     {
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
             <button class="relative text-subtle hover:text-foreground transition-colors p-2 rounded-lg hover:bg-surface-hover flex justify-center"
                     type="button" @onclick="ShowFlagged" title="Flagged Players">
                 <i class="ph ph-flag text-2xl text-level-flagged"></i>
@@ -60,7 +60,7 @@ else
                         <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")" Context="flaggedContext">
                             <button type="button" class="flex items-center border border-line rounded-lg overflow-hidden cursor-pointer hover:border-line-hover transition-colors group" @onclick="ShowFlagged">
                                 <span class="px-3 py-1 text-xs font-bold text-level-flagged bg-level-flagged/10 border-r border-line group-hover:bg-level-flagged/20 transition-colors">@(_navData.TotalFlaggedCount ?? 0)</span>
-                                <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">FLAGGED</span>
+                                <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_STATUS_FLAGGED")</span>
                             </button>
                         </AuthorizeView>
                     </div>

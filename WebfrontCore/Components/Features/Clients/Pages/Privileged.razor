@@ -18,7 +18,7 @@
                     @if (FilteredPrivilegedClients != null)
                     {
                         <div class="text-sm text-subtle font-medium mt-0.5">
-                            @FilteredPrivilegedClients.Sum(x => x.Value.Count).ToString("#,##0") privileged clients
+                            @(AppState.Loc("WEBFRONT_PRIVILEGED_COUNT").FormatExt(FilteredPrivilegedClients.Sum(x => x.Value.Count).ToString("#,##0")))
                         </div>
                     }
                 </div>

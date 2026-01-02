@@ -21,7 +21,7 @@
                 <button type="button"
                         @onclick="() => Model.IsExactClientName = !Model.IsExactClientName"
                         class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-xs font-medium transition-colors @(Model.IsExactClientName ? "bg-primary text-white" : "bg-surface-hover text-muted hover:text-foreground")">
-                    Exact
+                    @AppState.Loc("WEBFRONT_SEARCH_EXACT")
                 </button>
             </div>
         </div>
@@ -40,7 +40,7 @@
                 <button type="button"
                         @onclick="() => Model.IsExactClientIp = !Model.IsExactClientIp"
                         class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-xs font-medium transition-colors @(Model.IsExactClientIp ? "bg-primary text-white" : "bg-surface-hover text-muted hover:text-foreground")">
-                    Exact
+                    @AppState.Loc("WEBFRONT_SEARCH_EXACT")
                 </button>
             </div>
         </div>
@@ -48,7 +48,7 @@
         <!-- GUID/Network ID -->
         <div class="space-y-1">
             <label for="clientGuid" class="block text-xs font-semibold text-muted uppercase tracking-wider">
-                GUID / XUID / Network ID
+                @AppState.Loc("WEBFRONT_SEARCH_GUID_LABEL")
             </label>
             <input type="text"
                    class="block w-full rounded-md bg-input-bg border border-input-border text-foreground placeholder-input-placeholder focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2"
@@ -67,7 +67,7 @@
                     class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-sm px-2 py-2"
                     id="clientLevel"
                     @bind="Model.ClientLevel">
-                    <option value="">Any</option>
+                    <option value="">@AppState.Loc("WEBFRONT_FILTER_ANY")</option>
                     @foreach (EFClient.Permission permission in Enum.GetValues(typeof(EFClient.Permission)))
                     {
                         <option value="@permission">@permission.ToString()</option>
@@ -82,7 +82,7 @@
                     class="block w-full rounded-md bg-input-bg border border-input-border text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200 text-sm px-2 py-2"
                     id="clientGameName"
                     @bind="Model.GameName">
-                    <option value="">Any</option>
+                    <option value="">@AppState.Loc("WEBFRONT_FILTER_ANY")</option>
                     @foreach (Reference.Game game in Enum.GetValues(typeof(Reference.Game)))
                     {
                         <option value="@game">@game.ToString()</option>
@@ -108,7 +108,7 @@
                 <input type="checkbox" id="resultOrder" class="sr-only peer" @bind="IsAscending">
                 <div
                     class="w-8 h-4 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
-                <span class="ml-2 text-sm text-muted group-hover:text-foreground transition-colors">Oldest first</span>
+                <span class="ml-2 text-sm text-muted group-hover:text-foreground transition-colors">@AppState.Loc("WEBFRONT_SEARCH_OLDEST_FIRST")</span>
             </label>
             <button type="submit"
                     class="flex items-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-white bg-primary hover:bg-action-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">

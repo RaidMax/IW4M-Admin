@@ -1,3 +1,5 @@
+@inject AppState AppState
+
 <script type="module" src="/js/reconnect-modal.js"></script>
 
 <dialog id="components-reconnect-modal" data-nosnippet>
@@ -25,21 +27,21 @@
         @* Message Content *@
         <div class="space-y-3">
             <h3 class="text-xl font-bold tracking-tight text-foreground justify-center flex">
-                <span class="reconnect-state-msg reconnect-on-show leading-tight">Reconnecting</span>
-                <span class="reconnect-state-msg reconnect-on-retrying leading-tight">Retrying Connection</span>
-                <span class="reconnect-state-msg reconnect-on-failed leading-tight">Connection Failed</span>
-                <span class="reconnect-state-msg reconnect-on-paused leading-tight">Session Paused</span>
-                <span class="reconnect-state-msg reconnect-on-resume-failed leading-tight">Resume Failed</span>
+                <span class="reconnect-state-msg reconnect-on-show leading-tight">@AppState.Loc("WEBFRONT_RECONNECT_RECONNECTING")</span>
+                <span class="reconnect-state-msg reconnect-on-retrying leading-tight">@AppState.Loc("WEBFRONT_RECONNECT_RETRYING")</span>
+                <span class="reconnect-state-msg reconnect-on-failed leading-tight">@AppState.Loc("WEBFRONT_RECONNECT_FAILED")</span>
+                <span class="reconnect-state-msg reconnect-on-paused leading-tight">@AppState.Loc("WEBFRONT_RECONNECT_PAUSED")</span>
+                <span class="reconnect-state-msg reconnect-on-resume-failed leading-tight">@AppState.Loc("WEBFRONT_RECONNECT_RESUME_FAILED")</span>
             </h3>
             
             <p class="text-subtle text-sm leading-relaxed mx-auto px-2">
-                <span class="reconnect-state-msg reconnect-on-show">Attempting to re-establish connection to the server.</span>
+                <span class="reconnect-state-msg reconnect-on-show">@AppState.Loc("WEBFRONT_RECONNECT_ATTEMPTING")</span>
                 <span class="reconnect-state-msg reconnect-on-retrying">
-                    Rejoin failed. Next attempt in <span id="components-seconds-to-next-attempt" class="font-bold text-primary px-1"></span> seconds.
+                    @AppState.Loc("WEBFRONT_RECONNECT_REJOIN_FAILED") <span id="components-seconds-to-next-attempt" class="font-bold text-primary px-1"></span> @AppState.Loc("WEBFRONT_RECONNECT_SECONDS")
                 </span>
-                <span class="reconnect-state-msg reconnect-on-failed text-error/80 font-medium">We couldn't reconnect you. Please try manual reload.</span>
-                <span class="reconnect-state-msg reconnect-on-paused">The session has been paused by the server.</span>
-                <span class="reconnect-state-msg reconnect-on-resume-failed text-error/80 font-medium">We couldn't resume your session. A reload is required.</span>
+                <span class="reconnect-state-msg reconnect-on-failed text-error/80 font-medium">@AppState.Loc("WEBFRONT_RECONNECT_MANUAL_RELOAD")</span>
+                <span class="reconnect-state-msg reconnect-on-paused">@AppState.Loc("WEBFRONT_RECONNECT_SESSION_PAUSED")</span>
+                <span class="reconnect-state-msg reconnect-on-resume-failed text-error/80 font-medium">@AppState.Loc("WEBFRONT_RECONNECT_RELOAD_REQUIRED")</span>
             </p>
         </div>
 
@@ -47,15 +49,15 @@
         <div class="w-full pt-2 flex flex-col gap-2.5">
             <button id="components-reconnect-button" 
                     class="reconnect-state-msg reconnect-on-failed w-full py-2.5 px-4 bg-primary hover:bg-primary-600 text-white font-semibold rounded-lg transition-all shadow-sm active:scale-[0.98]">
-                Retry Connection
+                @AppState.Loc("WEBFRONT_RECONNECT_RETRY")
             </button>
             <button id="components-resume-button" 
                     class="reconnect-state-msg reconnect-on-paused w-full py-2.5 px-4 bg-primary hover:bg-primary-600 text-white font-semibold rounded-lg transition-all shadow-sm active:scale-[0.98]">
-                Resume Session
+                @AppState.Loc("WEBFRONT_RECONNECT_RESUME")
             </button>
             <button onclick="window.location.reload()" 
                     class="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 text-foreground font-medium rounded-lg border border-line transition-all active:scale-[0.98]">
-                Reload Page
+                @AppState.Loc("WEBFRONT_RECONNECT_RELOAD")
             </button>
         </div>
     </div>

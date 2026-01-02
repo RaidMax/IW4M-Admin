@@ -23,7 +23,7 @@
         <!-- Loading State -->
         <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
             <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
-            <span class="text-sm">Loading configuration files...</span>
+            <span class="text-sm">@AppState.Loc("WEBFRONT_LOADING")</span>
         </div>
     }
     else
@@ -43,7 +43,7 @@
                             </div>
                             <div>
                                 <h3 class="font-medium text-foreground">@file.FileName</h3>
-                                <p class="text-xs text-subtle font-mono">JSON Configuration</p>
+                                <p class="text-xs text-subtle font-mono">@AppState.Loc("WEBFRONT_CONFIG_JSON")</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-4">

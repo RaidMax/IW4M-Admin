@@ -28,7 +28,7 @@
                     @if (Model != null)
                     {
                         <div class="text-sm text-subtle font-medium mt-0.5">
-                            @Model.TotalServerCount.ToString("#,##0") @(Model.TotalServerCount == 1 ? "server" : "servers") monitored
+                            @(AppState.Loc("WEBFRONT_HOME_SERVERS_COUNT").FormatExt(Model.TotalServerCount.ToString("#,##0"), Model.TotalServerCount == 1 ? AppState.Loc("WEBFRONT_HOME_SERVER_SINGULAR") : AppState.Loc("WEBFRONT_HOME_SERVER_PLURAL")))
                         </div>
                     }
                 </div>
@@ -58,7 +58,7 @@
                 <div
                     class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
                     <span
-                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Online</span>
+                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HOME_STAT_ONLINE")</span>
                     <span
                         class="text-lg font-bold text-primary group-hover:text-primary transition-colors">@Model.TotalOccupiedClientSlots/@Model.TotalAvailableClientSlots</span>
                 </div>
@@ -67,7 +67,7 @@
                 <div
                     class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
                     <span
-                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Peak Today</span>
+                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HOME_STAT_PEAK_TODAY")</span>
                     <span class="text-lg font-bold text-primary group-hover:text-primary transition-colors"
                           title="@Model.MaxConcurrentClientsTime.Humanize().Titleize()">@Model.MaxConcurrentClients.ToString("#,##0")</span>
                 </div>
@@ -76,7 +76,7 @@
                 <div
                     class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
                     <span
-                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Recent (24h)</span>
+                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HOME_STAT_RECENT")</span>
                     <span
                         class="text-lg font-bold text-primary group-hover:text-primary transition-colors">@Model.RecentClientCount.ToString("#,##0")</span>
                 </div>
@@ -85,7 +85,7 @@
                 <div
                     class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
                     <span
-                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Total Players</span>
+                        class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HOME_STAT_TOTAL_PLAYERS")</span>
                     <span
                         class="text-lg font-bold text-primary group-hover:text-primary transition-colors">@Model.TotalClientCount.ToString("#,##0")</span>
                 </div>

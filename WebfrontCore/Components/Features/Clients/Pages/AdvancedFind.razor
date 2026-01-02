@@ -16,7 +16,7 @@
                 </h2>
 
              <div class="text-sm text-subtle font-medium mt-0.5">
-                 @_totalCount.ToString("#,##0") resources found
+                 @(AppState.Loc("WEBFRONT_SEARCH_RESOURCES_FOUND").FormatExt(_totalCount.ToString("#,##0")))
              </div>
         </div>
     </div>
@@ -54,7 +54,7 @@
                         <tr>
                             <td colspan="7" class="p-12 text-center text-muted">
                                 <i class="ph ph-spinner animate-spin text-4xl text-primary mx-auto mb-4"></i>
-                                <div class="text-lg">Loading results...</div>
+                                <div class="text-lg">@AppState.Loc("WEBFRONT_LOADING")</div>
                             </td>
                         </tr>
                     }
@@ -63,7 +63,7 @@
                         <tr>
                             <td colspan="7" class="p-12 text-center text-muted">
                                 <i class="ph ph-magnifying-glass text-4xl mb-4 text-subtle mx-auto"></i>
-                                <div class="text-lg">No results found</div>
+                                <div class="text-lg">@AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")</div>
                             </td>
                         </tr>
                     }
@@ -84,7 +84,7 @@
                                             @if (string.IsNullOrEmpty(client.ClientCountryCode))
                                             {
                                                 <i class="ph ph-question text-muted"></i>
-                                                <span class="text-sm text-muted">Unknown</span>
+                                                <span class="text-sm text-muted">@AppState.Loc("WEBFRONT_UNKNOWN")</span>
                                             }
                                             else
                                             {
@@ -185,7 +185,7 @@
         {
             <div class="flex items-center gap-2 text-muted animate-pulse">
                 <i class="ph ph-spinner animate-spin text-xl"></i>
-                <span>Loading more...</span>
+                <span>@AppState.Loc("WEBFRONT_LOADING")</span>
             </div>
         }
         else if (_hasMore)
@@ -194,7 +194,7 @@
         }
         else if (Results.Count > 0)
         {
-            <div class="text-muted italic text-sm">No more results</div>
+            <div class="text-muted italic text-sm">@AppState.Loc("WEBFRONT_SEARCH_NO_MORE_RESULTS")</div>
         }
     </div>
 </div>

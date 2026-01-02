@@ -85,24 +85,24 @@
         <div
             class="@(_showMobileDetails ? "flex" : "hidden") md:hidden flex-col space-y-2 pt-2 border-t border-line text-xs font-medium text-subtle w-full animate-in fade-in slide-in-from-top-1">
             <div class="flex items-center justify-between">
-                <span>Map</span>
+                <span>@AppState.Loc("WEBFRONT_SERVER_MAP")</span>
                 <span class="text-foreground">@Model.Map</span>
             </div>
             @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
             {
                 <div class="flex items-center justify-between">
-                    <span>Mode</span>
+                    <span>@AppState.Loc("WEBFRONT_SERVER_MODE")</span>
                     <span class="text-foreground">@Model.GameType</span>
                 </div>
             }
             <div class="flex items-center justify-between">
-                <span>Players</span>
+                <span>@AppState.Loc("WEBFRONT_SERVER_PLAYERS")</span>
                 <span class="text-foreground">@Model.ClientCount / @(Model.MaxClients - Model.PrivateClientSlots)</span>
             </div>
             @if (Model.LobbyZScore != null)
             {
                 <div class="flex items-center justify-between">
-                    <span>Rating</span>
+                    <span>@AppState.Loc("WEBFRONT_SERVER_RATING")</span>
                     <div class="flex items-center space-x-1">
                         <span class="text-foreground">@(Model.LobbyZScore ?? 0)</span>
                         <i class="ph-fill ph-lightning text-accent"></i>

@@ -139,10 +139,10 @@
                                     <div class="flex flex-col">
                                          <span
                                              class="text-3xl font-black text-foreground font-mono tracking-tighter leading-none">
-                                            @(SelectedServer != null ? (stat.Performance?.ToNumericalString() ?? "No Performance") : (stat.Performance?.ToNumericalString() ?? "Unrated"))
+                                            @(SelectedServer != null ? (stat.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_NO_PERFORMANCE")) : (stat.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_UNRATED")))
                                         </span>
                                         <span class="text-primary text-[10px] font-bold uppercase tracking-widest mt-1">
-                                             @(SelectedServer != null ? "Performance" : "Rating")
+                                             @(SelectedServer != null ? AppState.Loc("WEBFRONT_STATS_PERFORMANCE") : AppState.Loc("WEBFRONT_STATS_RATING"))
                                         </span>
                                     </div>
 
@@ -152,13 +152,13 @@
                                         <div class="flex flex-col min-w-[70px]">
                                             <span
                                                 class="text-foreground font-mono font-bold">@stat.Kills.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">Kills</span>
+                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KILLS")</span>
                                         </div>
                                         <!-- Deaths -->
                                         <div class="flex flex-col min-w-[70px]">
                                             <span
                                                 class="text-foreground font-mono font-bold">@stat.Deaths.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">Deaths</span>
+                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_DEATHS")</span>
                                         </div>
                                         <!-- KDR -->
                                         <div class="flex flex-col min-w-[50px]">
@@ -166,13 +166,13 @@
                                                 class="@(stat.KDR >= 2.0 ? "text-success" : stat.KDR >= 1.0 ? "text-foreground" : "text-error") font-mono font-bold">
                                                 @stat.KDR.ToString("F2")
                                             </span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">KDR</span>
+                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KDR")</span>
                                         </div>
                                         <!-- Time -->
                                         <div class="flex flex-col min-w-[50px]">
                                             <span
                                                 class="text-foreground font-mono font-bold">@stat.TimePlayedValue.TotalHours.ToString("F0")h</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">Played</span>
+                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_PLAYED")</span>
                                         </div>
                                     </div>
                                 </div>

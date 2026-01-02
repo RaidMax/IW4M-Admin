@@ -41,7 +41,7 @@ public partial class AuditLog : IAsyncDisposable
     private bool _groupByAction;
     
     // Collapsed group state
-    private HashSet<string> _collapsedGroups = [];
+    private readonly HashSet<string> _collapsedGroups = [];
 
     private static string DataDetailsPolicy => $"Permissions.{WebfrontEntity.AuditLogDataDetails}.{WebfrontPermission.Read}";
 

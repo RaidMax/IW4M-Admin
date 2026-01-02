@@ -19,7 +19,7 @@
 {
     <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
         <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
-        <span class="text-sm">Loading community info...</span>
+        <span class="text-sm">@AppState.Loc("WEBFRONT_ABOUT_LOADING")</span>
     </div>
 }
 else
@@ -69,7 +69,7 @@ else
                         @if (AboutInfo.CommunityInformation.SocialAccounts?.Any() == true)
                         {
                             <div class="mt-8 pt-6 border-t border-line">
-                                <h3 class="text-sm font-medium text-muted uppercase tracking-wider mb-4">Connect</h3>
+                                <h3 class="text-sm font-medium text-muted uppercase tracking-wider mb-4">@AppState.Loc("WEBFRONT_ABOUT_CONNECT")</h3>
                                 <div class="flex flex-wrap gap-4">
                                     @foreach (var social in AboutInfo.CommunityInformation.SocialAccounts)
                                     {

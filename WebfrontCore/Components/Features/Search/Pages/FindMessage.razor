@@ -12,7 +12,7 @@
         <div>
             <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT")</h2>
             <div class="text-sm text-subtle font-medium mt-0.5">
-                @Results.Count.ToString("#,##0") messages found
+                @(AppState.Loc("WEBFRONT_SEARCH_MESSAGES_FOUND").FormatExt(Results.Count.ToString("#,##0")))
             </div>
         </div>
     </div>
@@ -35,7 +35,7 @@
                     <tr>
                         <td colspan="4" class="p-12 text-center text-muted">
                             <i class="ph ph-spinner animate-spin text-4xl text-primary mx-auto mb-4"></i>
-                            <div class="text-lg">Loading results...</div>
+                            <div class="text-lg">@AppState.Loc("WEBFRONT_LOADING")</div>
                         </td>
                     </tr>
                 }
@@ -44,7 +44,7 @@
                     <tr>
                         <td colspan="4" class="p-12 text-center text-muted">
                             <i class="ph ph-chat-circle-text text-4xl mb-4 text-subtle mx-auto"></i>
-                            <div class="text-lg">No messages found</div>
+                            <div class="text-lg">@AppState.Loc("WEBFRONT_SEARCH_NO_MESSAGES")</div>
                         </td>
                     </tr>
                 }
@@ -123,7 +123,7 @@
         {
             <div class="flex items-center gap-2 text-muted animate-pulse">
                 <i class="ph ph-spinner animate-spin text-xl"></i>
-                <span>Loading more...</span>
+                <span>@AppState.Loc("WEBFRONT_LOADING")</span>
             </div>
         }
         else if (_hasMore)
@@ -133,7 +133,7 @@
         }
         else if (Results.Count > 0)
         {
-            <div class="text-muted italic text-sm">No more results</div>
+            <div class="text-muted italic text-sm">@AppState.Loc("WEBFRONT_SEARCH_NO_MORE_RESULTS")</div>
         }
     </div>
 </div>
@@ -152,7 +152,7 @@
             <div class="flex items-center justify-between p-4 border-b border-line">
                 <div class="flex items-center gap-2">
                     <i class="ph ph-chat-circle-text text-secondary"></i>
-                    <h3 class="font-semibold text-foreground">Chat Context</h3>
+                    <h3 class="font-semibold text-foreground">@AppState.Loc("WEBFRONT_CHAT_CONTEXT")</h3>
                     <span class="text-xs text-muted">±5 minutes</span>
                 </div>
                 <button @onclick="CloseContextModal" class="text-muted hover:text-foreground transition-colors">
@@ -203,7 +203,7 @@
                 {
                     <div class="text-center py-8 text-muted">
                         <i class="ph ph-chat-circle-text text-3xl mb-2"></i>
-                        <div>No context messages found</div>
+                        <div>@AppState.Loc("WEBFRONT_NO_CONTEXT_MESSAGES")</div>
                     </div>
                 }
             </div>

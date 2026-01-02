@@ -1,2 +1,3 @@
 @page "/NotFound"
-<h3>NotFound</h3>
+@inject AppState AppState
+<h3>@AppState.Loc("WEBFRONT_NOT_FOUND_TITLE")</h3>

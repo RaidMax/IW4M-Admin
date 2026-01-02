@@ -2,6 +2,7 @@
 using Microsoft.JSInterop;
 using SharedLibraryCore.Configuration;
 using WebfrontCore.Components.UI.Theme.Models;
+using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.UI.Theme;
 
@@ -10,6 +11,7 @@ public partial class ThemeSelector
     [Inject] public required IJSRuntime JSRuntime { get; set; }
     [Inject] public required NavigationManager NavigationManager { get; set; }
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required AppState AppState { get; set; }
     private bool _isOpen;
     private string _preset = "minimal";
     private string _primaryPalette = "blue";

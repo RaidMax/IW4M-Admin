@@ -5,7 +5,7 @@
     {
         <div class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
              <i class="ph ph-check-circle text-4xl text-success mb-3 opacity-80"></i>
-             <span class="text-muted font-medium">No recent reports found</span>
+             <span class="text-muted font-medium">@AppState.Loc("WEBFRONT_DASHBOARD_NO_REPORTS")</span>
         </div>
     }
 
@@ -28,14 +28,14 @@
                                  <i class="ph ph-clock"></i>
                                  <span>@report.ReportedOn.HumanizeForCurrentCulture()</span>
                              </div>
-                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-error/10 text-error border border-error/20 uppercase tracking-wider">Report</span>
+                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-error/10 text-error border border-error/20 uppercase tracking-wider">@AppState.Loc("WEBFRONT_STATUS_REPORT")</span>
                         </div>
                         
                         <div class="mb-2 text-sm leading-snug">
                              <a href="/client/@report.Target.ClientId" class="font-bold text-foreground hover:text-primary transition-colors">
                                 <ColorCode Value="@report.Target.Name"/>
                             </a>
-                            <span class="text-muted text-xs mx-1">reported by</span>
+                            <span class="text-muted text-xs mx-1">@AppState.Loc("WEBFRONT_REPORTED_BY")</span>
                             <a href="/client/@report.Origin.ClientId" class="font-medium text-foreground hover:text-primary transition-colors">
                                 <ColorCode Value="@report.Origin.Name"/>
                             </a>

@@ -102,12 +102,12 @@
                                                 @if (Stats.ServerId != null)
                                                 {
                                                     <span
-                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Performance?.ToNumericalString() ?? "No Performance"}</span>"))</span>
+                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_NO_PERFORMANCE")}</span>"))</span>
                                                 }
                                                 else
                                                 {
                                                     <span
-                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Rating?.ToNumericalString() ?? "Unrated"}</span>"))</span>
+                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Rating?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_UNRATED")}</span>"))</span>
                                                 }
                                             </div>
                                         }
@@ -131,7 +131,7 @@
                                 {
                                     <div
                                         class="absolute inset-0 flex items-center justify-center text-muted border border-dashed border-line rounded-xl">
-                                        <span>Not enough data for graph</span>
+                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_NO_GRAPH_DATA")</span>
                                     </div>
                                 }
                             </div>
@@ -215,11 +215,11 @@
                                     <i class="ph @(_showAllHitLocations ? "ph-caret-up" : "ph-caret-down")"></i>
                                     @if (_showAllHitLocations)
                                     {
-                                        <span>Show Less</span>
+                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_SHOW_LESS")</span>
                                     }
                                     else
                                     {
-                                        <span>Show All (@Stats.TopHitLocations.Count)</span>
+                                        <span>@(AppState.Loc("WEBFRONT_ADV_STATS_SHOW_ALL").FormatExt(Stats.TopHitLocations.Count))</span>
                                     }
                                 </button>
                             }
@@ -288,11 +288,11 @@
                                     <i class="ph @(_showAllWeapons ? "ph-caret-up" : "ph-caret-down")"></i>
                                     @if (_showAllWeapons)
                                     {
-                                        <span>Show Less</span>
+                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_SHOW_LESS")</span>
                                     }
                                     else
                                     {
-                                        <span>Show All (@Stats.TopWeapons.Count)</span>
+                                        <span>@(AppState.Loc("WEBFRONT_ADV_STATS_SHOW_ALL").FormatExt(Stats.TopWeapons.Count))</span>
                                     }
                                 </button>
                             }

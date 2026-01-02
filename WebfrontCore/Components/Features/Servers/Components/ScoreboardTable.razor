@@ -31,7 +31,7 @@ else
                 <div class="px-4 py-2 bg-sky-900/20 border-b border-sky-500/30 flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <i class="ph ph-users text-sky-400"></i>
-                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Allies)">Allies</span>
+                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Allies)">@AppState.Loc("WEBFRONT_TEAM_ALLIES")</span>
                         <span class="text-xs text-muted">(@AlliesPlayers.Count())</span>
                     </div>
                     <span class="font-mono font-bold text-sky-400">@AlliesTeamScore</span>
@@ -42,7 +42,7 @@ else
                 }
                 else
                 {
-                    <div class="p-4 text-center text-muted text-sm">No players</div>
+                    <div class="p-4 text-center text-muted text-sm">@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</div>
                 }
             </div>
 
@@ -52,7 +52,7 @@ else
                 <div class="px-4 py-2 bg-rose-900/20 border-b border-rose-500/30 flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <i class="ph ph-users text-rose-400"></i>
-                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Axis)">Axis</span>
+                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Axis)">@AppState.Loc("WEBFRONT_TEAM_AXIS")</span>
                         <span class="text-xs text-muted">(@AxisPlayers.Count())</span>
                     </div>
                     <span class="font-mono font-bold text-rose-400">@AxisTeamScore</span>
@@ -63,7 +63,7 @@ else
                 }
                 else
                 {
-                    <div class="p-4 text-center text-muted text-sm">No players</div>
+                    <div class="p-4 text-center text-muted text-sm">@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</div>
                 }
             </div>
         </div>
@@ -82,7 +82,7 @@ else
         <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-4">
             <div class="px-4 py-2 bg-surface-alt/50 border-b border-line flex items-center gap-2">
                 <i class="ph ph-question text-muted"></i>
-                <span class="font-semibold text-muted">Unassigned</span>
+                <span class="font-semibold text-muted">@AppState.Loc("WEBFRONT_TEAM_UNASSIGNED")</span>
                 <span class="text-xs text-muted">(@UnknownPlayers.Count())</span>
             </div>
             @RenderPlayerTable(UnknownPlayers)
@@ -95,7 +95,7 @@ else
         <div class="bg-surface rounded-lg border border-secondary-700/50 shadow-sm overflow-hidden">
             <div class="px-4 py-2 bg-secondary-800/30 border-b border-secondary-700/50 flex items-center gap-2">
                 <i class="ph ph-eye text-secondary-500"></i>
-                <span class="font-semibold text-secondary-500">Spectators</span>
+                <span class="font-semibold text-secondary-500">@AppState.Loc("WEBFRONT_TEAM_SPECTATORS")</span>
                 <span class="text-xs text-muted">(@SpectatorPlayers.Count())</span>
             </div>
             @RenderPlayerTable(SpectatorPlayers, isSpectator: true)
@@ -113,7 +113,7 @@ else
                 <thead class="text-[10px] text-muted uppercase bg-surface-alt/30 border-b border-line">
                 <tr>
                     <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground" @onclick="@(() => Sort("ClientName"))">
-                        <div class="flex items-center">Player @GetSortIndicator("ClientName")</div>
+                        <div class="pl-1">@AppState.Loc("WEBFRONT_TABLE_PLAYER")</div>
                     </th>
                     @if (!isSpectator)
                     {

@@ -5,7 +5,7 @@
     {
         <div class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
              <i class="ph ph-check-circle text-4xl text-success mb-3 opacity-80"></i>
-             <span class="text-muted font-medium">No flagged players currently online</span>
+             <span class="text-muted font-medium">@AppState.Loc("WEBFRONT_DASHBOARD_NO_FLAGGED")</span>
         </div>
     }
 
@@ -28,7 +28,7 @@
                                  <i class="ph ph-clock"></i>
                                  <span>@client.FlaggedOn.HumanizeForCurrentCulture()</span>
                              </div>
-                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-level-flagged/10 text-level-flagged border border-level-flagged/20 uppercase tracking-wider">Flagged</span>
+                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-level-flagged/10 text-level-flagged border border-level-flagged/20 uppercase tracking-wider">@AppState.Loc("WEBFRONT_STATUS_FLAGGED")</span>
                         </div>
                         
                         <div class="mb-2 text-sm leading-snug">

@@ -18,7 +18,7 @@
     {
         <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
             <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
-            <span class="text-sm">Loading commands...</span>
+            <span class="text-sm">@AppState.Loc("WEBFRONT_HELP_LOADING")</span>
         </div>
     }
     else
@@ -33,7 +33,7 @@
                     <div>
                         <h1 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE")</h1>
                         <div class="text-sm text-subtle font-medium mt-0.5">
-                            Explore all available server commands
+                            @AppState.Loc("WEBFRONT_HELP_SUBTITLE")
                         </div>
                     </div>
                 </div>
@@ -42,15 +42,15 @@
                 <div class="flex items-center bg-surface border border-line rounded-lg p-1 shadow-sm">
                     <button @onclick="() => ViewMode = ViewModeType.Cards"
                             class="@(ViewMode == ViewModeType.Cards ? "bg-primary text-white" : "text-muted hover:text-foreground") px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5"
-                            title="Card View">
+                            title="@AppState.Loc("WEBFRONT_HELP_VIEW_CARDS")">
                         <i class="ph ph-squares-four"></i>
-                        <span class="hidden sm:inline">Cards</span>
+                        <span class="hidden sm:inline">@AppState.Loc("WEBFRONT_HELP_VIEW_CARDS")</span>
                     </button>
                     <button @onclick="() => ViewMode = ViewModeType.Table"
                             class="@(ViewMode == ViewModeType.Table ? "bg-primary text-white" : "text-muted hover:text-foreground") px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5"
-                            title="Table View">
+                            title="@AppState.Loc("WEBFRONT_HELP_VIEW_TABLE")">
                         <i class="ph ph-table"></i>
-                        <span class="hidden sm:inline">Table</span>
+                        <span class="hidden sm:inline">@AppState.Loc("WEBFRONT_HELP_VIEW_TABLE")</span>
                     </button>
                 </div>
             </div>
@@ -58,19 +58,19 @@
             <!-- Stats Bar -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-0 bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-6 divide-y md:divide-y-0 md:divide-x divide-divider">
                 <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
-                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Total Commands</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HELP_STAT_TOTAL")</span>
                     <span class="text-lg font-bold text-primary">@CommandGroups.Sum(g => g.Commands.Count).ToString("#,##0")</span>
                 </div>
                 <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
-                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Categories</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HELP_STAT_CATEGORIES")</span>
                     <span class="text-lg font-bold text-primary">@CommandGroups.Count</span>
                 </div>
                 <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
-                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">User Commands</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HELP_STAT_USER_COMMANDS")</span>
                     <span class="text-lg font-bold text-success">@CommandGroups.Sum(g => g.Commands.Count(c => c.Permission == Data.Models.Client.EFClient.Permission.User))</span>
                 </div>
                 <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
-                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">Admin Commands</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HELP_STAT_ADMIN_COMMANDS")</span>
                     <span class="text-lg font-bold text-warning">@CommandGroups.Sum(g => g.Commands.Count(c => c.Permission >= Data.Models.Client.EFClient.Permission.Moderator))</span>
                 </div>
             </div>
@@ -86,7 +86,7 @@
                 <input @bind="SearchTerm" @bind:event="oninput" 
                        type="text" 
                        class="block w-full pl-10 pr-3 py-2.5 border border-input-border rounded-lg leading-5 bg-input-bg text-foreground placeholder-input-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 sm:text-sm"
-                       placeholder="Search commands..." />
+                       placeholder="@AppState.Loc("WEBFRONT_HELP_SEARCH_PLACEHOLDER")" />
             </div>
 
             <!-- Permission Filter Chips -->
@@ -103,7 +103,7 @@
                 {
                     <button @onclick="ClearPermissionFilters" 
                             class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-muted hover:text-foreground hover:bg-surface-alt">
-                        <i class="ph ph-x mr-1"></i> Clear
+                        <i class="ph ph-x mr-1"></i> @AppState.Loc("WEBFRONT_FILTER_CLEAR")
                     </button>
                 }
             </div>
@@ -115,7 +115,7 @@
                 <div class="p-4 rounded-full bg-surface-alt/50 border border-line mb-4">
                     <i class="ph ph-magnifying-glass text-3xl text-muted"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-foreground mb-2">No commands found</h3>
+                <h3 class="text-lg font-semibold text-foreground mb-2">@AppState.Loc("WEBFRONT_HELP_NO_COMMANDS")</h3>
                 <p class="text-sm text-muted max-w-sm">
                     @AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")
                 </p>
@@ -140,7 +140,7 @@
                                 </div>
                                 <div class="text-left">
                                     <h2 class="text-lg font-bold text-foreground">@group.Name</h2>
-                                    <span class="text-xs text-muted">@group.Commands.Count() command@(group.Commands.Count() != 1 ? "s" : "")</span>
+                                    <span class="text-xs text-muted">@group.Commands.Count @AppState.Loc("WEBFRONT_HELP_COMMAND_COUNT")</span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
@@ -266,12 +266,12 @@
                             <table class="min-w-full divide-y divide-line">
                                 <thead class="bg-surface-alt/50">
                                     <tr>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">Command</th>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider hidden md:table-cell">Description</th>
-                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">Syntax</th>
-                                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider hidden sm:table-cell">Target</th>
-                                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider hidden lg:table-cell">Games</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-muted uppercase tracking-wider">Level</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_TABLE_COMMAND")</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider hidden md:table-cell">@AppState.Loc("WEBFRONT_TABLE_DESCRIPTION")</th>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_TABLE_SYNTAX")</th>
+                                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider hidden sm:table-cell">@AppState.Loc("WEBFRONT_TABLE_TARGET")</th>
+                                        <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider hidden lg:table-cell">@AppState.Loc("WEBFRONT_TABLE_GAMES")</th>
+                                        <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_TABLE_LEVEL")</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-line">
@@ -333,7 +333,7 @@
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-xs text-muted">All</span>
+                                                    <span class="text-xs text-muted">@AppState.Loc("GAME_ALL")</span>
                                                 }
                                             </td>
                                             <td class="px-4 py-3 text-right whitespace-nowrap">

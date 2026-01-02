@@ -1,34 +1,40 @@
 <div class="space-y-4">
     <div class="text-sm text-subtle mb-4">@AppState.Loc("WEBFRONT_MODAL_ADMINS_SUBTITLE")</div>
 
-    @if (!AdminsList.Any())
+    @if (!_adminsList.Any())
     {
-        <div class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
-             <i class="ph ph-user-circle text-4xl text-success mb-3 opacity-80"></i>
-             <span class="text-muted font-medium">No admins currently online</span>
+        <div
+            class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
+            <i class="ph ph-user-circle text-4xl text-success mb-3 opacity-80"></i>
+            <span class="text-muted font-medium">@AppState.Loc("WEBFRONT_DASHBOARD_NO_ADMINS")</span>
         </div>
     }
 
-    @foreach (var server in AdminsList)
+    @foreach (var server in _adminsList)
     {
         <div class="bg-surface rounded-lg shadow-sm border border-line overflow-hidden mb-4">
-            <div class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
-                 <i class="ph ph-hard-drives text-primary"></i>
-                 <span class="truncate"><ColorCode Value="@server.Name"/></span>
-                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 ml-auto">
+            <div
+                class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
+                <i class="ph ph-hard-drives text-primary"></i>
+                <span class="truncate"><ColorCode Value="@server.Name"/></span>
+                <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 ml-auto">
                      @(AppState.Loc($"GAME_{server.Game}"))
                  </span>
             </div>
             <div class="divide-y divide-line">
                 @foreach (var admin in server.Admins)
                 {
-                    <div class="px-4 py-3 hover:bg-surface-hover/30 transition-colors flex items-center justify-between">
+                    <div
+                        class="px-4 py-3 hover:bg-surface-hover/30 transition-colors flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <a href="/client/@admin.ClientId" class="font-bold text-foreground hover:text-primary transition-colors">
+                            <a href="/client/@admin.ClientId"
+                               class="font-bold text-foreground hover:text-primary transition-colors">
                                 <ColorCode Value="@admin.Name"/>
                             </a>
                         </div>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold @GetLevelClass(admin.LevelInt) uppercase tracking-wider">
+                        <span
+                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold @GetLevelClass(admin.LevelInt) uppercase tracking-wider">
                             @admin.Level
                         </span>
                     </div>
@@ -41,7 +47,7 @@
 @code {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    private List<ServerAdminsInfo> AdminsList = [];
+    private List<ServerAdminsInfo> _adminsList = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -52,23 +58,24 @@
     {
         try
         {
-            AdminsList = (await DataService.GetOnlineAdminsAsync()).ToList();
+            _adminsList = (await DataService.GetOnlineAdminsAsync()).ToList();
         }
         catch
         {
-            AdminsList = [];
+            _adminsList = [];
         }
     }
 
-    private static string GetLevelClass(int levelInt) => (Data.Models.Client.EFClient.Permission)levelInt switch
+    private static string GetLevelClass(int levelInt) => (EFClient.Permission)levelInt switch
     {
-        Data.Models.Client.EFClient.Permission.Console => "bg-level-console/40 text-level-console border border-level-console/60",
-        Data.Models.Client.EFClient.Permission.Owner => "bg-level-owner/40 text-level-owner border border-level-owner/60",
-        Data.Models.Client.EFClient.Permission.Creator => "bg-level-owner/40 text-level-owner border border-level-owner/60",
-        Data.Models.Client.EFClient.Permission.SeniorAdmin => "bg-level-senioradmin/40 text-level-senioradmin border border-level-senioradmin/60",
-        Data.Models.Client.EFClient.Permission.Administrator => "bg-level-administrator/40 text-level-administrator border border-level-administrator/60",
-        Data.Models.Client.EFClient.Permission.Moderator => "bg-level-moderator/40 text-level-moderator border border-level-moderator/60",
-        Data.Models.Client.EFClient.Permission.Trusted => "bg-level-trusted/40 text-level-trusted border border-level-trusted/60",
+        EFClient.Permission.Console => "bg-level-console/40 text-level-console border border-level-console/60",
+        EFClient.Permission.Owner => "bg-level-owner/40 text-level-owner border border-level-owner/60",
+        EFClient.Permission.Creator => "bg-level-owner/40 text-level-owner border border-level-owner/60",
+        EFClient.Permission.SeniorAdmin => "bg-level-senioradmin/40 text-level-senioradmin border border-level-senioradmin/60",
+        EFClient.Permission.Administrator => "bg-level-administrator/40 text-level-administrator border border-level-administrator/60",
+        EFClient.Permission.Moderator => "bg-level-moderator/40 text-level-moderator border border-level-moderator/60",
+        EFClient.Permission.Trusted => "bg-level-trusted/40 text-level-trusted border border-level-trusted/60",
         _ => "bg-success/10 text-success border border-success/20"
     };
+
 }

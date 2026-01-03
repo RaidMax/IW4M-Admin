@@ -195,3 +195,10 @@ a {
 .meta-value-text.marquee-enabled {
     animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
 }
+
+/* Generic hover-triggered marquee - for text that scrolls on container hover/tap */
+.marquee-enabled:hover .marquee-text,
+.marquee-enabled:active .marquee-text,
+.marquee-enabled:focus-within .marquee-text {
+    animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}

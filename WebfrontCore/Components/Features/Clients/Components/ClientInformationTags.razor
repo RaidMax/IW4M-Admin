@@ -44,7 +44,7 @@ else if (_groupedMeta.Any())
 
                         <Tooltip Text="@item.ToolTipText">
                             <div
-                                class="meta-card relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")">
+                                class="relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 @(isHighlight ? "ring-1 ring-primary/20" : "")">
                                 @if (isHighlight)
                                 {
                                     <div
@@ -54,26 +54,39 @@ else if (_groupedMeta.Any())
                                 @if (isInterpolated)
                                 {
                                     var combinedLabel = string.Join(" ", tokens.Where(t => !t.IsInterpolation).Select(t => t.MatchValue.Titleize()));
+                                    var isLongLabel = combinedLabel.Length > 12;
+                                    var labelMarqueeDuration = isLongLabel ? Math.Max(3, (combinedLabel.Length - 12) * 0.15 + 3) : 0;
+                                    
                                     <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
                                         <span class="meta-value-text text-primary @(isLongValue ? "marquee-enabled" : "")"
                                               style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
                                             <ColorCode Value="@item.Value"/>
                                         </span>
                                     </div>
-                                    <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">
-                                        @combinedLabel
+                                    <div class="overflow-hidden @(isLongLabel ? "marquee-enabled" : "")"
+                                         style="@(isLongLabel ? $"--marquee-duration: {labelMarqueeDuration}s" : "")">
+                                        <span class="marquee-text text-[9px] font-medium uppercase tracking-wider text-muted">
+                                            @combinedLabel
+                                        </span>
                                     </div>
                                 }
                                 else
                                 {
+                                    var label = item.Key.Titleize();
+                                    var isLongLabel = label.Length > 12;
+                                    var labelMarqueeDuration = isLongLabel ? Math.Max(3, (label.Length - 12) * 0.15 + 3) : 0;
+                                    
                                     <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
                                         <span class="meta-value-text text-primary @(isLongValue ? "marquee-enabled" : "")"
                                               style="@(isLongValue ? $"--marquee-duration: {marqueeDuration}s" : "")">
                                             <ColorCode Value="@item.Value"/>
                                         </span>
                                     </div>
-                                    <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">
-                                        @item.Key.Titleize()
+                                    <div class="overflow-hidden @(isLongLabel ? "marquee-enabled" : "")"
+                                         style="@(isLongLabel ? $"--marquee-duration: {labelMarqueeDuration}s" : "")">
+                                        <span class="marquee-text text-[9px] font-medium uppercase tracking-wider text-muted">
+                                            @label
+                                        </span>
                                     </div>
                                 }
                             </div>

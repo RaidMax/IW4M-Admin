@@ -100,7 +100,10 @@ public class ClientResourceQueryHelper(
             iqGroupedClientAliases = query.Direction == SortDirection.Descending
                 ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.LastConnection)
                 : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
-            totalCount = await iqGroupedClientAliases.CountAsync();
+            if (query.Offset == 0)
+            {
+                totalCount = await iqGroupedClientAliases.CountAsync();
+            }
         }
 
         var clientIds = iqGroupedClientAliases.Select(g => g.Key.ClientId)

@@ -47,6 +47,7 @@ public partial class FindMessage : IAsyncDisposable
     private bool _hasMore = true;
     private bool _isLoading;
     private DotNetObjectReference<FindMessage>? _dotNetRef;
+    private long _totalCount;
 
     // Context modal state
     private bool _showContextModal;
@@ -136,6 +137,11 @@ public partial class FindMessage : IAsyncDisposable
             if (response.RetrievedResultCount > 0)
             {
                 Results.AddRange(response.Results);
+            }
+
+            if (response.TotalResultCount > 0)
+            {
+                _totalCount = response.TotalResultCount;
             }
 
             _hasMore = response.RetrievedResultCount >= PageSize;

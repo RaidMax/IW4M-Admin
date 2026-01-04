@@ -17,7 +17,7 @@ public partial class ChatSearch
     [Parameter] public ChatResourceRequest Model { get; set; } = new();
     private DateTime LocalSentAfter { get; set; }
     private DateTime LocalSentBefore { get; set; }
-    private bool _oldestFirst { get; set; }
+    private bool OldestFirst { get; set; }
 
     protected override void OnInitialized()
     {
@@ -42,7 +42,7 @@ public partial class ChatSearch
         if (!string.IsNullOrEmpty(query["sentBeforeTime"]))
             Model.SentBeforeTime = query["sentBeforeTime"];
         if (int.TryParse(query["direction"], out var dir))
-            _oldestFirst = dir == (int)SortDirection.Ascending;
+            OldestFirst = dir == (int)SortDirection.Ascending;
 
         LocalSentAfter = Model.SentAfterDateTime ?? DateTime.UtcNow.AddHours(-1);
         LocalSentBefore = Model.SentBeforeDateTime ?? DateTime.UtcNow;
@@ -81,7 +81,7 @@ public partial class ChatSearch
             { "sentAfterTime", Model.SentAfterTime },
             { "sentBefore", Model.SentBefore.ToString("s", CultureInfo.InvariantCulture) },
             { "sentBeforeTime", Model.SentBeforeTime },
-            { "direction", _oldestFirst ? (int)SortDirection.Ascending : (int)SortDirection.Descending }
+            { "direction", OldestFirst ? (int)SortDirection.Ascending : (int)SortDirection.Descending }
         };
 
         var url = NavManager.GetUriWithQueryParameters("find-message", query);

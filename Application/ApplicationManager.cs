@@ -1,4 +1,4 @@
-﻿using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.Misc;
 using IW4MAdmin.Application.RConParsers;
@@ -399,9 +399,9 @@ namespace IW4MAdmin.Application
                     _appConfig.Id = Guid.NewGuid().ToString();
                 }
 
-                if (string.IsNullOrEmpty(_appConfig.WebfrontBindUrl))
+                if (string.IsNullOrEmpty(_appConfig.Webfront.BindUrl))
                 {
-                    _appConfig.WebfrontBindUrl = "http://0.0.0.0:1624";
+                    _appConfig.Webfront.BindUrl = "http://0.0.0.0:1624";
                 }
 
 #pragma warning disable 618
@@ -413,6 +413,55 @@ namespace IW4MAdmin.Application
                 if (_appConfig.QuickMessages != null)
                 {
                     _appConfig.QuickMessages = null;
+                }
+                
+                // Migrate obsolete Webfront properties to Webfront.* properties
+                if (_appConfig.EnableWebFront.HasValue)
+                {
+                    _appConfig.Webfront.Enabled = _appConfig.EnableWebFront.Value;
+                    _appConfig.EnableWebFront = null;
+                }
+
+                if (_appConfig.WebfrontBindUrl != null)
+                {
+                    _appConfig.Webfront.BindUrl = _appConfig.WebfrontBindUrl;
+                    _appConfig.WebfrontBindUrl = null;
+                }
+
+                if (_appConfig.ManualWebfrontUrl != null)
+                {
+                    _appConfig.Webfront.ManualUrl = _appConfig.ManualWebfrontUrl;
+                    _appConfig.ManualWebfrontUrl = null;
+                }
+
+                if (_appConfig.WebfrontCustomBranding != null)
+                {
+                    _appConfig.Webfront.CustomBranding = _appConfig.WebfrontCustomBranding;
+                    _appConfig.WebfrontCustomBranding = null;
+                }
+
+                if (_appConfig.EnableWebfrontConnectionWhitelist.HasValue)
+                {
+                    _appConfig.Webfront.EnableConnectionWhitelist = _appConfig.EnableWebfrontConnectionWhitelist.Value;
+                    _appConfig.EnableWebfrontConnectionWhitelist = null;
+                }
+
+                if (_appConfig.WebfrontConnectionWhitelist != null)
+                {
+                    _appConfig.Webfront.ConnectionWhitelist = _appConfig.WebfrontConnectionWhitelist;
+                    _appConfig.WebfrontConnectionWhitelist = null;
+                }
+
+                if (_appConfig.WebfrontPrimaryColor != null)
+                {
+                    _appConfig.Webfront.PrimaryColor = _appConfig.WebfrontPrimaryColor;
+                    _appConfig.WebfrontPrimaryColor = null;
+                }
+
+                if (_appConfig.WebfrontSecondaryColor != null)
+                {
+                    _appConfig.Webfront.SecondaryColor = _appConfig.WebfrontSecondaryColor;
+                    _appConfig.WebfrontSecondaryColor = null;
                 }
 #pragma warning restore 618
 

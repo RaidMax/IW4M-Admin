@@ -14,25 +14,39 @@ namespace SharedLibraryCore.Configuration
     {
         [ConfigurationIgnore]
         public CommunityInformationConfiguration CommunityInformation { get; set; } =
-            new CommunityInformationConfiguration();
+            new();
 
-        [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
-        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor",
-            "WebfrontCustomBranding")]
-        public bool EnableWebFront { get; set; }
+        [Obsolete("Use Webfront.Enabled instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? EnableWebFront { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BIND_URL")]
-        public string WebfrontBindUrl { get; set; } = "http://0.0.0.0:1624";
+        [Obsolete("Use Webfront.BindUrl instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontBindUrl { get; set; }
 
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MANUAL_URL")]
-        public string ManualWebfrontUrl { get; set; }
+        [Obsolete("Use Webfront.ManualUrl instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ManualWebfrontUrl { get; set; }
 
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_BRANDING")]
-        public string WebfrontCustomBranding { get; set; }
+        [Obsolete("Use Webfront.CustomBranding instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontCustomBranding { get; set; }
 
-        [ConfigurationIgnore] public WebfrontConfiguration Webfront { get; set; } = new WebfrontConfiguration();
+        [Obsolete("Use Webfront.PrimaryColor instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontPrimaryColor { get; set; }
+
+        [Obsolete("Use Webfront.SecondaryColor instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontSecondaryColor { get; set; }
+
+        [ConfigurationIgnore] public WebfrontConfiguration Webfront { get; set; } = new();
 
         [LocalizedDisplayName("SETUP_ENABLE_MULTIOWN")]
         public bool EnableMultipleOwners { get; set; }
@@ -73,12 +87,15 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENCODING")]
         public string CustomParserEncoding { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_WHITELIST")]
-        [ConfigurationLinked("WebfrontConnectionWhitelist")]
-        public bool EnableWebfrontConnectionWhitelist { get; set; }
+        [Obsolete("Use Webfront.EnableConnectionWhitelist instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? EnableWebfrontConnectionWhitelist { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_WHITELIST_LIST")]
-        public string[] WebfrontConnectionWhitelist { get; set; } = Array.Empty<string>();
+        [Obsolete("Use Webfront.ConnectionWhitelist instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string[]? WebfrontConnectionWhitelist { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         [ConfigurationLinked("CustomLocale")]
@@ -193,9 +210,9 @@ namespace SharedLibraryCore.Configuration
 
         [ConfigurationIgnore]
         [JsonIgnore]
-        public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl)
-            ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1")
-            : ManualWebfrontUrl;
+        public string WebfrontUrl => string.IsNullOrEmpty(Webfront.ManualUrl)
+            ? Webfront.BindUrl?.Replace("0.0.0.0", "127.0.0.1")
+            : Webfront.ManualUrl;
 
         [ConfigurationIgnore] public bool IgnoreServerConnectionLost { get; set; }
         [ConfigurationIgnore] public Uri MasterUrl { get; set; } = new("https://master.iw4.zip");
@@ -205,9 +222,9 @@ namespace SharedLibraryCore.Configuration
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             Id = Guid.NewGuid().ToString();
 
-            EnableWebFront = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
+            Webfront.Enabled = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
             EnableMultipleOwners = loc["SETUP_ENABLE_MULTIOWN"].PromptBool();
-            WebfrontBindUrl = "http://0.0.0.0:1624";
+            Webfront.BindUrl = "http://0.0.0.0:1624";
             EnableSocialLink = loc["SETUP_DISPLAY_SOCIAL"].PromptBool();
 
             if (EnableSocialLink)

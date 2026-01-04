@@ -198,7 +198,7 @@ namespace IW4MAdmin.Application
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
                 _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
-                    (configHandler.Configuration() ?? new ApplicationConfiguration()).WebfrontBindUrl);
+                    (configHandler.Configuration() ?? new ApplicationConfiguration()).Webfront.BindUrl);
 
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
@@ -268,7 +268,7 @@ namespace IW4MAdmin.Application
             var webfrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
             using var onWebfrontErrored = new ManualResetEventSlim();
 
-            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
+            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().Webfront.Enabled
                 ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken).ContinueWith(continuation =>
                 {
                     if (!continuation.IsFaulted)
@@ -285,7 +285,7 @@ namespace IW4MAdmin.Application
                 })
                 : Task.CompletedTask;
 
-            if (_serverManager.GetApplicationSettings().Configuration().EnableWebFront)
+            if (_serverManager.GetApplicationSettings().Configuration().Webfront.Enabled)
             {
                 try
                 {

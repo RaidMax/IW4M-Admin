@@ -10,35 +10,24 @@ using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace WebfrontCore.Core.QueryHelpers;
 
-public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, BanInfo>
+public class BanInfoResourceQueryHelper(IDatabaseContextFactory contextFactory)
+    : IResourceQueryHelper<BanInfoRequest, BanInfo>
 {
-    private readonly IDatabaseContextFactory _contextFactory;
-
-    public BanInfoResourceQueryHelper(IDatabaseContextFactory contextFactory)
-    {
-        _contextFactory = contextFactory;
-    }
-
     public async Task<ResourceQueryHelperResult<BanInfo>> QueryResource(BanInfoRequest query)
     {
-        if (query.Count > 10)
-        {
-            query.Count = 10;
-        }
-
-        await using var context = _contextFactory.CreateContext(false);
-        
-        var iqMatchingClients = context.Clients.Where(client => client.Level == EFClient.Permission.Banned);
-        iqMatchingClients = SetupSearchArgs(query, iqMatchingClients);
-        
         if (string.IsNullOrEmpty(query.ClientName) && string.IsNullOrEmpty(query.ClientGuid) &&
             query.ClientId is null && string.IsNullOrEmpty(query.ClientIP))
         {
             return new ResourceQueryHelperResult<BanInfo>
             {
-                Results = Enumerable.Empty<BanInfo>()
+                Results = []
             };
         }
+
+        await using var context = contextFactory.CreateContext(false);
+
+        var iqMatchingClients = context.Clients.Where(client => client.Level == EFClient.Permission.Banned);
+        iqMatchingClients = SetupSearchArgs(query, iqMatchingClients);
 
         var matchingClients = await iqMatchingClients
             .OrderByDescending(client => client.LastConnection)
@@ -57,7 +46,7 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
         var results = new List<BanInfo>();
         var matchedClientIds = new List<int?>();
         var lateDateTime = DateTime.Now.AddYears(100);
-
+        var totalResultCount = 0;
         // would prefer not to loop this, but unfortunately due to the data design 
         // we can't properly group on ip and alias link
         foreach (var matchingClient in matchingClients)
@@ -91,7 +80,7 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                 })
                 .ToListAsync();
 
-            if (!matchedPenalties.Any())
+            if (matchedPenalties.Count == 0)
             {
                 var linkIds = (await context.Aliases
                     .Where(alias => alias.IPAddress != null && searchingIps.Contains(alias.IPAddress))
@@ -136,6 +125,7 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
                 }
             }).ToList();
 
+            totalResultCount += allPenalties.Count;
 
             if (matchedClientIds.Contains(matchingClient.ClientId))
             {
@@ -144,7 +134,8 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
 
             matchedClientIds.Add(matchingClient.ClientId);
             var relatedEntities =
-                allPenalties.Where(penalty => penalty.OffenderInfo.ClientId != matchingClient.ClientId);
+                allPenalties.Where(penalty => penalty.OffenderInfo.ClientId != matchingClient.ClientId)
+                    .ToList();
 
             matchedClientIds.AddRange(relatedEntities.Select(client => client.OffenderInfo.ClientId));
 
@@ -165,12 +156,14 @@ public class BanInfoResourceQueryHelper : IResourceQueryHelper<BanInfoRequest, B
         return new ResourceQueryHelperResult<BanInfo>
         {
             RetrievedResultCount = results.Count,
-            TotalResultCount = results.Count,
+            // this will technically be incorrect if the total # of matching players > pagination count
+            // however this should not be the case for the majority of searches
+            TotalResultCount = totalResultCount,
             Results = results
         };
     }
 
-    private IQueryable<EFClient> SetupSearchArgs(BanInfoRequest query, IQueryable<EFClient> source)
+    private static IQueryable<EFClient> SetupSearchArgs(BanInfoRequest query, IQueryable<EFClient> source)
     {
         if (!string.IsNullOrEmpty(query.ClientName))
         {

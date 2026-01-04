@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
@@ -10,33 +12,71 @@ public partial class BanManagement
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
-    
-    // JS Interop removed as we are using a native Load More button now.
-    
-    private BanInfoRequest Request { get; set; } = new() { Count = 10, Offset = 0 };
+    [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
+
+    private BanInfoRequest Request { get; set; } = new();
     private List<BanInfo> Results { get; set; } = [];
     private bool HasSearched { get; set; }
     private bool HasMoreResults { get; set; } = true;
     private bool IsLoading { get; set; }
+    private long TotalCount { get; set; }
+    private string? ValidationError { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private DotNetObjectReference<BanManagement>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+        }
     }
 
     private async Task Search()
     {
         HasSearched = true;
-        Results.Clear(); // Clear existing results to show loading spinner
+        Results.Clear();
         Request.Offset = 0;
+        TotalCount = 0;
+        HasMoreResults = true;
+        ValidationError = null;
+        StateHasChanged();
+
+        // Validate minimum name length if name search is provided
+        if (!string.IsNullOrWhiteSpace(Request.ClientName) && Request.ClientName.Length < AppConfig.MinimumNameLength)
+        {
+            ValidationError = AppState.Loc("WEBFRONT_SEARCH_LENGTH_ERROR").FormatExt(AppConfig.MinimumNameLength);
+            HasMoreResults = false;
+            StateHasChanged();
+            return;
+        }
+
         var result = await DataService.GetBansAsync(Request);
         Results = result?.Results?.ToList() ?? [];
-        HasMoreResults = Results.Count >= Request.Count;
+        TotalCount = result?.TotalResultCount ?? 0;
+        HasMoreResults = Results.Count >= Request.Count && Results.Count < TotalCount;
         StateHasChanged();
+
+        // Initialize infinite scroll after first results are loaded
+        if (_dotNetRef != null && HasMoreResults)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreBansTrigger");
+            }
+            catch (InvalidOperationException)
+            {
+                // JS interop not available - safe to ignore
+            }
+        }
     }
 
-    private async Task LoadMore()
+    [JSInvokable]
+    public async Task LoadMore()
     {
-        if (IsLoading || !HasMoreResults) return;
+        if (IsLoading || !HasMoreResults)
+            return;
 
         IsLoading = true;
         StateHasChanged();
@@ -51,9 +91,18 @@ public partial class BanManagement
             Results.AddRange(result.Results);
         }
 
-        if (result?.RetrievedResultCount < Request.Count)
+        if (result?.RetrievedResultCount < Request.Count || Results.Count >= TotalCount)
         {
             HasMoreResults = false;
+            // Disconnect the observer when no more results
+            try
+            {
+                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+            }
+            catch (InvalidOperationException)
+            {
+                // JS interop not available - safe to ignore
+            }
         }
 
         StateHasChanged();
@@ -61,7 +110,16 @@ public partial class BanManagement
 
     public async ValueTask DisposeAsync()
     {
-        // No more JS references to dispose
+        try
+        {
+            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+        }
+        catch (InvalidOperationException)
+        {
+            // JS interop not available during static rendering - safe to ignore
+        }
+
+        _dotNetRef?.Dispose();
     }
 
     private int _unbanTargetId;
@@ -84,7 +142,8 @@ public partial class BanManagement
 
     private async Task ConfirmUnban()
     {
-        if (string.IsNullOrWhiteSpace(_unbanReason)) return;
+        if (string.IsNullOrWhiteSpace(_unbanReason))
+            return;
 
         try
         {

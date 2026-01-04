@@ -2,28 +2,24 @@
 using Microsoft.JSInterop;
 using SharedLibraryCore.Configuration;
 using WebfrontCore.Components.UI.Theme.Models;
-using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.UI.Theme;
 
 public partial class ThemeSelector
 {
-    [Inject] public required IJSRuntime JSRuntime { get; set; }
-    [Inject] public required NavigationManager NavigationManager { get; set; }
-    [Inject] public required ApplicationConfiguration AppConfig { get; set; }
-    [Inject] public required AppState AppState { get; set; }
+    [Inject] public IJSRuntime JSRuntime { get; set; }
+    [Inject] public NavigationManager NavigationManager { get; set; }
+    [Inject] public ApplicationConfiguration AppConfig { get; set; }
     private bool _isOpen;
-    private string _preset = "minimal";
-    private string _primaryPalette = "blue";
+    private string _preset;
+    private string _primaryPalette;
     private int _primaryHue;
     private int _primarySaturation;
     private int _primaryLightness;
-    private string _secondaryPalette = "purple";
+    private string _secondaryPalette;
     private int _secondaryHue;
     private int _secondarySaturation;
     private int _secondaryLightness;
-
-    private bool _isLoading = true;
 
     // Computed defaults from server config
     private string DefaultPreset => AppConfig?.Webfront?.ThemePreset ?? "minimal";
@@ -41,23 +37,13 @@ public partial class ThemeSelector
         "indigo", "slate", "gray", "zinc", "neutral", "stone"
     };
 
-    protected override void OnInitialized()
-    {
-        // Set defaults synchronously so UI can render immediately
-        ApplyServerDefaults();
-    }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            NavigationManager.LocationChanged += OnLocationChanged;
-            
-            // Load user preferences and apply theme in background
             await LoadFromStorage();
             await ApplyTheme();
-            
-            _isLoading = false;
+            NavigationManager.LocationChanged += OnLocationChanged;
             StateHasChanged();
         }
     }
@@ -90,7 +76,6 @@ public partial class ThemeSelector
     private async Task SetPreset(string preset)
     {
         _preset = preset;
-        StateHasChanged();
         await ApplyTheme();
     }
 
@@ -215,12 +200,14 @@ public partial class ThemeSelector
             secondaryLightness = _secondaryLightness
         };
 
-        await JSRuntime.InvokeVoidAsync("themeManager.apply", settings);
-
+        // Save BEFORE apply to prevent MutationObserver race condition
+        // (observer loads from localStorage and would revert to old settings)
         if (!AppConfig.Webfront.PreventUserCustomization)
         {
             await JSRuntime.InvokeVoidAsync("themeManager.save", settings);
         }
+
+        await JSRuntime.InvokeVoidAsync("themeManager.apply", settings);
     }
 
     private async Task ResetToDefaults()

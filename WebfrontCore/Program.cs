@@ -199,11 +199,11 @@ public class Program
             app.UseHsts();
         }
 
-        if (appConfig.EnableWebfrontConnectionWhitelist)
+        if (appConfig.Webfront.EnableConnectionWhitelist)
         {
             app.UseMiddleware<IPWhitelist>(
                 app.Services.GetService<ILogger<IPWhitelist>>(),
-                appConfig.WebfrontConnectionWhitelist);
+                appConfig.Webfront.ConnectionWhitelist);
         }
 
         app.UseRouting();

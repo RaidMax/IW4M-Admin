@@ -20,13 +20,13 @@
 
         <a href="/"
            class="text-xl font-bold tracking-wide text-foreground hover:text-subtle transition-colors truncate">
-            @if (string.IsNullOrEmpty(AppConfig.WebfrontCustomBranding))
+            @if (string.IsNullOrEmpty(AppConfig.Webfront.CustomBranding))
             {
                 <span>IW4MAdmin</span>
             }
             else
             {
-                <span>@AppConfig.WebfrontCustomBranding</span>
+                <span>@AppConfig.Webfront.CustomBranding</span>
             }
         </a>
         

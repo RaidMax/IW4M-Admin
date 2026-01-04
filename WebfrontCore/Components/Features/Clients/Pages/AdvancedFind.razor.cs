@@ -126,7 +126,7 @@ public partial class AdvancedFind
             return;
 
         _validationError = null;
-        
+
         if (!string.IsNullOrWhiteSpace(ClientName) && ClientName.Length < AppConfig.MinimumNameLength)
         {
             _validationError = AppState.Loc("WEBFRONT_SEARCH_LENGTH_ERROR").FormatExt(AppConfig.MinimumNameLength);
@@ -144,7 +144,7 @@ public partial class AdvancedFind
             var response = await DataService.SearchClientsAsync(BuildRequest());
             var results = response.Results.ToList();
 
-            if (_offset == 0)
+            if (_offset == 0 && response.TotalResultCount > 0)
             {
                 _totalCount = response.TotalResultCount;
             }
@@ -168,12 +168,15 @@ public partial class AdvancedFind
         }
     }
 
-
     public async ValueTask DisposeAsync()
     {
         try
         {
             await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+        }
+        catch (InvalidOperationException)
+        {
+            // Allowed
         }
         catch (JSDisconnectedException)
         {

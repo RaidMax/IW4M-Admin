@@ -8,12 +8,12 @@ namespace Stats.Dtos
         /// <summary>
         /// specifies the partial content of the message to search for
         /// </summary>
-        public string MessageContains { get; set; }
+        public string? MessageContains { get; set; }
 
         /// <summary>
         /// identifier for the server
         /// </summary>
-        public string ServerId { get; set; }
+        public string? ServerId { get; set; }
 
         /// <summary>
         /// identifier for the client
@@ -28,7 +28,7 @@ namespace Stats.Dtos
         /// <summary>
         /// The time associated with SentAfter date
         /// </summary>
-        public string SentAfterTime { get; set; }
+        public string? SentAfterTime { get; set; }
 
         public DateTime? SentAfterDateTime => SentAfter?.Add(string.IsNullOrEmpty(SentAfterTime) ? TimeSpan.Zero : TimeSpan.Parse(SentAfterTime));
 
@@ -37,7 +37,7 @@ namespace Stats.Dtos
         /// </summary>
         public DateTime SentBefore { get; set; } = DateTime.UtcNow.Date;
 
-        public string SentBeforeTime { get; set; }
+        public string? SentBeforeTime { get; set; }
 
         public DateTime? SentBeforeDateTime =>
             SentBefore.Add(string.IsNullOrEmpty(SentBeforeTime) ? TimeSpan.Zero : TimeSpan.Parse(SentBeforeTime));

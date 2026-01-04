@@ -1,0 +1,12 @@
+<label class="relative inline-flex items-center cursor-pointer group">
+    <input type="checkbox" 
+           id="@Id" 
+           class="sr-only peer" 
+           checked="@Value"
+           @onchange="OnValueChange" />
+    <div class="w-9 h-5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="ml-2 text-sm text-muted group-hover:text-foreground transition-colors">@Label</span>
+    }
+</label>

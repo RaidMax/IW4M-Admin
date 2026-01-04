@@ -25,12 +25,14 @@ public partial class BanManagement
 
     private DotNetObjectReference<BanManagement>? _dotNetRef;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task Search()

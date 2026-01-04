@@ -12,7 +12,7 @@
         <div>
             <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT")</h2>
             <div class="text-sm text-subtle font-medium mt-0.5">
-                @(AppState.Loc("WEBFRONT_SEARCH_MESSAGES_FOUND").FormatExt(Results.Count.ToString("#,##0")))
+                @(AppState.Loc("WEBFRONT_SEARCH_MESSAGES_FOUND").FormatExt(_totalCount.ToString("#,##0")))
             </div>
         </div>
     </div>

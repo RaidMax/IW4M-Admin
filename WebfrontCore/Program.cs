@@ -84,7 +84,7 @@ public class Program
             options.KeepAliveInterval = TimeSpan.FromSeconds(5); // Default is 15
             options.ClientTimeoutInterval = TimeSpan.FromSeconds(10); // Default is 30
             options.EnableDetailedErrors = Utilities.IsDevelopment;
-            options.MaximumReceiveMessageSize = 128 * 1024; // 128KB (default is 32KB) - needed for chart history data
+            options.MaximumReceiveMessageSize = 256 * 1024; // 256KB (default is 32KB) - needed for chart history data
         });
 
         registerDependenciesAction(builder.Services);

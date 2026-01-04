@@ -1,9 +1,7 @@
 ﻿using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web.Virtualization;
-using Microsoft.JSInterop;
 using SharedLibraryCore;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -11,7 +9,6 @@ namespace WebfrontCore.Components.Features.Clients.Statistics;
 
 public partial class StatsOverview : IAsyncDisposable
 {
-    [Inject] public required IJSRuntime Runtime { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
@@ -179,7 +176,7 @@ public partial class StatsOverview : IAsyncDisposable
         };
     }
 
-    private int GetRankIconIndex(double? zScore)
+    private static int GetRankIconIndex(double? zScore)
     {
         // Logic from IW4MAdmin.Plugins.Stats.Extensions.RankIconIndexForZScore
         if (zScore == null)
@@ -238,12 +235,9 @@ public partial class StatsOverview : IAsyncDisposable
     private string GetOpenGraphImage()
     {
         var topPlayer = TopPlayers?.FirstOrDefault();
-        if (topPlayer?.ZScore != null)
-        {
-            return $"{NavManager.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(topPlayer.ZScore)}.png";
-        }
-
-        return $"{NavManager.BaseUri}images/icon.png";
+        return topPlayer?.ZScore != null
+            ? $"{NavManager.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(topPlayer.ZScore)}.png"
+            : $"{NavManager.BaseUri}images/icon.png";
     }
 
     public async ValueTask DisposeAsync()

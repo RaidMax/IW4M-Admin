@@ -140,7 +140,7 @@
                                 </div>
                                 <div class="text-left">
                                     <h2 class="text-lg font-bold text-foreground">@group.Name</h2>
-                                    <span class="text-xs text-muted">@group.Commands.Count @AppState.Loc("WEBFRONT_HELP_COMMAND_COUNT")</span>
+                                    <span class="text-xs text-muted">@AppState.Loc("WEBFRONT_HELP_COMMAND_COUNT").FormatExt(group.Commands.Count)</span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">

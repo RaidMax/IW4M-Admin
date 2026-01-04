@@ -183,10 +183,10 @@
 
             <!-- View Options -->
             <div class="flex items-center gap-4 mt-4 pt-4 border-t border-line">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" @bind="_groupByAction" class="w-4 h-4 rounded border-line bg-surface-alt text-primary focus:ring-primary/50"/>
-                    <span class="text-sm text-muted">@AppState.Loc("WEBFRONT_AUDIT_GROUP_BY_ACTION")</span>
-                </label>
+                <ToggleSwitch Id="groupByActionToggle" 
+                              Label="@AppState.Loc("WEBFRONT_AUDIT_GROUP_BY_ACTION")" 
+                              Value="@_groupByAction" 
+                              ValueChanged="OnGroupByChanged" />
             </div>
         </div>
 
@@ -207,10 +207,11 @@
                     var isCollapsed = IsGroupCollapsed(group.Key);
                     <div class="bg-surface rounded-lg overflow-hidden shadow ring-1 ring-line">
                         <button @onclick="() => ToggleGroupCollapsed(group.Key)" 
-                                class="w-full px-6 py-3 bg-surface-alt/50 border-b border-line flex items-center gap-3 hover:bg-surface-alt/80 transition-colors cursor-pointer">
+                                @onclick:stopPropagation="true"
+                                class="w-full px-6 py-4 min-h-[44px] bg-surface-alt/50 border-b border-line flex items-center gap-3 hover:bg-surface-alt/80 active:bg-surface-alt transition-colors cursor-pointer touch-manipulation">
                             <i class="ph @(isCollapsed ? "ph-caret-right" : "ph-caret-down") text-muted"></i>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(group.Key)">
-                                @group.Key
+                                @HighlightSearchTerm(group.Key)
                             </span>
                             <span class="text-sm text-muted">@(AppState.Loc("WEBFRONT_AUDIT_ENTRIES").FormatExt(group.Count()))</span>
                         </button>
@@ -237,7 +238,7 @@
                         <!-- Header Row -->
                         <div class="flex justify-between items-center px-4 py-2.5 bg-surface-alt/30 border-b border-line">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider @GetBadgeClass(info.Action)">
-                                @info.Action
+                                @HighlightSearchTerm(info.Action)
                             </span>
                             <span class="text-[11px] text-muted">@info.When.ToLocalTime().ToString("g")</span>
                         </div>
@@ -276,7 +277,7 @@
                             @if (!string.IsNullOrEmpty(info.Data))
                             {
                                 <div class="text-xs font-mono bg-surface-alt/50 px-3 py-2 rounded border border-line break-words text-subtle">
-                                    @info.Data
+                                    @HighlightSearchTerm(info.Data)
                                 </div>
                             }
 
@@ -290,7 +291,7 @@
                                         {
                                             <div class="flex gap-2">
                                                 <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0 pt-0.5">@AppState.Loc("WEBFRONT_AUDIT_CURRENT")</span>
-                                                <span class="text-xs font-mono text-green-400 break-all">@info.NewValue</span>
+                                                <span class="text-xs font-mono text-green-400 break-all">@HighlightSearchTerm(info.NewValue)</span>
                                             </div>
                                         }
                                         <!--@if (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--")
@@ -348,7 +349,7 @@
                     <tr class="hover:bg-surface-hover/30 transition-colors">
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(info.Action)">
-                                @info.Action
+                                @HighlightSearchTerm(info.Action)
                             </span>
                         </td>
                         <td class="px-4 py-3 font-mono text-xs text-muted">
@@ -374,13 +375,13 @@
                             }
                         </td>
                         <td class="px-4 py-3 font-mono text-xs text-subtle max-w-xs">
-                            <div class="truncate" title="@info.Data">@info.Data</div>
+                            <div class="truncate" title="@info.Data">@HighlightSearchTerm(info.Data)</div>
                         </td>
                         <AuthorizeView Policy="@DataDetailsPolicy">
                             <td class="px-4 py-3 font-mono text-xs max-w-32">
                                 @if (!string.IsNullOrWhiteSpace(info.NewValue) && info.NewValue != "--")
                                 {
-                                    <div class="truncate text-green-400" title="@info.NewValue">@info.NewValue</div>
+                                    <div class="truncate text-green-400" title="@info.NewValue">@HighlightSearchTerm(info.NewValue)</div>
                                 }
                                 else
                                 {

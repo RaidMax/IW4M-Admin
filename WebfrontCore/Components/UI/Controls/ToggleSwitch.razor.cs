@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace WebfrontCore.Components.UI;
+namespace WebfrontCore.Components.UI.Controls;
 
 public partial class ToggleSwitch
 {

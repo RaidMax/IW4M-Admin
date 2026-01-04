@@ -1106,7 +1106,7 @@ public class WebfrontDataService : IWebfrontDataService
                     Name = c.Name,
                     Alias = c.Alias,
                     Description = c.Description,
-                    Syntax = c.Syntax,
+                    Syntax = c.Syntax.Split(":").LastOrDefault()?.Trim() ?? "Translation is missing ':'", // TODO: This will break if translation has the ":" removed.
                     RequiresTarget = c.RequiresTarget,
                     Permission = c.Permission,
                     SupportedGames = c.SupportedGames

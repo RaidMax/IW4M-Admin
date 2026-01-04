@@ -1,7 +1,6 @@
 ﻿using Data.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.Services;
 using PenaltyInfo = SharedLibraryCore.Dtos.PenaltyInfo;
 
@@ -88,7 +87,7 @@ public partial class PenaltyList
 
         try
         {
-            var request = new WebfrontCore.Controllers.API.Models.PenaltyRequest
+            var request = new Controllers.API.Models.PenaltyRequest
             {
                 Offset = Offset,
                 Count = Count,
@@ -129,8 +128,16 @@ public partial class PenaltyList
 
     public async ValueTask DisposeAsync()
     {
-        // Disconnect infinite scroll
-        await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+        // Disconnect infinite scroll - wrapped in try-catch because disposal can 
+        // occur during static rendering when JS interop is unavailable
+        try
+        {
+            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+        }
+        catch (InvalidOperationException)
+        {
+            // JS interop not available during static rendering - safe to ignore
+        }
 
         _dotNetRef?.Dispose();
     }

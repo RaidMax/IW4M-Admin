@@ -79,12 +79,7 @@
 
         <!-- Options & Submit -->
         <div class="flex items-center justify-between pt-1">
-            <label class="relative inline-flex items-center cursor-pointer group">
-                <input type="checkbox" id="oldestFirst" class="sr-only peer" @bind="_oldestFirst">
-                <div
-                    class="w-8 h-4 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[0px] after:left-[0px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary flex-shrink-0"></div>
-                <span class="ml-2 text-sm text-muted group-hover:text-foreground transition-colors">Oldest first</span>
-            </label>
+            <ToggleSwitch Id="oldestFirst" Label="Oldest first" Value="OldestFirst" ValueChanged="@(v => OldestFirst = v)" />
             <button type="submit"
                     class="flex items-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-white bg-primary hover:bg-action-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
                 <i class="ph ph-magnifying-glass"></i>

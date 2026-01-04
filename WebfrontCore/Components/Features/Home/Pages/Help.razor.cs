@@ -342,17 +342,6 @@ public partial class Help
                 "px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-500/10 transition-all duration-200"
         };
 
-    private string GetSyntaxHeader()
-    {
-        var locValue = AppState.Loc("WEBFRONT_TABLE_SYNTAX");
-        // Remove redundant "Syntax:" prefix if present
-        if (locValue.StartsWith("Syntax:", StringComparison.OrdinalIgnoreCase))
-        {
-            return locValue.Substring(7).TrimStart();
-        }
-        return locValue;
-    }
-
     private MarkupString HighlightSearchTerm(string? text)
     {
         if (string.IsNullOrEmpty(text) || string.IsNullOrWhiteSpace(SearchTerm))
@@ -366,7 +355,7 @@ public partial class Help
             return new MarkupString(System.Web.HttpUtility.HtmlEncode(text));
 
         var encodedText = System.Web.HttpUtility.HtmlEncode(text);
-        var highlighted = encodedText.Replace(searchTerm, 
+        var highlighted = encodedText.Replace(searchTerm,
             $"<mark class=\"bg-primary/20 text-primary\">{System.Web.HttpUtility.HtmlEncode(searchTerm)}</mark>",
             StringComparison.OrdinalIgnoreCase);
 

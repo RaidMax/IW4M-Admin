@@ -14,10 +14,10 @@
         </div>
         <div>
             <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT")</h2>
-            @if (Results != null)
+            @if (HasSearched && TotalCount > 0)
             {
                 <div class="text-sm text-muted font-medium mt-0.5">
-                    @(AppState.Loc("WEBFRONT_BAN_MGMT_BANS_FOUND").FormatExt(Results.Count.ToString("#,##0")))
+                    @(AppState.Loc("WEBFRONT_BAN_MGMT_BANS_FOUND").FormatExt(TotalCount.ToString("#,##0")))
                 </div>
             }
         </div>
@@ -116,6 +116,14 @@
             </div>
         </div>
     </EditForm>
+
+    @if (!string.IsNullOrEmpty(ValidationError))
+    {
+        <div class="mb-6 p-4 rounded-lg bg-error/10 border border-error/20 text-error font-medium flex items-center shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <i class="ph ph-warning-circle text-xl mr-3"></i>
+            <span>@ValidationError</span>
+        </div>
+    }
 
     <!-- Results Section -->
     <div id="ban_entry_list" class="space-y-4">
@@ -269,23 +277,23 @@
         }
     </div>
 
-    <!-- Load More Section -->
+    <!-- Infinite Scroll Trigger -->
     <div class="w-full text-center mt-8 pb-8">
         @if (HasMoreResults && Results != null && Results.Any())
         {
-            <button @onclick="LoadMore" disabled="@IsLoading" 
-                    class="px-6 py-3 text-sm font-medium text-white bg-surface hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed rounded-full border border-line transition-all flex items-center justify-center mx-auto space-x-2">
+            <div id="loadMoreBansTrigger" class="flex items-center justify-center py-4">
                 @if (IsLoading)
                 {
-                    <i class="ph ph-spinner animate-spin"></i>
-                    <span>@AppState.Loc("WEBFRONT_LOADING")</span>
+                    <i class="ph ph-spinner animate-spin text-2xl text-primary"></i>
                 }
-                else
-                {
-                    <span>@AppState.Loc("WEBFRONT_BAN_MGMT_LOAD_MORE")</span>
-                    <i class="ph ph-caret-down"></i>
-                }
-            </button>
+            </div>
+        }
+        @if (!HasMoreResults && Results != null && Results.Any())
+        {
+            <div class="text-sm text-muted">
+                <i class="ph ph-check-circle text-success mr-1"></i>
+                @Results.Count.ToString("#,##0") / @TotalCount.ToString("#,##0")
+            </div>
         }
     </div>
 </div>

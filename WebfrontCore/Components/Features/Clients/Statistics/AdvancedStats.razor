@@ -160,14 +160,11 @@
                 </div>
 
                 <!-- Bottom Section: Models & Tables -->
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 2xl:grid-cols-2 gap-8">
                     <!-- Hit Locations -->
                     <div class="bg-surface rounded-xl shadow-lg border border-line overflow-hidden flex flex-col">
                         <div class="p-6 border-b border-line">
                             <div class="flex items-center gap-3">
-                                <div class="px-2 py-2 rounded-lg flex justify-center bg-surface-alt border border-line">
-                                    <i class="ph ph-crosshair text-lg text-primary"></i>
-                                </div>
                                 <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h4>
                             </div>
                         </div>
@@ -186,7 +183,7 @@
                                 @{
                                     var displayedHitLocations = _showAllHitLocations
                                         ? Stats.TopHitLocations
-                                        : Stats.TopHitLocations.Take(DefaultTableRowCount);
+                                        : Stats.TopHitLocations.Take(5);
                                 }
                                 @foreach (var hit in displayedHitLocations)
                                 {
@@ -238,9 +235,6 @@
                         class="bg-surface rounded-xl shadow-lg border border-line overflow-hidden flex flex-col h-full">
                         <div class="p-6 border-b border-line">
                             <div class="flex items-center gap-3">
-                                <div class="px-2 py-2 rounded-lg flex justify-center bg-surface-alt border border-line">
-                                    <i class="ph ph-crosshair-simple text-lg text-primary"></i>
-                                </div>
                                 <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h4>
                             </div>
                         </div>

@@ -1,4 +1,7 @@
-﻿function getClosestMultiple(baseValue, value) {
+﻿// Track chart instances by canvas ID for proper cleanup
+const chartInstances = {};
+
+function getClosestMultiple(baseValue, value) {
     return Math.round(value / baseValue) * baseValue;
 }
 
@@ -6,6 +9,12 @@ function getStatsChart(id, rankingText, data) {
     if (!data || data.length <= 1) {
         // only 0 perf or no data
         return;
+    }
+
+    // Destroy existing chart if it exists on this canvas
+    if (chartInstances[id]) {
+        chartInstances[id].destroy();
+        delete chartInstances[id];
     }
 
     // Get theme colors from shared utility
@@ -104,9 +113,11 @@ function getStatsChart(id, rankingText, data) {
         },
     };
 
-    new Chart(id, {
+    // Store the new chart instance for potential future cleanup
+    chartInstances[id] = new Chart(id, {
         type: 'line',
         data: chartData,
         options: options
     });
 }
+

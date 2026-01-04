@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
+using System.Web;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
 
@@ -70,6 +71,26 @@ public partial class AuditLog : IAsyncDisposable
             return "bg-blue-900/30 text-blue-400 border-blue-900/50";
 
         return "bg-slate-700/30 text-slate-400 border-slate-700/50";
+    }
+
+    private MarkupString HighlightSearchTerm(string? text)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrWhiteSpace(_searchQuery))
+            return new MarkupString(System.Web.HttpUtility.HtmlEncode(text ?? ""));
+
+        var searchTerm = _searchQuery.Trim();
+        var textLower = text.ToLowerInvariant();
+        var searchLower = searchTerm.ToLowerInvariant();
+
+        if (!textLower.Contains(searchLower))
+            return new MarkupString(System.Web.HttpUtility.HtmlEncode(text));
+
+        var encodedText = System.Web.HttpUtility.HtmlEncode(text);
+        var highlighted = encodedText.Replace(searchTerm, 
+            $"<mark class=\"bg-primary/20 text-primary\">{System.Web.HttpUtility.HtmlEncode(searchTerm)}</mark>",
+            StringComparison.OrdinalIgnoreCase);
+
+        return new MarkupString(highlighted);
     }
 
     protected override void OnInitialized()
@@ -261,6 +282,13 @@ public partial class AuditLog : IAsyncDisposable
     }
 
     private bool IsGroupCollapsed(string groupKey) => _collapsedGroups.Contains(groupKey);
+
+    private void OnGroupByChanged(bool value)
+    {
+        _groupByAction = value;
+        UpdateUrl();
+        StateHasChanged();
+    }
 
     private async Task HandleSearchKeyDown(KeyboardEventArgs e)
     {

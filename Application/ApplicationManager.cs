@@ -463,6 +463,35 @@ namespace IW4MAdmin.Application
                     _appConfig.Webfront.SecondaryColor = _appConfig.WebfrontSecondaryColor;
                     _appConfig.WebfrontSecondaryColor = null;
                 }
+                
+                // Migrate old PermissionSets to Webfront.PermissionSets
+                if (_appConfig.PermissionSets is { Count: > 0 })
+                {
+                    // Copy all permission sets from old location to new location
+                    foreach (var (level, permissions) in _appConfig.PermissionSets)
+                    {
+                        _appConfig.Webfront.PermissionSets[level] = permissions;
+                    }
+                    _appConfig.PermissionSets = null;
+                }
+                
+                // Migrate old wildcard-only permission sets to new tiered defaults
+                var defaultConfig = new ApplicationConfiguration();
+                foreach (var (permissionLevel, permissions) in _appConfig.Webfront.PermissionSets.ToList())
+                {
+                    // Only migrate if using old grant-all default (single "*" entry)
+                    if (permissions is ["*"] && defaultConfig.Webfront.PermissionSets.TryGetValue(permissionLevel, out var newDefault) && newDefault is not ["*"])
+                    {
+                        _appConfig.Webfront.PermissionSets[permissionLevel] = newDefault;
+                    }
+                }
+                
+                // Add User permission set if missing (new addition)
+                if (!_appConfig.Webfront.PermissionSets.ContainsKey(Data.Models.Client.EFClient.Permission.User.ToString()) && 
+                    defaultConfig.Webfront.PermissionSets.TryGetValue(Data.Models.Client.EFClient.Permission.User.ToString(), out var userPermissions))
+                {
+                    _appConfig.Webfront.PermissionSets[Data.Models.Client.EFClient.Permission.User.ToString()] = userPermissions;
+                }
 #pragma warning restore 618
 
                 var validator = new ApplicationConfigurationValidator();

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Data.Models.Misc;
 using SharedLibraryCore.Configuration.Attributes;
@@ -154,21 +151,16 @@ namespace SharedLibraryCore.Configuration
             TimeSpan.FromDays(30)
         };
 
-        public Dictionary<string, List<string>> PermissionSets { get; set; } = new()
-        {
-            { Permission.Trusted.ToString(), new List<string> { "*" } },
-            { Permission.Moderator.ToString(), new List<string> { "*" } },
-            { Permission.Administrator.ToString(), new List<string> { "*" } },
-            { Permission.SeniorAdmin.ToString(), new List<string> { "*" } },
-            { Permission.Owner.ToString(), new List<string> { "*" } },
-            { Permission.Console.ToString(), new List<string> { "*" } }
-        };
+        [Obsolete("Use Webfront.PermissionSets instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Dictionary<string, List<string>>? PermissionSets { get; set; }
 
         public Dictionary<string, Permission> MinimumAlertPermissions { get; set; } = new()
         {
             { nameof(EFInboxMessage), Permission.Trusted },
-            { GameEvent.EventType.ConnectionLost.ToString(), Permission.Administrator },
-            { GameEvent.EventType.ConnectionRestored.ToString(), Permission.Administrator }
+            { nameof(GameEvent.EventType.ConnectionLost), Permission.Administrator },
+            { nameof(GameEvent.EventType.ConnectionRestored), Permission.Administrator }
         };
 
         [ConfigurationIgnore]

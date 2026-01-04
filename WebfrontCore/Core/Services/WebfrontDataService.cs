@@ -601,7 +601,7 @@ public class WebfrontDataService : IWebfrontDataService
         var config = _manager.GetApplicationSettings().Configuration();
         var level = GetRequestingPermission();
 
-        if (!config.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
+        if (!config.Webfront.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
         {
             permissionSet = [];
         }
@@ -1434,7 +1434,7 @@ public class WebfrontDataService : IWebfrontDataService
     {
         var role = GetRequestingPermission();
         var config = _manager.GetApplicationSettings().Configuration();
-        return config.PermissionSets.TryGetValue(role.ToString(), out var set) && set.HasPermission(entity, permission);
+        return config.Webfront.PermissionSets.TryGetValue(role.ToString(), out var set) && set.HasPermission(entity, permission);
     }
 
     private Data.Models.Client.EFClient.Permission GetRequestingPermission()

@@ -2,6 +2,7 @@
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using System.Web;
 using WebfrontCore.Components.Features.Console.Models;
 using WebfrontCore.Core.Services;
 
@@ -125,18 +126,18 @@ public partial class Help
 
         // Fuzzy character sequence match (characters appear in order, with gaps allowed)
         // e.g., "tmpbn" matches "tempban"
-        if (searchTerm.Length >= 3 && FuzzySequenceMatch(sourceLower, searchTerm))
+        if (searchTerm.Length >= 4 && FuzzySequenceMatch(sourceLower, searchTerm))
             return true;
 
         // Levenshtein distance for short terms (typo tolerance)
         // Only use for small words to avoid false positives
-        if (searchTerm.Length is >= 3 and <= 8)
+        if (searchTerm.Length is >= 4 and <= 8)
         {
             // Check each word in the source
             if (words.Any(word =>
                     word.Length >= searchTerm.Length - 2 &&
                     word.Length <= searchTerm.Length + 2 &&
-                    LevenshteinDistance(word, searchTerm) <= Math.Max(1, searchTerm.Length / 4)))
+                    LevenshteinDistance(word, searchTerm) <= 1))
             {
                 return true;
             }
@@ -168,8 +169,8 @@ public partial class Help
             }
         }
 
-        // Require at least 70% of characters to match in sequence
-        return matchCount >= searchTerm.Length * 0.7;
+        // Require at least 80% of characters to match in sequence
+        return matchCount >= searchTerm.Length * 0.8;
     }
 
     /// <summary>
@@ -230,6 +231,27 @@ public partial class Help
         catch
         {
             // Use default prefix if status API fails
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Set default view to Cards on mobile
+            try
+            {
+                var isMobile = await JS.InvokeAsync<bool>("eval", "window.innerWidth < 768");
+                if (isMobile && ViewMode == ViewModeType.Table)
+                {
+                    ViewMode = ViewModeType.Cards;
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                // Fallback to default if JS interop fails
+            }
         }
     }
 
@@ -319,6 +341,37 @@ public partial class Help
             _ =>
                 "px-4 py-2 text-sm font-medium rounded-lg text-gray-400 hover:bg-gray-500/10 transition-all duration-200"
         };
+
+    private string GetSyntaxHeader()
+    {
+        var locValue = AppState.Loc("WEBFRONT_TABLE_SYNTAX");
+        // Remove redundant "Syntax:" prefix if present
+        if (locValue.StartsWith("Syntax:", StringComparison.OrdinalIgnoreCase))
+        {
+            return locValue.Substring(7).TrimStart();
+        }
+        return locValue;
+    }
+
+    private MarkupString HighlightSearchTerm(string? text)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrWhiteSpace(SearchTerm))
+            return new MarkupString(System.Web.HttpUtility.HtmlEncode(text ?? ""));
+
+        var searchTerm = SearchTerm.Trim();
+        var textLower = text.ToLowerInvariant();
+        var searchLower = searchTerm.ToLowerInvariant();
+
+        if (!textLower.Contains(searchLower))
+            return new MarkupString(System.Web.HttpUtility.HtmlEncode(text));
+
+        var encodedText = System.Web.HttpUtility.HtmlEncode(text);
+        var highlighted = encodedText.Replace(searchTerm, 
+            $"<mark class=\"bg-primary/20 text-primary\">{System.Web.HttpUtility.HtmlEncode(searchTerm)}</mark>",
+            StringComparison.OrdinalIgnoreCase);
+
+        return new MarkupString(highlighted);
+    }
 
     private string GetPermissionBadgeClass(Data.Models.Client.EFClient.Permission permission) => permission switch
     {

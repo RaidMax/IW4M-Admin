@@ -12,7 +12,7 @@ namespace SharedLibraryCore.Configuration.Validation
     {
         public ApplicationConfigurationValidator()
         {
-            RuleFor(_app => _app.WebfrontBindUrl)
+            RuleFor(_app => _app.Webfront.BindUrl)
                 .NotEmpty();
 
             RuleFor(_app => _app.CustomSayName)
@@ -31,11 +31,11 @@ namespace SharedLibraryCore.Configuration.Validation
                 .NotEmpty()
                 .When(_app => _app.EnableCustomParserEncoding);
 
-            RuleFor(_app => _app.WebfrontConnectionWhitelist)
+            RuleFor(_app => _app.Webfront.ConnectionWhitelist)
                 .NotEmpty()
-                .When(_app => _app.EnableWebfrontConnectionWhitelist);
+                .When(_app => _app.Webfront.EnableConnectionWhitelist);
 
-            RuleForEach(_app => _app.WebfrontConnectionWhitelist)
+            RuleForEach(_app => _app.Webfront.ConnectionWhitelist)
                 .Must(_address => IPAddress.TryParse(_address, out _));
 
             RuleFor(_app => _app.CustomLocale)

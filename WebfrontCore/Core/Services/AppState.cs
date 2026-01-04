@@ -9,85 +9,57 @@ public class AppState(ApplicationConfiguration appConfig)
 {
     public event Action OnChange = delegate { };
 
-    public string WebfrontBranding => !string.IsNullOrEmpty(appConfig.WebfrontCustomBranding) ? appConfig.WebfrontCustomBranding : "IW4MAdmin";
-
-    private bool _isDarkMode;
-
-    public bool IsDarkMode
-    {
-        get => _isDarkMode;
-        set
-        {
-            if (_isDarkMode != value)
-            {
-                _isDarkMode = value;
-                NotifyStateChanged();
-            }
-        }
-    }
-
-    private bool _sidebarCollapsed = false;
+    public string WebfrontBranding => !string.IsNullOrEmpty(appConfig.Webfront.CustomBranding)
+        ? appConfig.Webfront.CustomBranding
+        : "IW4MAdmin";
 
     public bool SidebarCollapsed
     {
-        get => _sidebarCollapsed;
+        get;
         set
         {
-            if (_sidebarCollapsed != value)
+            if (field == value)
             {
-                _sidebarCollapsed = value;
-                NotifyStateChanged();
+                return;
             }
-        }
-    }
 
-    private bool _isMobileNavOpen;
+            field = value;
+            NotifyStateChanged();
+        }
+    } = false;
 
     public bool IsMobileNavOpen
     {
-        get => _isMobileNavOpen;
+        get;
         set
         {
-            if (_isMobileNavOpen != value)
+            if (field == value)
             {
-                _isMobileNavOpen = value;
-                NotifyStateChanged();
+                return;
             }
+
+            field = value;
+            NotifyStateChanged();
         }
     }
-
-    private bool _isAdvancedSearchOpen;
 
     public bool IsAdvancedSearchOpen
     {
-        get => _isAdvancedSearchOpen;
+        get;
         set
         {
-            if (_isAdvancedSearchOpen != value)
+            if (field == value)
             {
-                _isAdvancedSearchOpen = value;
-                NotifyStateChanged();
+                return;
             }
-        }
-    }
 
-    private string? _activeServerId;
-
-    public string? ActiveServerId
-    {
-        get => _activeServerId;
-        set
-        {
-            if (_activeServerId != value)
-            {
-                _activeServerId = value;
-                NotifyStateChanged();
-            }
+            field = value;
+            NotifyStateChanged();
         }
     }
 
     public ClientInfo? User { get; private set; }
-    public System.Collections.Generic.Dictionary<string, string>? Localization { get; private set; }
+    public Dictionary<string, string>? Localization { get; private set; }
 
     public void SetUser(ClientInfo user)
     {
@@ -121,7 +93,7 @@ public class AppState(ApplicationConfiguration appConfig)
         }
     }
 
-    public string GetLevelColorClass(Data.Models.Client.EFClient.Permission permission) => permission switch
+    public static string GetLevelColorClass(Data.Models.Client.EFClient.Permission permission) => permission switch
     {
         Data.Models.Client.EFClient.Permission.Console => "text-level-console",
         Data.Models.Client.EFClient.Permission.Owner => "text-level-owner",
@@ -135,7 +107,7 @@ public class AppState(ApplicationConfiguration appConfig)
         _ => "text-slate-400"
     };
 
-    public string GetPenaltyBadgeClass(EFPenalty.PenaltyType type) => type switch
+    public static string GetPenaltyBadgeClass(EFPenalty.PenaltyType type) => type switch
     {
         EFPenalty.PenaltyType.Ban => "bg-red-900/30 text-red-400 border-red-900/50",
         EFPenalty.PenaltyType.TempBan => "bg-red-900/30 text-red-400 border-red-900/50",
@@ -144,7 +116,6 @@ public class AppState(ApplicationConfiguration appConfig)
         EFPenalty.PenaltyType.Unban => "bg-emerald-900/30 text-emerald-400 border-emerald-900/50",
         _ => "bg-slate-700 text-slate-300 border-slate-600"
     };
-
 
     private void NotifyStateChanged() => OnChange?.Invoke();
 }

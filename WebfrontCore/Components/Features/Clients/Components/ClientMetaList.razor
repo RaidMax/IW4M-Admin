@@ -27,7 +27,8 @@ else
             {
                 <div class="relative flex items-center gap-3 py-3">
                     @* Timeline dot for header *@
-                    <div class="relative z-10 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-line">
+                    <div
+                        class="relative z-10 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-line">
                         <i class="ph ph-clock text-xs text-muted"></i>
                     </div>
                     <span class="text-xs font-bold uppercase tracking-wider text-muted bg-surface px-2 py-1 rounded">
@@ -44,9 +45,10 @@ else
                     @{
                         var (dotColor, _) = GetItemStyle(item);
                     }
-                    <div class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125 m-auto"></div>
+                    <div
+                        class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125 m-auto"></div>
                 </div>
-                
+
                 @* Content *@
                 <div class="min-w-0 break-normal overflow-wrap-anywhere">
                     @switch (item)
@@ -98,6 +100,7 @@ else
 }
 
 @code {
+
     private string GetPenaltyColor(string type) => type?.ToLower() switch
     {
         "ban" => "text-error",
@@ -129,8 +132,8 @@ else
             },
             MessageResponse => ("bg-primary", "ph-chat"),
             UpdatedAliasResponse => ("bg-subtle", "ph-user"),
-            ConnectionHistoryResponse c => c.ConnectionType == Reference.ConnectionType.Connect 
-                ? ("bg-success", "ph-sign-in") 
+            ConnectionHistoryResponse c => c.ConnectionType == Reference.ConnectionType.Connect
+                ? ("bg-success", "ph-sign-in")
                 : ("bg-muted", "ph-sign-out"),
             PermissionLevelChangedResponse => ("bg-primary", "ph-shield"),
             ClientNoteMetaResponse => ("bg-primary", "ph-note"),
@@ -306,7 +309,7 @@ else
                 <div class="flex-1 min-w-0">
                     @if (!Meta.SentIngame)
                     {
-                        <Tooltip Text="Message was sent via the webfront" WrapperClass="inline-flex items-center">
+                        <Tooltip Text="@AppState.Loc("WEBFRONT_META_MESSAGE_REMOTE_TOOLTIP")" WrapperClass="inline-flex items-center">
                             <i class="ph ph-globe text-muted text-xs mr-1"></i>
                         </Tooltip>
                     }
@@ -343,7 +346,7 @@ else
                                         <span class="text-muted/60 font-mono text-[10px] tabular-nums">@message.When.ToString("HH:mm:ss")</span>
                                         @if (!message.SentIngame)
                                         {
-                                            <Tooltip Text="Message was sent via the webfront" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="inline-flex items-center relative">
+                                            <Tooltip Text="@AppState.Loc("WEBFRONT_META_MESSAGE_REMOTE_TOOLTIP")" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="inline-flex items-center relative">
                                                 <i class="ph ph-globe text-muted text-[10px] mr-0.5"></i>
                                             </Tooltip>
                                         }

@@ -405,16 +405,6 @@ namespace IW4MAdmin.Application
                 }
 
 #pragma warning disable 618
-                if (_appConfig.Maps != null)
-                {
-                    _appConfig.Maps = null;
-                }
-
-                if (_appConfig.QuickMessages != null)
-                {
-                    _appConfig.QuickMessages = null;
-                }
-                
                 // Migrate obsolete Webfront properties to Webfront.* properties
                 if (_appConfig.EnableWebFront.HasValue)
                 {

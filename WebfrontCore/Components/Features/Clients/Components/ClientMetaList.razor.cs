@@ -11,6 +11,7 @@ public partial class ClientMetaList : IAsyncDisposable
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required ILogger<ClientMetaList> Logger { get; set; }
 
     [Parameter] public int ClientId { get; set; }
     [Parameter] public MetaType? MetaFilterType { get; set; }
@@ -33,9 +34,12 @@ public partial class ClientMetaList : IAsyncDisposable
     private class MetaItemState
     {
         public bool IsOpen { get; set; }
+
         public bool IsLoading { get; set; }
+
         // For AdministeredPenalty
         public List<Dictionary<string, string>>? SnapshotInfo { get; set; }
+
         // For Message
         public List<MessageResponse>? ContextMessages { get; set; }
     }
@@ -63,7 +67,7 @@ public partial class ClientMetaList : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (MetaItems.Any() && HasMore && !_observerSetup)
+        if (MetaItems.Count != 0 && HasMore && !_observerSetup)
         {
             _objRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _objRef, "loadMoreMetaTrigger");
@@ -80,7 +84,7 @@ public partial class ClientMetaList : IAsyncDisposable
 
         try
         {
-            if (MetaItems.Any())
+            if (MetaItems.Count != 0)
             {
                 StartAt = MetaItems.Last().When.ToFileTimeUtc();
                 Offset = 0;
@@ -95,7 +99,7 @@ public partial class ClientMetaList : IAsyncDisposable
                     StartAt = StartAt,
                     MetaType = MetaFilterType
                 });
-            var itemList = newItems?.ToList() ?? new List<BaseMetaResponse>();
+            var itemList = newItems?.ToList() ?? [];
 
             var n = 0;
             var uniqueItems = new List<BaseMetaResponse>();
@@ -136,7 +140,7 @@ public partial class ClientMetaList : IAsyncDisposable
         catch (Exception ex)
         {
             _errorMessage = $"Error loading meta: {ex.Message}";
-            System.Console.WriteLine($"Error loading meta: {ex}");
+            Logger.LogError(ex, "Error loading client meta for client {ClientId}", ClientId);
             HasMore = false;
         }
         finally
@@ -158,6 +162,7 @@ public partial class ClientMetaList : IAsyncDisposable
         {
             await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
         }
+
         _objRef?.Dispose();
     }
 
@@ -212,7 +217,7 @@ public partial class ClientMetaList : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine(ex);
+                Logger.LogWarning(ex, "Error loading message context for message on server {ServerId}", meta.ServerId);
             }
             finally
             {

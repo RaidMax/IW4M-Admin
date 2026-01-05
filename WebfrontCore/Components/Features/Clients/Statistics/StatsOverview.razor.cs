@@ -12,6 +12,7 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ILogger<StatsOverview> Logger { get; set; }
 
     [SupplyParameterFromQuery(Name = "serverId")]
     public string? ServerId { get; set; }
@@ -146,7 +147,7 @@ public partial class StatsOverview : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"[Virtualize] Error: {ex.Message}");
+            Logger.LogError(ex, "Error loading stats for virtualized list");
             return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), (int)TotalRankedClients);
         }
     }

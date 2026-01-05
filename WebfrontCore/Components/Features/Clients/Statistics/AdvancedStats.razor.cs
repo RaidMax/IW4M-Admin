@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -13,6 +14,7 @@ public partial class AdvancedStats
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required ILogger<AdvancedStats> Logger { get; set; }
 
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string? serverId { get; set; }
@@ -61,7 +63,7 @@ public partial class AdvancedStats
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"Error calling initAdvancedStats: {ex.Message}");
+                Logger.LogWarning(ex, "Error calling initAdvancedStats for client {ClientId}", ClientId);
             }
         }
     }

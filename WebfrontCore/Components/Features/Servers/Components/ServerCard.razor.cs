@@ -12,6 +12,7 @@ public partial class ServerCard : IAsyncDisposable
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required ILogger<ServerCard> Logger { get; set; }
     [Parameter, EditorRequired] public ServerInfo Model { get; set; } = default!;
     [Parameter] public EventCallback<string> OnChat { get; set; }
 
@@ -73,7 +74,7 @@ public partial class ServerCard : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"[ServerCard] ERROR in RunTimerAsync: {ex}");
+            Logger.LogError(ex, "Error in ServerCard refresh timer");
         }
     }
 
@@ -108,7 +109,7 @@ public partial class ServerCard : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _cts.Cancel();
+        await _cts.CancelAsync();
         _cts.Dispose();
         _timer?.Dispose();
 

@@ -9,6 +9,7 @@ public partial class PlayerPerformanceChart
     [Parameter, EditorRequired] public int ClientId { get; set; }
     [Parameter, EditorRequired] public int Id { get; set; }
     [Parameter, EditorRequired] public IEnumerable<PerformanceHistory> History { get; set; } = [];
+    [Inject] public required ILogger<PlayerPerformanceChart> Logger { get; set; }
     private string CanvasId => $"rating_history_{ClientId}_{Id}";
 
     private bool _hasRendered;
@@ -58,8 +59,7 @@ public partial class PlayerPerformanceChart
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Failed to init chart {CanvasId}: {ex.Message}");
+            Logger.LogWarning(ex, "Failed to initialize chart {CanvasId}", CanvasId);
         }
     }
 }
-

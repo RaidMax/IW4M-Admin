@@ -33,21 +33,24 @@ public class ActionService : IActionService
     private readonly IMetaServiceV2 _metaService;
     private readonly IRemoteCommandService _remoteCommandService;
     private readonly IInteractionRegistration _interactionRegistration;
+    private readonly ILogger<ActionService> _logger;
 
     public event Action<string, int?, string, string?> OnOpenAction = delegate { };
-    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction = delegate { };
 
+    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction = delegate
+    {
+    };
 
     public void OpenAction(string actionName, int? targetId, string meta, string? serverId = null)
     {
         OnOpenAction?.Invoke(actionName, targetId, meta, serverId);
     }
 
-    public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null)
+    public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title,
+        string? modalClass = null)
     {
         OnOpenCustomAction?.Invoke(content, title, modalClass);
     }
-
 
     // Command Names
     private readonly string? _banCommandName;
@@ -65,7 +68,7 @@ public class ActionService : IActionService
     public ActionService(IManager manager, ApplicationConfiguration appConfig, ITranslationLookup localization,
         IMetaServiceV2 metaService, IRemoteCommandService remoteCommandService,
         IEnumerable<IManagerCommand> registeredCommands,
-        IInteractionRegistration interactionRegistration)
+        IInteractionRegistration interactionRegistration, ILogger<ActionService> logger)
     {
         _manager = manager;
         _appConfig = appConfig;
@@ -73,6 +76,7 @@ public class ActionService : IActionService
         _metaService = metaService;
         _remoteCommandService = remoteCommandService;
         _interactionRegistration = interactionRegistration;
+        _logger = logger;
 
         // Resolve command names
         foreach (var cmd in registeredCommands)
@@ -245,7 +249,7 @@ public class ActionService : IActionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing dynamic action meta: {ex}");
+            _logger.LogError(ex, "Error parsing dynamic action meta");
             throw new InvalidOperationException($"Error parsing dynamic action meta: {ex.Message}", ex);
         }
     }

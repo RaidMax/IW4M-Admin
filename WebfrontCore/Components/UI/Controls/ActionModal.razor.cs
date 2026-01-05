@@ -1,7 +1,6 @@
 ﻿using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.UI.Controls;
@@ -12,6 +11,7 @@ public partial class ActionModal
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    [Inject] public required ILogger<ActionModal> Logger { get; set; }
     private bool _isLoading;
     private bool _isLegacy;
     private bool _isLogin;
@@ -133,7 +133,7 @@ public partial class ActionModal
         catch (Exception ex)
         {
             _error = $"Failed to load action: {ex.Message}";
-            Console.WriteLine(ex);
+            Logger.LogError(ex, "Failed to load action");
         }
         finally
         {

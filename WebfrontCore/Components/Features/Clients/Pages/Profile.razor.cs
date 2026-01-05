@@ -19,6 +19,7 @@ public partial class Profile
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required ApplicationConfiguration Config { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
+    [Inject] public required ILogger<Profile> Logger { get; set; }
 
     [PersistentState]
     public PlayerInfo? Client { get; set; }
@@ -45,7 +46,7 @@ public partial class Profile
         catch (Exception ex)
         {
             _error = ex.Message;
-            System.Console.WriteLine($"Profile load error: {ex}");
+            Logger.LogError(ex, "Error loading profile for client {ClientId}", Id);
         }
         finally
         {

@@ -8,6 +8,7 @@ namespace WebfrontCore.Components.Features.Clients.Components;
 public partial class ClientActivitySparkline
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
+    [Inject] public required ILogger<ClientActivitySparkline> Logger { get; set; }
 
     [Parameter] public int ClientId { get; set; }
 
@@ -32,8 +33,8 @@ public partial class ClientActivitySparkline
             const int pageSize = 200;
             var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
             var allConnections = new List<ConnectionHistoryResponse>();
-            int offset = 0;
-            bool hasMoreData = true;
+            var offset = 0;
+            var hasMoreData = true;
 
             // Keep fetching until we have all data within 30 days or run out of results
             while (hasMoreData)
@@ -77,7 +78,7 @@ public partial class ClientActivitySparkline
 
             // Fill the 30-day array
             _activityData = new double[30];
-            for (int i = 0; i < 30; i++)
+            for (var i = 0; i < 30; i++)
             {
                 var date = DateTime.UtcNow.Date.AddDays(-29 + i);
                 _activityData[i] = grouped.TryGetValue(date, out var count) ? count : 0;
@@ -88,7 +89,7 @@ public partial class ClientActivitySparkline
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading activity data: {ex.Message}");
+            Logger.LogError(ex, "Error loading activity data");
             _activityData = new double[30];
             _totalConnections = 0;
         }

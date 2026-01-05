@@ -29,10 +29,10 @@
                 <span>@AppConfig.Webfront.CustomBranding</span>
             }
         </a>
-        
+
         <!-- Divider -->
         <div class="h-8 w-px bg-divider hidden md:block"></div>
-        
+
         <!-- Client Badges (Desktop) -->
         <div class="hidden md:flex">
             <ClientBadges/>
@@ -63,9 +63,7 @@
 
     private void ToggleMobile()
     {
-        Console.WriteLine("TopBar: ToggleMobile clicked. Current State: " + AppState.IsMobileNavOpen);
         AppState.IsMobileNavOpen = !AppState.IsMobileNavOpen;
-        Console.WriteLine("TopBar: New State: " + AppState.IsMobileNavOpen);
     }
 
     private void ToggleDesktop()

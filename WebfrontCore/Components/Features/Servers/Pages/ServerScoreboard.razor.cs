@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.Features.Servers.Models;
@@ -10,6 +9,7 @@ public partial class ServerScoreboard
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required ILogger<ServerScoreboard> Logger { get; set; }
     [Parameter, EditorRequired] public string Id { get; set; } = default!;
     private ScoreboardInfo? ScoreboardModel { get; set; }
     private SideContextMenuItems? ContextItems { get; set; }
@@ -27,7 +27,7 @@ public partial class ServerScoreboard
             ContextItems = null;
 
             // Cancel previous timer if running
-            _cts?.Cancel();
+            await (_cts?.CancelAsync() ?? Task.CompletedTask);
             _cts?.Dispose();
             _refreshTimer?.Dispose();
 
@@ -69,7 +69,7 @@ public partial class ServerScoreboard
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine(ex);
+            Logger.LogError(ex, "Error loading scoreboard data for server {ServerId}", Id);
         }
     }
 

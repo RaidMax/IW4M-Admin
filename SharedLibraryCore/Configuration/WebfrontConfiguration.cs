@@ -14,22 +14,23 @@ public class WebfrontConfiguration
     public string SecondaryColor { get; set; } = "pink";
     public string ThemePreset { get; set; } = "minimal";
     public bool PreventUserCustomization { get; set; }
-    
+    public bool EnableColorCodes { get; set; }
+
     /// <summary>
     /// Enable HTTPS with SSL certificate. When enabled, the webfront will serve over HTTPS only.
     /// </summary>
     public bool UseSsl { get; set; }
-    
+
     /// <summary>
     /// Path to the PFX certificate file for HTTPS.
     /// </summary>
     public string? SslCertificatePath { get; set; }
-    
+
     /// <summary>
     /// Password for the PFX certificate file (if required).
     /// </summary>
     public string? SslCertificatePassword { get; set; }
-    
+
     public Dictionary<string, List<string>> PermissionSets { get; set; } = new()
     {
         {

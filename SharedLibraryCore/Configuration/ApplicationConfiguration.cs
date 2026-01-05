@@ -64,16 +64,6 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("SETUP_SAY_NAME")]
         public string CustomSayName { get; set; }
 
-        [LocalizedDisplayName("SETUP_DISPLAY_SOCIAL")]
-        [ConfigurationLinked("SocialLinkAddress", "SocialLinkTitle")]
-        public bool EnableSocialLink { get; set; }
-
-        [LocalizedDisplayName("SETUP_SOCIAL_LINK")]
-        public string SocialLinkAddress { get; set; }
-
-        [LocalizedDisplayName("SETUP_SOCIAL_TITLE")]
-        public string SocialLinkTitle { get; set; }
-
         [LocalizedDisplayName("SETUP_CONTACT_URI")]
         public string ContactUri { get; set; }
 
@@ -217,13 +207,6 @@ namespace SharedLibraryCore.Configuration
             Webfront.Enabled = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
             EnableMultipleOwners = loc["SETUP_ENABLE_MULTIOWN"].PromptBool();
             Webfront.BindUrl = "http://0.0.0.0:1624";
-            EnableSocialLink = loc["SETUP_DISPLAY_SOCIAL"].PromptBool();
-
-            if (EnableSocialLink)
-            {
-                SocialLinkTitle = loc["SETUP_SOCIAL_TITLE"].PromptString();
-                SocialLinkAddress = loc["SETUP_SOCIAL_LINK"].PromptString();
-            }
 
             RConPollRate = 5000;
             AutoMessagePeriod = 60;

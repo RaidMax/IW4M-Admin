@@ -19,7 +19,6 @@ public class BaseController : Controller
     /// </summary>
     private const int CookieLifespan = 3;
 
-    private static string _socialLink;
     protected bool Authorized => User.Identity?.IsAuthenticated == true && Client.ClientId >= 0;
     protected TranslationLookup Localization { get; }
     protected EFClient Client { get; }
@@ -32,11 +31,6 @@ public class BaseController : Controller
         Manager = manager;
         Localization = Utilities.CurrentLocalization.LocalizationIndex;
         AppConfig = Manager.GetApplicationSettings().Configuration();
-
-        if (AppConfig.EnableSocialLink && _socialLink == null)
-        {
-            _socialLink = AppConfig.SocialLinkAddress;
-        }
 
         Client = new EFClient
         {

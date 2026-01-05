@@ -18,15 +18,6 @@ namespace SharedLibraryCore.Configuration.Validation
             RuleFor(_app => _app.CustomSayName)
                 .NotEmpty()
                 .When(_app => _app.EnableCustomSayName);
-
-            RuleFor(_app => _app.SocialLinkAddress)
-                .NotEmpty()
-                .When(_app => _app.EnableSocialLink);
-
-            RuleFor(_app => _app.SocialLinkTitle)
-                .NotEmpty()
-                .When(_app => _app.EnableSocialLink);
-
             RuleFor(_app => _app.CustomParserEncoding)
                 .NotEmpty()
                 .When(_app => _app.EnableCustomParserEncoding);

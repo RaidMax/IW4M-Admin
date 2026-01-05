@@ -60,17 +60,49 @@ public class Program
             WebRootPath = Path.Combine(contentRoot, "wwwroot")
         });
 
-        builder.WebHost.UseUrls(bindUrl);
+        // Register dependencies first so we can access ApplicationConfiguration
+        registerDependenciesAction(builder.Services);
+        
+        // Build a temporary service provider to get the config for SSL setup
+        using var tempProvider = builder.Services.BuildServiceProvider();
+        var appConfig = tempProvider.GetRequiredService<ApplicationConfiguration>();
+        var webfrontConfig = appConfig.Webfront;
+
+        // Configure Kestrel based on SSL settings
+        builder.WebHost.ConfigureKestrel(kestrel =>
+        {
+            kestrel.Limits.MaxConcurrentConnections =
+                int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
+            kestrel.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
+
+            // Parse the bind URL to get host and port
+            var uri = new Uri(bindUrl.Replace("0.0.0.0", "localhost"));
+            var port = uri.Port;
+
+            if (webfrontConfig.UseSsl && !string.IsNullOrEmpty(webfrontConfig.SslCertificatePath))
+            {
+                // HTTPS mode - listen with SSL certificate
+                kestrel.ListenAnyIP(port, listenOptions =>
+                {
+                    if (string.IsNullOrEmpty(webfrontConfig.SslCertificatePassword))
+                    {
+                        listenOptions.UseHttps(webfrontConfig.SslCertificatePath);
+                    }
+                    else
+                    {
+                        listenOptions.UseHttps(webfrontConfig.SslCertificatePath, webfrontConfig.SslCertificatePassword);
+                    }
+                });
+            }
+            else
+            {
+                // HTTP mode - standard listen
+                kestrel.ListenAnyIP(port);
+            }
+        });
 
         // This is needed because the Application project doesn't use Microsoft.NET.Sdk.Web
         builder.WebHost.UseStaticWebAssets();
-
-        builder.WebHost.ConfigureKestrel(cfg =>
-        {
-            cfg.Limits.MaxConcurrentConnections =
-                int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
-            cfg.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
-        });
 
         builder.Services.AddServerSideBlazor(options =>
         {
@@ -87,7 +119,6 @@ public class Program
             options.MaximumReceiveMessageSize = 256 * 1024; // 256KB (default is 32KB) - needed for chart history data
         });
 
-        registerDependenciesAction(builder.Services);
         ConfigureServices(builder.Services);
 
         var app = builder.Build();

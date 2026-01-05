@@ -1,19 +1,13 @@
-﻿using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using SharedLibraryCore.Configuration;
 
-namespace SharedLibraryCore
+namespace SharedLibraryCore.TagHelpers
 {
     [HtmlTargetElement("color-code")]
-    public class ColorCode : TagHelper
+    public class ColorCode(ApplicationConfiguration appConfig) : TagHelper
     {
-        private readonly bool _allow;
-
-        public ColorCode(ApplicationConfiguration appConfig)
-        {
-            _allow = appConfig?.EnableColorCodes ?? false;
-        }
+        private readonly bool _allow = appConfig?.Webfront.EnableColorCodes ?? false;
 
         public string Value { get; set; }
 

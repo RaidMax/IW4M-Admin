@@ -110,9 +110,6 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
         public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
-        public bool EnableColorCodes { get; set; }
-
         [ConfigurationIgnore] public string IngameAccentColorKey { get; set; } = "Cyan";
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
@@ -157,10 +154,7 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]
         public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new()
             { { "afk", "Away from keyboard" }, { "ci", "Connection interrupted. Reconnect" } };
-
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY")]
-        public bool EnablePrivilegedUserPrivacy { get; set; }
-
+        
         [ConfigurationIgnore] public bool EnableImplicitAccountLinking { get; set; } = false;
         [ConfigurationIgnore] public TimeSpan RecentAliasIpLinkTimeLimit { get; set; } = TimeSpan.FromDays(7);
 
@@ -181,14 +175,6 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore] public int MinimumNameLength { get; set; } = 3;
         [ConfigurationIgnore] public string Id { get; set; }
         [ConfigurationIgnore] public string SubscriptionId { get; set; }
-
-        [Obsolete("Moved to DefaultSettings")]
-        [ConfigurationIgnore]
-        public MapConfiguration[] Maps { get; set; }
-
-        [Obsolete("Moved to DefaultSettings")]
-        [ConfigurationIgnore]
-        public QuickMessageConfiguration[] QuickMessages { get; set; }
 
         [ConfigurationIgnore]
         [JsonIgnore]

@@ -12,6 +12,7 @@ public partial class PenaltyList
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ILogger<PenaltyList> Logger { get; set; }
     private List<PenaltyInfo> Penalties { get; set; } = [];
     private int Offset { get; set; } = 0;
     private int Count { get; set; } = 30;
@@ -116,7 +117,7 @@ public partial class PenaltyList
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading penalties: {ex.Message}");
+            Logger.LogError(ex, "Error loading penalties");
             HasMoreResults = false;
         }
         finally

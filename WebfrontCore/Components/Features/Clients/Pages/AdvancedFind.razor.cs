@@ -16,6 +16,7 @@ public partial class AdvancedFind
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
+    [Inject] public required ILogger<AdvancedFind> Logger { get; set; }
 
     [SupplyParameterFromQuery(Name = "clientName")]
     public string? ClientName { get; set; }
@@ -158,7 +159,7 @@ public partial class AdvancedFind
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading clients: {ex.Message}");
+            Logger.LogError(ex, "Error loading clients");
             _hasMore = false;
         }
         finally

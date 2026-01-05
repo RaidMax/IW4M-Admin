@@ -9,7 +9,8 @@ public partial class ScoreboardModalWrapper : IAsyncDisposable
     [Parameter, EditorRequired] public string ServerId { get; set; } = default!;
     [Inject] public required IWebfrontDataService ServerDataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    
+    [Inject] public required ILogger<ScoreboardModalWrapper> Logger { get; set; }
+
     private bool _isLoading = true;
     private string? _error;
     private ScoreboardInfo? _scoreboardInfo;
@@ -22,9 +23,9 @@ public partial class ScoreboardModalWrapper : IAsyncDisposable
         {
             return;
         }
-        
+
         await LoadDataAsync();
-        
+
         // Start refresh timer
         _cts = new CancellationTokenSource();
         _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
@@ -41,7 +42,7 @@ public partial class ScoreboardModalWrapper : IAsyncDisposable
         catch (Exception ex)
         {
             _error = AppState.Loc("WEBFRONT_SCOREBOARD_ERROR_LOADING");
-            System.Console.WriteLine(ex);
+            Logger.LogError(ex, "Error loading scoreboard for server {ServerId}", ServerId);
         }
         finally
         {
@@ -52,8 +53,9 @@ public partial class ScoreboardModalWrapper : IAsyncDisposable
 
     private async Task RefreshLoopAsync()
     {
-        if (_refreshTimer == null || _cts == null) return;
-        
+        if (_refreshTimer == null || _cts == null)
+            return;
+
         try
         {
             while (await _refreshTimer.WaitForNextTickAsync(_cts.Token))
@@ -77,7 +79,7 @@ public partial class ScoreboardModalWrapper : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _cts?.Cancel();
+        await (_cts?.CancelAsync() ?? Task.CompletedTask);
         _cts?.Dispose();
         _refreshTimer?.Dispose();
     }

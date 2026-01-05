@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using Stats.Dtos;
@@ -13,6 +12,7 @@ public partial class FindMessage : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
+    [Inject] public required ILogger<FindMessage> Logger { get; set; }
 
     [SupplyParameterFromQuery(Name = "messageContains")]
     public string? MessageContains { get; set; }
@@ -148,7 +148,7 @@ public partial class FindMessage : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading messages: {ex.Message}");
+            Logger.LogError(ex, "Error loading messages");
             _hasMore = false;
         }
         finally
@@ -174,7 +174,7 @@ public partial class FindMessage : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading chat context: {ex.Message}");
+            Logger.LogError(ex, "Error loading chat context for message at {Timestamp}", message.When);
         }
         finally
         {

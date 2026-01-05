@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
-using System.Web;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
 
@@ -17,6 +15,7 @@ public partial class AuditLog : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager Navigation { get; set; }
+    [Inject] public required ILogger<AuditLog> Logger { get; set; }
 
     // Filter state
     private string _searchQuery = "";
@@ -53,7 +52,7 @@ public partial class AuditLog : IAsyncDisposable
         EFChangeHistory.ChangeType.Command
     ];
 
-    private string GetBadgeClass(string action)
+    private static string GetBadgeClass(string action)
     {
         var upperAction = action?.ToUpperInvariant() ?? "";
 
@@ -213,7 +212,7 @@ public partial class AuditLog : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading audit log: {ex.Message}");
+            Logger.LogError(ex, "Error loading audit log");
             _error = "Failed to load audit log. You may not have permission to view this page.";
             HasMoreResults = false;
         }
@@ -234,7 +233,7 @@ public partial class AuditLog : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading statistics: {ex.Message}");
+            Logger.LogError(ex, "Error loading audit statistics");
         }
     }
 
@@ -269,9 +268,7 @@ public partial class AuditLog : IAsyncDisposable
 
     private void ToggleActionType(EFChangeHistory.ChangeType actionType)
     {
-        if (_selectedActionTypes.Contains(actionType))
-            _selectedActionTypes.Remove(actionType);
-        else
+        if (!_selectedActionTypes.Remove(actionType))
             _selectedActionTypes.Add(actionType);
     }
 

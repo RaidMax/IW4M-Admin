@@ -9,6 +9,7 @@ public partial class ClientInformationTags
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
+    [Inject] public required ILogger<ClientInformationTags> Logger { get; set; }
 
     [Parameter] public int ClientId { get; set; }
 
@@ -51,7 +52,7 @@ public partial class ClientInformationTags
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Error loading client meta: {ex.Message}");
+            Logger.LogError("Error loading client meta: {Ex}", ex);
             _groupedMeta = [];
         }
         finally
@@ -68,22 +69,6 @@ public partial class ClientInformationTags
             "Statistics" => ("ph-chart-bar", "Game Statistics", "text-success"),
             "AntiCheat" => ("ph-shield-check", "AntiCheat Metrics", "text-warning"),
             _ => ("ph-tag", category, "bg-gradient-to-br from-gray-500 to-gray-600")
-        };
-    }
-
-    private static string GetItemIcon(string key)
-    {
-        var lowerKey = key.ToLower();
-        return lowerKey switch
-        {
-            var k when k.Contains("map") => "ph-map-trifold",
-            var k when k.Contains("server") => "ph-hard-drives",
-            var k when k.Contains("time") || k.Contains("play") => "ph-clock",
-            var k when k.Contains("first") => "ph-calendar-plus",
-            var k when k.Contains("last") || k.Contains("seen") => "ph-calendar-check",
-            var k when k.Contains("connection") => "ph-plug",
-            var k when k.Contains("hidden") || k.Contains("mask") => "ph-eye-slash",
-            _ => "ph-info"
         };
     }
 }

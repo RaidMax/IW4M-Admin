@@ -116,7 +116,7 @@ public partial class BanManagement
         {
             await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
         }
-        catch (InvalidOperationException)
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException)
         {
             // JS interop not available during static rendering - safe to ignore
         }

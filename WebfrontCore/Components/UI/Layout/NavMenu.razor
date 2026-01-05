@@ -95,11 +95,11 @@
         {
             foreach (var pageLink in NavData.Pages)
             {
-                <a class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover"
-                   href="@pageLink.Location" @onclick="CloseMobileMenu">
+                <NavLink href="@pageLink.Location" @onclick="CloseMobileMenu"
+                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
                     <i class="ph @(pageLink.Location.EndsWith("radar") ? "ph-wifi-high" : "ph-chart-bar") mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
                     <span class="truncate">@pageLink.Name</span>
-                </a>
+                </NavLink>
             }
         }
 

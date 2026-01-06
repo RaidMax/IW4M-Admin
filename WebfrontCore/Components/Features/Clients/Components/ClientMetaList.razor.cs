@@ -16,7 +16,7 @@ public partial class ClientMetaList : IAsyncDisposable
     [Parameter] public int ClientId { get; set; }
     [Parameter] public MetaType? MetaFilterType { get; set; }
 
-    private List<BaseMetaResponse> MetaItems { get; set; } = new();
+    private List<BaseMetaResponse> MetaItems { get; set; } = [];
     private bool Loading { get; set; }
     private string? _errorMessage;
     private int Offset { get; set; } = 0;

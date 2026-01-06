@@ -210,8 +210,10 @@ jobs:
           cp ${{ github.workspace }}/BUILD/Plugins/*.dll ${{ env.outputFolder }}/Plugins/
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/src/user.css ${{ env.outputFolder }}/wwwroot/css/user.css
           mkdir -p ${{ env.outputFolder }}/wwwroot/js
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/user.js ${{ env.outputFolder }}/wwwroot/js/user.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
           mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/font/phosphor/ ${{ env.outputFolder }}/wwwroot/font/phosphor/

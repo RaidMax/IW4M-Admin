@@ -19,24 +19,51 @@ public partial class AdvancedStats
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string? serverId { get; set; }
 
-    [PersistentState] public AdvancedStatsInfo? Stats { get; set; }
+    [PersistentState(AllowUpdates = true)] 
+    public AdvancedStatsState? State { get; set; }
+    
+    // Convenience accessor
+    private AdvancedStatsInfo? Stats => State?.Stats;
+
     private SideContextMenuItems? MenuItems;
     private bool _chartsInitialized;
     private bool _showAllHitLocations;
     private bool _showAllWeapons;
     private const int DefaultTableRowCount = 10;
+    private int _lastLoadedId;
+    private string? _lastLoadedServerId;
 
     protected override async Task OnParametersSetAsync()
     {
         _chartsInitialized = false;
+
+        // Check if state is restored and matches current parameters
+        if (State?.Stats != null && 
+            _lastLoadedId == ClientId && 
+            State.Stats.ClientId == ClientId &&
+            EqualityComparer<string?>.Default.Equals(_lastLoadedServerId, serverId))
+        {
+             // Verify server endpoint match if serverId param is provided
+             if (serverId == null || State.Stats.ServerEndpoint == serverId)
+             {
+                 GenerateMenu();
+                 return;
+             }
+        }
+
         try
         {
-            Stats = await DataService.GetClientStatisticsAsync(ClientId, serverId);
+            State ??= new AdvancedStatsState();
+            
+            State.Stats = await DataService.GetClientStatisticsAsync(ClientId, serverId);
+            _lastLoadedId = ClientId;
+            _lastLoadedServerId = serverId;
+            
             GenerateMenu();
         }
         catch (Exception)
         {
-            NavManager.NavigateTo("/client" + ClientId);
+            NavManager.NavigateTo("/client/" + ClientId);
         }
     }
 
@@ -70,10 +97,12 @@ public partial class AdvancedStats
 
     private void GenerateMenu()
     {
+        if (Stats == null) return;
+        
         MenuItems = new SideContextMenuItems
         {
             MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
-            Items = Stats?.Servers.Select(server => new SideContextMenuItem
+            Items = Stats.Servers.Select(server => new SideContextMenuItem
             {
                 IsLink = true,
                 Reference = $"/client/{ClientId}/stats?serverId={server.Endpoint}",
@@ -154,5 +183,10 @@ public partial class AdvancedStats
         }
 
         return 0;
+    }
+
+    public class AdvancedStatsState
+    {
+        public AdvancedStatsInfo? Stats { get; set; }
     }
 }

@@ -17,6 +17,9 @@ public partial class AuditLog : IAsyncDisposable
     [Inject] public required NavigationManager Navigation { get; set; }
     [Inject] public required ILogger<AuditLog> Logger { get; set; }
 
+    [PersistentState(AllowUpdates = true)]
+    public AuditLogState? State { get; set; }
+
     // Filter state
     private string _searchQuery = "";
     private List<EFChangeHistory.ChangeType> _selectedActionTypes = [];
@@ -26,15 +29,55 @@ public partial class AuditLog : IAsyncDisposable
     private DateTime? _dateTo;
 
     // Results and statistics
-    private List<AuditInfo> Results { get; set; } = [];
-    private AuditStatistics? Statistics { get; set; }
-    private bool HasMoreResults { get; set; } = true;
+    private List<AuditInfo> Results
+    {
+        get => State?.Results ?? _results;
+        set
+        {
+            if (State != null) State.Results = value;
+            else _results = value;
+        }
+    }
+    private List<AuditInfo> _results = []; // Fallback/Initial
+
+    private AuditStatistics? Statistics
+    {
+        get => State?.Statistics ?? _statistics;
+        set
+        {
+            if (State != null) State.Statistics = value;
+            else _statistics = value;
+        }
+    }
+    private AuditStatistics? _statistics;
+
+    private bool HasMoreResults
+    {
+        get => State?.HasMoreResults ?? _hasMoreResults;
+        set
+        {
+            if (State != null) State.HasMoreResults = value;
+            else _hasMoreResults = value;
+        }
+    }
+    private bool _hasMoreResults = true;
+
     private bool _isLoading;
     private string? _error;
     private DotNetObjectReference<AuditLog>? _dotNetRef;
 
     // Pagination
-    private int _offset;
+    private int _offset
+    {
+        get => State?.Offset ?? _internalOffset;
+        set
+        {
+            if (State != null) State.Offset = value;
+            else _internalOffset = value;
+        }
+    }
+    private int _internalOffset;
+    
     private const int PageSize = 50;
 
     // View mode
@@ -99,6 +142,15 @@ public partial class AuditLog : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        // If we have restored state, use it and skip loading
+        if (State is not null && State.Results?.Count > 0)
+        {
+            return;
+        }
+
+        // Initialize state if not restored
+        State ??= new AuditLogState();
+
         await LoadData();
         await LoadStatistics();
     }
@@ -308,8 +360,23 @@ public partial class AuditLog : IAsyncDisposable
     {
         if (_dotNetRef is not null)
         {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-            _dotNetRef.Dispose();
+            try
+            {
+                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+                _dotNetRef.Dispose();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignored
+            }
         }
+    }
+
+    public class AuditLogState
+    {
+        public List<AuditInfo> Results { get; set; } = [];
+        public AuditStatistics? Statistics { get; set; }
+        public bool HasMoreResults { get; set; } = true;
+        public int Offset { get; set; }
     }
 }

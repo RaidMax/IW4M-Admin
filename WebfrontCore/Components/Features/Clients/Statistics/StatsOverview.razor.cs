@@ -17,13 +17,8 @@ public partial class StatsOverview : IAsyncDisposable
     [SupplyParameterFromQuery(Name = "serverId")]
     public string? ServerId { get; set; }
 
-    public required SideContextMenuItems MenuItems { get; set; }
-
-    [PersistentState] public long TotalRankedClients { get; set; }
-
-    [PersistentState] public ServerInfo? SelectedServer { get; set; }
-
-    [PersistentState] public List<TopStatsInfo>? TopPlayers { get; set; }
+    [PersistentState(AllowUpdates = true)]
+    public StatsOverviewState? State { get; set; }
 
     private bool _hasLoaded;
     private string? _previousServerId;
@@ -33,6 +28,40 @@ public partial class StatsOverview : IAsyncDisposable
 
     protected override async Task OnParametersSetAsync()
     {
+        // Initialize state if not restored
+        if (State is null)
+        {
+            State = new StatsOverviewState();
+        }
+        // Check if we have restored state that matches the current request
+        else if (_firstLoad && State.ServerId == ServerId && State.TopPlayers.Count > 0)
+        {
+            _firstLoad = false;
+            _previousServerId = ServerId;
+            _hasLoaded = true;
+            
+            // Restore cache from state
+            _statsCache.Clear();
+            for (var i = 0; i < State.TopPlayers.Count; i++)
+            {
+                _statsCache[i] = State.TopPlayers[i];
+            }
+            
+            if (State.MenuItems != null)
+            {
+                // We manually set the backing field of the wrapper (which proxies to state, so actually we just need to Ensure state is set, which it is)
+                // Actually MenuItems property SETTER writes to State.MenuItems.
+                // So we don't need to do anything if it's already there.
+                // But the property getter handles null coalescence.
+            }
+            else
+            {
+                await GenerateMenu();
+            }
+
+            return;
+        }
+
         // Refresh grid when ServerId changes
         if (_firstLoad || _previousServerId != ServerId)
         {
@@ -42,6 +71,8 @@ public partial class StatsOverview : IAsyncDisposable
 
             // Clear cache when server changes
             _statsCache.Clear();
+            State.TopPlayers.Clear();
+            State.ServerId = ServerId;
 
             if (_virtualizeComponent != null)
             {
@@ -53,22 +84,22 @@ public partial class StatsOverview : IAsyncDisposable
             if (ServerId != null)
             {
                 var servers = await DataService.GetServersAsync();
-                SelectedServer = servers.FirstOrDefault(s => s.Endpoint == ServerId);
+                State.SelectedServer = servers.FirstOrDefault(s => s.Endpoint == ServerId);
             }
             else
             {
-                SelectedServer = null;
+                State.SelectedServer = null;
             }
 
-            // Fetch top 3 players for OpenGraph
             var topResponse = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
             {
                 Count = 3,
                 Offset = 0,
                 ServerId = ServerId
             });
-            TopPlayers = topResponse.Players.Take(3).ToList();
-            TotalRankedClients = topResponse.TotalRankedClients;
+            
+            State.TotalRankedClients = topResponse.TotalRankedClients;
+            _hasLoaded = true;
         }
     }
 
@@ -76,16 +107,19 @@ public partial class StatsOverview : IAsyncDisposable
 
     private async ValueTask<ItemsProviderResult<TopStatsInfo>> LoadPlayerStats(ItemsProviderRequest request)
     {
+        // Ensure state is initialized (should be by OnParametersSet)
+        if (State == null) return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), 0);
+
         var startIndex = request.StartIndex;
         var requestedCount = request.Count;
 
         // Try to fulfill entirely from cache first
-        if (TotalRankedClients > 0)
+        if (State.TotalRankedClients > 0)
         {
             var cachedItems = new List<TopStatsInfo>();
             var allCached = true;
 
-            var actualEnd = Math.Min(startIndex + requestedCount, (int)TotalRankedClients);
+            var actualEnd = Math.Min(startIndex + requestedCount, (int)State.TotalRankedClients);
             for (var i = startIndex; i < actualEnd; i++)
             {
                 if (_statsCache.TryGetValue(i, out var item))
@@ -101,7 +135,7 @@ public partial class StatsOverview : IAsyncDisposable
 
             if (allCached && cachedItems.Count > 0)
             {
-                return new ItemsProviderResult<TopStatsInfo>(cachedItems, (int)TotalRankedClients);
+                return new ItemsProviderResult<TopStatsInfo>(cachedItems, (int)State.TotalRankedClients);
             }
         }
 
@@ -118,7 +152,7 @@ public partial class StatsOverview : IAsyncDisposable
             });
 
             // Update total count
-            TotalRankedClients = response.TotalRankedClients;
+            State.TotalRankedClients = response.TotalRankedClients;
             if (!_hasLoaded)
             {
                 _hasLoaded = true;
@@ -129,9 +163,23 @@ public partial class StatsOverview : IAsyncDisposable
             var playersList = response.Players.ToList();
             for (var i = 0; i < playersList.Count; i++)
             {
-                _statsCache[startIndex + i] = playersList[i];
+                var absoluteIndex = startIndex + i;
+                _statsCache[absoluteIndex] = playersList[i];
+                
+                // Persist the first batch (approx) to State for restoration
+                if (absoluteIndex < BatchSize)
+                {
+                    if (State.TopPlayers.Count <= absoluteIndex)
+                    {
+                         State.TopPlayers.Add(playersList[i]);
+                    }
+                    else
+                    {
+                        State.TopPlayers[absoluteIndex] = playersList[i];
+                    }
+                }
             }
-
+            
             // Return items for the requested range
             var result = new List<TopStatsInfo>();
             var resultEnd = Math.Min(startIndex + requestedCount, (int)response.TotalRankedClients);
@@ -148,15 +196,16 @@ public partial class StatsOverview : IAsyncDisposable
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading stats for virtualized list");
-            return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), (int)TotalRankedClients);
+            return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), (int)State.TotalRankedClients);
         }
     }
 
     private async Task GenerateMenu()
     {
+        if (State == null) return;
         var servers = await DataService.GetServersAsync();
 
-        MenuItems = new SideContextMenuItems
+        State.MenuItems = new SideContextMenuItems
         {
             MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
             Items = servers.Select(server => new SideContextMenuItem
@@ -176,7 +225,30 @@ public partial class StatsOverview : IAsyncDisposable
             }).ToList()
         };
     }
+    
+    // Properties that proxy to State
+    public long TotalRankedClients => State?.TotalRankedClients ?? 0;
+    public ServerInfo? SelectedServer => State?.SelectedServer;
+    public List<TopStatsInfo>? TopPlayers => State?.TopPlayers; 
+    public SideContextMenuItems MenuItems 
+    { 
+        get => State?.MenuItems ?? new SideContextMenuItems(); 
+        set
+        {
+             if (State != null) State.MenuItems = value;
+        } 
+    }
 
+    public class StatsOverviewState
+    {
+        public long TotalRankedClients { get; set; }
+        public ServerInfo? SelectedServer { get; set; }
+        public List<TopStatsInfo> TopPlayers { get; set; } = [];
+        public string? ServerId { get; set; }
+        public SideContextMenuItems? MenuItems { get; set; }
+    }
+    
+    // Existing helper methods...
     private static int GetRankIconIndex(double? zScore)
     {
         // Logic from IW4MAdmin.Plugins.Stats.Extensions.RankIconIndexForZScore
@@ -218,16 +290,16 @@ public partial class StatsOverview : IAsyncDisposable
     /// </summary>
     private string GetOpenGraphDescription()
     {
-        var serverName = SelectedServer?.Name.StripColors() ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS");
+        var serverName = State?.SelectedServer?.Name.StripColors() ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS");
 
-        if (TopPlayers == null || TopPlayers.Count == 0)
-            return $"{serverName} — {TotalRankedClients:N0} ranked players";
+        if (State?.TopPlayers == null || State.TopPlayers.Count == 0)
+            return $"{serverName} — {State?.TotalRankedClients ?? 0:N0} ranked players";
 
-        var topList = TopPlayers.Select((p, idx) =>
+        var topList = State.TopPlayers.Take(3).Select((p, idx) =>
             $"#{idx + 1} {p.Name.StripColors()} ({p.Performance:0} / {p.KDR:0.00})"
         );
 
-        return $"{serverName} — {TotalRankedClients:N0} ranked\n{string.Join("\n", topList)}";
+        return $"{serverName} — {State.TotalRankedClients:N0} ranked\n{string.Join("\n", topList)}";
     }
 
     /// <summary>
@@ -235,7 +307,7 @@ public partial class StatsOverview : IAsyncDisposable
     /// </summary>
     private string GetOpenGraphImage()
     {
-        var topPlayer = TopPlayers?.FirstOrDefault();
+        var topPlayer = State?.TopPlayers.FirstOrDefault();
         return topPlayer?.ZScore != null
             ? $"{NavManager.BaseUri}images/stats/ranks/rank_{GetRankIconIndex(topPlayer.ZScore)}.png"
             : $"{NavManager.BaseUri}images/icon.png";

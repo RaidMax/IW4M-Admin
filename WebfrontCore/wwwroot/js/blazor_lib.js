@@ -25,6 +25,87 @@ window.visibilityObserver = {
 };
 
 // ============================================
+// Global Navigation Loading Bar
+// ============================================
+window.loadingBar = {
+    _element: null,
+    _isVisible: false,
+
+    _getElement: function () {
+        if (!this._element) {
+            this._element = document.getElementById('mainLoadingBar');
+        }
+        return this._element;
+    },
+
+    show: function () {
+        const bar = this._getElement();
+        if (!bar || this._isVisible) return;
+
+        this._isVisible = true;
+        bar.classList.remove('hidden', 'loading-bar-complete');
+        bar.classList.add('loading-bar-active');
+    },
+
+    hide: function () {
+        const bar = this._getElement();
+        if (!bar || !this._isVisible) return;
+
+        this._isVisible = false;
+        bar.classList.remove('loading-bar-active');
+        bar.classList.add('loading-bar-complete');
+
+        // Remove complete class after animation
+        setTimeout(() => {
+            bar.classList.add('hidden');
+            bar.classList.remove('loading-bar-complete');
+        }, 300);
+    },
+
+    // Auto-initialize: Hook into Blazor enhanced navigation
+    init: function () {
+        if (this._initialized) return;
+        this._initialized = true;
+
+        // Show loading bar when enhanced navigation starts
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            // Only trigger for internal links (not external, not hash-only, not download, not actions)
+            if (href &&
+                !href.startsWith('http') &&
+                !href.startsWith('#') &&
+                !href.startsWith('javascript:') &&
+                !link.hasAttribute('download') &&
+                !link.hasAttribute('target') &&
+                !link.hasAttribute('data-no-loading-bar') &&
+                !link.closest('[data-no-loading-bar]')) {
+                this.show();
+            }
+        });
+
+        // Hide loading bar when enhanced navigation completes
+        if (typeof Blazor !== 'undefined') {
+            Blazor.addEventListener('enhancedload', () => {
+                this.hide();
+            });
+        }
+    }
+};
+
+// Initialize loading bar when Blazor is ready
+if (typeof Blazor !== 'undefined') {
+    window.loadingBar.init();
+} else {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Wait a bit for Blazor to initialize
+        setTimeout(() => window.loadingBar.init(), 100);
+    });
+}
+
+// ============================================
 // Chart Theme Utility
 // ============================================
 window.chartTheme = (function () {

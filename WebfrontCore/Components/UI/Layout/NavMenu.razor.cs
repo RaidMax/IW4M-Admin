@@ -9,22 +9,28 @@ public partial class NavMenu
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
-    private NavigationInfo? NavData;
+
+    /// <summary>
+    /// Persisted navigation data that survives SSR-to-interactive handoff during enhanced navigation.
+    /// </summary>
+    [PersistentState(AllowUpdates = true)]
+    public NavigationInfo? NavData { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        // If NavData was restored from persistent state, just apply it
+        if (NavData is not null)
+        {
+            ApplyNavData();
+            AppState.OnChange += StateHasChanged;
+            return;
+        }
+
+        // First load - fetch navigation data
         try
         {
             NavData = await DataService.GetNavigationDataAsync();
-            if (NavData?.User != null)
-            {
-                AppState.SetUser(NavData.User);
-            }
-
-            if (NavData?.Localization != null)
-            {
-                AppState.SetLocalization(NavData.Localization);
-            }
+            ApplyNavData();
         }
         catch
         {
@@ -32,6 +38,19 @@ public partial class NavMenu
         }
 
         AppState.OnChange += StateHasChanged;
+    }
+
+    private void ApplyNavData()
+    {
+        if (NavData?.User != null)
+        {
+            AppState.SetUser(NavData.User);
+        }
+
+        if (NavData?.Localization != null)
+        {
+            AppState.SetLocalization(NavData.Localization);
+        }
     }
 
     public void Dispose()

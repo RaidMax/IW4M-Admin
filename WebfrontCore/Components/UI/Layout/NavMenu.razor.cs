@@ -4,7 +4,7 @@ using WebfrontCore.Components.UI.Navigation.Models;
 
 namespace WebfrontCore.Components.UI.Layout;
 
-public partial class NavMenu
+public partial class NavMenu : IDisposable
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
@@ -44,12 +44,12 @@ public partial class NavMenu
     {
         if (NavData?.User != null)
         {
-            AppState.SetUser(NavData.User);
+            AppState.InitializeUser(NavData.User);
         }
 
         if (NavData?.Localization != null)
         {
-            AppState.SetLocalization(NavData.Localization);
+            AppState.InitializeLocalization(NavData.Localization);
         }
     }
 

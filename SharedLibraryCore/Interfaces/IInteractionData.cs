@@ -29,5 +29,6 @@ public enum InteractionType
 {
     ActionButton,
     RawContent,
-    TemplateContent
+    TemplateContent,
+    ExternalLink
 }

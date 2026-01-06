@@ -19,29 +19,30 @@ public partial class ClientBadges : IDisposable
     private PeriodicTimer? _badgeRefreshTimer;
     private CancellationTokenSource? _cts;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        AppState.OnChange += StateHasChanged;
+
+        try
+        {
+            _navData = await DataService.GetNavigationDataAsync();
+        }
+        catch
+        {
+            // Ignore initial fetch errors
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
         _cts = new CancellationTokenSource();
         _badgeRefreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-
         _ = RefreshBadgesAsync();
-        
-        // Initial load
-        Task.Run(async () =>
-        {
-            try
-            {
-                // todo: we don't need all the from here
-                _navData = await DataService.GetNavigationDataAsync();
-                await InvokeAsync(StateHasChanged);
-            }
-            catch
-            {
-                // Ignored
-            }
-        });
-        
-        AppState.OnChange += StateHasChanged;
     }
 
     private async Task RefreshBadgesAsync()

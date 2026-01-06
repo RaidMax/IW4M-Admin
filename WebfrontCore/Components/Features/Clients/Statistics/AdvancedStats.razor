@@ -19,16 +19,7 @@
 </HeadContent>
 
 <div class="flex flex-col xl:flex-row h-full">
-    @if (Stats == null)
-    {
-        <div class="flex justify-center p-20">
-            <div class="relative">
-                <div class="absolute inset-0 bg-primary blur-xl opacity-20 animate-pulse rounded-full"></div>
-                <i class="ph ph-spinner animate-spin text-5xl text-primary relative z-10"></i>
-            </div>
-        </div>
-    }
-    else
+    @if (Stats != null)
     {
         @* Main Content Area - Scrollable *@
         <div class="flex-1 min-w-0 p-4 md:p-6 lg:p-8 overflow-y-auto">

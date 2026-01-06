@@ -21,23 +21,41 @@ public partial class Profile
     [Inject] public required IActionService ActionService { get; set; }
     [Inject] public required ILogger<Profile> Logger { get; set; }
 
-    [PersistentState]
-    public PlayerInfo? Client { get; set; }
+    /// <summary>
+    /// Persisted state that survives SSR-to-interactive handoff during enhanced navigation.
+    /// </summary>
+    [PersistentState(AllowUpdates = true)]
+    public ProfileState? State { get; set; }
+
+    // Convenience accessor
+    private PlayerInfo? Client => State?.Client;
+
     private SideContextMenuItems? ContextItems { get; set; }
-    private bool _isLoading = true;
     private string? _error;
     private MetaType? _selectedMetaFilter = null;
+    private int _lastLoadedId;
     private bool IsAuthorized => AppState.User != null && (int)AppState.User.Level >= (int)EFClient.Permission.Trusted;
 
     protected override async Task OnParametersSetAsync()
     {
-        _isLoading = true;
+        // If state was restored AND we're viewing the same client, skip loading
+        if (State?.Client != null && State.Client.ClientId == Id)
+        {
+            _lastLoadedId = Id;
+            BuildContextMenu();
+            return;
+        }
+
         _error = null;
         _selectedMetaFilter = null;
 
         try
         {
-            Client = await DataService.GetClientProfileAsync(Id);
+            State ??= new ProfileState();
+            
+            State.Client = await DataService.GetClientProfileAsync(Id);
+            _lastLoadedId = Id;
+            
             if (Client != null)
             {
                 BuildContextMenu();
@@ -47,10 +65,6 @@ public partial class Profile
         {
             _error = ex.Message;
             Logger.LogError(ex, "Error loading profile for client {ClientId}", Id);
-        }
-        finally
-        {
-            _isLoading = false;
         }
     }
 
@@ -313,5 +327,13 @@ public partial class Profile
             builder.AddAttribute(1, "IPAddress", ipAddress);
             builder.CloseComponent();
         }, "IP Information", "max-w-md");
+    }
+
+    /// <summary>
+    /// State class for persistent state serialization during SSR-to-interactive handoff.
+    /// </summary>
+    public class ProfileState
+    {
+        public PlayerInfo? Client { get; set; }
     }
 }

@@ -13,21 +13,31 @@ public partial class PenaltyList
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required ILogger<PenaltyList> Logger { get; set; }
-    private List<PenaltyInfo> Penalties { get; set; } = [];
-    private int Offset { get; set; } = 0;
+
+    /// <summary>
+    /// Persisted state that survives SSR-to-interactive handoff during enhanced navigation.
+    /// </summary>
+    [PersistentState(AllowUpdates = true)]
+    public PenaltyListState? State { get; set; }
+
     private int Count { get; set; } = 30;
     private bool IgnoreAutomated { get; set; } = true;
     private EFPenalty.PenaltyType ShowOnly { get; set; } = EFPenalty.PenaltyType.Any;
-    private bool HasMoreResults { get; set; } = true;
-    private long _totalCount;
-
-    private bool _isLoading = false;
-
-    // Removed unused _loadMoreTrigger
+    private bool _isLoading;
     private DotNetObjectReference<PenaltyList>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
+        // If State was restored from persistent state, skip loading
+        if (State is not null)
+        {
+            Logger.LogDebug("PenaltyList: State restored from persistent state ({Count} items)", State.Penalties.Count);
+            return;
+        }
+
+        // First load - initialize state and fetch data
+        Logger.LogDebug("PenaltyList: Initializing fresh state");
+        State = new PenaltyListState();
         await LoadData();
     }
 
@@ -36,7 +46,6 @@ public partial class PenaltyList
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
-            // Use the new global infinite scroll helper
             await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
         }
     }
@@ -44,14 +53,13 @@ public partial class PenaltyList
     [JSInvokable]
     public async Task LoadMore()
     {
-        if (!HasMoreResults || _isLoading)
+        if (!(State?.HasMoreResults ?? false) || _isLoading)
         {
             return;
         }
 
-        Offset += Count;
+        State.Offset += Count;
         await LoadData();
-        StateHasChanged();
     }
 
     private async Task OnIgnoreAutomatedChanged(ChangeEventArgs e)
@@ -71,17 +79,15 @@ public partial class PenaltyList
 
     private async Task ResetAndLoad()
     {
-        Offset = 0;
-        Penalties.Clear();
-        HasMoreResults = true;
-        _totalCount = 0;
+        State = new PenaltyListState();
         StateHasChanged();
         await LoadData();
     }
 
     private async Task LoadData()
     {
-        if (_isLoading) return;
+        if (_isLoading || State is null)
+            return;
 
         _isLoading = true;
         StateHasChanged();
@@ -90,35 +96,35 @@ public partial class PenaltyList
         {
             var request = new Controllers.API.Models.PenaltyRequest
             {
-                Offset = Offset,
+                Offset = State.Offset,
                 Count = Count,
                 ShowOnly = ShowOnly,
                 IgnoreAutomated = IgnoreAutomated
             };
 
-            if (Offset == 0)
+            if (State.Offset == 0)
             {
-                _totalCount = await DataService.GetPenaltiesCountAsync(request);
+                State.TotalCount = await DataService.GetPenaltiesCountAsync(request);
             }
 
             var result = await DataService.GetPenaltiesAsync(request);
-            if (result != null && result.Any())
+            if (result is { Count: > 0 })
             {
-                Penalties.AddRange(result);
+                State.Penalties.AddRange(result);
                 if (result.Count < Count)
                 {
-                    HasMoreResults = false;
+                    State.HasMoreResults = false;
                 }
             }
             else
             {
-                HasMoreResults = false;
+                State.HasMoreResults = false;
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading penalties");
-            HasMoreResults = false;
+            State.HasMoreResults = false;
         }
         finally
         {
@@ -129,8 +135,6 @@ public partial class PenaltyList
 
     public async ValueTask DisposeAsync()
     {
-        // Disconnect infinite scroll - wrapped in try-catch because disposal can 
-        // occur during static rendering when JS interop is unavailable
         try
         {
             await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
@@ -141,5 +145,17 @@ public partial class PenaltyList
         }
 
         _dotNetRef?.Dispose();
+    }
+
+    /// <summary>
+    /// State class for persistent state serialization during SSR-to-interactive handoff.
+    /// All display-relevant values are stored here to prevent flashing during enhanced navigation.
+    /// </summary>
+    public class PenaltyListState
+    {
+        public List<PenaltyInfo> Penalties { get; set; } = [];
+        public int Offset { get; set; }
+        public long TotalCount { get; set; }
+        public bool HasMoreResults { get; set; } = true;
     }
 }

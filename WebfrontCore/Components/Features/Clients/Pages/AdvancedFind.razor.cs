@@ -48,17 +48,75 @@ public partial class AdvancedFind
     [SupplyParameterFromQuery(Name = "sortColumn")]
     public string? SortColumn { get; set; }
 
-    private List<ClientResourceResponse> Results { get; } = [];
-    private int _offset;
+    [PersistentState(AllowUpdates = true)]
+    public AdvancedFindState? State { get; set; }
+
     private const int PageSize = 30;
-    private bool _hasMore = true;
+
     private bool _isLoading;
-    private long _totalCount;
+    private List<ClientResourceResponse> Results => State?.Results ?? [];
+    private bool _hasMore => State?.HasMore ?? false;
+    private long _totalCount => State?.TotalCount ?? 0;
+    private string? _validationError => State?.ValidationError;
 
     protected override async Task OnParametersSetAsync()
     {
-        ResetState();
-        await LoadDataAsync();
+        // Initialize state if not restored
+        if (State is null)
+        {
+            State = new AdvancedFindState();
+            SetStateParams(State);
+            ResetState();
+            await LoadDataAsync();
+        }
+        else
+        {
+            // Check if restored state matches current parameters AND has valid data
+            // We consider state valid if params match AND either:
+            // - We have results loaded, OR
+            // - TotalCount is set (meaning we completed a search, possibly with 0 results)
+            var hasValidData = State.Results.Count > 0 || State.TotalCount > 0 || State.ValidationError != null;
+            
+            if (IsStateMatch(State) && hasValidData)
+            {
+                // Restored state is valid for current params with data, skip load
+            }
+            else
+            {
+                // Params changed or no valid data, reset and reload
+                SetStateParams(State);
+                ResetState();
+                await LoadDataAsync();
+            }
+        }
+    }
+
+    private void SetStateParams(AdvancedFindState state)
+    {
+        state.ClientName = ClientName;
+        state.IsExactClientName = IsExactClientName;
+        state.ClientIp = ClientIp;
+        state.IsExactClientIp = IsExactClientIp;
+        state.ClientGuid = ClientGuid;
+        state.ClientLevel = ClientLevel;
+        state.GameName = GameName;
+        state.ClientConnected = ClientConnected;
+        state.Direction = Direction;
+        state.SortColumn = SortColumn;
+    }
+
+    private bool IsStateMatch(AdvancedFindState state)
+    {
+        return state.ClientName == ClientName &&
+               state.IsExactClientName == IsExactClientName &&
+               state.ClientIp == ClientIp &&
+               state.IsExactClientIp == IsExactClientIp &&
+               state.ClientGuid == ClientGuid &&
+               state.ClientLevel == ClientLevel &&
+               state.GameName == GameName &&
+               state.ClientConnected == ClientConnected &&
+               state.Direction == Direction &&
+               state.SortColumn == SortColumn;
     }
 
     [Inject] public required IJSRuntime JS { get; set; }
@@ -76,20 +134,22 @@ public partial class AdvancedFind
     [JSInvokable]
     public async Task LoadMore()
     {
-        if (_isLoading || !_hasMore)
+        if (_isLoading || !_hasMore || State == null)
             return;
 
-        _offset += PageSize;
+        State.Offset += PageSize;
         await LoadDataAsync();
         StateHasChanged();
     }
 
     private void ResetState()
     {
-        Results.Clear();
-        _offset = 0;
-        _hasMore = true;
-        _totalCount = 0;
+        if (State == null) return;
+        State.Results.Clear();
+        State.Offset = 0;
+        State.HasMore = true;
+        State.TotalCount = 0;
+        State.ValidationError = null;
     }
 
     private ClientResourceRequest BuildRequest()
@@ -103,7 +163,7 @@ public partial class AdvancedFind
             ClientGuid = ClientGuid,
             ClientConnected = ClientConnected,
             SortColumn = SortColumn,
-            Offset = _offset,
+            Offset = State?.Offset ?? 0,
             Count = PageSize
         };
 
@@ -119,20 +179,18 @@ public partial class AdvancedFind
         return request;
     }
 
-    private string? _validationError;
-
     private async Task LoadDataAsync()
     {
-        if (_isLoading)
+        if (_isLoading || State == null)
             return;
 
-        _validationError = null;
+        State.ValidationError = null;
 
         if (!string.IsNullOrWhiteSpace(ClientName) && ClientName.Length < AppConfig.MinimumNameLength)
         {
-            _validationError = AppState.Loc("WEBFRONT_SEARCH_LENGTH_ERROR").FormatExt(AppConfig.MinimumNameLength);
-            _hasMore = false;
-            Results.Clear();
+            State.ValidationError = AppState.Loc("WEBFRONT_SEARCH_LENGTH_ERROR").FormatExt(AppConfig.MinimumNameLength);
+            State.HasMore = false;
+            State.Results.Clear();
             StateHasChanged();
             return;
         }
@@ -145,22 +203,22 @@ public partial class AdvancedFind
             var response = await DataService.SearchClientsAsync(BuildRequest());
             var results = response.Results.ToList();
 
-            if (_offset == 0 && response.TotalResultCount > 0)
+            if (State.Offset == 0 && response.TotalResultCount > 0)
             {
-                _totalCount = response.TotalResultCount;
+                State.TotalCount = response.TotalResultCount;
             }
 
             if (results.Count > 0)
             {
-                Results.AddRange(results);
+                State.Results.AddRange(results);
             }
 
-            _hasMore = results.Count >= PageSize;
+            State.HasMore = results.Count >= PageSize;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading clients");
-            _hasMore = false;
+            State.HasMore = false;
         }
         finally
         {
@@ -185,5 +243,26 @@ public partial class AdvancedFind
         }
 
         _dotNetRef?.Dispose();
+    }
+    
+    public class AdvancedFindState
+    {
+        public List<ClientResourceResponse> Results { get; set; } = [];
+        public int Offset { get; set; }
+        public bool HasMore { get; set; } = true;
+        public long TotalCount { get; set; }
+        public string? ValidationError { get; set; }
+        
+        // Params Snapshot
+        public string? ClientName { get; set; }
+        public bool IsExactClientName { get; set; }
+        public string? ClientIp { get; set; }
+        public bool IsExactClientIp { get; set; }
+        public string? ClientGuid { get; set; }
+        public string? ClientLevel { get; set; }
+        public string? GameName { get; set; }
+        public DateTime? ClientConnected { get; set; }
+        public int? Direction { get; set; }
+        public string? SortColumn { get; set; }
     }
 }

@@ -15,8 +15,15 @@ public partial class Help
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
 
-    private List<CommandGroupInfo>? CommandGroups { get; set; }
-    private string CommandPrefix { get; set; } = "!";
+    /// <summary>
+    /// Persisted state that survives SSR-to-interactive handoff during enhanced navigation.
+    /// </summary>
+    [PersistentState(AllowUpdates = true)]
+    public HelpState? State { get; set; }
+
+    // Convenience accessors
+    private List<CommandGroupInfo>? CommandGroups => State?.CommandGroups;
+    private string CommandPrefix => State?.CommandPrefix ?? "!";
 
     // View mode toggle
     public enum ViewModeType
@@ -211,12 +218,26 @@ public partial class Help
 
     protected override async Task OnInitializedAsync()
     {
-        CommandGroups = await DataService.GetHelpCommandsAsync();
+        // Skip loading if state was restored from persistent state
+        if (State is not null)
+        {
+            // Expand first group if not already expanded
+            if (CommandGroups?.Count > 0 && ExpandedGroups.Count == 0)
+            {
+                ExpandedGroups.Add(CommandGroups.First().Name);
+            }
+            return;
+        }
+
+        // Initialize state
+        State = new HelpState();
+
+        State.CommandGroups = await DataService.GetHelpCommandsAsync();
 
         // Expand first group by default for better UX (card view)
-        if (CommandGroups.Count != 0)
+        if (State.CommandGroups.Count != 0)
         {
-            ExpandedGroups.Add(CommandGroups.First().Name);
+            ExpandedGroups.Add(State.CommandGroups.First().Name);
         }
 
         // Try to get command prefix from status API
@@ -225,7 +246,7 @@ public partial class Help
             var status = await DataService.GetStatusAsync();
             if (!string.IsNullOrEmpty(status?.CommandPrefix))
             {
-                CommandPrefix = status.CommandPrefix;
+                State.CommandPrefix = status.CommandPrefix;
             }
         }
         catch
@@ -373,4 +394,13 @@ public partial class Help
         Data.Models.Client.EFClient.Permission.Console => "bg-red-500/10 text-red-500 border border-red-500/20",
         _ => "bg-gray-500/10 text-gray-400 border border-gray-500/20"
     };
+
+    /// <summary>
+    /// State class for persistent state serialization during SSR-to-interactive handoff.
+    /// </summary>
+    public class HelpState
+    {
+        public List<CommandGroupInfo>? CommandGroups { get; set; }
+        public string CommandPrefix { get; set; } = "!";
+    }
 }

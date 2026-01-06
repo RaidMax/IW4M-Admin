@@ -15,10 +15,18 @@ public partial class Privileged
 
     [SupplyParameterFromQuery] public string? Game { get; set; }
 
+    /// <summary>
+    /// Persisted state that survives SSR-to-interactive handoff during enhanced navigation.
+    /// </summary>
+    [PersistentState(AllowUpdates = true)]
+    public PrivilegedState? State { get; set; }
+
     private Reference.Game? SelectedGame { get; set; }
-    private IEnumerable<Reference.Game> ActiveGames { get; set; } = [];
-    private Dictionary<EFClient.Permission, IList<ClientInfo>>? AllPrivilegedClients;
     private Dictionary<EFClient.Permission, IList<ClientInfo>>? FilteredPrivilegedClients;
+
+    // Convenience accessors
+    private Dictionary<EFClient.Permission, IList<ClientInfo>>? AllPrivilegedClients => State?.AllPrivilegedClients;
+    private IEnumerable<Reference.Game> ActiveGames => State?.ActiveGames ?? [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -32,17 +40,21 @@ public partial class Privileged
             SelectedGame = null;
         }
 
-        // Fetch data if not already loaded
+        // Fetch data if not already loaded (either fresh or restored from persistent state)
         if (AllPrivilegedClients is null)
         {
+            // Initialize state if needed
+            State ??= new PrivilegedState();
+
             try
             {
-                AllPrivilegedClients = await DataService.GetPrivilegedClientsAsync();
-                ActiveGames = AllPrivilegedClients.Values
+                State.AllPrivilegedClients = await DataService.GetPrivilegedClientsAsync();
+                State.ActiveGames = State.AllPrivilegedClients.Values
                     .SelectMany(clients => clients)
                     .Select(c => c.Game)
                     .Distinct()
-                    .OrderBy(g => g.ToString());
+                    .OrderBy(g => g.ToString())
+                    .ToList();
             }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
@@ -88,4 +100,13 @@ public partial class Privileged
         EFClient.Permission.Flagged => "bg-level-flagged/40 text-level-flagged border-level-flagged/60",
         _ => "bg-blue-500/10 text-blue-500 border-blue-500/20"
     };
+
+    /// <summary>
+    /// State class for persistent state serialization during SSR-to-interactive handoff.
+    /// </summary>
+    public class PrivilegedState
+    {
+        public Dictionary<EFClient.Permission, IList<ClientInfo>>? AllPrivilegedClients { get; set; }
+        public List<Reference.Game> ActiveGames { get; set; } = [];
+    }
 }

@@ -18,14 +18,7 @@
     <meta property="og:image" content="@(GetGravatarUrl() ?? $"{NavManager.BaseUri}images/icon.png")"/>
 </HeadContent>
 
-@if (_isLoading)
-{
-    <div class="flex flex-col items-center justify-center min-h-[50vh] text-muted">
-        <i class="ph ph-spinner animate-spin text-4xl text-primary mb-4"></i>
-        <p class="font-medium">@(AppState.Loc("WEBFRONT_PROFILE_LOADING").FormatExt(Id))</p>
-    </div>
-}
-else if (!string.IsNullOrEmpty(_error))
+@if (!string.IsNullOrEmpty(_error))
 {
     <div class="max-w-7xl mx-auto mt-8 px-6">
         <div class="bg-error/10 border border-error/20 text-error p-6 rounded-lg flex items-center gap-3" role="alert">

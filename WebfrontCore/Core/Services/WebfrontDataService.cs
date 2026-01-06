@@ -624,10 +624,16 @@ public class WebfrontDataService : IWebfrontDataService
                     : new List<IClientMeta>(),
                 MetaType.ChatMessage => await _metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
                     request.MetaType.Value),
-                MetaType.Penalized => await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(metaRequest,
-                    request.MetaType.Value),
-                MetaType.ReceivedPenalty => await _metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(metaRequest,
-                    request.MetaType.Value),
+                MetaType.Penalized => permissionSet.HasPermission(WebfrontEntity.Penalty,
+                    WebfrontPermission.Read)
+                    ? await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(metaRequest,
+                        request.MetaType.Value)
+                    : new List<IClientMeta>(),
+                MetaType.ReceivedPenalty => permissionSet.HasPermission(WebfrontEntity.Penalty,
+                    WebfrontPermission.Read)
+                    ? await _metaService.GetRuntimeMeta<ReceivedPenaltyResponse>(metaRequest,
+                        request.MetaType.Value)
+                    : new List<IClientMeta>(),
                 MetaType.ConnectionHistory => await _metaService.GetRuntimeMeta<ConnectionHistoryResponse>(metaRequest,
                     request.MetaType.Value),
                 MetaType.PermissionLevel => await _metaService.GetRuntimeMeta<PermissionLevelChangedResponse>(
@@ -1167,7 +1173,7 @@ public class WebfrontDataService : IWebfrontDataService
     {
         if (!request.HasData)
         {
-            return new ResourceQueryHelperResult<ClientResourceResponse>();
+            return new ResourceQueryHelperResult<ClientResourceResponse> { Results = [] };
         }
 
         var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);

@@ -212,8 +212,12 @@ namespace IW4MAdmin.Application
 
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
+                var config = configHandler.Configuration() ?? new ApplicationConfiguration();
                 _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
-                    (configHandler.Configuration() ?? new ApplicationConfiguration()).Webfront.BindUrl);
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // before the migration has run we still need to respect the old bind url
+                    config.WebfrontBindUrl ?? config.Webfront.BindUrl);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
@@ -515,7 +519,7 @@ namespace IW4MAdmin.Application
 
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
-                ? new Uri("http://127.0.0.1:8080")
+                ? new Uri("https://master.iw4.zip")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
             var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
             {

@@ -273,15 +273,17 @@ public partial class Profile
         foreach (var interaction in Client.Interactions.Where(i =>
                      (int)userLevel >= ((int?)i.MinimumPermission ?? 0)))
         {
+            var isExternalLink = interaction.InteractionType == InteractionType.ExternalLink;
             ContextItems.Items.Add(new SideContextMenuItem
             {
                 Title = interaction.Name,
                 Tooltip = interaction.Description,
                 EntityId = interaction.EntityId,
                 Icon = interaction.DisplayMeta,
-                Reference = interaction.ActionPath,
+                Reference = isExternalLink ? interaction.ActionUri : interaction.ActionPath,
                 Meta = System.Text.Json.JsonSerializer.Serialize(interaction.ActionMeta),
-                IsButton = true
+                IsButton = !isExternalLink,
+                IsLink = isExternalLink
             });
         }
     }

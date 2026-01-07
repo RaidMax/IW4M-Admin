@@ -106,9 +106,10 @@ public class ClientResourceQueryHelper(
             }
         }
 
-        var clientIds = iqGroupedClientAliases.Select(g => g.Key.ClientId)
+        var clientIds = await iqGroupedClientAliases.Select(g => g.Key.ClientId)
             .Skip(query.Offset)
-            .Take(query.Count);
+            .Take(query.Count)
+            .ToListAsync(); // this change is for a pomelo/mariadb limitation and may be addressed in future version (MariaDB doesn't yet support 'LIMIT & IN/ALL/ANY/SOME subquery')
 
         // this pulls in more records than we need, but it's more efficient than ordering grouped entities
         var clientLookups = await clientAliases

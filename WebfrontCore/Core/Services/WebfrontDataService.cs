@@ -622,8 +622,9 @@ public class WebfrontDataService : IWebfrontDataService
                     WebfrontPermission.Read)
                     ? await _metaService.GetRuntimeMeta<UpdatedAliasResponse>(metaRequest, request.MetaType.Value)
                     : new List<IClientMeta>(),
-                MetaType.ChatMessage => await _metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
-                    request.MetaType.Value),
+                MetaType.ChatMessage =>
+                    await PostProcessChatMeta(_metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
+                    request.MetaType.Value)),
                 MetaType.Penalized => permissionSet.HasPermission(WebfrontEntity.Penalty,
                     WebfrontPermission.Read)
                     ? await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(metaRequest,
@@ -648,6 +649,20 @@ public class WebfrontDataService : IWebfrontDataService
         }
 
         return meta?.Cast<BaseMetaResponse>().ToList() ?? [];
+
+        async Task<IEnumerable<MessageResponse>> PostProcessChatMeta(Task<IEnumerable<MessageResponse>> metaResult)
+        {
+            var result = (await metaResult).ToList();
+
+            foreach (var m in result.Cast<MessageResponse?>())
+            {
+                m?.Message = m.IsServerPasswordProtected && level < Data.Models.Client.EFClient.Permission.Trusted
+                    ? m.HiddenMessage
+                    : m.Message;
+            }
+
+            return result;
+        }
     }
 
     public Task<ScoreboardInfo?> GetServerScoreboardAsync(string serverId)

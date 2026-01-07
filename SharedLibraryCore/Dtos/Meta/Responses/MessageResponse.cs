@@ -32,7 +32,9 @@ namespace SharedLibraryCore.Dtos.Meta.Responses
         ///     indicates if the message was sent ingame
         /// </summary>
         public bool SentIngame { get; set; }
+        
+        public bool IsServerPasswordProtected { get; set; }
 
-        public string HiddenMessage => string.Concat(Enumerable.Repeat('●', Message.Length));
+        public string HiddenMessage => new('●', Message.Length);
     }
 }

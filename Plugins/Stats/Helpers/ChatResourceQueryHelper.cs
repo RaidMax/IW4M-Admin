@@ -82,7 +82,8 @@ namespace Stats.Helpers
                     GameName = message.Server.GameName == null
                         ? Server.Game.IW4
                         : (Server.Game)message.Server.GameName.Value,
-                    SentIngame = message.SentIngame
+                    SentIngame = message.SentIngame,
+                    IsServerPasswordProtected = message.Server.IsPasswordProtected
                 });
 
             iqResponse = query.Direction == SharedLibraryCore.Dtos.SortDirection.Descending

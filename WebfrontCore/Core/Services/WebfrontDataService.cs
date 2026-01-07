@@ -1185,6 +1185,11 @@ public class WebfrontDataService : IWebfrontDataService
             request.ClientIp = null;
         }
 
+        if (!canViewLevel)
+        {
+            request.ClientLevel = null;
+        }
+
         var results = await _clientResourceHelper.QueryResource(request);
 
         results.Results = results.Results.Select(r =>

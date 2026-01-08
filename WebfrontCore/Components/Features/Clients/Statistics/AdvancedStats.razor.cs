@@ -19,9 +19,8 @@ public partial class AdvancedStats
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string? serverId { get; set; }
 
-    [PersistentState(AllowUpdates = true)] 
-    public AdvancedStatsState? State { get; set; }
-    
+    [PersistentState(AllowUpdates = true)] public AdvancedStatsState? State { get; set; }
+
     // Convenience accessor
     private AdvancedStatsInfo? Stats => State?.Stats;
 
@@ -38,27 +37,27 @@ public partial class AdvancedStats
         _chartsInitialized = false;
 
         // Check if state is restored and matches current parameters
-        if (State?.Stats != null && 
-            _lastLoadedId == ClientId && 
+        if (State?.Stats != null &&
+            _lastLoadedId == ClientId &&
             State.Stats.ClientId == ClientId &&
             EqualityComparer<string?>.Default.Equals(_lastLoadedServerId, serverId))
         {
-             // Verify server endpoint match if serverId param is provided
-             if (serverId == null || State.Stats.ServerEndpoint == serverId)
-             {
-                 GenerateMenu();
-                 return;
-             }
+            // Verify server endpoint match if serverId param is provided
+            if (serverId == null || State.Stats.ServerEndpoint == serverId)
+            {
+                GenerateMenu();
+                return;
+            }
         }
 
         try
         {
             State ??= new AdvancedStatsState();
-            
+
             State.Stats = await DataService.GetClientStatisticsAsync(ClientId, serverId);
             _lastLoadedId = ClientId;
             _lastLoadedServerId = serverId;
-            
+
             GenerateMenu();
         }
         catch (Exception)
@@ -98,7 +97,7 @@ public partial class AdvancedStats
     private void GenerateMenu()
     {
         if (Stats == null) return;
-        
+
         MenuItems = new SideContextMenuItems
         {
             MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
@@ -126,19 +125,35 @@ public partial class AdvancedStats
     /// </summary>
     private string GetOpenGraphDescription()
     {
+        // 1. Early exit for null stats
         if (Stats is null)
             return "Player statistics and performance data";
 
+        // 2. Calculate K/D Ratio
         var kd = Stats.Deaths > 0
             ? (Stats.Kills / (double)Stats.Deaths).ToString("0.00")
             : "-";
-        
-        var perfLabel = Stats.ServerId != null ? "Performance" : "Rating";
-        var perfValue = Stats.ServerId != null 
-            ? (Stats.Performance?.ToString("0") ?? "No Performance") 
-            : (Stats.Rating?.ToString("0") ?? "Unrated");
 
-        return $"{perfLabel}: {perfValue} • {kd} K/D\n{Stats.Kills:N0} kills • {Stats.Deaths:N0} deaths";
+        // 3. Determine Primary Metric (Performance vs Rating)
+        string primaryStatDisplay;
+
+        if (Stats.ServerId != null)
+        {
+            // Server Context: Use Performance
+            primaryStatDisplay = Stats.Performance.HasValue
+                ? $"{Stats.Performance:0} performance"
+                : "No Performance";
+        }
+        else
+        {
+            // Global Context: Use Rating
+            primaryStatDisplay = Stats.Rating.HasValue
+                ? $"{Stats.Rating:0} rating"
+                : "Unrated";
+        }
+
+        // 4. Return formatted string
+        return $"{primaryStatDisplay} • {kd} K/D\n{Stats.Kills:N0} kills • {Stats.Deaths:N0} deaths";
     }
 
     /// <summary>

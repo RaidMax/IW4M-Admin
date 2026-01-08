@@ -48,7 +48,7 @@ using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
 using Stats.Helpers;
-using WebfrontCore.QueryHelpers.Models;
+using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace IW4MAdmin.Application
 {
@@ -59,8 +59,14 @@ namespace IW4MAdmin.Application
         private static Task _applicationTask;
         private static IServiceProvider _serviceProvider;
 
-        private static readonly object Lock = new();
+        private static readonly Lock Lock = new();
         private static bool _isExiting;
+
+        // TODO: Temporary shim for Dragonfruit removal.
+        public static async Task Main()
+        {
+            await Main(false, 25, 25);
+        }
 
         /// <summary>
         /// entrypoint of the application
@@ -199,7 +205,6 @@ namespace IW4MAdmin.Application
             try
             {
                 // do any needed housekeeping file/folder migrations
-                ConfigurationMigration.MoveConfigFolder10518(null);
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
 
@@ -207,8 +212,12 @@ namespace IW4MAdmin.Application
 
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
+                var config = configHandler.Configuration() ?? new ApplicationConfiguration();
                 _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
-                    (configHandler.Configuration() ?? new ApplicationConfiguration()).WebfrontBindUrl);
+#pragma warning disable CS0618 // Type or member is obsolete
+                    // before the migration has run we still need to respect the old bind url
+                    config.WebfrontBindUrl ?? config.Webfront.BindUrl);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
@@ -278,7 +287,7 @@ namespace IW4MAdmin.Application
             var webfrontLifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
             using var onWebfrontErrored = new ManualResetEventSlim();
 
-            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().EnableWebFront
+            var webfrontTask = _serverManager.GetApplicationSettings().Configuration().Webfront.Enabled
                 ? WebfrontCore.Program.GetWebHostTask(_serverManager.CancellationToken).ContinueWith(continuation =>
                 {
                     if (!continuation.IsFaulted)
@@ -295,7 +304,7 @@ namespace IW4MAdmin.Application
                 })
                 : Task.CompletedTask;
 
-            if (_serverManager.GetApplicationSettings().Configuration().EnableWebFront)
+            if (_serverManager.GetApplicationSettings().Configuration().Webfront.Enabled)
             {
                 try
                 {
@@ -510,7 +519,7 @@ namespace IW4MAdmin.Application
 
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
-                ? new Uri("http://127.0.0.1:8080")
+                ? new Uri("https://master.iw4.zip")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
             var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
             {

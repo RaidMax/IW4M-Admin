@@ -1,0 +1,130 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 @(_isVisible ? "" : "hidden")" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @onclick="Close"></div>
+
+    <!-- Modal Content -->
+    <div class="relative bg-surface rounded-lg shadow-xl w-full @_modalClass overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="bg-surface-alt px-6 py-4 flex items-center justify-between border-b border-line flex-shrink-0">
+            <h5 class="text-lg font-medium text-foreground">
+                @(_actionInfo?.Name ?? (_childContent != null ? _customTitle : (_isLogin ? AppState.Loc("WEBFRONT_NAV_TITLE_LOGIN") : "Action")))
+            </h5>
+            <button type="button" class="text-muted hover:text-foreground transition-colors focus:outline-none" @onclick="Close">
+                <i class="ph ph-x text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto">
+            @if (_isLoading)
+            {
+                <div class="flex justify-center items-center py-8">
+                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            }
+            else if (_error != null)
+            {
+                <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm">
+                    @_error
+                </div>
+            }
+            else if (_childContent != null)
+            {
+                @_childContent
+            }
+            else if (_actionInfo != null)
+            {
+                @if (_isLegacy)
+                {
+                    <form action="/Action/@_actionInfo.Action" method="post" class="space-y-4">
+                        @RenderInputs()
+                        @RenderSubmitButton()
+                    </form>
+                }
+                else
+                {
+                    <form @onsubmit="Submit" class="space-y-4">
+                        @RenderInputs()
+                        @RenderSubmitButton()
+                    </form>
+                }
+            }
+            else if (_isLogin)
+            {
+                <LoginForm/>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+    private RenderFragment RenderInputs() => __builder =>
+    {
+        foreach (var input in _actionInfo!.Inputs)
+        {
+            if (input.Type == "hidden")
+            {
+                continue;
+            }
+
+            var inputType = input.Type ?? "text";
+            var inputId = $"input_{input.Name}";
+
+            if (inputType == "checkbox")
+            {
+                <div class="flex items-center">
+                    <input type="checkbox" name="@input.Name" id="@inputId"
+                           class="w-4 h-4 text-primary bg-input-bg border-input-border rounded focus:ring-2 focus:ring-primary/20 focus:ring-offset-0 focus:outline-none transition-all duration-200"
+                           checked="@(_formData.ContainsKey(input.Name) && _formData[input.Name] is true)"
+                           @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)">
+                    <label class="ml-2 text-sm font-medium text-subtle" for="@inputId">@input.Label</label>
+                </div>
+            }
+            else
+            {
+                <div class="space-y-1">
+                    <label for="@inputId" class="block text-sm font-medium text-subtle">@input.Label</label>
+
+                    @if (inputType == "select")
+                    {
+                        <select name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5"
+                                value="@_formData[input.Name]"
+                                @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)">
+                            @foreach (var kvp in input.Values)
+                            {
+                                var val = kvp.Key.Replace("!selected!", "");
+                                <option value="@val">@ProcessColor(kvp.Value)</option>
+                            }
+                        </select>
+                    }
+                    else if (inputType == "textarea")
+                    {
+                        <textarea name="@input.Name" id="@inputId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" placeholder="@input.Placeholder"
+                                  value="@_formData[input.Name]" @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)"></textarea>
+                    }
+                    else
+                    {
+                        <input type="@inputType" name="@input.Name" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" id="@inputId" placeholder="@input.Placeholder"
+                               value="@_formData[input.Name]" @onchange="@((ChangeEventArgs e) => _formData[input.Name] = e.Value)"
+                               required="@input.Required"/>
+                    }
+                </div>
+            }
+        }
+    };
+
+    private RenderFragment RenderSubmitButton() => __builder =>
+    {
+        <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-line">
+            <button type="button" class="px-4 py-2 text-sm font-medium text-subtle bg-surface-alt rounded-lg hover:bg-surface-hover focus:ring-2 focus:outline-none focus:ring-primary/20 transition-all duration-200" @onclick="Close">
+                @AppState.Loc("WEBFRONT_ACTION_MODAL_BUTTON_CLOSE")
+            </button>
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-action-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:outline-none focus:ring-primary/50 transition-all duration-200">
+                @(_actionInfo!.ActionButtonLabel ?? "Submit")
+            </button>
+        </div>
+    };
+
+}

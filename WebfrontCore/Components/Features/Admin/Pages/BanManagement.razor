@@ -1,0 +1,299 @@
+@page "/Admin/BanManagement"
+@page "/manage-bans"
+@implements IAsyncDisposable
+@attribute [Authorize(Policy = "Permissions.BanManagementPage.Read")]
+@rendermode InteractiveServer
+
+<PageTitle>@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT") | @AppState.WebfrontBranding</PageTitle>
+
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    <!-- Header & Title -->
+    <div class="flex items-center gap-3 mb-8">
+        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+            <i class="ph ph-prohibit text-xl text-primary"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT")</h2>
+            @if (HasSearched && TotalCount > 0)
+            {
+                <div class="text-sm text-muted font-medium mt-0.5">
+                    @(AppState.Loc("WEBFRONT_BAN_MGMT_BANS_FOUND").FormatExt(TotalCount.ToString("#,##0")))
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Unban Modal -->
+    @if (_showUnbanModal)
+    {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div class="bg-surface rounded-xl shadow-2xl border border-line w-full max-w-md overflow-hidden transform transition-all">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-line flex justify-between items-center bg-surface-alt/50">
+                    <h5 class="text-lg font-semibold text-foreground">@AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME")</h5>
+                    <button class="text-muted hover:text-foreground transition-colors" @onclick="CloseUnbanModal">
+                        <i class="ph ph-x text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <label for="unbanReason" class="block text-sm font-medium text-muted mb-2">
+                        @AppState.Loc("WEBFRONT_ACTION_LABEL_REASON")
+                    </label>
+                    <input type="text" id="unbanReason" @bind="_unbanReason"
+                           class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block p-2.5 placeholder-input-placeholder"
+                           placeholder="@AppState.Loc("WEBFRONT_PENALTY_LIST_BAN_REVOKED_REASON")" />
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-surface-alt/50 border-t border-line flex justify-end space-x-2">
+                    <button type="button" 
+                            class="px-4 py-2 text-sm font-medium text-muted bg-surface rounded-lg hover:bg-surface-hover focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all duration-200"
+                            @onclick="CloseUnbanModal">
+                        @AppState.Loc("WEBFRONT_MODAL_BUTTON_CANCEL")
+                    </button>
+                    <button type="button" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
+                            @onclick="ConfirmUnban">
+                        @AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Search / Filter Section -->
+    <EditForm Model="Request" OnValidSubmit="Search" class="mb-8 p-6 bg-surface/50 rounded-xl border border-line shadow-sm backdrop-blur-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Client Name -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted">
+                    <i class="ph ph-user"></i>
+                </div>
+                <InputText @bind-Value="Request.ClientName" 
+                           class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder" 
+                           placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_NAME")" />
+            </div>
+
+            <!-- Client GUID -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")" Context="guidContext">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted">
+                        <i class="ph ph-fingerprint"></i>
+                    </div>
+                    <InputText @bind-Value="Request.ClientGuid" 
+                               class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder" 
+                               placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_GUID")" />
+                </div>
+            </AuthorizeView>
+
+            <!-- Client IP -->
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")" Context="IpContext">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted">
+                        <i class="ph ph-globe"></i>
+                    </div>
+                    <InputText @bind-Value="Request.ClientIP" 
+                               class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder" 
+                               placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_IP")" />
+                </div>
+            </AuthorizeView>
+            
+            <!-- Client ID -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted">
+                    <i class="ph ph-identification-card"></i>
+                </div>
+                <InputNumber @bind-Value="Request.ClientId" 
+                             class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full pl-10 p-2.5 placeholder-input-placeholder appearance-none" 
+                             placeholder="@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")" />
+                
+                <!-- Search Button (Inside the last grid item on desktop, or separate) -->
+                <button type="submit" class="absolute inset-y-0 right-0 px-4 text-white bg-primary rounded-r-lg hover:bg-action-primary-hover transition-colors flex items-center justify-center">
+                    <i class="ph ph-magnifying-glass text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(ValidationError))
+    {
+        <div class="mb-6 p-4 rounded-lg bg-error/10 border border-error/20 text-error font-medium flex items-center shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+            <i class="ph ph-warning-circle text-xl mr-3"></i>
+            <span>@ValidationError</span>
+        </div>
+    }
+
+    <!-- Results Section -->
+    <div id="ban_entry_list" class="space-y-4">
+        @if (!HasSearched)
+        {
+            <!-- Initial State Prompt -->
+            <div class="flex flex-col items-center justify-center py-20 text-muted border border-dashed border-line rounded-xl bg-surface/20">
+                <div class="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4">
+                    <i class="ph ph-magnifying-glass text-3xl text-subtle"></i>
+                </div>
+                <h3 class="text-lg font-medium text-foreground">@AppState.Loc("WEBFRONT_BAN_MGMT_START_SEARCH")</h3>
+                <p class="text-sm mt-1 max-w-xs text-center">@AppState.Loc("WEBFRONT_BAN_MGMT_SEARCH_HINT")</p>
+            </div>
+        }
+        else if (Results == null)
+        {
+             <!-- Loading State -->
+            <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
+                <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
+                <span class="text-sm">@AppState.Loc("WEBFRONT_BAN_MGMT_LOADING")</span>
+            </div>
+        }
+        else if (!Results.Any())
+        {
+            <!-- Empty State -->
+            <div class="flex flex-col items-center justify-center py-20 text-muted border border-dashed border-line rounded-xl bg-surface/20">
+                <div class="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4">
+                    <i class="ph ph-gavel text-3xl text-subtle"></i>
+                </div>
+                <h3 class="text-lg font-medium text-foreground">@AppState.Loc("WEBFRONT_BAN_MGMT_NO_RESULTS")</h3>
+                <p class="text-sm mt-1 max-w-xs text-center">@AppState.Loc("WEBFRONT_BAN_MGMT_NO_RESULTS_HINT")</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var ban in Results)
+            {
+                <div class="bg-surface border border-line rounded-lg p-4 md:p-6 shadow-sm hover:border-line-hover transition-colors">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <!-- Left Side: Offender Info -->
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <a href="/client/@ban.ClientId" class="text-lg font-semibold text-primary hover:text-foreground truncate transition-colors">
+                                    <ColorCode Value="@ban.ClientName" />
+                                </a>
+                                <span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line" title="@AppState.Loc($"GAME_{ban.Game}")">
+                                    @Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))
+                                </span>
+                            </div>
+                            
+                            <div class="space-y-1 text-xs text-subtle font-mono">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
+                                    <div class="flex items-center gap-2">
+                                        <i class="ph ph-fingerprint"></i>
+                                        <span>@ban.NetworkId.ToString("X")</span>
+                                    </div>
+                                </AuthorizeView>
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                    <div class="flex items-center gap-2">
+                                        <i class="ph ph-globe"></i>
+                                        <span>@ban.IPAddress.ConvertIPtoString()</span>
+                                    </div>
+                                </AuthorizeView>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t border-line">
+                                @if (ban.AttachedPenalty is not null)
+                                {
+                                    <div class="flex items-center justify-between flex-wrap gap-2">
+                                        <div>
+                                            <div class="text-sm font-medium text-foreground">
+                                                <ColorCode Value="@ban.AttachedPenalty.Offense" />
+                                            </div>
+                                            <div class="text-xs text-error mt-1 flex items-center gap-1">
+                                                <i class="ph ph-calendar-blank"></i>
+                                                @(ban.AttachedPenalty.DateTime.HasValue ? ban.AttachedPenalty.DateTime.Value.ToLocalTime().ToString("g") : AppState.Loc("WEBFRONT_SELECTION_PERMANENT"))
+                                            </div>
+                                        </div>
+                                        <button @onclick="() => OpenUnbanModal(ban.ClientId)" 
+                                                class="px-3 py-1.5 text-xs font-medium text-white bg-action-primary rounded hover:bg-action-primary-hover transition-colors flex items-center gap-1">
+                                            <i class="ph ph-arrow-u-up-left"></i>
+                                            @AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="flex items-center text-yellow-500 text-sm bg-yellow-500/10 px-3 py-2 rounded border border-yellow-500/20">
+                                        <i class="ph ph-warning mr-2"></i>
+                                        <span>@AppState.Loc("WEBFRONT_BAN_MGMT_LINK_ONLY")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Linked Penalties (if any) -->
+                        @if (ban.AssociatedPenalties.Any())
+                        {
+                             <div class="md:w-80 md:border-l md:border-line md:pl-6 space-y-3">
+                                <div class="text-xs font-semibold text-muted uppercase tracking-wider flex items-center gap-2 mb-3">
+                                    <i class="ph ph-link"></i> @AppState.Loc("WEBFRONT_BAN_MGMT_LINKED_ACCOUNTS")
+                                </div>
+                                @foreach (var associatedEntity in ban.AssociatedPenalties)
+                                {
+                                    <div class="p-4 bg-surface-alt/20 border border-line rounded-lg text-sm hover:border-line-hover transition-colors">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <a href="/client/@associatedEntity.OffenderInfo.ClientId" class="font-medium text-primary hover:text-foreground truncate max-w-[140px] transition-colors">
+                                                <ColorCode Value="@associatedEntity.OffenderInfo.ClientName" />
+                                            </a>
+                                            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-surface-alt text-muted uppercase">
+                                                @Utilities.MakeAbbreviation(AppState.Loc($"GAME_{ban.Game}"))
+                                            </span>
+                                        </div>
+
+                                        <div class="space-y-1 text-xs text-subtle font-mono mb-3">
+                                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientGuid}.{WebfrontPermission.Read}")">
+                                                <div class="flex items-center gap-1.5">
+                                                     <i class="ph ph-fingerprint text-[0.65rem]"></i>
+                                                     <span>@associatedEntity.OffenderInfo.NetworkId?.ToString("X")</span>
+                                                </div>
+                                            </AuthorizeView>
+                                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
+                                                <div class="flex items-center gap-1.5">
+                                                    <i class="ph ph-globe text-[0.65rem]"></i>
+                                                    <span>@associatedEntity.OffenderInfo.IPAddress.ConvertIPtoString()</span>
+                                                </div>
+                                            </AuthorizeView>
+                                        </div>
+                                        
+                                        <div class="text-xs font-medium text-foreground mb-1 bg-surface-alt/50 p-1.5 rounded border border-line">
+                                            <ColorCode Value="@associatedEntity.Offense" />
+                                        </div>
+                                        
+                                        <div class="text-xs text-error mb-3 flex items-center gap-1">
+                                            <i class="ph ph-calendar text-[0.65rem]"></i>
+                                            @(associatedEntity.DateTime.HasValue ? associatedEntity.DateTime.Value.ToLocalTime().ToString("d") : "")
+                                        </div>
+
+                                        <button @onclick="() => OpenUnbanModal(associatedEntity.OffenderInfo.ClientId ?? 0)" 
+                                                class="w-full py-2 text-xs font-bold text-white bg-action-primary hover:bg-action-primary-hover rounded-md transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                             <i class="ph ph-arrow-u-up-left"></i>
+                                            @AppState.Loc("WEBFRONT_BAN_MGMT_ACTION_UNBAN")
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Infinite Scroll Trigger -->
+    <div class="w-full text-center mt-8 pb-8">
+        @if (HasMoreResults && Results != null && Results.Any())
+        {
+            <div id="loadMoreBansTrigger" class="flex items-center justify-center py-4">
+                @if (IsLoading)
+                {
+                    <i class="ph ph-spinner animate-spin text-2xl text-primary"></i>
+                }
+            </div>
+        }
+        @if (!HasMoreResults && Results != null && Results.Any())
+        {
+            <div class="text-sm text-muted">
+                <i class="ph ph-check-circle text-success mr-1"></i>
+                @Results.Count.ToString("#,##0") / @TotalCount.ToString("#,##0")
+            </div>
+        }
+    </div>
+</div>

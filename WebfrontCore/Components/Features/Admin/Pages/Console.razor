@@ -1,0 +1,136 @@
+@page "/Console"
+@attribute [Authorize(Policy = "Permissions.ConsolePage.Read")]
+@namespace WebfrontCore.Components.Features.Admin.Pages
+@rendermode InteractiveServer
+
+<PageTitle>@AppState.Loc("WEBFRONT_CONSOLE_TITLE") | @AppState.WebfrontBranding</PageTitle>
+
+<div class="h-[calc(100vh-10rem)] max-w-7xl mx-auto p-4 md:p-8 flex flex-col">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+            <i class="ph ph-terminal text-xl text-primary"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_CONSOLE_TITLE")</h2>
+        </div>
+    </div>
+    <!-- Terminal Window -->
+    <div class="flex-1 flex flex-col bg-surface-alt rounded-lg shadow-2xl ring-1 ring-line overflow-hidden font-mono">
+        <!-- Terminal Output -->
+        <div id="console_scroll_container" class="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-thin scrollbar-thumb-line scrollbar-track-transparent">
+            @if (!CommandOutput.Any())
+            {
+                <div class="flex h-full items-center justify-center opacity-10 select-none pointer-events-none">
+                    <pre class="text-[0.6rem] leading-none text-success text-center font-bold">
+                                /(((((((*                           
+                      ./((((((((((((((((,                            
+            .*/(((((((((((((((((((((((((.                            
+    *((((((((((((((((((((((((((((((((((                              
+ ./(((((((((((((((((((((((((((((((((((/ ,**,                         
+    ./(((((((((((((((((((((((((((((((/  ,******,                     
+       ,(((((((((((((((((((((((((((((* ********//**.                 
+         */(((((((((((((((((((((((((* ***************                
+      ,***  ,(((((((((((((((((((((((,  ,***************.             
+     ,****/**,*/(((((((((((((((((((.       *************,            
+    ************,,((((((((((((((((*.         ,************           
+  .***********,     *(((((((((((((            .*//*********          
+ .,**********,        ,(((((((((/               ***********          
+ ,**********,           *(((((((/               ,**********          
+ ,/*********,             .*(((*                 **********,         
+ ,/*********,                .*.                 ***********.        
+ ,**********,                                   ***********          
+  .***********                                  ***********          
+  .************                               .***********           
+    ************.                           .************,           
+     ,*************                      .**************,            
+      .*****************              *****************.             
+         *******************************************,                
+           .*//***********************************.                  
+              ********************************,.                     
+                 .************************,                          
+                            ,.**,           
+                    </pre>
+                </div>
+            }
+            else
+            {
+                @foreach (var line in CommandOutput)
+                {
+                    <div class="text-sm">
+                        @if (line.StartsWith(">"))
+                        {
+                            <span class="text-warning font-bold mr-2">➜</span><span class="text-foreground">@line.Substring(1).Trim()</span>
+                        }
+                        else if (line.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <span class="text-error">@line</span>
+                        }
+                        else
+                        {
+                            <span class="text-success">@line</span>
+                        }
+                    </div>
+                }
+            }
+            <div @ref="ScrollAnchor" tabindex="-1"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-surface-alt border-t border-line">
+            <div class="flex flex-col md:flex-row gap-3 h-auto md:h-[46px]">
+                <!-- Server Selector -->
+                <div class="relative flex-shrink-0 group w-full md:w-auto h-[42px] md:h-full">
+                    <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted">
+                        <i class="ph ph-hard-drives text-lg"></i>
+                    </div>
+                    <select @bind="SelectedServerId" 
+                            class="appearance-none pl-10 pr-9 h-full w-full bg-surface border border-line rounded-lg text-sm font-medium text-foreground hover:border-primary/50 focus:border-primary focus:outline-none transition-all cursor-pointer md:min-w-[180px] md:max-w-[240px] truncate shadow-sm flex items-center">
+                        @foreach (var server in Servers)
+                        {
+                            <option value="@server.Id">@server.Name (@server.Game)</option>
+                        }
+                    </select>
+                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted">
+                        <i class="ph ph-caret-down text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Command Input & Form -->
+                <form @onsubmit="ExecuteCommand" 
+                      class="flex-1 w-full flex items-center bg-surface border border-line rounded-lg px-4 h-[42px] md:h-full focus-within:border-primary transition-all cursor-text shadow-sm relative">
+                    <span class="text-success font-bold font-mono mr-3 select-none text-lg flex items-center pt-0.5">➜</span>
+                    <input @bind="Command" 
+                           @bind:event="oninput"
+                           @ref="InputElement"
+                           @onkeydown="OnKeyDown"
+                           type="text" 
+                           class="flex-1 bg-transparent border-none text-foreground placeholder-input-placeholder focus:ring-0 focus:outline-none p-0 text-sm font-mono h-full"
+                           placeholder="@AppState.Loc("WEBFRONT_CONSOLE_FORM_PLACEHOLDER_COMMAND")" 
+                           autocomplete="off" />
+                    
+                    <!-- Execute Button -->
+                    <button type="submit" 
+                            disabled="@(IsExecuting || string.IsNullOrWhiteSpace(Command))"
+                            class="ml-2 p-1.5 -mr-1 rounded-md text-muted hover:text-primary hover:bg-primary/10 disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent transition-colors flex items-center justify-center">
+                        @if (IsExecuting)
+                        {
+                            <i class="ph ph-spinner animate-spin text-lg"></i>
+                        }
+                        else
+                        {
+                            <i class="ph ph-paper-plane-right text-lg"></i>
+                        }
+                    </button>
+                </form>
+            </div>
+            
+            <div class="mt-2 flex justify-between px-1">
+                <div class="text-[0.65rem] text-muted font-medium">
+                    <span class="bg-surface border border-line rounded px-1.5 py-0.5 text-xs text-foreground font-mono mr-1">Enter</span> @AppState.Loc("WEBFRONT_CONSOLE_SUBMIT_HINT")
+                    <span class="mx-2 text-border">|</span>
+                    <span class="bg-surface border border-line rounded px-1.5 py-0.5 text-xs text-foreground font-mono mr-1">↑</span> <span class="bg-surface border border-line rounded px-1.5 py-0.5 text-xs text-foreground font-mono mr-1">↓</span> @AppState.Loc("WEBFRONT_CONSOLE_HISTORY_HINT")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

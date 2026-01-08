@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Data.Models.Misc;
 using SharedLibraryCore.Configuration.Attributes;
@@ -14,33 +11,39 @@ namespace SharedLibraryCore.Configuration
     {
         [ConfigurationIgnore]
         public CommunityInformationConfiguration CommunityInformation { get; set; } =
-            new CommunityInformationConfiguration();
+            new();
 
-        [LocalizedDisplayName("SETUP_ENABLE_WEBFRONT")]
-        [ConfigurationLinked("WebfrontBindUrl", "ManualWebfrontUrl", "WebfrontPrimaryColor", "WebfrontSecondaryColor",
-            "WebfrontCustomBranding")]
-        public bool EnableWebFront { get; set; }
+        [Obsolete("Use Webfront.Enabled instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? EnableWebFront { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_BIND_URL")]
-        public string WebfrontBindUrl { get; set; } = "http://0.0.0.0:1624";
+        [Obsolete("Use Webfront.BindUrl instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontBindUrl { get; set; }
 
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MANUAL_URL")]
-        public string ManualWebfrontUrl { get; set; }
+        [Obsolete("Use Webfront.ManualUrl instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ManualWebfrontUrl { get; set; }
 
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRIMARY_COLOR")]
-        public string WebfrontPrimaryColor { get; set; }
+        [Obsolete("Use Webfront.CustomBranding instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontCustomBranding { get; set; }
 
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_SECONDARY_COLOR")]
-        public string WebfrontSecondaryColor { get; set; }
+        [Obsolete("Use Webfront.PrimaryColor instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontPrimaryColor { get; set; }
 
-        [ConfigurationOptional]
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_BRANDING")]
-        public string WebfrontCustomBranding { get; set; }
+        [Obsolete("Use Webfront.SecondaryColor instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? WebfrontSecondaryColor { get; set; }
 
-        [ConfigurationIgnore] public WebfrontConfiguration Webfront { get; set; } = new WebfrontConfiguration();
+        [ConfigurationIgnore] public WebfrontConfiguration Webfront { get; set; } = new();
 
         [LocalizedDisplayName("SETUP_ENABLE_MULTIOWN")]
         public bool EnableMultipleOwners { get; set; }
@@ -61,16 +64,6 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("SETUP_SAY_NAME")]
         public string CustomSayName { get; set; }
 
-        [LocalizedDisplayName("SETUP_DISPLAY_SOCIAL")]
-        [ConfigurationLinked("SocialLinkAddress", "SocialLinkTitle")]
-        public bool EnableSocialLink { get; set; }
-
-        [LocalizedDisplayName("SETUP_SOCIAL_LINK")]
-        public string SocialLinkAddress { get; set; }
-
-        [LocalizedDisplayName("SETUP_SOCIAL_TITLE")]
-        public string SocialLinkTitle { get; set; }
-
         [LocalizedDisplayName("SETUP_CONTACT_URI")]
         public string ContactUri { get; set; }
 
@@ -81,12 +74,15 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENCODING")]
         public string CustomParserEncoding { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_WHITELIST")]
-        [ConfigurationLinked("WebfrontConnectionWhitelist")]
-        public bool EnableWebfrontConnectionWhitelist { get; set; }
+        [Obsolete("Use Webfront.EnableConnectionWhitelist instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? EnableWebfrontConnectionWhitelist { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_WHITELIST_LIST")]
-        public string[] WebfrontConnectionWhitelist { get; set; } = Array.Empty<string>();
+        [Obsolete("Use Webfront.ConnectionWhitelist instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string[]? WebfrontConnectionWhitelist { get; set; }
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_CUSTOM_LOCALE")]
         [ConfigurationLinked("CustomLocale")]
@@ -114,9 +110,6 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
         public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_COLOR_CODES")]
-        public bool EnableColorCodes { get; set; }
-        
         [ConfigurationIgnore] public string IngameAccentColorKey { get; set; } = "Cyan";
 
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_AUTOMESSAGE_PERIOD")]
@@ -145,31 +138,23 @@ namespace SharedLibraryCore.Configuration
             TimeSpan.FromDays(30)
         };
 
-        public Dictionary<string, List<string>> PermissionSets { get; set; } = new()
-        {
-            { Permission.Trusted.ToString(), new List<string> { "*" } },
-            { Permission.Moderator.ToString(), new List<string> { "*" } },
-            { Permission.Administrator.ToString(), new List<string> { "*" } },
-            { Permission.SeniorAdmin.ToString(), new List<string> { "*" } },
-            { Permission.Owner.ToString(), new List<string> { "*" } },
-            { Permission.Console.ToString(), new List<string> { "*" } }
-        };
+        [Obsolete("Use Webfront.PermissionSets instead")]
+        [ConfigurationIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Dictionary<string, List<string>>? PermissionSets { get; set; }
 
         public Dictionary<string, Permission> MinimumAlertPermissions { get; set; } = new()
         {
             { nameof(EFInboxMessage), Permission.Trusted },
-            { GameEvent.EventType.ConnectionLost.ToString(), Permission.Administrator },
-            { GameEvent.EventType.ConnectionRestored.ToString(), Permission.Administrator }
+            { nameof(GameEvent.EventType.ConnectionLost), Permission.Administrator },
+            { nameof(GameEvent.EventType.ConnectionRestored), Permission.Administrator }
         };
 
         [ConfigurationIgnore]
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_PRESET_BAN_REASONS")]
         public Dictionary<string, string> PresetPenaltyReasons { get; set; } = new()
             { { "afk", "Away from keyboard" }, { "ci", "Connection interrupted. Reconnect" } };
-
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_ENABLE_PRIVILEGED_USER_PRIVACY")]
-        public bool EnablePrivilegedUserPrivacy { get; set; }
-
+        
         [ConfigurationIgnore] public bool EnableImplicitAccountLinking { get; set; } = false;
         [ConfigurationIgnore] public TimeSpan RecentAliasIpLinkTimeLimit { get; set; } = TimeSpan.FromDays(7);
 
@@ -191,19 +176,11 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore] public string Id { get; set; }
         [ConfigurationIgnore] public string SubscriptionId { get; set; }
 
-        [Obsolete("Moved to DefaultSettings")]
-        [ConfigurationIgnore]
-        public MapConfiguration[] Maps { get; set; }
-
-        [Obsolete("Moved to DefaultSettings")]
-        [ConfigurationIgnore]
-        public QuickMessageConfiguration[] QuickMessages { get; set; }
-
         [ConfigurationIgnore]
         [JsonIgnore]
-        public string WebfrontUrl => string.IsNullOrEmpty(ManualWebfrontUrl)
-            ? WebfrontBindUrl?.Replace("0.0.0.0", "127.0.0.1")
-            : ManualWebfrontUrl;
+        public string WebfrontUrl => string.IsNullOrEmpty(Webfront.ManualUrl)
+            ? Webfront.BindUrl?.Replace("0.0.0.0", "127.0.0.1")
+            : Webfront.ManualUrl;
 
         [ConfigurationIgnore] public bool IgnoreServerConnectionLost { get; set; }
         [ConfigurationIgnore] public Uri MasterUrl { get; set; } = new("https://master.iw4.zip");
@@ -213,16 +190,9 @@ namespace SharedLibraryCore.Configuration
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
             Id = Guid.NewGuid().ToString();
 
-            EnableWebFront = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
+            Webfront.Enabled = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
             EnableMultipleOwners = loc["SETUP_ENABLE_MULTIOWN"].PromptBool();
-            WebfrontBindUrl = "http://0.0.0.0:1624";
-            EnableSocialLink = loc["SETUP_DISPLAY_SOCIAL"].PromptBool();
-
-            if (EnableSocialLink)
-            {
-                SocialLinkTitle = loc["SETUP_SOCIAL_TITLE"].PromptString();
-                SocialLinkAddress = loc["SETUP_SOCIAL_LINK"].PromptString();
-            }
+            Webfront.BindUrl = "http://0.0.0.0:1624";
 
             RConPollRate = 5000;
             AutoMessagePeriod = 60;

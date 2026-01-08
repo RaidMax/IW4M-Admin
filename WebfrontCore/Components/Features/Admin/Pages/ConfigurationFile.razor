@@ -1,0 +1,103 @@
+@page "/Configuration/Files"
+@page "/configuration"
+@attribute [Authorize(Roles = "Owner")]
+@rendermode InteractiveServer
+
+<PageTitle>@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE") | @AppState.WebfrontBranding</PageTitle>
+
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    <!-- Header -->
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-8">
+        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+            <i class="ph ph-gear text-xl text-primary"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_CONFIGURATION_TITLE")</h2>
+            <div class="text-sm text-subtle font-medium mt-0.5">@AppState.Loc("WEBFRONT_CONFIGURATION_SAVING_CHANGES")</div>
+        </div>
+    </div>
+
+    @if (ConfigurationFiles == null)
+    {
+        <!-- Loading State -->
+        <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
+            <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
+            <span class="text-sm">@AppState.Loc("WEBFRONT_LOADING")</span>
+        </div>
+    }
+    else
+    {
+        <div class="space-y-4">
+            @foreach (var file in ConfigurationFiles.OrderByDescending(f => f.FileName.Contains("IW4MAdmin")))
+            {
+                var isExpanded = ExpandedFiles.Contains(file.FileName);
+                
+                <div class="bg-surface border border-line rounded-lg overflow-hidden transition-all shadow-sm @(isExpanded ? "ring-1 ring-primary/20" : "")">
+                    <!-- File Header (Clickable) -->
+                    <button @onclick="@(() => ToggleFile(file))" 
+                            class="w-full flex items-center justify-between px-6 py-4 bg-surface/50 hover:bg-surface-hover transition-colors text-left focus:outline-none focus:bg-surface">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded bg-surface-alt text-primary border border-line">
+                                <i class="ph ph-file-code text-xl"  ></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-foreground">@file.FileName</h3>
+                                <p class="text-xs text-subtle font-mono">@AppState.Loc("WEBFRONT_CONFIG_JSON")</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            @if (!string.IsNullOrEmpty(SaveStatus[file.FileName]))
+                            {
+                                <span class="@(SaveStatus[file.FileName].Contains("Error") ? "text-error" : "text-success") text-sm font-medium animate-fade-in-out">
+                                    @SaveStatus[file.FileName]
+                                </span>
+                            }
+                            <i class="ph ph-caret-down text-muted transition-transform duration-200 text-lg @(isExpanded ? "rotate-180" : "")"></i>
+                        </div>
+                    </button>
+
+                    <!-- Editor Area (Collapsible) -->
+                    @if (isExpanded)
+                    {
+                        <div class="border-t border-line">
+                            <!-- Toolbar -->
+                            <div class="px-4 py-2 bg-surface-alt border-b border-line flex justify-end">
+                                <button class="px-3 py-1 text-xs text-muted hover:text-foreground transition-colors flex items-center gap-1"
+                                        title="Format JSON (Not implemented)">
+                                    <i class="ph ph-brackets-curly"></i>
+                                    <span>JSON</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Editing Textarea -->
+                            <div class="relative group">
+                                <textarea @bind="file.FileContent"
+                                          class="w-full h-[500px] p-4 bg-surface-alt text-subtle font-mono text-sm border-none focus:ring-0 focus:outline-none resize-y leading-relaxed scrollbar-thin scrollbar-thumb-line scrollbar-track-surface-alt"
+                                          spellcheck="false"></textarea>
+                            </div>
+                            
+                            <!-- Footer Actions -->
+                            <div class="px-6 py-4 bg-surface border-t border-line flex justify-between items-center">
+                                <div class="text-xs text-muted">
+                                    Last modified details not available
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button class="px-4 py-2 text-sm text-muted hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
+                                            @onclick="@(() => ToggleFile(file))">
+                                        Cancel
+                                    </button>
+                                    <button class="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-all flex items-center gap-2"
+                                            @onclick="() => SaveFile(file)">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        @AppState.Loc("WEBFRONT_CONFIGURATION_BUTTON_SAVE")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

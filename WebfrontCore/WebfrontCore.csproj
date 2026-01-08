@@ -1,77 +1,121 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
-    <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
-    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-    <PreserveCompilationContext>true</PreserveCompilationContext>
-    <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
-    <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
-    <Version>2022.0.0</Version>
-    <Authors>RaidMax</Authors>
-    <Company>Forever None</Company>
-    <Product>IW4MAdmin</Product>
-    <Description>IW4MAdmin is a complete server administration tool for IW4x and most Call of Duty® dedicated servers</Description>
-    <Copyright>2019</Copyright>
-    <PackageLicenseUrl>https://github.com/RaidMax/IW4M-Admin/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://raidmax.org/IW4MAdmin</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
-    <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
-    <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
-    <Configurations>Debug;Release;Prerelease</Configurations>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
+        <TypeScriptToolsVersion>2.6</TypeScriptToolsVersion>
+        <PackageId>RaidMax.IW4MAdmin.WebfrontCore</PackageId>
+        <Version>2022.0.0</Version>
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Product>IW4MAdmin</Product>
+        <Description>IW4MAdmin is a complete server administration tool for IW4x and most Call of Duty® dedicated servers</Description>
+        <Copyright>2019</Copyright>
+        <PackageLicenseUrl>https://github.com/RaidMax/IW4M-Admin/blob/master/LICENSE</PackageLicenseUrl>
+        <PackageProjectUrl>https://raidmax.org/IW4MAdmin</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin</RepositoryUrl>
+        <PackageIconUrl>https://raidmax.org/IW4MAdmin/img/iw4adminicon-3.png</PackageIconUrl>
+        <ApplicationIcon/>
+        <OutputType>Library</OutputType>
+        <StartupObject/>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <ImplicitUsings>true</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <ServerGarbageCollection>true</ServerGarbageCollection>
-    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-    <TieredCompilation>true</TieredCompilation>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <Content Update="wwwroot\**\*.*" CopyToPublishDirectory="Never" />
-    <Content Update="wwwroot\css\src\global.min.css" CopyToPublishDirectory="Never" />
-    <Content Update="Views\*.*" CopyToPublishDirectory="Never" />
-    <None Include="wwwroot\css\global.min.css" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="wwwroot\js\global.min.js" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest" />
-    <None Remove="Properties\launchSettings.json" />
-  </ItemGroup>
+    <PropertyGroup>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+        <TieredCompilation>true</TieredCompilation>
+        <LangVersion>Latest</LangVersion>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="8.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.6" />
-    <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="2.1.175" />
-  </ItemGroup>
+    <ItemGroup>
+        <!-- Static web assets should be included -->
+        <Content Update="Views\*.*" CopyToPublishDirectory="Never"/>
+        <None Include="wwwroot\images\**\*.*" CopyToPublishDirectory="PreserveNewest"/>
+        <None Remove="Properties\launchSettings.json"/>
+        <Content Update="tailwind.config.js">
+            <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>
 
-  <ItemGroup>
-    <DotNetCliToolReference Include="BundlerMinifier.Core" Version="3.2.449" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1"/>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\lib\canvas.js\" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="10.0.1"/>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Plugins\Stats\Stats.csproj" />
-    <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
-    <ProjectReference Include="..\Data\Data.csproj" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="libman.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <DotNetCliToolReference Include="BundlerMinifier.Core" Version="3.2.449"/>
+    </ItemGroup>
 
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties />
-    </VisualStudio>
-  </ProjectExtensions>
+    <ItemGroup>
+        <Folder Include="wwwroot\images\banners\"/>
+        <Folder Include="wwwroot\lib\canvas.js\"/>
+    </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Plugins\Stats\Stats.csproj"/>
+        <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj"/>
+        <ProjectReference Include="..\Data\Data.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="libman.json">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </Content>
+        <Content Remove="wwwroot\lib\**"/>
+        <Content Update="wwwroot\font\phosphor\**\*.*">
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.eot"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.otf"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.svg"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.ttf"/>
+        <_ContentIncludedByDefault Remove="wwwroot\font\open-iconic.woff"/>
+    </ItemGroup>
+
+    <ProjectExtensions>
+        <VisualStudio>
+            <UserProperties/>
+        </VisualStudio>
+    </ProjectExtensions>
+
+    <Target Name="DownloadTailwind" Condition="!Exists('Tools/tailwindcss.exe') AND !Exists('Tools/tailwindcss')">
+        <PropertyGroup>
+            <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">Tools\tailwindcss.exe</TailwindExe>
+            <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Linux'))">Tools/tailwindcss</TailwindExe>
+            <TailwindUrl Condition="$([MSBuild]::IsOSPlatform('Windows'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-windows-x64.exe</TailwindUrl>
+            <TailwindUrl Condition="$([MSBuild]::IsOSPlatform('Linux'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64</TailwindUrl>
+        </PropertyGroup>
+        <MakeDir Directories="Tools"/>
+        <Exec Command="curl -sL $(TailwindUrl) -o $(TailwindExe)"/>
+        <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" Command="chmod +x $(TailwindExe)"/>
+    </Target>
+
+    <Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="DownloadTailwind" Condition="'$(Configuration)' == 'Debug' OR '$(RunTailwind)' == 'true'">
+        <PropertyGroup>
+            <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(ProjectDir)Tools\tailwindcss.exe</TailwindExe>
+            <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(ProjectDir)Tools/tailwindcss</TailwindExe>
+        </PropertyGroup>
+        <Exec Command="$(TailwindExe) -i wwwroot/css/src/app.css -o wwwroot/css/app.css"/>
+    </Target>
+
+    <Target Name="CopyPhosphorFonts" AfterTargets="Build">
+        <MakeDir Directories="wwwroot/font/phosphor"/>
+        <ItemGroup>
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/regular/Phosphor.*"/>
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/bold/Phosphor-Bold.*"/>
+            <PhosphorFontFiles Include="wwwroot/lib/phosphor-icons/src/fill/Phosphor-Fill.*"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(PhosphorFontFiles)" DestinationFolder="wwwroot/font/phosphor" SkipUnchangedFiles="true"/>
+    </Target>
 </Project>

@@ -3,6 +3,7 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -16,14 +17,18 @@ namespace Data.Migrations.MySql
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.1")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
                     b.Property<int>("ACSnapshotVector3Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ACSnapshotVector3Id"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -48,6 +53,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("ClientId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ClientId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -109,6 +116,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ClientConnectionId"));
+
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -140,6 +149,8 @@ namespace Data.Migrations.MySql
                     b.Property<long>("KillId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("KillId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -215,6 +226,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("MessageId"));
+
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
 
@@ -249,6 +262,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("SnapshotId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SnapshotId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -357,6 +372,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ClientHitStatisticId"));
+
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -410,8 +427,6 @@ namespace Data.Migrations.MySql
 
                     b.HasKey("ClientHitStatisticId");
 
-                    b.HasIndex("ClientId");
-
                     b.HasIndex("HitLocationId");
 
                     b.HasIndex("MeansOfDeathId");
@@ -422,6 +437,8 @@ namespace Data.Migrations.MySql
 
                     b.HasIndex("WeaponId");
 
+                    b.HasIndex("ClientId", "ServerId");
+
                     b.ToTable("EFClientHitStatistics", (string)null);
                 });
 
@@ -430,6 +447,8 @@ namespace Data.Migrations.MySql
                     b.Property<long>("ClientRankingHistoryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ClientRankingHistoryId"));
 
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
@@ -477,6 +496,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("RatingHistoryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RatingHistoryId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -555,6 +576,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("HitLocationCountId"));
+
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
 
@@ -592,6 +615,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("RatingId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RatingId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -636,6 +661,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("HitLocationId"));
+
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -662,6 +689,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MapId"));
+
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -686,6 +715,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MeansOfDeathId"));
+
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -709,6 +740,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("WeaponId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("WeaponId"));
 
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
@@ -736,6 +769,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("WeaponAttachmentId"));
+
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -759,6 +794,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("WeaponAttachmentComboId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("WeaponAttachmentComboId"));
 
                     b.Property<int>("Attachment1Id")
                         .HasColumnType("int");
@@ -794,6 +831,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("AliasId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AliasId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -845,6 +884,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AliasLinkId"));
+
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
 
@@ -858,6 +899,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("ChangeHistoryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ChangeHistoryId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -897,6 +940,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("MetaId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MetaId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -941,6 +986,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("PenaltyId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PenaltyId"));
 
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
@@ -990,6 +1037,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PenaltyIdentifierId"));
+
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -1021,6 +1070,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("InboxMessageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InboxMessageId"));
 
                     b.Property<DateTime>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
@@ -1088,6 +1139,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ServerSnapshotId"));
+
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
 
@@ -1126,6 +1179,8 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("StatisticId"));
+
                     b.Property<bool>("Active")
                         .HasColumnType("tinyint(1)");
 
@@ -1150,6 +1205,8 @@ namespace Data.Migrations.MySql
                     b.Property<int>("Vector3Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Vector3Id"));
 
                     b.Property<float>("X")
                         .HasColumnType("float");

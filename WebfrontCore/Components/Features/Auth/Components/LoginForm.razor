@@ -1,0 +1,28 @@
+<form @onsubmit="@Login" @onsubmit:preventDefault class="space-y-4">
+    <div class="space-y-1">
+        <label for="clientId" class="block text-sm font-medium text-subtle">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_CLIENTID"))</label>
+        <div class="relative">
+            <input type="number" id="clientId" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" 
+                   @bind="ClientId" @bind:event="oninput" aria-label="clientId" />
+        </div>
+    </div>
+    
+    <div class="space-y-1">
+        <label for="password" class="block text-sm font-medium text-subtle">@(AppState.Loc("WEBFRONT_LOGIN_MODAL_FORM_PASSWORD"))</label>
+        <div class="relative">
+            <input type="password" id="password" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" 
+                   @bind="Password" @bind:event="oninput" aria-label="Password" />
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-sm">
+            @ErrorMessage
+        </div>
+    }
+
+    <button type="submit" class="w-full text-white bg-action-primary hover:bg-action-primary-hover focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 font-medium rounded-lg text-sm px-5 py-2.5">
+        @(AppState.Loc("WEBFRONT_LOGIN_BUTTON_SUBMIT"))
+    </button>
+</form>

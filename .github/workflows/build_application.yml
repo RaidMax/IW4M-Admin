@@ -2,7 +2,7 @@ name: Application build
 
 on:
   push:
-    branches: [ develop, release/pre, master ]
+    branches: [ develop, release/pre, master, feature/ui-update ]
     paths:
       - Application/**
       - WebfrontCore/**
@@ -121,26 +121,32 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Restore NuGet packages
         run: dotnet restore ${{ env.solution }}
 
-      - name: Preload external resources
+      - name: Generate Tailwind CSS
         run: |
-          echo "Build Configuration is ${{ env.buildConfiguration }}, Release Type is ${{ env.releaseType }}"
-          mkdir -p WebfrontCore/wwwroot/lib/open-iconic/font/css
-          curl -o WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss https://raw.githubusercontent.com/iconic/open-iconic/master/font/css/open-iconic-bootstrap.scss
-          sed -i 's#../fonts/#/font/#g' WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss
+          curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -o tailwindcss
+          chmod +x tailwindcss
+          cd WebfrontCore
+          ../tailwindcss -i wwwroot/css/src/app.css -o wwwroot/css/app.css --minify
 
       - name: Build webfront
         run: dotnet build WebfrontCore/WebfrontCore.csproj -c ${{ env.buildConfiguration }} /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64"
+
+      - name: Patch Phosphor CSS font paths
+        run: |
+          cd WebfrontCore/wwwroot/lib/phosphor-icons/src
+          sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' regular/style.css
+          sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' bold/style.css
+          sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' fill/style.css
 
       - name: Compile SCSS files
         run: |
           dotnet tool install Excubo.WebCompiler --global
           webcompiler -r WebfrontCore/wwwroot/css/src -o WebfrontCore/wwwroot/css/ -m disable -z disable
-          webcompiler WebfrontCore/wwwroot/lib/open-iconic/font/css/open-iconic-bootstrap-override.scss -o WebfrontCore/wwwroot/css/ -m disable -z disable
 
       - name: Bundle JS files
         run: |
@@ -203,19 +209,21 @@ jobs:
           cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/
           cp ${{ github.workspace }}/BUILD/Plugins/*.dll ${{ env.outputFolder }}/Plugins/
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/global.min.css ${{ env.outputFolder }}/wwwroot/css/global.min.css
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/src/user.css ${{ env.outputFolder }}/wwwroot/css/user.css
           mkdir -p ${{ env.outputFolder }}/wwwroot/js
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/global.min.js ${{ env.outputFolder }}/wwwroot/js/global.min.js
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/user.js ${{ env.outputFolder }}/wwwroot/js/user.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
-          rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/lib/open-iconic/font/fonts/ ${{ env.outputFolder }}/wwwroot/font
+          mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor
+          rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/font/phosphor/ ${{ env.outputFolder }}/wwwroot/font/phosphor/
           mkdir -p ${{ env.outputFolder }}/GameFiles
           rsync -ar ${{ github.workspace }}/GameFiles/ ${{ env.outputFolder }}/GameFiles
           mkdir -p ${{ env.outputFolder }}/wwwroot/images/
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/images/ ${{ env.outputFolder }}/wwwroot/images/
-          rsync -ar ${{ github.workspace }}/BUILD/Plugins/wwwroot/ ${{ env.outputFolder }}/wwwroot/
           cp ${{ github.workspace }}/DeploymentFiles/UpdateIW4MAdmin.ps1 ${{ env.outputFolder }}/UpdateIW4MAdmin.ps1
           cp ${{ github.workspace }}/DeploymentFiles/UpdateIW4MAdmin.sh ${{ env.outputFolder }}/UpdateIW4MAdmin.sh
-
+        # rsync -ar ${{ github.workspace }}/BUILD/Plugins/wwwroot/ ${{ env.outputFolder }}/wwwroot/
       - name: Upload artifact for analysis
         uses: actions/upload-artifact@v4
         with:

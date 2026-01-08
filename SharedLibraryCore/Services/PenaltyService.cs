@@ -130,8 +130,22 @@ namespace SharedLibraryCore.Services
             return await iqPenalties.ToListAsync();
         }
 
-        private static readonly EFPenalty.PenaltyType[] LinkedPenalties =
-            { EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.Flag, EFPenalty.PenaltyType.TempBan, EFPenalty.PenaltyType.TempMute, EFPenalty.PenaltyType.Mute };
+        public async Task<int> GetRecentPenaltiesCount(EFPenalty.PenaltyType showOnly = EFPenalty.PenaltyType.Any, bool ignoreAutomated = true)
+        {
+            await using var context = _contextFactory.CreateContext(false);
+            return await context.Penalties
+                .Where(p => showOnly == EFPenalty.PenaltyType.Any
+                    ? p.Type != EFPenalty.PenaltyType.Any
+                    : p.Type == showOnly)
+                .Where(_penalty => !ignoreAutomated || _penalty.PunisherId != 1)
+                .CountAsync();
+        }
+
+        private static readonly List<EFPenalty.PenaltyType> LinkedPenalties =
+        [
+            EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.Flag, EFPenalty.PenaltyType.TempBan,
+            EFPenalty.PenaltyType.TempMute, EFPenalty.PenaltyType.Mute
+        ];
 
         private static readonly Expression<Func<EFPenalty, bool>> Filter = p =>
             LinkedPenalties.Contains(p.Type) && p.Active && (p.Expires == null || p.Expires > DateTime.UtcNow);
@@ -220,7 +234,7 @@ namespace SharedLibraryCore.Services
         }
 
         public virtual async Task RemoveActivePenalties(int aliasLinkId, long networkId, Reference.Game game, int? ipAddress = null,
-            EFPenalty.PenaltyType[] penaltyTypes = null)
+            List<EFPenalty.PenaltyType> penaltyTypes = null)
         {
             await using var context = _contextFactory.CreateContext();
             var now = DateTime.UtcNow;

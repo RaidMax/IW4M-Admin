@@ -1,22 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ApplicationIcon />
-    <StartupObject />
-    <PackageId>RaidMax.IW4MAdmin.Plugins.ProfanityDeterment</PackageId>
-    <Authors>RaidMax</Authors>
-    <Company>Forever None</Company>
-    <Product>Profanity Determent for IW4MAdmin</Product>
-    <Description>Warns and kicks players for using profanity</Description>
-    <Copyright>2018</Copyright>
-    <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ApplicationIcon/>
+        <StartupObject/>
+        <PackageId>RaidMax.IW4MAdmin.Plugins.ProfanityDeterment</PackageId>
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Product>Profanity Determent for IW4MAdmin</Product>
+        <Description>Warns and kicks players for using profanity</Description>
+        <Copyright>2018</Copyright>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <LangVersion>Latest</LangVersion>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2024.6.22.1" PrivateAssets="All" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+    </ItemGroup>
 
 </Project>

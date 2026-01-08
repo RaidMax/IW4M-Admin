@@ -1,0 +1,21 @@
+@page "/Server/Scoreboard"
+@page "/scoreboard"
+@rendermode InteractiveServer
+
+<PageTitle>@AppState.Loc("WEBFRONT_TITLE_SCOREBOARD") | @AppState.WebfrontBranding</PageTitle>
+
+@if (Loading)
+{
+    <div class="flex justify-center mt-20">
+        <i class="ph ph-spinner animate-spin text-4xl text-primary"></i>
+    </div>
+}
+else if (NoServers)
+{
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <div class="bg-amber-900/20 border-l-4 border-amber-500 text-amber-200 p-4 rounded bg-surface" role="alert">
+            <p class="font-bold">No Servers</p>
+            <p>No servers are currently available.</p>
+        </div>
+    </div>
+}

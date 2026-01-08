@@ -1,0 +1,341 @@
+﻿using Data.Models;
+using Data.Models.Client;
+using Microsoft.AspNetCore.Components;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.Auth;
+using WebfrontCore.Core.Services;
+
+namespace WebfrontCore.Components.Features.Clients.Pages;
+
+public partial class Profile
+{
+    [Parameter] public int Id { get; set; }
+
+    [Inject] public required IWebfrontDataService DataService { get; set; }
+    [Inject] public required AppState AppState { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required ApplicationConfiguration Config { get; set; }
+    [Inject] public required IActionService ActionService { get; set; }
+    [Inject] public required ILogger<Profile> Logger { get; set; }
+
+    /// <summary>
+    /// Persisted state that survives SSR-to-interactive handoff during enhanced navigation.
+    /// </summary>
+    [PersistentState(AllowUpdates = true)]
+    public ProfileState? State { get; set; }
+
+    // Convenience accessor
+    private PlayerInfo? Client => State?.Client;
+
+    private SideContextMenuItems? ContextItems { get; set; }
+    private string? _error;
+    private MetaType? _selectedMetaFilter = null;
+    private int _lastLoadedId;
+    private bool IsAuthorized => AppState.User != null && (int)AppState.User.Level >= (int)EFClient.Permission.Trusted;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // If state was restored AND we're viewing the same client, skip loading
+        if (State?.Client != null && State.Client.ClientId == Id)
+        {
+            _lastLoadedId = Id;
+            BuildContextMenu();
+            return;
+        }
+
+        _error = null;
+        _selectedMetaFilter = null;
+
+        try
+        {
+            State ??= new ProfileState();
+            
+            State.Client = await DataService.GetClientProfileAsync(Id);
+            _lastLoadedId = Id;
+            
+            if (Client != null)
+            {
+                BuildContextMenu();
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            Logger.LogError(ex, "Error loading profile for client {ClientId}", Id);
+        }
+    }
+
+    private void SetMetaFilter(MetaType type)
+    {
+        _selectedMetaFilter = type == MetaType.All ? null : type;
+        StateHasChanged();
+    }
+
+    private IEnumerable<MetaType> GetFilterableMetaTypes()
+    {
+        var ignoredTypes = new[] { MetaType.Information, MetaType.Other, MetaType.QuickMessage };
+        return Enum.GetValues<MetaType>()
+            .Where(meta => !ignoredTypes.Contains(meta))
+            .OrderByDescending(meta => meta == MetaType.All);
+    }
+
+    private static string GetShortCode(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return "?";
+        var match = System.Text.RegularExpressions.Regex.Match(name.ToUpper(), "[A-Z]").Value;
+        return string.IsNullOrEmpty(match) ? "?" : match;
+    }
+
+    /// <summary>
+    /// Gets the OpenGraph description for the profile page.
+    /// Null-safe for StreamRendering - returns fallback during loading.
+    /// </summary>
+    private string GetOpenGraphDescription()
+    {
+        if (Client == null)
+            return AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE");
+        
+        var game = AppState.Loc($"GAME_{Client.Game}");
+        var lastSeen = Client.LastConnection.HumanizeForCurrentCulture();
+        
+        return $"{game} • {lastSeen}";
+    }
+
+    /// <summary>
+    /// Gets the Gravatar URL for the OpenGraph image.
+    /// Returns null if no Gravatar is available.
+    /// </summary>
+    private string? GetGravatarUrl()
+    {
+        var gravatarHash = Client?.Meta?.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
+        if (string.IsNullOrEmpty(gravatarHash))
+            return null;
+        
+        return $"https://gravatar.com/avatar/{gravatarHash}?size=168&default=blank&rating=pg";
+    }
+
+
+    private void BuildContextMenu()
+    {
+        if (Client is null) return;
+        
+        var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;
+        var isPermBanned = Client.LevelInt == (int)EFClient.Permission.Banned;
+        var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
+        var userLevel = AppState.User?.Level ?? EFClient.Permission.User;
+
+        ContextItems = new SideContextMenuItems
+        {
+            MenuTitle = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TITLE")
+        };
+
+        // Join Server (if online)
+        if (Client.Online && !string.IsNullOrEmpty(Client.ConnectProtocolUrl))
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_JOIN"),
+                IsButton = true,
+                IsLink = true,
+                Reference = Client.ConnectProtocolUrl,
+                Tooltip = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TOOLTIP_JOIN")
+                    .FormatExt(Client.CurrentServerName?.StripColors() ?? ""),
+                Icon = "ph-play-circle",
+            });
+        }
+
+        // Edit Level (if authorized)
+        if (Client.LevelInt != -1 && IsAuthorized)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_LEVEL"),
+                IsButton = true,
+                Reference = "edit",
+                Icon = "ph-gear",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Set Tag (if authorized)
+        if (IsAuthorized)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_TAG"),
+                IsButton = true,
+                Reference = "SetClientTag",
+                Icon = "ph-tag",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Add Note (if authorized + permission)
+        if (IsAuthorized && HasPermission(WebfrontEntity.ClientNote, WebfrontPermission.Write))
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_NOTE"),
+                IsButton = true,
+                Reference = "AddClientNote",
+                Icon = "ph-clipboard-text",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Send Message (if authorized)
+        if (IsAuthorized)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_MESSAGE"),
+                IsButton = true,
+                Reference = "OfflineMessage",
+                Icon = "ph-envelope-simple",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // View Stats (always)
+        ContextItems.Items.Add(new SideContextMenuItem
+        {
+            Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_ACTION_STATS"),
+            IsButton = true,
+            IsLink = true,
+            Reference = $"/client/{Id}/stats",
+            Icon = "ph-chart-line",
+        });
+
+        // Flag/Unflag (if authorized + not perm banned)
+        if (!isPermBanned && IsAuthorized)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = isFlagged
+                    ? AppState.Loc("WEBFRONT_ACTION_UNFLAG_NAME")
+                    : AppState.Loc("WEBFRONT_ACTION_FLAG_NAME"),
+                IsButton = true,
+                Reference = isFlagged ? "unflag" : "flag",
+                Icon = "ph-flag",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Kick (if online + higher level)
+        if (Client.LevelInt < (int)userLevel && Client.Online)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_ACTION_KICK_NAME"),
+                IsButton = true,
+                Reference = "kick",
+                Icon = "ph-x-circle",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Ban (if not banned + higher level + authorized)
+        if ((Client.LevelInt < (int)userLevel && !isPermBanned || isTempBanned) && IsAuthorized)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_ACTION_BAN_NAME"),
+                IsButton = true,
+                Reference = "ban",
+                Icon = "ph-lock",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Unban (if banned + higher level + authorized)
+        if ((Client.LevelInt < (int)userLevel && isPermBanned || isTempBanned) && IsAuthorized)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_ACTION_UNBAN_NAME"),
+                IsButton = true,
+                Reference = "unban",
+                Icon = "ph-lock-open",
+                EntityId = Client.ClientId
+            });
+        }
+
+        // Plugin Interactions
+        if (Client.Interactions == null)
+        {
+            return;
+        }
+
+        foreach (var interaction in Client.Interactions.Where(i =>
+                     (int)userLevel >= ((int?)i.MinimumPermission ?? 0)))
+        {
+            var isExternalLink = interaction.InteractionType == InteractionType.ExternalLink;
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = interaction.Name,
+                Tooltip = interaction.Description,
+                EntityId = interaction.EntityId,
+                Icon = interaction.DisplayMeta,
+                Reference = isExternalLink ? interaction.ActionUri : interaction.ActionPath,
+                Meta = System.Text.Json.JsonSerializer.Serialize(interaction.ActionMeta),
+                IsButton = !isExternalLink,
+                IsLink = isExternalLink
+            });
+        }
+    }
+
+    private bool HasPermission(WebfrontEntity entity, WebfrontPermission permission)
+    {
+        return AppState.User != null && Config.HasPermission(AppState.User.Level, entity, permission);
+    }
+
+    private string ClassForProfileBackground()
+    {
+        return !HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) || Client is null
+            ? "level-bgcolor-0"
+            : $"level-bgcolor-{Client.LevelInt}";
+    }
+
+    private static string ClassForPenaltyType(EFPenalty.PenaltyType type)
+    {
+        return type switch
+        {
+            EFPenalty.PenaltyType.Ban => "alert-danger",
+            EFPenalty.PenaltyType.Flag => "alert-secondary",
+            EFPenalty.PenaltyType.TempBan => "alert-secondary",
+            EFPenalty.PenaltyType.TempMute => "alert-secondary",
+            EFPenalty.PenaltyType.Mute => "alert-secondary",
+            _ => "alert"
+        };
+    }
+
+    private void OnProfileContextAction(SideContextMenuItem item)
+    {
+        ActionService.OpenAction(item.Reference, item.EntityId, item.Meta);
+    }
+
+    private void OpenIpContextModal(string ipAddress)
+    {
+        if (string.IsNullOrEmpty(ipAddress))
+            return;
+
+        ActionService.OpenCustom(builder =>
+        {
+            builder.OpenComponent<Components.IPContextModal>(0);
+            builder.AddAttribute(1, "IPAddress", ipAddress);
+            builder.CloseComponent();
+        }, "IP Information", "max-w-md");
+    }
+
+    /// <summary>
+    /// State class for persistent state serialization during SSR-to-interactive handoff.
+    /// </summary>
+    public class ProfileState
+    {
+        public PlayerInfo? Client { get; set; }
+    }
+}

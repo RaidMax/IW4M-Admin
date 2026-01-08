@@ -9,7 +9,7 @@ const serverOrderCache = [];
 
 const plugin = {
     author: 'RaidMax',
-    version: '1.1',
+    version: '1.2',
     name: 'Server Banner',
     serviceResolver: null,
     scriptHelper: null,
@@ -175,13 +175,12 @@ const plugin = {
                             }
                             .server-container {
                                 font-family: '${font}';
-                                background: url('https://raidmax.org/resources/images/banners/${gameCode}.jpg') no-repeat;
+                                background: url('images/banners/${gameCode}.jpg') no-repeat;
                                 align-items: center;
                             }
                             .server-container.large {
                                 padding-left: 1rem;
                                 padding-right: 1rem;
-                                width: calc(750px - 2rem);
                                 height: 120px;
                                 display: flex;
                                 background-position: center center;
@@ -191,7 +190,7 @@ const plugin = {
                                 background-position: left center;
                             }
                             .game-icon {
-                                background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg') no-repeat;
+                                background: url('images/icons/${gameCode}.jpg') no-repeat;
                                 background-size: contain;
                             }
                             .game-icon.large {
@@ -199,7 +198,7 @@ const plugin = {
                                 height: 64px;
                                 border-radius: 10px;
                             }
-                            .game-icon.small {
+                            .game-icon.small { 
                                 width: 20px;
                                 height: 20px;
                                 border-radius: 5px;
@@ -291,7 +290,7 @@ const plugin = {
                                     <div class="server-container small" id="server">
                                         <div class="first-line small"> 
                                             <div class="game-icon small"></div>
-                                            <div class="header" id="serverName" style="${colorLeft}"></div>
+                                            <div class="header" id="serverName" style="${colorLeft}">${server.serverName.stripColors()}</div>
                                         </div>
                                         <div class="third-line game-info small">
                                             ${status}
@@ -309,10 +308,6 @@ const plugin = {
                                             </div>
                                         </div> 
                                     </div>
-                                    <script>
-                                        const serverNameElem = document.getElementById('serverName');
-                                        serverNameElem.textContent = '${server.serverName.stripColors()}';
-                                    </script>
                                 </body>
                             </html>`;
                 }
@@ -322,10 +317,10 @@ const plugin = {
                             <body>
                                 <div class="server-container large" id="server">
                                         <div class="game-icon large" 
-                                            style="background: url('https://raidmax.org/resources/images/icons/games/${gameCode}.jpg');">
+                                            style="background: url('images/icons/${gameCode}.jpg');">
                                         </div>
                                         <div style="flex: 1; ${colorLeft}" class="game-info large">
-                                            <div class="header" id="serverName"></div>
+                                            <div class="header" id="serverName">${server.serverName.stripColors()}</div>
                                             <div class="text-weight-lighter subtitle">${displayIp}:${server.listenPort}</div>
                                             <div class="players-flag-section">
                                                 <div class="subtitle">${server.throttled ? '-' : server.clientNum}/${server.maxClients} Players</div>
@@ -339,10 +334,6 @@ const plugin = {
                                             ${status}
                                         </div>
                                 </div>
-                                <script>
-                                    const serverNameElem = document.getElementById('serverName');
-                                    serverNameElem.textContent = '${server.serverName.stripColors()}';
-                                </script>
                             </body>
                         </html>`;
             };
@@ -361,7 +352,7 @@ const plugin = {
             interactionData.source = plugin.name;
             interactionData.name = 'Banners';
             interactionData.description = interactionData.name;
-            interactionData.displayMeta = 'oi-image';
+            interactionData.displayMeta = 'ph-image';
 
             interactionData.scriptAction = (_, __, ___, ____, _____) => {
                 if (Object.keys(serverOrderCache).length === 0) {
@@ -373,46 +364,42 @@ const plugin = {
                     }
                 }
 
-                let response = '<div class="d-flex flex-row flex-wrap" style="margin-left: -1rem; margin-top: -1rem;">';
+                let response = '<div class="grid grid-cols-1 gap-6"><script></script>';
                 Object.keys(serverOrderCache).forEach(key => {
                     const servers = serverOrderCache[key];
                     for (let i = 0; i < servers.length; i++) {
                         const eachServer = servers[i];
-                        response += `<div class="w-full w-xl-half">
-                                        <div class="card m-10 p-20">
-                                        <div class="font-size-16 mb-10">
-                                            <div class="badge ml-10 float-right font-size-16">${eachServer.gameCode}</div>
-                                            <div id="serverName"></div>
+                        response += `<div class="bg-surface rounded-lg border border-line shadow-sm p-5">
+                                        <div class="text-base mb-4 flex items-center justify-between">
+                                            <span class="font-medium text-foreground">${eachServer.serverName.stripColors()}</span>
+                                            <span class="px-2 py-1 rounded bg-surface-alt text-sm font-mono text-muted border border-line">${eachServer.gameCode}</span>
                                         </div>
                                  
-                                        <div style="overflow: hidden">
+                                        <div class="overflow-hidden mb-4">
                                             <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}" width="750" 
-                                                    height="120" style="border-width: 0; overflow: hidden;" class="rounded mb-5" 
+                                                    height="120" style="border-width: 0; overflow: hidden;"
+                                                    class="rounded-lg" 
                                                     title="${eachServer.id}"></iframe>
                                         </div>
-                                        <div class="btn mb-10" onclick="$(document.getElementById('showCode${eachServer.id}')).toggleClass('d-flex')">Show Embed</div>
-                                        <div class="code p-5 mb-10" id="showCode${eachServer.id}" style="display:none;">
+                                        <button type="button" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-action-primary-hover transition-colors text-sm font-medium mb-4" onclick="document.getElementById('showCode${eachServer.id}').classList.toggle('hidden')">Show Embed</button>
+                                        <div class="hidden p-4 mb-4 bg-surface-alt rounded-lg border border-line font-mono text-xs text-muted overflow-x-auto" id="showCode${eachServer.id}">
                                             &lt;iframe 
                                             <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}" 
                                             <br/>&nbsp;width="750" height="120" style="border-width: 0; overflow: hidden;"&gt;<br/>
                                             &lt;/iframe&gt;</div>
-                                        <div>
+                                        <div class="rounded-lg overflow-hidden mb-4 mt-4">
                                             <iframe src="/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" width="400"
-                                                    height="70" style="border-width: 0; overflow: hidden;" class="rounded mb-5" 
+                                                    height="70" style="border-width: 0; overflow: hidden;" 
+                                                    class="rounded-lg" 
                                                     title="${eachServer.id}"></iframe>
                                         </div>
-                                        <div class="btn mb-10" onclick="$(document.getElementById('showCode${eachServer.id}Small')).toggleClass('d-flex')">Show Embed</div>
-                                        <div class="code p-5" id="showCode${eachServer.id}Small" style="display:none;">
+                                        <button type="button" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-action-primary-hover transition-colors text-sm font-medium mb-4" onclick="document.getElementById('showCode${eachServer.id}Small').classList.toggle('hidden')">Show Embed</button>
+                                        <div class="hidden p-4 bg-surface-alt rounded-lg border border-line font-mono text-xs text-muted overflow-x-auto" id="showCode${eachServer.id}Small">
                                             &lt;iframe 
 	                                        <br/>&nbsp;src="${plugin.webfrontUrl}/Interaction/Render/Banner?serverId=${eachServer.id}&size=small" 
                                             <br/>&nbsp;width="400" height="70" style="border-width: 0; overflow: hidden;"&gt;<br/>
                                             &lt;/iframe&gt;</div>
-                                        </div>
-                                    </div>
-                                    <script>
-                                        const serverNameElem = document.getElementById('serverName');
-                                        serverNameElem.textContent = '${eachServer.serverName.stripColors()}';
-                                    </script>`;
+                                    </div>`;
                     }
                 });
 

@@ -19,7 +19,7 @@ namespace SharedLibraryCore.Configuration
             }
 
             var strings = this[game.Value];
-            return !strings.ContainsKey(key) ? key.Transform(To.TitleCase) : strings[key];
+            return !strings.TryGetValue(key, out var s) ? key.Transform(To.TitleCase) : s;
         }
     }
 }

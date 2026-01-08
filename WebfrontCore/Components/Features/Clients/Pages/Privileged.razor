@@ -1,0 +1,179 @@
+@page "/Client/Privileged"
+@page "/privileged-clients"
+@attribute [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
+@rendermode InteractiveServer
+
+<PageTitle>@AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE") | @AppState.WebfrontBranding</PageTitle>
+
+<div class="flex flex-col xl:flex-row h-full">
+    <div class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
+                    <i class="ph ph-users text-xl text-primary"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gradient-title">@(AppState.Loc("WEBFRONT_CLIENT_PRIVILEGED_TITLE"))</h1>
+                    @if (FilteredPrivilegedClients != null)
+                    {
+                        <div class="text-sm text-subtle font-medium mt-0.5">
+                            @(AppState.Loc("WEBFRONT_PRIVILEGED_COUNT").FormatExt(FilteredPrivilegedClients.Sum(x => x.Value.Count).ToString("#,##0")))
+                        </div>
+                    }
+                </div>
+            </div>
+            @if (FilteredPrivilegedClients != null)
+            {
+                @if (SelectedGame.HasValue)
+                {
+                    <span class="px-3 py-1 rounded-full bg-surface text-sm text-subtle border border-line">
+                        @(AppState.Loc($"GAME_{SelectedGame}"))
+                    </span>
+                }
+                else
+                {
+                    <span class="px-3 py-1 rounded-full bg-surface text-sm text-subtle border border-line">
+                        @(AppState.Loc("GAME_ALL"))
+                    </span>
+                }
+            }
+        </div>
+
+        @if (FilteredPrivilegedClients != null)
+        {
+            @foreach (var key in FilteredPrivilegedClients.Keys.OrderByDescending(key => key))
+            {
+                <div class="mb-8 overflow-hidden bg-surface rounded-lg shadow ring-1 ring-line">
+                    <div class="px-4 py-3 border-b border-line font-semibold text-foreground @GetHeaderClass(key)">
+                        @(key.ToLocalizedLevelName())
+                    </div>
+
+                    <!-- Desktop Table -->
+                    <table class="hidden md:table w-full text-left border-collapse">
+                        <thead>
+                        <tr class="text-xs uppercase text-muted bg-surface-alt/50 border-b border-line">
+                            <th class="px-4 py-3 font-medium">@(AppState.Loc("WEBFRONT_CLIENT_NAME"))</th>
+                            <th class="px-4 py-3 font-medium w-1/4">@(AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"))</th>
+                            <th class="px-4 py-3 font-medium text-right w-1/4">@(AppState.Loc("WEBFRONT_SEARCH_LAST_CONNECTED"))</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-line">
+                        @foreach (var client in FilteredPrivilegedClients[key].OrderByDescending(c => c.LastConnection))
+                        {
+                            if (client.IsMasked)
+                            {
+                                <tr class="hover:bg-surface-hover/30 transition-colors">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                                <span class="mr-2 text-warning inline-flex items-center"
+                                                      title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                                                    <i class="ph ph-mask-happy text-lg"></i>
+                                                </span>
+                                            <a href="/client/@client.ClientId"
+                                               class="font-medium text-foreground hover:text-primary transition-colors">
+                                                <ColorCode Value="@client.Name"/>
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                                @(AppState.Loc($"GAME_{client.Game}"))
+                                            </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-muted text-sm">
+                                        @client.LastConnection.Humanize()
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr class="hover:bg-surface-hover/30 transition-colors">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <a href="/client/@client.ClientId"
+                                               class="font-medium text-foreground hover:text-primary transition-colors">
+                                                <ColorCode Value="@client.Name"/>
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                            @(AppState.Loc($"GAME_{client.Game}"))
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-muted text-sm">
+                                        @client.LastConnection.Humanize()
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+
+                    <div class="md:hidden divide-y divide-line">
+                        @foreach (var client in FilteredPrivilegedClients[key].OrderByDescending(c => c.LastConnection))
+                        {
+                            <div class="p-4 flex items-center justify-between gap-4">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    @if (client.IsMasked)
+                                    {
+                                        <span class="text-warning flex-shrink-0 inline-flex items-center"
+                                              title="@(AppState.Loc("WEBFRONT_PRIVILEGED_TOOLTIP_MASKED"))">
+                                            <i class="ph ph-mask-happy text-lg"></i>
+                                        </span>
+                                    }
+                                    <a href="/client/@client.ClientId"
+                                       class="font-medium text-foreground hover:text-primary transition-colors">
+                                        <ColorCode Value="@client.Name"/>
+                                    </a>
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                                        @(SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc($"GAME_{client.Game}")))
+                                    </span>
+                                </div>
+                                <span
+                                    class="text-xs text-muted whitespace-nowrap flex-shrink-0">@client.LastConnection.Humanize()</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="flex justify-center items-center py-20">
+                <i class="ph ph-spinner animate-spin text-4xl text-primary"></i>
+            </div>
+        }
+    </div>
+
+    @if (FilteredPrivilegedClients != null && ActiveGames.Any())
+    {
+        var menuItems = new SideContextMenuItems
+        {
+            MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
+            Items = ActiveGames.Select(game => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = $"/privileged-clients?game={game}",
+                Title = AppState.Loc($"GAME_{game}"),
+                IsActive = game == SelectedGame
+            }).Prepend(new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = "/privileged-clients",
+                Title = AppState.Loc("GAME_ALL"),
+                IsActive = !SelectedGame.HasValue
+            }).ToList()
+        };
+
+        <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
+            <div class="sticky top-6">
+                <SideContextMenu Model="menuItems"/>
+            </div>
+        </div>
+    }
+</div>

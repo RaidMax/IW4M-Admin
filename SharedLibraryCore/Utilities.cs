@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using Humanizer;
-using Humanizer.Localisation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
@@ -589,8 +588,8 @@ namespace SharedLibraryCore
             Permission permissionLevel, TEntity entity,
             TPermission permission) where TEntity : Enum where TPermission : Enum
         {
-            return appConfig.PermissionSets.ContainsKey(permissionLevel.ToString()) &&
-                   HasPermission(appConfig.PermissionSets[permissionLevel.ToString()], entity, permission);
+            return appConfig.Webfront.PermissionSets.ContainsKey(permissionLevel.ToString()) &&
+                   HasPermission(appConfig.Webfront.PermissionSets[permissionLevel.ToString()], entity, permission);
         }
 
         /// <summary>

@@ -1,22 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
-    <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
-    <PreserveCompilationContext>false</PreserveCompilationContext>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-    <Version>0.1.0.0</Version>
-    <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>Latest</LangVersion>
-    <ApplicationIcon />
-    <OutputType>Library</OutputType>
-    <StartupObject />
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
+        <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
+        <PreserveCompilationContext>false</PreserveCompilationContext>
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 
-  <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2024.6.22.1" PrivateAssets="All" />
-  </ItemGroup>
+        <Version>0.1.0.0</Version>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <LangVersion>Latest</LangVersion>
+        <ApplicationIcon/>
+        <OutputType>Library</OutputType>
+        <StartupObject/>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+    </ItemGroup>
 
 </Project>

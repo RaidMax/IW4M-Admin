@@ -1,0 +1,133 @@
+<div @ref="_cardElement"
+     class="relative overflow-hidden rounded-lg bg-surface-alt border border-line shadow-lg transition-all duration-300 hover:border-line-hover group flex flex-col">
+
+    <!-- Compact Header -->
+    <div
+        class="relative min-h-[40px] px-4 flex flex-col md:flex-row md:items-center justify-center md:justify-between bg-surface border-b border-line cursor-pointer md:cursor-default py-2 md:py-0 space-y-2 md:space-y-0"
+        id="server_header_@Model.Id"
+        @onclick="() => _showMobileDetails = !_showMobileDetails">
+
+        <!-- Main Row -->
+        <div class="flex items-center w-full min-w-0">
+
+            <!-- 1. Game Tag -->
+            <span
+                class="px-1.5 py-0.5 rounded bg-surface text-[10px] font-mono text-muted border border-line uppercase tracking-widest shrink-0 mr-3">
+                @Model.Game
+            </span>
+
+            <!-- 2. Server Name (High visual weight, expanded) -->
+            <h3 class="text-sm font-bold text-foreground truncate flex-1 min-w-0 mr-4">
+                <ColorCode Value="@Model.Name"/>
+            </h3>
+
+            <!-- Desktop: 3. Map & Mode & 4. Player Count -->
+            <div class="hidden md:flex items-center shrink-0 space-x-3 text-xs font-medium text-subtle mr-4">
+                <!-- 3. Map & Mode -->
+                <div class="flex items-center space-x-1">
+                    <span class="text-foreground">@Model.Map</span>
+                    @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
+                    {
+                        <span class="text-muted">&bull;</span>
+                        <span class="text-subtle">@Model.GameType</span>
+                    }
+                </div>
+
+                <!-- 4. Player Count -->
+                <div
+                    class="px-2 py-0.5 rounded-full bg-surface text-foreground font-mono text-xs border border-line shadow-sm">
+                    <span class="font-bold">@Model.ClientCount</span>
+                    <span class="opacity-50 mx-0.5">/</span>
+                    <span class="opacity-75">@(Model.MaxClients - Model.PrivateClientSlots)</span>
+                </div>
+
+                <!-- 5. Lobby Z-Score Badge -->
+                @if (Model.LobbyZScore != null)
+                {
+                    <div
+                        class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20"
+                        title="Lobby Rating">
+                        <i class="ph-fill ph-lightning text-xs"></i>
+                        <span class="font-mono font-bold">@Model.LobbyZScore</span>
+                    </div>
+                }
+            </div>
+
+            <!-- 5. Actions (Always Visible, prevent propagation) -->
+            <div class="flex items-center space-x-1 shrink-0 ml-auto md:ml-0" @onclick:stopPropagation>
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
+                    <button @onclick:preventDefault @onclick="() => OnChat.InvokeAsync(Model.Endpoint)"
+                            class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors">
+                        <i class="ph-bold ph-chat-circle-text text-xs"></i>
+                    </button>
+                </AuthorizeView>
+
+                <button @onclick:preventDefault @onclick="OpenScoreboard"
+                        class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors"
+                        title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))">
+                    <i class="ph-bold ph-list text-xs"></i>
+                </button>
+
+                <a href="@Model.ConnectProtocolUrl"
+                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:flex"
+                   title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
+                    <i class="ph-fill ph-play text-xs"></i>
+                </a>
+            </div>
+
+            <!-- Mobile Expansion Chevron -->
+            <div class="md:hidden ml-2 text-muted">
+                <i class="ph-bold @(_showMobileDetails ? "ph-caret-up" : "ph-caret-down")"></i>
+            </div>
+        </div>
+
+        <!-- Mobile Details (Map, Mode, Player Count) -->
+        <div
+            class="@(_showMobileDetails ? "flex" : "hidden") md:hidden flex-col space-y-2 pt-2 border-t border-line text-xs font-medium text-subtle w-full animate-in fade-in slide-in-from-top-1">
+            <div class="flex items-center justify-between">
+                <span>@AppState.Loc("WEBFRONT_SERVER_MAP")</span>
+                <span class="text-foreground">@Model.Map</span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
+            {
+                <div class="flex items-center justify-between">
+                    <span>@AppState.Loc("WEBFRONT_SERVER_MODE")</span>
+                    <span class="text-foreground">@Model.GameType</span>
+                </div>
+            }
+            <div class="flex items-center justify-between">
+                <span>@AppState.Loc("WEBFRONT_SERVER_PLAYERS")</span>
+                <span class="text-foreground">@Model.ClientCount / @(Model.MaxClients - Model.PrivateClientSlots)</span>
+            </div>
+            @if (Model.LobbyZScore != null)
+            {
+                <div class="flex items-center justify-between">
+                    <span>@AppState.Loc("WEBFRONT_SERVER_RATING")</span>
+                    <div class="flex items-center space-x-1">
+                        <span class="text-foreground">@(Model.LobbyZScore ?? 0)</span>
+                        <i class="ph-fill ph-lightning text-accent"></i>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Body: Player List -->
+    <div
+        class="relative flex-1 flex @(Model.ClientCount == 0 ? "min-h-[60px] items-center" : "min-h-[120px]") bg-surface-alt">
+        <div id="server_clientactivity_@Model.Id" class="w-full">
+            <ClientActivity Model="@Model"/>
+        </div>
+    </div>
+
+    <!-- Separator -->
+    <div class="h-px w-full bg-line"></div>
+
+    <!-- Bottom Graph (Overlaid slightly or bottom stacked) -->
+    <div class="server-history relative h-[80px] w-full mt-auto mb-0 bg-surface-alt">
+        <div class="server-history-row w-full h-full" id="server_history_@Model.Id">
+            <!-- Canvas managed by JS -->
+            <canvas id="server_history_canvas_@Model.Id" class="w-full h-full block"></canvas>
+        </div>
+    </div>
+</div>

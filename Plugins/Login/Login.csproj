@@ -1,25 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ApplicationIcon />
-    <StartupObject />
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <PackageId>RaidMax.IW4MAdmin.Plugins.Login</PackageId>
-    <Authors>RaidMax</Authors>
-    <Company>Forever None</Company>
-    <Product>Login Plugin for IW4MAdmin</Product>
-    <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ApplicationIcon/>
+        <StartupObject/>
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+        <PackageId>RaidMax.IW4MAdmin.Plugins.Login</PackageId>
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Product>Login Plugin for IW4MAdmin</Product>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <LangVersion>Latest</LangVersion>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2024.6.22.1" PrivateAssets="All" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+    </ItemGroup>
 
 </Project>

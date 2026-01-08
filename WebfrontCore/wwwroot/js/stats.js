@@ -1,26 +1,34 @@
-﻿function getClosestMultiple(baseValue, value) {
+﻿// Track chart instances by canvas ID for proper cleanup
+const chartInstances = {};
+
+function getClosestMultiple(baseValue, value) {
     return Math.round(value / baseValue) * baseValue;
 }
 
-function getStatsChart(id) {
-    const data = $('#' + id).data('history');
+function getStatsChart(id, rankingText, data) {
+    if (!data || data.length <= 1) {
+        // only 0 perf or no data
+        return;
+    }
 
-    if (data === undefined) {
-        return;
+    // Destroy existing chart if it exists on this canvas
+    if (chartInstances[id]) {
+        chartInstances[id].destroy();
+        delete chartInstances[id];
     }
-    if (data.length <= 1) {
-        // only 0 perf
-        return;
-    }
+
+    // Get theme colors from shared utility
+    const theme = window.chartTheme.getChartColors();
+    const tooltipConfig = window.chartTheme.getTooltipConfig();
 
     const labels = [];
     const values = [];
 
     data.forEach(function (item, i) {
-        labels.push(item.OccurredAt);
-        values.push(item.Performance)
+        // Handle both PascalCase (from MVC) and camelCase (from Blazor JS interop)
+        labels.push(item.OccurredAt || item.occurredAt);
+        values.push(item.Performance || item.performance);
     });
-    
 
     const padding = 4;
     let dataMin = Math.min(...values);
@@ -42,7 +50,7 @@ function getStatsChart(id) {
             pointBackgroundColor: 'rgba(255, 255, 255, 0)',
             pointBorderColor: 'rgba(255, 255, 255, 0)',
             pointHoverRadius: 5,
-            pointHoverBackgroundColor: 'rgba(255, 255, 255, 1)',
+            pointHoverBackgroundColor: theme.lineColor,
         }]
     };
 
@@ -52,15 +60,11 @@ function getStatsChart(id) {
         maintainAspectRatio: false,
         legend: false,
         tooltips: {
+            ...tooltipConfig,
             callbacks: {
                 label: context => moment.utc(context.label).local().calendar(),
-                title: items => Math.round(items[0].yLabel) + ' ' + _localization['WEBFRONT_ADV_STATS_RANKING_METRIC']
-            },
-            mode: 'nearest',
-            intersect: false,
-            animationDuration: 0,
-            cornerRadius: 0,
-            displayColors: false
+                title: items => Math.round(items[0].yLabel) + ' ' + rankingText
+            }
         },
         hover: {
             mode: 'nearest',
@@ -69,7 +73,7 @@ function getStatsChart(id) {
         elements: {
             line: {
                 fill: false,
-                borderColor: halfmoon.getPreferredMode() === 'light-mode' ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.75)',
+                borderColor: theme.lineColor,
                 borderWidth: 2
             },
             point: {
@@ -109,29 +113,11 @@ function getStatsChart(id) {
         },
     };
 
-    new Chart(id, {
+    // Store the new chart instance for potential future cleanup
+    chartInstances[id] = new Chart(id, {
         type: 'line',
         data: chartData,
         options: options
-    }); 
+    });
 }
 
-$(document).ready(function () {
-    $('.client-rating-graph').each(function (i, element) {
-        getStatsChart($(element).children('canvas').attr('id'));
-    });
-
-  
-    $('.top-players-link').click(function (event) {
-        $($(this).attr('href')).html('');
-        initLoader('/Stats/GetTopPlayersAsync?serverId=' + $(this).data('serverid'), $(this).attr('href'), 10, 0);
-        loadMoreItems();
-    });
-});
-
-$(document).on('loaderFinished', function (event, response) {
-    const ids = $.map($(response).find('.client-rating-graph'), function (elem) { return $(elem).children('canvas').attr('id'); });
-    ids.forEach(function (item, index) {
-        getStatsChart(item);
-    });
-});

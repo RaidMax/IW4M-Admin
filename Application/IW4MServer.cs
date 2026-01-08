@@ -418,6 +418,7 @@ namespace IW4MAdmin
 
                         ChatHistory.Add(new ChatInfo()
                         {
+                            ClientId = E.Origin.ClientId,
                             Name = E.Origin.Name,
                             Message = "CONNECTED",
                             Time = DateTime.UtcNow
@@ -576,7 +577,7 @@ namespace IW4MAdmin
 
                     E.Target.SetLevel(Permission.User, E.Origin);
                     await Manager.GetPenaltyService().RemoveActivePenalties(E.Target.AliasLinkId, E.Target.NetworkId,
-                        E.Target.GameName, E.Target.CurrentAlias?.IPAddress, new[] {EFPenalty.PenaltyType.Flag});
+                        E.Target.GameName, E.Target.CurrentAlias?.IPAddress, [EFPenalty.PenaltyType.Flag]);
                     await Manager.GetPenaltyService().Create(unflagPenalty);
                     
                     Manager.QueueEvent(new ClientPenaltyRevokeEvent
@@ -658,6 +659,7 @@ namespace IW4MAdmin
                 {
                     ChatHistory.Add(new ChatInfo()
                     {
+                        ClientId = E.Origin.ClientId,
                         Name = E.Origin.Name,
                         Message = "DISCONNECTED",
                         Time = DateTime.UtcNow
@@ -737,6 +739,7 @@ namespace IW4MAdmin
 
                         ChatHistory.Add(new ChatInfo
                         {
+                            ClientId = E.Origin.ClientId,
                             Name = E.Origin.Name,
                             Message = message,
                             Time = DateTime.UtcNow,
@@ -853,7 +856,7 @@ namespace IW4MAdmin
 
                 lock (ChatHistory)
                 {
-                    while (ChatHistory.Count > Math.Ceiling(ClientNum / 2.0))
+                    while (ChatHistory.Count > ClientNum * 5)
                     {
                         ChatHistory.RemoveAt(0);
                     }
@@ -861,7 +864,7 @@ namespace IW4MAdmin
 
                 // the last client hasn't fully disconnected yet
                 // so there will still be at least 1 client left
-                if (ClientNum < 2)
+                if (ClientNum == 0)
                 {
                     ChatHistory.Clear();
                 }
@@ -1325,7 +1328,8 @@ namespace IW4MAdmin
                 ClientCount = ClientNum,
                 ConnectionInterrupted = Throttled,
                 Time = DateTime.UtcNow,
-                Map = CurrentMap.Name
+                Map = CurrentMap.Name,
+                MapAlias = CurrentMap.Alias
             });
             
             _lastPlayerCount = DateTime.Now;
@@ -1365,7 +1369,7 @@ namespace IW4MAdmin
             var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version", token: Manager.CancellationToken);
             Version = version.Value;
             GameName = Utilities.GetGame(version.Value ?? RconParser.Version);
-
+            
             if (GameName == Game.UKN)
             {
                 GameName = RconParser.GameName;

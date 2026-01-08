@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SharedLibraryCore.Dtos
+﻿namespace SharedLibraryCore.Dtos
 {
     /// <summary>
     ///     pagination information holder class
@@ -12,10 +10,11 @@ namespace SharedLibraryCore.Dtos
         /// </summary>
         public int Offset { get; set; }
 
-        /// <summary>
-        ///     how many items to take
-        /// </summary>
-        public int Count { get; set; } = 30;
+        public int Count
+        {
+            get;
+            set => field = Math.Min(value, 100);
+        } = 50;
 
         /// <summary>
         ///     filter query
@@ -27,8 +26,10 @@ namespace SharedLibraryCore.Dtos
         /// </summary>
         public SortDirection Direction { get; set; } = SortDirection.Descending;
 
+        public string SortColumn { get; set; }
+
         public DateTime? Before { get; set; }
-        
+
         public DateTime? After { get; set; }
     }
 

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full antialiased">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="theme-color" content="@GetThemeColor()"/>
+    <base href="/"/>
+    <ResourcePreloader/>
+    @if (Utilities.IsDevelopment)
+    {
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/regular/style.css"/>
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/bold/style.css"/>
+        <link rel="stylesheet" href="/lib/phosphor-icons/src/fill/style.css"/>
+        <link rel="stylesheet" href="/css/app.css"/>
+    }
+    else
+    {
+        <link rel="stylesheet" href="css/app.min.css"/>
+    }
+    <link rel="stylesheet" href="/css/user.css"/>
+    <link rel="icon" type="image/png" href="images/icon.png"/>
+
+    <ImportMap/>
+    <HeadOutlet/>
+</head>
+<body class="h-full bg-background text-foreground dark-mode with-custom-webkit-scrollbars with-custom-css-scrollbars">
+
+<Routes/>
+<ReconnectModal/>
+</body>
+
+@* ReSharper disable once Razor.UnresolvedComponent *@
+@if (Utilities.IsDevelopment)
+{
+    <script src="/lib/jquery/dist/jquery.js"></script>
+    <script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="/lib/moment.js/min/moment-with-locales.js"></script>
+
+    <script src="/js/blazor_lib.js"></script>
+    <script src="/js/stats.js"></script>
+    <script src="/js/advanced_stats.js"></script>
+    <script src="/js/liveradar.js"></script>
+    <script src="/js/infinite-scroll.js"></script>
+}
+else
+{
+    <script src="/js/app.min.js"></script>
+}
+<script src="js/user.js"></script>
+
+<script>
+    window.serverThemeSettings = {
+        primaryColor: '@(AppConfig.Webfront.PrimaryColor)',
+        secondaryColor: '@(AppConfig.Webfront.SecondaryColor)',
+        preset: '@(AppConfig.Webfront.ThemePreset)',
+        preventUserCustomization: @(AppConfig.Webfront.PreventUserCustomization.ToString().ToLower())
+    };
+    window.themeManager.init(window.serverThemeSettings);
+</script>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
+</html>

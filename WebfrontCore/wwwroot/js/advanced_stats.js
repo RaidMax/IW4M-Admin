@@ -1,34 +1,23 @@
 ﻿window.onresize = function () {
-    drawPlayerModel();
+    if (window.hitLocationData) {
+        drawPlayerModel();
+    }
 }
 
-$(document).ready(function () {
-    $('.table-slide').click(function () {
-        if ($(window).width() < 993) {
-            $(this).prev().find('.hidden-row').toggleClass('d-none d-flex');
-        } else {
-            $(this).prev().find('.hidden-row-lg').toggleClass('d-none');
-        }
-        
-        $(this).attr('data-title', '');
-        $(this).attr('data-toggle', '');
- 
-        $(this).children('span').toggleClass('oi-chevron-top oi-chevron-bottom');
-    });
-    setupPerformanceGraph();
-    drawPlayerModel();
-})
+window.initAdvancedStats = function (history, hitLocations, maxPct, performanceText) {
+    // Store globally for resize event
+    window.hitLocationData = hitLocations;
+    window.maxPercentage = maxPct;
+    window.performanceHistory = history;
 
-function setupPerformanceGraph() {
-    const summary = $('#client_stats_summary');
-    if (summary === undefined) {
-        return;
+    // Setup Performance
+    const chart = document.getElementById('client_performance_history');
+    if (chart) {
+        renderPerformanceChart(performanceText);
     }
-    const chart = $('#client_performance_history');
-    const container = $('#client_performance_history_container');
-    chart.attr('height', summary.height() * 1.5);
-    chart.attr('width', container.width());
-    renderPerformanceChart();
+
+    // Setup Hitmodel
+    drawPlayerModel();
 }
 
 function drawPlayerModel() {
@@ -37,205 +26,155 @@ function drawPlayerModel() {
         return;
     }
     const context = canvas.getContext('2d');
-    const container = $('#hitlocation_container');
+    const container = document.getElementById('hitlocation_container');
+    if (!container) {
+        return;
+    }
     const background = new Image();
     background.onload = () => {
         const backgroundRatioX = background.width / background.height;
 
-        canvas.height = container.height() - 28;
+        canvas.height = container.clientHeight - 28;
         canvas.width = (canvas.height * backgroundRatioX);
 
         const scalar = canvas.height / background.height;
 
         drawHitLocationChart(context, background, scalar, canvas.width, canvas.height);
     }
-    background.src = '/images/stats/hit_location_model.png';
+    background.src = '/images/stats/hit_location_model.jpg';
 }
 
 function buildHitLocationPosition() {
-    let hitLocations = {}
+    // Ultra-precise multi-point polygon coordinates for hit_location_model.jpg (300x441)
+    // Refined for exact silhouette alignment, zero gaps at joints, and smooth curves
+    let hitLocations = {};
+
+    // Head - refined helmet/head shape
     hitLocations['head'] = {
-        x: 454.5,
-        y: 108.5,
-        width: 157,
-        height: 217
-    }
+        points: [
+            { x: 150, y: 22 }, { x: 138, y: 25 }, { x: 128, y: 35 }, { x: 124, y: 50 },
+            { x: 124, y: 65 }, { x: 130, y: 78 }, { x: 140, y: 84 }, { x: 150, y: 86 },
+            { x: 160, y: 84 }, { x: 170, y: 78 }, { x: 176, y: 65 }, { x: 176, y: 50 },
+            { x: 172, y: 35 }, { x: 162, y: 25 }
+        ],
+        type: 'polygon'
+    };
 
+    // Torso upper - shoulders, chest, joints with arms
     hitLocations['torso_upper'] = {
-        x: 457,
-        y: 318,
-        width: 254,
-        height: 202
-    }
+        points: [
+            { x: 140, y: 84 }, { x: 125, y: 75 }, { x: 105, y: 85 }, { x: 90, y: 115 },
+            { x: 105, y: 145 }, { x: 115, y: 175 }, { x: 185, y: 175 }, { x: 195, y: 145 },
+            { x: 210, y: 115 }, { x: 195, y: 85 }, { x: 175, y: 75 }, { x: 160, y: 84 }
+        ],
+        type: 'polygon'
+    };
 
+    // Torso lower - belly, hips, utility belt
     hitLocations['torso_lower'] = {
-        x: 456.50,
-        y: 581,
-        width: 315,
-        height: 324
-    }
-
-    hitLocations['right_leg_upper'] = {
-        x: 527.5,
-        y: 856.7,
-        width: 149,
-        height: 228
-    }
-
-    hitLocations['right_leg_lower'] = {
-        x: 542,
-        y: 1077.6,
-        width: 120,
-        height: 214
-    }
-
-    hitLocations['right_foot'] = {
-        x: 558.5,
-        y: 1253.5,
-        width: 93,
-        height: 138
-    }
-
-    hitLocations['left_leg_upper'] = {
-        x: 382.5,
-        y: 857,
-        width: 141,
-        height: 228
-    }
-
-    hitLocations['left_leg_lower'] = {
-        x: 371.5,
-        y: 1078,
-        width: 119,
-        height: 214
-    }
-
-    hitLocations['left_foot'] = {
-        x: 353,
-        y: 1254,
-        width: 90,
-        height: 138
-    }
-
-    hitLocations['left_arm_upper'] = {
-        p1: {
-            x: 330,
-            y: 218
-        },
-        p2: {
-            x: 330,
-            y: 400
-        },
-        p3: {
-            x: 255,
-            y: 475
-        },
-        p4: {
-            x: 165,
-            y: 375
-        },
+        points: [
+            { x: 115, y: 175 }, { x: 95, y: 200 }, { x: 98, y: 228 }, { x: 150, y: 235 },
+            { x: 202, y: 228 }, { x: 205, y: 200 }, { x: 185, y: 175 }
+        ],
         type: 'polygon'
-    }
+    };
 
+    // Right arm upper (viewer's left)
     hitLocations['right_arm_upper'] = {
-        p1: {
-            x: 584,
-            y: 218
-        },
-        p2: {
-            x: 584,
-            y: 400
-        },
-        p3: {
-            x: 659,
-            y: 475
-        },
-        p4: {
-            x: 749,
-            y: 375
-        },
+        points: [
+            { x: 90, y: 115 }, { x: 105, y: 145 }, { x: 78, y: 165 }, { x: 45, y: 142 }, { x: 65, y: 105 }
+        ],
         type: 'polygon'
-    }
+    };
 
-    hitLocations['left_arm_lower'] = {
-        p1: {
-            x: 165,
-            y: 375
-        },
-        p2: {
-            x: 255,
-            y: 475
-        },
-        p3: {
-            x: 121,
-            y: 584
-        },
-        p4: {
-            x: 30,
-            y: 512
-        },
+    // Left arm upper (viewer's right)
+    hitLocations['left_arm_upper'] = {
+        points: [
+            { x: 210, y: 115 }, { x: 195, y: 145 }, { x: 222, y: 165 }, { x: 255, y: 142 }, { x: 235, y: 105 }
+        ],
         type: 'polygon'
-    }
+    };
 
+    // Right arm lower (viewer's left)
     hitLocations['right_arm_lower'] = {
-        p1: {
-            x: 749,
-            y: 375
-        },
-        p2: {
-            x: 659,
-            y: 475
-        },
-        p3: {
-            x: 789,
-            y: 587
-        },
-        p4: {
-            x: 876,
-            y: 497
-        },
+        points: [
+            { x: 45, y: 142 }, { x: 78, y: 165 }, { x: 45, y: 192 }, { x: 15, y: 168 }
+        ],
         type: 'polygon'
-    }
+    };
 
-    hitLocations['left_hand'] = {
-        p1: {
-            x: 30,
-            y: 512
-        },
-        p2: {
-            x: 121,
-            y: 584
-        },
-        p3: {
-            x: 0,
-            y: 669
-        },
-        p4: {
-            x: 0,
-            y: 582
-        },
+    // Left arm lower (viewer's right)
+    hitLocations['left_arm_lower'] = {
+        points: [
+            { x: 255, y: 142 }, { x: 222, y: 165 }, { x: 255, y: 192 }, { x: 285, y: 168 }
+        ],
         type: 'polygon'
-    }
+    };
 
+    // Right hand (viewer's left)
     hitLocations['right_hand'] = {
-        p1: {
-            x: 789,
-            y: 587
-        },
-        p2: {
-            x: 876,
-            y: 497
-        },
-        p3: {
-            x: 905,
-            y: 534
-        },
-        p4: {
-            x: 905,
-            y: 666
-        },
+        points: [
+            { x: 15, y: 168 }, { x: 45, y: 192 }, { x: 40, y: 210 }, { x: 18, y: 215 }, { x: 0, y: 200 }, { x: 5, y: 170 }
+        ],
         type: 'polygon'
-    }
+    };
+
+    // Left hand (viewer's right)
+    hitLocations['left_hand'] = {
+        points: [
+            { x: 285, y: 168 }, { x: 255, y: 192 }, { x: 260, y: 210 }, { x: 282, y: 215 }, { x: 300, y: 200 }, { x: 295, y: 170 }
+        ],
+        type: 'polygon'
+    };
+
+    // Right leg upper (viewer's left) - thigh
+    hitLocations['right_leg_upper'] = {
+        points: [
+            { x: 98, y: 228 }, { x: 150, y: 235 }, { x: 150, y: 310 }, { x: 95, y: 310 }, { x: 98, y: 260 }
+        ],
+        type: 'polygon'
+    };
+
+    // Left leg upper (viewer's right) - thigh
+    hitLocations['left_leg_upper'] = {
+        points: [
+            { x: 202, y: 228 }, { x: 150, y: 235 }, { x: 150, y: 310 }, { x: 205, y: 310 }, { x: 202, y: 260 }
+        ],
+        type: 'polygon'
+    };
+
+    // Right leg lower (viewer's left) - shin
+    hitLocations['right_leg_lower'] = {
+        points: [
+            { x: 95, y: 310 }, { x: 150, y: 310 }, { x: 150, y: 400 }, { x: 105, y: 400 }, { x: 100, y: 360 }
+        ],
+        type: 'polygon'
+    };
+
+    // Left leg lower (viewer's right) - shin
+    hitLocations['left_leg_lower'] = {
+        points: [
+            { x: 205, y: 310 }, { x: 150, y: 310 }, { x: 150, y: 400 }, { x: 195, y: 400 }, { x: 200, y: 360 }
+        ],
+        type: 'polygon'
+    };
+
+    // Right foot (viewer's left)
+    hitLocations['right_foot'] = {
+        points: [
+            { x: 105, y: 400 }, { x: 150, y: 400 }, { x: 150, y: 438 }, { x: 95, y: 438 }, { x: 92, y: 425 }
+        ],
+        type: 'polygon'
+    };
+
+    // Left foot (viewer's right)
+    hitLocations['left_foot'] = {
+        points: [
+            { x: 195, y: 400 }, { x: 150, y: 400 }, { x: 150, y: 438 }, { x: 205, y: 438 }, { x: 208, y: 425 }
+        ],
+        type: 'polygon'
+    };
+
     return hitLocations;
 }
 
@@ -244,8 +183,8 @@ function drawHitLocationChart(context, background, scalar, width, height) {
 
     const hitLocations = buildHitLocationPosition();
 
-    $.each(hitLocationData, (index, hit) => {
-        let scaledPercentage = hit.percentage / maxPercentage;
+    window.hitLocationData.forEach((hit) => {
+        let scaledPercentage = hit.percentage / window.maxPercentage;
         let red;
         let green = 255;
 
@@ -261,163 +200,44 @@ function drawHitLocationChart(context, background, scalar, width, height) {
 
         const color = '#' + red + green + '0077';
         const location = hitLocations[hit.name];
-        
+
         if (location === undefined) {
-            return true;
+            return;
         }
 
-        if (location.type === 'polygon') {
-            drawPolygon(context, scalar, location.p1, location.p2, location.p3, location.p4, color);
-        } else {
-            drawRectangle(context, scalar, location.x, location.y, location.width, location.height, color);
-        }
+        // All locations are now polygons with variable point counts
+        drawPolygon(context, scalar, location.points, color);
     });
 }
 
-function drawRectangle(context, scalar, x, y, width, height, color) {
-    const scaledRectWidth = width * scalar;
-    const scaledRectHeight = height * scalar;
-    const rectX = x * scalar - (scaledRectWidth / 2);
-    const rectY = y * scalar - (scaledRectHeight / 2);
-    context.beginPath();
-    context.fillStyle = color
-    context.fillRect(rectX, rectY, scaledRectWidth, scaledRectHeight);
-    context.closePath();
-}
+function drawPolygon(context, scalar, points, color) {
+    if (!points || points.length < 3) return;
 
-function drawPolygon(context, scalar, p1, p2, p3, p4, color) {
-
-    const points = [p1, p2, p3, p4];
-
-    $.each(points, (index, point) => {
-        point.x = point.x * scalar;
-        point.y = point.y * scalar;
-    });
+    // Scale each point
+    const scaledPoints = points.map(p => ({
+        x: p.x * scalar,
+        y: p.y * scalar
+    }));
 
     context.beginPath();
     context.fillStyle = color;
-    context.moveTo(p1.x, p1.y);
-    context.lineTo(p2.x, p2.y);
-    context.lineTo(p3.x, p3.y);
-    context.lineTo(p4.x, p4.y);
-    context.fill();
+    context.moveTo(scaledPoints[0].x, scaledPoints[0].y);
+
+    for (let i = 1; i < scaledPoints.length; i++) {
+        context.lineTo(scaledPoints[i].x, scaledPoints[i].y);
+    }
+
     context.closePath();
+    context.fill();
 }
 
-function getClosestMultiple(baseValue, value) {
-    return Math.round(value / baseValue) * baseValue;
-}
-
-function renderPerformanceChart() {
+function renderPerformanceChart(performanceText) {
     const id = 'client_performance_history';
-    const data = $('#' + id).data('history');
-    
-    if (data === undefined) {
-        return;
-    }
-    if (data.length <= 1) {
-        // only 0 perf
+    const data = window.performanceHistory;
+
+    if (data === undefined || data === null) {
         return;
     }
 
-    const labels = [];
-    const values = [];
-    
-    data.forEach(function (item, i) {
-        labels.push(item.OccurredAt);
-        values.push(item.Performance)
-    });
-
-    const padding = 4;
-    let dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
-
-    if (dataMax - dataMin === 0) {
-        dataMin = 0;
-    }
-
-    dataMin = Math.max(0, dataMin);
-
-    const min = getClosestMultiple(padding, dataMin - padding);
-    const max = getClosestMultiple(padding, dataMax + padding);
-
-    const chartData = {
-        labels: labels,
-        datasets: [{
-            data: values,
-            pointBackgroundColor: 'rgba(255, 255, 255, 0)',
-            pointBorderColor: 'rgba(255, 255, 255, 0)',
-            pointHoverRadius: 5,
-            pointHoverBackgroundColor: 'rgba(255, 255, 255, 1)',
-        }]
-    };
-
-    const options = {
-        defaultFontFamily: '-apple-system, BlinkMacSystemFont, "Open Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: false,
-        tooltips: {
-            callbacks: {
-                label: context => moment.utc(context.label).local().calendar(),
-                title: items => Math.round(items[0].yLabel) + ' ' + _localization["PLUGINS_STATS_COMMANDS_PERFORMANCE"],
-            },
-            mode: 'nearest',
-            intersect: false,
-            animationDuration: 0,
-            cornerRadius: 0,
-            displayColors: false
-        },
-        hover: {
-            mode: 'nearest',
-            intersect: false
-        },
-        elements: {
-            line: {
-                fill: false,
-                borderColor: halfmoon.getPreferredMode() === "light-mode" ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.75)',
-                borderWidth: 2
-            },
-            point: {
-                radius: 5
-            }
-        },
-        scales: {
-            xAxes: [{
-                display: false,
-            }],
-            yAxes: [{
-                gridLines: {
-                    display: false
-                },
-
-                position: 'right',
-                ticks: {
-                    precision: 0,
-                    stepSize: max - min / 2,
-                    callback: function (value, index, values) {
-                        if (index === values.length - 1) {
-                            return min;
-                        } else if (index === 0) {
-                            return max;
-                        } else {
-                            return '';
-                        }
-                    },
-                    fontColor: 'rgba(255, 255, 255, 0.25)'
-                }
-            }]
-        },
-        layout: {
-            padding: {
-                left: 15
-            }
-        },
-    };
-
-    new Chart(id, {
-        type: 'line',
-        data: chartData,
-        options: options
-    });
+    getStatsChart(id, performanceText, data);
 }

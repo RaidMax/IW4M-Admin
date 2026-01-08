@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Data.Models;
 using SharedLibraryCore.Helpers;
 
@@ -19,7 +20,7 @@ namespace SharedLibraryCore.Dtos
         public List<PlayerInfo> Players { get; set; }
         public List<Report> Reports { get; set; }
         public ClientHistoryInfo ClientHistory { get; set; }
-        public long ID { get; set; }
+        public string Id { get; set; }
         public bool Online { get; set; }
         public string ConnectProtocolUrl { get; set; }
         public string IPAddress { get; set; }
@@ -28,10 +29,15 @@ namespace SharedLibraryCore.Dtos
         public string? ResolvedExternalIPAddress { get; set; }
         public string Endpoint => $"{IPAddress}:{Port}";
 
+        [JsonIgnore]
         public double? LobbyZScore
         {
             get
             {
+                if (Players == null)
+                {
+                    return null;
+                }
                 var valid = Players.Where(player => player.ZScore != null && player.ZScore != 0)
                     .ToList();
 

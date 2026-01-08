@@ -38,23 +38,23 @@ const plugin = {
             gameEvent.origin.tell(`Successfully whitelisted ${gameEvent.target.name}`);
         }
     },
-        {
-            name: 'disallowvpn',
-            description: 'disallows a player from connecting with a VPN',
-            alias: 'dv',
-            permission: 'SeniorAdmin',
-            targetRequired: true,
-            arguments: [{
-                name: 'player',
-                required: true
-            }],
-            execute: (gameEvent) => {
-                vpnExceptionIds = vpnExceptionIds.filter(exception => parseInt(exception) !== parseInt(gameEvent.Target.ClientId));
-                plugin.configWrapper.setValue('vpnExceptionIds', vpnExceptionIds);
+    {
+        name: 'disallowvpn',
+        description: 'disallows a player from connecting with a VPN',
+        alias: 'dv',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        execute: (gameEvent) => {
+            vpnExceptionIds = vpnExceptionIds.filter(exception => parseInt(exception) !== parseInt(gameEvent.Target.ClientId));
+            plugin.configWrapper.setValue('vpnExceptionIds', vpnExceptionIds);
 
-                gameEvent.origin.tell(`Successfully disallowed ${gameEvent.target.name} from connecting with VPN`);
-            }
+            gameEvent.origin.tell(`Successfully disallowed ${gameEvent.target.name} from connecting with VPN`);
         }
+    }
     ],
 
     interactions: [{
@@ -74,14 +74,14 @@ const plugin = {
 
             if (vpnExceptionIds.includes(targetId)) {
                 interactionData.name = plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']; // text for the profile button
-                interactionData.displayMeta = 'oi-circle-x';
+                interactionData.displayMeta = 'ph-x-circle';
 
                 interactionData.actionMeta.add('Data', `disallowvpn`); // command to execute
                 interactionData.actionMeta.add('ActionButtonLabel', plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM']); // confirm button on the dialog
                 interactionData.actionMeta.add('Name', plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']); // title on the confirm dialog
             } else {
                 interactionData.name = plugin.translations['WEBFRONT_VPN_ACTION_ALLOW']; // text for the profile button
-                interactionData.displayMeta = 'oi-circle-check';
+                interactionData.displayMeta = 'ph-check-circle';
 
                 interactionData.actionMeta.add('Data', `whitelistvpn`); // command to execute
                 interactionData.actionMeta.add('ActionButtonLabel', plugin.translations['WEBFRONT_VPN_ACTION_ALLOW_CONFIRM']); // confirm button on the dialog
@@ -91,61 +91,61 @@ const plugin = {
             return interactionData;
         }
     },
-        {
-            name: vpnAllowListKey,
-            action: function (targetId, game, token) {
-                const helpers = importNamespace('SharedLibraryCore.Helpers');
-                const interactionData = new helpers.InteractionData();
+    {
+        name: vpnAllowListKey,
+        action: function (targetId, game, token) {
+            const helpers = importNamespace('SharedLibraryCore.Helpers');
+            const interactionData = new helpers.InteractionData();
 
-                interactionData.name = plugin.translations['WEBFRONT_NAV_VPN_TITLE']; // navigation link name
-                interactionData.description = plugin.translations['WEBFRONT_NAV_VPN_DESC']; // alt and title
-                interactionData.displayMeta = 'oi-circle-check'; // nav icon
-                interactionData.interactionId = vpnAllowListKey;
-                interactionData.minimumPermission = 3; // moderator
-                interactionData.interactionType = 2; // 1 is RawContent for apis etc..., 2 is 
-                interactionData.source = plugin.name;
+            interactionData.name = plugin.translations['WEBFRONT_NAV_VPN_TITLE']; // navigation link name
+            interactionData.description = plugin.translations['WEBFRONT_NAV_VPN_DESC']; // alt and title
+            interactionData.displayMeta = 'ph-check-circle'; // nav icon
+            interactionData.interactionId = vpnAllowListKey;
+            interactionData.minimumPermission = 3; // moderator
+            interactionData.interactionType = 2; // 1 is RawContent for apis etc..., 2 is 
+            interactionData.source = plugin.name;
 
-                interactionData.scriptAction = (sourceId, targetId, game, meta, token) => {
-                    const clientsData = plugin.getClientsData(vpnExceptionIds);
+            interactionData.scriptAction = (sourceId, targetId, game, meta, token) => {
+                const clientsData = plugin.getClientsData(vpnExceptionIds);
 
-                    let table = '<table class="table bg-dark-dm bg-light-lm">';
+                let table = '<table class="w-full text-left border-collapse">';
 
-                    const disallowInteraction = {
-                        InteractionId: 'command',
-                        Data: 'disallowvpn',
-                        ActionButtonLabel: plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM'],
-                        Name: plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']
-                    };
-
-                    if (clientsData.length === 0) {
-                        table += `<tr><td>No players are whitelisted.</td></tr>`;
-                    }
-
-                    clientsData.forEach(client => {
-                        table += `<tr>
-                                    <td>
-                                        <a href="/Client/Profile/${client.clientId}" class="level-color-${client.level.toLowerCase()} no-decoration">${client.currentAlias.name.stripColors()}</a>
-                                    </td>
-                                    <td>
-                                        <a href="#" class="profile-action no-decoration float-right" data-action="DynamicAction" data-action-id="${client.clientId}"
-                                           data-action-meta="${encodeURI(JSON.stringify(disallowInteraction))}">
-                                            <div class="btn">
-                                                <i class="oi oi-circle-x mr-5 font-size-12"></i>
-                                                <span class="text-truncate">${plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']}</span>
-                                            </div>
-                                        </a>
-                                    </td>
-                                </tr>`;
-                    });
-
-                    table += '</table>';
-
-                    return table;
+                const disallowInteraction = {
+                    InteractionId: 'command',
+                    Data: 'disallowvpn',
+                    ActionButtonLabel: plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_CONFIRM'],
+                    Name: plugin.translations['WEBFRONT_VPN_ACTION_DISALLOW_TITLE']
                 };
 
-                return interactionData;
-            }
+                if (clientsData.length === 0) {
+                    table += `<tr><td colspan="2" class="px-6 py-8 text-center text-muted">No players are whitelisted.</td></tr>`;
+                }
+
+                clientsData.forEach(client => {
+                    table += `<tr class="border-t border-line hover:bg-surface-hover/30 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <a href="/Client/Profile/${client.clientId}" class="text-sm font-medium hover:text-primary transition-colors">${client.currentAlias.name.stripColors()}</a>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button type="button" class="profile-action cursor-pointer" data-action="DynamicAction" data-action-id="${client.clientId}"
+                                           data-action-meta="${encodeURI(JSON.stringify(disallowInteraction))}">
+                                            <div class="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 transition-colors text-sm font-medium">
+                                                <i class="ph ph-x-circle mr-2 text-sm"></i>
+                                                <span class="truncate">${plugin.translations['WEBFRONT_VPN_BUTTON_DISALLOW']}</span>
+                                            </div>
+                                        </button>
+                                    </td>
+                                </tr>`;
+                });
+
+                table += '</table>';
+
+                return table;
+            };
+
+            return interactionData;
         }
+    }
     ],
 
     onClientAuthorized: async function (authorizeEvent, token) {
@@ -166,14 +166,14 @@ const plugin = {
         this.configWrapper.setName(this.name); // use legacy key
         this.configWrapper.getValue('vpnExceptionIds').forEach(element => vpnExceptionIds.push(parseInt(element)));
         this.logger.logInformation(`Loaded ${vpnExceptionIds.length} ids into whitelist`);
-        
+
         this.enabled = this.configWrapper.getValue('enabled', newValue => {
             if (newValue) {
                 plugin.logger.logInformation('{Name} configuration updated. Enabled={Enabled}', newValue);
                 plugin.enabled = newValue;
             }
         });
-        
+
         if (this.enabled === undefined) {
             this.configWrapper.setValue('enabled', true);
             this.enabled = true;
@@ -211,7 +211,7 @@ const plugin = {
         const headers = new stringDict();
         headers.add('User-Agent', userAgent);
         const pluginScript = importNamespace('IW4MAdmin.Application.Plugin.Script');
-        const request = new pluginScript.ScriptPluginWebRequest(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`, 
+        const request = new pluginScript.ScriptPluginWebRequest(`https://api.xdefcon.com/proxy/check/?ip=${origin.IPAddressString}`,
             null, 'GET', 'application/json', headers);
 
         try {

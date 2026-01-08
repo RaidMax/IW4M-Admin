@@ -1,55 +1,144 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Data.Abstractions;
+﻿using Data.Abstractions;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 
-namespace SharedLibraryCore.Repositories
+namespace SharedLibraryCore.Repositories;
+
+/// <summary>
+///     implementation of IAuditInformationRepository
+/// </summary>
+public class AuditInformationRepository(IDatabaseContextFactory contextFactory) : IAuditInformationRepository
 {
-    /// <summary>
-    ///     implementation if IAuditInformationRepository
-    /// </summary>
-    public class AuditInformationRepository : IAuditInformationRepository
+    /// <inheritdoc />
+    public async Task<IList<AuditInfo>> ListAuditInformation(AuditFilterRequest request)
     {
-        private readonly IDatabaseContextFactory _contextFactory;
+        await using var ctx = contextFactory.CreateContext(false);
 
-        public AuditInformationRepository(IDatabaseContextFactory contextFactory)
+        var query = BuildBaseQuery(ctx, request);
+
+        var iqItems = query
+            .OrderByDescending(x => x.TimeChanged)
+            .Skip(request.Offset)
+            .Take(request.Count)
+            .Select(x => new AuditInfo
+            {
+                Action = x.TypeOfChange.ToString(),
+                OriginName = ctx.Clients
+                    .Where(c => c.ClientId == (x.ImpersonationEntityId ?? x.OriginEntityId))
+                    .Select(c => c.CurrentAlias.Name)
+                    .FirstOrDefault() ?? "",
+                OriginId = x.ImpersonationEntityId ?? x.OriginEntityId,
+                OriginIPAddress = ctx.Clients
+                    .Where(c => c.ClientId == (x.ImpersonationEntityId ?? x.OriginEntityId))
+                    .Select(c => c.CurrentAlias.SearchableIPAddress)
+                    .FirstOrDefault() ?? "",
+                TargetName = ctx.Clients
+                    .Where(c => c.ClientId == x.TargetEntityId)
+                    .Select(c => c.CurrentAlias.Name)
+                    .FirstOrDefault() ?? "",
+                TargetId = x.TargetEntityId == 0 ? null : x.TargetEntityId,
+                When = x.TimeChanged,
+                Data = x.Comment,
+                OldValue = x.PreviousValue,
+                NewValue = x.CurrentValue
+            });
+
+        var result = await iqItems.ToListAsync();
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<AuditStatistics> GetStatisticsAsync(AuditFilterRequest request)
+    {
+        await using var ctx = contextFactory.CreateContext(false);
+        var query = BuildBaseQuery(ctx, request);
+
+        var totalCount = await query.CountAsync();
+
+        var countByType = await query
+            .GroupBy(x => x.TypeOfChange)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Type, x => x.Count);
+
+        var topAdminIds = await query
+            .GroupBy(x => x.ImpersonationEntityId ?? x.OriginEntityId)
+            .Select(g => new { ClientId = g.Key, ActionCount = g.Count() })
+            .OrderByDescending(x => x.ActionCount)
+            .Take(5)
+            .ToListAsync();
+
+        var topAdmins = new List<AdminActivityInfo>();
+        foreach (var admin in topAdminIds)
         {
-            _contextFactory = contextFactory;
+            var name = await ctx.Clients
+                .Where(c => c.ClientId == admin.ClientId)
+                .Select(c => c.CurrentAlias.Name)
+                .FirstOrDefaultAsync() ?? "Unknown";
+
+            topAdmins.Add(new AdminActivityInfo
+            {
+                ClientId = admin.ClientId,
+                Name = name,
+                ActionCount = admin.ActionCount
+            });
         }
 
-        /// <inheritdoc />
-        public async Task<IList<AuditInfo>> ListAuditInformation(PaginationRequest paginationInfo)
+        return new AuditStatistics
         {
-            await using var ctx = _contextFactory.CreateContext(false);
-            var iqItems = (from change in ctx.EFChangeHistory
-                    where change.TypeOfChange != EFChangeHistory.ChangeType.Ban
-                    orderby change.TimeChanged descending
-                    join originClient in ctx.Clients
-                        on change.ImpersonationEntityId ?? change.OriginEntityId equals originClient.ClientId
-                    join targetClient in ctx.Clients
-                        on change.TargetEntityId equals targetClient.ClientId
-                        into targetChange
-                    from targetClient in targetChange.DefaultIfEmpty()
-                    select new AuditInfo
-                    {
-                        Action = change.TypeOfChange.ToString(),
-                        OriginName = originClient.CurrentAlias.Name,
-                        OriginId = originClient.ClientId,
-                        TargetName = targetClient == null ? "" : targetClient.CurrentAlias.Name,
-                        TargetId = targetClient == null ? new int?() : targetClient.ClientId,
-                        When = change.TimeChanged,
-                        Data = change.Comment,
-                        OldValue = change.PreviousValue,
-                        NewValue = change.CurrentValue
-                    })
-                .Skip(paginationInfo.Offset)
-                .Take(paginationInfo.Count);
+            TotalCount = totalCount,
+            CountByActionType = countByType,
+            MostActiveAdmins = topAdmins
+        };
+    }
 
-            return await iqItems.ToListAsync();
+    private static IQueryable<EFChangeHistory> BuildBaseQuery(Data.Context.DatabaseContext ctx, AuditFilterRequest request)
+    {
+        var query = ctx.EFChangeHistory
+            .Where(change => change.TypeOfChange != EFChangeHistory.ChangeType.Ban);
+
+        // Filter by action types
+        if (request.ActionTypes is { Count: > 0 })
+        {
+            query = query.Where(x => request.ActionTypes.Contains(x.TypeOfChange));
         }
+
+        // Filter by origin (admin) ID
+        if (request.OriginId.HasValue)
+        {
+            query = query.Where(x =>
+                x.OriginEntityId == request.OriginId.Value ||
+                x.ImpersonationEntityId == request.OriginId.Value);
+        }
+
+        // Filter by target ID
+        if (request.TargetId.HasValue)
+        {
+            query = query.Where(x => x.TargetEntityId == request.TargetId.Value);
+        }
+
+        // Filter by date range
+        if (request.After.HasValue)
+        {
+            query = query.Where(x => x.TimeChanged >= request.After.Value);
+        }
+
+        if (request.Before.HasValue)
+        {
+            query = query.Where(x => x.TimeChanged <= request.Before.Value);
+        }
+
+        // Text search across multiple fields
+        if (!string.IsNullOrWhiteSpace(request.SearchQuery))
+        {
+            var searchPattern = $"%{request.SearchQuery}%";
+            query = query.Where(x =>
+                (x.Comment != null && EF.Functions.Like(x.Comment, searchPattern)) ||
+                (x.PreviousValue != null && EF.Functions.Like(x.PreviousValue, searchPattern)) ||
+                (x.CurrentValue != null && EF.Functions.Like(x.CurrentValue, searchPattern)));
+        }
+
+        return query;
     }
 }

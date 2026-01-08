@@ -12,17 +12,18 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using WebfrontCore.Permissions;
-using WebfrontCore.QueryHelpers.Models;
+using WebfrontCore.Core.QueryHelpers.Models;
 using EFClient = Data.Models.Client.EFClient;
 
 namespace IW4MAdmin.Application.QueryHelpers;
 
-public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>
+public class ClientResourceQueryHelper(
+    IDatabaseContextFactory contextFactory,
+    IGeoLocationService geoLocationService,
+    ApplicationConfiguration appConfig)
+    : IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>
 {
-    public ApplicationConfiguration _appConfig { get; }
-    private readonly IDatabaseContextFactory _contextFactory;
-    private readonly IGeoLocationService _geoLocationService;
+    public ApplicationConfiguration AppConfig { get; } = appConfig;
 
     private class ClientAlias
     {
@@ -30,28 +31,20 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
         public EFAlias Alias { get; set; }
     }
 
-    public ClientResourceQueryHelper(IDatabaseContextFactory contextFactory, IGeoLocationService geoLocationService,
-        ApplicationConfiguration appConfig)
-    {
-        _appConfig = appConfig;
-        _contextFactory = contextFactory;
-        _geoLocationService = geoLocationService;
-    }
-
     public async Task<ResourceQueryHelperResult<ClientResourceResponse>> QueryResource(ClientResourceRequest query)
     {
-        await using var context = _contextFactory.CreateContext(false);
+        await using var context = contextFactory.CreateContext(false);
         var iqAliases = context.Aliases.AsQueryable();
         var iqClients = context.Clients.AsQueryable();
 
         var iqClientAliases = iqClients.Join(iqAliases, client => client.AliasLinkId, alias => alias.LinkId,
             (client, alias) => new ClientAlias { Client = client, Alias = alias });
 
-        return await StartFromClient(query, iqClientAliases, iqClients);
+        return await StartFromClient(query, iqClientAliases);
     }
 
     private async Task<ResourceQueryHelperResult<ClientResourceResponse>> StartFromClient(ClientResourceRequest query,
-        IQueryable<ClientAlias> clientAliases, IQueryable<EFClient> iqClients)
+        IQueryable<ClientAlias> clientAliases)
     {
         if (!string.IsNullOrWhiteSpace(query.ClientGuid))
         {
@@ -75,25 +68,48 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
 
         if (!string.IsNullOrWhiteSpace(query.ClientName))
         {
+            if (query.ClientName.Length < AppConfig.MinimumNameLength)
+            {
+                return new ResourceQueryHelperResult<ClientResourceResponse>
+                {
+                    Results = [],
+                    RetrievedResultCount = 0,
+                    TotalResultCount = 0
+                };
+            }
+
             clientAliases = SearchByName(query, clientAliases);
         }
 
         if (!string.IsNullOrWhiteSpace(query.ClientIp))
         {
-            clientAliases = SearchByIp(query, clientAliases,
-                _appConfig.HasPermission(query.RequesterPermission, WebfrontEntity.ClientIPAddress,
-                    WebfrontPermission.Read));
+            clientAliases = SearchByIp(query, clientAliases);
         }
 
         var iqGroupedClientAliases = clientAliases.GroupBy(a => new { a.Client.ClientId, a.Client.LastConnection });
+        var totalCount = 0;
 
-        iqGroupedClientAliases = query.Direction == SortDirection.Descending
-            ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.LastConnection)
-            : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
+        if (query.SortColumn == "FirstConnection")
+        {
+            iqGroupedClientAliases = query.Direction == SortDirection.Descending
+                ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.ClientId)
+                : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.ClientId);
+        }
+        else
+        {
+            iqGroupedClientAliases = query.Direction == SortDirection.Descending
+                ? iqGroupedClientAliases.OrderByDescending(clientAlias => clientAlias.Key.LastConnection)
+                : iqGroupedClientAliases.OrderBy(clientAlias => clientAlias.Key.LastConnection);
+            if (query.Offset == 0)
+            {
+                totalCount = await iqGroupedClientAliases.CountAsync();
+            }
+        }
 
         var clientIds = await iqGroupedClientAliases.Select(g => g.Key.ClientId)
             .Skip(query.Offset)
-            .Take(query.Count).ToListAsync(); // todo: this change was for a pomelo limitation and may be addressed in future version
+            .Take(query.Count)
+            .ToListAsync(); // this change is for a pomelo/mariadb limitation and may be addressed in future version (MariaDB doesn't yet support 'LIMIT & IN/ALL/ANY/SOME subquery')
 
         // this pulls in more records than we need, but it's more efficient than ordering grouped entities
         var clientLookups = await clientAliases
@@ -110,6 +126,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
                 ClientLevel = clientAlias.Client.Level.ToLocalizedLevelName(),
                 ClientLevelValue = clientAlias.Client.Level,
                 LastConnection = clientAlias.Client.LastConnection,
+                FirstConnection = clientAlias.Client.FirstConnection,
                 Game = clientAlias.Client.GameName
             })
             .ToListAsync();
@@ -125,7 +142,9 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
 
         return new ResourceQueryHelperResult<ClientResourceResponse>
         {
-            Results = clients
+            Results = clients,
+            TotalResultCount = totalCount,
+            RetrievedResultCount = clients.Count
         };
     }
 
@@ -139,7 +158,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
                     return;
                 }
 
-                var geolocationData = await _geoLocationService.Locate(client.CurrentClientIp.ConvertIPtoString());
+                var geolocationData = await geoLocationService.Locate(client.CurrentClientIp.ConvertIPtoString());
                 client.ClientCountryCode = geolocationData.CountryCode;
 
                 if (!string.IsNullOrWhiteSpace(client.ClientCountryCode))
@@ -185,7 +204,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
     private static IQueryable<ClientAlias> SearchByName(ClientResourceRequest query,
         IQueryable<ClientAlias> clientAliases)
     {
-        var lowerCaseQueryName = query.ClientName.ToLower();
+        var lowerCaseQueryName = query.ClientName!.ToLower();
 
         clientAliases = clientAliases.Where(query.IsExactClientName
             ? ExactNameMatch(lowerCaseQueryName)
@@ -210,9 +229,9 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
     }
 
     private static IQueryable<ClientAlias> SearchByIp(ClientResourceRequest query,
-        IQueryable<ClientAlias> clientAliases, bool canSearchIP)
+        IQueryable<ClientAlias> clientAliases)
     {
-        var ipString = query.ClientIp.Trim();
+        var ipString = query.ClientIp!.Trim();
         var ipAddress = ipString.ConvertToIP();
 
         if (ipAddress != null && ipString.Split('.').Length == 4 && query.IsExactClientIp)
@@ -220,7 +239,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
             clientAliases = clientAliases.Where(clientAlias =>
                 clientAlias.Alias.IPAddress != null && clientAlias.Alias.IPAddress == ipAddress);
         }
-        else if(canSearchIP)
+        else
         {
             clientAliases = clientAliases.Where(clientAlias =>
                 EF.Functions.Like(clientAlias.Alias.SearchableIPAddress, $"{ipString}%"));
@@ -232,7 +251,7 @@ public class ClientResourceQueryHelper : IResourceQueryHelper<ClientResourceRequ
     private static IQueryable<ClientAlias> SearchByGuid(ClientResourceRequest query,
         IQueryable<ClientAlias> clients)
     {
-        var guidString = query.ClientGuid.Trim();
+        var guidString = query.ClientGuid!.Trim();
         var parsedGuids = new List<long>();
         long guid = 0;
 

@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "3.0",
   "defaultProvider": "jsdelivr",
   "libraries": [
     {
@@ -15,10 +15,6 @@
       "destination": "wwwroot/lib/moment-timezone/"
     },
     {
-      "library": "open-iconic@1.1.1",
-      "destination": "wwwroot/lib/open-iconic/"
-    },
-    {
       "library": "moment@2.24.0",
       "destination": "wwwroot/lib/moment.js/"
     },
@@ -27,12 +23,27 @@
       "destination": "wwwroot/lib/chart.js"
     },
     {
-      "library": "halfmoon@1.1.1",
-      "destination": "wwwroot/lib/halfmoon"
-    },
-    {
       "library": "vanillajs-datepicker@1.2.0",
       "destination": "wwwroot/lib/vanillajs-datepicker"
+    },
+    {
+      "provider": "unpkg",
+      "library": "@phosphor-icons/web@2.1.1",
+      "destination": "wwwroot/lib/phosphor-icons",
+      "files": [
+        "src/regular/style.css",
+        "src/regular/Phosphor.woff2",
+        "src/regular/Phosphor.woff",
+        "src/regular/Phosphor.ttf",
+        "src/bold/style.css",
+        "src/bold/Phosphor-Bold.woff2",
+        "src/bold/Phosphor-Bold.woff",
+        "src/bold/Phosphor-Bold.ttf",
+        "src/fill/style.css",
+        "src/fill/Phosphor-Fill.woff2",
+        "src/fill/Phosphor-Fill.woff",
+        "src/fill/Phosphor-Fill.ttf"
+      ]
     }
   ]
 }

@@ -144,7 +144,11 @@ function calculateViewPosition(x, y, distance) {
     let ny = Math.sin(x) * Math.cos(y);
     let nz = Math.sin(360.0 - y);
 
-    return { x: (nx * distance) * stateInfo.mapScaler, y: (ny * distance) * stateInfo.mapScaler, z: (nz * distance)  * stateInfo.mapScaler };
+    return {
+        x: (nx * distance) * stateInfo.mapScaler,
+        y: (ny * distance) * stateInfo.mapScaler,
+        z: (nz * distance) * stateInfo.mapScaler
+    };
 }
 
 function lerp(start, end, complete) {
@@ -154,7 +158,7 @@ function lerp(start, end, complete) {
 function easeLerp(start, end, t) {
     let t2 = (1 - Math.cos(t * Math.PI)) / 2;
 
-    return (start * (1-t2) + end * t2);
+    return (start * (1 - t2) + end * t2);
 }
 
 function fixRollAngles(oldAngles, newAngles) {
@@ -165,9 +169,7 @@ function fixRollAngles(oldAngles, newAngles) {
 
     if (angleDifferenceX > Math.PI) {
         newX = oldAngles.x + (Math.PI * 2) - angleDifferenceX;
-    }
-
-    else if (Math.abs(newAngles.x - oldAngles.x) > Math.PI) {
+    } else if (Math.abs(newAngles.x - oldAngles.x) > Math.PI) {
         newX = newAngles.x - (Math.PI * 2);
     }
 
@@ -175,9 +177,7 @@ function fixRollAngles(oldAngles, newAngles) {
 
     if (angleDifferenceY > Math.PI) {
         newY = oldAngles.y + (Math.PI * 2) - angleDifferenceY;
-    }
-
-    else if (Math.abs(newAngles.y - oldAngles.y) > Math.PI) {
+    } else if (Math.abs(newAngles.y - oldAngles.y) > Math.PI) {
         newY = newAngles.y - (Math.PI * 2);
     }
 
@@ -207,7 +207,7 @@ function weaponImageForWeapon(weapon) {
         name = "none";
     }
 
-    return `../images/radar/hud_weapons/hud_${weapons[name]}.png`;
+    return `/images/radar/hud_weapons/hud_${weapons[name]}.png`;
 }
 
 function updatePlayerData() {
@@ -220,54 +220,50 @@ function updatePlayerData() {
         }
 
         let column = player.team === 'allies' ? $('.player-data-left') : $('.player-data-right');
-        
+
         let greenProgressClass = 'rounded-top';
         let redProgressClass = 'rounded-right';
-        
+
         if (player.health < 100) {
             greenProgressClass = 'rounded-left';
         }
         if (player.health <= 0) {
             redProgressClass = 'rounded-top';
         }
-        
+
         column.append(`
-<div class="card m-0 p-0 mb-15">
-        <div class="progress h-25">
-                       <div class="position-absolute ml-10 text-dark" style="top: 1.2rem;">${player.name}</div>
-                                 <div class="progress-bar bg-success ${greenProgressClass} h-25" role="progressbar" style="min-width: 0px; width: ${player.health}%" aria-valuenow="${player.health}" aria-valuemin="0" aria-valuemax="100"></div>
-                                <div class="progress-bar bg-danger ${redProgressClass} h-25" role="progressbar" style="min-width: 0px; border-right: 0px; width: ${100 - player.health}%" aria-valuenow="${100 - player.health}" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            <div class="ml-10 mr-10 pt-5 pb-5">
-                               <div class="d-flex flex-row bg-dark-dm bg-light-lm rounded-bottom">
-                                 <div style="width: 3rem; height: 1.5rem; background-image:url(${weaponImageForWeapon(player.weapon)}); background-size: 3rem 1.5rem;" class="mr-auto text-left align-self-center" data-toggle="tooltip" data-title="${player.weapon}">
-                                 </div>
-                                 <div class="d-flex">
-                                    <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/kills.png')"></div>
-                                    <div class="pr-5 align-self-center">${player.kills}</div>
-                                    <div class="player-stat-icon align-self-center" style="background-image:url('/images/radar/death.png')"></div>
-                                    <div class="pr-10 align-self-center">${player.deaths}</div>
-                                    <span class="align-self-center oi oi-target pr-5"></span>
-                                    <div class="pr-10 align-self-center">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</div>
-                                    <span class="align-self-center oi oi-graph pr-5"></span>
-                                    <div>${ player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</div>
-                                </div>
-                              </div>
-                          </div>
+<div class="bg-surface rounded-lg border border-line shadow-sm mb-4 overflow-hidden group hover:border-primary/50 transition-colors">
+    <div class="relative h-6 w-full bg-surface-alt">
+        <div class="absolute inset-0 flex">
+             <div class="h-full bg-emerald-500/80 transition-all duration-300" style="width: ${player.health}%"></div>
+             <div class="h-full bg-red-500/80 transition-all duration-300" style="width: ${100 - player.health}%"></div>
+        </div>
+        <div class="absolute inset-0 flex items-center px-2 text-xs font-bold text-shadow-sm text-white z-10 drop-shadow-md truncate">${player.name}</div>
+    </div>
+    
+    <div class="p-2 flex items-center justify-between text-xs text-foreground/90 bg-surface">
+         <div class="w-12 h-6 bg-contain bg-no-repeat bg-left opacity-80" style="background-image:url(${weaponImageForWeapon(player.weapon)})" title="${player.weapon}"></div>
+         <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1" title="Kills"><i class="ph ph-skull text-muted"></i> <span class="font-mono">${player.kills}</span></div>
+            <div class="flex items-center gap-1" title="Deaths"><i class="ph ph-skull text-muted opacity-50"></i> <span class="font-mono">${player.deaths}</span></div>
+            <div class="flex items-center gap-1" title="K/D Ratio"><i class="ph ph-crosshair text-muted"></i> <span class="font-mono">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</span></div>
+            <div class="flex items-center gap-1" title="Score/Min"><i class="ph ph-chart-line-up text-muted"></i> <span class="font-mono">${player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</span></div>
+         </div>
+    </div>
 </div>`);
     });
 
-    $('.player-data-left').delay(1000).animate({opacity: 1}, 500);
-    $('.player-data-right').delay(1000).animate({opacity: 1}, 500);
+    $('.player-data-left').delay(1000).animate({ opacity: 1 }, 500);
+    $('.player-data-right').delay(1000).animate({ opacity: 1 }, 500);
 }
 
 function updateRadarData() {
-    $.getJSON(radarDataUrl, function (_radarItem) {
+    $.getJSON(window.radarDataUrl, function (_radarItem) {
         newRadarData = _radarItem;
     });
 
 
-    $.getJSON(mapDataUrl, function (_map) {
+    $.getJSON(window.mapDataUrl, function (_map) {
         stateInfo.mapInfo = _map
     });
 
@@ -308,13 +304,14 @@ function updateRadarData() {
             else if (value.isAlive && !previous.isAlive) {
                 value.previous = value;
             }
-        }});
+        }
+    });
 
     // we switch out the items to
     previousRadarData = newRadarData;
 
     $('#map_name').html(stateInfo.mapInfo.alias);
-    $('#map_list').css('background-image', `url(../images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@2x.jpg)`);
+    $('#map_list').css('background-image', `url(/images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@2x.jpg)`);
     checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), stateInfo.mapInfo);
     updatePlayerData();
 }
@@ -416,11 +413,18 @@ function updateMap() {
     window.requestAnimationFrame(updateMap);
 }
 
-$(document).ready(function () {
+window.initLiveRadar = function (radarDataUrl, mapDataUrl) {
     if ($('#map_canvas').length === 0) {
+        console.error("[LiveRadar] Canvas #map_canvas not found!");
         return;
     }
-    
+
+    // Reset state if re-initializing
+    if (stateInfo && stateInfo.intervalId) {
+        console.log("[LiveRadar] Cleaning up previous interval", stateInfo.intervalId);
+        clearInterval(stateInfo.intervalId);
+    }
+
     stateInfo = {
         canvas: $('#map_canvas'),
         ctx: $('#map_canvas')[0].getContext('2d'),
@@ -433,11 +437,22 @@ $(document).ready(function () {
         deathIcons: {},
         deathIconTime: 4000
     };
-    
-    $.getJSON(radarDataUrl, function (_map) {
+
+    // Globals update
+    window.radarDataUrl = radarDataUrl;
+    window.mapDataUrl = mapDataUrl;
+
+    // Correct logic: First fetch MAP metadata, then start polling for radar entities.
+    $.getJSON(window.mapDataUrl, function (_map) {
         stateInfo.mapInfo = _map;
+
+        // Initial Radar Data fetch
         updateRadarData();
-        setInterval(updateRadarData, stateInfo.updateFrequency);
+
+        // Start polling
+        stateInfo.intervalId = setInterval(updateRadarData, stateInfo.updateFrequency);
         window.requestAnimationFrame(updateMap);
+    }).fail(function (jqxhr, textStatus, error) {
+        console.error("[LiveRadar] Map Metadata fetch failed:", textStatus, error);
     });
-})
+}

@@ -1,23 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Data.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
-using SharedLibraryCore.Helpers;
-using SharedLibraryCore.Services;
-using WebfrontCore.Controllers.API.Dtos;
+using SharedLibraryCore.Dtos.Meta.Responses;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using WebfrontCore.Core.QueryHelpers.Models;
+using WebfrontCore.Core.Services;
+using WebfrontCore.Controllers.API.Models;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -28,19 +22,17 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     public class ClientController(
         ILogger<ClientController> logger,
-        IResourceQueryHelper<FindClientRequest, FindClientResult> clientQueryHelper,
-        ClientService clientService,
         IManager manager,
-        IMetaServiceV2 metaService)
+        IWebfrontDataService dataService)
         : BaseController(manager)
     {
         private readonly ILogger _logger = logger;
 
-        [HttpGet("find")]
+        [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> FindAsync([FromQuery] FindClientRequest request)
+        public async Task<IActionResult> SearchAsync([FromQuery] ClientResourceRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -51,21 +43,34 @@ namespace WebfrontCore.Controllers.API
                 });
             }
 
+            if (!request.HasData)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    Messages = ["You must provide at least 1 search criteria"]
+                });
+            }
+
             try
             {
-                var results = await clientQueryHelper.QueryResource(request);
-
-                return Ok(new FindClientResponse
-                {
-                    TotalFoundClients = results.TotalResultCount,
-                    Clients = results.Results
-                });
+                var results = await dataService.SearchClientsAsync(request);
+                return Ok(results);
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to retrieve clients with query - {@Request}", request);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Messages = [e.Message] });
+                _logger.LogWarning(e, "Failed to search clients with query - {@Request}", request);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse { Messages = [e.Message] });
             }
+        }
+
+        [HttpGet("privileged")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
+        public async Task<IActionResult> GetPrivilegedAsync()
+        {
+            var adminsDict = await dataService.GetPrivilegedClientsAsync();
+            return Ok(adminsDict);
         }
 
         [HttpGet("{clientId:int}")]
@@ -75,34 +80,49 @@ namespace WebfrontCore.Controllers.API
         {
             try
             {
-                var clientInfo = await clientService.Get(clientId);
-                if (clientInfo is null)
-                {
-                    return BadRequest("Could not find client");
-                }
-
-                var metaResult = await metaService
-                    .GetPersistentMetaByLookup(EFMeta.ClientTagV2, EFMeta.ClientTagNameV2, clientInfo.ClientId);
-
-                return Ok(new ClientInfoResult
-                {
-                    ClientId = clientInfo.ClientId,
-                    Name = clientInfo.CleanedName,
-                    Level = clientInfo.Level.ToLocalizedLevelName(),
-                    NetworkId = clientInfo.NetworkId,
-                    GameName = clientInfo.GameName.ToString(),
-                    Tag = metaResult?.Value,
-                    FirstConnection = clientInfo.FirstConnection,
-                    LastConnection = clientInfo.LastConnection,
-                    TotalConnectionTime = clientInfo.TotalConnectionTime,
-                    Connections = clientInfo.Connections,
-                });
+                var clientInfo = await dataService.GetClientInfoAsync(clientId);
+                return Ok(clientInfo);
             }
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to retrieve information for Client - {ClientId}", clientId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Messages = [e.Message] });
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse { Messages = [e.Message] });
             }
+        }
+
+        [HttpGet("{clientId:int}/profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<PlayerInfo>> GetProfileAsync([FromRoute] int clientId,
+            [FromQuery] MetaType? metaFilterType)
+        {
+            try
+            {
+                var profile = await dataService.GetClientProfileAsync(clientId, metaFilterType);
+                return Ok(profile);
+            }
+            catch (Exception)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet("{clientId:int}/meta")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<BaseMetaResponse>>> GetMetaAsync([FromRoute] int clientId,
+            [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType,
+            CancellationToken token)
+        {
+            var meta = await dataService.GetClientMetaAsync(new ClientMetaRequest
+            {
+                ClientId = clientId,
+                Count = count,
+                Offset = offset,
+                StartAt = startAt,
+                MetaType = metaType
+            });
+            return Ok(meta);
         }
 
         [HttpPost("{clientId:int}/login")]
@@ -112,80 +132,38 @@ namespace WebfrontCore.Controllers.API
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromRoute] int clientId, [FromBody, Required] PasswordRequest request)
         {
-            if (clientId is 0)
-            {
-                return Unauthorized();
-            }
-
             if (Authorized)
             {
                 return Ok();
             }
 
+            var ip = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var val)
+                ? val.ToString()
+                : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP Unavailable";
+
             try
             {
-                var privilegedClient = await clientService.GetClientForLogin(clientId);
-                var loginSuccess = false;
-
-                if (!Authorized)
+                var principal = await dataService.LoginAsync(new ServiceLoginRequest
                 {
-                    var tokenData = new TokenIdentifier
-                    {
-                        ClientId = clientId,
-                        Token = request.Password
-                    };
-
-                    loginSuccess = Manager.TokenAuthenticator.AuthorizeToken(tokenData) ||
-                                   (await Task.FromResult(Hashing.Hash(request.Password, privilegedClient.PasswordSalt)))[0] ==
-                                   privilegedClient.Password;
-                }
-
-                if (loginSuccess)
-                {
-                    List<Claim> claims =
-                    [
-                        new Claim(ClaimTypes.NameIdentifier, privilegedClient.Name),
-                        new Claim(ClaimTypes.Role, privilegedClient.Level.ToString()),
-                        new Claim(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-                        new Claim(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X"))
-                    ];
-
-                    var claimsIdentity = new ClaimsIdentity(claims, "login");
-                    var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
-                    await SignInAsync(claimsPrinciple);
-
-                    Manager.AddEvent(new GameEvent
-                    {
-                        Origin = privilegedClient,
-                        Type = GameEvent.EventType.Login,
-                        Owner = Manager.GetServers().First(),
-                        Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var gameStringValues)
-                            ? gameStringValues.ToString()
-                            : HttpContext.Connection.RemoteIpAddress?.ToString()
-                    });
-
-                    Manager.QueueEvent(new LoginEvent
-                    {
-                        Source = this,
-                        LoginSource = LoginEvent.LoginSourceType.Webfront,
-                        EntityId = Client.ClientId.ToString(),
-                        Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var loginStringValues)
-                            ? loginStringValues.ToString()
-                            : HttpContext.Connection.RemoteIpAddress?.ToString()
-                    });
-
-                    return Ok();
-                }
+                    ClientId = clientId,
+                    Password = request.Password,
+                    IpAddress = ip
+                });
+                await SignInAsync(principal);
+                return Ok();
             }
-            catch (Exception)
+            catch (UnauthorizedAccessException)
             {
                 return Unauthorized();
             }
-
-            return Unauthorized();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not login client {ClientId}", clientId);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
 
-        [HttpPost("{clientId:int}/logout")]
+        [HttpPost("/logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Logout()
@@ -215,11 +193,6 @@ namespace WebfrontCore.Controllers.API
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok();
-        }
-
-        public class PasswordRequest
-        {
-            public string Password { get; set; }
         }
     }
 }

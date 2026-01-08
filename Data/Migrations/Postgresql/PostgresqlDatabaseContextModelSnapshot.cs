@@ -17,7 +17,7 @@ namespace Data.Migrations.Postgresql
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.1")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -427,8 +427,6 @@ namespace Data.Migrations.Postgresql
 
                     b.HasKey("ClientHitStatisticId");
 
-                    b.HasIndex("ClientId");
-
                     b.HasIndex("HitLocationId");
 
                     b.HasIndex("MeansOfDeathId");
@@ -438,6 +436,8 @@ namespace Data.Migrations.Postgresql
                     b.HasIndex("WeaponAttachmentComboId");
 
                     b.HasIndex("WeaponId");
+
+                    b.HasIndex("ClientId", "ServerId");
 
                     b.ToTable("EFClientHitStatistics", (string)null);
                 });

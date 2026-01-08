@@ -1,0 +1,244 @@
+﻿@import "tailwindcss";
+@import "./palette.css";
+
+@source "../../../";
+
+@theme {
+    /* Permission Level Colors */
+    --color-level-console: #ff6060;
+    --color-level-banned: #ff6060;
+    --color-level-flagged: #fd9c38;
+    --color-level-trusted: #749363;
+    --color-level-moderator: #f0de8b;
+    --color-level-administrator: #f1a8e8;
+    --color-level-senioradmin: #50bcc3;
+    --color-level-owner: #007acc;
+}
+
+/* ============================================
+   GLOBAL NAVIGATION LOADING BAR
+   ============================================ */
+.loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    z-index: 9999;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            var(--color-primary, hsl(217 91% 60%)) 50%,
+            transparent 100%);
+    background-size: 200% 100%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.loading-bar.loading-bar-active {
+    opacity: 1;
+    animation: loading-bar-slide 4s ease-in-out infinite;
+}
+
+.loading-bar.loading-bar-complete {
+    opacity: 0;
+    background: var(--color-primary, hsl(217 91% 60%));
+    background-size: 100% 100%;
+}
+
+@keyframes loading-bar-slide {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.profile-banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 300px;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.4;
+    filter: blur(4px) brightness(0.75);
+    transition: opacity 1s;
+
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent), linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, black 70%, transparent), linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    mask-composite: intersect;
+}
+
+/* ============================================
+   RECONNECT MODAL
+   ============================================ */
+#components-reconnect-modal {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 20vh auto;
+    width: fit-content;
+    max-width: calc(100% - 2rem);
+    opacity: 0;
+    transition: display 0.4s allow-discrete, overlay 0.4s allow-discrete;
+}
+
+#components-reconnect-modal[open] {
+    opacity: 1;
+    animation: modal-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#components-reconnect-modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    opacity: 1;
+    transition: opacity 0.4s;
+}
+
+/* Visibility State Handling (Blazor Classes) 
+   We ensure states are mutually exclusive to prevent overlapping text */
+.reconnect-state-msg {
+    display: none;
+}
+
+/* Base "show" state is active unless a more specific state is present */
+#components-reconnect-modal.components-reconnect-show:not(.components-reconnect-retrying):not(.components-reconnect-failed) .reconnect-on-show {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-retrying .reconnect-on-retrying {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-failed .reconnect-on-failed {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-paused .reconnect-on-paused {
+    display: flex;
+}
+
+#components-reconnect-modal.components-reconnect-resume-failed .reconnect-on-resume-failed {
+    display: flex;
+}
+
+@keyframes modal-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Misc */
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+}
+
+/* ============================================
+   CUSTOM SCROLLBARS (Chromium/WebKit)
+   ============================================ */
+/* Scrollbar dimensions */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+/* Track (the background) */
+::-webkit-scrollbar-track {
+    background: var(--color-surface-alt, hsl(0 0% 10%));
+    border-radius: 8px;
+}
+
+/* Handle (the draggable part) */
+::-webkit-scrollbar-thumb {
+    background: var(--color-line, hsl(0 0% 20%));
+    border-radius: 8px;
+    border: 2px solid var(--color-surface-alt, hsl(0 0% 10%));
+    transition: background 0.2s ease;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted, hsl(0 0% 45%));
+}
+
+/* Handle when actively dragging */
+::-webkit-scrollbar-thumb:active {
+    background: var(--color-primary, hsl(217 91% 60%));
+}
+
+/* Corner where horizontal and vertical scrollbars meet */
+::-webkit-scrollbar-corner {
+    background: var(--color-surface-alt, hsl(0 0% 10%));
+}
+
+/* Firefox scrollbar styling */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line, hsl(0 0% 20%)) var(--color-surface-alt, hsl(0 0% 10%));
+}
+
+/* ============================================
+   MARQUEE TEXT ANIMATIONS
+   For long text that scrolls on hover
+   ============================================ */
+@keyframes marquee {
+
+    0%,
+    15% {
+        transform: translateX(0);
+    }
+
+    85%,
+    100% {
+        transform: translateX(calc(-100% + 80px));
+    }
+}
+
+/* Base text style for marquee items */
+.marquee-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+/* Menu item marquee - triggers on container hover */
+.menu-item-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.marquee-enabled .menu-item-text {
+    animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}
+
+/* Meta card marquee - always on for long values, duration from CSS variable */
+.meta-value-text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.meta-value-text.marquee-enabled {
+    animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}
+
+/* Generic hover-triggered marquee - for text that scrolls on container hover/tap */
+.marquee-enabled:hover .marquee-text,
+.marquee-enabled:active .marquee-text,
+.marquee-enabled:focus-within .marquee-text {
+    animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}

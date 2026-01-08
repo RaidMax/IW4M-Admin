@@ -1,0 +1,17 @@
+@rendermode InteractiveServer
+@inject IWebfrontDataService DataService
+@inject IActionService ActionService
+
+@if (_servers != null)
+{
+    <div class="space-y-4">
+        @foreach (var serverInfo in _servers)
+        {
+            <ServerCard @key="serverInfo.Id" Model="serverInfo" OnChat="OpenChat"/>
+        }
+    </div>
+}
+else
+{
+    <p>Loading servers...</p>
+}

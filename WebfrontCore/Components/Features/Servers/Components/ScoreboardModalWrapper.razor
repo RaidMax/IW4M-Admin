@@ -1,0 +1,16 @@
+@if (_isLoading)
+{
+    <div class="flex justify-center items-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+}
+else if (_error != null)
+{
+    <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm text-center">
+        @_error
+    </div>
+}
+else if (_scoreboardInfo != null)
+{
+    <ScoreboardTable Model="_scoreboardInfo" DualColumnMode="true" ShowHeader="false" />
+}

@@ -31,7 +31,44 @@ mv "$PublishDir/DefaultSettings.json" "$PublishDir/Configuration/"
 
 mkdir -p "$PublishDir/Lib"
 rm -f "$PublishDir/Microsoft.CodeAnalysis*.dll"
-mv "$PublishDir"/*.dll "$PublishDir/Lib/"
+
+# Get list of plugin DLLs from BUILD/Plugins (dynamically detected)
+pluginDllNames=()
+if [ -d "$SourceDir/BUILD/Plugins" ]; then
+    for pluginDll in "$SourceDir/BUILD/Plugins"/*.dll; do
+        if [ -f "$pluginDll" ]; then
+            pluginDllNames+=("$(basename "$pluginDll")")
+        fi
+    done
+fi
+
+# Move DLLs to Lib, excluding plugin assemblies (they go to Plugins/ folder)
+# Exception: Stats.dll should go to Lib as it's tightly integrated with the application
+for dll in "$PublishDir"/*.dll; do
+    if [ ! -f "$dll" ]; then
+        continue
+    fi
+    dllName=$(basename "$dll")
+    
+    # Stats.dll is an exception - it goes to Lib, not Plugins
+    if [ "$dllName" = "Stats.dll" ]; then
+        mv "$dll" "$PublishDir/Lib/"
+        continue
+    fi
+    
+    isPlugin=false
+    for plugin in "${pluginDllNames[@]}"; do
+        if [ "$dllName" = "$plugin" ]; then
+            isPlugin=true
+            break
+        fi
+    done
+    if [ "$isPlugin" = false ]; then
+        mv "$dll" "$PublishDir/Lib/"
+    else
+        rm -f "$dll"  # Remove from publish dir, plugins are copied from BUILD/Plugins
+    fi
+done
 mv "$PublishDir"/*.json "$PublishDir/Lib/"
 mv "$PublishDir/runtimes" "$PublishDir/Lib/runtimes"
 mv "$PublishDir/ru" "$PublishDir/Lib/ru"

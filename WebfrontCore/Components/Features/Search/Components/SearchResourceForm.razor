@@ -1,17 +1,17 @@
 <div class="relative inline-block text-left w-full max-w-sm ml-auto">
     <div class="flex items-center gap-2">
         <!-- Search Input Group -->
-        <form @onsubmit="BasicSubmit" class="flex-1 flex items-center relative w-full">
+        <form @onsubmit="BasicSubmit" class="flex-1 flex items-center relative w-full group rounded-md focus-within:ring-2 focus-within:ring-primary/20">
             <input @bind="ClientName"
                    type="text"
-                   class="block w-full h-10 rounded-l-md bg-input-bg border border-input-border border-r-0 text-foreground placeholder-muted focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 sm:text-sm px-3 py-2 min-w-0"
+                   class="block w-full h-10 rounded-l-md bg-input-bg border border-input-border border-r-0 text-foreground placeholder-muted focus:outline-none group-focus-within:border-primary transition-all duration-200 sm:text-sm px-3 py-2 min-w-0"
                    placeholder="@(AppState.Loc("WEBFRONT_NAV_SEARCH"))"
                    required/>
 
             <!-- Advanced Search Toggle (Inside Input Group) -->
             <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdvancedSearch}.{WebfrontPermission.Read}")">
                 <button type="button"
-                        class="h-10 px-3 bg-input-bg border-y border-input-border text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 border-l-0"
+                        class="h-10 px-3 bg-input-bg border-y border-input-border text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none group-focus-within:border-primary transition-all duration-200 border-l-0"
                         @onclick="ToggleAdvancedSearch"
                         title="@(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))">
                     <i class="ph ph-sliders text-lg flex justify-center"></i>
@@ -20,7 +20,7 @@
 
             <button type="button"
                     @onclick="BasicSubmit"
-                    class="inline-flex items-center px-3 py-2 h-10 border border-input-border border-l-0 rounded-r-md bg-input-bg text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200">
+                    class="inline-flex items-center px-3 py-2 h-10 border border-input-border border-l-0 rounded-r-md bg-input-bg text-subtle hover:text-foreground hover:bg-surface-hover focus:outline-none group-focus-within:border-primary transition-all duration-200">
                 <i class="ph ph-magnifying-glass text-lg"></i>
             </button>
         </form>

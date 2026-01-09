@@ -139,7 +139,7 @@ public partial class PenaltyList
         {
             await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
         }
-        catch (InvalidOperationException)
+        catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
         {
             // JS interop not available during static rendering - safe to ignore
         }

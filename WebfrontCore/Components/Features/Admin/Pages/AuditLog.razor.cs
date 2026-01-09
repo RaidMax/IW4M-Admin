@@ -31,62 +31,69 @@ public partial class AuditLog : IAsyncDisposable
     // Results and statistics
     private List<AuditInfo> Results
     {
-        get => State?.Results ?? _results;
+        get => State?.Results ?? field;
         set
         {
-            if (State != null) State.Results = value;
-            else _results = value;
+            if (State != null)
+                State.Results = value;
+            else
+                field = value;
         }
-    }
-    private List<AuditInfo> _results = []; // Fallback/Initial
+    } = [];
 
     private AuditStatistics? Statistics
     {
-        get => State?.Statistics ?? _statistics;
+        get => State?.Statistics ?? field;
         set
         {
-            if (State != null) State.Statistics = value;
-            else _statistics = value;
+            if (State != null)
+                State.Statistics = value;
+            else
+                field = value;
         }
     }
-    private AuditStatistics? _statistics;
 
     private bool HasMoreResults
     {
-        get => State?.HasMoreResults ?? _hasMoreResults;
+        get => State?.HasMoreResults ?? field;
         set
         {
-            if (State != null) State.HasMoreResults = value;
-            else _hasMoreResults = value;
+            if (State != null)
+                State.HasMoreResults = value;
+            else
+                field = value;
         }
-    }
-    private bool _hasMoreResults = true;
+    } = true;
 
     private bool _isLoading;
     private string? _error;
     private DotNetObjectReference<AuditLog>? _dotNetRef;
 
     // Pagination
-    private int _offset
+    private int Offset
     {
         get => State?.Offset ?? _internalOffset;
         set
         {
-            if (State != null) State.Offset = value;
-            else _internalOffset = value;
+            if (State != null)
+                State.Offset = value;
+            else
+                _internalOffset = value;
         }
     }
+
     private int _internalOffset;
-    
+
     private const int PageSize = 50;
 
     // View mode
     private bool _groupByAction;
-    
+
     // Collapsed group state
     private readonly HashSet<string> _collapsedGroups = [];
 
-    private static string DataDetailsPolicy => $"Permissions.{WebfrontEntity.AuditLogDataDetails}.{WebfrontPermission.Read}";
+    private static string DataDetailsPolicy =>
+        $"Permissions.{WebfrontEntity.AuditLogDataDetails}.{WebfrontPermission.Read}";
 
     // Available action types (excluding Ban which is filtered out at repository level)
     private static readonly EFChangeHistory.ChangeType[] AvailableActionTypes =
@@ -101,10 +108,12 @@ public partial class AuditLog : IAsyncDisposable
 
         if (upperAction.Contains("BAN") && !upperAction.Contains("UNBAN"))
             return "bg-red-900/30 text-red-400 border-red-900/50";
-        if (upperAction.Contains("KICK")) return "bg-orange-900/30 text-orange-400 border-orange-900/50";
+        if (upperAction.Contains("KICK"))
+            return "bg-orange-900/30 text-orange-400 border-orange-900/50";
         if (upperAction.Contains("FLAG") && !upperAction.Contains("UNFLAG"))
             return "bg-yellow-900/30 text-yellow-400 border-yellow-900/50";
-        if (upperAction.Contains("WARN")) return "bg-yellow-900/30 text-yellow-400 border-yellow-900/50";
+        if (upperAction.Contains("WARN"))
+            return "bg-yellow-900/30 text-yellow-400 border-yellow-900/50";
 
         if (upperAction.Contains("UNBAN") || upperAction.Contains("UNFLAG"))
             return "bg-green-900/30 text-green-400 border-green-900/50";
@@ -128,7 +137,7 @@ public partial class AuditLog : IAsyncDisposable
             return new MarkupString(System.Web.HttpUtility.HtmlEncode(text));
 
         var encodedText = System.Web.HttpUtility.HtmlEncode(text);
-        var highlighted = encodedText.Replace(searchTerm, 
+        var highlighted = encodedText.Replace(searchTerm,
             $"<mark class=\"bg-primary/20 text-primary\">{System.Web.HttpUtility.HtmlEncode(searchTerm)}</mark>",
             StringComparison.OrdinalIgnoreCase);
 
@@ -230,7 +239,7 @@ public partial class AuditLog : IAsyncDisposable
         return new AuditFilterRequest
         {
             Count = PageSize,
-            Offset = _offset,
+            Offset = Offset,
             SearchQuery = string.IsNullOrWhiteSpace(_searchQuery) ? null : _searchQuery,
             ActionTypes = _selectedActionTypes.Count > 0 ? _selectedActionTypes : [],
             OriginId = _originId,
@@ -242,7 +251,8 @@ public partial class AuditLog : IAsyncDisposable
 
     private async Task LoadData()
     {
-        if (_isLoading) return;
+        if (_isLoading)
+            return;
         _isLoading = true;
         StateHasChanged();
 
@@ -250,7 +260,7 @@ public partial class AuditLog : IAsyncDisposable
         {
             var request = BuildRequest();
             var result = await DataService.GetAuditLogAsync(request);
-            
+
             if (result.Any())
             {
                 Results.AddRange(result);
@@ -260,6 +270,7 @@ public partial class AuditLog : IAsyncDisposable
             {
                 HasMoreResults = false;
             }
+
             _error = null;
         }
         catch (Exception ex)
@@ -291,7 +302,7 @@ public partial class AuditLog : IAsyncDisposable
 
     private async Task ApplyFilters()
     {
-        _offset = 0;
+        Offset = 0;
         Results.Clear();
         HasMoreResults = true;
         UpdateUrl();
@@ -309,7 +320,7 @@ public partial class AuditLog : IAsyncDisposable
         _dateFrom = null;
         _dateTo = null;
         _groupByAction = false;
-        _offset = 0;
+        Offset = 0;
         Results.Clear();
         HasMoreResults = true;
         UpdateUrl();
@@ -350,8 +361,9 @@ public partial class AuditLog : IAsyncDisposable
     [JSInvokable]
     public async Task LoadMore()
     {
-        if (!HasMoreResults || _isLoading) return;
-        _offset += PageSize;
+        if (!HasMoreResults || _isLoading)
+            return;
+        Offset += PageSize;
         await LoadData();
         StateHasChanged();
     }
@@ -365,7 +377,7 @@ public partial class AuditLog : IAsyncDisposable
                 await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
                 _dotNetRef.Dispose();
             }
-            catch (JSDisconnectedException)
+            catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
             {
                 // Ignored
             }

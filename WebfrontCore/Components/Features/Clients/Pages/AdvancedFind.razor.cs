@@ -76,7 +76,7 @@ public partial class AdvancedFind
             // - We have results loaded, OR
             // - TotalCount is set (meaning we completed a search, possibly with 0 results)
             var hasValidData = State.Results.Count > 0 || State.TotalCount > 0 || State.ValidationError != null;
-            
+
             if (IsStateMatch(State) && hasValidData)
             {
                 // Restored state is valid for current params with data, skip load
@@ -233,18 +233,14 @@ public partial class AdvancedFind
         {
             await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
         }
-        catch (InvalidOperationException)
+        catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
         {
-            // Allowed
-        }
-        catch (JSDisconnectedException)
-        {
-            // Allowed
+            // Ignored
         }
 
         _dotNetRef?.Dispose();
     }
-    
+
     public class AdvancedFindState
     {
         public List<ClientResourceResponse> Results { get; set; } = [];
@@ -252,7 +248,7 @@ public partial class AdvancedFind
         public bool HasMore { get; set; } = true;
         public long TotalCount { get; set; }
         public string? ValidationError { get; set; }
-        
+
         // Params Snapshot
         public string? ClientName { get; set; }
         public bool IsExactClientName { get; set; }

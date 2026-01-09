@@ -8,19 +8,14 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 /// <summary>
 /// Tracks the state of a single loaded .cs plugin.
 /// </summary>
-internal class CsPluginInstance : IDisposable
+internal class CsPluginInstance(string filePath) : IDisposable
 {
-    public string FilePath { get; }
+    public string FilePath { get; } = filePath;
     public string FileName => Path.GetFileName(FilePath);
     public CsPluginLoadContext? LoadContext { get; set; }
     public WeakReference? ContextWeakRef { get; set; }
     public IPluginV2? Plugin { get; set; }
     public IServiceProvider? PluginServiceProvider { get; set; }
-
-    public CsPluginInstance(string filePath)
-    {
-        FilePath = filePath;
-    }
 
     /// <summary>
     /// Waits for the AssemblyLoadContext to be garbage collected.

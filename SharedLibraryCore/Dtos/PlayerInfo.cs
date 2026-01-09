@@ -24,6 +24,8 @@ namespace SharedLibraryCore.Dtos
         public bool Authenticated { get; set; }
         public List<InformationResponse> Meta { get; set; }
         public EFPenalty ActivePenalty { get; set; }
+        public string ActivePenaltyPunisherName { get; set; }
+        public int? ActivePenaltyPunisherId { get; set; }
         public bool Online { get; set; }
         public string TimeOnline { get; set; }
         public DateTime FirstConnection { get; set; }

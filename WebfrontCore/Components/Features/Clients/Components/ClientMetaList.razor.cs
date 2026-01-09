@@ -185,12 +185,12 @@ public partial class ClientMetaList : IAsyncDisposable
         return state;
     }
 
-    public async Task TogglePenaltyDetails(AdministeredPenaltyResponse meta)
+    public async Task TogglePenaltyDetails(ReceivedPenaltyResponse meta)
     {
         var state = GetState(meta);
         state.IsOpen = !state.IsOpen;
 
-        if (state.IsOpen && state.SnapshotInfo == null)
+        if (state is { IsOpen: true, SnapshotInfo: null })
         {
             state.IsLoading = true;
             try
@@ -213,7 +213,7 @@ public partial class ClientMetaList : IAsyncDisposable
         var state = GetState(meta);
         state.IsOpen = !state.IsOpen;
 
-        if (state.IsOpen && state.ContextMessages == null)
+        if (state is { IsOpen: true, ContextMessages: null })
         {
             state.IsLoading = true;
             try

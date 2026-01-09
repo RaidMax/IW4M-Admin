@@ -538,6 +538,13 @@ public class WebfrontDataService : IWebfrontDataService
             EFPenalty.PenaltyType.Mute => 1,
             _ => (int)penalty.Type
         });
+        
+        if (clientDto.ActivePenalty != null)
+        {
+            clientDto.ActivePenaltyPunisherId = clientDto.ActivePenalty.PunisherId;
+            clientDto.ActivePenaltyPunisherName = await _clientService.GetClientNameById(clientDto.ActivePenalty.PunisherId);
+        }
+        
         clientDto.Meta.AddRange(authorized ? meta : meta.Where(m => !m.IsSensitive));
 
         clientDto.IPAddress = canViewIp ? client.IPAddressString : null;

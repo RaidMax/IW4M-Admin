@@ -54,41 +54,6 @@ else
             <div class="max-w-[1400px] mx-auto space-y-6 w-full">
 
                 @* ================================================================ *@
-                @* ADMIN NOTICE - Above everything *@
-                @* ================================================================ *@
-                @if (Client.NoteMeta != null && !string.IsNullOrWhiteSpace(Client.NoteMeta.Note))
-                {
-                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientNote}.{WebfrontPermission.Read}")">
-                        <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
-                            <div
-                                class="px-2 py-2 rounded-lg flex justify-center bg-amber-500/20 text-amber-500 shrink-0">
-                                <i class="ph ph-warning-circle text-lg"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span
-                                        class="text-xs font-bold uppercase tracking-wider text-amber-500">@AppState.Loc("WEBFRONT_ACTION_NOTE_FORM_NOTE")</span>
-                                </div>
-                                <div class="text-sm text-amber-200/90 leading-relaxed">
-                                    @foreach (var line in Client.NoteMeta.Note.Split("\n"))
-                                    {
-                                        <p class="break-words">@line.TrimEnd('\r')</p>
-                                    }
-                                </div>
-                                <div class="flex items-center gap-2 text-xs text-amber-500/70 mt-2">
-                                    <a href="/client/@Client.NoteMeta.OriginEntityId"
-                                       class="hover:text-amber-400 transition-colors font-medium">
-                                        <ColorCode Value="@Client.NoteMeta.OriginEntityName"/>
-                                    </a>
-                                    <span>•</span>
-                                    <span>@Client.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
-                                </div>
-                            </div>
-                        </div>
-                    </AuthorizeView>
-                }
-
-                @* ================================================================ *@
                 @* ACTIVE PENALTY BANNER *@
                 @* ================================================================ *@
                 @if (Client.ActivePenalty != null)
@@ -117,8 +82,11 @@ else
                                 </div>
                                 <div>
                                     <div class="text-xs font-bold uppercase tracking-wider opacity-70 mb-0.5">
-                                        @(Client.ActivePenalty.Type == EFPenalty.PenaltyType.Ban ? AppState.Loc("WEBFRONT_PROFILE_PERMANENTLY_BANNED") :
-                                        Client.ActivePenalty.Type == EFPenalty.PenaltyType.TempBan ? AppState.Loc("WEBFRONT_PROFILE_TEMPORARILY_BANNED") : AppState.Loc("WEBFRONT_PROFILE_WARNING_STATUS"))
+                                        @(Client.ActivePenalty.Type == EFPenalty.PenaltyType.Ban
+                                            ? AppState.Loc("WEBFRONT_PROFILE_PERMANENTLY_BANNED")
+                                            : Client.ActivePenalty.Type == EFPenalty.PenaltyType.TempBan
+                                                ? AppState.Loc("WEBFRONT_PROFILE_TEMPORARILY_BANNED")
+                                                : AppState.Loc("WEBFRONT_PROFILE_WARNING_STATUS"))
                                     </div>
                                     @if (IsAuthorized && !string.IsNullOrEmpty(Client.ActivePenalty.AutomatedOffense) && Client.ActivePenalty.Type != EFPenalty.PenaltyType.Warning)
                                     {
@@ -129,6 +97,14 @@ else
                                     {
                                         <span class="font-medium">@Client.ActivePenalty.Offense</span>
                                     }
+                                    <div class="flex items-center gap-2 text-xs opacity-70 mt-2">
+                                        <a href="/client/@Client.ActivePenaltyPunisherId"
+                                           class="hover:opacity-100 transition-opacity font-medium">
+                                            <ColorCode Value="@Client.ActivePenaltyPunisherName"/>
+                                        </a>
+                                        <span>•</span>
+                                        <span>@Client.ActivePenalty.When.HumanizeForCurrentCulture()</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -140,6 +116,42 @@ else
                                     <span>@(AppState.Loc("WEBFRONT_PROFILE_EXPIRES").FormatExt((Client.ActivePenalty.Expires.Value - DateTime.UtcNow).HumanizeForCurrentCulture()))</span>
                                 </div>
                             }
+                        </div>
+                    </AuthorizeView>
+                }
+
+                @* ================================================================ *@
+                @* ADMIN NOTICE - Above everything *@
+                @* ================================================================ *@
+                @if (Client.NoteMeta != null && !string.IsNullOrWhiteSpace(Client.NoteMeta.Note))
+                {
+                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientNote}.{WebfrontPermission.Read}")">
+                        <div
+                            class="rounded-xl border-2 px-5 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-amber-500/10 border-amber-500/30 text-amber-500">
+                            <div class="flex items-center gap-4">
+                                <div class="p-2.5 flex justify-center rounded-lg bg-current/10">
+                                    <i class="ph ph-note text-2xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wider opacity-70 mb-0.5">
+                                        @AppState.Loc("WEBFRONT_ACTION_NOTE_FORM_NOTE")
+                                    </div>
+                                    <div class="text-sm text-amber-200/90 leading-relaxed font-medium">
+                                        @foreach (var line in Client.NoteMeta.Note.Split("\n"))
+                                        {
+                                            <p class="break-words">@line.TrimEnd('\r')</p>
+                                        }
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs opacity-70 mt-2">
+                                        <a href="/client/@Client.NoteMeta.OriginEntityId"
+                                           class="hover:opacity-100 transition-opacity font-medium">
+                                            <ColorCode Value="@Client.NoteMeta.OriginEntityName"/>
+                                        </a>
+                                        <span>•</span>
+                                        <span>@Client.NoteMeta.ModifiedDate.HumanizeForCurrentCulture()</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </AuthorizeView>
                 }

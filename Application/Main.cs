@@ -583,6 +583,7 @@ namespace IW4MAdmin.Application
                     PermissionLevelChangedResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>,
                     ClientResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
                 .AddSingleton<IMasterCommunication, MasterCommunication>()

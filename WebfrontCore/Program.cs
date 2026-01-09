@@ -186,7 +186,6 @@ public class Program
                 options.Events.OnSignedIn += ClaimsPermissionRemoval.OnSignedIn;
             });
 
-        services.AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>();
         services.AddTransient<IValidator<FindClientRequest>, FindClientRequestValidator>();
         services.AddSingleton<IResourceQueryHelper<FindClientRequest, FindClientResult>, ClientService>();
         services.AddSingleton<IResourceQueryHelper<StatsInfoRequest, StatsInfoResult>, StatsResourceQueryHelper>();

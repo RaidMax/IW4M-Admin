@@ -590,16 +590,18 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<IEnumerable<BaseMetaResponse>> GetClientMetaAsync(ClientMetaRequest request)
     {
+        var level = GetRequestingPermission();
+        
         var metaRequest = new ClientPaginationRequest
         {
             ClientId = request.ClientId,
             Count = request.Count,
             Offset = request.Offset,
             Before = request.StartAt.HasValue ? DateTime.FromFileTimeUtc(request.StartAt.Value) : DateTime.UtcNow,
+            IsPrivileged = level >= Data.Models.Client.EFClient.Permission.Trusted
         };
 
         var config = _manager.GetApplicationSettings().Configuration();
-        var level = GetRequestingPermission();
 
         if (!config.Webfront.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
         {
@@ -622,9 +624,8 @@ public class WebfrontDataService : IWebfrontDataService
                     WebfrontPermission.Read)
                     ? await _metaService.GetRuntimeMeta<UpdatedAliasResponse>(metaRequest, request.MetaType.Value)
                     : new List<IClientMeta>(),
-                MetaType.ChatMessage =>
-                    await PostProcessChatMeta(_metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
-                    request.MetaType.Value)),
+                MetaType.ChatMessage => await _metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
+                    request.MetaType.Value),
                 MetaType.Penalized => permissionSet.HasPermission(WebfrontEntity.Penalty,
                     WebfrontPermission.Read)
                     ? await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(metaRequest,
@@ -650,15 +651,20 @@ public class WebfrontDataService : IWebfrontDataService
 
         return meta?.Cast<BaseMetaResponse>().ToList() ?? [];
 
-        async Task<IEnumerable<MessageResponse>> PostProcessChatMeta(Task<IEnumerable<MessageResponse>> metaResult)
+        async Task<IEnumerable<IClientMeta>> PostProcessChatMeta(Task<IEnumerable<IClientMeta>> metaResult)
         {
             var result = (await metaResult).ToList();
-
-            foreach (var m in result.Cast<MessageResponse?>())
+            
+            foreach (var m in result)
             {
-                m?.Message = m.IsServerPasswordProtected && level < Data.Models.Client.EFClient.Permission.Trusted
-                    ? m.HiddenMessage
-                    : m.Message;
+                if (m is not MessageResponse mr)
+                {
+                    continue;
+                }
+                
+                mr.Message = mr.IsHidden && level < Data.Models.Client.EFClient.Permission.Trusted
+                    ? mr.HiddenMessage
+                    : mr.Message;
             }
 
             return result;
@@ -1241,7 +1247,8 @@ public class WebfrontDataService : IWebfrontDataService
         {
             ServerId = serverId,
             SentBefore = whenUpper,
-            SentAfter = whenLower
+            SentAfter = whenLower,
+            IsPrivileged = GetRequestingPermission() > Data.Models.Client.EFClient.Permission.Trusted
         });
 
         return messages.Results.OrderBy(message => message.When).ToList();

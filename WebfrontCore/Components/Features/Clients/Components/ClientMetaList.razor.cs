@@ -131,11 +131,10 @@ public partial class ClientMetaList : IAsyncDisposable
             {
                 MetaItems.AddRange(uniqueItems);
             }
-
-            if (itemList.Count < Count)
-            {
-                HasMore = false;
-            }
+            
+            // Note: We don't check itemList.Count < Count here because permission filtering
+            // may reduce the returned count even when more items exist in the database.
+            // The n == 0 check above handles the true "no more items" case.
         }
         catch (Exception ex)
         {
@@ -160,7 +159,14 @@ public partial class ClientMetaList : IAsyncDisposable
     {
         if (_observerSetup)
         {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+            try
+            {
+                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
+            {
+                // ignored
+            }
         }
 
         _objRef?.Dispose();

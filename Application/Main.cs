@@ -32,6 +32,7 @@ using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Localization;
 using IW4MAdmin.Application.Plugin;
+using IW4MAdmin.Application.Plugin.CSharpScript;
 using IW4MAdmin.Application.Plugin.Script;
 using IW4MAdmin.Application.QueryHelpers;
 using Microsoft.Extensions.Logging;
@@ -223,6 +224,10 @@ namespace IW4MAdmin.Application
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
 
                 await _serverManager.Init();
+
+                // Start C# script plugin service host for hot reload support
+                var csPluginHost = _serviceProvider.GetRequiredService<ICsPluginServiceHost>();
+                await csPluginHost.StartAsync(_serverManager.CancellationToken);
 
                 _applicationTask = RunApplicationTasksAsync(logger, _serverManager, _serviceProvider);
 
@@ -478,6 +483,46 @@ namespace IW4MAdmin.Application
                         .CreateScriptPlugin(scriptPlugin.Item1, scriptPlugin.Item2));
             }
 
+            // Pre-register .cs plugin dependencies before container is built
+            // This allows .cs plugins to use RegisterDependencies just like DLL plugins
+            var csPlugins = pluginImporter.DiscoverCsPlugins().ToList();
+            if (csPlugins.Count > 0)
+            {
+                var compiler = new CsPluginCompiler(
+                    serviceCollection.BuildServiceProvider().GetRequiredService<ILogger<CsPluginCompiler>>());
+
+                foreach (var (_, filePath) in csPlugins)
+                {
+                    try
+                    {
+                        defaultLogger.LogDebug("Pre-compiling C# script plugin {FileName} for dependency registration",
+                            Path.GetFileName(filePath));
+
+                        var assembly = compiler.PreCompile(filePath);
+                        var pluginType = assembly.GetTypes()
+                            .FirstOrDefault(t =>
+                                t is { IsInterface: false, IsAbstract: false } &&
+                                t.GetInterface(nameof(IPluginV2)) != null);
+
+                        if (pluginType != null)
+                        {
+                            // Invoke RegisterDependencies if present (same as DLL plugins)
+                            var registrationMethod = pluginType.GetMethod(nameof(IPluginV2.RegisterDependencies));
+                            if (registrationMethod != null)
+                            {
+                                defaultLogger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
+                                registrationMethod.Invoke(null, [serviceCollection]);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        defaultLogger.LogError(ex, "Failed to pre-register dependencies for .cs plugin {FileName}",
+                            Path.GetFileName(filePath));
+                    }
+                }
+            }
+
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
                          .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
@@ -611,6 +656,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton(new ConfigurationWatcher())
                 .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
+                .AddSingleton<CsPluginCompiler>()
+                .AddSingleton<ICsPluginServiceHost, CsPluginServiceHost>()
                 .AddSingleton<IGameScriptEventFactory, GameScriptEventFactory>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);

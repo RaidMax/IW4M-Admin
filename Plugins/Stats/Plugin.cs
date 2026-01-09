@@ -474,23 +474,6 @@ public class Plugin : IPluginV2
             };
         }
 
-        async Task<IEnumerable<MessageResponse>> GetMessages(ClientPaginationRequest request,
-            CancellationToken token = default)
-        {
-            var query = new ChatSearchQuery
-            {
-                ClientId = request.ClientId,
-                Before = request.Before,
-                SentBefore = request.Before ?? DateTime.UtcNow,
-                SentAfter = request.After,
-                After = request.After,
-                Count = request.Count,
-                IsProfileMeta = true
-            };
-
-            return (await _chatQueryHelper.QueryResource(query)).Results;
-        }
-
         if (_statsConfig.AnticheatConfiguration.Enable)
         {
             _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information,
@@ -498,7 +481,6 @@ public class Plugin : IPluginV2
         }
 
         _metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information, GetStats);
-        _metaService.AddRuntimeMeta<ClientPaginationRequest, MessageResponse>(MetaType.ChatMessage, GetMessages);
 
         async Task<string> TotalKills(Server server)
         {

@@ -100,14 +100,14 @@ public class ChatResourceQueryHelper(
             .Skip(query.Offset)
             .Take(query.Count)
             .ToListAsync();
-            
+
         foreach (var message in resultList)
         {
             if (message.IsHidden && !query.IsPrivileged)
             {
                 message.Message = message.HiddenMessage;
             }
-                
+
             if (!message.Message.IsQuickMessage())
             {
                 continue;

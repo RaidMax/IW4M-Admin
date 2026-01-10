@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using IW4MAdmin.Application.Configuration;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Interfaces;
-using System.IO;
 
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
 
@@ -19,7 +18,7 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
     private ScriptPluginConfiguration _config;
     private readonly IConfigurationHandlerV2<ScriptPluginConfiguration> _configHandler;
     private readonly ILogger<CsScriptPluginConfigurationWrapper> _logger;
-    private readonly List<(string key, Action<object> callback)> _updateCallbacks = new();
+    private readonly List<(string key, Type targetType, Action<object> callback)> _updateCallbacks = new();
     private readonly List<(string key, object value)> _pendingWrites = new();
     private readonly List<(string key, object defaultValue, object onUpdate)> _pendingReads = new();
     private readonly Func<string?>? _pluginNameProvider;
@@ -262,7 +261,19 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
         {
             lock (_updateCallbacks)
             {
-                _updateCallbacks.Add((key, (obj) => onUpdate((T)obj)));
+                _updateCallbacks.Add((key, typeof(T), (obj) =>
+                {
+                    try
+                    {
+                        // Convert to the correct type T before invoking the callback
+                        var converted = ConvertValue<T>(obj);
+                        onUpdate(converted);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to convert value for update callback key {Key} to type {Type}", key, typeof(T).Name);
+                    }
+                }));
             }
         }
 
@@ -366,7 +377,7 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
     {
         lock (_updateCallbacks)
         {
-            foreach (var (key, callback) in _updateCallbacks.ToList())
+            foreach (var (key, targetType, callback) in _updateCallbacks.ToList())
             {
                 try
                 {
@@ -378,8 +389,16 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
                     
                     if (value == null) continue;
                     
-                    var convertedValue = ConvertValue<object>(value);
-                    callback(convertedValue);
+                    // Convert to the target type using reflection to call the generic ConvertValue method
+                    var convertMethod = typeof(CsScriptPluginConfigurationWrapper)
+                        .GetMethod(nameof(ConvertValue), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                    var genericMethod = convertMethod?.MakeGenericMethod(targetType);
+                    var convertedValue = genericMethod?.Invoke(null, new[] { value });
+                    
+                    if (convertedValue != null)
+                    {
+                        callback(convertedValue);
+                    }
                 }
                 catch (Exception ex)
                 {

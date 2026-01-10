@@ -21,6 +21,11 @@ internal class CsPluginInstance(string filePath) : IDisposable
     public IServiceProvider? PluginServiceProvider { get; set; }
     
     /// <summary>
+    /// Plugin name, used for configuration wrapper key in ScriptPluginSettings.json
+    /// </summary>
+    public string? PluginName { get; set; }
+    
+    /// <summary>
     /// Tracks commands registered by this plugin so they can be safely unregistered on unload.
     /// </summary>
     public List<IManagerCommand> RegisteredCommands { get; } = new();

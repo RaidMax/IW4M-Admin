@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using IW4MAdmin.Application.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
@@ -334,13 +335,83 @@ public class CsPluginServiceHost : ICsPluginServiceHost
 
             _logger.LogDebug("Found plugin type: {TypeName}", pluginType.FullName);
 
-            // Create a plugin-scoped provider that can resolve both plugin services and root services
-            instance.PluginServiceProvider = CreatePluginScopedProvider(pluginType);
+            // CRITICAL: Get plugin name BEFORE creating service provider and instantiating
+            // We need the name available during plugin construction so config reads work
+            // Read the Name property via reflection (no instantiation needed for property getters)
+            string? pluginName = null;
+            try
+            {
+                // Get the Name property and read it via reflection
+                // This works because Name is typically an expression-bodied property or simple getter
+                var nameProperty = pluginType.GetProperty("Name");
+                if (nameProperty != null && nameProperty.CanRead)
+                {
+                    // Try to get a default instance if possible (for expression-bodied properties)
+                    // If that fails, we'll try to compile/evaluate the property getter
+                    object? tempInstance = null;
+                    try
+                    {
+                        tempInstance = Activator.CreateInstance(pluginType);
+                    }
+                    catch
+                    {
+                        // Can't create instance - will try other approaches
+                    }
+                    
+                    if (tempInstance != null)
+                    {
+                        pluginName = nameProperty.GetValue(tempInstance)?.ToString();
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(pluginName))
+                {
+                    instance.PluginName = pluginName;
+                }
+            }
+            catch (Exception)
+            {
+                // Reflection failed - we'll get name after instantiation
+            }
 
-            // Instantiate the plugin using the scoped provider
+            // Create a plugin-scoped provider that can resolve both plugin services and root services
+            // Use a closure that will have plugin name available if we got it above
+            instance.PluginServiceProvider = CreatePluginScopedProvider(pluginType, () => 
+            {
+                // Use cached name if we got it, otherwise try instance.Plugin.Name (available during construction in some cases)
+                var name = !string.IsNullOrEmpty(instance.PluginName) ? instance.PluginName : (instance.Plugin?.Name);
+                return name ?? string.Empty;
+            });
+
+            // Set plugin name on wrapper BEFORE instantiation if we got it
+            if (!string.IsNullOrEmpty(pluginName))
+            {
+                var configWrapperBeforeInit = instance.PluginServiceProvider.GetService<ICsScriptPluginConfiguration>();
+                if (configWrapperBeforeInit != null)
+                {
+                    configWrapperBeforeInit.SetName(pluginName);
+                }
+            }
+
+            // Now instantiate the plugin using the scoped provider (this will run the constructor)
             instance.Plugin = (IPluginV2)ActivatorUtilities.CreateInstance(
                 instance.PluginServiceProvider,
                 pluginType);
+
+            // Update plugin name if we didn't have it before, and ensure wrapper has it
+            if (string.IsNullOrEmpty(instance.PluginName))
+            {
+                instance.PluginName = instance.Plugin.Name;
+            }
+            
+            // Ensure configuration wrapper has the plugin name
+            var configWrapper = instance.PluginServiceProvider.GetService<ICsScriptPluginConfiguration>();
+            if (configWrapper != null)
+            {
+                // Always set it in case it wasn't set before, or to update if we just got the name
+                configWrapper.SetName(instance.PluginName);
+                _logger.LogDebug("[{FileName}] Set plugin name '{PluginName}' on configuration wrapper", fileName, instance.PluginName);
+            }
 
             // Discover and register commands from the plugin assembly
             await RegisterPluginCommands(instance, assembly);
@@ -429,8 +500,9 @@ public class CsPluginServiceHost : ICsPluginServiceHost
     /// Creates a plugin-scoped service provider that can resolve:
     /// 1. Services registered by the plugin's RegisterDependencies (built with root provider for their deps)
     /// 2. All services from the root provider
+    /// 3. ICsScriptPluginConfiguration wrapper for shared ScriptPluginSettings.json access
     /// </summary>
-    private IServiceProvider CreatePluginScopedProvider(Type pluginType)
+    private IServiceProvider CreatePluginScopedProvider(Type pluginType, Func<string?> pluginNameProvider)
     {
         // Collect the plugin's service registrations
         var pluginServices = new ServiceCollection();
@@ -460,6 +532,25 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         {
             _logger.LogWarning(ex, "Failed to invoke RegisterDependencies for {TypeName}", pluginType.Name);
         }
+
+        // Register the shared configuration wrapper for ScriptPluginSettings.json
+        // This allows plugins to opt-in by requesting ICsScriptPluginConfiguration in their constructor
+        pluginServices.AddSingleton<ICsScriptPluginConfiguration>(serviceProvider =>
+        {
+            var configHandler = _rootServiceProvider.GetRequiredService<IConfigurationHandlerV2<ScriptPluginConfiguration>>();
+            var wrapperLogger = _rootServiceProvider.GetRequiredService<ILogger<CsScriptPluginConfigurationWrapper>>();
+            // Pass the plugin name provider so GetValue can use it even before SetName is called
+            var wrapper = new CsScriptPluginConfigurationWrapper(configHandler, wrapperLogger, pluginNameProvider);
+            
+            // Set plugin name if available (for immediate use)
+            var pluginName = pluginNameProvider();
+            if (!string.IsNullOrEmpty(pluginName))
+            {
+                wrapper.SetName(pluginName);
+            }
+            
+            return wrapper;
+        });
 
         // Build a composite provider that:
         // 1. First tries to resolve from plugin-registered services (instantiated with root provider)

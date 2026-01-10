@@ -404,7 +404,7 @@ const plugin = {
 
                 for (let i = 0; i < chunks.length; i++) {
                     this.sendEventMessage(server, false, 'UrlRequestCompleted', null, null,
-                        null, { entity: event.data.entity, remaining: chunks.length - (i + 1), response: chunks[i] });
+                        null, {entity: event.data.entity, remaining: chunks.length - (i + 1), response: chunks[i]});
                 }
             });
         }
@@ -633,7 +633,7 @@ const plugin = {
                     }
 
                     if (gameEvent.data === '--reload' && gameEvent.origin.level === 'Owner') {
-                        this.sendEventMessage(gameEvent.owner, true, 'GetCommandsRequested', null, null, null, { name: gameEvent.extra.name });
+                        this.sendEventMessage(gameEvent.owner, true, 'GetCommandsRequested', null, null, null, {name: gameEvent.extra.name});
                     } else {
                         sendScriptCommand(gameEvent.owner, `${event.data['eventKey']}Execute`, gameEvent.origin, gameEvent.target, {
                             args: gameEvent.data
@@ -657,10 +657,10 @@ const commands = [{
         name: 'player',
         required: true
     },
-    {
-        name: 'weapon name',
-        required: true
-    }
+        {
+            name: 'weapon name',
+            required: true
+        }
     ],
     supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
     execute: (gameEvent) => {
@@ -672,221 +672,221 @@ const commands = [{
         });
     }
 },
-{
-    name: 'takeweapons',
-    description: 'take all weapons from specified player',
-    alias: 'tw',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
+    {
+        name: 'takeweapons',
+        description: 'take all weapons from specified player',
+        alias: 'tw',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'TakeWeapons', gameEvent.origin, gameEvent.target, undefined);
         }
-        sendScriptCommand(gameEvent.owner, 'TakeWeapons', gameEvent.origin, gameEvent.target, undefined);
-    }
-},
-{
-    name: 'switchteam',
-    description: 'switches specified player to the opposite team',
-    alias: 'st',
-    permission: 'Administrator',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.owner, 'SwitchTeams', gameEvent.origin, gameEvent.target, undefined);
-    }
-},
-{
-    name: 'lockcontrols',
-    description: 'locks target player\'s controls',
-    alias: 'lc',
-    permission: 'Administrator',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.owner, 'LockControls', gameEvent.origin, gameEvent.target, undefined);
-    }
-},
-{
-    name: 'noclip',
-    description: 'enable noclip on yourself ingame',
-    alias: 'nc',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [],
-    supportedGames: ['IW4', 'IW5'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.owner, 'NoClip', gameEvent.origin, gameEvent.origin, undefined);
-    }
-},
-{
-    name: 'hide',
-    description: 'hide yourself ingame',
-    alias: 'hi',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.owner, 'Hide', gameEvent.origin, gameEvent.origin, undefined);
-    }
-},
-{
-    name: 'alert',
-    description: 'alert a player',
-    alias: 'alr',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
     },
     {
-        name: 'message',
-        required: true
-    }
-    ],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
+        name: 'switchteam',
+        description: 'switches specified player to the opposite team',
+        alias: 'st',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'SwitchTeams', gameEvent.origin, gameEvent.target, undefined);
         }
-        sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.origin, gameEvent.target, {
-            alertType: 'Alert',
-            message: gameEvent.Data
-        });
-    }
-},
-{
-    name: 'gotoplayer',
-    description: 'teleport to a player',
-    alias: 'g2p',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.owner, 'Goto', gameEvent.origin, gameEvent.target, undefined);
-    }
-},
-{
-    name: 'playertome',
-    description: 'teleport a player to you',
-    alias: 'p2m',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
-        }
-        sendScriptCommand(gameEvent.owner, 'PlayerToMe', gameEvent.origin, gameEvent.target, undefined);
-    }
-},
-{
-    name: 'goto',
-    description: 'teleport to a position',
-    alias: 'g2',
-    permission: 'SeniorAdmin',
-    targetRequired: false,
-    arguments: [{
-        name: 'x',
-        required: true
     },
     {
-        name: 'y',
-        required: true
+        name: 'lockcontrols',
+        description: 'locks target player\'s controls',
+        alias: 'lc',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'LockControls', gameEvent.origin, gameEvent.target, undefined);
+        }
     },
     {
-        name: 'z',
-        required: true
-    }
-    ],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
+        name: 'noclip',
+        description: 'enable noclip on yourself ingame',
+        alias: 'nc',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4', 'IW5'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'NoClip', gameEvent.origin, gameEvent.origin, undefined);
         }
+    },
+    {
+        name: 'hide',
+        description: 'hide yourself ingame',
+        alias: 'hi',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'Hide', gameEvent.origin, gameEvent.origin, undefined);
+        }
+    },
+    {
+        name: 'alert',
+        description: 'alert a player',
+        alias: 'alr',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        },
+            {
+                name: 'message',
+                required: true
+            }
+        ],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.Owner, 'Alert', gameEvent.origin, gameEvent.target, {
+                alertType: 'Alert',
+                message: gameEvent.Data
+            });
+        }
+    },
+    {
+        name: 'gotoplayer',
+        description: 'teleport to a player',
+        alias: 'g2p',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'Goto', gameEvent.origin, gameEvent.target, undefined);
+        }
+    },
+    {
+        name: 'playertome',
+        description: 'teleport a player to you',
+        alias: 'p2m',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'PlayerToMe', gameEvent.origin, gameEvent.target, undefined);
+        }
+    },
+    {
+        name: 'goto',
+        description: 'teleport to a position',
+        alias: 'g2',
+        permission: 'SeniorAdmin',
+        targetRequired: false,
+        arguments: [{
+            name: 'x',
+            required: true
+        },
+            {
+                name: 'y',
+                required: true
+            },
+            {
+                name: 'z',
+                required: true
+            }
+        ],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
 
-        const args = String(gameEvent.Data).split(' ');
-        sendScriptCommand(gameEvent.owner, 'Goto', gameEvent.origin, gameEvent.target, {
-            x: args[0],
-            y: args[1],
-            z: args[2]
-        });
-    }
-},
-{
-    name: 'kill',
-    description: 'kill a player',
-    alias: 'kpl',
-    permission: 'SeniorAdmin',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
+            const args = String(gameEvent.Data).split(' ');
+            sendScriptCommand(gameEvent.owner, 'Goto', gameEvent.origin, gameEvent.target, {
+                x: args[0],
+                y: args[1],
+                z: args[2]
+            });
         }
-        sendScriptCommand(gameEvent.owner, 'Kill', gameEvent.origin, gameEvent.target, undefined);
-    }
-},
-{
-    name: 'setspectator',
-    description: 'sets a player as spectator',
-    alias: 'spec',
-    permission: 'Administrator',
-    targetRequired: true,
-    arguments: [{
-        name: 'player',
-        required: true
-    }],
-    supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
-    execute: (gameEvent) => {
-        if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
-            return;
+    },
+    {
+        name: 'kill',
+        description: 'kill a player',
+        alias: 'kpl',
+        permission: 'SeniorAdmin',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'Kill', gameEvent.origin, gameEvent.target, undefined);
         }
-        sendScriptCommand(gameEvent.owner, 'SetSpectator', gameEvent.origin, gameEvent.target, undefined);
+    },
+    {
+        name: 'setspectator',
+        description: 'sets a player as spectator',
+        alias: 'spec',
+        permission: 'Administrator',
+        targetRequired: true,
+        arguments: [{
+            name: 'player',
+            required: true
+        }],
+        supportedGames: ['IW4', 'IW5', 'T5', 'T6'],
+        execute: (gameEvent) => {
+            if (!validateEnabled(gameEvent.owner, gameEvent.origin)) {
+                return;
+            }
+            sendScriptCommand(gameEvent.owner, 'SetSpectator', gameEvent.origin, gameEvent.target, undefined);
+        }
     }
-}
 ];
 
 const sendScriptCommand = (server, command, origin, target, data) => {

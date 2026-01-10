@@ -43,27 +43,6 @@
             </div>
 
             <div id="topPlayersContainer" class="flex flex-col gap-4 relative">
-                @if (!_hasLoaded)
-                {
-                    @* Initial loading skeleton - overlays content while first batch loads *@
-                    <div class="absolute inset-0 z-10 flex flex-col gap-4">
-                        @for (var i = 0; i < 8; i++)
-                        {
-                            <div
-                                class="bg-surface-alt/70 backdrop-blur-md relative rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-6 animate-pulse border border-line">
-                                <div
-                                    class="flex md:flex-col items-center justify-center md:w-24 md:self-stretch bg-surface/50 shrink-0 h-24 rounded-l-xl"></div>
-                                <div class="flex-1 space-y-4 py-2">
-                                    <div class="h-6 w-48 bg-surface/50 rounded"></div>
-                                    <div class="flex gap-4">
-                                        <div class="h-10 w-24 bg-surface/50 rounded"></div>
-                                        <div class="h-10 w-64 bg-surface/50 rounded"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
                 @if (_hasLoaded && TotalRankedClients == 0)
                 {
                     <div
@@ -78,7 +57,7 @@
                 }
 
                 <Virtualize @ref="_virtualizeComponent" Context="stat" ItemsProvider="LoadPlayerStats"
-                            OverscanCount="10" ItemSize="139">
+                            OverscanCount="10" ItemSize="121">
                     <ItemContent>
                         @{
                             var isGold = stat.Ranking == 1;
@@ -193,16 +172,17 @@
                         </div>
                     </ItemContent>
                     <Placeholder>
-                        <div
-                            class="bg-surface-alt/70 backdrop-blur-md relative rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-6 animate-pulse border border-line">
-                            <div
-                                class="flex md:flex-col items-center justify-center md:w-24 md:self-stretch bg-surface/50 shrink-0 h-24 rounded-l-xl"></div>
-                            <div class="flex-1 space-y-4 py-2">
-                                <div class="h-6 w-48 bg-surface/50 rounded"></div>
-                                <div class="flex gap-4">
-                                    <div class="h-10 w-24 bg-surface/50 rounded"></div>
-                                    <div class="h-10 w-64 bg-surface/50 rounded"></div>
-                                </div>
+                        <div class="bg-surface-alt/70 backdrop-blur-md rounded-xl p-5 md:p-0 flex flex-col md:flex-row md:items-center gap-6 border-y border-r border-line overflow-hidden">
+                            <div class="relative flex md:flex-col items-center justify-center md:w-24 md:self-stretch md:bg-surface-alt shrink-0">
+                                <div class="w-10 h-10 bg-surface/30 rounded"></div>
+                            </div>
+                            <div class="flex-1 min-w-0 py-2 md:py-4 pr-4">
+                                <div class="h-5 w-40 bg-surface/30 rounded mb-2"></div>
+                                <div class="h-4 w-32 bg-surface/20 rounded"></div>
+                            </div>
+                            <div class="w-full h-24 md:flex-1 md:h-20 md:min-w-[200px] bg-surface/10 rounded"></div>
+                            <div class="hidden md:flex items-center justify-center w-24 bg-surface-alt self-stretch shrink-0 border-l border-line">
+                                <div class="w-12 h-12 bg-surface/20 rounded"></div>
                             </div>
                         </div>
                     </Placeholder>

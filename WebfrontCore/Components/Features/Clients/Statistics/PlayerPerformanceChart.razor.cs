@@ -4,7 +4,7 @@ using Microsoft.JSInterop;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
 
-public partial class PlayerPerformanceChart
+public partial class PlayerPerformanceChart : IAsyncDisposable
 {
     [Parameter, EditorRequired] public int ClientId { get; set; }
     [Parameter, EditorRequired] public int Id { get; set; }
@@ -16,6 +16,7 @@ public partial class PlayerPerformanceChart
     private int _previousClientId;
     private int _previousId;
     private bool _needsReinitialization;
+    private string _currentCanvasId;
 
     protected override void OnParametersSet()
     {
@@ -34,11 +35,27 @@ public partial class PlayerPerformanceChart
         if (firstRender)
         {
             _hasRendered = true;
+            _currentCanvasId = CanvasId;
             await InitializeChartAsync();
         }
         else if (_needsReinitialization)
         {
             _needsReinitialization = false;
+            
+            // Destroy the old chart before creating a new one
+            if (!string.IsNullOrEmpty(_currentCanvasId))
+            {
+                try
+                {
+                    await JsRuntime.InvokeVoidAsync("destroyStatsChart", _currentCanvasId);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogDebug(ex, "Failed to destroy old chart {CanvasId}", _currentCanvasId);
+                }
+            }
+            
+            _currentCanvasId = CanvasId;
             await InitializeChartAsync();
         }
     }
@@ -60,6 +77,25 @@ public partial class PlayerPerformanceChart
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Failed to initialize chart {CanvasId}", CanvasId);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!string.IsNullOrEmpty(_currentCanvasId))
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("destroyStatsChart", _currentCanvasId);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected, chart will be cleaned up automatically
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Failed to destroy chart {CanvasId} on dispose", _currentCanvasId);
+            }
         }
     }
 }

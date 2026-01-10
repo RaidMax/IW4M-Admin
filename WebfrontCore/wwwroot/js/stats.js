@@ -1,6 +1,14 @@
 ﻿// Track chart instances by canvas ID for proper cleanup
 const chartInstances = {};
 
+// Destroy a chart instance by ID (called from Blazor dispose)
+function destroyStatsChart(id) {
+    if (chartInstances[id]) {
+        chartInstances[id].destroy();
+        delete chartInstances[id];
+    }
+}
+
 function getClosestMultiple(baseValue, value) {
     return Math.round(value / baseValue) * baseValue;
 }

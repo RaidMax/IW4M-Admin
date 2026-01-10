@@ -19,5 +19,11 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <returns>initialized script plugin collection</returns>
         IEnumerable<(Type, string)> DiscoverScriptPlugins();
+
+        /// <summary>
+        ///     discovers .cs script plugins for dynamic compilation
+        /// </summary>
+        /// <returns>tuple of plugin type and file path</returns>
+        IEnumerable<(Type PluginType, string FilePath)> DiscoverCsPlugins();
     }
 }

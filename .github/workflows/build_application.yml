@@ -206,7 +206,8 @@ jobs:
 
       - name: Move extra content into publish directory
         run: |
-          cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/
+          cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
+          cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.cs ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
           cp ${{ github.workspace }}/BUILD/Plugins/*.dll ${{ env.outputFolder }}/Plugins/
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css

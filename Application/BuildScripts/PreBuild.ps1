@@ -73,4 +73,5 @@ if (-not (Test-Path "$OutputDir/Localization")) {
 Write-Output "copying plugins to build dir"
 New-Item -ItemType Directory -Force -Path "$OutputDir/Plugins"
 Copy-Item -Recurse -Force -Path "$SolutionDir/BUILD/Plugins/*.dll" -Destination "$OutputDir/Plugins/"
-Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.js" -Destination "$OutputDir/Plugins/"
+Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.js" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue
+Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.cs" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue

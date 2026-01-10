@@ -16,6 +16,7 @@ const init = (registerNotify, serviceResolver, config, scriptHelper) => {
     registerNotify('IGameServerEventSubscriptions.ServerValueReceived', (serverValueEvent, _) => plugin.onServerValueReceived(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.ServerValueSetCompleted', (serverValueEvent, _) => plugin.onServerValueSetCompleted(serverValueEvent));
     registerNotify('IGameServerEventSubscriptions.MonitoringStarted', (monitorStartEvent, _) => plugin.onServerMonitoringStart(monitorStartEvent));
+    registerNotify('IGameServerEventSubscriptions.ServerRemoved', (serverRemovedEvent, _) => plugin.onServerRemoved(serverRemovedEvent));
     registerNotify('IGameEventSubscriptions.MatchStarted', (matchStartEvent, _) => plugin.onMatchStart(matchStartEvent));
     registerNotify('IManagementEventSubscriptions.ClientPenaltyAdministered', (penaltyEvent, _) => plugin.onPenalty(penaltyEvent));
 
@@ -103,6 +104,11 @@ const plugin = {
         }
 
         const serverState = servers[serverValueEvent.server.id];
+        // Server may have been removed - gracefully exit
+        if (!serverState) {
+            this.logger.logDebug('[GameInterface] server {serverId} was removed, ignoring value set complete', serverValueEvent.server.id);
+            return;
+        }
         serverState.outQueue.shift();
 
         this.logger.logDebug('[GameInterface] outQueue len = {outLen}, inQueue len = {inLen}', serverState.outQueue.length, serverState.inQueue.length);
@@ -135,6 +141,23 @@ const plugin = {
         this.initializeServer(monitorStartEvent.server);
     },
 
+    onServerRemoved: function (serverRemovedEvent) {
+        const serverId = serverRemovedEvent.server.id;
+        if (servers[serverId]) {
+            this.logger.logInformation('[GameInterface] cleaning up server state for removed server {serverId}', serverId);
+            // Stop any running loops
+            if (servers[serverId].running) {
+                servers[serverId].running = false;
+            }
+            // Clear queues
+            servers[serverId].inQueue = [];
+            servers[serverId].outQueue = [];
+            servers[serverId].commandQueue = [];
+            // Remove from dictionary
+            delete servers[serverId];
+        }
+    },
+
     onMatchStart: function (matchStartEvent) {
         busMode = 'rcon';
         this.sendEventMessage(matchStartEvent.server, true, 'GetBusModeRequested', null, null, null, {});
@@ -156,6 +179,11 @@ const plugin = {
 
     handleInitializeServerData: function (responseEvent) {
         const serverState = servers[responseEvent.server.id];
+        // Server may have been removed - gracefully exit
+        if (!serverState) {
+            this.logger.logDebug('[GameInterface] server {serverId} was removed, ignoring initialization', responseEvent.server.id);
+            return;
+        }
 
         if (responseEvent.response.value !== '1') {
             this.logger.logInformation('[GameInterface] gsc integration is disabled for {server}', responseEvent.server.id);
@@ -182,6 +210,11 @@ const plugin = {
             responseEvent.response.value, responseEvent.success, responseEvent.server.id);
 
         const serverState = servers[responseEvent.server.id];
+        // Server may have been removed - gracefully exit
+        if (!serverState) {
+            this.logger.logDebug('[GameInterface] server {serverId} was removed, ignoring incoming data', responseEvent.server.id);
+            return;
+        }
         serverState.outQueue.shift();
 
         const utilities = importNamespace('SharedLibraryCore.Utilities');
@@ -399,6 +432,11 @@ const plugin = {
     },
 
     sendEventMessage: function (server, responseExpected, event, subtype, origin, target, data) {
+        if (!servers[server.id]) {
+            this.logger.logDebug('[GameInterface] skipping sendEventMessage for removed server {id}', server.id);
+            return;
+        }
+
         let targetClientNumber = -1;
         let originClientNumber = -1;
 
@@ -418,6 +456,11 @@ const plugin = {
 
     requestGetDvar: function (dvarName, server) {
         const serverState = servers[server.id];
+
+        if (!serverState) {
+            this.logger.logDebug('[GameInterface] skipping requestGetDvar for removed server {id}', server.id);
+            return;
+        }
 
         if (dvarName !== integrationEnabledDvar && busMode === 'file') {
             this.scriptHelper.requestNotifyAfterDelay(250, () => {
@@ -479,6 +522,11 @@ const plugin = {
 
     requestSetDvar: function (dvarName, dvarValue, server) {
         const serverState = servers[server.id];
+
+        if (!serverState) {
+            this.logger.logDebug('[GameInterface] skipping requestSetDvar for removed server {id}', server.id);
+            return;
+        }
 
         if (busMode === 'file') {
             this.scriptHelper.requestNotifyAfterDelay(250, () => {

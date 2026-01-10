@@ -204,10 +204,7 @@ namespace IW4MAdmin.Application
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
                 var config = configHandler.Configuration() ?? new ApplicationConfiguration();
-                _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
-#pragma warning disable CS0618 // Type or member is obsolete
-                    // before the migration has run we still need to respect the old bind url
-                    config.WebfrontBindUrl ?? config.Webfront.BindUrl);
+                _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices, config);
 #pragma warning restore CS0618 // Type or member is obsolete
 
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();

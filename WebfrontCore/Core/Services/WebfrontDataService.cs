@@ -2,6 +2,7 @@ using SharedLibraryCore;
 using System.Diagnostics;
 using SharedLibraryCore.Dtos;
 using Data.Models;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Helpers;
 using WebfrontCore.Components.Features.Admin.Models;
 using WebfrontCore.Components.Features.Servers.Models;
@@ -69,7 +70,7 @@ public class WebfrontDataService : IWebfrontDataService
         IAlertManager alertManager,
         IRemoteCommandService remoteCommandService,
         ITranslationLookup translationLookup,
-        SharedLibraryCore.Configuration.ApplicationConfiguration appConfig,
+        ApplicationConfiguration appConfig,
         IEnumerable<IPlugin> v1Plugins,
         IEnumerable<IPluginV2> v2Plugins)
     {
@@ -1528,5 +1529,59 @@ public class WebfrontDataService : IWebfrontDataService
         return counts
             .Where(h => h.Time >= DateTime.UtcNow - maxHistoryTime)
             .ToList();
+    }
+    
+    public IEnumerable<string> GetAvailableParsers()
+    {
+        return _manager.AdditionalRConParsers.Select(p => p.Name).ToList();
+    }
+    
+    public async Task<AddServerResponse?> AddServerAsync(AddServerRequest request, CancellationToken token = default)
+    {
+        // Validate the parser exists
+        if (_manager.AdditionalRConParsers.All(p => p.Name != request.RConParserVersion))
+        {
+            throw new ArgumentException($"Invalid RCon parser version: {request.RConParserVersion}. Use GetAvailableParsers() to see available parsers.");
+        }
+        
+        if (_manager.AdditionalEventParsers.All(p => p.Name != request.EventParserVersion))
+        {
+            throw new ArgumentException($"Invalid Event parser version: {request.EventParserVersion}. Use GetAvailableParsers() to see available parsers.");
+        }
+        
+        var config = new ServerConfiguration
+        {
+            IPAddress = request.IPAddress,
+            Port = request.Port,
+            Password = request.Password,
+            RConParserVersion = request.RConParserVersion,
+            EventParserVersion = request.EventParserVersion,
+            CustomHostname = request.CustomHostname,
+            ManualLogPath = request.ManualLogPath,
+            ReservedSlotNumber = request.ReservedSlotNumber,
+            GameLogServerUrl = !string.IsNullOrEmpty(request.GameLogServerUrl) 
+                ? new Uri(request.GameLogServerUrl) 
+                : null
+        };
+        
+        var server = await _manager.AddServerAsync(config, request.PersistToConfiguration, token);
+        
+        if (server == null)
+        {
+            return null;
+        }
+        
+        return new AddServerResponse
+        {
+            ServerId = server.Id,
+            Hostname = server.Hostname,
+            Game = server.GameName.ToString(),
+            Persisted = request.PersistToConfiguration
+        };
+    }
+    
+    public async Task<bool> RemoveServerAsync(string serverId, bool persist = false, CancellationToken token = default)
+    {
+        return await _manager.RemoveServerAsync(serverId, persist, token);
     }
 }

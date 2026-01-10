@@ -55,4 +55,27 @@ public interface IWebfrontDataService
     Task<ResourceQueryHelperResult<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>> SearchMessagesAsync(ChatSearchQuery request);
     Task<SystemInfo> GetSystemInfoAsync();
     Task<IEnumerable<ClientCountSnapshot>> GetClientHistoryAsync(string serverId);
+    
+    /// <summary>
+    /// Gets available RCon/Event parser names for server configuration
+    /// </summary>
+    IEnumerable<string> GetAvailableParsers();
+    
+    /// <summary>
+    /// Adds a new server dynamically at runtime
+    /// </summary>
+    /// <param name="request">The server configuration request</param>
+    /// <param name="token">Cancellation token</param>
+    /// <returns>Response with server info if successful, null otherwise</returns>
+    Task<AddServerResponse?> AddServerAsync(AddServerRequest request, CancellationToken token = default);
+    
+    /// <summary>
+    /// Removes a server dynamically at runtime
+    /// </summary>
+    /// <param name="serverId">Server identifier (IP:Port or internal ID)</param>
+    /// <param name="persist">Whether to persist the removal to configuration</param>
+    /// <param name="token">Cancellation token</param>
+    /// <returns>True if server was removed successfully</returns>
+    Task<bool> RemoveServerAsync(string serverId, bool persist = false, CancellationToken token = default);
 }
+

@@ -1,12 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace SharedLibraryCore.Interfaces;
+﻿namespace SharedLibraryCore.Interfaces;
 
 public interface IConfigurationHandlerV2<TConfigurationType> where TConfigurationType: class
 {
     Task<TConfigurationType> Get(string configurationName, TConfigurationType defaultConfiguration = null);
     Task Set(TConfigurationType configuration);
     Task Set();
+    string Filename { get; }
     event Action<TConfigurationType> Updated;
 }

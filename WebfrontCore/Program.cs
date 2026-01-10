@@ -34,9 +34,9 @@ public class Program
     private static WebApplication? _webApp;
 
     public static IServiceProvider InitializeServices(Action<IServiceCollection> registerDependenciesAction,
-        string bindUrl)
+        ApplicationConfiguration appConfig)
     {
-        _webApp = BuildWebApp(registerDependenciesAction, bindUrl);
+        _webApp = BuildWebApp(registerDependenciesAction, appConfig);
         Manager = _webApp.Services.GetRequiredService<IManager>();
         return _webApp.Services;
     }
@@ -46,11 +46,11 @@ public class Program
         return _webApp?.RunAsync(cancellationToken) ?? Task.CompletedTask;
     }
 
-    private static WebApplication BuildWebApp(Action<IServiceCollection> registerDependenciesAction, string bindUrl)
+    private static WebApplication BuildWebApp(Action<IServiceCollection> registerDependenciesAction, ApplicationConfiguration appConfig)
     {
 #if DEBUG
         var contentRoot =
-            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\", "WebfrontCore"));
+            Path.GetFullPath(Path.Combine(Utilities.OperatingDirectory, @"..\..\..\", "WebfrontCore"));
 #else
         var contentRoot = Utilities.OperatingDirectory;
 #endif
@@ -63,10 +63,10 @@ public class Program
         // Register dependencies first so we can access ApplicationConfiguration
         registerDependenciesAction(builder.Services);
         
-        // Build a temporary service provider to get the config for SSL setup
-        using var tempProvider = builder.Services.BuildServiceProvider();
-        var appConfig = tempProvider.GetRequiredService<ApplicationConfiguration>();
-        var webfrontConfig = appConfig.Webfront;
+        // before the migration has run we still need to respect the old bind url
+#pragma warning disable CS0618 // Type or member is obsolete
+        var bindUrl = appConfig.WebfrontBindUrl ?? appConfig.Webfront.BindUrl;
+#pragma warning restore CS0618 // Type or member is obsolete
 
         // Configure Kestrel based on SSL settings
         builder.WebHost.ConfigureKestrel(kestrel =>
@@ -79,18 +79,19 @@ public class Program
             var uri = new Uri(bindUrl.Replace("0.0.0.0", "localhost"));
             var port = uri.Port;
 
-            if (webfrontConfig.UseSsl && !string.IsNullOrEmpty(webfrontConfig.SslCertificatePath))
+            if (appConfig.Webfront.UseSsl && !string.IsNullOrEmpty(appConfig.Webfront.SslCertificatePath))
             {
                 // HTTPS mode - listen with SSL certificate
                 kestrel.ListenAnyIP(port, listenOptions =>
                 {
-                    if (string.IsNullOrEmpty(webfrontConfig.SslCertificatePassword))
+                    if (string.IsNullOrEmpty(appConfig.Webfront.SslCertificatePassword))
                     {
-                        listenOptions.UseHttps(webfrontConfig.SslCertificatePath);
+                        listenOptions.UseHttps(appConfig.Webfront.SslCertificatePath);
                     }
                     else
                     {
-                        listenOptions.UseHttps(webfrontConfig.SslCertificatePath, webfrontConfig.SslCertificatePassword);
+                        listenOptions.UseHttps(appConfig.Webfront.SslCertificatePath,
+                            appConfig.Webfront.SslCertificatePassword);
                     }
                 });
             }

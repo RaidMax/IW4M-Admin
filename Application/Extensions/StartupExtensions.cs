@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Data.MigrationContext;
@@ -29,22 +28,9 @@ namespace IW4MAdmin.Application.Extensions
         {
             if (_defaultLogger == null)
             {
-                // Build base configuration from JSON
-                var jsonPath = Path.Join(Utilities.OperatingDirectory, "Configuration", "LoggingConfiguration.json");
-                var configBuilder = new ConfigurationBuilder()
-                    .AddJsonFile(jsonPath);
-                
-                // In development, override log path to be absolute (IDE sets CWD to project folder, not bin)
-                if (Utilities.IsDevelopment)
-                {
-                    var absoluteLogPath = Path.Join(Utilities.OperatingDirectory, "Log", "IW4MAdmin-Application-Dev-.log");
-                    configBuilder.AddInMemoryCollection(new Dictionary<string, string>
-                    {
-                        ["Serilog:WriteTo:0:Args:path"] = absoluteLogPath
-                    });
-                }
-                
-                var configuration = configBuilder.Build();
+                var configuration = new ConfigurationBuilder()
+                    .AddJsonFile(Path.Join(Utilities.OperatingDirectory, "Configuration", "LoggingConfiguration.json"))
+                    .Build();
 
                 var loggerConfig = new LoggerConfiguration()
                     .ReadFrom.Configuration(configuration);

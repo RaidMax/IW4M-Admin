@@ -1451,26 +1451,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public EFServerStatistics InitializeServerStats(long serverId)
         {
-            EFServerStatistics serverStats;
-
             using var ctx = _contextFactory.CreateContext(enableTracking: false);
             var serverStatsSet = ctx.Set<EFServerStatistics>();
-            serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
+            var serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
 
-            if (serverStats == null)
+            if (serverStats != null)
             {
-                _log.LogDebug("Initializing server stats for {serverId}", serverId);
-                // server stats have never been generated before
-                serverStats = new EFServerStatistics()
-                {
-                    ServerId = serverId,
-                    TotalKills = 0,
-                    TotalPlayTime = 0,
-                };
-
-                serverStats = serverStatsSet.Add(serverStats).Entity;
-                ctx.SaveChanges();
+                return serverStats;
             }
+
+            _log.LogDebug("Initializing server stats for {serverId}", serverId);
+            // server stats have never been generated before
+            serverStats = new EFServerStatistics
+            {
+                ServerId = serverId,
+                TotalKills = 0,
+                TotalPlayTime = 0,
+            };
+
+            serverStats = serverStatsSet.Add(serverStats).Entity;
+            ctx.SaveChanges();
 
             return serverStats;
         }

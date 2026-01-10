@@ -212,7 +212,7 @@ jobs:
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
           mkdir -p ${{ env.outputFolder }}/wwwroot/css/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/user/user.css ${{ env.outputFolder }}/wwwroot/user/user.css
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/user/user.css ${{ env.outputFolder }}/wwwroot/css/user/user.css
           mkdir -p ${{ env.outputFolder }}/wwwroot/js
           mkdir -p ${{ env.outputFolder }}/wwwroot/js/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js

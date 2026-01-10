@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using IW4MAdmin.Application.Configuration;
 using Microsoft.Extensions.Logging;
@@ -15,14 +16,18 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 /// </summary>
 internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
 {
+    private const string ConfigSectionName = "ScriptPluginSettings";
+    private const int ConfigLoadTimeoutMs = 2000;
+    private const int ConfigRefreshTimeoutMs = 500;
+    private const StringComparison KeyComparison = StringComparison.OrdinalIgnoreCase;
+
     private ScriptPluginConfiguration _config;
     private readonly IConfigurationHandlerV2<ScriptPluginConfiguration> _configHandler;
     private readonly ILogger<CsScriptPluginConfigurationWrapper> _logger;
-    private readonly List<(string key, Type targetType, Action<object> callback)> _updateCallbacks = new();
-    private readonly List<(string key, object value)> _pendingWrites = new();
-    private readonly List<(string key, object defaultValue, object onUpdate)> _pendingReads = new();
+    private readonly Dictionary<string, List<Action<object>>> _updateCallbacks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<(string key, object value)> _pendingWrites = [];
     private readonly Func<string?>? _pluginNameProvider;
-    private readonly object _configLock = new();
+    private readonly Lock _configLock = new();
     private string _pluginName = string.Empty;
 
     public CsScriptPluginConfigurationWrapper(
@@ -30,83 +35,142 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
         ILogger<CsScriptPluginConfigurationWrapper> logger,
         Func<string?>? pluginNameProvider = null)
     {
-        _configHandler = configHandler;
-        _logger = logger;
+        _configHandler = configHandler ?? throw new ArgumentNullException(nameof(configHandler));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _pluginNameProvider = pluginNameProvider;
         
-        // Load config with timeout to avoid deadlock during plugin initialization
+        _config = TryLoadConfig(TimeSpan.FromMilliseconds(ConfigLoadTimeoutMs));
+        _configHandler.Updated += OnConfigurationUpdated;
+    }
+
+    private ScriptPluginConfiguration TryLoadConfig(TimeSpan timeout)
+    {
         try
         {
-            var getTask = configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
-            if (getTask.Wait(TimeSpan.FromSeconds(2)))
+            var getTask = _configHandler.Get(ConfigSectionName, new ScriptPluginConfiguration());
+            if (getTask.Wait(timeout))
             {
-                _config = getTask.Result;
+                return getTask.Result;
             }
-            else
-            {
-                _logger.LogWarning("Config load timed out during wrapper construction. Using default.");
-                _config = new ScriptPluginConfiguration();
-            }
+
+            _logger.LogWarning("Config load timed out during wrapper construction. Using default.");
+            return new ScriptPluginConfiguration();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to load config during wrapper construction. Using default.");
-            _config = new ScriptPluginConfiguration();
+            return new ScriptPluginConfiguration();
         }
-        
-        _configHandler.Updated += OnConfigurationUpdated;
+    }
+
+    private ScriptPluginConfiguration GetOrLoadConfig()
+    {
+        lock (_configLock)
+        {
+            if (_config != null)
+            {
+                return _config;
+            }
+
+            _config = TryLoadConfig(TimeSpan.FromMilliseconds(ConfigRefreshTimeoutMs));
+            return _config;
+        }
+    }
+
+    private static bool TryFindKeyCaseInsensitive(Dictionary<string, object> dictionary, string key, out string actualKey)
+    {
+        actualKey = dictionary.Keys.FirstOrDefault(k => string.Equals(k, key, KeyComparison)) ?? string.Empty;
+        return !string.IsNullOrEmpty(actualKey);
+    }
+
+    private string GetPluginName()
+    {
+        if (!string.IsNullOrEmpty(_pluginName))
+        {
+            return _pluginName;
+        }
+
+        var name = _pluginNameProvider?.Invoke();
+        if (!string.IsNullOrEmpty(name))
+        {
+            _pluginName = name;
+            return name;
+        }
+
+        return string.Empty;
+    }
+
+    private string? FindPluginNameByKey(string key)
+    {
+        var config = GetOrLoadConfig();
+        if (config == null || config.Count == 0)
+        {
+            return null;
+        }
+
+        // Search through all plugin sections to find one containing the requested key
+        // This is only used as a fallback when plugin name isn't available during construction
+        foreach (var section in config)
+        {
+            var sectionConfig = section.Value;
+            if (sectionConfig == null)
+            {
+                continue;
+            }
+
+            // Case-insensitive key lookup
+            if (TryFindKeyCaseInsensitive(sectionConfig, key, out _))
+            {
+                // Found a section with this key - use this section as the plugin name temporarily
+                // Don't cache this as _pluginName - let the proper plugin name be set later via SetName()
+                return section.Key;
+            }
+        }
+
+        return null;
     }
 
     public void SetName(string name)
     {
-        _pluginName = name;
-        
-        // Apply any pending writes that occurred before the name was set
-        // Only write if the key doesn't already exist (don't overwrite user settings)
-        if (_pendingWrites.Count > 0)
+        if (string.IsNullOrWhiteSpace(name))
         {
-            lock (_pendingWrites)
-            {
-                foreach (var (key, value) in _pendingWrites)
-                {
-                    // Use cached config to avoid deadlock - file watcher will update it if needed
-                    ScriptPluginConfiguration currentConfig;
-                    lock (_configLock)
-                    {
-                        currentConfig = _config ?? new ScriptPluginConfiguration();
-                    }
-
-                    // Check if key exists before writing (case-insensitive)
-                    if (currentConfig.TryGetValue(_pluginName, out var pluginConfig))
-                    {
-                        var existingKey = pluginConfig.Keys.FirstOrDefault(k => 
-                            string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
-                        
-                        // Only write if key doesn't exist
-                        if (existingKey == null)
-                        {
-                            _ = SetValueAsync(key, value);
-                        }
-                    }
-                    else
-                    {
-                        // Plugin section doesn't exist, safe to write
-                        _ = SetValueAsync(key, value);
-                    }
-                }
-                _pendingWrites.Clear();
-            }
+            throw new ArgumentException("Plugin name cannot be null or empty", nameof(name));
         }
-        
-        // Note: Pending reads can't be re-executed because GetValue is synchronous
-        // Plugins will need to re-read values after SetName is called, or we'd need to make GetValue async
-        // For now, we'll log a warning that values read before name was set used defaults
-        if (_pendingReads.Count > 0)
+
+        _pluginName = name;
+        ApplyPendingWrites();
+    }
+
+    private void ApplyPendingWrites()
+    {
+        if (_pendingWrites.Count == 0)
         {
-            _logger.LogWarning("Plugin name was not available during initial config reads. {Count} value(s) were read with defaults. Values should be re-read after plugin initialization.", _pendingReads.Count);
-            lock (_pendingReads)
+            return;
+        }
+
+        List<(string key, object value)> writesToApply;
+        lock (_pendingWrites)
+        {
+            writesToApply = new List<(string key, object value)>(_pendingWrites);
+            _pendingWrites.Clear();
+        }
+
+        var currentConfig = GetOrLoadConfig();
+
+        // Apply pending writes only if keys don't already exist (don't overwrite user settings)
+        foreach (var (key, value) in writesToApply)
+        {
+            if (!currentConfig.TryGetValue(_pluginName, out var pluginConfig))
             {
-                _pendingReads.Clear();
+                // Plugin section doesn't exist, safe to write
+                _ = SetValueAsync(key, value);
+                continue;
+            }
+
+            // Check if key exists (case-insensitive) - only write if it doesn't exist
+            if (!TryFindKeyCaseInsensitive(pluginConfig, key, out _))
+            {
+                _ = SetValueAsync(key, value);
             }
         }
     }
@@ -123,82 +187,18 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
 
     public T GetValue<T>(string key, T defaultValue, Action<T> onUpdate)
     {
-        // Try to get plugin name from stored value or provider
-        var pluginName = _pluginName;
-        if (string.IsNullOrEmpty(pluginName) && _pluginNameProvider != null)
+        if (string.IsNullOrWhiteSpace(key))
         {
-            pluginName = _pluginNameProvider();
-            if (!string.IsNullOrEmpty(pluginName))
-            {
-                _pluginName = pluginName; // Cache it for future calls
-            }
+            throw new ArgumentException("Key cannot be null or empty", nameof(key));
         }
+
+        var pluginName = GetPluginName();
         
+        // If plugin name not available yet, try to find it by searching config sections
+        // This is needed for plugins that read config during construction, before SetName is called
         if (string.IsNullOrEmpty(pluginName))
         {
-            // Plugin name not available yet - try to find matching config section by scanning all sections
-            // This is a fallback for when the plugin name isn't set yet during construction
-            // We'll try to match by searching for a section that has the requested key
-            // Use cached config to avoid deadlock - don't call Get() synchronously here
-            lock (_configLock)
-            {
-                ScriptPluginConfiguration currentConfig = _config;
-                
-                // Only try to refresh if we have no cached config
-                if (currentConfig == null || currentConfig.Count == 0)
-                {
-                    try
-                    {
-                        // Try async get but with timeout to avoid deadlock
-                        var getTask = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
-                        if (getTask.Wait(TimeSpan.FromMilliseconds(500)))
-                        {
-                            currentConfig = getTask.Result;
-                            _config = currentConfig;
-                        }
-                    }
-                    catch
-                    {
-                        // If refresh fails, use existing cached config
-                        currentConfig = _config ?? new ScriptPluginConfiguration();
-                    }
-                }
-
-                // Search through all plugin sections to find one with this key
-                if (currentConfig != null)
-                {
-                    foreach (var section in currentConfig)
-                    {
-                        var sectionConfig = section.Value;
-                        if (sectionConfig != null)
-                        {
-                            // Case-insensitive key lookup
-                            var foundKey = sectionConfig.Keys.FirstOrDefault(k => 
-                                string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
-                            
-                            if (foundKey != null)
-                            {
-                                // Found a section with this key - use this section as the plugin name
-                                // BUT: Only use this as a temporary fallback for this read only.
-                                // We'll log a warning if it's an old JS plugin name.
-                                if (section.Key.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var actualPluginName = _pluginNameProvider?.Invoke();
-                                    if (!string.IsNullOrEmpty(actualPluginName) && actualPluginName != section.Key)
-                                    {
-                                        _logger.LogWarning("Found config section '{OldSectionName}' (old JS plugin name) for key '{Key}'. Plugin will use this section temporarily. Consider updating ScriptPluginSettings.json to rename '{OldSectionName}' to '{NewPluginName}'.", 
-                                            section.Key, key, actualPluginName);
-                                    }
-                                }
-                                pluginName = section.Key;
-                                // Don't cache this as _pluginName - let the proper plugin name be set later via SetName()
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            
+            pluginName = FindPluginNameByKey(key);
             if (string.IsNullOrEmpty(pluginName))
             {
                 _logger.LogDebug("Plugin name not yet available for configuration wrapper. Cannot retrieve key: {Key}. Returning default.", key);
@@ -206,91 +206,84 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
             }
         }
 
-        // Use cached config to avoid deadlock - only refresh if absolutely necessary
-        // The config should already be loaded from the constructor, and file watcher will update it
-        ScriptPluginConfiguration configToUse;
-        lock (_configLock)
-        {
-            // Use cached config - file watcher updates will handle hot-reload
-            configToUse = _config;
-            
-            // Only try to refresh if we have no cached config (shouldn't happen after constructor)
-            if (configToUse == null)
-            {
-                try
-                {
-                    // Try async get with timeout to avoid deadlock
-                    var getTask = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
-                    if (getTask.Wait(TimeSpan.FromMilliseconds(500)))
-                    {
-                        configToUse = getTask.Result;
-                        _config = configToUse;
-                    }
-                    else
-                    {
-                        // Timeout - use default
-                        _logger.LogWarning("Config refresh timed out. Using default configuration.");
-                        configToUse = new ScriptPluginConfiguration();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // If refresh fails, use default
-                    _logger.LogDebug(ex, "Config refresh failed. Using default configuration.");
-                    configToUse = new ScriptPluginConfiguration();
-                }
-            }
-        }
-
-        if (!configToUse.TryGetValue(pluginName, out var pluginConfig))
+        if (!TryGetValueFromConfig(pluginName, key, out T? value))
         {
             return defaultValue;
         }
 
-        // Case-insensitive key lookup (JSON keys may vary in case)
-        var item = pluginConfig.FirstOrDefault(kvp => 
-            string.Equals(kvp.Key, key, StringComparison.OrdinalIgnoreCase)).Value;
-        
-        if (item == null)
-        {
-            return defaultValue;
-        }
-
-        // Register update callback if provided
         if (onUpdate != null)
         {
-            lock (_updateCallbacks)
-            {
-                _updateCallbacks.Add((key, typeof(T), (obj) =>
-                {
-                    try
-                    {
-                        // Convert to the correct type T before invoking the callback
-                        var converted = ConvertValue<T>(obj);
-                        onUpdate(converted);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to convert value for update callback key {Key} to type {Type}", key, typeof(T).Name);
-                    }
-                }));
-            }
+            RegisterUpdateCallback(key, onUpdate);
+        }
+
+        return value;
+    }
+
+    private bool TryGetValueFromConfig<T>(string pluginName, string key, out T value)
+    {
+        value = default!;
+
+        var config = GetOrLoadConfig();
+        if (!config.TryGetValue(pluginName, out var pluginConfig))
+        {
+            return false;
+        }
+
+        if (!TryFindKeyCaseInsensitive(pluginConfig, key, out var actualKey))
+        {
+            return false;
+        }
+
+        var item = pluginConfig[actualKey];
+        if (item == null)
+        {
+            return false;
         }
 
         try
         {
-            var converted = ConvertValue<T>(item);
-            return converted;
+            value = ConvertValue<T>(item);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to convert configuration value for key {Key} to type {Type}", key, typeof(T).Name);
-            return defaultValue;
+            return false;
+        }
+    }
+
+    private void RegisterUpdateCallback<T>(string key, Action<T> callback)
+    {
+        lock (_updateCallbacks)
+        {
+            if (!_updateCallbacks.TryGetValue(key, out var callbacks))
+            {
+                callbacks = new List<Action<object>>();
+                _updateCallbacks[key] = callbacks;
+            }
+
+            callbacks.Add(obj =>
+            {
+                try
+                {
+                    var converted = ConvertValue<T>(obj);
+                    callback(converted);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to convert value for update callback key {Key} to type {Type}", key, typeof(T).Name);
+                }
+            });
         }
     }
 
     public async Task SetValueAsync(string key, object value)
     {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new ArgumentException("Key cannot be null or empty", nameof(key));
+        }
+
         if (string.IsNullOrEmpty(_pluginName))
         {
             // Queue the write to be applied once the plugin name is set
@@ -298,62 +291,25 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
             {
                 _pendingWrites.Add((key, value));
             }
+
             _logger.LogDebug("Plugin name not set for configuration wrapper. Queued write for key: {Key}", key);
             return;
         }
 
-        // Use cached config - file watcher will update it if the file changes
-        // Only refresh if we don't have cached config (shouldn't happen after constructor)
-        ScriptPluginConfiguration configToUse;
-        lock (_configLock)
-        {
-            configToUse = _config;
-            
-            // Only try to refresh if we have no cached config
-            if (configToUse == null)
-            {
-                try
-                {
-                    // Try async get with timeout to avoid deadlock
-                    var getTask = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
-                    if (getTask.Wait(TimeSpan.FromMilliseconds(500)))
-                    {
-                        configToUse = getTask.Result;
-                        _config = configToUse;
-                    }
-                    else
-                    {
-                        // Timeout - create new empty config
-                        _logger.LogWarning("Config refresh timed out in SetValueAsync. Using new empty configuration.");
-                        configToUse = new ScriptPluginConfiguration();
-                        _config = configToUse;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // If refresh fails, create new empty config
-                    _logger.LogDebug(ex, "Config refresh failed in SetValueAsync. Using new empty configuration.");
-                    configToUse = new ScriptPluginConfiguration();
-                    _config = configToUse;
-                }
-            }
-        }
+        var configToUse = GetOrLoadConfig();
 
         // Ensure plugin section exists
         if (!configToUse.TryGetValue(_pluginName, out var pluginConfig))
         {
             pluginConfig = new Dictionary<string, object>();
-            configToUse.Add(_pluginName, pluginConfig);
+            configToUse[_pluginName] = pluginConfig;
         }
 
         // Convert value if needed (handle numeric types from JSON)
         var castValue = ConvertValueForStorage(value);
 
-        // Case-insensitive key lookup - find existing key with different case
-        var existingKey = pluginConfig.Keys.FirstOrDefault(k => 
-            string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
-        
-        if (existingKey != null)
+        // Case-insensitive key lookup - find existing key with different case, or add new one
+        if (TryFindKeyCaseInsensitive(pluginConfig, key, out var existingKey))
         {
             // Update existing key (preserving original case)
             pluginConfig[existingKey] = castValue;
@@ -365,7 +321,7 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
         }
 
         await _configHandler.Set(configToUse);
-        
+
         // Update our cached reference
         lock (_configLock)
         {
@@ -375,40 +331,42 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
 
     private void OnConfigurationUpdated(ScriptPluginConfiguration updatedConfig)
     {
+        if (string.IsNullOrEmpty(_pluginName) || !updatedConfig.TryGetValue(_pluginName, out var pluginConfig))
+        {
+            return;
+        }
+
         lock (_updateCallbacks)
         {
-            foreach (var (key, targetType, callback) in _updateCallbacks.ToList())
+            foreach (var (key, callbacks) in _updateCallbacks.ToList())
             {
-                try
+                if (!TryFindKeyCaseInsensitive(pluginConfig, key, out var actualKey))
                 {
-                    if (!updatedConfig.TryGetValue(_pluginName, out var value1)) continue;
-                    
-                    // Case-insensitive key lookup
-                    var value = value1.FirstOrDefault(kvp => 
-                        string.Equals(kvp.Key, key, StringComparison.OrdinalIgnoreCase)).Value;
-                    
-                    if (value == null) continue;
-                    
-                    // Convert to the target type using reflection to call the generic ConvertValue method
-                    var convertMethod = typeof(CsScriptPluginConfigurationWrapper)
-                        .GetMethod(nameof(ConvertValue), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-                    var genericMethod = convertMethod?.MakeGenericMethod(targetType);
-                    var convertedValue = genericMethod?.Invoke(null, new[] { value });
-                    
-                    if (convertedValue != null)
-                    {
-                        callback(convertedValue);
-                    }
+                    continue;
                 }
-                catch (Exception ex)
+
+                var value = pluginConfig[actualKey];
+                if (value == null)
                 {
-                    _logger.LogWarning(ex, "Error invoking update callback for key {Key}", key);
+                    continue;
+                }
+
+                foreach (var callback in callbacks.ToList())
+                {
+                    try
+                    {
+                        callback(value);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error invoking update callback for key {Key}", key);
+                    }
                 }
             }
         }
     }
 
-    private static T ConvertValue<T>(object value)
+    private T ConvertValue<T>(object value)
     {
         if (value == null)
         {
@@ -432,19 +390,24 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
         {
             return (T)Convert.ChangeType(value, typeof(T));
         }
-        catch
+        catch (Exception ex)
         {
-            // If conversion fails, try JSON deserialization
+            // If conversion fails, try JSON deserialization for string values
             if (value is string str)
             {
                 try
                 {
                     return JsonSerializer.Deserialize<T>(str)!;
                 }
-                catch
+                catch (Exception deserializeEx)
                 {
+                    _logger.LogDebug(deserializeEx, "Failed to deserialize string value to type {Type}", typeof(T).Name);
                     // Fall through to return default
                 }
+            }
+            else
+            {
+                _logger.LogDebug(ex, "Failed to convert value of type {SourceType} to type {TargetType}", value.GetType().Name, typeof(T).Name);
             }
 
             return default!;
@@ -453,40 +416,42 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
 
     private static T ConvertJsonElement<T>(JsonElement element)
     {
-        switch (element.ValueKind)
+        return element.ValueKind switch
         {
-            case JsonValueKind.String:
-                return (T)(object)element.GetString()!;
-            case JsonValueKind.Number:
-                if (typeof(T) == typeof(int))
-                    return (T)(object)element.GetInt32();
-                if (typeof(T) == typeof(long))
-                    return (T)(object)element.GetInt64();
-                if (typeof(T) == typeof(double))
-                    return (T)(object)element.GetDouble();
-                if (typeof(T) == typeof(float))
-                    return (T)(object)element.GetSingle();
-                if (typeof(T) == typeof(decimal))
-                    return (T)(object)element.GetDecimal();
-                if (typeof(T) == typeof(bool))
-                    return (T)(object)(element.GetInt32() != 0);
-                return (T)(object)element.GetInt32(); // Default to int
-            case JsonValueKind.True:
-            case JsonValueKind.False:
-                return (T)(object)element.GetBoolean();
-            case JsonValueKind.Array:
-                var list = new List<object>();
-                foreach (var item in element.EnumerateArray())
-                {
-                    list.Add(item.GetRawText());
-                }
+            JsonValueKind.String => (T)(object)element.GetString()!,
+            JsonValueKind.Number => ConvertJsonNumber<T>(element),
+            JsonValueKind.True or JsonValueKind.False => (T)(object)element.GetBoolean(),
+            JsonValueKind.Array => ConvertJsonArray<T>(element),
+            JsonValueKind.Object => JsonSerializer.Deserialize<T>(element.GetRawText())!,
+            _ => default!
+        };
+    }
 
-                return (T)(object)list;
-            case JsonValueKind.Object:
-                return JsonSerializer.Deserialize<T>(element.GetRawText())!;
-            default:
-                return default!;
+    private static T ConvertJsonNumber<T>(JsonElement element)
+    {
+        var targetType = typeof(T);
+        
+        return targetType switch
+        {
+            _ when targetType == typeof(int) => (T)(object)element.GetInt32(),
+            _ when targetType == typeof(long) => (T)(object)element.GetInt64(),
+            _ when targetType == typeof(double) => (T)(object)element.GetDouble(),
+            _ when targetType == typeof(float) => (T)(object)element.GetSingle(),
+            _ when targetType == typeof(decimal) => (T)(object)element.GetDecimal(),
+            _ when targetType == typeof(bool) => (T)(object)(element.GetInt32() != 0),
+            _ => (T)(object)element.GetInt32() // Default to int for unknown numeric types
+        };
+    }
+
+    private static T ConvertJsonArray<T>(JsonElement element)
+    {
+        var list = new List<object>();
+        foreach (var item in element.EnumerateArray())
+        {
+            list.Add(item.GetRawText());
         }
+
+        return (T)(object)list;
     }
 
     private static object ConvertValueForStorage(object value)

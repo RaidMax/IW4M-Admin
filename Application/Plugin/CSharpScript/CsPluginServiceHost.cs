@@ -586,11 +586,10 @@ public class CsPluginServiceHost : ICsPluginServiceHost
                 try
                 {
                     // Create a temporary command instance to get its name/alias
+                    // Use plugin's scoped provider so commands with plugin-scoped dependencies can be instantiated
                     var tempCommand = (Command)ActivatorUtilities.CreateInstance(
-                        _rootServiceProvider,
-                        commandType,
-                        commandConfig,
-                        translationLookup);
+                        instance.PluginServiceProvider,
+                        commandType);
                     
                     var commandName = tempCommand.Name;
                     var commandAlias = tempCommand.Alias;
@@ -643,13 +642,12 @@ public class CsPluginServiceHost : ICsPluginServiceHost
                         await Task.Delay(10);
                     }
 
-                    // Instantiate the command using ActivatorUtilities (supports constructor injection)
-                    // Commands need CommandConfiguration and ITranslationLookup as constructor parameters
+                    // Instantiate the command using the plugin's scoped service provider
+                    // This ensures commands can access plugin-scoped services like ICsScriptPluginConfiguration
+                    // Fall back to root provider for services not available in plugin scope
                     var command = (Command)ActivatorUtilities.CreateInstance(
-                        _rootServiceProvider,
-                        commandType,
-                        commandConfig,
-                        translationLookup);
+                        instance.PluginServiceProvider,
+                        commandType);
 
                     // Register with manager
                     manager.AddAdditionalCommand(command);
@@ -668,10 +666,8 @@ public class CsPluginServiceHost : ICsPluginServiceHost
                     {
                         // First, instantiate to get the actual command name and alias
                         var testCommand = (Command)ActivatorUtilities.CreateInstance(
-                            _rootServiceProvider,
-                            commandType,
-                            commandConfig,
-                            translationLookup);
+                            instance.PluginServiceProvider,
+                            commandType);
                         
                         var commandName = testCommand.Name;
                         var commandAlias = testCommand.Alias;

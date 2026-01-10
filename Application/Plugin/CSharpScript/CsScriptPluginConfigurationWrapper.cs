@@ -34,7 +34,27 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
         _configHandler = configHandler;
         _logger = logger;
         _pluginNameProvider = pluginNameProvider;
-        _config = configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration()).GetAwaiter().GetResult();
+        
+        // Load config with timeout to avoid deadlock during plugin initialization
+        try
+        {
+            var getTask = configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
+            if (getTask.Wait(TimeSpan.FromSeconds(2)))
+            {
+                _config = getTask.Result;
+            }
+            else
+            {
+                _logger.LogWarning("Config load timed out during wrapper construction. Using default.");
+                _config = new ScriptPluginConfiguration();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load config during wrapper construction. Using default.");
+            _config = new ScriptPluginConfiguration();
+        }
+        
         _configHandler.Updated += OnConfigurationUpdated;
     }
 
@@ -50,23 +70,11 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
             {
                 foreach (var (key, value) in _pendingWrites)
                 {
-                    // Refresh config before checking (might have been updated)
+                    // Use cached config to avoid deadlock - file watcher will update it if needed
                     ScriptPluginConfiguration currentConfig;
-                    try
+                    lock (_configLock)
                     {
-                        var latestConfig = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration()).GetAwaiter().GetResult();
-                        lock (_configLock)
-                        {
-                            _config = latestConfig;
-                            currentConfig = _config;
-                        }
-                    }
-                    catch
-                    {
-                        lock (_configLock)
-                        {
-                            currentConfig = _config;
-                        }
+                        currentConfig = _config ?? new ScriptPluginConfiguration();
                     }
 
                     // Check if key exists before writing (case-insensitive)
@@ -132,34 +140,61 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
             // Plugin name not available yet - try to find matching config section by scanning all sections
             // This is a fallback for when the plugin name isn't set yet during construction
             // We'll try to match by searching for a section that has the requested key
+            // Use cached config to avoid deadlock - don't call Get() synchronously here
             lock (_configLock)
             {
-                ScriptPluginConfiguration currentConfig;
-                try
+                ScriptPluginConfiguration currentConfig = _config;
+                
+                // Only try to refresh if we have no cached config
+                if (currentConfig == null || currentConfig.Count == 0)
                 {
-                    currentConfig = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration()).GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    currentConfig = _config;
+                    try
+                    {
+                        // Try async get but with timeout to avoid deadlock
+                        var getTask = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
+                        if (getTask.Wait(TimeSpan.FromMilliseconds(500)))
+                        {
+                            currentConfig = getTask.Result;
+                            _config = currentConfig;
+                        }
+                    }
+                    catch
+                    {
+                        // If refresh fails, use existing cached config
+                        currentConfig = _config ?? new ScriptPluginConfiguration();
+                    }
                 }
 
                 // Search through all plugin sections to find one with this key
-                foreach (var section in currentConfig)
+                if (currentConfig != null)
                 {
-                    var sectionConfig = section.Value;
-                    if (sectionConfig != null)
+                    foreach (var section in currentConfig)
                     {
-                        // Case-insensitive key lookup
-                        var foundKey = sectionConfig.Keys.FirstOrDefault(k => 
-                            string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
-                        
-                        if (foundKey != null)
+                        var sectionConfig = section.Value;
+                        if (sectionConfig != null)
                         {
-                            // Found a section with this key - use this section as the plugin name
-                            pluginName = section.Key;
-                            _pluginName = pluginName; // Cache it
-                            break;
+                            // Case-insensitive key lookup
+                            var foundKey = sectionConfig.Keys.FirstOrDefault(k => 
+                                string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+                            
+                            if (foundKey != null)
+                            {
+                                // Found a section with this key - use this section as the plugin name
+                                // BUT: Only use this as a temporary fallback for this read only.
+                                // We'll log a warning if it's an old JS plugin name.
+                                if (section.Key.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var actualPluginName = _pluginNameProvider?.Invoke();
+                                    if (!string.IsNullOrEmpty(actualPluginName) && actualPluginName != section.Key)
+                                    {
+                                        _logger.LogWarning("Found config section '{OldSectionName}' (old JS plugin name) for key '{Key}'. Plugin will use this section temporarily. Consider updating ScriptPluginSettings.json to rename '{OldSectionName}' to '{NewPluginName}'.", 
+                                            section.Key, key, actualPluginName);
+                                    }
+                                }
+                                pluginName = section.Key;
+                                // Don't cache this as _pluginName - let the proper plugin name be set later via SetName()
+                                break;
+                            }
                         }
                     }
                 }
@@ -172,25 +207,39 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
             }
         }
 
-        // Refresh config from handler in case it was updated (handles file reload scenarios)
-        // This ensures we're reading the latest config state even if file watcher events were missed
+        // Use cached config to avoid deadlock - only refresh if absolutely necessary
+        // The config should already be loaded from the constructor, and file watcher will update it
         ScriptPluginConfiguration configToUse;
-        try
+        lock (_configLock)
         {
-            var latestConfig = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration()).GetAwaiter().GetResult();
-            lock (_configLock)
+            // Use cached config - file watcher updates will handle hot-reload
+            configToUse = _config;
+            
+            // Only try to refresh if we have no cached config (shouldn't happen after constructor)
+            if (configToUse == null)
             {
-                // Update our cached config reference with latest values
-                _config = latestConfig;
-                configToUse = _config;
-            }
-        }
-        catch (Exception ex)
-        {
-            // If refresh fails (e.g., file locked), use cached config
-            lock (_configLock)
-            {
-                configToUse = _config;
+                try
+                {
+                    // Try async get with timeout to avoid deadlock
+                    var getTask = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
+                    if (getTask.Wait(TimeSpan.FromMilliseconds(500)))
+                    {
+                        configToUse = getTask.Result;
+                        _config = configToUse;
+                    }
+                    else
+                    {
+                        // Timeout - use default
+                        _logger.LogWarning("Config refresh timed out. Using default configuration.");
+                        configToUse = new ScriptPluginConfiguration();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // If refresh fails, use default
+                    _logger.LogDebug(ex, "Config refresh failed. Using default configuration.");
+                    configToUse = new ScriptPluginConfiguration();
+                }
             }
         }
 
@@ -242,22 +291,40 @@ internal class CsScriptPluginConfigurationWrapper : ICsScriptPluginConfiguration
             return;
         }
 
-        // Refresh config before writing to ensure we have latest state
+        // Use cached config - file watcher will update it if the file changes
+        // Only refresh if we don't have cached config (shouldn't happen after constructor)
         ScriptPluginConfiguration configToUse;
-        try
+        lock (_configLock)
         {
-            var latestConfig = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration()).GetAwaiter().GetResult();
-            lock (_configLock)
+            configToUse = _config;
+            
+            // Only try to refresh if we have no cached config
+            if (configToUse == null)
             {
-                _config = latestConfig;
-                configToUse = _config;
-            }
-        }
-        catch
-        {
-            lock (_configLock)
-            {
-                configToUse = _config;
+                try
+                {
+                    // Try async get with timeout to avoid deadlock
+                    var getTask = _configHandler.Get("ScriptPluginSettings", new ScriptPluginConfiguration());
+                    if (getTask.Wait(TimeSpan.FromMilliseconds(500)))
+                    {
+                        configToUse = getTask.Result;
+                        _config = configToUse;
+                    }
+                    else
+                    {
+                        // Timeout - create new empty config
+                        _logger.LogWarning("Config refresh timed out in SetValueAsync. Using new empty configuration.");
+                        configToUse = new ScriptPluginConfiguration();
+                        _config = configToUse;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // If refresh fails, create new empty config
+                    _logger.LogDebug(ex, "Config refresh failed in SetValueAsync. Using new empty configuration.");
+                    configToUse = new ScriptPluginConfiguration();
+                    _config = configToUse;
+                }
             }
         }
 

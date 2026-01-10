@@ -75,6 +75,7 @@ namespace IW4MAdmin.Application
             int? requestQueueLimit = 25)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
+            Directory.SetCurrentDirectory(Utilities.OperatingDirectory);
             AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
             {
                 var libraryName = eventArgs.Name.Split(",").First();

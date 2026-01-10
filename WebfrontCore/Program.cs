@@ -50,7 +50,7 @@ public class Program
     {
 #if DEBUG
         var contentRoot =
-            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\", "WebfrontCore"));
+            Path.GetFullPath(Path.Combine(Utilities.OperatingDirectory, @"..\..\..\", "WebfrontCore"));
 #else
         var contentRoot = Utilities.OperatingDirectory;
 #endif

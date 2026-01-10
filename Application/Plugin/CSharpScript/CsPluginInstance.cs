@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
@@ -17,6 +19,11 @@ internal class CsPluginInstance(string filePath) : IDisposable
     public WeakReference? ContextWeakRef { get; set; }
     public IPluginV2? Plugin { get; set; }
     public IServiceProvider? PluginServiceProvider { get; set; }
+    
+    /// <summary>
+    /// Tracks commands registered by this plugin so they can be safely unregistered on unload.
+    /// </summary>
+    public List<IManagerCommand> RegisteredCommands { get; } = new();
 
     /// <summary>
     /// Waits for the AssemblyLoadContext to be garbage collected.

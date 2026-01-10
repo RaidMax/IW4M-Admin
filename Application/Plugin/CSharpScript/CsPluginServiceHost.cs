@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
@@ -302,7 +303,7 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         return true;
     }
 
-    private Task LoadPluginAsync(string pluginPath)
+    private async Task LoadPluginAsync(string pluginPath)
     {
         var fileName = Path.GetFileName(pluginPath);
         CsPluginInstance? instance = null;
@@ -341,6 +342,9 @@ public class CsPluginServiceHost : ICsPluginServiceHost
                 instance.PluginServiceProvider,
                 pluginType);
 
+            // Discover and register commands from the plugin assembly
+            await RegisterPluginCommands(instance, assembly);
+
             lock (_lock)
             {
                 _plugins[pluginPath] = instance;
@@ -356,8 +360,6 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             _logger.LogError(ex, "[{FileName}] Failed to load", fileName);
             throw;
         }
-
-        return Task.CompletedTask;
     }
 
     private async Task UnloadPluginAsync(string pluginPath)
@@ -376,6 +378,12 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         var pluginName = instance?.Plugin?.Name ?? "Unknown";
 
         _logger.LogInformation("[{FileName}] Unloading {PluginName}...", fileName, pluginName);
+
+        // Unregister commands before disposing
+        if (instance != null)
+        {
+            UnregisterPluginCommands(instance);
+        }
 
         // Dispose the instance (this calls Dispose on plugin if IDisposable, and unloads context)
         instance?.Dispose();
@@ -457,6 +465,236 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         // 1. First tries to resolve from plugin-registered services (instantiated with root provider)
         // 2. Falls back to root provider for everything else
         return new PluginScopedServiceProvider(pluginServices, _rootServiceProvider, _logger);
+    }
+
+    /// <summary>
+    /// Discovers Command classes from the plugin assembly and registers them with the manager.
+    /// </summary>
+    private async Task RegisterPluginCommands(CsPluginInstance instance, System.Reflection.Assembly assembly)
+    {
+        try
+        {
+            // Get manager and required services for command instantiation
+            var manager = _rootServiceProvider.GetRequiredService<IManager>();
+            var commandConfig = _rootServiceProvider.GetRequiredService<CommandConfiguration>();
+            var translationLookup = _rootServiceProvider.GetRequiredService<ITranslationLookup>();
+
+            // Discover all Command classes in the assembly
+            var commandTypes = assembly.GetTypes()
+                .Where(type =>
+                    type.IsClass &&
+                    !type.IsAbstract &&
+                    type.BaseType == typeof(Command) &&
+                    (type.Namespace == null || !type.Namespace.StartsWith(nameof(SharedLibraryCore))))
+                .ToList();
+
+            // Before registering, check for any orphaned commands from previous plugin instances
+            // that might have the same names/aliases but weren't properly cleaned up
+            foreach (var commandType in commandTypes)
+            {
+                try
+                {
+                    // Create a temporary command instance to get its name/alias
+                    var tempCommand = (Command)ActivatorUtilities.CreateInstance(
+                        _rootServiceProvider,
+                        commandType,
+                        commandConfig,
+                        translationLookup);
+                    
+                    var commandName = tempCommand.Name;
+                    var commandAlias = tempCommand.Alias;
+                    
+                    // Check if a command with this name or alias already exists
+                    var existingCommands = manager.GetCommands().Where(cmd =>
+                        cmd.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(commandAlias) && cmd.Alias?.Equals(commandAlias, StringComparison.OrdinalIgnoreCase) == true) ||
+                        (!string.IsNullOrEmpty(cmd.Alias) && cmd.Alias.Equals(commandName, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrEmpty(commandAlias) && cmd.Name.Equals(commandAlias, StringComparison.OrdinalIgnoreCase)) ||
+                        cmd.GetType().Name == commandType.Name).ToList();
+                    
+                    if (existingCommands.Count > 0)
+                    {
+                        _logger.LogDebug("[{FileName}] Removing {Count} existing command(s) matching {CommandType} before registration",
+                            instance.FileName, existingCommands.Count, commandType.Name);
+                        
+                        foreach (var existingCmd in existingCommands)
+                        {
+                            manager.RemoveCommandByName(existingCmd.Name);
+                        }
+                        
+                        // Small delay to ensure cleanup
+                        await Task.Delay(50);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[{FileName}] Error during pre-cleanup check for {CommandType}",
+                        instance.FileName, commandType.Name);
+                }
+            }
+
+            foreach (var commandType in commandTypes)
+            {
+                try
+                {
+                    // Check if command already exists before attempting to register
+                    // This can happen during hot reload if the old command wasn't fully removed yet
+                    var commandName = commandType.Name.Replace("Command", "").ToLower();
+                    var existingCommand = manager.GetCommands()
+                        .FirstOrDefault(cmd => 
+                            cmd.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase) ||
+                            cmd.GetType() == commandType);
+
+                    if (existingCommand != null)
+                    {
+                        // Try to remove the existing command first (might be from a previous plugin instance)
+                        manager.RemoveCommandByName(existingCommand.Name);
+                        await Task.Delay(10);
+                    }
+
+                    // Instantiate the command using ActivatorUtilities (supports constructor injection)
+                    // Commands need CommandConfiguration and ITranslationLookup as constructor parameters
+                    var command = (Command)ActivatorUtilities.CreateInstance(
+                        _rootServiceProvider,
+                        commandType,
+                        commandConfig,
+                        translationLookup);
+
+                    // Register with manager
+                    manager.AddAdditionalCommand(command);
+                    instance.RegisteredCommands.Add(command);
+
+                    _logger.LogDebug("[{FileName}] Registered command: {CommandName} (alias: {Alias})",
+                        instance.FileName, command.Name, command.Alias ?? "none");
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("Duplicate command"))
+                {
+                    // Command with same name/alias already exists - try to remove and retry once
+                    _logger.LogWarning("[{FileName}] Duplicate command detected: {CommandType}. Attempting cleanup...",
+                        instance.FileName, commandType.Name);
+                    
+                    try
+                    {
+                        // First, instantiate to get the actual command name and alias
+                        var testCommand = (Command)ActivatorUtilities.CreateInstance(
+                            _rootServiceProvider,
+                            commandType,
+                            commandConfig,
+                            translationLookup);
+                        
+                        var commandName = testCommand.Name;
+                        var commandAlias = testCommand.Alias;
+                        
+                        // Find ALL matching commands (by name, alias, or type)
+                        var allCommands = manager.GetCommands().ToList();
+                        var toRemove = allCommands.Where(cmd => 
+                            cmd.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase) ||
+                            (!string.IsNullOrEmpty(commandAlias) && cmd.Alias?.Equals(commandAlias, StringComparison.OrdinalIgnoreCase) == true) ||
+                            cmd.GetType().Name == commandType.Name ||
+                            (!string.IsNullOrEmpty(cmd.Alias) && cmd.Alias.Equals(commandName, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(commandAlias) && cmd.Name.Equals(commandAlias, StringComparison.OrdinalIgnoreCase))).ToList();
+                        
+                        // Remove all matching commands
+                        foreach (var cmdToRemove in toRemove)
+                        {
+                            manager.RemoveCommandByName(cmdToRemove.Name);
+                        }
+                        
+                        // Verify removal worked and retry if needed
+                        await Task.Delay(100);
+                        var remainingCommands = manager.GetCommands().Where(cmd => 
+                            cmd.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase) ||
+                            (!string.IsNullOrEmpty(commandAlias) && cmd.Alias?.Equals(commandAlias, StringComparison.OrdinalIgnoreCase) == true)).ToList();
+                        
+                        if (remainingCommands.Count > 0)
+                        {
+                            // Force remove any remaining duplicates
+                            foreach (var remainingCmd in remainingCommands)
+                            {
+                                manager.RemoveCommandByName(remainingCmd.Name);
+                            }
+                            await Task.Delay(50);
+                        }
+                        
+                        // Retry registration with the already-instantiated command
+                        manager.AddAdditionalCommand(testCommand);
+                        instance.RegisteredCommands.Add(testCommand);
+                        
+                        _logger.LogDebug("[{FileName}] Successfully registered command after cleanup: {CommandName}",
+                            instance.FileName, testCommand.Name);
+                    }
+                    catch (Exception retryEx)
+                    {
+                        _logger.LogError(retryEx, "[{FileName}] Failed to register command after cleanup attempt: {CommandType}",
+                            instance.FileName, commandType.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[{FileName}] Failed to register command: {CommandType}",
+                        instance.FileName, commandType.Name);
+                }
+            }
+
+            if (instance.RegisteredCommands.Count > 0)
+            {
+                _logger.LogDebug("[{FileName}] Registered {Count} command(s)",
+                    instance.FileName, instance.RegisteredCommands.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[{FileName}] Error discovering/registering commands",
+                instance.FileName);
+        }
+    }
+
+    /// <summary>
+    /// Unregisters all commands that were registered by this plugin instance.
+    /// </summary>
+    private void UnregisterPluginCommands(CsPluginInstance instance)
+    {
+        try
+        {
+            var manager = _rootServiceProvider.GetRequiredService<IManager>();
+            var commandCount = instance.RegisteredCommands.Count;
+
+            if (commandCount == 0)
+            {
+                _logger.LogDebug("[{FileName}] No commands to unregister", instance.FileName);
+                return;
+            }
+
+            var unregisteredCount = 0;
+            var commandsToRemove = new List<IManagerCommand>(instance.RegisteredCommands);
+            
+            foreach (var command in commandsToRemove)
+            {
+                try
+                {
+                    // Remove by name
+                    manager.RemoveCommandByName(command.Name);
+                    unregisteredCount++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[{FileName}] Failed to unregister command: {CommandName}",
+                        instance.FileName, command.Name);
+                }
+            }
+
+            instance.RegisteredCommands.Clear();
+            
+            if (unregisteredCount > 0)
+            {
+                _logger.LogDebug("[{FileName}] Unregistered {Count} command(s)", instance.FileName, unregisteredCount);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[{FileName}] Error unregistering commands",
+                instance.FileName);
+        }
     }
 
     public void Dispose()

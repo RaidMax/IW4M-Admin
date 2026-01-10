@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
@@ -150,32 +150,35 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
         try
         {
             await _onIo.WaitAsync();
-            await using var fileStream = File.OpenRead(_path);
-            var readConfiguration =
-                await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
+            try
+            {
+                // Use FileShare.ReadWrite to allow concurrent access when possible
+                await using var fileStream = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var readConfiguration =
+                    await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
 
-            if (readConfiguration is null)
-            {
-                _logger.LogWarning("Could not parse updated configuration {Type} at {Path}",
-                    typeof(TConfigurationType).Name, filePath);
-            }
-            else
-            {
+                if (readConfiguration is null)
+                {
+                    _logger.LogWarning("Could not parse updated configuration {Type} at {Path} - deserialization returned null",
+                        typeof(TConfigurationType).Name, filePath);
+                    return;
+                }
+
                 CopyUpdatedProperties(readConfiguration);
                 Updated?.Invoke(readConfiguration);
+            }
+            finally
+            {
+                if (_onIo.CurrentCount == 0)
+                {
+                    _onIo.Release(1);
+                }
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not parse updated configuration {Type} at {Path}",
                 typeof(TConfigurationType).Name, filePath);
-        }
-        finally
-        {
-            if (_onIo.CurrentCount == 0)
-            {
-                _onIo.Release(1);
-            }
         }
     }
 

@@ -89,7 +89,7 @@ namespace IW4MAdmin.Application.Misc
                     ServerId = await server.GetIdForServer(),
                     MapId = await GetOrCreateMap(server.CurrentMap.Name, (Reference.Game) server.GameName, token),
                     ClientCount = server.ClientNum,
-                    ConnectionInterrupted = server.Throttled || server.IsFailState,
+                    ConnectionInterrupted = server.Throttled || server.IsErrorState,
                 }));
 
             return data;

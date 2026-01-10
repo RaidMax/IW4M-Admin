@@ -96,7 +96,7 @@ namespace SharedLibraryCore.Database.Models
         [NotMapped] public DateTime ConnectionTime { get; set; }
 
         [NotMapped] public int ConnectionLength => 
-            CurrentServer?.IsFailState == true 
+            CurrentServer?.IsErrorState == true 
                 ? 0 
                 : (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds;
 

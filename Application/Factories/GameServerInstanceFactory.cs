@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using Data.Abstractions;
 using Data.Models.Server;
+using IW4MAdmin.Application.Misc;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -42,7 +43,8 @@ namespace IW4MAdmin.Application.Factories
             return new IW4MServer(config,
                 _serviceProvider.GetRequiredService<CommandConfiguration>(), _translationLookup, _metaService,
                 _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
-                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
+                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>(),
+                _serviceProvider.GetRequiredService<IServerStateChecker>());
         }
 
         /// <summary>

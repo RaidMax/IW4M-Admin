@@ -4,7 +4,14 @@
         <i class="ph ph-activity text-lg text-secondary"></i>
         <div class="flex flex-col leading-none">
             <span class="text-xs font-bold uppercase tracking-wider">Playtime</span>
-            <span class="text-[10px] font-medium opacity-70">@FormatPlaytime(_totalPlaytime)</span>
+            @if (_totalPlaytime == TimeSpan.Zero)
+            {
+                <span class="text-[10px] font-medium opacity-70">No activity</span>
+            }
+            else
+            {
+                <span class="text-[10px] font-medium opacity-70">@FormatPlaytime(_totalPlaytime)</span>
+            }
         </div>
     </div>
 
@@ -17,8 +24,8 @@
             var colorClass = value > 0 ? "bg-success" : "bg-line";
             var playTime = TimeSpan.FromMinutes(value);
             var tooltipText = value > 0
-                ? $"{date:MMM d}: {FormatPlaytime(playTime)}"
-                : $"{date:MMM d}: No activity";
+                ? $"{FormatPlaytime(playTime)} • {date:MMM d}"
+                : $"No activity • {date:MMM d}";
 
             <Tooltip Text="@tooltipText" WrapperClass="flex-1 flex items-end">
                 <div class="w-full rounded-t transition-all hover:opacity-80 @colorClass"

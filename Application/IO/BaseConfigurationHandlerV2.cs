@@ -30,8 +30,9 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
 
     private readonly SemaphoreSlim _onIo = new(1, 1);
     private TConfigurationType _configurationInstance;
-    private string _path = string.Empty;
     private event Action<string> FileUpdated;
+
+    public string Filename { get; private set; } = string.Empty;
 
     public BaseConfigurationHandlerV2(ILogger<BaseConfigurationHandlerV2<TConfigurationType>> logger,
         ConfigurationWatcher watcher)
@@ -44,7 +45,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
     ~BaseConfigurationHandlerV2()
     {
         FileUpdated -= OnFileUpdated;
-        _watcher.Unregister(_path);
+        _watcher.Unregister(Filename);
     }
 
     public async Task<TConfigurationType> Get(string configurationName,
@@ -62,21 +63,21 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             return defaultConfiguration;
         }
 
-        _path = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{cleanName}.json");
+        Filename = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{cleanName}.json");
         TConfigurationType readConfiguration = null;
 
         try
         {
             await _onIo.WaitAsync();
-            await using var fileStream = File.OpenRead(_path);
+            await using var fileStream = File.OpenRead(Filename);
             readConfiguration =
                 await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
-            _watcher.Register(_path, FileUpdated);
+            _watcher.Register(Filename, FileUpdated);
 
             if (readConfiguration is null)
             {
                 _logger.LogError("Could not parse configuration {Type} at {FileName}", typeof(TConfigurationType).Name,
-                    _path);
+                    Filename);
 
                 return defaultConfiguration;
             }
@@ -90,7 +91,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not read configuration file at {Path}", _path);
+            _logger.LogError(ex, "Could not read configuration file at {Path}", Filename);
             return defaultConfiguration;
         }
         finally
@@ -128,13 +129,13 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
                 await _onIo.WaitAsync();
             }
 
-            await using var fileStream = File.Create(_path);
+            await using var fileStream = File.Create(Filename);
             await JsonSerializer.SerializeAsync(fileStream, configuration, _serializerOptions);
             _configurationInstance = configuration;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not save configuration {Type} {Path}", configuration.GetType().Name, _path);
+            _logger.LogError(ex, "Could not save configuration {Type} {Path}", configuration.GetType().Name, Filename);
         }
         finally
         {
@@ -150,7 +151,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
         try
         {
             await _onIo.WaitAsync();
-            await using var fileStream = File.OpenRead(_path);
+            await using var fileStream = File.OpenRead(Filename);
             var readConfiguration =
                 await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
 
@@ -188,7 +189,7 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
         }
 
         _logger.LogDebug("Updating existing config with new values {Type} at {Path}", typeof(TConfigurationType).Name,
-            _path);
+            Filename);
 
         if (_configurationInstance is IDictionary configDict && newConfiguration is IDictionary newConfigDict)
         {

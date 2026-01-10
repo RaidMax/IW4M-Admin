@@ -15,9 +15,9 @@
     }
     else
     {
-        <link rel="stylesheet" href="css/app.min.css"/>
+        <link rel="stylesheet" href="/css/app.min.css?Version=@Program.Manager.Version"/>
+        <link rel="stylesheet" href="/css/user/user.css?Version=@Program.Manager.Version"/>
     }
-    <link rel="stylesheet" href="/css/user.css"/>
     <link rel="icon" type="image/png" href="images/icon.png"/>
 
     <ImportMap/>
@@ -44,9 +44,9 @@
 }
 else
 {
-    <script src="/js/app.min.js"></script>
+    <script src="/js/app.min.js?Version=@Program.Manager.Version"></script>
+    <script src="/js/user/user.js?Version=@Program.Manager.Version"></script>
 }
-<script src="js/user.js"></script>
 
 <script>
     window.serverThemeSettings = {

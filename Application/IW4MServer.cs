@@ -1,4 +1,4 @@
-﻿using IW4MAdmin.Application.IO;
+using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Misc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -24,6 +24,7 @@ using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 using Data.Models;
+using Data.Models.Client.Stats;
 using Data.Models.Server;
 using Humanizer;
 using IW4MAdmin.Application.Alerts;
@@ -48,6 +49,14 @@ namespace IW4MAdmin
         private const int REPORT_FLAG_COUNT = 4;
         private long lastGameTime = 0;
 
+        // Fail-state detection tracking
+        private DateTime? _lastScoreActivity = DateTime.UtcNow;
+        private DateTime? _lastJoinLeaveActivity = DateTime.UtcNow;
+        private DateTime? _lastStatsActivity = DateTime.UtcNow;
+        private bool _isFailState = false;
+        private DateTime? _failStateDetectedAt = null;
+        private Dictionary<long, int> _previousPlayerScores = new Dictionary<long, int>();
+
         private readonly IServiceProvider _serviceProvider;
         private readonly IClientNoticeMessageFormatter _messageFormatter;
         private readonly ILookupCache<EFServer> _serverCache;
@@ -55,6 +64,8 @@ namespace IW4MAdmin
         private EFServer _cachedDatabaseServer;
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
+
+        public override bool IsFailState => _isFailState;
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
@@ -91,6 +102,28 @@ namespace IW4MAdmin
                 await EnsureServerAdded();
                 await _statManager.EnsureServerAdded(gameEvent.Server, token);
             };
+            
+            // Subscribe to stats events for fail-state detection
+            IGameEventSubscriptions.ClientKilled += async (killEvent, token) =>
+            {
+                if (killEvent.Server.Id != Id)
+                {
+                    return;
+                }
+
+                // Track stats activity for fail-state detection
+                if (killEvent.Attacker?.CurrentServer == this && !killEvent.Attacker.IsBot)
+                {
+                    _lastStatsActivity = DateTime.UtcNow;
+                    if (_isFailState)
+                    {
+                        // Server recovered from fail-state due to stats activity
+                        _isFailState = false;
+                        _failStateDetectedAt = null;
+                        ServerLogger.LogInformation("Server recovered from fail-state - stats activity detected");
+                    }
+                }
+            };
         }
 
         public override async Task<EFClient> OnClientConnected(EFClient clientFromLog)
@@ -126,6 +159,13 @@ namespace IW4MAdmin
             client.State = ClientState.Connecting;
 
             Clients[client.ClientNumber] = client;
+            
+            // Track join activity for fail-state detection
+            if (!client.IsBot)
+            {
+                _lastJoinLeaveActivity = DateTime.UtcNow;
+            }
+            
             ServerLogger.LogDebug("End PreConnect for {client}", client.ToString());
             var e = new GameEvent
             {
@@ -160,6 +200,13 @@ namespace IW4MAdmin
 #endif
                 ServerLogger.LogDebug("Client {@client} disconnecting...", new { client=client.ToString(), client.State });
                 Clients[client.ClientNumber] = null;
+                
+                // Track leave activity for fail-state detection
+                if (!client.IsBot)
+                {
+                    _lastJoinLeaveActivity = DateTime.UtcNow;
+                }
+                
                 await client.OnDisconnect();
 
                 var e = new GameEvent()
@@ -931,6 +978,13 @@ namespace IW4MAdmin
             }
 
             client.Ping = origin.Ping;
+            
+            // Track score changes for fail-state detection
+            if (client.Score != origin.Score)
+            {
+                _lastScoreActivity = DateTime.UtcNow;
+            }
+            
             client.Score = origin.Score;
 
             // update their IP if it hasn't been set yet
@@ -998,12 +1052,122 @@ namespace IW4MAdmin
             UpdateHostname(statusResponse.Hostname);
             UpdateMaxPlayers(statusResponse.MaxClients);
 
+            // Track join/leave activity
+            if (connectingClients.Any() || disconnectingClients.Any())
+            {
+                _lastJoinLeaveActivity = DateTime.UtcNow;
+                if (_isFailState)
+                {
+                    // Server recovered from fail-state
+                    ServerLogger.LogInformation("Server recovered from fail-state - activity detected");
+                    _isFailState = false;
+                    _failStateDetectedAt = null;
+                }
+            }
+
+            // Check for score changes and detect fail-state
+            DetectFailState(updatedClients, polledClients, currentClients);
+
             return new []
             {
                 connectingClients.ToList(),
                 disconnectingClients.ToList(),
                 updatedClients.ToList()
             };
+        }
+
+        /// <summary>
+        /// Detects if the server is in a fail-state (frozen game loop with stale data)
+        /// </summary>
+        private void DetectFailState(IEnumerable<EFClient> updatedClients, IEnumerable<EFClient> polledClients, List<EFClient> currentClients)
+        {
+            var threshold = _appConfig?.FailStateDetectionThreshold ?? TimeSpan.FromHours(2);
+            var minPlayers = _appConfig?.FailStateMinPlayers ?? 1;
+            var now = DateTime.UtcNow;
+
+            // Need at least minimum players to trigger fail-state detection
+            var nonBotPlayers = currentClients.Count(c => !c.IsBot);
+            if (nonBotPlayers < minPlayers)
+            {
+                // Empty or low-population server - reset fail-state if active
+                if (_isFailState)
+                {
+                    _isFailState = false;
+                    _failStateDetectedAt = null;
+                }
+                return;
+            }
+
+            // Check for score changes
+            foreach (var client in updatedClients)
+            {
+                if (_previousPlayerScores.TryGetValue(client.NetworkId, out int previousScore))
+                {
+                    if (client.Score != previousScore)
+                    {
+                        _lastScoreActivity = now;
+                        break;
+                    }
+                }
+                else
+                {
+                    // New player - this is activity
+                    _lastScoreActivity = now;
+                }
+                _previousPlayerScores[client.NetworkId] = client.Score;
+            }
+
+            // Remove scores for disconnected players
+            var currentNetworkIds = polledClients.Select(c => c.NetworkId).ToHashSet();
+            _previousPlayerScores = _previousPlayerScores
+                .Where(kvp => currentNetworkIds.Contains(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            // Check stats activity (LastActive from StatManager)
+            var hasStatsActivity = false;
+            foreach (var client in currentClients.Where(c => !c.IsBot))
+            {
+                var stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
+                if (stats == null || stats.LastActive <= (now - threshold)) continue;
+                hasStatsActivity = true;
+                _lastStatsActivity = now;
+                break;
+            }
+
+            // Initialize activity timestamps if not set
+            _lastScoreActivity ??= now;
+            _lastJoinLeaveActivity ??= now;
+            _lastStatsActivity ??= now;
+
+            // Determine if server is in fail-state
+            var scoreStale = (now - _lastScoreActivity.Value) > threshold;
+            var joinLeaveStale = (now - _lastJoinLeaveActivity.Value) > threshold;
+            var statsStale = !hasStatsActivity && (now - _lastStatsActivity.Value) > threshold;
+
+            var shouldBeFailState = scoreStale && joinLeaveStale && statsStale && nonBotPlayers >= minPlayers;
+
+            if (shouldBeFailState && !_isFailState)
+            {
+                // Entering fail-state
+                _isFailState = true;
+                _failStateDetectedAt = now;
+                ServerLogger.LogWarning(
+                    "Server detected in fail-state - scores unchanged for {ScoreAge}, no joins/leaves for {JoinAge}, no stats activity for {StatsAge}. Players: {PlayerCount}",
+                    (now - _lastScoreActivity.Value).Humanize(),
+                    (now - _lastJoinLeaveActivity.Value).Humanize(),
+                    (now - _lastStatsActivity.Value).Humanize(),
+                    nonBotPlayers);
+            }
+            else if (!shouldBeFailState && _isFailState)
+            {
+                // Recovering from fail-state
+                _isFailState = false;
+                var duration = _failStateDetectedAt.HasValue 
+                    ? (now - _failStateDetectedAt.Value).Humanize() 
+                    : "unknown";
+                ServerLogger.LogInformation("Server recovered from fail-state after {Duration}", duration);
+                _failStateDetectedAt = null;
+            }
         }
         
         public override async Task<long> GetIdForServer(Server server = null)
@@ -1144,6 +1308,26 @@ namespace IW4MAdmin
                     if (polledClients is null)
                     {
                         return true;
+                    }
+
+                    // If fail-state was just detected, disconnect all players
+                    if (_isFailState && _failStateDetectedAt.HasValue && 
+                        (DateTime.UtcNow - _failStateDetectedAt.Value).TotalSeconds < 30)
+                    {
+                        // Disconnect all non-bot players to prevent false playtime accumulation
+                        var allClients = GetClientsAsList().Where(c => !c.IsBot && c.State == ClientState.Connected).ToList();
+                        foreach (var client in allClients)
+                        {
+                            try
+                            {
+                                ServerLogger.LogInformation("Disconnecting {Client} due to server fail-state detection", client.ToString());
+                                await OnClientDisconnected(client);
+                            }
+                            catch (Exception ex)
+                            {
+                                ServerLogger.LogWarning(ex, "Error disconnecting {Client} during fail-state", client.ToString());
+                            }
+                        }
                     }
 
                     foreach (var disconnectingClient in polledClients[1]
@@ -1326,7 +1510,7 @@ namespace IW4MAdmin
             ClientHistory.ClientCounts.Add(new ClientCountSnapshot
             {
                 ClientCount = ClientNum,
-                ConnectionInterrupted = Throttled,
+                ConnectionInterrupted = Throttled || IsFailState,
                 Time = DateTime.UtcNow,
                 Map = CurrentMap.Name,
                 MapAlias = CurrentMap.Alias

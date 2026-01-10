@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -95,7 +95,10 @@ namespace SharedLibraryCore.Database.Models
 
         [NotMapped] public DateTime ConnectionTime { get; set; }
 
-        [NotMapped] public int ConnectionLength => (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds;
+        [NotMapped] public int ConnectionLength => 
+            CurrentServer?.IsFailState == true 
+                ? 0 
+                : (int)(DateTime.UtcNow - ConnectionTime).TotalSeconds;
 
         [NotMapped] public Server CurrentServer { get; set; }
 

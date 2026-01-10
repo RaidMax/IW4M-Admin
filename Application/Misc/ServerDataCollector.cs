@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -89,7 +89,7 @@ namespace IW4MAdmin.Application.Misc
                     ServerId = await server.GetIdForServer(),
                     MapId = await GetOrCreateMap(server.CurrentMap.Name, (Reference.Game) server.GameName, token),
                     ClientCount = server.ClientNum,
-                    ConnectionInterrupted = server.Throttled,
+                    ConnectionInterrupted = server.Throttled || server.IsFailState,
                 }));
 
             return data;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -142,6 +142,7 @@ namespace SharedLibraryCore
             new ReadOnlyCollection<EFClient>(GetClientsAsList());
         public string Password { get; }
         public bool Throttled { get; protected set; }
+        public virtual bool IsFailState { get; protected set; }
         public bool CustomCallback { get; protected set; }
         public bool IsLegacyGameIntegrationEnabled => CustomCallback;
         public string WorkingDirectory { get; protected set; }

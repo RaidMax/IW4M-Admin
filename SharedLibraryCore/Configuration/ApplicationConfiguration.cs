@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Data.Models.Misc;
 using SharedLibraryCore.Configuration.Attributes;
@@ -161,6 +161,10 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore] public TimeSpan MaxClientHistoryTime { get; set; } = TimeSpan.FromHours(12);
 
         [ConfigurationIgnore] public TimeSpan ServerDataCollectionInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+        [ConfigurationIgnore] public TimeSpan FailStateDetectionThreshold { get; set; } = TimeSpan.FromHours(2);
+
+        [ConfigurationIgnore] public int FailStateMinPlayers { get; set; } = 1;
 
         public int ServerConnectionAttempts { get; set; } = 6;
 

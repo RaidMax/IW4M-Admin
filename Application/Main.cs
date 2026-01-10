@@ -488,8 +488,7 @@ namespace IW4MAdmin.Application
             var csPlugins = pluginImporter.DiscoverCsPlugins().ToList();
             if (csPlugins.Count > 0)
             {
-                var compiler = new CsPluginCompiler(
-                    serviceCollection.BuildServiceProvider().GetRequiredService<ILogger<CsPluginCompiler>>());
+                var compiler = new CsPluginCompiler(Utilities.DefaultLogger);
 
                 foreach (var (_, filePath) in csPlugins)
                 {
@@ -504,16 +503,20 @@ namespace IW4MAdmin.Application
                                 t is { IsInterface: false, IsAbstract: false } &&
                                 t.GetInterface(nameof(IPluginV2)) != null);
 
-                        if (pluginType != null)
+                        if (pluginType == null)
                         {
-                            // Invoke RegisterDependencies if present (same as DLL plugins)
-                            var registrationMethod = pluginType.GetMethod(nameof(IPluginV2.RegisterDependencies));
-                            if (registrationMethod != null)
-                            {
-                                defaultLogger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
-                                registrationMethod.Invoke(null, [serviceCollection]);
-                            }
+                            continue;
                         }
+
+                        // Invoke RegisterDependencies if present (same as DLL plugins)
+                        var registrationMethod = pluginType.GetMethod(nameof(IPluginV2.RegisterDependencies));
+                        if (registrationMethod == null)
+                        {
+                            continue;
+                        }
+
+                        defaultLogger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
+                        registrationMethod.Invoke(null, [serviceCollection]);
                     }
                     catch (Exception ex)
                     {
@@ -656,7 +659,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton(new ConfigurationWatcher())
                 .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
-                .AddSingleton<CsPluginCompiler>()
+                .AddSingleton(new CsPluginCompiler(Utilities.DefaultLogger))
                 .AddSingleton<ICsPluginServiceHost, CsPluginServiceHost>()
                 .AddSingleton<IGameScriptEventFactory, GameScriptEventFactory>()
                 .AddSingleton(translationLookup)

@@ -14,10 +14,10 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 /// </summary>
 public class CsPluginCompiler
 {
-    private readonly ILogger<CsPluginCompiler> _logger;
+    private readonly ILogger _logger;
     private readonly Lazy<IEnumerable<MetadataReference>> _metadataReferences;
 
-    public CsPluginCompiler(ILogger<CsPluginCompiler> logger)
+    public CsPluginCompiler(ILogger logger)
     {
         _logger = logger;
         _metadataReferences = new Lazy<IEnumerable<MetadataReference>>(GetMetadataReferences);
@@ -121,12 +121,9 @@ public class CsPluginCompiler
             ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))?.Split(Path.PathSeparator)
             ?? [];
 
-        foreach (var assemblyPath in trustedAssemblies)
+        foreach (var assemblyPath in trustedAssemblies.Where(File.Exists))
         {
-            if (File.Exists(assemblyPath))
-            {
-                assemblies.Add(MetadataReference.CreateFromFile(assemblyPath));
-            }
+            assemblies.Add(MetadataReference.CreateFromFile(assemblyPath));
         }
 
         // Add reference to SharedLibraryCore (for IPluginV2, etc.)

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
@@ -21,7 +22,7 @@ internal class CsPluginInstance(string filePath) : IDisposable
     /// Waits for the AssemblyLoadContext to be garbage collected.
     /// </summary>
     /// <returns>True if the context was unloaded, false if references still exist</returns>
-    public bool WaitForUnload()
+    public async Task<bool> WaitForUnloadAsync()
     {
         if (ContextWeakRef == null)
         {
@@ -42,7 +43,7 @@ internal class CsPluginInstance(string filePath) : IDisposable
             }
 
             // Small delay between attempts
-            Thread.Sleep(100);
+            await Task.Delay(100);
         }
 
         return false;
@@ -51,12 +52,15 @@ internal class CsPluginInstance(string filePath) : IDisposable
     public void Dispose()
     {
         // Dispose the plugin if it implements IDisposable
-        if (Plugin is IDisposable disposable)
+        Plugin?.Dispose();
+        Plugin = null;
+
+        // Dispose the plugin service provider if it implements IDisposable
+        if (PluginServiceProvider is IDisposable disposableProvider)
         {
-            disposable.Dispose();
+            disposableProvider.Dispose();
         }
 
-        Plugin = null;
         PluginServiceProvider = null;
 
         // Initiate unload of the context

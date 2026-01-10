@@ -30,13 +30,9 @@ public class CsPluginLoadContext() : AssemblyLoadContext(isCollectible: true)
     {
         // Share core assemblies with host for type compatibility
         // Returning null causes the runtime to load from the Default context
-        if (SharedAssemblyPrefixes.Any(prefix =>
-                assemblyName.Name?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ?? false))
-        {
-            return null;
-        }
-
-        // Plugin-specific assemblies stay isolated in this context
-        return base.Load(assemblyName);
+        return SharedAssemblyPrefixes.Any(prefix => assemblyName.Name?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ?? false)
+            ? null
+            // Plugin-specific assemblies stay isolated in this context
+            : base.Load(assemblyName);
     }
 }

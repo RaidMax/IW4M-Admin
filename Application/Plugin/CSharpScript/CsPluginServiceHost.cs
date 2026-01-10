@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -259,18 +260,31 @@ public class CsPluginServiceHost : ICsPluginServiceHost
     {
         lock (_fileOperationLocks)
         {
-            if (!_fileOperationLocks.TryGetValue(filePath, out var semaphore))
+            if (_fileOperationLocks.TryGetValue(filePath, out var semaphore))
             {
-                semaphore = new SemaphoreSlim(1, 1);
-                _fileOperationLocks[filePath] = semaphore;
+                // Check if semaphore was disposed (race condition protection)
+                try
+                {
+                    // Try to access a property to verify it's not disposed
+                    _ = semaphore.CurrentCount;
+                    return semaphore;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Semaphore was disposed, create a new one
+                    _fileOperationLocks.Remove(filePath);
+                }
             }
+
+            semaphore = new SemaphoreSlim(1, 1);
+            _fileOperationLocks[filePath] = semaphore;
             return semaphore;
         }
     }
 
     private bool ShouldProcessChange(string filePath)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         lock (_lastChangeTime)
         {
@@ -288,13 +302,14 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         return true;
     }
 
-    private async Task LoadPluginAsync(string pluginPath)
+    private Task LoadPluginAsync(string pluginPath)
     {
         var fileName = Path.GetFileName(pluginPath);
+        CsPluginInstance? instance = null;
 
         try
         {
-            var instance = new CsPluginInstance(pluginPath);
+            instance = new CsPluginInstance(pluginPath);
 
             // Create a new load context for this plugin
             instance.LoadContext = new CsPluginLoadContext();
@@ -318,8 +333,8 @@ public class CsPluginServiceHost : ICsPluginServiceHost
 
             _logger.LogDebug("Found plugin type: {TypeName}", pluginType.FullName);
 
-            // Create a scoped service provider for this plugin
-            instance.PluginServiceProvider = CreatePluginScopedProvider(pluginType, _rootServiceProvider);
+            // Create a plugin-scoped provider that can resolve both plugin services and root services
+            instance.PluginServiceProvider = CreatePluginScopedProvider(pluginType);
 
             // Instantiate the plugin using the scoped provider
             instance.Plugin = (IPluginV2)ActivatorUtilities.CreateInstance(
@@ -336,9 +351,13 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         }
         catch (Exception ex)
         {
+            // Clean up instance if partially created
+            instance?.Dispose();
             _logger.LogError(ex, "[{FileName}] Failed to load", fileName);
             throw;
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task UnloadPluginAsync(string pluginPath)
@@ -353,16 +372,16 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             }
         }
 
-        var fileName = instance.FileName;
-        var pluginName = instance.Plugin?.Name ?? "Unknown";
+        var fileName = instance?.FileName;
+        var pluginName = instance?.Plugin?.Name ?? "Unknown";
 
         _logger.LogInformation("[{FileName}] Unloading {PluginName}...", fileName, pluginName);
 
         // Dispose the instance (this calls Dispose on plugin if IDisposable, and unloads context)
-        instance.Dispose();
+        instance?.Dispose();
 
         // Wait for GC to collect the context
-        var unloaded = instance.WaitForUnload();
+        var unloaded = instance != null && await instance.WaitForUnloadAsync();
 
         if (unloaded)
         {
@@ -373,28 +392,60 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             _logger.LogWarning("[{FileName}] Context may not have fully unloaded - check for lingering references",
                 fileName);
         }
+
+        // Clean up file operation lock semaphore
+        lock (_fileOperationLocks)
+        {
+            if (_fileOperationLocks.TryGetValue(pluginPath, out var semaphore))
+            {
+                try
+                {
+                    semaphore.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Semaphore already disposed, ignore
+                }
+                _fileOperationLocks.Remove(pluginPath);
+            }
+        }
+
+        // Clean up change tracking entry
+        lock (_lastChangeTime)
+        {
+            _lastChangeTime.Remove(pluginPath);
+        }
     }
 
     /// <summary>
-    /// Creates a child service provider that includes the plugin's RegisterDependencies registrations.
+    /// Creates a plugin-scoped service provider that can resolve:
+    /// 1. Services registered by the plugin's RegisterDependencies (built with root provider for their deps)
+    /// 2. All services from the root provider
     /// </summary>
-    private IServiceProvider CreatePluginScopedProvider(Type pluginType, IServiceProvider rootProvider)
+    private IServiceProvider CreatePluginScopedProvider(Type pluginType)
     {
-        // Create a new service collection
-        var services = new ServiceCollection();
+        // Collect the plugin's service registrations
+        var pluginServices = new ServiceCollection();
 
-        // Add all services from the root provider by creating a wrapper
-        // that resolves from the root for anything not explicitly registered
-        services.AddSingleton<IServiceProvider>(sp => rootProvider);
-
-        // Try to invoke RegisterDependencies if it exists
         try
         {
-            var registrationMethod = pluginType.GetMethod(nameof(IPluginV2.RegisterDependencies));
+            var registrationMethod = pluginType.GetMethod(
+                nameof(IPluginV2.RegisterDependencies),
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+
             if (registrationMethod != null)
             {
-                _logger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
-                registrationMethod.Invoke(null, [services]);
+                // Validate method signature
+                var parameters = registrationMethod.GetParameters();
+                if (parameters.Length == 1 && parameters[0].ParameterType == typeof(IServiceCollection))
+                {
+                    _logger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
+                    registrationMethod.Invoke(null, [pluginServices]);
+                }
+                else
+                {
+                    _logger.LogWarning("RegisterDependencies for {TypeName} has invalid signature. Expected: static void RegisterDependencies(IServiceCollection)", pluginType.Name);
+                }
             }
         }
         catch (Exception ex)
@@ -402,8 +453,10 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             _logger.LogWarning(ex, "Failed to invoke RegisterDependencies for {TypeName}", pluginType.Name);
         }
 
-        // Build a provider that chains to the root provider
-        return new ChainedServiceProvider(services.BuildServiceProvider(), rootProvider);
+        // Build a composite provider that:
+        // 1. First tries to resolve from plugin-registered services (instantiated with root provider)
+        // 2. Falls back to root provider for everything else
+        return new PluginScopedServiceProvider(pluginServices, _rootServiceProvider, _logger);
     }
 
     public void Dispose()
@@ -411,42 +464,18 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         _watcher.EnableRaisingEvents = false;
         _watcher.Dispose();
 
-        lock (_lock)
+        foreach (var instance in _plugins.Values)
         {
-            foreach (var instance in _plugins.Values)
-            {
-                instance.Dispose();
-            }
-
-            _plugins.Clear();
-        }
-    }
-}
-
-/// <summary>
-/// A service provider that tries the child provider first, then falls back to the parent.
-/// </summary>
-internal class ChainedServiceProvider : IServiceProvider
-{
-    private readonly IServiceProvider _child;
-    private readonly IServiceProvider _parent;
-
-    public ChainedServiceProvider(IServiceProvider child, IServiceProvider parent)
-    {
-        _child = child;
-        _parent = parent;
-    }
-
-    public object? GetService(Type serviceType)
-    {
-        // Try child first
-        var service = _child.GetService(serviceType);
-        if (service != null)
-        {
-            return service;
+            instance.Dispose();
         }
 
-        // Fall back to parent
-        return _parent.GetService(serviceType);
+        _plugins.Clear();
+
+        foreach (var semaphore in _fileOperationLocks.Values)
+        {
+            semaphore.Dispose();
+        }
+
+        _fileOperationLocks.Clear();
     }
 }

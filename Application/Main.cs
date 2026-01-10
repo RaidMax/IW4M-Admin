@@ -20,7 +20,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.Loader;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,7 +47,6 @@ using SharedLibraryCore.Interfaces.Events;
 using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
-using Stats.Helpers;
 using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace IW4MAdmin.Application
@@ -113,15 +111,6 @@ namespace IW4MAdmin.Application
             Console.WriteLine(" by RaidMax ");
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
-
-            // Important notice...
-            //Console.ForegroundColor = ConsoleColor.Red;
-            //Console.WriteLine("!!!! IMPORTANT !!!!");
-            //Console.WriteLine("The next update of IW4MAdmin will require .NET 10.");
-            //Console.WriteLine("This is a breaking change!");
-            //Console.WriteLine(
-            //    "Please update the ASP.NET Core Runtime: https://dotnet.microsoft.com/en-us/download/dotnet/10.0");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!");
 
             Console.ForegroundColor = ConsoleColor.Gray;
 

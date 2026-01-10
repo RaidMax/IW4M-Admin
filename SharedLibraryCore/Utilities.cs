@@ -38,7 +38,7 @@ namespace SharedLibraryCore
     {
         // note: this is only to be used by classes not created by dependency injection
         public static ILogger DefaultLogger { get; set; }
-#if DEBUG == true
+#if DEBUG
         public static string OperatingDirectory => $"{Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}{Path.DirectorySeparatorChar}";
 #else
         public static string OperatingDirectory =>

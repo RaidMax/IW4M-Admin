@@ -1,13 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Data.Models.Client.Stats;
 using Humanizer;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
+using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Management;
+using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Interfaces.Events;
 
 namespace IW4MAdmin.Application.Misc;
 
@@ -17,6 +24,17 @@ namespace IW4MAdmin.Application.Misc;
 public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerStateChecker> logger) : IServerStateChecker
 {
     private readonly Dictionary<long, int> _previousPlayerScores = new();
+    private readonly Dictionary<long, int> _previousPlayerPings = new();
+
+    /// <summary>
+    /// Indicates if stale checking is disabled due to unreliable ping data (all 0 or 999)
+    /// </summary>
+    private bool _pingDataUnreliable;
+
+    /// <summary>
+    /// The server this state checker is monitoring
+    /// </summary>
+    public Server Server { get; private set; }
 
     /// <summary>
     /// Last time any activity was detected (score changes, joins/leaves, stats events)
@@ -27,6 +45,86 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
     /// Timestamp when fail-state was first detected (for logging/recovery)
     /// </summary>
     public DateTime? FailStateDetectedAt { get; private set; }
+
+    /// <summary>
+    /// Initialize the state checker for a specific server and subscribe to events
+    /// </summary>
+    public void Initialize(Server server)
+    {
+        Server = server ?? throw new ArgumentNullException(nameof(server));
+
+        // Subscribe to stats events for fail-state detection
+        IGameEventSubscriptions.ClientKilled += OnClientKilled;
+
+        // Subscribe to client data update events for score change detection
+        IGameServerEventSubscriptions.ClientDataUpdated += OnClientDataUpdated;
+
+        // Subscribe to client state events for join/leave activity tracking
+        IManagementEventSubscriptions.ClientStateInitialized += OnClientStateInitialized;
+        IManagementEventSubscriptions.ClientStateDisposed += OnClientStateDisposed;
+    }
+
+    private async Task OnClientKilled(ClientKillEvent killEvent, CancellationToken token)
+    {
+        if (!IsServerMatch(killEvent.Server))
+        {
+            return;
+        }
+
+        // Track stats activity for fail-state detection
+        if (killEvent.Attacker?.CurrentServer == Server && !killEvent.Attacker.IsBot)
+        {
+            RecordActivity();
+        }
+    }
+
+    private async Task OnClientDataUpdated(ClientDataUpdateEvent updateEvent, CancellationToken token)
+    {
+        if (!IsServerMatch(updateEvent.Server))
+        {
+            return;
+        }
+
+        // Process player updates to detect score changes
+        var currentClients = Server.GetClientsAsList();
+        ProcessPlayerUpdates(updateEvent.Clients, currentClients);
+    }
+
+    private async Task OnClientStateInitialized(ClientStateInitializeEvent stateEvent, CancellationToken token)
+    {
+        if (!IsServerMatch(stateEvent.Source as IGameServer))
+        {
+            return;
+        }
+
+        // Track join activity for fail-state detection
+        if (!stateEvent.Client.IsBot)
+        {
+            RecordActivity();
+        }
+    }
+
+    private async Task OnClientStateDisposed(ClientStateDisposeEvent stateEvent, CancellationToken token)
+    {
+        if (!IsServerMatch(stateEvent.Source as IGameServer))
+        {
+            return;
+        }
+
+        // Track leave activity for fail-state detection
+        if (!stateEvent.Client.IsBot)
+        {
+            RecordActivity();
+        }
+    }
+
+    /// <summary>
+    /// Check if the event is from the server this checker is monitoring
+    /// </summary>
+    private bool IsServerMatch(IGameServer eventServer)
+    {
+        return Server != null && eventServer?.Id == Server.Id;
+    }
 
     /// <summary>
     /// Records that activity has occurred (updates LastActivity timestamp)
@@ -56,36 +154,71 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
     }
 
     /// <summary>
-    /// Processes player updates to detect score changes and updates LastActivity accordingly
+    /// Processes player updates to detect score and ping changes, updates LastActivity accordingly
     /// </summary>
     public void ProcessPlayerUpdates(IEnumerable<EFClient> updatedClients, IEnumerable<EFClient> polledClients)
     {
-        // Check for score changes
-        foreach (var client in updatedClients)
+        var clientList = updatedClients.ToList();
+
+        // Check if all pings are 0 or 999 (unreliable ping data - e.g., WaW after weeks of uptime)
+        if (clientList.Count > 0)
         {
+            var allPingsUnreliable = clientList.All(c => c.Ping is 0 or 999);
+            if (allPingsUnreliable != _pingDataUnreliable)
+            {
+                _pingDataUnreliable = allPingsUnreliable;
+                logger.LogInformation("{Status}", _pingDataUnreliable
+                    ? "Ping data unreliable (all 0 or 999) - ping variance check disabled for server"
+                    : "Ping data now reliable - ping variance check enabled for server");
+            }
+        }
+
+        // Check for score and ping changes
+        foreach (var client in clientList)
+        {
+            var hasActivity = false;
+
+            // Check score change
             if (_previousPlayerScores.TryGetValue(client.NetworkId, out var previousScore))
             {
                 if (client.Score != previousScore)
                 {
-                    RecordActivity();
-                    break;
+                    hasActivity = true;
                 }
             }
             else
             {
                 // New player - this is activity
+                hasActivity = true;
+            }
+
+            // Check ping change (only if ping data is reliable)
+            if (!_pingDataUnreliable && _previousPlayerPings.TryGetValue(client.NetworkId, out var previousPing))
+            {
+                // Ping change > 1 indicates real activity (frozen servers return exact same value)
+                if (Math.Abs(client.Ping - previousPing) > 1)
+                {
+                    hasActivity = true;
+                }
+            }
+
+            if (hasActivity)
+            {
                 RecordActivity();
+                // Don't break - still need to update all stored values
             }
 
             _previousPlayerScores[client.NetworkId] = client.Score;
+            _previousPlayerPings[client.NetworkId] = client.Ping;
         }
 
-        // Remove scores for disconnected players
+        // Remove data for disconnected players
         var currentNetworkIds = polledClients.Select(c => c.NetworkId).ToHashSet();
         var keysToRemove = _previousPlayerScores.Keys.Where(k => !currentNetworkIds.Contains(k)).ToList();
         foreach (var key in keysToRemove)
         {
             _previousPlayerScores.Remove(key);
+            _previousPlayerPings.Remove(key);
         }
     }
 
@@ -113,13 +246,11 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
         }
 
         // Check stats activity (LastActive from StatManager)
-        var hasStatsActivity = false;
         foreach (var client in currentClients.Where(c => !c.IsBot))
         {
             var stats = client.GetAdditionalProperty<EFClientStatistics>(StatManager.CLIENT_STATS_KEY);
             if (stats != null && stats.LastActive > (now - threshold))
             {
-                hasStatsActivity = true;
                 RecordActivity();
                 break;
             }

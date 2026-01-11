@@ -50,7 +50,6 @@ namespace IW4MAdmin
         private long lastGameTime = 0;
 
         private readonly IServerStateChecker _stateChecker;
-
         private readonly IServiceProvider _serviceProvider;
         private readonly IClientNoticeMessageFormatter _messageFormatter;
         private readonly ILookupCache<EFServer> _serverCache;
@@ -97,35 +96,9 @@ namespace IW4MAdmin
 
                 await EnsureServerAdded();
                 await _statManager.EnsureServerAdded(gameEvent.Server, token);
-            };
-            
-            // Subscribe to stats events for fail-state detection
-            IGameEventSubscriptions.ClientKilled += async (killEvent, token) =>
-            {
-                if (killEvent.Server.Id != Id)
-                {
-                    return;
-                }
-
-                // Track stats activity for fail-state detection
-                if (killEvent.Attacker?.CurrentServer == this && !killEvent.Attacker.IsBot)
-                {
-                    _stateChecker.RecordActivity();
-                }
-            };
-            
-            // Subscribe to client data update events for score change detection
-            IGameServerEventSubscriptions.ClientDataUpdated += async (updateEvent, token) =>
-            {
-                if (updateEvent.Server.Id != Id)
-                {
-                    return;
-                }
-
-                // Process player updates to detect score changes
-                // Use all current clients as "polled clients" for cleanup
-                var currentClients = GetClientsAsList();
-                _stateChecker.ProcessPlayerUpdates(updateEvent.Clients, currentClients);
+                
+                // Initialize the state checker for fail-state detection (subscribes to events)
+                _stateChecker.Initialize(this);
             };
         }
 
@@ -163,12 +136,6 @@ namespace IW4MAdmin
 
             Clients[client.ClientNumber] = client;
             
-            // Track join activity for fail-state detection
-            if (!client.IsBot)
-            {
-                _stateChecker.RecordActivity();
-            }
-            
             ServerLogger.LogDebug("End PreConnect for {client}", client.ToString());
             var e = new GameEvent
             {
@@ -203,12 +170,6 @@ namespace IW4MAdmin
 #endif
                 ServerLogger.LogDebug("Client {@client} disconnecting...", new { client=client.ToString(), client.State });
                 Clients[client.ClientNumber] = null;
-                
-                // Track leave activity for fail-state detection
-                if (!client.IsBot)
-                {
-                    _stateChecker.RecordActivity();
-                }
                 
                 await client.OnDisconnect();
 

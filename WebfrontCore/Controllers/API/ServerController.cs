@@ -109,12 +109,12 @@ namespace WebfrontCore.Controllers.API
         [Authorize(Roles = nameof(EFClient.Permission.Owner))]
         public async Task<ActionResult> RemoveServer(
             string id,
-            [FromQuery] bool shouldPersist = false,
+            [FromQuery] bool persistToConfiguration = false,
             CancellationToken token = default)
         {
             try
             {
-                var success = await dataService.RemoveServerAsync(id, shouldPersist, token);
+                var success = await dataService.RemoveServerAsync(id, persistToConfiguration, token);
                 
                 if (!success)
                 {

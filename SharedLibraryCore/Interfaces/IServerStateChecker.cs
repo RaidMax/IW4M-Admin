@@ -1,11 +1,11 @@
-﻿namespace SharedLibraryCore.Interfaces;
+namespace SharedLibraryCore.Interfaces;
 
 public interface IServerStateChecker : IDisposable
 {
     /// <summary>
     /// The server this state checker is monitoring
     /// </summary>
-    Server Server { get; }
+    IGameServer Server { get; }
     
     DateTime? LastActivity { get; }
     DateTime? FailStateDetectedAt { get; }
@@ -13,7 +13,7 @@ public interface IServerStateChecker : IDisposable
     /// <summary>
     /// Initialize the state checker for a specific server and subscribe to events
     /// </summary>
-    void Initialize(Server server);
+    void Initialize(IGameServer server);
     
     /// <summary>
     /// Determines if players should be disconnected due to recent fail-state detection.

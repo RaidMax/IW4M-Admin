@@ -34,7 +34,7 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
     /// <summary>
     /// The server this state checker is monitoring
     /// </summary>
-    public Server Server { get; private set; }
+    public IGameServer Server { get; private set; }
 
     /// <summary>
     /// Last time any activity was detected (score changes, joins/leaves, stats events)
@@ -49,7 +49,7 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
     /// <summary>
     /// Initialize the state checker for a specific server and subscribe to events
     /// </summary>
-    public void Initialize(Server server)
+    public void Initialize(IGameServer server)
     {
         Server = server ?? throw new ArgumentNullException(nameof(server));
 
@@ -97,7 +97,7 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
         }
 
         // Process player updates to detect score changes
-        var currentClients = Server.GetClientsAsList();
+        var currentClients = Server.ConnectedClients.ToList();
         ProcessPlayerUpdates(updateEvent.Clients, currentClients);
     }
 
@@ -171,7 +171,7 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
             return false;
         }
         
-        var nonBotPlayerCount = Server.GetClientsAsList().Count(c => !c.IsBot);
+        var nonBotPlayerCount = Server.ConnectedClients.Count(c => !c.IsBot);
         if (nonBotPlayerCount < (config?.FailStateMinPlayers ?? 1))
         {
             return false;
@@ -265,7 +265,7 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
             return false;
         }
         
-        var currentClients = Server.GetClientsAsList();
+        var currentClients = Server.ConnectedClients.ToList();
         var threshold = config?.FailStateDetectionThreshold ?? TimeSpan.FromHours(2);
         var minPlayers = config?.FailStateMinPlayers ?? 1;
         var now = DateTime.UtcNow;

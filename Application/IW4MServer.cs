@@ -40,7 +40,7 @@ using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
 {
-    public class IW4MServer : Server, IDisposable 
+    public class IW4MServer : Server 
     {
         private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
         public GameLogEventDetection LogEvent;
@@ -1826,9 +1826,10 @@ namespace IW4MAdmin
 
         public override long LegacyDatabaseId => _cachedDatabaseServer?.ServerId ?? BuildLegacyDatabaseId();
 
-        public void Dispose()
+        public override void Dispose()
         {
             _stateChecker?.Dispose();
+            base.Dispose();
         }
     }
 }

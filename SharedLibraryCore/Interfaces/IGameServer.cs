@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
@@ -8,7 +8,7 @@ using SharedLibraryCore.Database.Models;
 
 namespace SharedLibraryCore.Interfaces
 {
-    public interface IGameServer
+    public interface IGameServer : IDisposable
     {
         /// <summary>
         ///     kicks target on behalf of origin for given reason

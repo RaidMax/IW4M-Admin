@@ -440,5 +440,14 @@ namespace SharedLibraryCore
         [Obsolete("Use the ScriptPluginExtension helper")]
         public EFClient GetClientByNumber(int clientNumber) =>
             GetClientsAsList().FirstOrDefault(client => client.ClientNumber == clientNumber);
+
+        /// <summary>
+        /// Dispose resources held by the server
+        /// </summary>
+        public virtual void Dispose()
+        {
+            EventProcessing?.Dispose();
+            OnRemoteCommandResponse?.Dispose();
+        }
     }
 }

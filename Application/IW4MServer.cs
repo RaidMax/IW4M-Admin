@@ -40,7 +40,7 @@ using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
 {
-    public class IW4MServer : Server
+    public class IW4MServer : Server, IDisposable 
     {
         private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
         public GameLogEventDetection LogEvent;
@@ -58,7 +58,7 @@ namespace IW4MAdmin
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
 
-        public override bool IsErrorState => _stateChecker.IsErrorState(GetClientsAsList().Count(c => !c.IsBot));
+        public override bool IsErrorState => _stateChecker.IsInErrorState();
 
         public IW4MServer(
             ServerConfiguration serverConfiguration,
@@ -887,14 +887,14 @@ namespace IW4MAdmin
         public async Task EnsureServerAdded()
         {
             var gameServer = await _serverCache
-                .FirstAsync(server => server.EndPoint == Id);
+                .FirstAsync(server => server.EndPoint == base.Id);
             
             if (gameServer == null)
             {
                 gameServer = new EFServer
                 {
                     Port = ListenPort,
-                    EndPoint = Id,
+                    EndPoint = base.Id,
                     ServerId = BuildLegacyDatabaseId(),
                     GameName = (Reference.Game?)GameName,
                     HostName = ServerName
@@ -942,13 +942,6 @@ namespace IW4MAdmin
             }
 
             client.Ping = origin.Ping;
-            
-            // Track score changes for fail-state detection
-            if (client.Score != origin.Score)
-            {
-                _stateChecker.RecordActivity();
-            }
-            
             client.Score = origin.Score;
 
             // update their IP if it hasn't been set yet
@@ -1016,14 +1009,8 @@ namespace IW4MAdmin
             UpdateHostname(statusResponse.Hostname);
             UpdateMaxPlayers(statusResponse.MaxClients);
 
-            // Track join/leave activity
-            if (connectingClients.Any() || disconnectingClients.Any())
-            {
-                _stateChecker.RecordActivity();
-            }
-
             // Check and update fail-state status
-            _stateChecker.CheckAndUpdateFailState(currentClients);
+            _stateChecker.CheckAndUpdateFailState();
 
             return new []
             {
@@ -1140,6 +1127,7 @@ namespace IW4MAdmin
             using var tokenSource = new CancellationTokenSource();
             tokenSource.CancelAfter(Utilities.DefaultCommandTimeout);
             
+            Dispose();
             Manager.QueueEvent(new MonitorStopEvent
             {
                 Server = this
@@ -1175,11 +1163,10 @@ namespace IW4MAdmin
                     }
 
                     // If fail-state was just detected, disconnect all players
-                    if (_stateChecker.FailStateDetectedAt.HasValue && 
-                        (DateTime.UtcNow - _stateChecker.FailStateDetectedAt.Value).TotalSeconds < 30)
+                    if (_stateChecker.ShouldDisconnectPlayersOnFailState())
                     {
-                        // Disconnect all non-bot players to prevent false playtime accumulation
-                        var allClients = GetClientsAsList().Where(c => !c.IsBot && c.State == ClientState.Connected).ToList();
+                        // Disconnect ALL players (including bots and connecting clients) to prevent false playtime accumulation
+                        var allClients = GetClientsAsList().ToList();
                         foreach (var client in allClients)
                         {
                             try
@@ -1838,5 +1825,10 @@ namespace IW4MAdmin
         }
 
         public override long LegacyDatabaseId => _cachedDatabaseServer?.ServerId ?? BuildLegacyDatabaseId();
+
+        public void Dispose()
+        {
+            _stateChecker?.Dispose();
+        }
     }
 }

@@ -166,6 +166,8 @@ namespace SharedLibraryCore.Configuration
 
         [ConfigurationIgnore] public int FailStateMinPlayers { get; set; } = 1;
 
+        [ConfigurationIgnore] public TimeSpan? FailStateGracePeriod { get; set; }
+
         public int ServerConnectionAttempts { get; set; } = 6;
 
         [ConfigurationIgnore]

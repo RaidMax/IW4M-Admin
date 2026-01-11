@@ -972,6 +972,11 @@ namespace IW4MAdmin.Application
                     {
                         await client.OnDisconnect();
                     }
+
+                    if (serverToRemove is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
                     
                     // Remove from the collection
                     if (!_servers.TryRemove(serverKey, out _))

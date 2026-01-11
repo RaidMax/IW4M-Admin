@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Data.Abstractions;
 using Data.Models.Server;
 using IW4MAdmin.Application.Misc;
@@ -63,7 +63,8 @@ namespace IW4MAdmin.Application.Factories
             return new DummyServer(dummyConfig,
                 _serviceProvider.GetRequiredService<CommandConfiguration>(), _translationLookup, _metaService,
                 _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
-                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
+                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>(), 
+                _serviceProvider.GetRequiredService<IServerStateChecker>());
         }
     }
 }

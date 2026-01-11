@@ -64,6 +64,17 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
         IManagementEventSubscriptions.ClientStateDisposed += OnClientStateDisposed;
     }
 
+    /// <summary>
+    /// Unsubscribes from all events to support dynamic server removal
+    /// </summary>
+    public void Dispose()
+    {
+        IGameEventSubscriptions.ClientKilled -= OnClientKilled;
+        IGameServerEventSubscriptions.ClientDataUpdated -= OnClientDataUpdated;
+        IManagementEventSubscriptions.ClientStateInitialized -= OnClientStateInitialized;
+        IManagementEventSubscriptions.ClientStateDisposed -= OnClientStateDisposed;
+    }
+
     private async Task OnClientKilled(ClientKillEvent killEvent, CancellationToken token)
     {
         if (!IsServerMatch(killEvent.Server))
@@ -135,10 +146,32 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
     }
 
     /// <summary>
-    /// Computes whether the server is in a fail-state based on configuration and player count
+    /// Determines if players should be disconnected due to recent fail-state detection.
+    /// This encapsulates the grace period logic which may vary by game.
     /// </summary>
-    public bool IsErrorState(int nonBotPlayerCount)
+    public bool ShouldDisconnectPlayersOnFailState()
     {
+        if (!FailStateDetectedAt.HasValue)
+        {
+            return false;
+        }
+        
+        // Grace period before resuming normal polling - may need adjustment for specific games
+        var gracePeriod = config?.FailStateGracePeriod ?? TimeSpan.FromSeconds(30);
+        return (DateTime.UtcNow - FailStateDetectedAt.Value) < gracePeriod;
+    }
+
+    /// <summary>
+    /// Computes whether the server is in a fail-state based on configuration and current player count
+    /// </summary>
+    public bool IsInErrorState()
+    {
+        if (Server == null)
+        {
+            return false;
+        }
+        
+        var nonBotPlayerCount = Server.GetClientsAsList().Count(c => !c.IsBot);
         if (nonBotPlayerCount < (config?.FailStateMinPlayers ?? 1))
         {
             return false;
@@ -225,8 +258,14 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
     /// <summary>
     /// Checks and updates fail-state status, returns true if status changed
     /// </summary>
-    public bool CheckAndUpdateFailState(List<EFClient> currentClients)
+    public bool CheckAndUpdateFailState()
     {
+        if (Server == null)
+        {
+            return false;
+        }
+        
+        var currentClients = Server.GetClientsAsList();
         var threshold = config?.FailStateDetectionThreshold ?? TimeSpan.FromHours(2);
         var minPlayers = config?.FailStateMinPlayers ?? 1;
         var now = DateTime.UtcNow;
@@ -263,7 +302,7 @@ public class ServerStateChecker(ApplicationConfiguration config, ILogger<ServerS
         }
 
         // Determine if server is in fail-state
-        var shouldBeFailState = IsErrorState(nonBotPlayers);
+        var shouldBeFailState = IsInErrorState();
 
         if (shouldBeFailState && !FailStateDetectedAt.HasValue)
         {

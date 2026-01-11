@@ -568,5 +568,17 @@ namespace Integrations.Cod
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            // Clean up the connection state for this endpoint
+            if (!ActiveQueries.TryRemove(Endpoint, out var connectionState))
+            {
+                return;
+            }
+
+            connectionState.OnComplete?.Dispose();
+            _log.LogDebug("Disposed RCon connection for {Endpoint}", Endpoint);
+        }
     }
 }

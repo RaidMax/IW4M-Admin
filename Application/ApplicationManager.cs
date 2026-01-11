@@ -943,6 +943,12 @@ namespace IW4MAdmin.Application
                 _logger.LogWarning("Server {ServerId} not found for removal", serverId);
                 return false;
             }
+
+            if (serverToRemove is DummyServer)
+            {
+                _logger.LogInformation("Server {ServerId} is a dummy server, skipping removal...", serverId);
+                return false;
+            }
             
             try
             {

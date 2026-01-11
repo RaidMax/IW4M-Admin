@@ -448,6 +448,7 @@ namespace SharedLibraryCore
         {
             EventProcessing?.Dispose();
             OnRemoteCommandResponse?.Dispose();
+            RemoteConnection?.Dispose();
         }
     }
 }

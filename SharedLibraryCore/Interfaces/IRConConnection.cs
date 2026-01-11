@@ -7,7 +7,7 @@ namespace SharedLibraryCore.Interfaces
     /// <summary>
     ///     defines the capabilities of an RCon connection
     /// </summary>
-    public interface IRConConnection
+    public interface IRConConnection : IDisposable
     {
         /// <summary>
         ///     sends a query with the instance of the rcon connection

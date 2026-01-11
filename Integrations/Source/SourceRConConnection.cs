@@ -43,9 +43,19 @@ namespace Integrations.Source
             _activeQuery = new SemaphoreSlim(1, 1);
         }
 
-        ~SourceRConConnection()
+        public void Dispose()
         {
-            _activeQuery.Dispose();
+            try
+            {
+                _rconClient?.Disconnect();
+            }
+            catch
+            {
+                // Ignore disconnect errors during disposal
+            }
+            
+            _activeQuery?.Dispose();
+            _logger.LogDebug("Disposed Source RCon connection for {Endpoint}", _ipEndPoint);
         }
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "",  CancellationToken token = default)

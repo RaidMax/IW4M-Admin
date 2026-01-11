@@ -887,14 +887,14 @@ namespace IW4MAdmin
         public async Task EnsureServerAdded()
         {
             var gameServer = await _serverCache
-                .FirstAsync(server => server.EndPoint == base.Id);
+                .FirstAsync(server => server.EndPoint == Id);
             
             if (gameServer == null)
             {
                 gameServer = new EFServer
                 {
                     Port = ListenPort,
-                    EndPoint = base.Id,
+                    EndPoint = Id,
                     ServerId = BuildLegacyDatabaseId(),
                     GameName = (Reference.Game?)GameName,
                     HostName = ServerName
@@ -1828,6 +1828,7 @@ namespace IW4MAdmin
 
         public override void Dispose()
         {
+            LogEvent?.Dispose();
             _stateChecker?.Dispose();
             base.Dispose();
         }

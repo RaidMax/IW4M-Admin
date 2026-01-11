@@ -2,6 +2,7 @@
 using SharedLibraryCore.Interfaces;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
@@ -9,25 +10,32 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.IO
 {
-    public class GameLogEventDetection
+    public class GameLogEventDetection(
+        ILogger<GameLogEventDetection> logger,
+        IW4MServer server,
+        Uri[] gameLogUris,
+        IGameLogReaderFactory gameLogReaderFactory)
+        : IDisposable
     {
-        private long previousFileSize;
-        private readonly Server _server;
-        private readonly IGameLogReader _reader;
-        private readonly bool _ignoreBots;
-        private readonly ILogger _logger;
+        private long _previousFileSize;
+        private readonly Server _server = server;
 
-        public GameLogEventDetection(ILogger<GameLogEventDetection> logger, IW4MServer server, Uri[] gameLogUris, IGameLogReaderFactory gameLogReaderFactory)
-        {
-            _reader = gameLogReaderFactory.CreateGameLogReader(gameLogUris, server.EventParser);
-            _server = server;
-            _ignoreBots = server.Manager.GetApplicationSettings().Configuration()?.IgnoreBots ?? false;
-            _logger = logger;
-        }
+        private readonly IGameLogReader _reader =
+            gameLogReaderFactory.CreateGameLogReader(gameLogUris, server.EventParser);
+
+        private readonly bool _ignoreBots =
+            server.Manager.GetApplicationSettings().Configuration()?.IgnoreBots ?? false;
+
+        private readonly ILogger _logger = logger;
+        private readonly CancellationTokenSource _cts = new();
+        private bool _disposed;
 
         public async Task PollForChanges()
         {
-            while (!_server.Manager.CancellationToken.IsCancellationRequested)
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                _cts.Token, _server.Manager.CancellationToken);
+
+            while (!linkedCts.Token.IsCancellationRequested)
             {
                 if (_server.IsInitialized)
                 {
@@ -38,38 +46,45 @@ namespace IW4MAdmin.Application.IO
 
                     catch (Exception e)
                     {
-                        using(LogContext.PushProperty("Server", _server.ToString()))
+                        using (LogContext.PushProperty("Server", _server.ToString()))
                         {
                             _logger.LogError(e, "Failed to update log event for {endpoint}", _server.EndPoint);
                         }
                     }
                 }
 
-                await Task.Delay(_reader.UpdateInterval, _server.Manager.CancellationToken);
+                try
+                {
+                    await Task.Delay(_reader.UpdateInterval, linkedCts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
 
             _logger.LogDebug("Stopped polling for changes");
         }
 
-        public async Task UpdateLogEvents()
+        private async Task UpdateLogEvents()
         {
-            long fileSize = _reader.Length;
+            var fileSize = _reader.Length;
 
-            if (previousFileSize == 0)
+            if (_previousFileSize == 0)
             {
-                previousFileSize = fileSize;
+                _previousFileSize = fileSize;
             }
 
-            long fileDiff = fileSize - previousFileSize;
+            var fileDiff = fileSize - _previousFileSize;
 
             // this makes the http log get pulled
             if (fileDiff < 1 && fileSize != -1)
             {
-                previousFileSize = fileSize;
+                _previousFileSize = fileSize;
                 return;
             }
 
-            var events = await _reader.ReadEventsFromLog(fileDiff, previousFileSize, _server);
+            var events = await _reader.ReadEventsFromLog(fileDiff, _previousFileSize, _server);
 
             foreach (var gameEvent in events)
             {
@@ -78,16 +93,21 @@ namespace IW4MAdmin.Application.IO
                     gameEvent.Owner = _server;
 
                     // we don't want to add the event if ignoreBots is on and the event comes from a bot
-                    if (!_ignoreBots || (_ignoreBots && !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
+                    if (!_ignoreBots || (_ignoreBots &&
+                                         !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                     {
-                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) == GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != Utilities.WORLD_ID)
+                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) ==
+                            GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != Utilities.WORLD_ID)
                         {
-                            gameEvent.Origin = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
+                            gameEvent.Origin = _server.GetClientsAsList()
+                                .First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
                         }
 
-                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) == GameEvent.EventRequiredEntity.Target)
+                        if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) ==
+                            GameEvent.EventRequiredEntity.Target)
                         {
-                            gameEvent.Target = _server.GetClientsAsList().First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
+                            gameEvent.Target = _server.GetClientsAsList()
+                                .First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
                         }
 
                         if (gameEvent.Origin != null)
@@ -110,15 +130,26 @@ namespace IW4MAdmin.Application.IO
                     {
                         continue;
                     }
-                    
-                    using(LogContext.PushProperty("Server", _server.ToString()))
+
+                    using (LogContext.PushProperty("Server", _server.ToString()))
                     {
-                        _logger.LogError("Could not find client in client list when parsing event line {data}", gameEvent.Data);
+                        _logger.LogError("Could not find client in client list when parsing event line {data}",
+                            gameEvent.Data);
                     }
                 }
             }
 
-            previousFileSize = fileSize;
+            _previousFileSize = fileSize;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _cts.Cancel();
+            _cts.Dispose();
+            _disposed = true;
         }
     }
 }

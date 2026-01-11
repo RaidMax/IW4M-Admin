@@ -1,4 +1,4 @@
-#:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.10.1
+#:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Data.Models;
 using Data.Models.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
@@ -24,6 +25,13 @@ using SharedLibraryCore.Interfaces.Events;
 /// </summary>
 public class SubnetBanPlugin : IPluginV2
 {
+    public static void RegisterDependencies(IServiceCollection serviceCollection)
+    {
+        serviceCollection.AddConfiguration<SubnetBanConfiguration>(
+            "SubnetBanSettings",
+            new SubnetBanConfiguration());
+    }
+
     public string Name => "Subnet Banlist Plugin";
     public string Author => "RaidMax";
     public string Version => "2.0";
@@ -32,15 +40,12 @@ public class SubnetBanPlugin : IPluginV2
     private static readonly Regex CidrRegex = new(@"^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$", RegexOptions.Compiled);
 
     private readonly ILogger<SubnetBanPlugin> _logger;
-    private readonly ICsScriptPluginConfiguration _config;
+    private readonly SubnetBanConfiguration _config;
     private readonly IInteractionRegistration _interactionRegistration;
-    private readonly List<string> _subnetList = new();
-
-    private string _banMessage = "You are not allowed to join this server.";
 
     public SubnetBanPlugin(
         ILogger<SubnetBanPlugin> logger,
-        ICsScriptPluginConfiguration config,
+        SubnetBanConfiguration config,
         IInteractionRegistration interactionRegistration)
     {
         _logger = logger;
@@ -50,67 +55,12 @@ public class SubnetBanPlugin : IPluginV2
         // Subscribe to client authorization events
         IManagementEventSubscriptions.ClientStateAuthorized += OnClientAuthorized;
 
-        // Load configuration
-        LoadConfiguration();
-
         // Register webfront interaction
         RegisterInteraction();
 
         _logger.LogInformation("Subnet Ban loaded");
     }
 
-    private void LoadConfiguration()
-    {
-        ReloadSubnetList();
-        ReloadBanMessage();
-
-        // Subscribe to config updates to reload subnet list when changed
-        _config.GetValue("SubnetBanList", new List<object>(), updatedValue =>
-        {
-            if (updatedValue is List<object> newList)
-            {
-                ReloadSubnetList();
-            }
-        });
-
-        _config.GetValue("BanMessage", _banMessage, updatedValue =>
-        {
-            if (updatedValue is string newMessage)
-            {
-                _banMessage = newMessage;
-            }
-        });
-    }
-
-    private void ReloadSubnetList()
-    {
-        var list = _config.GetValue<List<object>>("SubnetBanList", new List<object>());
-        _subnetList.Clear();
-
-        if (list != null && list.Count > 0)
-        {
-            foreach (var element in list)
-            {
-                var ban = element?.ToString() ?? string.Empty;
-                if (!string.IsNullOrEmpty(ban))
-                {
-                    _subnetList.Add(ban);
-                }
-            }
-            _logger.LogInformation("Loaded {Count} banned subnets", _subnetList.Count);
-        }
-        else
-        {
-            // Set empty list as default (only if it doesn't exist)
-            _ = _config.SetValueAsync("SubnetBanList", new List<string>());
-        }
-    }
-
-    private void ReloadBanMessage()
-    {
-        _banMessage = _config.GetValue<string>("BanMessage", "You are not allowed to join this server.");
-        _ = _config.SetValueAsync("BanMessage", _banMessage);
-    }
 
     private void RegisterInteraction()
     {
@@ -123,7 +73,7 @@ public class SubnetBanPlugin : IPluginV2
             var interaction = new InteractionData
             {
                 Name = "Subnet Banlist",
-                Description = $"List of banned subnets ({_subnetList.Count} Total)",
+                Description = $"List of banned subnets ({_config.SubnetBanList.Count} Total)",
                 DisplayMeta = "ph-x-circle",
                 InteractionId = SubnetBanlistKey,
                 MinimumPermission = EFClient.Permission.Moderator,
@@ -143,13 +93,13 @@ public class SubnetBanPlugin : IPluginV2
                     { "Name", "Unban Subnet" }
                 };
 
-                if (_subnetList.Count == 0)
+                if (_config.SubnetBanList.Count == 0)
                 {
                     table += "<tr><td colspan=\"2\" class=\"px-6 py-8 text-center text-muted\">No subnets are banned.</td></tr>";
                 }
                 else
                 {
-                    foreach (var subnet in _subnetList)
+                    foreach (var subnet in _config.SubnetBanList)
                     {
                         unbanSubnetInteraction["Data"] = "unbansubnet " + subnet;
                         var encodedMeta = Uri.EscapeDataString(System.Text.Json.JsonSerializer.Serialize(unbanSubnetInteraction));
@@ -181,13 +131,13 @@ public class SubnetBanPlugin : IPluginV2
 
     private Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)
     {
-        if (!IsSubnetBanned(clientEvent.Client.IPAddressString, _subnetList))
+        if (!IsSubnetBanned(clientEvent.Client.IPAddressString, _config.SubnetBanList))
         {
             return Task.CompletedTask;
         }
 
         _logger.LogInformation("Kicking {Client} because they are subnet banned.", clientEvent.Client);
-        clientEvent.Client.Kick(_banMessage, clientEvent.Client.CurrentServer.AsConsoleClient());
+        clientEvent.Client.Kick(_config.BanMessage, clientEvent.Client.CurrentServer.AsConsoleClient());
         
         return Task.CompletedTask;
     }
@@ -251,9 +201,10 @@ public class SubnetBanPlugin : IPluginV2
 /// </summary>
 public class BanSubnetCommand : Command
 {
-    private readonly ICsScriptPluginConfiguration _config;
+    private readonly SubnetBanConfiguration _config;
+    private readonly IConfigurationHandlerV2<SubnetBanConfiguration> _configHandler;
 
-    public BanSubnetCommand(CommandConfiguration config, ITranslationLookup translationLookup, ICsScriptPluginConfiguration scriptConfig)
+    public BanSubnetCommand(CommandConfiguration config, ITranslationLookup translationLookup, SubnetBanConfiguration scriptConfig, IConfigurationHandlerV2<SubnetBanConfiguration> configHandler)
         : base(config, translationLookup)
     {
         Name = "bansubnet";
@@ -262,6 +213,7 @@ public class BanSubnetCommand : Command
         Permission = EFClient.Permission.SeniorAdmin;
         RequiresTarget = false;
         _config = scriptConfig;
+        _configHandler = configHandler;
     }
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
@@ -274,22 +226,18 @@ public class BanSubnetCommand : Command
             return;
         }
 
-        // Get current list
-        var list = _config.GetValue<List<object>>("SubnetBanList", new List<object>());
-        var subnetList = list?.Select(item => item?.ToString() ?? string.Empty)
-            .Where(item => !string.IsNullOrEmpty(item))
-            .ToList() ?? new List<string>();
-
         // Check if already banned
-        if (subnetList.Contains(input))
+        if (_config.SubnetBanList.Contains(input))
         {
             gameEvent.Origin.Tell($"Subnet {input} is already banned");
             return;
         }
 
         // Add to list
-        subnetList.Add(input);
-        await _config.SetValueAsync("SubnetBanList", subnetList);
+        _config.SubnetBanList.Add(input);
+
+        // Save configuration to disk
+        await _configHandler.Set(_config);
 
         gameEvent.Origin.Tell($"Added {input} to subnet banlist");
     }
@@ -307,9 +255,10 @@ public class BanSubnetCommand : Command
 /// </summary>
 public class UnbanSubnetCommand : Command
 {
-    private readonly ICsScriptPluginConfiguration _config;
+    private readonly SubnetBanConfiguration _config;
+    private readonly IConfigurationHandlerV2<SubnetBanConfiguration> _configHandler;
 
-    public UnbanSubnetCommand(CommandConfiguration config, ITranslationLookup translationLookup, ICsScriptPluginConfiguration scriptConfig)
+    public UnbanSubnetCommand(CommandConfiguration config, ITranslationLookup translationLookup, SubnetBanConfiguration scriptConfig, IConfigurationHandlerV2<SubnetBanConfiguration> configHandler)
         : base(config, translationLookup)
     {
         Name = "unbansubnet";
@@ -318,6 +267,7 @@ public class UnbanSubnetCommand : Command
         Permission = EFClient.Permission.SeniorAdmin;
         RequiresTarget = false;
         _config = scriptConfig;
+        _configHandler = configHandler;
     }
 
     public override async Task ExecuteAsync(GameEvent gameEvent)
@@ -330,21 +280,17 @@ public class UnbanSubnetCommand : Command
             return;
         }
 
-        // Get current list
-        var list = _config.GetValue<List<object>>("SubnetBanList", new List<object>());
-        var subnetList = list?.Select(item => item?.ToString() ?? string.Empty)
-            .Where(item => !string.IsNullOrEmpty(item))
-            .ToList() ?? new List<string>();
-
-        if (!subnetList.Contains(input))
+        if (!_config.SubnetBanList.Contains(input))
         {
             gameEvent.Origin.Tell("Subnet is not banned");
             return;
         }
 
         // Remove from list
-        subnetList.Remove(input);
-        await _config.SetValueAsync("SubnetBanList", subnetList);
+        _config.SubnetBanList.Remove(input);
+
+        // Save configuration to disk
+        await _configHandler.Set(_config);
 
         gameEvent.Origin.Tell($"Removed {input} from subnet banlist");
     }
@@ -352,6 +298,22 @@ public class UnbanSubnetCommand : Command
     private static bool IsValidCidr(string input)
     {
         return !string.IsNullOrWhiteSpace(input) && 
-               System.Text.RegularExpressions.Regex.IsMatch(input, @"^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$");
+               Regex.IsMatch(input, @"^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$");
     }
+}
+
+/// <summary>
+/// Configuration class for SubnetBan plugin.
+/// </summary>
+public class SubnetBanConfiguration
+{
+    /// <summary>
+    /// List of banned IPv4 subnets in CIDR notation.
+    /// </summary>
+    public List<string> SubnetBanList { get; set; } = new();
+
+    /// <summary>
+    /// Message to display to kicked clients.
+    /// </summary>
+    public string BanMessage { get; set; } = "You are not allowed to join this server.";
 }

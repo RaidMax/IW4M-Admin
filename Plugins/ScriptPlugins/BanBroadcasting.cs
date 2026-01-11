@@ -1,4 +1,4 @@
-#:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.10.1
+#:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
 using System;
 using System.Linq;
@@ -9,53 +9,51 @@ using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Interfaces.Events;
+using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Broadcasts ban messages to all servers when a client is banned.
-/// Uses the shared ScriptPluginSettings.json configuration file for simple settings.
 /// </summary>
 public class BanBroadcastingPlugin : IPluginV2
 {
+    public static void RegisterDependencies(IServiceCollection serviceCollection)
+    {
+        serviceCollection.AddConfiguration<BanBroadcastingConfiguration>(
+            "BanBroadcastingSettings",
+            new BanBroadcastingConfiguration());
+    }
+
     public string Name => "Broadcast Bans";
     public string Author => "Amos, RaidMax";
     public string Version => "2.1";
 
     private readonly ILogger<BanBroadcastingPlugin> _logger;
-    private readonly ICsScriptPluginConfiguration _config;
+    private readonly BanBroadcastingConfiguration _config;
     private readonly ITranslationLookup _translationLookup;
     private readonly IManager _manager;
 
     public BanBroadcastingPlugin(
         ILogger<BanBroadcastingPlugin> logger,
-        ICsScriptPluginConfiguration config,
+        BanBroadcastingConfiguration config,
         ITranslationLookup translationLookup,
         IManager manager)
     {
         _logger = logger;
-        _config = config; // Shared ScriptPluginSettings.json configuration
+        _config = config;
         _translationLookup = translationLookup;
         _manager = manager;
 
         // Subscribe to penalty events
         IManagementEventSubscriptions.ClientPenaltyAdministered += OnClientPenalty;
 
-        // Load configuration with default
-        var enabled = _config.GetValue<bool>("EnableBroadcastBans", false);
-        
-        // Queue write of default value (will only be written if key doesn't exist after plugin name is set)
-        // This ensures defaults are saved on first load without overwriting user settings on reload
-        _ = _config.SetValueAsync("EnableBroadcastBans", enabled);
-
         _logger.LogInformation("{Name} {Version} by {Author} loaded. Enabled={Enabled}",
-            Name, Version, Author, enabled);
+            Name, Version, Author, _config.EnableBroadcastBans);
     }
 
     private Task OnClientPenalty(ClientPenaltyEvent penaltyEvent, CancellationToken token)
     {
-        // Check if broadcasting is enabled (supports hot-reload from ScriptPluginSettings.json)
-        var enabled = _config.GetValue<bool>("EnableBroadcastBans", false);
-        
-        if (!enabled || penaltyEvent.Penalty.Type != Data.Models.EFPenalty.PenaltyType.Ban)
+        // Check if broadcasting is enabled
+        if (!_config.EnableBroadcastBans || penaltyEvent.Penalty.Type != Data.Models.EFPenalty.PenaltyType.Ban)
         {
             return Task.CompletedTask;
         }
@@ -106,4 +104,15 @@ public class BanBroadcastingPlugin : IPluginV2
         IManagementEventSubscriptions.ClientPenaltyAdministered -= OnClientPenalty;
         _logger.LogInformation("{Name} unloaded", Name);
     }
+}
+
+/// <summary>
+/// Configuration class for BanBroadcasting plugin.
+/// </summary>
+public class BanBroadcastingConfiguration
+{
+    /// <summary>
+    /// Indicates if the plugin is enabled.
+    /// </summary>
+    public bool EnableBroadcastBans { get; set; } = false;
 }

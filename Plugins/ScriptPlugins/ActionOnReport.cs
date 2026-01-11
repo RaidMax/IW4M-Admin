@@ -1,4 +1,4 @@
-#:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.10.1
+#:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
 using System;
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Interfaces.Events;
+using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Action on Report Plugin - Automatically bans or temporarily bans players
@@ -18,20 +19,25 @@ using SharedLibraryCore.Interfaces.Events;
 /// </summary>
 public class ActionOnReportPlugin : IPluginV2
 {
+    public static void RegisterDependencies(IServiceCollection serviceCollection)
+    {
+        serviceCollection.AddConfiguration<ActionOnReportConfig>(
+            "ActionOnReportSettings",
+            new ActionOnReportConfig());
+    }
+
     public string Name => "Action on Report";
     public string Author => "RaidMax";
     public string Version => "2.1";
 
     private readonly ILogger<ActionOnReportPlugin> _logger;
-    private readonly ICsScriptPluginConfiguration _config;
+    private readonly ActionOnReportConfig _config;
     private readonly ITranslationLookup _translationLookup;
     private readonly Dictionary<long, int> _reportCounts = new();
 
-    private ActionOnReportConfig _pluginConfig = new();
-
     public ActionOnReportPlugin(
         ILogger<ActionOnReportPlugin> logger,
-        ICsScriptPluginConfiguration config,
+        ActionOnReportConfig config,
         ITranslationLookup translationLookup)
     {
         _logger = logger;
@@ -41,65 +47,14 @@ public class ActionOnReportPlugin : IPluginV2
         // Subscribe to penalty events
         IManagementEventSubscriptions.ClientPenaltyAdministered += OnPenalty;
 
-        // Load configuration
-        LoadConfiguration();
-
         _logger.LogInformation("ActionOnReport {Version} by {Author} loaded. Enabled={Enabled}", 
-            Version, Author, _pluginConfig.Enabled);
+            Version, Author, _config.Enabled);
     }
 
-    private void LoadConfiguration()
-    {
-        // Load individual config properties (stored separately for simplicity)
-        _pluginConfig.Enabled = _config.GetValue<bool>("Enabled", false);
-        _pluginConfig.ReportAction = _config.GetValue<string>("ReportAction", "TempBan");
-        _pluginConfig.MaxReportCount = _config.GetValue<int>("MaxReportCount", 5);
-        _pluginConfig.TempBanDurationMinutes = _config.GetValue<int>("TempBanDurationMinutes", 60);
-
-        // Save defaults if they don't exist
-        _ = _config.SetValueAsync("Enabled", _pluginConfig.Enabled);
-        _ = _config.SetValueAsync("ReportAction", _pluginConfig.ReportAction);
-        _ = _config.SetValueAsync("MaxReportCount", _pluginConfig.MaxReportCount);
-        _ = _config.SetValueAsync("TempBanDurationMinutes", _pluginConfig.TempBanDurationMinutes);
-
-        // Subscribe to config updates for hot-reload
-        _config.GetValue("Enabled", _pluginConfig.Enabled, newValue =>
-        {
-            if (newValue is bool enabled)
-            {
-                _pluginConfig.Enabled = enabled;
-                _logger.LogInformation("ActionOnReport config reloaded. Enabled={Enabled}", enabled);
-            }
-        });
-
-        _config.GetValue("ReportAction", _pluginConfig.ReportAction, newValue =>
-        {
-            if (newValue is string action)
-            {
-                _pluginConfig.ReportAction = action;
-            }
-        });
-
-        _config.GetValue("MaxReportCount", _pluginConfig.MaxReportCount, newValue =>
-        {
-            if (newValue is int count)
-            {
-                _pluginConfig.MaxReportCount = count;
-            }
-        });
-
-        _config.GetValue("TempBanDurationMinutes", _pluginConfig.TempBanDurationMinutes, newValue =>
-        {
-            if (newValue is int minutes)
-            {
-                _pluginConfig.TempBanDurationMinutes = minutes;
-            }
-        });
-    }
 
     private Task OnPenalty(ClientPenaltyEvent penaltyEvent, CancellationToken token)
     {
-        if (!_pluginConfig.Enabled || penaltyEvent.Penalty.Type != Data.Models.EFPenalty.PenaltyType.Report)
+        if (!_config.Enabled || penaltyEvent.Penalty.Type != Data.Models.EFPenalty.PenaltyType.Report)
         {
             return Task.CompletedTask;
         }
@@ -122,16 +77,16 @@ public class ActionOnReportPlugin : IPluginV2
         reportCount++;
         _reportCounts[client.NetworkId] = reportCount;
 
-        if (reportCount >= _pluginConfig.MaxReportCount)
+        if (reportCount >= _config.MaxReportCount)
         {
             var reason = _translationLookup["PLUGINS_REPORT_ACTION"] ?? "Too many reports";
 
-            switch (_pluginConfig.ReportAction)
+            switch (_config.ReportAction)
             {
                 case "TempBan":
                     _logger.LogInformation("TempBanning client (id) {ClientId} because they received {ReportCount} reports", 
                         client.ClientId, reportCount);
-                    client.TempBan(reason, TimeSpan.FromMinutes(_pluginConfig.TempBanDurationMinutes), 
+                    client.TempBan(reason, TimeSpan.FromMinutes(_config.TempBanDurationMinutes), 
                         client.CurrentServer.AsConsoleClient());
                     break;
 

@@ -336,7 +336,7 @@ public class ActionService : IActionService
                         .Append(new
                         {
                             Id = (_appConfig.BanDurations.Length + 1).ToString(),
-                            Value = _localization["WEBFRONT_SELECTION_PERMANENT"]
+                            Value = _localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]
                         }).ToDictionary(duration => duration.Id, duration => duration.Value)
                 }
             ],

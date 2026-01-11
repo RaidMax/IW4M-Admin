@@ -1,7 +1,7 @@
-﻿using SharedLibraryCore.Configuration;
+﻿using Microsoft.Extensions.Logging;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Interfaces.Events;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.EventParsers
 {
@@ -9,12 +9,10 @@ namespace IW4MAdmin.Application.EventParsers
     /// empty generic implementation of the IEventParserConfiguration
     /// allows script plugins to generate dynamic event parsers
     /// </summary>
-    sealed internal class DynamicEventParser : BaseEventParser
-    {
-        public DynamicEventParser(IParserRegexFactory parserRegexFactory, ILogger logger,
-            ApplicationConfiguration appConfig, IGameScriptEventFactory gameScriptEventFactory) : base(
-            parserRegexFactory, logger, appConfig, gameScriptEventFactory)
-        {
-        }
-    }
+    internal sealed class DynamicEventParser(
+        IParserRegexFactory parserRegexFactory,
+        ILogger<DynamicEventParser> logger,
+        ApplicationConfiguration appConfig,
+        IGameScriptEventFactory gameScriptEventFactory)
+        : BaseEventParser(parserRegexFactory, logger, appConfig, gameScriptEventFactory);
 }

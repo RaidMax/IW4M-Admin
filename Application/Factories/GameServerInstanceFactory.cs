@@ -44,5 +44,24 @@ namespace IW4MAdmin.Application.Factories
                 _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
                 _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
         }
+
+        /// <summary>
+        /// creates a DummyServer instance for when no real servers are configured
+        /// </summary>
+        /// <param name="manager">application manager</param>
+        /// <returns></returns>
+        public Server CreateDummyServer(IManager manager)
+        {
+            var dummyConfig = new ServerConfiguration
+            {
+                IPAddress = "0.0.0.0",
+                Port = 0
+            };
+
+            return new DummyServer(dummyConfig,
+                _serviceProvider.GetRequiredService<CommandConfiguration>(), _translationLookup, _metaService,
+                _serviceProvider, _serviceProvider.GetRequiredService<IClientNoticeMessageFormatter>(),
+                _serviceProvider.GetRequiredService<ILookupCache<EFServer>>());
+        }
     }
 }

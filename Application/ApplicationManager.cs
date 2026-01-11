@@ -236,7 +236,9 @@ namespace IW4MAdmin.Application
 
         public IList<Server> GetServers()
         {
-            return Servers;
+            return Servers
+                .Where(server => server is not DummyServer)
+                .ToList();
         }
 
         public IList<IManagerCommand> GetCommands()
@@ -371,7 +373,9 @@ namespace IW4MAdmin.Application
 
             #region CONFIG
             // copy over default config if it doesn't exist
-            if (!_appConfig.Servers?.Any() ?? true)
+            // Only run setup wizard if this is a fresh config (no Id set), not when servers are intentionally empty
+            var isFirstRun = string.IsNullOrEmpty(_appConfig.Id);
+            if (isFirstRun && _appConfig.Servers?.Length == 0)
             {
                 var defaultHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
                 await defaultHandler.BuildAsync();
@@ -534,11 +538,6 @@ namespace IW4MAdmin.Application
                 await ConfigHandler.Set(_appConfig);
             }
 
-            if (_appConfig.Servers.Length == 0)
-            {
-                throw new ServerException("A server configuration in IW4MAdminSettings.json is invalid");
-            }
-
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Utilities.EncodingType = Encoding.GetEncoding(!string.IsNullOrEmpty(_appConfig.CustomParserEncoding) ? _appConfig.CustomParserEncoding : "windows-1252");
 
@@ -625,6 +624,18 @@ namespace IW4MAdmin.Application
 
         private async Task InitializeServers()
         {
+            // Handle case where no servers are configured - create dummy server
+            if (_appConfig.Servers == null || _appConfig.Servers.Length == 0)
+            {
+                var dummyServer = _serverInstanceFactory.CreateDummyServer(this) as DummyServer;
+                await dummyServer!.Initialize();
+                _servers[dummyServer.Id] = dummyServer;
+                
+                Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_NO_SERVERS_CONFIGURED"]);
+                _logger.LogInformation("No servers configured. Running with dummy server");
+                return;
+            }
+
             var successServers = 0;
             Exception lastException = null;
 
@@ -666,7 +677,7 @@ namespace IW4MAdmin.Application
 
             await Task.WhenAll(_appConfig.Servers.Select(InitializeEachServer).ToArray());
 
-            if (successServers == 0)
+            if (successServers == 0 && lastException != null)
             {
                 throw lastException;
             }
@@ -792,7 +803,7 @@ namespace IW4MAdmin.Application
 
         public IRConParser GenerateDynamicRConParser(string name)
         {
-            return new DynamicRConParser(_serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), _parserRegexFactory)
+            return new DynamicRConParser(_serviceProvider.GetRequiredService<ILogger<DynamicRConParser>>(), _parserRegexFactory)
             {
                 Name = name
             };
@@ -800,7 +811,7 @@ namespace IW4MAdmin.Application
 
         public IEventParser GenerateDynamicEventParser(string name)
         {
-            return new DynamicEventParser(_parserRegexFactory, _logger, _appConfig, _serviceProvider.GetRequiredService<IGameScriptEventFactory>())
+            return new DynamicEventParser(_parserRegexFactory, _serviceProvider.GetRequiredService<ILogger<DynamicEventParser>>(), _appConfig, _serviceProvider.GetRequiredService<IGameScriptEventFactory>())
             {
                 Name = name
             };

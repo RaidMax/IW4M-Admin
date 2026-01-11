@@ -210,7 +210,7 @@ else
                                 @* Name & Aliases *@
                                 <div>
                                     <div class="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
-                                        <h1 class="text-3xl md:text-4xl font-bold text-foreground leading-tight break-all">
+                                        <h1 class="text-3xl md:text-4xl font-bold text-foreground leading-none break-all">
                                             <ColorCode Value="@Client.Name"/>
                                         </h1>
 
@@ -322,15 +322,14 @@ else
                                         Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
                                         <div class="relative group" tabindex="0">
                                         <span
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-alt/50 border border-line text-muted hover:text-foreground hover:border-line-hover transition-all cursor-pointer"
-                                            @onclick="() => OpenIpContextModal(Client.IPAddress)">
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-alt/50 border border-line text-muted hover:text-foreground hover:border-line-hover transition-all cursor-pointer">
                                             <i class="ph ph-globe"></i>
                                             <span class="font-mono text-xs">@Client.IPAddress</span>
                                         </span>
                                             @if (Client.IPs?.Any(ip => !string.IsNullOrEmpty(ip.Value)) == true)
                                             {
                                                 <div
-                                                    class="absolute left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 mt-2 w-72 bg-surface-alt border border-line rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 overflow-hidden">
+                                                    class="absolute right-0 lg:left-0 lg:right-auto mt-2 w-72 bg-surface-alt border border-line rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 overflow-hidden">
                                                     <div class="px-3 py-2 bg-surface border-b border-line">
                                                         <span
                                                             class="text-[10px] font-bold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_PROFILE_IP_HISTORY")</span>

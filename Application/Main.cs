@@ -1,4 +1,4 @@
-﻿using IW4MAdmin.Application.API.Master;
+using IW4MAdmin.Application.API.Master;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Meta;
@@ -635,6 +635,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
+                .AddTransient<IServerStateChecker, ServerStateChecker>()
                 .AddSingleton<IGeoLocationService>(
                     new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
                 .AddSingleton<IAlertManager, AlertManager>()

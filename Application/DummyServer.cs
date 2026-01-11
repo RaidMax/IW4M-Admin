@@ -24,9 +24,10 @@ public class DummyServer(
     IMetaServiceV2 metaService,
     IServiceProvider serviceProvider,
     IClientNoticeMessageFormatter messageFormatter,
-    ILookupCache<EFServer> serverCache)
+    ILookupCache<EFServer> serverCache,
+    IServerStateChecker stateChecker)
     : IW4MServer(serverConfiguration, commandConfiguration, lookup, metaService,
-        serviceProvider, messageFormatter, serverCache)
+        serviceProvider, messageFormatter, serverCache, stateChecker)
 {
     public new async Task Initialize()
     {

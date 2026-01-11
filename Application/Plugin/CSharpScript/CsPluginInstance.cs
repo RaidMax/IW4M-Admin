@@ -11,7 +11,7 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 /// <summary>
 /// Tracks the state of a single loaded .cs plugin.
 /// </summary>
-internal class CsPluginInstance(string filePath) : IDisposable
+public class CsPluginInstance(string filePath) : IDisposable
 {
     public string FilePath { get; } = filePath;
     public string FileName => Path.GetFileName(FilePath);

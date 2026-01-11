@@ -14,10 +14,10 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 /// </summary>
 public class CsPluginCompiler
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<CsPluginCompiler> _logger;
     private readonly Lazy<IEnumerable<MetadataReference>> _metadataReferences;
 
-    public CsPluginCompiler(ILogger logger)
+    public CsPluginCompiler(ILogger<CsPluginCompiler> logger)
     {
         _logger = logger;
         _metadataReferences = new Lazy<IEnumerable<MetadataReference>>(GetMetadataReferences);

@@ -475,7 +475,11 @@ namespace IW4MAdmin.Application
             var csPlugins = pluginImporter.DiscoverCsPlugins().ToList();
             if (csPlugins.Count > 0)
             {
-                var compiler = new CsPluginCompiler(Utilities.DefaultLogger);
+                var compilerLogger = new ServiceCollection()
+                    .AddBaseLogger(appConfig)
+                    .BuildServiceProvider()
+                    .GetRequiredService<ILogger<CsPluginCompiler>>();
+                var compiler = new CsPluginCompiler(compilerLogger);
 
                 foreach (var (_, filePath) in csPlugins)
                 {
@@ -647,7 +651,9 @@ namespace IW4MAdmin.Application
                 .AddSingleton(new ConfigurationWatcher())
                 .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
-                .AddSingleton(new CsPluginCompiler(Utilities.DefaultLogger))
+                .AddSingleton<CsPluginCompiler>()
+                .AddSingleton<CsPluginFileWatcher>()
+                .AddSingleton<CsPluginCommandRegistrar>()
                 .AddSingleton<ICsPluginServiceHost, CsPluginServiceHost>()
                 .AddSingleton<IGameScriptEventFactory, GameScriptEventFactory>()
                 .AddSingleton(translationLookup)

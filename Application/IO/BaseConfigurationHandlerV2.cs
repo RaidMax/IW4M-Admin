@@ -151,32 +151,35 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
         try
         {
             await _onIo.WaitAsync();
-            await using var fileStream = File.OpenRead(Filename);
-            var readConfiguration =
-                await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
 
-            if (readConfiguration is null)
+            try
             {
-                _logger.LogWarning("Could not parse updated configuration {Type} at {Path}",
-                    typeof(TConfigurationType).Name, filePath);
-            }
-            else
-            {
+                await using var fileStream = new FileStream(Filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var readConfiguration =
+                    await JsonSerializer.DeserializeAsync<TConfigurationType>(fileStream, _serializerOptions);
+
+                if (readConfiguration is null)
+                {
+                    _logger.LogWarning("Could not parse updated configuration {Type} at {Path} - deserialization returned null",
+                        typeof(TConfigurationType).Name, filePath);
+                    return;
+                }
+
                 CopyUpdatedProperties(readConfiguration);
                 Updated?.Invoke(readConfiguration);
+            }
+            finally
+            {
+                if (_onIo.CurrentCount == 0)
+                {
+                    _onIo.Release(1);
+                }
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not parse updated configuration {Type} at {Path}",
                 typeof(TConfigurationType).Name, filePath);
-        }
-        finally
-        {
-            if (_onIo.CurrentCount == 0)
-            {
-                _onIo.Release(1);
-            }
         }
     }
 

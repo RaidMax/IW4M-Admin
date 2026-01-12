@@ -245,6 +245,8 @@ public class Program
         app.UseStatusCodePagesWithReExecute("/NotFound", createScopeForStatusCodePages: true);
         app.UseAntiforgery();
         app.UseRateLimiter();
+        // serve user provided files
+        app.UseStaticFiles();
 
         app.MapControllerRoute(
                 name: "default",

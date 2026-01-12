@@ -87,7 +87,7 @@
                             class="appearance-none pl-10 pr-9 h-full w-full bg-surface border border-line rounded-lg text-sm font-medium text-foreground hover:border-primary/50 focus:border-primary focus:outline-none transition-all cursor-pointer md:min-w-[180px] md:max-w-[240px] truncate shadow-sm flex items-center">
                         @foreach (var server in Servers)
                         {
-                            <option value="@server.Id">@server.Name (@server.Game)</option>
+                            <option value="@server.Id">@server.Name.StripColors() (@server.Game)</option>
                         }
                     </select>
                     <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted">

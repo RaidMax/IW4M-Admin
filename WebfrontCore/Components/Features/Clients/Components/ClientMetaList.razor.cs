@@ -131,11 +131,10 @@ public partial class ClientMetaList : IAsyncDisposable
             {
                 MetaItems.AddRange(uniqueItems);
             }
-
-            if (itemList.Count < Count)
-            {
-                HasMore = false;
-            }
+            
+            // Note: We don't check itemList.Count < Count here because permission filtering
+            // may reduce the returned count even when more items exist in the database.
+            // The n == 0 check above handles the true "no more items" case.
         }
         catch (Exception ex)
         {
@@ -160,7 +159,14 @@ public partial class ClientMetaList : IAsyncDisposable
     {
         if (_observerSetup)
         {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+            try
+            {
+                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
+            {
+                // ignored
+            }
         }
 
         _objRef?.Dispose();
@@ -179,12 +185,12 @@ public partial class ClientMetaList : IAsyncDisposable
         return state;
     }
 
-    public async Task TogglePenaltyDetails(AdministeredPenaltyResponse meta)
+    public async Task TogglePenaltyDetails(ReceivedPenaltyResponse meta)
     {
         var state = GetState(meta);
         state.IsOpen = !state.IsOpen;
 
-        if (state.IsOpen && state.SnapshotInfo == null)
+        if (state is { IsOpen: true, SnapshotInfo: null })
         {
             state.IsLoading = true;
             try
@@ -207,7 +213,7 @@ public partial class ClientMetaList : IAsyncDisposable
         var state = GetState(meta);
         state.IsOpen = !state.IsOpen;
 
-        if (state.IsOpen && state.ContextMessages == null)
+        if (state is { IsOpen: true, ContextMessages: null })
         {
             state.IsLoading = true;
             try

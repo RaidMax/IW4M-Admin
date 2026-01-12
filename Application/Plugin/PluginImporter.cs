@@ -219,6 +219,7 @@ namespace IW4MAdmin.Application.Plugin
     public enum PluginType
     {
         Binary,
-        Script
+        Script,
+        CSharpScript
     }
 }

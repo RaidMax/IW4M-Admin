@@ -48,7 +48,7 @@ namespace SharedLibraryCore.Configuration.Validation
                 .GreaterThanOrEqualTo(60);
 
             RuleFor(_app => _app.Servers)
-                .NotEmpty();
+                .NotNull();
 
             RuleFor(_app => _app.AutoMessages)
                 .NotNull();

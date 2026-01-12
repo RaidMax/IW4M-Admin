@@ -1,4 +1,4 @@
-﻿using IW4MAdmin.Application.API.Master;
+using IW4MAdmin.Application.API.Master;
 using IW4MAdmin.Application.EventParsers;
 using IW4MAdmin.Application.Factories;
 using IW4MAdmin.Application.Meta;
@@ -20,7 +20,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.Loader;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,6 +31,7 @@ using IW4MAdmin.Application.Extensions;
 using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Localization;
 using IW4MAdmin.Application.Plugin;
+using IW4MAdmin.Application.Plugin.CSharpScript;
 using IW4MAdmin.Application.Plugin.Script;
 using IW4MAdmin.Application.QueryHelpers;
 using Microsoft.Extensions.Logging;
@@ -47,7 +47,6 @@ using SharedLibraryCore.Interfaces.Events;
 using Stats.Client.Abstractions;
 using Stats.Client;
 using Stats.Config;
-using Stats.Helpers;
 using WebfrontCore.Core.QueryHelpers.Models;
 
 namespace IW4MAdmin.Application
@@ -76,6 +75,7 @@ namespace IW4MAdmin.Application
             int? requestQueueLimit = 25)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", Utilities.OperatingDirectory);
+            Directory.SetCurrentDirectory(Utilities.OperatingDirectory);
             AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
             {
                 var libraryName = eventArgs.Name.Split(",").First();
@@ -112,15 +112,6 @@ namespace IW4MAdmin.Application
             Console.WriteLine(" by RaidMax ");
             Console.WriteLine($" Version {Utilities.GetVersionAsString()}");
             Console.WriteLine("=====================================================");
-
-            // Important notice...
-            //Console.ForegroundColor = ConsoleColor.Red;
-            //Console.WriteLine("!!!! IMPORTANT !!!!");
-            //Console.WriteLine("The next update of IW4MAdmin will require .NET 10.");
-            //Console.WriteLine("This is a breaking change!");
-            //Console.WriteLine(
-            //    "Please update the ASP.NET Core Runtime: https://dotnet.microsoft.com/en-us/download/dotnet/10.0");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!");
 
             Console.ForegroundColor = ConsoleColor.Gray;
 
@@ -213,17 +204,18 @@ namespace IW4MAdmin.Application
                 var configHandler = new BaseConfigurationHandler<ApplicationConfiguration>("IW4MAdminSettings");
                 await configHandler.BuildAsync();
                 var config = configHandler.Configuration() ?? new ApplicationConfiguration();
-                _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices,
-#pragma warning disable CS0618 // Type or member is obsolete
-                    // before the migration has run we still need to respect the old bind url
-                    config.WebfrontBindUrl ?? config.Webfront.BindUrl);
+                _serviceProvider = WebfrontCore.Program.InitializeServices(ConfigureServices, config);
 #pragma warning restore CS0618 // Type or member is obsolete
 
                 _serverManager = (ApplicationManager)_serviceProvider.GetRequiredService<IManager>();
                 translationLookup = _serviceProvider.GetRequiredService<ITranslationLookup>();
 
-                await _serverManager.Init();
+                // Start C# script plugin service host for hot reload support
+                var csPluginHost = _serviceProvider.GetRequiredService<ICsPluginServiceHost>();
+                await csPluginHost.StartAsync(_serverManager.CancellationToken);
 
+                await _serverManager.Init();
+                
                 _applicationTask = RunApplicationTasksAsync(logger, _serverManager, _serviceProvider);
 
                 await _applicationTask;
@@ -583,6 +575,7 @@ namespace IW4MAdmin.Application
                     PermissionLevelChangedResourceQueryHelper>()
                 .AddSingleton<IResourceQueryHelper<ClientResourceRequest, ClientResourceResponse>,
                     ClientResourceQueryHelper>()
+                .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
@@ -599,6 +592,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton(typeof(IDataValueCache<,>), typeof(DataValueCache<,>))
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
+                .AddTransient<IServerStateChecker, ServerStateChecker>()
                 .AddSingleton<IGeoLocationService>(
                     new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
                 .AddSingleton<IAlertManager, AlertManager>()
@@ -610,6 +604,10 @@ namespace IW4MAdmin.Application
                 .AddSingleton(new ConfigurationWatcher())
                 .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
+                .AddSingleton<CsPluginCompiler>()
+                .AddSingleton<CsPluginFileWatcher>()
+                .AddSingleton<CsPluginCommandRegistrar>()
+                .AddSingleton<ICsPluginServiceHost, CsPluginServiceHost>()
                 .AddSingleton<IGameScriptEventFactory, GameScriptEventFactory>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);

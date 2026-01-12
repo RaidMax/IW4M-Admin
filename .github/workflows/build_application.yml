@@ -206,14 +206,17 @@ jobs:
 
       - name: Move extra content into publish directory
         run: |
-          cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/
+          cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
+          cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.cs ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
           cp ${{ github.workspace }}/BUILD/Plugins/*.dll ${{ env.outputFolder }}/Plugins/
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
+          mkdir -p ${{ env.outputFolder }}/wwwroot/css/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/src/user.css ${{ env.outputFolder }}/wwwroot/css/user.css
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/user/user.css ${{ env.outputFolder }}/wwwroot/css/user/user.css
           mkdir -p ${{ env.outputFolder }}/wwwroot/js
+          mkdir -p ${{ env.outputFolder }}/wwwroot/js/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/user.js ${{ env.outputFolder }}/wwwroot/js/user.js
+          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/user/user.js ${{ env.outputFolder }}/wwwroot/js/user/user.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
           mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/font/phosphor/ ${{ env.outputFolder }}/wwwroot/font/phosphor/

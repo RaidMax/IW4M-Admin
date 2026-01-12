@@ -69,14 +69,6 @@ namespace Data.Helpers
             var cacheInstance = _cacheStates[key];
             var id = GenerateKeyFromIds(ids);
 
-            lock (_cacheStates)
-            {
-                if (cacheInstance.ContainsKey(id))
-                {
-                    return;
-                }
-            }
-
             var state = new CacheState<TReturnType>
             {
                 Key = key,
@@ -86,7 +78,10 @@ namespace Data.Helpers
 
             lock (_cacheStates)
             {
-                cacheInstance.Add(id, state);
+                if (!cacheInstance.TryAdd(id, state))
+                {
+                    return;
+                }
             }
 
             _autoRefresh = autoRefresh;

@@ -1,9 +1,12 @@
 using Data.Models;
+using Data.Models.Client;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Components.Features.Servers.Models;
+using WebfrontCore.Controllers.API.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
@@ -54,6 +57,79 @@ namespace WebfrontCore.Controllers.API
         {
             var history = await dataService.GetClientHistoryAsync(id);
             return Ok(history);
+        }
+        
+        /// <summary>
+        /// Get available RCon/Event parsers for server configuration
+        /// </summary>
+        [HttpGet("parsers")]
+        public ActionResult<IEnumerable<string>> GetAvailableParsers()
+        {
+            var parsers = dataService.GetAvailableParsers();
+            return Ok(parsers);
+        }
+        
+        /// <summary>
+        /// Add a new server dynamically at runtime
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = nameof(EFClient.Permission.Owner))]
+        public async Task<ActionResult<AddServerResponse>> AddServer(
+            [FromBody] AddServerRequest request,
+            CancellationToken token = default)
+        {
+            try
+            {
+                var response = await dataService.AddServerAsync(request, token);
+                
+                if (response == null)
+                {
+                    return Conflict($"Server {request.IPAddress}:{request.Port} is already being monitored");
+                }
+                
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return Problem(
+                    detail: ex.Message,
+                    title: "Failed to add server",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+        
+        /// <summary>
+        /// Remove a server dynamically at runtime
+        /// </summary>
+        [HttpDelete("{id}")]
+        [Authorize(Roles = nameof(EFClient.Permission.Owner))]
+        public async Task<ActionResult> RemoveServer(
+            string id,
+            [FromQuery] bool persistToConfiguration = false,
+            CancellationToken token = default)
+        {
+            try
+            {
+                var success = await dataService.RemoveServerAsync(id, persistToConfiguration, token);
+                
+                if (!success)
+                {
+                    return NotFound($"Server {id} not found");
+                }
+                
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return Problem(
+                    detail: ex.Message,
+                    title: "Failed to remove server",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

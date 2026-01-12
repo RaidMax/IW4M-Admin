@@ -14,5 +14,12 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="manager">application manager</param>
         /// <returns></returns>
         Server CreateServer(ServerConfiguration config, IManager manager);
+
+        /// <summary>
+        ///     creates the instance of a dummy server for when no real servers are configured
+        /// </summary>
+        /// <param name="manager">application manager</param>
+        /// <returns></returns>
+        Server CreateDummyServer(IManager manager);
     }
 }

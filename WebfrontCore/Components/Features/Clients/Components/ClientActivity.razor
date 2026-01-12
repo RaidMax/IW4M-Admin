@@ -11,7 +11,7 @@
                 @AppState.Loc("WEBFRONT_CLIENT_RECENT_ACTIVITY")
             </div>
 
-            <div class="px-3 py-1 font-mono text-[11px] overflow-y-auto max-h-[200px] custom-scrollbar flex-1 flex flex-col-reverse">
+            <div class="px-3 py-1 font-mono text-[13px] overflow-y-auto max-h-[200px] custom-scrollbar flex-1 flex flex-col-reverse">
                 @if (Model?.ChatHistory?.Any() == true)
                 {
                     @foreach (var chat in Model.ChatHistory.AsEnumerable().Reverse())
@@ -24,13 +24,13 @@
                             class="flex items-start opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-muted" : "text-subtle")">
                             @if (isEvent)
                             {
-                                <i class="@stateIcon text-[10px] self-center shrink-0 mr-1.5 leading-none"></i>
+                                <i class="@stateIcon text-[13px] self-center shrink-0 mr-1.5 leading-none"></i>
                                 <a href="/client/@chat.ClientId"
                                    class="truncate flex-1 hover:text-foreground transition-colors leading-tight">
                                     <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
                                 </a>
                                 <span
-                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                    class="text-muted/75 select-none shrink-0 text-[13px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                             }
                             else
                             {
@@ -45,7 +45,7 @@
                                     </span>
                                 </div>
                                 <span
-                                    class="text-muted/75 select-none shrink-0 text-[10px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                    class="text-muted/75 select-none shrink-0 text-[13px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
                             }
                         </div>
                     }
@@ -80,10 +80,10 @@
                     var ping = GetPingIconAndColor(client.Ping);
 
                     <div
-                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[11px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
+                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[13px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
                         <!-- Player -->
                         <div class="flex items-center min-w-0 pr-2">
-                            <i class="@ping.Icon @ping.Color text-[10px] mr-1.5 shrink-0"></i>
+                            <i class="@ping.Icon @ping.Color text-[13px] mr-1.5 shrink-0"></i>
                             <AuthorizeView
                                 Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
                                 <Authorized>

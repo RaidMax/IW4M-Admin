@@ -2,6 +2,7 @@ using SharedLibraryCore;
 using System.Diagnostics;
 using SharedLibraryCore.Dtos;
 using Data.Models;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Helpers;
 using WebfrontCore.Components.Features.Admin.Models;
 using WebfrontCore.Components.Features.Servers.Models;
@@ -69,7 +70,7 @@ public class WebfrontDataService : IWebfrontDataService
         IAlertManager alertManager,
         IRemoteCommandService remoteCommandService,
         ITranslationLookup translationLookup,
-        SharedLibraryCore.Configuration.ApplicationConfiguration appConfig,
+        ApplicationConfiguration appConfig,
         IEnumerable<IPlugin> v1Plugins,
         IEnumerable<IPluginV2> v2Plugins)
     {
@@ -538,6 +539,13 @@ public class WebfrontDataService : IWebfrontDataService
             EFPenalty.PenaltyType.Mute => 1,
             _ => (int)penalty.Type
         });
+        
+        if (clientDto.ActivePenalty != null)
+        {
+            clientDto.ActivePenaltyPunisherId = clientDto.ActivePenalty.PunisherId;
+            clientDto.ActivePenaltyPunisherName = await _clientService.GetClientNameById(clientDto.ActivePenalty.PunisherId);
+        }
+        
         clientDto.Meta.AddRange(authorized ? meta : meta.Where(m => !m.IsSensitive));
 
         clientDto.IPAddress = canViewIp ? client.IPAddressString : null;
@@ -590,16 +598,18 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<IEnumerable<BaseMetaResponse>> GetClientMetaAsync(ClientMetaRequest request)
     {
+        var level = GetRequestingPermission();
+        
         var metaRequest = new ClientPaginationRequest
         {
             ClientId = request.ClientId,
             Count = request.Count,
             Offset = request.Offset,
             Before = request.StartAt.HasValue ? DateTime.FromFileTimeUtc(request.StartAt.Value) : DateTime.UtcNow,
+            IsPrivileged = level >= Data.Models.Client.EFClient.Permission.Trusted
         };
 
         var config = _manager.GetApplicationSettings().Configuration();
-        var level = GetRequestingPermission();
 
         if (!config.Webfront.PermissionSets.TryGetValue(level.ToString(), out var permissionSet))
         {
@@ -622,9 +632,8 @@ public class WebfrontDataService : IWebfrontDataService
                     WebfrontPermission.Read)
                     ? await _metaService.GetRuntimeMeta<UpdatedAliasResponse>(metaRequest, request.MetaType.Value)
                     : new List<IClientMeta>(),
-                MetaType.ChatMessage =>
-                    await PostProcessChatMeta(_metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
-                    request.MetaType.Value)),
+                MetaType.ChatMessage => await _metaService.GetRuntimeMeta<MessageResponse>(metaRequest,
+                    request.MetaType.Value),
                 MetaType.Penalized => permissionSet.HasPermission(WebfrontEntity.Penalty,
                     WebfrontPermission.Read)
                     ? await _metaService.GetRuntimeMeta<AdministeredPenaltyResponse>(metaRequest,
@@ -650,15 +659,20 @@ public class WebfrontDataService : IWebfrontDataService
 
         return meta?.Cast<BaseMetaResponse>().ToList() ?? [];
 
-        async Task<IEnumerable<MessageResponse>> PostProcessChatMeta(Task<IEnumerable<MessageResponse>> metaResult)
+        async Task<IEnumerable<IClientMeta>> PostProcessChatMeta(Task<IEnumerable<IClientMeta>> metaResult)
         {
             var result = (await metaResult).ToList();
-
-            foreach (var m in result.Cast<MessageResponse?>())
+            
+            foreach (var m in result)
             {
-                m?.Message = m.IsServerPasswordProtected && level < Data.Models.Client.EFClient.Permission.Trusted
-                    ? m.HiddenMessage
-                    : m.Message;
+                if (m is not MessageResponse mr)
+                {
+                    continue;
+                }
+                
+                mr.Message = mr.IsHidden && level < Data.Models.Client.EFClient.Permission.Trusted
+                    ? mr.HiddenMessage
+                    : mr.Message;
             }
 
             return result;
@@ -1241,7 +1255,8 @@ public class WebfrontDataService : IWebfrontDataService
         {
             ServerId = serverId,
             SentBefore = whenUpper,
-            SentAfter = whenLower
+            SentAfter = whenLower,
+            IsPrivileged = GetRequestingPermission() > Data.Models.Client.EFClient.Permission.Trusted
         });
 
         return messages.Results.OrderBy(message => message.When).ToList();
@@ -1514,5 +1529,59 @@ public class WebfrontDataService : IWebfrontDataService
         return counts
             .Where(h => h.Time >= DateTime.UtcNow - maxHistoryTime)
             .ToList();
+    }
+    
+    public IEnumerable<string> GetAvailableParsers()
+    {
+        return _manager.AdditionalRConParsers.Select(p => p.Name).ToList();
+    }
+    
+    public async Task<AddServerResponse?> AddServerAsync(AddServerRequest request, CancellationToken token = default)
+    {
+        // Validate the parser exists
+        if (_manager.AdditionalRConParsers.All(p => p.Name != request.RConParserVersion))
+        {
+            throw new ArgumentException($"Invalid RCon parser version: {request.RConParserVersion}. Use GetAvailableParsers() to see available parsers.");
+        }
+        
+        if (_manager.AdditionalEventParsers.All(p => p.Name != request.EventParserVersion))
+        {
+            throw new ArgumentException($"Invalid Event parser version: {request.EventParserVersion}. Use GetAvailableParsers() to see available parsers.");
+        }
+        
+        var config = new ServerConfiguration
+        {
+            IPAddress = request.IPAddress,
+            Port = request.Port,
+            Password = request.Password,
+            RConParserVersion = request.RConParserVersion,
+            EventParserVersion = request.EventParserVersion,
+            CustomHostname = request.CustomHostname,
+            ManualLogPath = request.ManualLogPath,
+            ReservedSlotNumber = request.ReservedSlotNumber,
+            GameLogServerUrl = !string.IsNullOrEmpty(request.GameLogServerUrl) 
+                ? new Uri(request.GameLogServerUrl) 
+                : null
+        };
+        
+        var server = await _manager.AddServerAsync(config, request.PersistToConfiguration, token);
+        
+        if (server == null)
+        {
+            return null;
+        }
+        
+        return new AddServerResponse
+        {
+            ServerId = server.Id,
+            Hostname = server.Hostname,
+            Game = server.GameName.ToString(),
+            Persisted = request.PersistToConfiguration
+        };
+    }
+    
+    public async Task<bool> RemoveServerAsync(string serverId, bool persist = false, CancellationToken token = default)
+    {
+        return await _manager.RemoveServerAsync(serverId, persist, token);
     }
 }

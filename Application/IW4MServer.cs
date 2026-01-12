@@ -1,4 +1,4 @@
-﻿using IW4MAdmin.Application.IO;
+using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Misc;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -24,6 +24,7 @@ using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using static SharedLibraryCore.Database.Models.EFClient;
 using Data.Models;
+using Data.Models.Client.Stats;
 using Data.Models.Server;
 using Humanizer;
 using IW4MAdmin.Application.Alerts;
@@ -39,7 +40,7 @@ using static Data.Models.Client.EFClient;
 
 namespace IW4MAdmin
 {
-    public class IW4MServer : Server
+    public class IW4MServer : Server 
     {
         private static readonly SharedLibraryCore.Localization.TranslationLookup loc = Utilities.CurrentLocalization.LocalizationIndex;
         public GameLogEventDetection LogEvent;
@@ -48,6 +49,7 @@ namespace IW4MAdmin
         private const int REPORT_FLAG_COUNT = 4;
         private long lastGameTime = 0;
 
+        private readonly IServerStateChecker _stateChecker;
         private readonly IServiceProvider _serviceProvider;
         private readonly IClientNoticeMessageFormatter _messageFormatter;
         private readonly ILookupCache<EFServer> _serverCache;
@@ -56,6 +58,8 @@ namespace IW4MAdmin
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
 
+        public override bool IsErrorState => _stateChecker.IsInErrorState();
+
         public IW4MServer(
             ServerConfiguration serverConfiguration,
             CommandConfiguration commandConfiguration,
@@ -63,7 +67,8 @@ namespace IW4MAdmin
             IMetaServiceV2 metaService, 
             IServiceProvider serviceProvider,
             IClientNoticeMessageFormatter messageFormatter,
-            ILookupCache<EFServer> serverCache) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
+            ILookupCache<EFServer> serverCache,
+            IServerStateChecker stateChecker) : base(serviceProvider.GetRequiredService<ILogger<Server>>(), 
 #pragma warning disable CS0612
             serviceProvider.GetRequiredService<SharedLibraryCore.Interfaces.ILogger>(), 
 #pragma warning restore CS0612
@@ -80,6 +85,7 @@ namespace IW4MAdmin
             _commandConfiguration = commandConfiguration;
             _statManager = serviceProvider.GetRequiredService<StatManager>();
             _appConfig =  serviceProvider.GetService<ApplicationConfiguration>();
+            _stateChecker = stateChecker;
             
             IGameServerEventSubscriptions.MonitoringStarted += async (gameEvent, token) =>
             {
@@ -90,6 +96,9 @@ namespace IW4MAdmin
 
                 await EnsureServerAdded();
                 await _statManager.EnsureServerAdded(gameEvent.Server, token);
+                
+                // Initialize the state checker for fail-state detection (subscribes to events)
+                _stateChecker.Initialize(this);
             };
         }
 
@@ -126,6 +135,7 @@ namespace IW4MAdmin
             client.State = ClientState.Connecting;
 
             Clients[client.ClientNumber] = client;
+            
             ServerLogger.LogDebug("End PreConnect for {client}", client.ToString());
             var e = new GameEvent
             {
@@ -160,6 +170,7 @@ namespace IW4MAdmin
 #endif
                 ServerLogger.LogDebug("Client {@client} disconnecting...", new { client=client.ToString(), client.State });
                 Clients[client.ClientNumber] = null;
+                
                 await client.OnDisconnect();
 
                 var e = new GameEvent()
@@ -876,14 +887,14 @@ namespace IW4MAdmin
         public async Task EnsureServerAdded()
         {
             var gameServer = await _serverCache
-                .FirstAsync(server => server.EndPoint == base.Id);
+                .FirstAsync(server => server.EndPoint == Id);
             
             if (gameServer == null)
             {
                 gameServer = new EFServer
                 {
                     Port = ListenPort,
-                    EndPoint = base.Id,
+                    EndPoint = Id,
                     ServerId = BuildLegacyDatabaseId(),
                     GameName = (Reference.Game?)GameName,
                     HostName = ServerName
@@ -998,6 +1009,9 @@ namespace IW4MAdmin
             UpdateHostname(statusResponse.Hostname);
             UpdateMaxPlayers(statusResponse.MaxClients);
 
+            // Check and update fail-state status
+            _stateChecker.CheckAndUpdateFailState();
+
             return new []
             {
                 connectingClients.ToList(),
@@ -1005,6 +1019,7 @@ namespace IW4MAdmin
                 updatedClients.ToList()
             };
         }
+
         
         public override async Task<long> GetIdForServer(Server server = null)
         {
@@ -1112,6 +1127,7 @@ namespace IW4MAdmin
             using var tokenSource = new CancellationTokenSource();
             tokenSource.CancelAfter(Utilities.DefaultCommandTimeout);
             
+            Dispose();
             Manager.QueueEvent(new MonitorStopEvent
             {
                 Server = this
@@ -1144,6 +1160,25 @@ namespace IW4MAdmin
                     if (polledClients is null)
                     {
                         return true;
+                    }
+
+                    // If fail-state was just detected, disconnect all players
+                    if (_stateChecker.ShouldDisconnectPlayersOnFailState())
+                    {
+                        // Disconnect ALL players (including bots and connecting clients) to prevent false playtime accumulation
+                        var allClients = GetClientsAsList().ToList();
+                        foreach (var client in allClients)
+                        {
+                            try
+                            {
+                                ServerLogger.LogInformation("Disconnecting {Client} due to server fail-state detection", client.ToString());
+                                await OnClientDisconnected(client);
+                            }
+                            catch (Exception ex)
+                            {
+                                ServerLogger.LogWarning(ex, "Error disconnecting {Client} during fail-state", client.ToString());
+                            }
+                        }
                     }
 
                     foreach (var disconnectingClient in polledClients[1]
@@ -1326,7 +1361,7 @@ namespace IW4MAdmin
             ClientHistory.ClientCounts.Add(new ClientCountSnapshot
             {
                 ClientCount = ClientNum,
-                ConnectionInterrupted = Throttled,
+                ConnectionInterrupted = Throttled || IsErrorState,
                 Time = DateTime.UtcNow,
                 Map = CurrentMap.Name,
                 MapAlias = CurrentMap.Alias
@@ -1789,6 +1824,13 @@ namespace IW4MAdmin
             Manager.GetMessageTokens().Add(new MessageToken("ADMINS", (Server s) => Task.FromResult(ListAdminsCommand.OnlineAdmins(s, _translationLookup))));
         }
 
-        public override long LegacyDatabaseId => _cachedDatabaseServer.ServerId;
+        public override long LegacyDatabaseId => _cachedDatabaseServer?.ServerId ?? BuildLegacyDatabaseId();
+
+        public override void Dispose()
+        {
+            LogEvent?.Dispose();
+            _stateChecker?.Dispose();
+            base.Dispose();
+        }
     }
 }

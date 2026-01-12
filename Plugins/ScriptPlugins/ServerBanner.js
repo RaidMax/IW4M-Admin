@@ -1,5 +1,6 @@
 ﻿const init = (registerNotify, serviceResolver, config, scriptHelper) => {
     registerNotify('IGameServerEventSubscriptions.MonitoringStarted', (monitorStartEvent, _) => plugin.onServerMonitoringStart(monitorStartEvent));
+    registerNotify('IGameServerEventSubscriptions.ServerRemoved', (serverRemovedEvent, _) => plugin.onServerRemoved(serverRemovedEvent));
     plugin.onLoad(serviceResolver, config, scriptHelper);
     return plugin;
 };
@@ -71,6 +72,37 @@ const plugin = {
                 this.logger.logWarning('Could not determine server location from IP');
             }
         });
+    },
+
+    onServerRemoved: function (removedEvent) {
+        const serverId = removedEvent.server.id;
+        const gameCode = removedEvent.server.gameCode;
+        const listenAddress = removedEvent.server.listenAddress;
+
+        this.logger.logInformation('[ServerBanner] cleaning up cache for removed server {serverId}', serverId);
+
+        // Remove from serverOrderCache
+        if (serverOrderCache[gameCode]) {
+            serverOrderCache[gameCode] = serverOrderCache[gameCode].filter(s => s.id !== serverId);
+            // If no more servers of this game type, remove the game code entry
+            if (serverOrderCache[gameCode].length === 0) {
+                delete serverOrderCache[gameCode];
+            }
+        }
+
+        // Check if any other servers share this listen address before removing from location cache
+        const servers = this.manager.servers;
+        let addressStillInUse = false;
+        for (let i = 0; i < servers.length; i++) {
+            if (servers[i].id !== serverId && servers[i].listenAddress === listenAddress) {
+                addressStillInUse = true;
+                break;
+            }
+        }
+
+        if (!addressStillInUse) {
+            delete serverLocationCache[listenAddress];
+        }
     },
 
     interactions: [{

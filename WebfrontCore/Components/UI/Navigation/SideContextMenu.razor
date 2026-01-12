@@ -89,7 +89,7 @@
 
             @foreach (var group in groupedItems)
             {
-                <details class="group mt-4" open="@(index == 0)">
+                <details class="group mt-4">
                     <summary
                         class="list-none flex items-center justify-between text-xs font-bold text-muted uppercase tracking-wider mb-2 cursor-pointer hover:text-foreground transition-colors px-2">
                         <span>@(AppState.Loc($"GAME_{group.Key}"))</span>
@@ -156,7 +156,7 @@
 
             @foreach (var group in groupedItems)
             {
-                <details class="group mt-4" open="@(index == 0)">
+                <details class="group mt-4">
                     <summary
                         class="list-none flex items-center justify-between text-xs font-bold text-muted uppercase tracking-wider mb-2 cursor-pointer hover:text-foreground transition-colors px-2">
                         <span>@(AppState.Loc($"GAME_{group.Key}"))</span>

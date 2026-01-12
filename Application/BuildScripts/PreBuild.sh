@@ -69,7 +69,8 @@ if [ ! -d "$OutputDir/Localization" ]; then
     done
 fi
 
-echo copying plugins to buld dir
+echo copying plugins to build dir
 mkdir -p "$OutputDir/Plugins"
-cp -r "$SolutionDir/BUILD/Plugins/*.dll" "$OutputDir/Plugins/"
-cp -r "$SolutionDir/Plugins/ScriptPlugins/*.js" "$OutputDir/Plugins/"
+cp -r "$SolutionDir/BUILD/Plugins/*.dll" "$OutputDir/Plugins/" 2>/dev/null || true
+cp -r "$SolutionDir/Plugins/ScriptPlugins/*.js" "$OutputDir/Plugins/" 2>/dev/null || true
+cp -r "$SolutionDir/Plugins/ScriptPlugins/*.cs" "$OutputDir/Plugins/" 2>/dev/null || true

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
@@ -59,7 +55,7 @@ namespace SharedLibraryCore.Interfaces
         /// <summary>
         ///     provides a method to execute database operations by name without exposing the
         ///     service level methods
-        ///     todo: this could be made obsolete by creating a seperate service library with more concrete definitions
+        ///     todo: this could be made obsolete by creating a separate service library with more concrete definitions
         /// </summary>
         /// <param name="operationName"></param>
         /// <returns></returns>
@@ -113,5 +109,23 @@ namespace SharedLibraryCore.Interfaces
 
         IAlertManager AlertManager { get; }
         IInteractionRegistration InteractionRegistration { get; }
+        
+        /// <summary>
+        ///     Adds a new server to the manager at runtime
+        /// </summary>
+        /// <param name="config">The server configuration</param>
+        /// <param name="persistConfig">Whether to persist the configuration to file</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>The server instance if successful, null otherwise</returns>
+        Task<Server> AddServerAsync(ServerConfiguration config, bool persistConfig = true, CancellationToken token = default);
+        
+        /// <summary>
+        ///     Removes a server from the manager at runtime
+        /// </summary>
+        /// <param name="serverId">The server endpoint identifier (IP:Port)</param>
+        /// <param name="persistConfig">Whether to persist the configuration change to file</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>True if server was removed successfully</returns>
+        Task<bool> RemoveServerAsync(string serverId, bool persistConfig = false, CancellationToken token = default);
     }
 }

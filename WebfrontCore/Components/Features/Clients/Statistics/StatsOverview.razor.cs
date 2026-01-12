@@ -97,7 +97,8 @@ public partial class StatsOverview : IAsyncDisposable
                 Offset = 0,
                 ServerId = ServerId
             });
-            
+
+            State.TopPlayers = topResponse.Players;
             State.TotalRankedClients = topResponse.TotalRankedClients;
             _hasLoaded = true;
         }

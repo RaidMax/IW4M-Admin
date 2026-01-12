@@ -9,6 +9,18 @@ namespace SharedLibraryCore.Interfaces.Events;
 public interface IGameServerEventSubscriptions
 {
     /// <summary>
+    /// Raised when a server is added dynamically at runtime
+    /// <value><see cref="ServerAddEvent"/></value>
+    /// </summary>
+    static event Func<ServerAddEvent, CancellationToken, Task> ServerAdded;
+    
+    /// <summary>
+    /// Raised when a server is removed dynamically at runtime
+    /// <value><see cref="ServerRemoveEvent"/></value>
+    /// </summary>
+    static event Func<ServerRemoveEvent, CancellationToken, Task> ServerRemoved;
+    
+    /// <summary>
     /// Raised when IW4MAdmin starts monitoring a game server
     /// <value><see cref="MonitorStartEvent"/></value>
     /// </summary>
@@ -82,6 +94,8 @@ public interface IGameServerEventSubscriptions
     {
         return coreEvent switch
         {
+            ServerAddEvent serverAddedEvent => ServerAdded?.InvokeAsync(serverAddedEvent, token) ?? Task.CompletedTask,
+            ServerRemoveEvent serverRemovedEvent => ServerRemoved?.InvokeAsync(serverRemovedEvent, token) ?? Task.CompletedTask,
             MonitorStartEvent monitoringStartEvent => MonitoringStarted?.InvokeAsync(monitoringStartEvent, token) ?? Task.CompletedTask,
             MonitorStopEvent monitorStopEvent => MonitoringStopped?.InvokeAsync(monitorStopEvent, CancellationToken.None) ?? Task.CompletedTask,
             ConnectionInterruptEvent connectionInterruptEvent => ConnectionInterrupted?.InvokeAsync(connectionInterruptEvent, token) ?? Task.CompletedTask,
@@ -100,6 +114,8 @@ public interface IGameServerEventSubscriptions
 
     static void ClearEventInvocations()
     {
+        ServerAdded = null;
+        ServerRemoved = null;
         MonitoringStarted = null;
         MonitoringStopped = null;
         ConnectionInterrupted = null;

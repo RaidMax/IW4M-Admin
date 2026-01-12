@@ -301,7 +301,7 @@ public class ActionService : IActionService
         }
 
         // Handle "command" interactions (generic command execution)
-        var server = _manager.GetServers().FirstOrDefault();
+        var server = _manager.Servers.FirstOrDefault();
         if (server == null)
             return (false, "No servers available");
 
@@ -336,7 +336,7 @@ public class ActionService : IActionService
                         .Append(new
                         {
                             Id = (_appConfig.BanDurations.Length + 1).ToString(),
-                            Value = _localization["WEBFRONT_SELECTION_PERMANENT"]
+                            Value = _localization["WEBFRONT_ACTION_SELECTION_PERMANENT"]
                         }).ToDictionary(duration => duration.Id, duration => duration.Value)
                 }
             ],
@@ -724,7 +724,7 @@ public class ActionService : IActionService
             return (false, "Server ID is required");
         }
 
-        var server = _manager.GetServers().FirstOrDefault(s => $"{s.ListenAddress}:{s.ListenPort}" == serverId);
+        var server = _manager.Servers.FirstOrDefault(s => $"{s.ListenAddress}:{s.ListenPort}" == serverId);
         if (server == null)
         {
             return (false, "Server not found");
@@ -763,7 +763,7 @@ public class ActionService : IActionService
 
     private async Task<(bool, string)> ExecuteCommand(string command, EFClient origin)
     {
-        var server = _manager.GetServers().FirstOrDefault();
+        var server = _manager.Servers.FirstOrDefault();
         if (server == null)
             throw new Exception("No servers available");
 

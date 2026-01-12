@@ -3,7 +3,7 @@
 
     <!-- Compact Header -->
     <div
-        class="relative min-h-[40px] px-4 flex flex-col md:flex-row md:items-center justify-center md:justify-between bg-surface border-b border-line cursor-pointer md:cursor-default py-2 md:py-0 space-y-2 md:space-y-0"
+        class="relative min-h-[40px] px-4 flex flex-col md:flex-row md:items-center justify-center md:justify-between bg-surface border-b border-line cursor-pointer md:cursor-default py-2 md:py-0"
         id="server_header_@Model.Id"
         @onclick="() => _showMobileDetails = !_showMobileDetails">
 
@@ -83,7 +83,7 @@
 
         <!-- Mobile Details (Map, Mode, Player Count) -->
         <div
-            class="@(_showMobileDetails ? "flex" : "hidden") md:hidden flex-col space-y-2 pt-2 border-t border-line text-xs font-medium text-subtle w-full animate-in fade-in slide-in-from-top-1">
+            class="@(_showMobileDetails ? "flex" : "hidden") md:hidden flex-col space-y-2 pt-2 mt-2 border-t border-line text-xs font-medium text-subtle w-full animate-in fade-in slide-in-from-top-1">
             <div class="flex items-center justify-between">
                 <span>@AppState.Loc("WEBFRONT_SERVER_MAP")</span>
                 <span class="text-foreground">@Model.Map</span>

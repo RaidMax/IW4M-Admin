@@ -44,6 +44,8 @@ namespace SharedLibraryCore
         public static string OperatingDirectory =>
             $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
 #endif
+        public static string PluginsDirectory => Path.Combine(OperatingDirectory, "Plugins");
+        
         public static Encoding EncodingType;
         public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
 

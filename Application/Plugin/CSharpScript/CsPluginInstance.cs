@@ -1,29 +1,35 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
-using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
+
+#nullable enable
 
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
 
 /// <summary>
 /// Tracks the state of a single loaded .cs plugin.
 /// </summary>
-internal class CsPluginInstance(string filePath) : IDisposable
+public class CsPluginInstance : IDisposable
 {
-    public string FilePath { get; } = filePath;
+    private string FilePath { get; }
     public string FileName => Path.GetFileName(FilePath);
-    public CsPluginLoadContext? LoadContext { get; set; }
-    public WeakReference? ContextWeakRef { get; set; }
-    public IPluginV2? Plugin { get; set; }
-    public IServiceProvider? PluginServiceProvider { get; set; }
-    
+    public required CsPluginLoadContext LoadContext { get; init; }
+    public required IServiceProvider PluginServiceProvider { get; init; }
+    public required IPluginV2 Plugin { get; init; }
+    private WeakReference? _contextWeakRef;
+
+    public CsPluginInstance(string filePath)
+    {
+        FilePath = filePath;
+        _contextWeakRef = new WeakReference(LoadContext);
+    }
+
     /// <summary>
     /// Tracks commands registered by this plugin so they can be safely unregistered on unload.
     /// </summary>
-    public List<IManagerCommand> RegisteredCommands { get; } = new();
+    public List<IManagerCommand> RegisteredCommands { get; } = [];
 
     /// <summary>
     /// Waits for the AssemblyLoadContext to be garbage collected.
@@ -31,7 +37,7 @@ internal class CsPluginInstance(string filePath) : IDisposable
     /// <returns>True if the context was unloaded, false if references still exist</returns>
     public async Task<bool> WaitForUnloadAsync()
     {
-        if (ContextWeakRef == null)
+        if (_contextWeakRef is null)
         {
             return true;
         }
@@ -43,9 +49,9 @@ internal class CsPluginInstance(string filePath) : IDisposable
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            if (!ContextWeakRef.IsAlive)
+            if (!_contextWeakRef.IsAlive)
             {
-                ContextWeakRef = null;
+                _contextWeakRef = null;
                 return true;
             }
 
@@ -59,8 +65,7 @@ internal class CsPluginInstance(string filePath) : IDisposable
     public void Dispose()
     {
         // Dispose the plugin if it implements IDisposable
-        Plugin?.Dispose();
-        Plugin = null;
+        Plugin.Dispose();
 
         // Dispose the plugin service provider if it implements IDisposable
         if (PluginServiceProvider is IDisposable disposableProvider)
@@ -68,10 +73,7 @@ internal class CsPluginInstance(string filePath) : IDisposable
             disposableProvider.Dispose();
         }
 
-        PluginServiceProvider = null;
-
         // Initiate unload of the context
-        LoadContext?.Unload();
-        LoadContext = null;
+        LoadContext.Unload();
     }
 }

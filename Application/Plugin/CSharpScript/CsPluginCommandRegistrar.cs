@@ -11,7 +11,7 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 /// <summary>
 /// Handles discovery, registration, and unregistration of commands from plugin assemblies.
 /// </summary>
-public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILogger<CsPluginCommandRegistrar> logger)
+public class CsPluginCommandRegistrar(ILogger<CsPluginCommandRegistrar> logger, IManager manager)
 {
     /// <summary>
     /// Discovers Command classes from the plugin assembly and registers them with the manager.
@@ -22,13 +22,12 @@ public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILog
 
         try
         {
-            var manager = rootServiceProvider.GetRequiredService<IManager>();
-
-            var commandTypes = assembly.GetTypes()
+            var commandTypes = assembly.GetExportedTypes()
                 .Where(type =>
                     type.IsClass &&
                     !type.IsAbstract &&
                     type.IsSubclassOf(typeof(Command)) &&
+                    // Ensure we don't accidentally pick up base commands from the core library
                     (type.Namespace == null || !type.Namespace.StartsWith(nameof(SharedLibraryCore))))
                 .ToList();
 
@@ -37,16 +36,17 @@ public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILog
                 try
                 {
                     // Instantiate the command once
-                    var command = (Command)ActivatorUtilities.CreateInstance(instance.PluginServiceProvider, commandType);
+                    var command =
+                        (Command)ActivatorUtilities.CreateInstance(instance.PluginServiceProvider, commandType);
 
                     // Remove any existing commands that conflict by name or alias
-                    RemoveConflictingCommands(manager, command.Name, command.Alias, commandType.Name, instance.FileName);
+                    RemoveConflictingCommands(command, instance.FileName);
 
                     // Register the command
                     manager.AddAdditionalCommand(command);
                     instance.RegisteredCommands.Add(command);
 
-                    logger.LogDebug("[{FileName}] Registered command: {CommandName} (alias: {Alias})",
+                    logger.LogInformation("[{FileName}] Registered command: {CommandName} (alias: {Alias})",
                         instance.FileName, command.Name, command.Alias ?? "none");
                 }
                 catch (Exception ex)
@@ -71,32 +71,21 @@ public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILog
     /// <summary>
     /// Removes any registered commands that conflict with the given name or alias.
     /// </summary>
-    private void RemoveConflictingCommands(
-        IManager manager,
-        string commandName,
-        string? commandAlias,
-        string typeName,
-        string fileName)
+    private void RemoveConflictingCommands(Command newCommand, string fileName)
     {
-        var existingCommands = manager.GetCommands().Where(cmd =>
-            cmd.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase) ||
-            (!string.IsNullOrEmpty(commandAlias) &&
-             cmd.Alias?.Equals(commandAlias, StringComparison.OrdinalIgnoreCase) == true) ||
-            (!string.IsNullOrEmpty(cmd.Alias) &&
-             cmd.Alias.Equals(commandName, StringComparison.OrdinalIgnoreCase)) ||
-            (!string.IsNullOrEmpty(commandAlias) &&
-             cmd.Name.Equals(commandAlias, StringComparison.OrdinalIgnoreCase)) ||
-            cmd.GetType().Name == typeName).ToList();
+        var conflicts = manager.GetCommands()
+            .Where(existing => IsConflict((Command)existing, newCommand))
+            .ToList();
 
-        if (existingCommands.Count > 0)
+        if (conflicts.Count == 0)
+            return;
+
+        logger.LogWarning("[{FileName}] Overwriting {Count} existing command(s) due to conflict with {CommandName}",
+            fileName, conflicts.Count, newCommand.Name);
+
+        foreach (var conflict in conflicts)
         {
-            logger.LogDebug("[{FileName}] Removing {Count} existing command(s) matching {CommandName}",
-                fileName, existingCommands.Count, commandName);
-
-            foreach (var existingCmd in existingCommands)
-            {
-                manager.RemoveCommandByName(existingCmd.Name);
-            }
+            manager.RemoveCommandByName(conflict.Name);
         }
     }
 
@@ -107,7 +96,6 @@ public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILog
     {
         try
         {
-            var manager = rootServiceProvider.GetRequiredService<IManager>();
             var commandCount = instance.RegisteredCommands.Count;
 
             if (commandCount == 0)
@@ -123,6 +111,8 @@ public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILog
             {
                 try
                 {
+                    logger.LogInformation("[{FileName}] Unregistering command: {CommandName} (alias: {Alias})",
+                        instance.FileName, command.Name, command.Alias ?? "none");
                     manager.RemoveCommandByName(command.Name);
                     unregisteredCount++;
                 }
@@ -144,5 +134,27 @@ public class CsPluginCommandRegistrar(IServiceProvider rootServiceProvider, ILog
         {
             logger.LogError(ex, "[{FileName}] Error unregistering commands", instance.FileName);
         }
+    }
+
+    private static bool IsConflict(Command existing, Command newCmd)
+    {
+        // 1. Name vs Name
+        if (existing.Name.Equals(newCmd.Name, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 2. Alias vs Alias (if both have one)
+        if (!string.IsNullOrEmpty(existing.Alias) &&
+            !string.IsNullOrEmpty(newCmd.Alias) &&
+            existing.Alias.Equals(newCmd.Alias, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 3. Name vs Alias (New command name matches existing alias)
+        if (!string.IsNullOrEmpty(existing.Alias) &&
+            existing.Alias.Equals(newCmd.Name, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 4. Alias vs Name (New command alias matches existing name)
+        return !string.IsNullOrEmpty(newCmd.Alias) &&
+               existing.Name.Equals(newCmd.Alias, StringComparison.OrdinalIgnoreCase);
     }
 }

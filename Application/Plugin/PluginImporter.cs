@@ -214,33 +214,6 @@ namespace IW4MAdmin.Application.Plugin
                 return Enumerable.Empty<string>();
             }
         }
-
-        /// <summary>
-        /// Discovers .cs script plugins for dynamic compilation.
-        /// Note: The actual compilation happens in CsPluginCompiler during startup and hot reload.
-        /// This method returns file paths for pre-registration of dependencies.
-        /// </summary>
-        /// <returns>Enumerable of plugin file paths</returns>
-        public IEnumerable<(Type PluginType, string FilePath)> DiscoverCsPlugins()
-        {
-            var pluginDir = $"{Utilities.OperatingDirectory}{PluginDir}{Path.DirectorySeparatorChar}";
-
-            if (!Directory.Exists(pluginDir))
-            {
-                return Enumerable.Empty<(Type, string)>();
-            }
-
-            var csPluginFiles = Directory.GetFiles(pluginDir, "*.cs");
-
-            foreach (var csFile in csPluginFiles)
-            {
-                _logger.LogDebug("Discovered C# script plugin {FileName}", Path.GetFileName(csFile));
-            }
-
-            // Return as IPluginV2 type with file path
-            // The actual type discovery happens during compilation
-            return csPluginFiles.Select(f => (typeof(IPluginV2), f));
-        }
     }
 
     public enum PluginType
@@ -250,4 +223,3 @@ namespace IW4MAdmin.Application.Plugin
         CSharpScript
     }
 }
-

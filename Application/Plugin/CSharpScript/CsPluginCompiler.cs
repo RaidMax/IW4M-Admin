@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
+
+#nullable enable
 
 /// <summary>
 /// Handles Roslyn-based compilation of .cs plugin files.
@@ -29,7 +32,7 @@ public class CsPluginCompiler
     /// <param name="csFilePath">Path to the .cs file</param>
     /// <param name="loadContext">The AssemblyLoadContext to load into</param>
     /// <returns>The compiled and loaded assembly</returns>
-    public Assembly CompileFromFile(string csFilePath, CsPluginLoadContext loadContext)
+    public async Task<Assembly> CompileFromFile(string csFilePath, CsPluginLoadContext loadContext)
     {
         var absolutePath = Path.GetFullPath(csFilePath);
         if (!File.Exists(absolutePath))
@@ -39,11 +42,11 @@ public class CsPluginCompiler
 
         _logger.LogDebug("Compiling C# plugin from {Path}", absolutePath);
 
-        var sourceCode = File.ReadAllText(absolutePath);
-        
+        var sourceCode = await File.ReadAllTextAsync(absolutePath);
+
         // Comment out #:package directives used for IntelliSense (not valid C# syntax)
         sourceCode = PreprocessSource(sourceCode);
-        
+
         var assemblyName = Path.GetFileNameWithoutExtension(absolutePath);
 
         return CompileSource(sourceCode, assemblyName, loadContext);
@@ -67,7 +70,7 @@ public class CsPluginCompiler
     /// </summary>
     /// <param name="csFilePath">Path to the .cs file</param>
     /// <returns>The compiled assembly (loaded into a temporary collectible context)</returns>
-    public Assembly PreCompile(string csFilePath)
+    public Task<Assembly> PreCompile(string csFilePath)
     {
         var tempContext = new CsPluginLoadContext();
         return CompileFromFile(csFilePath, tempContext);
@@ -102,7 +105,8 @@ public class CsPluginCompiler
                 .ToList();
 
             var errorMessage = $"C# plugin compilation failed:\n{string.Join("\n", failures)}";
-            _logger.LogError("Compilation failed for {AssemblyName}:\n{Errors}", assemblyName, string.Join("\n", failures));
+            _logger.LogError("Compilation failed for {AssemblyName}:\n{Errors}", assemblyName,
+                string.Join("\n", failures));
             throw new InvalidOperationException(errorMessage);
         }
 
@@ -114,17 +118,13 @@ public class CsPluginCompiler
 
     private IEnumerable<MetadataReference> GetMetadataReferences()
     {
-        var assemblies = new List<MetadataReference>();
-
         // Add core runtime references from trusted platform assemblies
         var trustedAssemblies =
             ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))?.Split(Path.PathSeparator)
             ?? [];
 
-        foreach (var assemblyPath in trustedAssemblies.Where(File.Exists))
-        {
-            assemblies.Add(MetadataReference.CreateFromFile(assemblyPath));
-        }
+        var assemblies = trustedAssemblies.Where(File.Exists)
+            .Select(assemblyPath => MetadataReference.CreateFromFile(assemblyPath)).Cast<MetadataReference>().ToList();
 
         // Add reference to SharedLibraryCore (for IPluginV2, etc.)
         AddAssemblyReference(assemblies, typeof(SharedLibraryCore.Interfaces.IPluginV2).Assembly);

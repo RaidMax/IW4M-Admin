@@ -1,56 +1,37 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 
+#nullable enable
+
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
 
-/// <summary>
-/// Event types for file changes.
-/// </summary>
-public enum FileEventType
-{
-    Created,
-    Changed
-}
-
-/// <summary>
-/// Watches the Plugins directory for .cs file changes with debouncing and per-file locking.
-/// </summary>
 public class CsPluginFileWatcher : IDisposable
 {
     private readonly FileSystemWatcher _watcher;
     private readonly ILogger<CsPluginFileWatcher> _logger;
+    private readonly Channel<FileSystemEventArgs> _eventChannel;
+    private readonly CancellationTokenSource _cts;
+    private Task? _processingTask;
 
-    // Debounce file changes (editors often save multiple times, copy triggers both Created and Changed)
-    private readonly Dictionary<string, DateTime> _lastChangeTime = new(StringComparer.OrdinalIgnoreCase);
-    private readonly TimeSpan _debounceInterval = TimeSpan.FromMilliseconds(500);
+    private readonly ConcurrentDictionary<string, DateTime> _debounceTracker = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan DebounceWindow = TimeSpan.FromMilliseconds(500);
 
-    // Per-file semaphores to prevent concurrent operations on the same file
-    private readonly Dictionary<string, SemaphoreSlim> _fileOperationLocks = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Lock _lockObject = new();
-
-    /// <summary>
-    /// Raised when a file is created or changed (after debouncing).
-    /// </summary>
-    public event Func<string, FileEventType, Task>? FileChanged;
-
-    /// <summary>
-    /// Raised when a file is deleted.
-    /// </summary>
+    public event Func<string, Task>? FileChanged;
     public event Func<string, Task>? FileDeleted;
-
-    /// <summary>
-    /// Raised when a file is renamed.
-    /// </summary>
     public event Func<string, string, Task>? FileRenamed;
 
     public CsPluginFileWatcher(ILogger<CsPluginFileWatcher> logger)
     {
         _logger = logger;
+        _cts = new CancellationTokenSource();
+
+        _eventChannel = Channel.CreateUnbounded<FileSystemEventArgs>();
 
         if (!Directory.Exists(Utilities.PluginsDirectory))
         {
@@ -64,204 +45,124 @@ public class CsPluginFileWatcher : IDisposable
             IncludeSubdirectories = false
         };
 
-        _watcher.Changed += OnFileChanged;
-        _watcher.Created += OnFileCreated;
-        _watcher.Deleted += OnFileDeleted;
-        _watcher.Renamed += OnFileRenamed;
+        _watcher.Changed += OnFileEvent;
+        _watcher.Created += OnFileEvent;
+        _watcher.Deleted += OnFileEvent;
+        _watcher.Renamed += OnFileEvent;
     }
 
     public void Start()
     {
+        _processingTask = Task.Run(() => ProcessEventsAsync(_cts.Token));
         _watcher.EnableRaisingEvents = true;
         _logger.LogInformation("Hot reload enabled - watching for .cs file changes");
     }
 
-    private void OnFileChanged(object sender, FileSystemEventArgs e)
+    private void OnFileEvent(object sender, FileSystemEventArgs e)
     {
-        HandleFileEventAsync(e.FullPath, FileEventType.Changed);
+        _eventChannel.Writer.TryWrite(e);
     }
 
-    private void OnFileCreated(object sender, FileSystemEventArgs e)
+    private async Task ProcessEventsAsync(CancellationToken ct)
     {
-        HandleFileEventAsync(e.FullPath, FileEventType.Created);
-    }
-
-    private void OnFileDeleted(object sender, FileSystemEventArgs e)
-    {
-        _logger.LogInformation("Plugin removed: {FileName}", e.Name);
-
-        // Clean up debounce tracking for deleted file
-        lock (_lockObject)
+        try
         {
-            _lastChangeTime.Remove(e.FullPath);
-        }
-
-        _ = Task.Run(async () =>
-        {
-            var semaphore = GetOrCreateFileLock(e.FullPath);
-            await semaphore.WaitAsync();
-            try
+            while (await _eventChannel.Reader.WaitToReadAsync(ct))
             {
-                if (FileDeleted != null)
+                while (_eventChannel.Reader.TryRead(out var e))
                 {
-                    await FileDeleted(e.FullPath);
+                    await HandleEventSafeAsync(e, ct);
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling file deletion {FileName}", e.Name);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-    }
-
-    private void OnFileRenamed(object sender, RenamedEventArgs e)
-    {
-        _logger.LogInformation("Plugin renamed: {OldName} → {NewName}", e.OldName, e.Name);
-
-        _ = Task.Run(async () =>
-        {
-            var oldSemaphore = GetOrCreateFileLock(e.OldFullPath);
-            var newSemaphore = GetOrCreateFileLock(e.FullPath);
-
-            await oldSemaphore.WaitAsync();
-            try
-            {
-                if (FileRenamed != null)
-                {
-                    await FileRenamed(e.OldFullPath, e.FullPath);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling file rename {OldName} → {NewName}", e.OldName, e.Name);
-            }
-            finally
-            {
-                oldSemaphore.Release();
-            }
-        });
-    }
-
-    private void HandleFileEventAsync(string filePath, FileEventType eventType)
-    {
-        if (!ShouldProcessChange(filePath))
-        {
-            _logger.LogDebug("Skipping duplicate {EventType} event for {FileName}", eventType, Path.GetFileName(filePath));
-            return;
         }
-
-        var fileName = Path.GetFileName(filePath);
-        _logger.LogInformation("Plugin file {EventType}: {FileName}", eventType, fileName);
-
-        _ = Task.Run(async () =>
+        catch (OperationCanceledException)
         {
-            var semaphore = GetOrCreateFileLock(filePath);
+            // Graceful shutdown
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fatal error in plugin file watcher loop");
+        }
+    }
 
-            // Try to acquire the lock - if we can't get it immediately, another operation is in progress
-            if (!await semaphore.WaitAsync(0))
+    private async Task HandleEventSafeAsync(FileSystemEventArgs eventArg, CancellationToken token)
+    {
+        try
+        {
+            var path = eventArg.FullPath;
+
+            var now = DateTime.UtcNow;
+            if (_debounceTracker.TryGetValue(path, out var lastTime))
             {
-                _logger.LogDebug("Skipping {EventType} for {FileName} - operation already in progress", eventType, fileName);
-                return;
-            }
-
-            try
-            {
-                // Let file system settle
-                await Task.Delay(200);
-
-                // Check if file still exists (might have been deleted)
-                if (!File.Exists(filePath))
+                if (now - lastTime < DebounceWindow)
                 {
-                    _logger.LogDebug("File no longer exists: {FileName}", fileName);
+                    _debounceTracker[path] = now;
                     return;
                 }
+            }
 
-                if (FileChanged != null)
-                {
-                    await FileChanged(filePath, eventType);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling {EventType} for plugin {FileName}", eventType, fileName);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-    }
+            _debounceTracker[path] = now;
 
-    private SemaphoreSlim GetOrCreateFileLock(string filePath)
-    {
-        lock (_lockObject)
+            switch (eventArg.ChangeType)
+            {
+                case WatcherChangeTypes.Created:
+                case WatcherChangeTypes.Changed:
+                    if (await WaitForFileAccessAsync(path, token))
+                    {
+                        if (FileChanged != null)
+                            await FileChanged(path);
+                    }
+
+                    break;
+                case WatcherChangeTypes.Deleted:
+                    _debounceTracker.TryRemove(path, out _);
+                    if (FileDeleted != null)
+                        await FileDeleted(path);
+                    break;
+                case WatcherChangeTypes.Renamed:
+                    if (eventArg is RenamedEventArgs re)
+                    {
+                        _debounceTracker.TryRemove(re.OldFullPath, out _);
+                        if (FileRenamed != null)
+                            await FileRenamed(re.OldFullPath, re.FullPath);
+                    }
+
+                    break;
+            }
+        }
+        catch (Exception ex)
         {
-            if (_fileOperationLocks.TryGetValue(filePath, out var semaphore))
-            {
-                try
-                {
-                    _ = semaphore.CurrentCount;
-                    return semaphore;
-                }
-                catch (ObjectDisposedException)
-                {
-                    _fileOperationLocks.Remove(filePath);
-                }
-            }
-
-            semaphore = new SemaphoreSlim(1, 1);
-            _fileOperationLocks[filePath] = semaphore;
-            return semaphore;
+            _logger.LogError(ex, "Error processing file event for {Path}", eventArg.FullPath);
         }
     }
 
-    private bool ShouldProcessChange(string filePath)
+    private async Task<bool> WaitForFileAccessAsync(string filePath, CancellationToken ct)
     {
-        var now = DateTime.UtcNow;
+        const int maxRetries = 10;
+        const int delayMs = 100;
 
-        lock (_lockObject)
+        for (var i = 0; i < maxRetries; i++)
         {
-            if (_lastChangeTime.TryGetValue(filePath, out var lastTime))
-            {
-                if (now - lastTime < _debounceInterval)
-                {
-                    return false;
-                }
-            }
+            if (ct.IsCancellationRequested)
+                return false;
+            if (!File.Exists(filePath))
+                return false;
 
-            _lastChangeTime[filePath] = now;
+            try
+            {
+                // Try to open the file for reading. If this succeeds, the writer is done.
+                await using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                return true;
+            }
+            catch (IOException)
+            {
+                // File is still locked by the writer
+                await Task.Delay(delayMs, ct);
+            }
         }
 
-        return true;
-    }
-
-    /// <summary>
-    /// Cleans up tracking state for a file path.
-    /// </summary>
-    public void CleanupFilePath(string filePath)
-    {
-        lock (_lockObject)
-        {
-            if (_fileOperationLocks.TryGetValue(filePath, out var semaphore))
-            {
-                try
-                {
-                    semaphore.Dispose();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Already disposed
-                }
-
-                _fileOperationLocks.Remove(filePath);
-            }
-
-            _lastChangeTime.Remove(filePath);
-        }
+        _logger.LogWarning("Timed out waiting for file access: {Path}", filePath);
+        return false;
     }
 
     public void Dispose()
@@ -269,11 +170,12 @@ public class CsPluginFileWatcher : IDisposable
         _watcher.EnableRaisingEvents = false;
         _watcher.Dispose();
 
-        foreach (var semaphore in _fileOperationLocks.Values)
+        if (!_cts.IsCancellationRequested)
         {
-            semaphore.Dispose();
+            _cts.Cancel();
+            _cts.Dispose();
         }
 
-        _fileOperationLocks.Clear();
+        _processingTask?.Wait();
     }
 }

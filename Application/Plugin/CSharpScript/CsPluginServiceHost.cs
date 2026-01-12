@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 
+#nullable enable
+
 namespace IW4MAdmin.Application.Plugin.CSharpScript;
 
 /// <summary>
@@ -50,8 +52,7 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         get
         {
             return _plugins.Values
-                .Where(p => p.Plugin != null)
-                .Select(p => p.Plugin!)
+                .Select(p => p.Plugin)
                 .ToList();
         }
     }
@@ -90,7 +91,7 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         _fileWatcher.Start();
     }
 
-    private async Task OnFileChanged(string filePath, FileEventType eventType)
+    private async Task OnFileChanged(string filePath)
     {
         // Check if plugin is already loaded
         var isAlreadyLoaded = _plugins.ContainsKey(filePath);
@@ -116,7 +117,6 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         // Load with new name if it's still a .cs file
         if (newPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
         {
-            await Task.Delay(100);
             await LoadPluginAsync(newPath);
         }
     }
@@ -128,14 +128,8 @@ public class CsPluginServiceHost : ICsPluginServiceHost
 
         try
         {
-            instance = new CsPluginInstance(pluginPath);
-
-            // Create a new load context for this plugin
-            instance.LoadContext = new CsPluginLoadContext();
-            instance.ContextWeakRef = new WeakReference(instance.LoadContext);
-
-            // Compile and load the plugin
-            var assembly = _compiler.CompileFromFile(pluginPath, instance.LoadContext);
+            var loadContext = new CsPluginLoadContext();
+            var assembly = await _compiler.CompileFromFile(pluginPath, loadContext);
 
             // Find the IPluginV2 implementation
             var pluginType = assembly.GetTypes()
@@ -143,7 +137,7 @@ public class CsPluginServiceHost : ICsPluginServiceHost
                     t is { IsInterface: false, IsAbstract: false } &&
                     t.GetInterface(nameof(IPluginV2)) != null);
 
-            if (pluginType == null)
+            if (pluginType is null)
             {
                 var availableTypes = string.Join(", ", assembly.GetTypes().Select(t => t.FullName));
                 throw new InvalidOperationException(
@@ -152,18 +146,17 @@ public class CsPluginServiceHost : ICsPluginServiceHost
 
             _logger.LogDebug("Found plugin type: {TypeName}", pluginType.FullName);
 
-            // Create a plugin-scoped provider that can resolve both plugin services and root services
-            instance.PluginServiceProvider = CreatePluginScopedProvider(pluginType);
-            ArgumentNullException.ThrowIfNull(instance.PluginServiceProvider);
+            var scopedProvider = CreatePluginScopedProvider(pluginType);
 
-            // Instantiate the plugin using the scoped provider
-            instance.Plugin = (IPluginV2)ActivatorUtilities.CreateInstance(
-                instance.PluginServiceProvider,
-                pluginType);
+            instance = new CsPluginInstance(pluginPath)
+            {
+                LoadContext = loadContext,
+                PluginServiceProvider = scopedProvider,
+                Plugin = (IPluginV2)ActivatorUtilities.CreateInstance(scopedProvider, pluginType)
+            };
 
             // Discover and register commands from the plugin assembly
             _commandRegistrar.RegisterCommands(instance, assembly);
-
             _plugins[pluginPath] = instance;
 
             _logger.LogInformation("[{FileName}] Loaded: {PluginName} v{Version} by {Author}",
@@ -185,22 +178,19 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             return;
         }
 
-        var fileName = instance?.FileName;
-        var pluginName = instance?.Plugin?.Name ?? "Unknown";
+        var fileName = instance.FileName;
+        var pluginName = instance.Plugin.Name ?? "Unknown";
 
         _logger.LogInformation("[{FileName}] Unloading {PluginName}...", fileName, pluginName);
 
         // Unregister commands before disposing
-        if (instance != null)
-        {
-            _commandRegistrar.UnregisterCommands(instance);
-        }
+        _commandRegistrar.UnregisterCommands(instance);
 
         // Dispose the instance (this calls Dispose on plugin if IDisposable, and unloads context)
-        instance?.Dispose();
+        instance.Dispose();
 
         // Wait for GC to collect the context
-        var unloaded = instance != null && await instance.WaitForUnloadAsync();
+        var unloaded = await instance.WaitForUnloadAsync();
 
         if (unloaded)
         {
@@ -211,9 +201,6 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             _logger.LogWarning("[{FileName}] Context may not have fully unloaded - check for lingering references",
                 fileName);
         }
-
-        // Clean up file watcher tracking state
-        _fileWatcher.CleanupFilePath(pluginPath);
     }
 
     /// <summary>
@@ -221,37 +208,34 @@ public class CsPluginServiceHost : ICsPluginServiceHost
     /// 1. Services registered by the plugin's RegisterDependencies (built with root provider for their deps)
     /// 2. All services from the root provider
     /// </summary>
-    private IServiceProvider CreatePluginScopedProvider(Type pluginType)
+    private PluginScopedServiceProvider CreatePluginScopedProvider(Type pluginType)
     {
         // Collect the plugin's service registrations
         var pluginServices = new ServiceCollection();
 
-        try
-        {
-            var registrationMethod = pluginType.GetMethod(
-                nameof(IPluginV2.RegisterDependencies),
-                BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+        var registrationMethod = pluginType.GetMethod(
+            nameof(IPluginV2.RegisterDependencies),
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
 
-            if (registrationMethod != null)
-            {
-                // Validate method signature
-                var parameters = registrationMethod.GetParameters();
-                if (parameters.Length == 1 && parameters[0].ParameterType == typeof(IServiceCollection))
-                {
-                    _logger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
-                    registrationMethod.Invoke(null, [pluginServices]);
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "RegisterDependencies for {TypeName} has invalid signature. Expected: static void RegisterDependencies(IServiceCollection)",
-                        pluginType.Name);
-                }
-            }
-        }
-        catch (Exception ex)
+        if (registrationMethod is null)
         {
-            _logger.LogWarning(ex, "Failed to invoke RegisterDependencies for {TypeName}", pluginType.Name);
+            return new PluginScopedServiceProvider(pluginServices, _rootServiceProvider, _logger);
+        }
+
+        // Validate method signature
+        var parameters = registrationMethod.GetParameters();
+        if (parameters.Length == 1 && parameters[0].ParameterType == typeof(IServiceCollection))
+        {
+            // if this fails we want the developer to be informed immediately instead
+            // of runtime DI inconsistencies 
+            _logger.LogDebug("Invoking RegisterDependencies for {TypeName}", pluginType.Name);
+            registrationMethod.Invoke(null, [pluginServices]);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "RegisterDependencies for {TypeName} has invalid signature. Expected: static void RegisterDependencies(IServiceCollection)",
+                pluginType.Name);
         }
 
         // Build a composite provider that:

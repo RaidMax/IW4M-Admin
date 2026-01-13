@@ -21,7 +21,7 @@
             var value = _activityData[i];
             var date = DateTime.UtcNow.Date.AddDays(-29 + i);
             var height = value > 0 ? Math.Max(4, (int)(value / _maxValue * 32)) : 2;
-            var colorClass = value > 0 ? "bg-success" : "bg-line";
+            var colorClass = value > 0 ? "bg-primary" : "bg-line";
             var playTime = TimeSpan.FromMinutes(value);
             var tooltipText = value > 0
                 ? $"{FormatPlaytime(playTime)} • {date:MMM d}"

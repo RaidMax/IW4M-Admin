@@ -1105,7 +1105,7 @@ public class WebfrontDataService : IWebfrontDataService
             userLevel = user.Level;
         }
 
-        var commands = _manager.GetCommands()
+        var commands = _manager.Commands
             .Where(command => command.Permission <= userLevel)
             .OrderByDescending(command => command.Permission)
             .GroupBy(command =>

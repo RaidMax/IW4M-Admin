@@ -241,12 +241,16 @@ namespace IW4MAdmin.Application
                 .ToList();
         }
 
-        public IList<IManagerCommand> GetCommands()
+        public IReadOnlyList<IManagerCommand> Commands
         {
-            return _commands;
+            get 
+            {
+                lock (_commands)
+                {
+                    return _commands.ToImmutableList();
+                } 
+            }
         }
-
-        public IReadOnlyList<IManagerCommand> Commands => _commands.ToImmutableList();
 
         private Task UpdateServerStates()
         {
@@ -557,21 +561,25 @@ namespace IW4MAdmin.Application
             #region COMMANDS
             if (await ClientSvc.HasOwnerAsync(_isRunningTokenSource.Token))
             {
-                _commands.RemoveAll(_cmd => _cmd.GetType() == typeof(OwnerCommand));
+                lock (_commands)
+                {
+                    _commands.RemoveAll(cmd => cmd.GetType() == typeof(OwnerCommand));
+                }
             }
 
-            List<IManagerCommand> commandsToAddToConfig = new List<IManagerCommand>();
+            List<IManagerCommand> commandsToAddToConfig = [];
             var cmdConfig = _commandConfiguration.Configuration();
 
             if (cmdConfig == null)
             {
                 cmdConfig = new CommandConfiguration();
-                commandsToAddToConfig.AddRange(_commands);
+                commandsToAddToConfig.AddRange(Commands);
             }
 
             else
             {
-                var unsavedCommands = _commands.Where(_cmd => !cmdConfig.Commands.Keys.Contains(_cmd.CommandConfigNameForType()));
+                var unsavedCommands = Commands
+                    .Where(cmd => !cmdConfig.Commands.ContainsKey(cmd.CommandConfigNameForType()));
                 commandsToAddToConfig.AddRange(unsavedCommands);
             }
 
@@ -842,7 +850,14 @@ namespace IW4MAdmin.Application
             }
         }
 
-        public void RemoveCommandByName(string commandName) => _commands.RemoveAll(_command => _command.Name == commandName);
+        public void RemoveCommandByName(string commandName)
+        {
+            lock (_commands)
+            {
+                _commands.RemoveAll(command => command.Name == commandName);
+            }
+        }
+
         public IAlertManager AlertManager => _alertManager;
         
         public async Task<Server> AddServerAsync(ServerConfiguration config, bool persistConfig = true, CancellationToken token = default)

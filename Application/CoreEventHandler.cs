@@ -134,7 +134,10 @@ namespace IW4MAdmin.Application
         {
             if (manager.IsRunning || OverrideEvents.Contains(gameEvent.Type))
             {
-                await manager.ExecuteEvent(gameEvent);
+                using var timeoutToken = new CancellationTokenSource(Utilities.DefaultCommandTimeout);
+                using var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(manager.CancellationToken, timeoutToken.Token);
+                
+                await manager.ExecuteEvent(gameEvent).WaitAsync(linkedToken.Token);
                 await IGameEventSubscriptions.InvokeEventAsync(coreEvent, manager.CancellationToken);
                 return;
             }

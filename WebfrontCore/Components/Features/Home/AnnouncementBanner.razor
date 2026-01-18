@@ -8,30 +8,30 @@
 @if (_announcement != null && !_isDismissed)
 {
     <div
-        class="flex items-center bg-surface border border-l-4 @(_announcement.IsGlobalNotice ? "border-warning" : "border-line border-primary") p-3.5 mb-4 rounded-lg shadow-sm gap-4 @(GlobalOnly ? "mb-6 mx-4 mt-4" : "") transition-all duration-300">
+        class="flex items-start bg-surface border border-l-4 @(_announcement.IsGlobalNotice ? "border-warning" : "border-line border-primary") p-3 md:p-4 mb-4 rounded-lg shadow-sm gap-3 md:gap-4 @(GlobalOnly ? "mb-6 mx-4 mt-4" : "") transition-all duration-300">
         <div
-            class="flex items-center justify-center @(_announcement.IsGlobalNotice ? "border-warning/30 bg-warning/10" : "border-line bg-surface-alt") border w-10 h-10 rounded-lg flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite]">
+            class="flex items-center justify-center @(_announcement.IsGlobalNotice ? "border-warning/30 bg-warning/10" : "border-line bg-surface-alt") border w-10 h-10 rounded-lg flex-shrink-0 animate-[pulse_3s_ease-in-out_infinite] mt-0.5">
             <i class="ph ph-megaphone @(_announcement.IsGlobalNotice ? "text-warning" : "text-primary") text-xl"></i>
         </div>
-        <div class="flex flex-col flex-grow gap-0.5 overflow-hidden">
-            <div class="flex items-center gap-2">
+        <div class="flex flex-col flex-grow gap-1 overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center gap-0.5 md:gap-2">
                 <span
                     class="@(_announcement.IsGlobalNotice ? "text-warning" : "text-primary") font-bold text-[0.7rem] uppercase tracking-widest leading-tight">@_announcement.Title</span>
                 @if (!string.IsNullOrEmpty(_announcement.CreatedByName))
                 {
-                    <span class="text-xs text-muted flex items-center gap-2">
-                         <span class="w-1 h-1 rounded-full bg-subtle/50"></span>
+                    <span class="text-xs text-muted flex items-center gap-2 whitespace-nowrap">
+                         <span class="w-1 h-1 rounded-full bg-subtle/50 hidden md:block"></span>
                         @_announcement.CreatedByName
                      </span>
                 }
             </div>
-            <span class="text-subtle text-[0.9rem] font-medium leading-normal truncate">@_announcement.Content</span>
+            <span class="text-subtle text-[0.9rem] font-medium leading-normal">@_announcement.Content</span>
         </div>
         @if (_allowDismiss)
         {
-            <Tooltip Text="@Loc["WEBFRONT_ACTION_DISMISS"]">
+            <Tooltip Text="@Loc["WEBFRONT_ACTION_DISMISS"]" Direction="Tooltip.TooltipDirection.Left">
                 <button
-                    class="flex items-center justify-center w-8 h-8 -mr-1 rounded-lg text-subtle hover:text-foreground hover:bg-surface transition-colors flex-shrink-0"
+                    class="flex items-center justify-center w-8 h-8 -mr-1 rounded-lg text-subtle hover:text-foreground hover:bg-surface transition-colors flex-shrink-0 mt-0.5"
                     @onclick="Dismiss">
                     <i class="ph ph-x"></i>
                 </button>

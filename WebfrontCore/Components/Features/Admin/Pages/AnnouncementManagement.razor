@@ -18,7 +18,7 @@
         <div>
             <h2 class="text-2xl font-bold text-gradient-title">@Loc["WEBFRONT_NAV_ANNOUNCEMENTS"]</h2>
              <div class="text-sm text-subtle font-medium mt-0.5">
-                 Manage system-wide broadcast messages
+                 @Loc["WEBFRONT_ANNOUNCEMENT_SUBTITLE"]
             </div>
         </div>
         
@@ -66,19 +66,19 @@
                         </div>
                     </div>
 
-                    <div class="flex gap-8 border-t border-line/50 pt-4">
+                    <div class="flex flex-col md:flex-row gap-4 md:gap-8 border-t border-line/50 pt-4">
                         <div class="flex items-center gap-3">
                             <ToggleSwitch @bind-Value="_formIsGlobal" Id="chkGlobal" />
                             <div class="cursor-pointer group" @onclick="() => _formIsGlobal = !_formIsGlobal">
                                 <span class="block text-sm font-medium text-foreground group-hover:text-primary transition-colors">@Loc["WEBFRONT_ANNOUNCEMENT_IS_GLOBAL"]</span>
-                                <span class="text-xs text-subtle">Display heavily on all pages</span>
+                                <span class="text-xs text-subtle">@Loc["WEBFRONT_ANNOUNCEMENT_IS_GLOBAL_DESC"]</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <ToggleSwitch @bind-Value="_formIsActive" Id="chkActive" />
                             <div class="cursor-pointer group" @onclick="() => _formIsActive = !_formIsActive">
                                 <span class="block text-sm font-medium text-foreground group-hover:text-primary transition-colors">@Loc["WEBFRONT_ANNOUNCEMENT_IS_ACTIVE"]</span>
-                                <span class="text-xs text-subtle">Visible to users immediately</span>
+                                <span class="text-xs text-subtle">@Loc["WEBFRONT_ANNOUNCEMENT_IS_ACTIVE_DESC"]</span>
                             </div>
                         </div>
                     </div>
@@ -119,7 +119,7 @@
                     <i class="ph ph-megaphone text-3xl text-subtle"></i>
                 </div>
                 <h3 class="text-lg font-medium text-foreground">@Loc["WEBFRONT_ANNOUNCEMENT_NONE"]</h3>
-                <p class="text-sm mt-1 max-w-xs text-center">Get started by creating a new announcement.</p>
+                <p class="text-sm mt-1 max-w-xs text-center">@Loc["WEBFRONT_ANNOUNCEMENT_NONE_DESC"]</p>
             </div>
         }
         else
@@ -146,7 +146,7 @@
                                 else 
                                 {
                                     <span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
-                                        Inactive
+                                        @Loc["WEBFRONT_ANNOUNCEMENT_INACTIVE"]
                                     </span>
                                 }
 
@@ -161,13 +161,13 @@
                             <p class="text-subtle text-sm line-clamp-2 max-w-3xl">@announcement.Content</p>
                             
                             <div class="flex items-center gap-4 text-xs text-muted font-mono mt-2">
-                                <span class="flex items-center gap-1.5" title="Start Time">
+                                <span class="flex items-center gap-1.5" title="@Loc["WEBFRONT_ANNOUNCEMENT_START_AT"]">
                                     <i class="ph ph-clock"></i>
-                                    @(announcement.StartAt?.ToString("g") ?? "Now")
+                                    @(announcement.StartAt?.ToString("g") ?? Loc["WEBFRONT_ANNOUNCEMENT_TIME_NOW"])
                                 </span>
                                 <span class="text-line">&rarr;</span>
-                                <span class="flex items-center gap-1.5" title="End Time">
-                                     @(announcement.EndAt?.ToString("g") ?? "Forever")
+                                <span class="flex items-center gap-1.5" title="@Loc["WEBFRONT_ANNOUNCEMENT_END_AT"]">
+                                     @(announcement.EndAt?.ToString("g") ?? Loc["WEBFRONT_ANNOUNCEMENT_TIME_FOREVER"])
                                 </span>
                                 <span class="w-px h-3 bg-line hidden sm:block"></span>
                                 <span class="hidden sm:flex items-center gap-1.5">

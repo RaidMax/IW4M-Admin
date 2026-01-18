@@ -19,6 +19,8 @@ public enum WebfrontEntity
     Interaction,
     AdvancedSearch,
     AuditLogDataDetails,
+    AnnouncementPage,
+    Announcement,
 }
 
 public enum WebfrontPermission

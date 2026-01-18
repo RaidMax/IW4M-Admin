@@ -17,7 +17,7 @@ else
         
         <!-- Top Menu Bar (Interactive) -->
         <TopBar />
-
+        
         <div class="flex flex-1 overflow-hidden relative">
             <!-- Sidebar / NavMenu (Interactive Container) -->
             <SidebarContainer />
@@ -29,6 +29,9 @@ else
                  
                 <!-- Toast Container -->
                 <ToastContainer />
+
+                <!-- Global MOTD Announcement Banner -->
+                <AnnouncementBanner GlobalOnly="true" @rendermode="InteractiveServer" />
 
                 @Body
                 

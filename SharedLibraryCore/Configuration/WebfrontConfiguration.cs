@@ -17,6 +17,11 @@ public class WebfrontConfiguration
     public bool EnableColorCodes { get; set; }
 
     /// <summary>
+    /// Whether users can dismiss the MOTD announcement. When false, the dismiss button is hidden.
+    /// </summary>
+    public bool AllowMotdDismiss { get; set; } = true;
+
+    /// <summary>
     /// Enable HTTPS with SSL certificate. When enabled, the webfront will serve over HTTPS only.
     /// </summary>
     public bool UseSsl { get; set; }

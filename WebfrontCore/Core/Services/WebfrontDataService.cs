@@ -50,6 +50,7 @@ public class WebfrontDataService : IWebfrontDataService
     private readonly ITranslationLookup _translationLookup;
     private readonly SharedLibraryCore.Configuration.ApplicationConfiguration _appConfig;
     private readonly ILookup<Type, string> _pluginTypeNames;
+    private readonly IAnnouncementService _announcementService;
 
     public WebfrontDataService(IManager manager,
         IServerDataViewer serverDataViewer,
@@ -72,7 +73,8 @@ public class WebfrontDataService : IWebfrontDataService
         ITranslationLookup translationLookup,
         ApplicationConfiguration appConfig,
         IEnumerable<IPlugin> v1Plugins,
-        IEnumerable<IPluginV2> v2Plugins)
+        IEnumerable<IPluginV2> v2Plugins,
+        IAnnouncementService announcementService)
     {
         _manager = manager;
         _serverDataViewer = serverDataViewer;
@@ -97,6 +99,7 @@ public class WebfrontDataService : IWebfrontDataService
         _pluginTypeNames = v1Plugins.Select(plugin => (plugin.GetType(), plugin.Name))
             .Concat(v2Plugins.Select(plugin => (plugin.GetType(), plugin.Name)))
             .ToLookup(selector => selector.Item1, selector => selector.Name);
+        _announcementService = announcementService;
     }
 
     public async Task<List<ServerInfo>> GetServersAsync(Reference.Game? game = null)
@@ -1583,5 +1586,82 @@ public class WebfrontDataService : IWebfrontDataService
     public async Task<bool> RemoveServerAsync(string serverId, bool persist = false, CancellationToken token = default)
     {
         return await _manager.RemoveServerAsync(serverId, persist, token);
+    }
+    
+    public async Task<AnnouncementInfo?> GetActiveAnnouncementAsync(bool globalOnly = false)
+    {
+        var announcement = await _announcementService.GetActiveAnnouncementAsync(globalOnly);
+        return announcement == null ? null : MapToAnnouncementInfo(announcement);
+    }
+
+    public async Task<IEnumerable<AnnouncementInfo>> GetAllAnnouncementsAsync()
+    {
+        var announcements = await _announcementService.GetAllAnnouncementsAsync();
+        return announcements.Select(MapToAnnouncementInfo);
+    }
+
+    public async Task<AnnouncementInfo> CreateAnnouncementAsync(CreateAnnouncementRequest request, int createdByClientId)
+    {
+        var announcement = new Data.Models.Misc.EFAnnouncement
+        {
+            Title = request.Title,
+            Content = request.Content,
+            StartAt = request.StartAt,
+            EndAt = request.EndAt,
+            IsActive = request.IsActive,
+            IsGlobalNotice = request.IsGlobalNotice,
+            CreatedByClientId = createdByClientId
+        };
+        var result = await _announcementService.CreateAnnouncementAsync(announcement);
+        return MapToAnnouncementInfo(result);
+    }
+
+    public async Task<AnnouncementInfo> UpdateAnnouncementAsync(UpdateAnnouncementRequest request)
+    {
+        var announcement = new Data.Models.Misc.EFAnnouncement
+        {
+            AnnouncementId = request.AnnouncementId,
+            Title = request.Title,
+            Content = request.Content,
+            StartAt = request.StartAt,
+            EndAt = request.EndAt,
+            IsActive = request.IsActive,
+            IsGlobalNotice = request.IsGlobalNotice
+        };
+        var result = await _announcementService.UpdateAnnouncementAsync(announcement);
+        return MapToAnnouncementInfo(result);
+    }
+
+    public async Task DeleteAnnouncementAsync(int id)
+    {
+        await _announcementService.DeleteAnnouncementAsync(id);
+    }
+
+    public async Task ActivateAnnouncementAsync(int id)
+    {
+        await _announcementService.ActivateAnnouncementAsync(id);
+    }
+
+    public async Task DeactivateAnnouncementAsync(int id)
+    {
+        await _announcementService.DeactivateAnnouncementAsync(id);
+    }
+
+    private static AnnouncementInfo MapToAnnouncementInfo(Data.Models.Misc.EFAnnouncement announcement)
+    {
+        return new AnnouncementInfo
+        {
+            AnnouncementId = announcement.AnnouncementId,
+            Title = announcement.Title,
+            Content = announcement.Content,
+            StartAt = announcement.StartAt,
+            EndAt = announcement.EndAt,
+            IsActive = announcement.IsActive,
+            IsGlobalNotice = announcement.IsGlobalNotice,
+            CreatedByName = announcement.CreatedByClient?.CurrentAlias?.Name ?? "Unknown",
+            CreatedByClientId = announcement.CreatedByClientId,
+            CreatedDateTime = announcement.CreatedDateTime,
+            UpdatedDateTime = announcement.UpdatedDateTime
+        };
     }
 }

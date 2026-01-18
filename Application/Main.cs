@@ -559,6 +559,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IMetaServiceV2, MetaServiceV2>()
                 .AddSingleton<ClientService>()
                 .AddSingleton<PenaltyService>()
+                .AddSingleton<IAnnouncementService, AnnouncementService>()
                 .AddSingleton<ChangeHistoryService>()
                 .AddSingleton<IMetaRegistration, MetaRegistration>()
                 .AddSingleton<IScriptPluginServiceResolver, ScriptPluginServiceResolver>()

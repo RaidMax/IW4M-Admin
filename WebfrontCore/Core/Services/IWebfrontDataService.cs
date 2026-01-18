@@ -77,5 +77,12 @@ public interface IWebfrontDataService
     /// <param name="token">Cancellation token</param>
     /// <returns>True if server was removed successfully</returns>
     Task<bool> RemoveServerAsync(string serverId, bool persist = false, CancellationToken token = default);
+    
+    Task<AnnouncementInfo?> GetActiveAnnouncementAsync(bool globalOnly = false);
+    Task<IEnumerable<AnnouncementInfo>> GetAllAnnouncementsAsync();
+    Task<AnnouncementInfo> CreateAnnouncementAsync(CreateAnnouncementRequest request, int createdByClientId);
+    Task<AnnouncementInfo> UpdateAnnouncementAsync(UpdateAnnouncementRequest request);
+    Task DeleteAnnouncementAsync(int id);
+    Task ActivateAnnouncementAsync(int id);
+    Task DeactivateAnnouncementAsync(int id);
 }
-

@@ -1454,7 +1454,7 @@ public class WebfrontDataService : IWebfrontDataService
         {
             Origin = privilegedClient,
             Type = GameEvent.EventType.Login,
-            Owner = _manager.GetServers().First(),
+            Owner = _manager.Servers.First(),
             Data = request.IpAddress
         });
 

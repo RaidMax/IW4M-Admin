@@ -56,7 +56,7 @@ public class AccountController(IManager manager) : BaseController(manager)
                 {
                     Origin = privilegedClient,
                     Type = GameEvent.EventType.Login,
-                    Owner = Manager.GetServers().First(),
+                    Owner = Manager.Servers.First(),
                     Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For")
                         ? HttpContext.Request.Headers["X-Forwarded-For"].ToString()
                         : HttpContext.Connection.RemoteIpAddress?.ToString()
@@ -93,7 +93,7 @@ public class AccountController(IManager manager) : BaseController(manager)
             {
                 Origin = Client,
                 Type = GameEvent.EventType.Logout,
-                Owner = Manager.GetServers().First(),
+                Owner = Manager.Servers.First(),
                 Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var value)
                     ? value.ToString()
                     : HttpContext.Connection.RemoteIpAddress?.ToString()

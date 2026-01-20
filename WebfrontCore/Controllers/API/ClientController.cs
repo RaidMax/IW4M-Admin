@@ -163,7 +163,7 @@ namespace WebfrontCore.Controllers.API
             }
         }
 
-        [HttpPost("/logout")]
+        [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Logout()
@@ -174,7 +174,7 @@ namespace WebfrontCore.Controllers.API
                 {
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
-                    Owner = Manager.GetServers().First(),
+                    Owner = Manager.Servers.First(),
                     Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var gameStringValues)
                         ? gameStringValues.ToString()
                         : HttpContext.Connection.RemoteIpAddress?.ToString()

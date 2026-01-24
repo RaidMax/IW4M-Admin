@@ -468,7 +468,7 @@ public class MetaServiceV2 : IMetaServiceV2
 
         var registration = _metaActions[metaType][0];
 
-        if (registration.EntityType == WebfrontEntity.Default || !_configuration.HasPermission(request.RequestPermission,
+        if (registration.EntityType != WebfrontEntity.Default && !_configuration.HasPermission(request.RequestPermission,
                 registration.EntityType, WebfrontPermission.Read))
         {
             return [];

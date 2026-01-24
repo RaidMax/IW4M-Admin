@@ -142,19 +142,16 @@ public class Program
                 });
         });
 
-        services.AddStackPolicy(options =>
+        services.AddRateLimiter(options =>
         {
-            options.MaxConcurrentRequests =
-                int.Parse(Environment.GetEnvironmentVariable("MaxConcurrentRequests") ?? "1");
-            options.RequestQueueLimit = int.Parse(Environment.GetEnvironmentVariable("RequestQueueLimit") ?? "1");
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddConcurrencyLimiter("concurrencyPolicy", opt =>
+            {
+                opt.PermitLimit = 30;
+                opt.QueueLimit = 10;
+                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
         });
-
-        services.AddRateLimiter(options => options.AddConcurrencyLimiter("concurrencyPolicy", opt =>
-        {
-            opt.PermitLimit = 2;
-            opt.QueueLimit = 25;
-            opt.QueueProcessingOrder = QueueProcessingOrder.NewestFirst;
-        }));
 
         // Add framework services
         var mvcBuilder = services.AddControllers(options => options.SuppressAsyncSuffixInActionNames = false);

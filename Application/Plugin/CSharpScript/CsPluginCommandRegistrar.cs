@@ -73,7 +73,7 @@ public class CsPluginCommandRegistrar(ILogger<CsPluginCommandRegistrar> logger, 
     /// </summary>
     private void RemoveConflictingCommands(Command newCommand, string fileName)
     {
-        var conflicts = manager.GetCommands()
+        var conflicts = manager.Commands
             .Where(existing => IsConflict((Command)existing, newCommand))
             .ToList();
 

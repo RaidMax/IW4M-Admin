@@ -75,6 +75,10 @@
                                 <td class="p-4">
                                     <a href="/client/@client.ClientId" class="font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(client.ClientLevelValue)">
                                         <ColorCode Value="@client.CurrentClientName" />
+                                        @if (client.CurrentClientName != client.MatchedClientName)
+                                        {
+                                            <span class="text-muted ml-2">[<ColorCode Value="@client.MatchedClientName" />]</span>
+                                        }
                                     </a>
                                 </td>
                                 <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
@@ -140,6 +144,10 @@
                          <div class="flex justify-between items-start mb-3">
                              <a href="/client/@client.ClientId" class="text-lg font-bold hover:text-primary transition-colors @AppState.GetLevelColorClass(client.ClientLevelValue)">
                                   <ColorCode Value="@client.CurrentClientName" />
+                                  @if (client.CurrentClientName != client.MatchedClientName)
+                                  {
+                                      <span class="text-muted ml-2 text-base">[<ColorCode Value="@client.MatchedClientName" />]</span>
+                                  }
                              </a>
                              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
                                  @(global::SharedLibraryCore.Utilities.MakeAbbreviation(AppState.Loc("GAME_" + client.Game)))

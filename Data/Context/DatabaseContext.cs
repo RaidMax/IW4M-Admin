@@ -44,6 +44,7 @@ namespace Data.Context
         #region MISC
 
         public DbSet<EFInboxMessage> InboxMessages { get; set; }
+        public DbSet<EFAnnouncement> Announcements { get; set; }
         public DbSet<EFServerSnapshot> ServerSnapshots { get;set; }
         public DbSet<EFClientConnectionHistory> ConnectionHistory { get; set; }
 
@@ -154,6 +155,17 @@ namespace Data.Context
             modelBuilder.Entity<EFClientConnectionHistory>(ent => ent.HasIndex(history => history.CreatedDateTime));
 
             modelBuilder.Entity<EFServerSnapshot>(ent => ent.HasIndex(snapshot => snapshot.CapturedAt));
+
+            modelBuilder.Entity<EFAnnouncement>(ent =>
+            {
+                ent.HasIndex(a => a.IsActive);
+                ent.HasIndex(a => a.IsGlobalNotice);
+                ent.HasOne(a => a.CreatedByClient)
+                    .WithMany()
+                    .HasForeignKey(a => a.CreatedByClientId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<EFAnnouncement>().ToTable(nameof(EFAnnouncement));
 
             // force full name for database conversion
             modelBuilder.Entity<EFClient>().ToTable("EFClients");

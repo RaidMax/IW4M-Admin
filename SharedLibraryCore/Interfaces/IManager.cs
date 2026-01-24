@@ -38,7 +38,6 @@ namespace SharedLibraryCore.Interfaces
 
         IList<Server> GetServers();
         List<Server> Servers { get; }
-        IList<IManagerCommand> GetCommands();
         IList<MessageToken> GetMessageTokens();
         IList<EFClient> GetActiveClients();
         EFClient FindActiveClient(EFClient client);

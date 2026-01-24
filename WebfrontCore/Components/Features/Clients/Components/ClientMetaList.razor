@@ -44,9 +44,13 @@ else
                 <div class="z-10 min-w-6">
                     @{
                         var (dotColor, _) = GetItemStyle(item);
+                        var utcTime = item.When.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                        var tooltipText = $"{item.Type.ToTranslatedName()} • {utcTime}";
                     }
-                    <div
-                        class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125 m-auto"></div>
+                    <Tooltip Text="@tooltipText" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="flex items-center justify-center">
+                        <div
+                            class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125 m-auto"></div>
+                    </Tooltip>
                 </div>
 
                 @* Content *@
@@ -189,7 +193,7 @@ else
             var state = GetState(Meta);
         }
 
-        <div class="text-subtle text-sm leading-relaxed" title="@Meta.When.ToString("G")">
+        <div class="text-subtle text-sm leading-relaxed">
             <div class="inline">
                 @foreach (var match in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
                 {
@@ -239,7 +243,7 @@ else
             var state = GetState(Meta);
         }
 
-        <div class="text-subtle text-sm leading-relaxed" title="@Meta.When.ToString("G")">
+        <div class="text-subtle text-sm leading-relaxed">
             <div class="inline">
                 @foreach (var match in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
                 {
@@ -373,7 +377,7 @@ else
     </text>;
 
     RenderFragment<UpdatedAliasResponse> UpdatedAliasTemplate => (Meta) => @<text>
-        <div class="text-sm text-muted" title="@Meta.When.ToString("G")">
+        <div class="text-sm text-muted">
         @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc("WEBFRONT_PROFILE_META_CONNECT_ALIAS")))
         {
             if (token.IsInterpolation)
@@ -406,7 +410,7 @@ else
         @{
             var localizationKey = $"WEBFRONT_CLIENT_META_CONNECTION_{Meta.ConnectionType.ToString().ToUpper()}";
         }
-        <div class="text-sm text-muted" title="@Meta.When.ToString("G")">
+        <div class="text-sm text-muted">
         @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc(localizationKey)))
             {
                 if (token.IsInterpolation)
@@ -435,7 +439,7 @@ else
     </text>;
 
     RenderFragment<PermissionLevelChangedResponse> PermissionLevelChangedTemplate => (Meta) => @<text>
-        <div class="text-sm text-muted" title="@Meta.When.ToString("G")">
+        <div class="text-sm text-muted">
         @foreach (var token in Utilities.SplitTranslationTokens(AppState.Loc("WEBFRONT_CLIENT_META_PERMISSION_CHANGED")))
         {
             if (token.IsInterpolation)
@@ -467,7 +471,7 @@ else
     </text>;
 
     RenderFragment<ClientNoteMetaResponse> ClientNoteTemplate => (Meta) => @<text>
-        <div class="text-sm flex gap-2 items-center" title="@Meta.When.ToString("G")">
+        <div class="text-sm flex gap-2 items-center">
             <span class="text-muted uppercase text-xs font-bold tracking-wider">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
             <span class="text-foreground italic">@Meta.Note</span>
             <span class="text-subtle">&mdash;</span>

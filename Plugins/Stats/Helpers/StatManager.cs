@@ -1235,45 +1235,45 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await context.SaveChangesAsync();
 
                 performances.Add(clientStats);
-            }
 
-            if (performances.Any(performance => performance.TimePlayed >= minPlayTime))
-            {
-                var aggregateZScore =
-                    performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
-
-                int? aggregateRanking = await context.Set<EFClientStatistics>()
-                    .Where(stat => stat.ClientId != clientId)
-                    .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime))
-                    .GroupBy(stat => stat.ClientId)
-                    .Where(group =>
-                        group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
-                        aggregateZScore)
-                    .Select(c => c.Key)
-                    .CountAsync();
-
-                var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore);
-
-                if (newPerformanceMetric == null)
+                if (performances.Any(performance => performance.TimePlayed >= minPlayTime))
                 {
-                    _log.LogWarning("Could not determine performance metric for {Client} {AggregateZScore}",
-                        clientStats.Client?.ToString(), aggregateZScore);
-                    return;
+                    var aggregateZScore =
+                        performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), minPlayTime);
+
+                    int? aggregateRanking = await context.Set<EFClientStatistics>()
+                        .Where(stat => stat.ClientId != clientId)
+                        .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(minPlayTime))
+                        .GroupBy(stat => stat.ClientId)
+                        .Where(group =>
+                            group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
+                            aggregateZScore)
+                        .Select(c => c.Key)
+                        .CountAsync();
+
+                    var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore);
+
+                    if (newPerformanceMetric == null)
+                    {
+                        _log.LogWarning("Could not determine performance metric for {Client} {AggregateZScore}",
+                            clientStats.Client?.ToString(), aggregateZScore);
+                        return;
+                    }
+
+                    var aggregateRankingSnapshot = new EFClientRankingHistory
+                    {
+                        ClientId = clientId,
+                        ZScore = aggregateZScore,
+                        Ranking = aggregateRanking,
+                        PerformanceMetric = newPerformanceMetric,
+                        Newest = true,
+                    };
+
+                    context.Add(aggregateRankingSnapshot);
+
+                    await PruneOldRankings(context, clientId);
+                    await context.SaveChangesAsync();
                 }
-
-                var aggregateRankingSnapshot = new EFClientRankingHistory
-                {
-                    ClientId = clientId,
-                    ZScore = aggregateZScore,
-                    Ranking = aggregateRanking,
-                    PerformanceMetric = newPerformanceMetric,
-                    Newest = true,
-                };
-
-                context.Add(aggregateRankingSnapshot);
-
-                await PruneOldRankings(context, clientId);
-                await context.SaveChangesAsync();
             }
         }
 

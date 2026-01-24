@@ -2,6 +2,7 @@
 
 public enum WebfrontEntity
 {
+    Default,
     ClientIPAddress,
     ClientGuid,
     ClientLevel,
@@ -19,6 +20,9 @@ public enum WebfrontEntity
     Interaction,
     AdvancedSearch,
     AuditLogDataDetails,
+    AnnouncementPage,
+    Announcement,
+    ChatMessage
 }
 
 public enum WebfrontPermission

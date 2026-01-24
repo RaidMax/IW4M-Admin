@@ -12,6 +12,8 @@ public class AppState(ApplicationConfiguration appConfig)
     public string WebfrontBranding => !string.IsNullOrEmpty(appConfig.Webfront.CustomBranding)
         ? appConfig.Webfront.CustomBranding
         : "IW4MAdmin";
+    
+    public WebfrontConfiguration WebfrontConfig => appConfig.Webfront;
 
     public bool SidebarCollapsed
     {

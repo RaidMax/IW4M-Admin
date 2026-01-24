@@ -23,16 +23,13 @@ using Stats.Client.Game;
 
 namespace IW4MAdmin.Plugins.Stats.Client;
 
-public class HitState
+public class HitState : IDisposable
 {
+    private bool _disposed;
+
     public HitState()
     {
         OnTransaction = new SemaphoreSlim(1, 1);
-    }
-
-    ~HitState()
-    {
-        OnTransaction.Dispose();
     }
 
     public List<EFClientHitStatistic> Hits { get; set; }
@@ -41,6 +38,17 @@ public class HitState
     public EFServer Server { get; set; }
     public SemaphoreSlim OnTransaction { get; }
     public int UpdateCount { get; set; }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        OnTransaction.Dispose();
+    }
 }
 
 public class HitCalculator : IClientStatisticCalculator
@@ -49,8 +57,6 @@ public class HitCalculator : IClientStatisticCalculator
     private readonly ILogger<HitCalculator> _logger;
 
     private readonly ConcurrentDictionary<int, HitState> _clientHitStatistics = new();
-
-    private readonly SemaphoreSlim _onTransaction = new SemaphoreSlim(1, 1);
 
     private readonly ILookupCache<EFServer> _serverCache;
     private readonly ILookupCache<EFHitLocation> _hitLocationCache;
@@ -111,34 +117,35 @@ public class HitCalculator : IClientStatisticCalculator
 
         if (coreEvent is ClientStateDisposeEvent clientStateDisposeEvent)
         {
-            _clientHitStatistics.Remove(clientStateDisposeEvent.Client.ClientId, out var state);
-
-            if (state == null)
+            // Atomically remove the state to prevent race conditions with hit processing
+            if (!_clientHitStatistics.TryRemove(clientStateDisposeEvent.Client.ClientId, out var state))
             {
                 _logger.LogWarning("No client hit state available for disconnecting client {Client}",
                     clientStateDisposeEvent.Client.ToString());
                 return;
             }
 
+            var acquired = false;
             try
             {
                 await state.OnTransaction.WaitAsync();
+                acquired = true;
                 HandleDisconnectCalculations(clientStateDisposeEvent.Client, state);
                 await UpdateClientStatistics(clientStateDisposeEvent.Client.ClientId, state);
             }
-
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not handle disconnect calculations for client {Client}",
                     clientStateDisposeEvent.Client.ToString());
             }
-
             finally
             {
-                if (state.OnTransaction.CurrentCount == 0)
+                if (acquired)
                 {
                     state.OnTransaction.Release();
                 }
+
+                state.Dispose();
             }
 
             return;
@@ -186,21 +193,41 @@ public class HitCalculator : IClientStatisticCalculator
                 _logger.LogDebug("Skipping hit because it does not contain the required data");
                 continue;
             }
-                
+
+            HitState state;
             try
             {
-                await _onTransaction.WaitAsync();
-                if (!_clientHitStatistics.ContainsKey(hitInfo.EntityId))
+                var needsInitialization = !_clientHitStatistics.ContainsKey(hitInfo.EntityId);
+                state = _clientHitStatistics.GetOrAdd(hitInfo.EntityId, _ => new HitState
                 {
-                    _logger.LogDebug("Starting to track hits for {Client}", hitInfo.EntityId);
-                    var clientHits = await GetHitsForClient(hitInfo.EntityId);
-                    _clientHitStatistics.TryAdd(hitInfo.EntityId, new HitState
+                    Hits = new List<EFClientHitStatistic>()
+                });
+
+                // If this is a new state, initialize it with database data
+                if (needsInitialization || state.Hits.Count == 0)
+                {
+                    var acquired = false;
+                    try
                     {
-                        Hits = clientHits,
-                        Server = await _serverCache
-                            .FirstAsync(server =>
-                                server.EndPoint == damageEvent.Server.Id && server.HostName != null)
-                    });
+                        await state.OnTransaction.WaitAsync();
+                        acquired = true;
+
+                        if (state.Hits.Count == 0)
+                        {
+                            _logger.LogDebug("Starting to track hits for {Client}", hitInfo.EntityId);
+                            state.Hits = await GetHitsForClient(hitInfo.EntityId);
+                            state.Server = await _serverCache
+                                .FirstAsync(server =>
+                                    server.EndPoint == damageEvent.Server.Id && server.HostName != null);
+                        }
+                    }
+                    finally
+                    {
+                        if (acquired)
+                        {
+                            state.OnTransaction.Release();
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -209,37 +236,36 @@ public class HitCalculator : IClientStatisticCalculator
                 continue;
             }
 
-            finally
-            {
-                if (_onTransaction.CurrentCount == 0)
-                {
-                    _onTransaction.Release();
-                }
-            }
-
-            var state = _clientHitStatistics[hitInfo.EntityId];
-
+            // Process hit calculations under per-client lock only
+            var lockAcquired = false;
             try
             {
-                await _onTransaction.WaitAsync();
-                var calculatedHits = await RunTasksForHitInfo(hitInfo, state.Server.ServerId);
+                await state.OnTransaction.WaitAsync();
+                lockAcquired = true;
+
+                // Verify state is still valid (client may have disconnected)
+                if (!_clientHitStatistics.ContainsKey(hitInfo.EntityId))
+                {
+                    _logger.LogDebug("Client {Client} disconnected during hit processing, skipping", hitInfo.EntityId);
+                    continue;
+                }
+
+                var calculatedHits = await RunTasksForHitInfo(hitInfo, state.Server?.ServerId);
 
                 foreach (var clientHit in calculatedHits)
                 {
                     RunCalculation(clientHit, hitInfo, state);
                 }
             }
-
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not update hit calculations for {Client}", hitInfo.EntityId);
             }
-
             finally
             {
-                if (_onTransaction.CurrentCount == 0)
+                if (lockAcquired)
                 {
-                    _onTransaction.Release();
+                    state.OnTransaction.Release();
                 }
             }
         }
@@ -378,12 +404,15 @@ public class HitCalculator : IClientStatisticCalculator
         }
     }
 
-    private async Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null,
+    private Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null,
         int? hitLocationId = null, int? weaponId = null, int? attachmentComboId = null,
         int? meansOfDeathId = null)
     {
-        var state = _clientHitStatistics[clientId];
-        await state.OnTransaction.WaitAsync();
+        // Note: Caller must hold state.OnTransaction lock
+        if (!_clientHitStatistics.TryGetValue(clientId, out var state))
+        {
+            throw new InvalidOperationException($"No hit state found for client {clientId}");
+        }
 
         var hitStat = state.Hits
             .FirstOrDefault(hit => hit.HitLocationId == hitLocationId
@@ -394,8 +423,7 @@ public class HitCalculator : IClientStatisticCalculator
 
         if (hitStat != null)
         {
-            state.OnTransaction.Release();
-            return hitStat;
+            return Task.FromResult(hitStat);
         }
 
         hitStat = new EFClientHitStatistic()
@@ -410,13 +438,6 @@ public class HitCalculator : IClientStatisticCalculator
 
         try
         {
-            /*if (state.UpdateCount > MaxUpdatesBeforePersist)
-            {
-                await UpdateClientStatistics(clientId);
-                state.UpdateCount = 0;
-            }
-
-            state.UpdateCount++;*/
             state.Hits.Add(hitStat);
         }
         catch (Exception ex)
@@ -425,15 +446,8 @@ public class HitCalculator : IClientStatisticCalculator
                 clientId);
             state.Hits.Remove(hitStat);
         }
-        finally
-        {
-            if (state.OnTransaction.CurrentCount == 0)
-            {
-                state.OnTransaction.Release();
-            }
-        }
 
-        return hitStat;
+        return Task.FromResult(hitStat);
     }
 
     private async Task<EFHitLocation> GetOrAddHitLocation(string location, Reference.Game game)

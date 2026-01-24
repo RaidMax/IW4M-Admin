@@ -3,9 +3,9 @@
 {
     <div class="tooltip-wrapper group/tooltip relative @WrapperClass" @onclick="ToggleTooltip" @onclick:stopPropagation>
         @ChildContent
-        <div class="@TooltipClasses">
+        <div class="@TooltipClasses tooltip-content" @onclick:stopPropagation>
             <div
-                class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] text-center whitespace-normal break-words">
+                class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] text-center whitespace-normal break-words @(_showMobile ? "select-text" : "")">
                 @Text
             </div>
             <div class="@ArrowClasses"></div>
@@ -55,11 +55,13 @@ else
     private string BaseVisibilityClasses =>
         "opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible " +
         (_showMobile ? "!opacity-100 !visible " : "") +
-        "transition-all duration-200 pointer-events-none";
+        "transition-all duration-200 " +
+        (_showMobile ? "" : "pointer-events-none");
 
     private void ToggleTooltip()
     {
         // Only toggle on touch devices (mobile)
+        // Clicks on tooltip content are prevented from reaching here via @onclick:stopPropagation
         _showMobile = !_showMobile;
     }
 

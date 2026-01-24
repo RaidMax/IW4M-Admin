@@ -24,7 +24,7 @@ namespace SharedLibraryCore.Commands
             gameEvent.Message = gameEvent.Data;
 
             Command matchedCommand = null;
-            foreach (var availableCommand in manager.GetCommands()
+            foreach (var availableCommand in manager.Commands
                          .Where(c => c.Name != null))
             {
                 if ((availableCommand.SupportedGames?.Any() ?? false) &&

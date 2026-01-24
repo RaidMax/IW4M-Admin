@@ -1065,6 +1065,56 @@ namespace Data.Migrations.Postgresql
                     b.ToTable("EFPenaltyIdentifiers", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Models.Misc.EFAnnouncement", b =>
+                {
+                    b.Property<int>("AnnouncementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AnnouncementId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<int>("CreatedByClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedDateTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("EndAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsGlobalNotice")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("StartAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("UpdatedDateTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("AnnouncementId");
+
+                    b.HasIndex("CreatedByClientId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsGlobalNotice");
+
+                    b.ToTable("EFAnnouncement", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>
                 {
                     b.Property<int>("InboxMessageId")
@@ -1606,6 +1656,17 @@ namespace Data.Migrations.Postgresql
                         .IsRequired();
 
                     b.Navigation("Penalty");
+                });
+
+            modelBuilder.Entity("Data.Models.Misc.EFAnnouncement", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "CreatedByClient")
+                        .WithMany()
+                        .HasForeignKey("CreatedByClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByClient");
                 });
 
             modelBuilder.Entity("Data.Models.Misc.EFInboxMessage", b =>

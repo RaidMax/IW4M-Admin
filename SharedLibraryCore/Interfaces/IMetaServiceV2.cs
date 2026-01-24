@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Data.Models;
+﻿using Data.Models;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.QueryHelper;
 
@@ -169,6 +165,16 @@ public interface IMetaServiceV2
     /// <param name="metaAction">action to perform</param>
     void AddRuntimeMeta<T, TReturn>(MetaType metaKey,
         Func<T, CancellationToken, Task<IEnumerable<TReturn>>> metaAction)
+        where TReturn : IClientMeta where T : PaginationRequest;
+
+    /// <summary>
+    /// adds a meta task to the runtime meta list
+    /// </summary>
+    /// <param name="metaKey">type of meta</param>
+    /// <param name="metaAction">action to perform</param>
+    /// <param name="entityPermission">required entity permission</param>
+    void AddRuntimeMeta<T, TReturn>(MetaType metaKey,
+        Func<T, CancellationToken, Task<IEnumerable<TReturn>>> metaAction, string entityPermission)
         where TReturn : IClientMeta where T : PaginationRequest;
 
     /// <summary>

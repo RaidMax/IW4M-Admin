@@ -41,6 +41,7 @@ public class
                 CurrentPermissionLevelValue = change.CurrentValue,
                 When = change.TimeChanged,
                 ClientId = change.TargetEntityId,
+                Type = MetaType.PermissionLevel,
                 IsSensitive = true
             };
 

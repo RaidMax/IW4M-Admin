@@ -8,24 +8,36 @@ using Data.Abstractions;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SharedLibraryCore;
+using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.QueryHelper;
+using WebfrontCore.Core.Auth;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Misc;
 
 public class MetaServiceV2 : IMetaServiceV2
 {
-    private readonly IDictionary<MetaType, List<dynamic>> _metaActions;
+    protected class MetaRegistration
+    {
+        public required dynamic Action;
+        public required WebfrontEntity EntityType;
+    }
+    
+    private readonly IDictionary<MetaType, List<MetaRegistration>> _metaActions;
     private readonly IDatabaseContextFactory _contextFactory;
+    private readonly ApplicationConfiguration _configuration;
     private readonly ILogger _logger;
 
-    public MetaServiceV2(ILogger<MetaServiceV2> logger, IDatabaseContextFactory contextFactory, IServiceProvider serviceProvider)
+    public MetaServiceV2(ILogger<MetaServiceV2> logger, IDatabaseContextFactory contextFactory,
+        ApplicationConfiguration configuration)
     {
         _logger = logger;
-        _metaActions = new Dictionary<MetaType, List<dynamic>>();
+        _metaActions = new Dictionary<MetaType, List<MetaRegistration>>();
         _contextFactory = contextFactory;
+        _configuration = configuration;
     }
 
     public async Task SetPersistentMeta(string metaKey, string metaValue, int clientId,
@@ -184,7 +196,7 @@ public class MetaServiceV2 : IMetaServiceV2
 
         if (meta is null)
         {
-            return default;
+            return null;
         }
 
         try
@@ -194,7 +206,7 @@ public class MetaServiceV2 : IMetaServiceV2
         catch (Exception ex)
         {
             _logger.LogError(ex, "Could not deserialize meta with key {Key} and value {Value}", metaKey, meta.Value);
-            return default;
+            return null;
         }
     }
 
@@ -208,7 +220,7 @@ public class MetaServiceV2 : IMetaServiceV2
         if (metaValue is null)
         {
             _logger.LogDebug("No meta exists for key {Key}, clientId {ClientId}", metaKey, clientId);
-            return default;
+            return null;
         }
 
         var lookupMeta = await context.EFMeta.FirstOrDefaultAsync(meta => meta.Key == lookupKey, token);
@@ -217,7 +229,7 @@ public class MetaServiceV2 : IMetaServiceV2
         {
             _logger.LogWarning("No lookup meta exists for metaKey {MetaKey} and lookupKey {LookupKey}", metaKey,
                 lookupKey);
-            return default;
+            return null;
         }
 
         var lookupId = int.Parse(metaValue.Value);
@@ -225,7 +237,7 @@ public class MetaServiceV2 : IMetaServiceV2
 
         if (lookupValues is null)
         {
-            return default;
+            return null;
         }
 
         var foundLookup = lookupValues.FirstOrDefault(value => value.Id == lookupId);
@@ -244,7 +256,7 @@ public class MetaServiceV2 : IMetaServiceV2
 
         _logger.LogWarning("No lookup meta found for provided lookup id {MetaKey}, {LookupKey}, {LookupId}",
             metaKey, lookupKey, lookupId);
-        return default;
+        return null;
     }
 
     public async Task RemovePersistentMeta(string metaKey, int clientId, CancellationToken token = default)
@@ -357,14 +369,14 @@ public class MetaServiceV2 : IMetaServiceV2
     {
         if (string.IsNullOrWhiteSpace(metaKey))
         {
-            return default;
+            return null;
         }
 
         var meta = await GetPersistentMeta(metaKey, token);
 
         if (meta is null)
         {
-            return default;
+            return null;
         }
 
         try
@@ -374,7 +386,7 @@ public class MetaServiceV2 : IMetaServiceV2
         catch (Exception ex)
         {
             _logger.LogError(ex, "Could not serialize meta with key {Key} and value {Value}", metaKey, meta.Value);
-            return default;
+            return null;
         }
     }
 
@@ -401,24 +413,37 @@ public class MetaServiceV2 : IMetaServiceV2
     }
 
     public void AddRuntimeMeta<T, TReturnType>(MetaType metaKey,
-        Func<T, CancellationToken, Task<IEnumerable<TReturnType>>> metaAction)
+        Func<T, CancellationToken, Task<IEnumerable<TReturnType>>> metaAction, string entityPermission)
         where T : PaginationRequest where TReturnType : IClientMeta
     {
-        if (!_metaActions.ContainsKey(metaKey))
+        var entity = Enum.Parse<WebfrontEntity>(entityPermission);
+        if (!_metaActions.TryGetValue(metaKey, out var action))
         {
-            _metaActions.Add(metaKey, new List<dynamic> { metaAction });
+            _metaActions.Add(metaKey, [new MetaRegistration { Action = metaAction, EntityType = entity }]);
         }
 
         else
         {
-            _metaActions[metaKey].Add(metaAction);
+            action.Add(new MetaRegistration { Action = metaAction, EntityType = entity });
         }
     }
 
-    public async Task<IEnumerable<IClientMeta>> GetRuntimeMeta(ClientPaginationRequest request, CancellationToken token = default)
+    public void AddRuntimeMeta<T, TReturnType>(MetaType metaKey,
+        Func<T, CancellationToken, Task<IEnumerable<TReturnType>>> metaAction)
+        where T : PaginationRequest where TReturnType : IClientMeta
+    {
+        AddRuntimeMeta(metaKey, metaAction, nameof(WebfrontEntity.Default));
+    }
+
+    public async Task<IEnumerable<IClientMeta>> GetRuntimeMeta(ClientPaginationRequest request,
+        CancellationToken token = default)
     {
         var metas = await Task.WhenAll(_metaActions.Where(kvp => kvp.Key != MetaType.Information)
-            .Select(async kvp => await kvp.Value[0](request, token)));
+            .SelectMany(kvp => kvp.Value)
+            .Where(reg => reg.EntityType == WebfrontEntity.Default || _configuration.HasPermission(
+                request.RequestPermission,
+                reg.EntityType, WebfrontPermission.Read))
+            .Select(async reg => await reg.Action(request, token)));
 
         return metas.SelectMany(m => (IEnumerable<IClientMeta>)m)
             .OrderByDescending(m => m.When)
@@ -434,14 +459,22 @@ public class MetaServiceV2 : IMetaServiceV2
             var allMeta = new List<T>();
 
             var completedMeta = await Task.WhenAll(_metaActions[metaType].Select(async individualMetaRegistration =>
-                (IEnumerable<T>)await individualMetaRegistration(request, token)));
+                (IEnumerable<T>)await individualMetaRegistration.Action(request, token)));
 
             allMeta.AddRange(completedMeta.SelectMany(meta => meta));
 
             return ProcessInformationMeta(allMeta);
         }
 
-        var meta = await _metaActions[metaType][0](request, token) as IEnumerable<T>;
+        var registration = _metaActions[metaType][0];
+
+        if (registration.EntityType == WebfrontEntity.Default || !_configuration.HasPermission(request.RequestPermission,
+                registration.EntityType, WebfrontPermission.Read))
+        {
+            return [];
+        }
+
+        var meta = await registration.Action(request, token) as IEnumerable<T>;
 
         return meta;
     }

@@ -42,7 +42,8 @@ public class WebfrontConfiguration
             nameof(Permission.User), [
                 "HelpPage.Read",
                 "ProfilePage.Read",
-                "Interaction.Read"
+                "Interaction.Read",
+                "ChatMessage.Read"
             ]
         },
         {
@@ -53,7 +54,8 @@ public class WebfrontConfiguration
                 "Interaction.Read",
                 "ClientLevel.Read",
                 "ConsolePage.Read",
-                "PrivilegedClientsPage.Read"
+                "PrivilegedClientsPage.Read",
+                "ChatMessage.Read"
             ]
         },
         {
@@ -68,7 +70,8 @@ public class WebfrontConfiguration
                 "RecentPlayersPage.Read",
                 "ClientNote.Read",
                 "ConsolePage.Read",
-                "AdvancedSearch.Read"
+                "AdvancedSearch.Read",
+                "ChatMessage.Read"
             ]
         },
         {
@@ -86,7 +89,9 @@ public class WebfrontConfiguration
                 "MetaAliasUpdate.Read",
                 "ClientGuid.Read",
                 "ConsolePage.Read",
-                "AuditPage.Read"
+                "AuditPage.Read",
+                "AntiCheat.Read",
+                "ChatMessage.Read"
             ]
         },
         {

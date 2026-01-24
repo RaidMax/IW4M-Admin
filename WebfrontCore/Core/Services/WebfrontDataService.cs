@@ -522,7 +522,8 @@ public class WebfrontDataService : IWebfrontDataService
         var meta = await _metaService.GetRuntimeMeta<InformationResponse>(new ClientPaginationRequest
         {
             ClientId = client.ClientId,
-            Before = DateTime.UtcNow
+            Before = DateTime.UtcNow,
+            RequestPermission = GetRequestingPermission()
         }, MetaType.Information);
 
 
@@ -609,6 +610,7 @@ public class WebfrontDataService : IWebfrontDataService
             Count = request.Count,
             Offset = request.Offset,
             Before = request.StartAt.HasValue ? DateTime.FromFileTimeUtc(request.StartAt.Value) : DateTime.UtcNow,
+            RequestPermission = level,
             IsPrivileged = level >= Data.Models.Client.EFClient.Permission.Trusted
         };
 
@@ -661,25 +663,6 @@ public class WebfrontDataService : IWebfrontDataService
         }
 
         return meta?.Cast<BaseMetaResponse>().ToList() ?? [];
-
-        async Task<IEnumerable<IClientMeta>> PostProcessChatMeta(Task<IEnumerable<IClientMeta>> metaResult)
-        {
-            var result = (await metaResult).ToList();
-            
-            foreach (var m in result)
-            {
-                if (m is not MessageResponse mr)
-                {
-                    continue;
-                }
-                
-                mr.Message = mr.IsHidden && level < Data.Models.Client.EFClient.Permission.Trusted
-                    ? mr.HiddenMessage
-                    : mr.Message;
-            }
-
-            return result;
-        }
     }
 
     public Task<ScoreboardInfo?> GetServerScoreboardAsync(string serverId)
@@ -1254,12 +1237,15 @@ public class WebfrontDataService : IWebfrontDataService
         var whenUpper = whenTime.AddMinutes(5);
         var whenLower = whenTime.AddMinutes(-5);
 
+        var level = GetRequestingPermission();
+        
         var messages = await _chatQueryHelper.QueryResource(new ChatSearchQuery
         {
             ServerId = serverId,
             SentBefore = whenUpper,
             SentAfter = whenLower,
-            IsPrivileged = GetRequestingPermission() > Data.Models.Client.EFClient.Permission.Trusted
+            RequestPermission =  level,
+            IsPrivileged = level > Data.Models.Client.EFClient.Permission.Trusted
         });
 
         return messages.Results.OrderBy(message => message.When).ToList();

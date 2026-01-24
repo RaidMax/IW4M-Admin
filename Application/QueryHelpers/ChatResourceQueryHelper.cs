@@ -83,7 +83,8 @@ public class ChatResourceQueryHelper(
                     ? Server.Game.IW4
                     : (Server.Game)message.Server.GameName.Value,
                 SentIngame = message.SentIngame,
-                IsHidden = message.Server.IsPasswordProtected
+                IsHidden = message.Server.IsPasswordProtected,
+                Type = MetaType.ChatMessage
             });
 
         iqResponse = query.Direction == SharedLibraryCore.Dtos.SortDirection.Descending

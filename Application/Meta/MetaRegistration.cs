@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 using Stats.Dtos;
+using WebfrontCore.Core.Auth;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Meta
@@ -34,16 +35,17 @@ namespace IW4MAdmin.Application.Meta
             metaService.AddRuntimeMeta<ClientPaginationRequest, InformationResponse>(MetaType.Information,
                 GetProfileMeta);
             metaService.AddRuntimeMeta<ClientPaginationRequest, ReceivedPenaltyResponse>(MetaType.ReceivedPenalty,
-                GetReceivedPenaltiesMeta);
+                GetReceivedPenaltiesMeta, nameof(WebfrontEntity.Penalty));
             metaService.AddRuntimeMeta<ClientPaginationRequest, AdministeredPenaltyResponse>(MetaType.Penalized,
-                GetAdministeredPenaltiesMeta);
+                GetAdministeredPenaltiesMeta, nameof(WebfrontEntity.Penalty));
             metaService.AddRuntimeMeta<ClientPaginationRequest, UpdatedAliasResponse>(MetaType.AliasUpdate,
-                GetUpdatedAliasMeta);
+                GetUpdatedAliasMeta, nameof(WebfrontEntity.MetaAliasUpdate));
             metaService.AddRuntimeMeta<ClientPaginationRequest, ConnectionHistoryResponse>(MetaType.ConnectionHistory,
                 GetConnectionHistoryMeta);
             metaService.AddRuntimeMeta<ClientPaginationRequest, PermissionLevelChangedResponse>(
-                MetaType.PermissionLevel, GetPermissionLevelMeta);
-            metaService.AddRuntimeMeta<ClientPaginationRequest, MessageResponse>(MetaType.ChatMessage, GetChatMessages);
+                MetaType.PermissionLevel, GetPermissionLevelMeta, nameof(WebfrontEntity.ClientLevel));
+            metaService.AddRuntimeMeta<ClientPaginationRequest, MessageResponse>(MetaType.ChatMessage, GetChatMessages,
+                nameof(WebfrontEntity.ChatMessage));
         }
 
         private async Task<IEnumerable<InformationResponse>> GetProfileMeta(ClientPaginationRequest request,

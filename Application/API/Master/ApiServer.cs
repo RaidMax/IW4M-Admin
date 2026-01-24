@@ -26,5 +26,7 @@ namespace IW4MAdmin.Application.API.Master
         public int MaxClientNum { get; set; }
         [JsonPropertyName("resolved_external_ip_address")]
         public string? ResolvedExternalIPAddress { get; set; }
+        [JsonPropertyName("has_valid_connection")]
+        public bool HasValidConnection { get; set; }
     }
 }

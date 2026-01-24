@@ -132,7 +132,7 @@ namespace SharedLibraryCore
 
         public int ClientNum
         {
-            get { return Clients.ToArray().Count(p => p != null && Utilities.IsDevelopment || (!p?.IsBot ?? false)); }
+            get { return IsErrorState ? 0 : Clients.Count(p => p != null && (Utilities.IsDevelopment || !p.IsBot)); }
         }
 
         public int MaxClients { get; protected set; }

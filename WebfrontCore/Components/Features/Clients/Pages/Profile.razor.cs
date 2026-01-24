@@ -79,7 +79,27 @@ public partial class Profile
         var ignoredTypes = new[] { MetaType.Information, MetaType.Other, MetaType.QuickMessage };
         return Enum.GetValues<MetaType>()
             .Where(meta => !ignoredTypes.Contains(meta))
+            .Where(meta =>
+            {
+                if (meta == MetaType.All) return true;
+                var entity = GetEntityForMetaType(meta);
+                return entity == WebfrontEntity.Default || HasPermission(entity, WebfrontPermission.Read);
+            })
             .OrderByDescending(meta => meta == MetaType.All);
+    }
+
+    private static WebfrontEntity GetEntityForMetaType(MetaType type)
+    {
+        return type switch
+        {
+            MetaType.AliasUpdate => WebfrontEntity.MetaAliasUpdate,
+            MetaType.ChatMessage => WebfrontEntity.ChatMessage,
+            MetaType.Penalized => WebfrontEntity.Penalty,
+            MetaType.ReceivedPenalty => WebfrontEntity.Penalty,
+            MetaType.ConnectionHistory => WebfrontEntity.ClientIPAddress,
+            MetaType.PermissionLevel => WebfrontEntity.ClientLevel, 
+            _ => WebfrontEntity.Default
+        };
     }
 
     private static string GetShortCode(string name)

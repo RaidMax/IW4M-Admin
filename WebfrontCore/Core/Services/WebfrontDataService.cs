@@ -324,13 +324,10 @@ public class WebfrontDataService : IWebfrontDataService
             };
         }
 
-        var localization = Utilities.CurrentLocalization.LocalizationIndex.Set;
-
         return new NavigationInfo
         {
             User = user,
             Authorized = authorized,
-            Localization = localization,
             Pages = pages
                 .Select(page => new Page { Name = page.Name, Location = page.Location }),
             Interactions = interactions

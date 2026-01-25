@@ -78,14 +78,11 @@
                             </div>
                             
                             <!-- Footer Actions -->
-                            <div class="px-6 py-4 bg-surface border-t border-line flex justify-between items-center">
-                                <div class="text-xs text-muted">
-                                    Last modified details not available
-                                </div>
+                            <div class="px-6 py-4 bg-surface border-t border-line flex justify-end">
                                 <div class="flex items-center gap-3">
                                     <button class="px-4 py-2 text-sm text-muted hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
                                             @onclick="@(() => ToggleFile(file))">
-                                        Cancel
+                                        @AppState.Loc("WEBFRONT_ACTION_MODAL_BUTTON_CLOSE")
                                     </button>
                                     <button class="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-all flex items-center gap-2"
                                             @onclick="() => SaveFile(file)">

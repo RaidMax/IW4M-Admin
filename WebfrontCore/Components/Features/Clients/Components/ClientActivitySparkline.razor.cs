@@ -10,6 +10,7 @@ public partial class ClientActivitySparkline
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required ILogger<ClientActivitySparkline> Logger { get; set; }
+    [Inject] public required AppState AppState { get; set; }
 
     [Parameter] public int ClientId { get; set; }
 

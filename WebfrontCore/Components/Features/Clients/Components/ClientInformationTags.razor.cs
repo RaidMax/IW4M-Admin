@@ -61,13 +61,13 @@ public partial class ClientInformationTags
         }
     }
 
-    private static (string Icon, string Title, string AccentClass) GetCategoryDisplay(string category)
+    private (string Icon, string Title, string AccentClass) GetCategoryDisplay(string category)
     {
         return category switch
         {
-            "General" => ("ph-info", "General Information", "text-primary"),
-            "Statistics" => ("ph-chart-bar", "Game Statistics", "text-success"),
-            "AntiCheat" => ("ph-shield-check", "AntiCheat Metrics", "text-warning"),
+            "General" => ("ph-info", AppState.Loc("WEBFRONT_PROFILE_META_CATEGORY_GENERAL"), "text-primary"),
+            "Statistics" => ("ph-chart-bar", AppState.Loc("WEBFRONT_PROFILE_META_CATEGORY_STATS"), "text-success"),
+            "AntiCheat" => ("ph-shield-check", AppState.Loc("WEBFRONT_PROFILE_META_CATEGORY_AC"), "text-warning"),
             _ => ("ph-tag", category, "bg-gradient-to-br from-gray-500 to-gray-600")
         };
     }

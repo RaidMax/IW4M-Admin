@@ -3,10 +3,10 @@
     <div class="flex items-center gap-2 text-muted">
         <i class="ph ph-activity text-lg text-secondary"></i>
         <div class="flex flex-col leading-none">
-            <span class="text-xs font-bold uppercase tracking-wider">Playtime</span>
+            <span class="text-xs font-bold uppercase tracking-wider">@AppState.Loc("WEBFRONT_PROFILE_PLAYTIME")</span>
             @if (_totalPlaytime == TimeSpan.Zero)
             {
-                <span class="text-[10px] font-medium opacity-70">No activity</span>
+                <span class="text-[10px] font-medium opacity-70">@AppState.Loc("WEBFRONT_PROFILE_NO_PLAYTIME")</span>
             }
             else
             {
@@ -25,7 +25,7 @@
             var playTime = TimeSpan.FromMinutes(value);
             var tooltipText = value > 0
                 ? $"{FormatPlaytime(playTime)} • {date:MMM d}"
-                : $"No activity • {date:MMM d}";
+                : $"{AppState.Loc("WEBFRONT_PROFILE_NO_PLAYTIME")} • {date:MMM d}";
 
             <Tooltip Text="@tooltipText" WrapperClass="flex-1 flex items-end">
                 <div class="w-full rounded-t transition-all hover:opacity-80 @colorClass"

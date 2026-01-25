@@ -61,7 +61,6 @@ public class AppState(ApplicationConfiguration appConfig)
     }
 
     public ClientInfo? User { get; private set; }
-    public Dictionary<string, string>? Localization { get; private set; }
 
     /// <summary>
     /// Sets the user without triggering state change notifications.
@@ -70,15 +69,6 @@ public class AppState(ApplicationConfiguration appConfig)
     public void InitializeUser(ClientInfo user)
     {
         User ??= user;
-    }
-
-    /// <summary>
-    /// Sets the localization without triggering state change notifications.
-    /// Use during component initialization to avoid render tree exceptions.
-    /// </summary>
-    public void InitializeLocalization(Dictionary<string, string> localization)
-    {
-        Localization ??= localization;
     }
 
     public void SetUser(ClientInfo user)
@@ -92,28 +82,8 @@ public class AppState(ApplicationConfiguration appConfig)
         NotifyStateChanged();
     }
 
-    public void SetLocalization(Dictionary<string, string> localization)
-    {
-        // Skip if already set
-        if (Localization != null)
-        {
-            return;
-        }
-        
-        Localization = localization;
-        NotifyStateChanged();
-    }
-
     public string Loc(string key)
     {
-        // Try API-fetched localization first, then fall back to direct access
-        if (Localization != null && Localization.TryGetValue(key, out var value))
-        {
-            return value;
-        }
-
-        // Fall back to directly accessing the server-side localization
-        // This works because Blazor Server runs on the same process
         try
         {
             return Utilities.CurrentLocalization?.LocalizationIndex?[key] ?? key;

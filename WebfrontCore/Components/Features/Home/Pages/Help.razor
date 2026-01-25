@@ -219,7 +219,7 @@
                                                     else
                                                     {
                                                         <span class="flex items-center gap-1">
-                                                            <i class="ph ph-globe"></i> All Games
+                                                            <i class="ph ph-globe"></i> @AppState.Loc("GAME_ALL")
                                                         </span>
                                                     }
                                                 </div>
@@ -249,7 +249,7 @@
                             </div>
                             <div>
                                 <h2 class="text-lg font-bold text-foreground">@group.Name</h2>
-                                <span class="text-xs text-muted">@group.Commands.Count() command@(group.Commands.Count() != 1 ? "s" : "")</span>
+                                <span class="text-xs text-muted">@AppState.Loc("WEBFRONT_HELP_COMMAND_COUNT").FormatExt(group.Commands.Count)</span>
                             </div>
                         </div>
                         

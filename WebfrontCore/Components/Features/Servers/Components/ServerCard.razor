@@ -55,7 +55,7 @@
 
             <!-- 5. Actions (Always Visible, prevent propagation) -->
             <div class="flex items-center space-x-1 shrink-0 ml-auto md:ml-0" @onclick:stopPropagation>
-                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ChatMessage}.{WebfrontPermission.Write}")">
                     <button @onclick:preventDefault @onclick="() => OnChat.InvokeAsync(Model.Endpoint)"
                             class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors">
                         <i class="ph-bold ph-chat-circle-text text-xs"></i>

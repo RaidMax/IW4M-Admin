@@ -720,7 +720,7 @@ namespace SharedLibraryCore.Services
 
                 await ctx.Penalties.Where(penalty =>
                         clientIdsByIp.Contains(penalty.OffenderId)
-                        && new[]
+                        && new List<EFPenalty.PenaltyType>
                         {
                             EFPenalty.PenaltyType.Ban, EFPenalty.PenaltyType.TempBan, EFPenalty.PenaltyType.Flag
                         }.Contains(penalty.Type)

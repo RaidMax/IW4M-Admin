@@ -21,7 +21,7 @@ Setup()
     level.overrideMethods[level.commonFunctions.waittillNotifyOrTimeout] = ::WaitillNotifyOrTimeoutWrapper;
     level.overrideMethods[level.commonFunctions.isBot]                   = ::IsBotWrapper;
     level.overrideMethods[level.commonFunctions.getXuid]                 = ::GetXuidWrapper;
-    level.overrideMethods[level.commonFunction.getPlayerFromClientNum]   = ::_GetPlayerFromClientNum;
+    level.overrideMethods[level.commonFunctions.getPlayerFromClientNum]   = ::_GetPlayerFromClientNum;
     
     RegisterClientCommands();
     

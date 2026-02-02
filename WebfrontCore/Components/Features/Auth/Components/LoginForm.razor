@@ -15,6 +15,17 @@
         </div>
     </div>
 
+    @if (TwoFactorRequired)
+    {
+        <div class="space-y-1">
+            <label for="2fa" class="block text-sm font-medium text-subtle">2FA Code</label>
+            <div class="relative">
+                <input type="text" id="2fa" class="bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block w-full p-2.5" 
+                       @bind="TwoFactorCode" @bind:event="oninput" aria-label="2FA Code" placeholder="000000" />
+            </div>
+        </div>
+    }
+
     @if (!string.IsNullOrEmpty(ErrorMessage))
     {
         <div class="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-sm">

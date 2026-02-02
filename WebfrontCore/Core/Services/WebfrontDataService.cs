@@ -48,9 +48,10 @@ public class WebfrontDataService : IWebfrontDataService
     private readonly IAlertManager _alertManager;
     private readonly IRemoteCommandService _remoteCommandService;
     private readonly ITranslationLookup _translationLookup;
-    private readonly SharedLibraryCore.Configuration.ApplicationConfiguration _appConfig;
+    private readonly ApplicationConfiguration _appConfig;
     private readonly ILookup<Type, string> _pluginTypeNames;
     private readonly IAnnouncementService _announcementService;
+    private readonly ITwoFactorAuthService _twoFactorService;
 
     public WebfrontDataService(IManager manager,
         IServerDataViewer serverDataViewer,
@@ -74,7 +75,8 @@ public class WebfrontDataService : IWebfrontDataService
         ApplicationConfiguration appConfig,
         IEnumerable<IPlugin> v1Plugins,
         IEnumerable<IPluginV2> v2Plugins,
-        IAnnouncementService announcementService)
+        IAnnouncementService announcementService,
+        ITwoFactorAuthService twoFactorService)
     {
         _manager = manager;
         _serverDataViewer = serverDataViewer;
@@ -100,6 +102,7 @@ public class WebfrontDataService : IWebfrontDataService
             .Concat(v2Plugins.Select(plugin => (plugin.GetType(), plugin.Name)))
             .ToLookup(selector => selector.Item1, selector => selector.Name);
         _announcementService = announcementService;
+        _twoFactorService = twoFactorService;
     }
 
     public async Task<List<ServerInfo>> GetServersAsync(Reference.Game? game = null)
@@ -499,6 +502,7 @@ public class WebfrontDataService : IWebfrontDataService
                 PermissionAccess = interaction.PermissionAccess,
                 Source = interaction.Source
             }).ToList(),
+            HasTwoFactor = !string.IsNullOrEmpty(client.TwoFactorSecret)
         };
 
         var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
@@ -1421,6 +1425,19 @@ public class WebfrontDataService : IWebfrontDataService
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
+        if (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
+        {
+            if (string.IsNullOrEmpty(request.TwoFactorCode) || request.TwoFactorCode == "null")
+            {
+                throw new UnauthorizedAccessException("WEBFRONT_ERROR_2FA_REQUIRED");
+            }
+
+            if (!_twoFactorService.Validate(privilegedClient.TwoFactorSecret, request.TwoFactorCode))
+            {
+                throw new UnauthorizedAccessException("Invalid credentials");
+            }
+        }
+
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, privilegedClient.Name),
@@ -1628,6 +1645,47 @@ public class WebfrontDataService : IWebfrontDataService
     public async Task DeactivateAnnouncementAsync(int id)
     {
         await _announcementService.DeactivateAnnouncementAsync(id);
+    }
+
+    public async Task<TwoFactorSetupInfo> EnableTwoFactorAsync()
+    {
+        var executor = await GetExecutorAsync();
+        if (executor == null) throw new UnauthorizedAccessException();
+
+        var (secret, qrCodeUrl, manualEntryKey) = _twoFactorService.GenerateSetup(executor.Name);
+        return new TwoFactorSetupInfo
+        {
+            Secret = secret,
+            QrCodeUrl = qrCodeUrl,
+            ManualEntryKey = manualEntryKey
+        };
+    }
+
+    public async Task<bool> ConfirmTwoFactorAsync(string secret, string code)
+    {
+        var executor = await GetExecutorAsync();
+        if (executor == null) throw new UnauthorizedAccessException();
+
+        if (!_twoFactorService.Validate(secret, code))
+        {
+            return false;
+        }
+
+        var client = await _clientService.Get(executor.ClientId);
+        client.TwoFactorSecret = secret;
+        await _clientService.Update(client);
+        return true;
+
+    }
+
+    public async Task DisableTwoFactorAsync()
+    {
+        var executor = await GetExecutorAsync();
+        if (executor == null) throw new UnauthorizedAccessException();
+
+        var client = await _clientService.Get(executor.ClientId);
+        client.TwoFactorSecret = null;
+        await _clientService.Update(client);
     }
 
     private static AnnouncementInfo MapToAnnouncementInfo(Data.Models.Misc.EFAnnouncement announcement)

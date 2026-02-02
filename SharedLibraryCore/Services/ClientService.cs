@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -40,6 +40,7 @@ namespace SharedLibraryCore.Services
                         AliasLink = client.AliasLink,
                         Password = client.Password,
                         PasswordSalt = client.PasswordSalt,
+                        TwoFactorSecret = client.TwoFactorSecret,
                         GameName = client.GameName
                     })
                     .FirstOrDefault(client => client.NetworkId == networkId && client.GameName == game)
@@ -187,6 +188,7 @@ namespace SharedLibraryCore.Services
                     LastConnection = _client.LastConnection,
                     Masked = _client.Masked,
                     NetworkId = _client.NetworkId,
+                    TwoFactorSecret = _client.TwoFactorSecret,
                     CurrentAlias = new EFAlias
                     {
                         Name = _client.CurrentAlias.Name,
@@ -285,6 +287,8 @@ namespace SharedLibraryCore.Services
             {
                 entity.PasswordSalt = temporalClient.PasswordSalt;
             }
+
+            entity.TwoFactorSecret = temporalClient.TwoFactorSecret;
 
             if (entity.GameName == Reference.Game.UKN && temporalClient.GameName != entity.GameName)
             {
@@ -774,6 +778,7 @@ namespace SharedLibraryCore.Services
                     },
                     Password = client.Password,
                     PasswordSalt = client.PasswordSalt,
+                    TwoFactorSecret = client.TwoFactorSecret,
                     GameName = client.GameName,
                     Level = client.Level
                 })
@@ -795,6 +800,7 @@ namespace SharedLibraryCore.Services
                     Level = client.Level,
                     Password = client.Password,
                     PasswordSalt = client.PasswordSalt,
+                    TwoFactorSecret = client.TwoFactorSecret,
                     NetworkId = client.NetworkId,
                     LastConnection = client.LastConnection,
                     Masked = client.Masked,

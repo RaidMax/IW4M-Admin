@@ -8,7 +8,7 @@ public partial class LoginForm
 {
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    private int ClientId { get; set; }
+    private string? ClientId { get; set; }
     private string? Password { get; set; }
     private string? TwoFactorCode { get; set; }
     private bool TwoFactorRequired { get; set; }
@@ -17,7 +17,7 @@ public partial class LoginForm
     private async Task Login()
     {
         ErrorMessage = null;
-        if (ClientId == 0 || string.IsNullOrEmpty(Password))
+        if (string.IsNullOrEmpty(Password))
         {
             ErrorMessage = "Please enter ID and Password";
             return;

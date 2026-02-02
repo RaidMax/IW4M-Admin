@@ -1429,7 +1429,7 @@ public class WebfrontDataService : IWebfrontDataService
         {
             if (string.IsNullOrEmpty(request.TwoFactorCode) || request.TwoFactorCode == "null")
             {
-                throw new UnauthorizedAccessException("WEBFRONT_ERROR_2FA_REQUIRED");
+                throw new UnauthorizedAccessException("2FA_REQUIRED");
             }
 
             if (!_twoFactorService.Validate(privilegedClient.TwoFactorSecret, request.TwoFactorCode))

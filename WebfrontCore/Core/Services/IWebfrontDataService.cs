@@ -85,4 +85,8 @@ public interface IWebfrontDataService
     Task DeleteAnnouncementAsync(int id);
     Task ActivateAnnouncementAsync(int id);
     Task DeactivateAnnouncementAsync(int id);
+
+    Task<TwoFactorSetupInfo> EnableTwoFactorAsync();
+    Task<bool> ConfirmTwoFactorAsync(string secret, string code);
+    Task DisableTwoFactorAsync();
 }

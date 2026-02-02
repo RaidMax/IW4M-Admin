@@ -4,4 +4,5 @@ public class LoginRequest
 {
     public required int ClientId { get; set; }
     public required string Password { get; set; }
+    public string? TwoFactorCode { get; set; }
 }

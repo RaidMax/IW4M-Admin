@@ -1,4 +1,4 @@
-﻿using Data.Models;
+using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore;
@@ -230,6 +230,19 @@ public partial class Profile
             Icon = "ph-chart-line",
         });
 
+        // Two-Factor Auth (if own profile)
+        if (AppState.User?.ClientId == Client.ClientId)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_2FA"),
+                IsButton = true,
+                Reference = "TwoFactorAuth",
+                Icon = "ph-shield-check",
+                EntityId = Client.ClientId
+            });
+        }
+
         // Flag/Unflag (if authorized + not perm banned)
         if (!isPermBanned && IsAuthorized)
         {
@@ -335,6 +348,23 @@ public partial class Profile
 
     private void OnProfileContextAction(SideContextMenuItem item)
     {
+        if (item.Reference == "TwoFactorAuth")
+        {
+            ActionService.OpenCustom(builder =>
+            {
+                builder.OpenComponent<WebfrontCore.Components.Features.Auth.Components.TwoFactorModal>(0);
+                builder.AddAttribute(1, "ClientId", Client!.ClientId);
+                builder.AddAttribute(2, "HasTwoFactor", Client.HasTwoFactor);
+                builder.AddAttribute(3, "OnChanged", EventCallback.Factory.Create<bool>(this, (enabled) =>
+                {
+                    Client.HasTwoFactor = enabled;
+                    StateHasChanged();
+                }));
+                builder.CloseComponent();
+            }, AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_2FA"), "max-w-md");
+            return;
+        }
+
         ActionService.OpenAction(item.Reference, item.EntityId, item.Meta);
     }
 

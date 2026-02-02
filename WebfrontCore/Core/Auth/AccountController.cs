@@ -1,16 +1,19 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
 using WebfrontCore.Components.Features.Auth.Models;
 
+using WebfrontCore.Core.Services;
+
 namespace WebfrontCore.Core.Auth;
 
-public class AccountController(IManager manager) : BaseController(manager)
+public class AccountController(IManager manager, IWebfrontDataService dataService, ITwoFactorAuthService twoFactorService) : BaseController(manager)
 {
     [HttpPost]
     public async Task<IActionResult> Login([FromForm] LoginRequest request)
@@ -39,6 +42,19 @@ public class AccountController(IManager manager) : BaseController(manager)
 
             if (loginSuccess)
             {
+                if (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
+                {
+                    if (string.IsNullOrEmpty(request.TwoFactorCode) || request.TwoFactorCode == "null")
+                    {
+                        return Unauthorized("2FA_REQUIRED");
+                    }
+
+                    if (!twoFactorService.Validate(privilegedClient.TwoFactorSecret, request.TwoFactorCode))
+                    {
+                        return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
+                    }
+                }
+
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, privilegedClient.Name),
@@ -83,6 +99,41 @@ public class AccountController(IManager manager) : BaseController(manager)
 
         return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
     }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> EnableTwoFactor()
+    {
+        if (!Authorized) return Unauthorized();
+
+        var setupInfo = await dataService.EnableTwoFactorAsync();
+        return Ok(setupInfo);
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ConfirmTwoFactor([FromBody] TwoFactorConfirmRequest request)
+    {
+        if (!Authorized) return Unauthorized();
+
+        if (await dataService.ConfirmTwoFactorAsync(request.Secret, request.Code))
+        {
+            return Ok();
+        }
+
+        return BadRequest("Invalid Code");
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> DisableTwoFactor()
+    {
+        if (!Authorized) return Unauthorized();
+
+        await dataService.DisableTwoFactorAsync();
+        return Ok();
+    }
+
 
     [HttpPost]
     public async Task<IActionResult> Logout()

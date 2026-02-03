@@ -71,6 +71,33 @@
                  <h3 class="text-lg font-bold">@AppState.Loc("WEBFRONT_2FA_ENABLED_TITLE")</h3>
                  <p class="text-muted">@AppState.Loc("WEBFRONT_2FA_ENABLED")</p>
              </div>
+             
+             @if (BackupCodes != null)
+             {
+                 <div class="bg-surface-alt p-6 rounded-xl border border-line space-y-4">
+                     <div class="flex items-center gap-2 text-warning justify-center">
+                         <i class="ph ph-warning-diamond text-xl"></i>
+                         <h4 class="font-bold uppercase tracking-wider text-sm">@AppState.Loc("WEBFRONT_2FA_BACKUP_CODES_TITLE")</h4>
+                     </div>
+                     <p class="text-sm text-muted">@AppState.Loc("WEBFRONT_2FA_BACKUP_CODES_DESC")</p>
+                     
+                     <div class="grid grid-cols-2 gap-2 mt-4">
+                         @foreach (var backupCode in BackupCodes)
+                         {
+                             <div class="bg-background p-2 rounded border border-line font-mono text-center text-sm font-bold select-all">
+                                 @backupCode
+                             </div>
+                         }
+                     </div>
+                     
+                     <div class="pt-2">
+                         <button class="text-primary text-sm font-bold hover:underline" onclick="window.print()">
+                             <i class="ph ph-printer mr-1"></i> @AppState.Loc("WEBFRONT_ACTION_PRINT")
+                         </button>
+                     </div>
+                 </div>
+             }
+
              <button class="w-full py-3 rounded-xl bg-error/10 hover:bg-error/20 text-error border border-error/20 font-bold transition-colors" 
                      @onclick="Disable2FA">
                  @AppState.Loc("WEBFRONT_2FA_DISABLE")

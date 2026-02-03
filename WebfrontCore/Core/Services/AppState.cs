@@ -73,7 +73,9 @@ public class AppState(ApplicationConfiguration appConfig)
 
     public void SetUser(ClientInfo user)
     {
-        if (User?.ClientId == user.ClientId)
+        if (User?.ClientId == user.ClientId && 
+            User?.PendingTwoFactorEnrollment == user.PendingTwoFactorEnrollment && 
+            User?.HasTwoFactor == user.HasTwoFactor)
         {
             return;
         }

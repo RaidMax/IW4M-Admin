@@ -24,6 +24,7 @@ using Stats.Dtos;
 using WebfrontCore.Core.Auth;
 using System.Security.Claims;
 using SharedLibraryCore.Events.Management;
+using WebfrontCore.Components.Features.Auth.Models;
 
 namespace WebfrontCore.Core.Services;
 
@@ -935,7 +936,8 @@ public class WebfrontDataService : IWebfrontDataService
                 Level = client.Level,
                 LastConnection = client.LastConnection,
                 Game = client.GameName,
-                IsMasked = client.Masked
+                IsMasked = client.Masked,
+                HasTwoFactor = !string.IsNullOrEmpty(client.TwoFactorSecret)
             })
             .GroupBy(client => client.Level)
             .ToDictionary(folder => folder.Key, IList<ClientInfo> (folder) => folder.ToList());
@@ -1661,21 +1663,77 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<bool> ConfirmTwoFactorAsync(string secret, string code)
+    public async Task<TwoFactorConfirmResponse> ConfirmTwoFactorAsync(string secret, string code)
     {
         var executor = await GetExecutorAsync();
         if (executor == null) throw new UnauthorizedAccessException();
 
         if (!_twoFactorService.Validate(secret, code))
         {
-            return false;
+            return new TwoFactorConfirmResponse { Success = false };
         }
 
         var client = await _clientService.Get(executor.ClientId);
         client.TwoFactorSecret = secret;
+        
+        var backupCodes = _twoFactorService.GenerateBackupCodes();
+        var hashedBackupCodes = backupCodes.Select(c => Hashing.Hash(c, client.PasswordSalt)[0]).ToList();
+        client.TwoFactorBackupCodes = System.Text.Json.JsonSerializer.Serialize(hashedBackupCodes);
+        
         await _clientService.Update(client);
-        return true;
+        return new TwoFactorConfirmResponse
+        {
+            Success = true,
+            BackupCodes = backupCodes
+        };
+    }
 
+    public async Task<bool> ValidateTwoFactorCodeAsync(int clientId, string code)
+    {
+        if (string.IsNullOrEmpty(code) || code == "null")
+        {
+            return false;
+        }
+
+        var client = await _clientService.Get(clientId);
+        if (client == null || string.IsNullOrEmpty(client.TwoFactorSecret))
+        {
+            return false;
+        }
+
+        if (_twoFactorService.Validate(client.TwoFactorSecret, code))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrEmpty(client.TwoFactorBackupCodes))
+        {
+            return false;
+        }
+
+        try
+        {
+            var backupCodes = System.Text.Json.JsonSerializer.Deserialize<List<string>>(client.TwoFactorBackupCodes);
+            if (backupCodes != null)
+            {
+                var hashedInput = Hashing.Hash(code, client.PasswordSalt)[0];
+                var match = backupCodes.FirstOrDefault(c => c == hashedInput);
+                    
+                if (match != null)
+                {
+                    backupCodes.Remove(match);
+                    client.TwoFactorBackupCodes = System.Text.Json.JsonSerializer.Serialize(backupCodes);
+                    await _clientService.Update(client);
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return false;
     }
 
     public async Task DisableTwoFactorAsync()
@@ -1685,6 +1743,7 @@ public class WebfrontDataService : IWebfrontDataService
 
         var client = await _clientService.Get(executor.ClientId);
         client.TwoFactorSecret = null;
+        client.TwoFactorBackupCodes = null;
         await _clientService.Update(client);
     }
 

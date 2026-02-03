@@ -8,12 +8,13 @@ using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Helpers;
 using WebfrontCore.Components.Features.Auth.Models;
-
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Core.Auth;
 
-public class AccountController(IManager manager, IWebfrontDataService dataService, ITwoFactorAuthService twoFactorService) : BaseController(manager)
+public class AccountController(
+    IManager manager,
+    IWebfrontDataService dataService) : BaseController(manager)
 {
     [HttpPost]
     public async Task<IActionResult> Login([FromForm] LoginRequest request)
@@ -49,20 +50,28 @@ public class AccountController(IManager manager, IWebfrontDataService dataServic
                         return Unauthorized("2FA_REQUIRED");
                     }
 
-                    if (!twoFactorService.Validate(privilegedClient.TwoFactorSecret, request.TwoFactorCode))
+                    if (!await dataService.ValidateTwoFactorCodeAsync(privilegedClient.ClientId, request.TwoFactorCode))
                     {
                         return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
                     }
                 }
 
-                var claims = new[]
+                var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.NameIdentifier, privilegedClient.Name),
-                    new Claim(ClaimTypes.Role, privilegedClient.Level.ToString()),
-                    new Claim(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-                    new Claim(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
-                    new Claim(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
+                    new(ClaimTypes.NameIdentifier, privilegedClient.Name),
+                    new(ClaimTypes.Role, privilegedClient.Level.ToString()),
+                    new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
+                    new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
+                    new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
                 };
+
+                var appConfig = Manager.GetApplicationSettings().Configuration();
+                if (appConfig.RequireTwoFactorForPrivilegedClients &&
+                    privilegedClient.Level >= Data.Models.Client.EFClient.Permission.Moderator &&
+                    string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
+                {
+                    claims.Add(new Claim("PendingTwoFactorEnrollment", "true"));
+                }
 
                 var claimsIdentity = new ClaimsIdentity(claims, "login");
                 var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
@@ -83,15 +92,17 @@ public class AccountController(IManager manager, IWebfrontDataService dataServic
                     Source = this,
                     LoginSource = LoginEvent.LoginSourceType.Webfront,
                     EntityId = privilegedClient.ClientId.ToString(),
-                    Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out Microsoft.Extensions.Primitives.StringValues value)
+                    Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For",
+                        out var value)
                         ? value.ToString()
                         : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
 
-                return Ok(Localization["WEBFRONT_ACTION_LOGIN_SUCCESS"].FormatExt(privilegedClient.CleanedName));
+                return Ok(claims.Any(c => c.Type == "PendingTwoFactorEnrollment")
+                    ? "2FA_ENROLLMENT_REQUIRED"
+                    : Localization["WEBFRONT_ACTION_LOGIN_SUCCESS"].FormatExt(privilegedClient.CleanedName));
             }
         }
-
         catch (Exception)
         {
             return Unauthorized(Localization["WEBFRONT_ACTION_LOGIN_ERROR"]);
@@ -116,9 +127,11 @@ public class AccountController(IManager manager, IWebfrontDataService dataServic
     {
         if (!Authorized) return Unauthorized();
 
-        if (await dataService.ConfirmTwoFactorAsync(request.Secret, request.Code))
+        var result = await dataService.ConfirmTwoFactorAsync(request.Secret, request.Code);
+
+        if (result.Success)
         {
-            return Ok();
+            return Ok(result);
         }
 
         return BadRequest("Invalid Code");
@@ -149,7 +162,7 @@ public class AccountController(IManager manager, IWebfrontDataService dataServic
                     ? value.ToString()
                     : HttpContext.Connection.RemoteIpAddress?.ToString()
             });
-                
+
             Manager.QueueEvent(new LogoutEvent
             {
                 Source = this,

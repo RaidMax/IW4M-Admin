@@ -9,6 +9,7 @@ using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Components.UI.Navigation.Models;
 using WebfrontCore.Components.Features.Home.Models;
 using WebfrontCore.Components.Features.Console.Models;
+using WebfrontCore.Components.Features.Auth.Models;
 using PenaltyInfo = SharedLibraryCore.Dtos.PenaltyInfo;
 
 namespace WebfrontCore.Core.Services;
@@ -87,6 +88,7 @@ public interface IWebfrontDataService
     Task DeactivateAnnouncementAsync(int id);
 
     Task<TwoFactorSetupInfo> EnableTwoFactorAsync();
-    Task<bool> ConfirmTwoFactorAsync(string secret, string code);
+    Task<TwoFactorConfirmResponse> ConfirmTwoFactorAsync(string secret, string code);
     Task DisableTwoFactorAsync();
+    Task<bool> ValidateTwoFactorCodeAsync(int clientId, string code);
 }

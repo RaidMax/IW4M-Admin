@@ -1,6 +1,5 @@
-﻿using Data.Models.Client;
+using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
-using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -11,6 +10,7 @@ public partial class MainLayout
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
+    [Inject] public required NavigationManager NavManager { get; set; }
     private bool _isInitialized = false;
 
     protected override async Task OnInitializedAsync()
@@ -45,7 +45,8 @@ public partial class MainLayout
                         ClientId = clientId,
                         Name = nameClaim,
                         Level = level,
-                        Game = game
+                        Game = game,
+                        PendingTwoFactorEnrollment = user.HasClaim(c => c.Type == "PendingTwoFactorEnrollment")
                     });
                 }
             }
@@ -53,15 +54,6 @@ public partial class MainLayout
         catch
         {
             // Handle errors gracefully
-        }
-
-        try
-        {
-            // ... existing initialization logic ...
-            // ... existing initialization logic ...
-        }
-        catch
-        {
         }
 
         _isInitialized = true;
@@ -74,14 +66,8 @@ public partial class MainLayout
         await Task.CompletedTask;
     }
 
-
-
     public void Dispose()
     {
         AppState.OnChange -= StateHasChanged;
-    }
-
-    private async Task ToggleDarkMode()
-    {
     }
 }

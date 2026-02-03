@@ -289,6 +289,7 @@ namespace SharedLibraryCore.Services
             }
 
             entity.TwoFactorSecret = temporalClient.TwoFactorSecret;
+            entity.TwoFactorBackupCodes = temporalClient.TwoFactorBackupCodes;
 
             if (entity.GameName == Reference.Game.UKN && temporalClient.GameName != entity.GameName)
             {
@@ -779,6 +780,7 @@ namespace SharedLibraryCore.Services
                     Password = client.Password,
                     PasswordSalt = client.PasswordSalt,
                     TwoFactorSecret = client.TwoFactorSecret,
+                    TwoFactorBackupCodes = client.TwoFactorBackupCodes,
                     GameName = client.GameName,
                     Level = client.Level
                 })

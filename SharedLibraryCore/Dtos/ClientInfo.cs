@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Data.Models;
 using Data.Models.Client;
 
@@ -13,5 +13,7 @@ namespace SharedLibraryCore.Dtos
         public DateTime LastConnection { get; set; }
         public Reference.Game Game { get; set; }
         public bool IsMasked { get; set; }
+        public bool HasTwoFactor { get; set; }
+        public bool PendingTwoFactorEnrollment { get; set; }
     }
 }

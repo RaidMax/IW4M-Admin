@@ -18,6 +18,7 @@ public partial class TwoFactorModal : ComponentBase
     private TwoFactorSetupInfo? SetupInfo { get; set; }
     private string? VerifyCode { get; set; }
     private string? ErrorMessage { get; set; }
+    private IEnumerable<string>? BackupCodes { get; set; }
 
     private async Task StartSetup()
     {
@@ -43,10 +44,12 @@ public partial class TwoFactorModal : ComponentBase
         ErrorMessage = null;
         try
         {
-            if (await DataService.ConfirmTwoFactorAsync(SetupInfo!.Secret, VerifyCode))
+            var result = await DataService.ConfirmTwoFactorAsync(SetupInfo!.Secret, VerifyCode);
+            if (result.Success)
             {
                 HasTwoFactor = true;
                 SetupInfo = null;
+                BackupCodes = result.BackupCodes;
                 await ToastService.ShowSuccessAsync(AppState.Loc("WEBFRONT_2FA_ENABLED"));
                 await OnChanged.InvokeAsync(true);
             }

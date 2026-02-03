@@ -7,6 +7,7 @@ public interface ITwoFactorAuthService
 {
     (string secret, string qrCodeUrl, string manualEntryKey) GenerateSetup(string email);
     bool Validate(string secret, string code);
+    IEnumerable<string> GenerateBackupCodes(int count = 10);
 }
 
 public class TwoFactorAuthService(ApplicationConfiguration appConfig) : ITwoFactorAuthService
@@ -34,5 +35,15 @@ public class TwoFactorAuthService(ApplicationConfiguration appConfig) : ITwoFact
         if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(secret)) return false;
         var tfa = new TwoFactorAuthenticator();
         return tfa.ValidateTwoFactorPIN(secret, code);
+    }
+
+    public IEnumerable<string> GenerateBackupCodes(int count = 10)
+    {
+        var codes = new List<string>();
+        for (var i = 0; i < count; i++)
+        {
+            codes.Add(Guid.NewGuid().ToString("N")[..8].ToUpper());
+        }
+        return codes;
     }
 }

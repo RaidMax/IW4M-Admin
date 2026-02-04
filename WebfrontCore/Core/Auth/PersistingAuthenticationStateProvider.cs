@@ -16,12 +16,13 @@ public class PersistingAuthenticationStateProvider : ServerAuthenticationStatePr
     private readonly IHttpContextAccessor _httpContextAccessor;
     private Task<AuthenticationState>? _authenticationStateTask;
 
-    public PersistingAuthenticationStateProvider(PersistentComponentState persistentComponentState, AppState appState, IHttpContextAccessor httpContextAccessor)
+    public PersistingAuthenticationStateProvider(PersistentComponentState persistentComponentState, AppState appState,
+        IHttpContextAccessor httpContextAccessor)
     {
         _persistentComponentState = persistentComponentState;
         _appState = appState;
         _httpContextAccessor = httpContextAccessor;
-        
+
         // Register callback to persist the state during SSR
         _subscription = _persistentComponentState.RegisterOnPersisting(OnPersistingAsync, RenderMode.InteractiveServer);
     }
@@ -56,18 +57,19 @@ public class PersistingAuthenticationStateProvider : ServerAuthenticationStatePr
                 return new AuthenticationState(httpContextUser);
             }
         }
-        
+
         // 3. Fallback to base ServerAuthenticationStateProvider (Standard Circuit Auth)
         // This handles cases like iOS Long Polling where persisted state transfer fails but the circuit is authenticated
         var baseState = await base.GetAuthenticationStateAsync();
         if (baseState.User.Identity?.IsAuthenticated == true)
         {
-             var clientInfo = ParseClientInfo(baseState.User);
-             if (clientInfo != null)
-             {
-                 _appState.SetUser(clientInfo);
-             }
-             return baseState;
+            var clientInfo = ParseClientInfo(baseState.User);
+            if (clientInfo != null)
+            {
+                _appState.SetUser(clientInfo);
+            }
+
+            return baseState;
         }
 
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
@@ -76,8 +78,8 @@ public class PersistingAuthenticationStateProvider : ServerAuthenticationStatePr
     private Task OnPersistingAsync()
     {
         // This runs during SSR. 
-        var user = _appState.User; 
-        
+        var user = _appState.User;
+
         if (user != null)
         {
             _persistentComponentState.PersistAsJson("UserInfo", user);
@@ -88,43 +90,55 @@ public class PersistingAuthenticationStateProvider : ServerAuthenticationStatePr
 
     private AuthenticationState CreateStateFromUser(ClientInfo userInfo)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, userInfo.Name),
-            new Claim(ClaimTypes.Role, userInfo.Level.ToString()),
-            new Claim(ClaimTypes.Sid, userInfo.ClientId.ToString()),
-            new Claim(ClaimTypes.PrimarySid, "0"), 
-            new Claim(ClaimTypes.PrimaryGroupSid, userInfo.Game.ToString())
+            new(ClaimTypes.NameIdentifier, userInfo.Name),
+            new(ClaimTypes.Role, userInfo.Level.ToString()),
+            new(ClaimTypes.Sid, userInfo.ClientId.ToString()),
+            new(ClaimTypes.PrimarySid, "0"),
+            new(ClaimTypes.PrimaryGroupSid, userInfo.Game.ToString())
         };
-        
+
+        if (userInfo.PendingTwoFactorEnrollment)
+        {
+            claims.Add(new Claim(WebfrontClaimTypes.PendingTwoFactorEnrollment, "true"));
+        }
+
+        claims.Add(new Claim(WebfrontClaimTypes.HasTwoFactor, userInfo.HasTwoFactor.ToString().ToLower()));
+
         var identity = new ClaimsIdentity(claims, "PersistentState");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
     private ClientInfo? ParseClientInfo(ClaimsPrincipal? principal)
     {
-        if (principal == null) return null;
+        if (principal == null)
+            return null;
 
         var clientIdStr = principal.FindFirst(ClaimTypes.Sid)?.Value;
         var name = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var levelStr = principal.FindFirst(ClaimTypes.Role)?.Value;
         var gameStr = principal.FindFirst(ClaimTypes.PrimaryGroupSid)?.Value;
+        var pending2FaStr = principal.FindFirst(WebfrontClaimTypes.PendingTwoFactorEnrollment)?.Value;
+        var has2FaStr = principal.FindFirst(WebfrontClaimTypes.HasTwoFactor)?.Value;
 
-        if (int.TryParse(clientIdStr, out int clientId) && 
-            Enum.TryParse<Data.Models.Client.EFClient.Permission>(levelStr, out var level))
+        if (!int.TryParse(clientIdStr, out int clientId) ||
+            !Enum.TryParse<Data.Models.Client.EFClient.Permission>(levelStr, out var level))
         {
-             var game = Enum.TryParse<Data.Models.Reference.Game>(gameStr, out var g) ? g : Data.Models.Reference.Game.IW4;
-             
-             return new ClientInfo
-             {
-                 ClientId = clientId,
-                 Name = name ?? "Unknown",
-                 Level = level,
-                 Game = game
-             };
+            return null;
         }
 
-        return null;
+        var game = Enum.TryParse<Data.Models.Reference.Game>(gameStr, out var g) ? g : Data.Models.Reference.Game.IW4;
+
+        return new ClientInfo
+        {
+            ClientId = clientId,
+            Name = name ?? "Unknown",
+            Level = level,
+            Game = game,
+            PendingTwoFactorEnrollment = pending2FaStr == "true",
+            HasTwoFactor = has2FaStr == "true"
+        };
     }
 
     public void Dispose()

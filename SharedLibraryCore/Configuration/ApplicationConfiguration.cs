@@ -57,9 +57,6 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_IGNORE_BOTS")]
         public bool IgnoreBots { get; set; }
 
-        [LocalizedDisplayName("WEBFRONT_CONFIGURATION_REQUIRE_2FA_PRIVILEGED")]
-        public bool RequireTwoFactorForPrivilegedClients { get; set; }
-
         [ConfigurationLinked("CustomSayName")]
         [LocalizedDisplayName("SETUP_ENABLE_CUSTOMSAY")]
         public bool EnableCustomSayName { get; set; }

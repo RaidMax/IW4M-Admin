@@ -158,11 +158,11 @@ public class WebfrontDataService : IWebfrontDataService
                             Name = p.client.Name,
                             ClientId = p.client.ClientId,
                             TimeOnline = (DateTime.UtcNow - p.client.LastConnection).HumanizeForCurrentCulture(),
-                            Level = p.client.Level.ToLocalizedLevelName(),
-                            LevelInt = (int)p.client.Level,
+                            Level = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)? p.client.Level.ToLocalizedLevelName() : Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName(),
+                            LevelInt = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) ? (int)p.client.Level : 0,
                             Tag = p.client.Tag,
-                            IPAddress = p.client.IPAddressString,
-                            NetworkId = p.client.NetworkId,
+                            IPAddress = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read) ? p.client.IPAddressString : null,
+                            NetworkId = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read) ? p.client.NetworkId : 0,
                             Online = true,
                             LastConnection = p.client.LastConnection,
                             Score = p.client.Score,
@@ -172,17 +172,10 @@ public class WebfrontDataService : IWebfrontDataService
                             ZScore = p.stats?.ZScore
                         };
 
-                        if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
-                        {
-                            return playerInfo;
-                        }
-
-                        playerInfo.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
-                        playerInfo.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
                         return playerInfo;
                     })
                     .ToList(),
-                ChatHistory = server.ChatHistory.ToList(),
+                ChatHistory = HasPermission(WebfrontEntity.ChatMessage, WebfrontPermission.Read) ? server.ChatHistory.ToList() : [],
                 Online = !server.Throttled,
                 IPAddress = server.ListenAddress,
                 ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal()
@@ -232,11 +225,11 @@ public class WebfrontDataService : IWebfrontDataService
                         Name = p.client.Name,
                         ClientId = p.client.ClientId,
                         TimeOnline = (DateTime.UtcNow - p.client.LastConnection).HumanizeForCurrentCulture(),
-                        Level = p.client.Level.ToLocalizedLevelName(),
-                        LevelInt = (int)p.client.Level,
+                        Level = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)? p.client.Level.ToLocalizedLevelName() : Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName(),
+                        LevelInt = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) ? (int)p.client.Level : 0,
                         Tag = p.client.Tag,
-                        IPAddress = p.client.IPAddressString,
-                        NetworkId = p.client.NetworkId,
+                        IPAddress = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read) ? p.client.IPAddressString : null,
+                        NetworkId = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read) ? p.client.NetworkId : 0,
                         Online = true,
                         LastConnection = p.client.LastConnection,
                         Score = p.client.Score,
@@ -246,17 +239,10 @@ public class WebfrontDataService : IWebfrontDataService
                         ZScore = p.stats?.ZScore
                     };
 
-                    if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
-                    {
-                        return playerInfo;
-                    }
-
-                    playerInfo.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
-                    playerInfo.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
-                    return playerInfo;
+                   return playerInfo;
                 })
                 .ToList(),
-            ChatHistory = server.ChatHistory.ToList(),
+            ChatHistory = HasPermission(WebfrontEntity.ChatMessage, WebfrontPermission.Read) ? server.ChatHistory.ToList() : [],
             Online = !server.Throttled,
             IPAddress = server.ListenAddress,
             ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal()

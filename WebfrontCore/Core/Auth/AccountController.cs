@@ -66,7 +66,7 @@ public class AccountController(
                 };
 
                 var appConfig = Manager.GetApplicationSettings().Configuration();
-                if (appConfig.RequireTwoFactorForPrivilegedClients &&
+                if (appConfig.Webfront.RequireTwoFactorForPrivilegedClients &&
                     privilegedClient.Level >= Data.Models.Client.EFClient.Permission.Moderator &&
                     string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
                 {

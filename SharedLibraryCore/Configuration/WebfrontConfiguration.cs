@@ -15,6 +15,7 @@ public class WebfrontConfiguration
     public string ThemePreset { get; set; } = "minimal";
     public bool PreventUserCustomization { get; set; }
     public bool EnableColorCodes { get; set; }
+    public bool RequireTwoFactorForPrivilegedClients { get; set; }
 
     /// <summary>
     /// Whether users can dismiss the MOTD announcement. When false, the dismiss button is hidden.

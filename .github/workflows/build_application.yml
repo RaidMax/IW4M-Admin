@@ -2,7 +2,7 @@ name: Application build
 
 on:
   push:
-    branches: [ develop, release/pre, master, feature/ui-update ]
+    branches: [ develop, release/pre, master ]
     paths:
       - Application/**
       - WebfrontCore/**
@@ -226,7 +226,6 @@ jobs:
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/images/ ${{ env.outputFolder }}/wwwroot/images/
           cp ${{ github.workspace }}/DeploymentFiles/UpdateIW4MAdmin.ps1 ${{ env.outputFolder }}/UpdateIW4MAdmin.ps1
           cp ${{ github.workspace }}/DeploymentFiles/UpdateIW4MAdmin.sh ${{ env.outputFolder }}/UpdateIW4MAdmin.sh
-        # rsync -ar ${{ github.workspace }}/BUILD/Plugins/wwwroot/ ${{ env.outputFolder }}/wwwroot/
       - name: Upload artifact for analysis
         uses: actions/upload-artifact@v4
         with:

@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -210,6 +210,7 @@ public class Program
         services.AddCascadingAuthenticationState();
 
         services.AddScoped<IActionService, ActionService>();
+        services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
     }
 
     private static void ConfigureMiddleware(WebApplication app)

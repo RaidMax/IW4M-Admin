@@ -95,6 +95,12 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("TotalConnectionTime")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TwoFactorBackupCodes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TwoFactorSecret")
+                        .HasColumnType("text");
+
                     b.HasKey("ClientId");
 
                     b.HasAlternateKey("NetworkId", "GameName");

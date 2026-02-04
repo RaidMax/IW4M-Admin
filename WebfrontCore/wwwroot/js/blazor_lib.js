@@ -532,8 +532,12 @@ window.processLoginPost = function (url, body) {
         headers: headers,
         body: formData.toString()
     })
-        .then(response => {
+        .then(async response => {
             if (response.ok) {
+                const text = await response.text();
+                if (text === "2FA_ENROLLMENT_REQUIRED") {
+                    return text;
+                }
                 location.reload();
                 return "OK";
             } else {

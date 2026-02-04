@@ -379,7 +379,7 @@ namespace IW4MAdmin.Application
             // copy over default config if it doesn't exist
             // Only run setup wizard if this is a fresh config (no Id set), not when servers are intentionally empty
             var isFirstRun = string.IsNullOrEmpty(_appConfig.Id);
-            if (isFirstRun && _appConfig.Servers?.Length == 0)
+            if (isFirstRun && _appConfig.Servers is null)
             {
                 var defaultHandler = new BaseConfigurationHandler<DefaultSettings>("DefaultSettings");
                 await defaultHandler.BuildAsync();

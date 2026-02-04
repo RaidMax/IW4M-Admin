@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -79,8 +79,10 @@ namespace Data.Models.Client
 
         public string Password { get; set; }
         public string PasswordSalt { get; set; }
+        public string? TwoFactorSecret { get; set; }
+        public string? TwoFactorBackupCodes { get; set; }
         // list of meta for the client
-        public virtual ICollection<EFMeta> Meta { get; set; }        
+        public virtual ICollection<EFMeta> Meta { get; set; }
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }
     }

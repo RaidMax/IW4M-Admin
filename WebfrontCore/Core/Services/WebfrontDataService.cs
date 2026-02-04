@@ -1722,12 +1722,19 @@ public class WebfrontDataService : IWebfrontDataService
         return false;
     }
 
-    public async Task DisableTwoFactorAsync()
+    public async Task DisableTwoFactorAsync(int? clientId = null)
     {
         var executor = await GetExecutorAsync();
         if (executor == null) throw new UnauthorizedAccessException();
 
-        var client = await _clientService.Get(executor.ClientId);
+        var targetId = clientId ?? executor.ClientId;
+
+        if (targetId != executor.ClientId && executor.Level < Data.Models.Client.EFClient.Permission.Owner)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        var client = await _clientService.Get(targetId);
         client.TwoFactorSecret = null;
         client.TwoFactorBackupCodes = null;
         await _clientService.Update(client);

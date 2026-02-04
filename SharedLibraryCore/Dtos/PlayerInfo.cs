@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Data.Models;
@@ -45,5 +45,6 @@ namespace SharedLibraryCore.Dtos
         public int? Kills { get; set; }
         public int? Deaths { get; set; }
         public int Ping { get; set; }
+        public bool HasTwoFactor { get; set; }
     }
 }

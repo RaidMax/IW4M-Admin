@@ -6,7 +6,6 @@ public class NavigationInfo
 {
     public ClientInfo? User { get; set; }
     public bool Authorized { get; set; }
-    public required Dictionary<string, string> Localization { get; set; }
     public required IEnumerable<Page> Pages { get; set; }
     public required IEnumerable<NavigationInteractionInfo> Interactions { get; set; }
     public required WebfrontCore.Components.Features.Home.Models.CommunityInfo CommunityInformation { get; set; }

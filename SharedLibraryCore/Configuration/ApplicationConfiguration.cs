@@ -194,7 +194,6 @@ namespace SharedLibraryCore.Configuration
         public IBaseConfiguration Generate()
         {
             var loc = Utilities.CurrentLocalization.LocalizationIndex;
-            Id = Guid.NewGuid().ToString();
 
             Webfront.Enabled = loc["SETUP_ENABLE_WEBFRONT"].PromptBool();
             EnableMultipleOwners = loc["SETUP_ENABLE_MULTIOWN"].PromptBool();

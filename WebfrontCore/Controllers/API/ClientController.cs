@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using System.ComponentModel.DataAnnotations;
@@ -147,10 +147,15 @@ namespace WebfrontCore.Controllers.API
                 {
                     ClientId = clientId,
                     Password = request.Password,
+                    TwoFactorCode = request.TwoFactorCode,
                     IpAddress = ip
                 });
                 await SignInAsync(principal);
                 return Ok();
+            }
+            catch (UnauthorizedAccessException ex) when (ex.Message == "WEBFRONT_LOGIN_ERROR_2FA_REQUIRED")
+            {
+                return Unauthorized(new { requires2FA = true, message = "WEBFRONT_LOGIN_ERROR_2FA_REQUIRED" });
             }
             catch (UnauthorizedAccessException)
             {

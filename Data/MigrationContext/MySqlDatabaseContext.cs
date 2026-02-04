@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Data.Context;
 using Data.Extensions;
 using Microsoft.EntityFrameworkCore;

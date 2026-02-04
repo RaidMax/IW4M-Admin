@@ -138,7 +138,7 @@ namespace IW4MAdmin.Application.Misc
                 Uptime = (int)(DateTime.UtcNow - (_manager as ApplicationManager).StartTime).TotalSeconds,
                 Version = Program.Version,
                 Servers = _manager.GetServers().Select(s =>
-                            new ApiServer()
+                            new ApiServer
                             {
                                 ClientNum = s.ClientNum,
                                 Game = s.GameName.ToString(),
@@ -148,6 +148,7 @@ namespace IW4MAdmin.Application.Misc
                                 Map = s.CurrentMap.Name,
                                 MaxClientNum = s.MaxClients,
                                 Id = s.EndPoint,
+                                HasValidConnection = !s.Throttled && !s.IsErrorState,
                                 Port = (short)s.ListenPort,
                                 IPAddress = s.ListenAddress,
                                 ResolvedExternalIPAddress = s.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : null

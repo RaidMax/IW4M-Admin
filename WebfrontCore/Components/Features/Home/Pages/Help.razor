@@ -2,12 +2,12 @@
 @page "/commands"
 @rendermode InteractiveServer
 
-<PageTitle>@AppState.Loc("WEBFRONT_HELP_COMMANDS_NATIVE_TITLE") | @AppState.WebfrontBranding</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_HELP_TITLE") | @AppState.WebfrontBranding</PageTitle>
 
 <HeadContent>
     <meta property="og:title" content="@AppState.Loc("WEBFRONT_HELP_TITLE") | @AppState.WebfrontBranding" />
     <meta property="og:site_name" content="IW4MAdmin"/>
-    <meta property="og:description" content="@AppState.Loc("WEBFRONT_HELP_COMMANDS")" />
+    <meta property="og:description" content="@AppState.Loc("WEBFRONT_HELP_SUBTITLE")" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="@NavManager.Uri" />
     <meta property="og:image" content="@($"{NavManager.BaseUri}images/icon.png")" />
@@ -219,7 +219,7 @@
                                                     else
                                                     {
                                                         <span class="flex items-center gap-1">
-                                                            <i class="ph ph-globe"></i> All Games
+                                                            <i class="ph ph-globe"></i> @AppState.Loc("GAME_ALL")
                                                         </span>
                                                     }
                                                 </div>
@@ -249,7 +249,7 @@
                             </div>
                             <div>
                                 <h2 class="text-lg font-bold text-foreground">@group.Name</h2>
-                                <span class="text-xs text-muted">@group.Commands.Count() command@(group.Commands.Count() != 1 ? "s" : "")</span>
+                                <span class="text-xs text-muted">@AppState.Loc("WEBFRONT_HELP_COMMAND_COUNT").FormatExt(group.Commands.Count)</span>
                             </div>
                         </div>
                         

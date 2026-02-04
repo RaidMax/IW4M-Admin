@@ -86,6 +86,12 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("TotalConnectionTime")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("TwoFactorBackupCodes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TwoFactorSecret")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("ClientId");
 
                     b.HasAlternateKey("NetworkId", "GameName");

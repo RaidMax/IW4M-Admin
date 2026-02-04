@@ -112,8 +112,8 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="p-4 text-sm text-muted text-right">@client.FirstConnection.Humanize()</td>
-                                <td class="p-4 text-sm text-muted text-right">@client.LastConnection.Humanize()</td>
+                                <td class="p-4 text-sm text-muted text-right">@client.FirstConnection.HumanizeForCurrentCulture()</td>
+                                <td class="p-4 text-sm text-muted text-right">@client.LastConnection.HumanizeForCurrentCulture()</td>
                             </tr>
                         }
                     }
@@ -161,7 +161,7 @@
                              </div>
                              <div class="text-right">
                                   <span class="text-xs text-muted uppercase tracking-wider block mb-0.5">Last Seen</span>
-                                  <span class="text-foreground">@client.LastConnection.Humanize()</span>
+                                  <span class="text-foreground">@client.LastConnection.HumanizeForCurrentCulture()</span>
                              </div>
                          </div>
                          

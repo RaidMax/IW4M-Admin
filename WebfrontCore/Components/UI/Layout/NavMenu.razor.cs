@@ -46,11 +46,6 @@ public partial class NavMenu : IDisposable
         {
             AppState.InitializeUser(NavData.User);
         }
-
-        if (NavData?.Localization != null)
-        {
-            AppState.InitializeLocalization(NavData.Localization);
-        }
     }
 
     public void Dispose()

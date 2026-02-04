@@ -24,6 +24,7 @@ using Stats.Dtos;
 using WebfrontCore.Core.Auth;
 using System.Security.Claims;
 using SharedLibraryCore.Events.Management;
+using WebfrontCore.Components.Features.Auth.Models;
 
 namespace WebfrontCore.Core.Services;
 
@@ -48,9 +49,10 @@ public class WebfrontDataService : IWebfrontDataService
     private readonly IAlertManager _alertManager;
     private readonly IRemoteCommandService _remoteCommandService;
     private readonly ITranslationLookup _translationLookup;
-    private readonly SharedLibraryCore.Configuration.ApplicationConfiguration _appConfig;
+    private readonly ApplicationConfiguration _appConfig;
     private readonly ILookup<Type, string> _pluginTypeNames;
     private readonly IAnnouncementService _announcementService;
+    private readonly ITwoFactorAuthService _twoFactorService;
 
     public WebfrontDataService(IManager manager,
         IServerDataViewer serverDataViewer,
@@ -74,7 +76,8 @@ public class WebfrontDataService : IWebfrontDataService
         ApplicationConfiguration appConfig,
         IEnumerable<IPlugin> v1Plugins,
         IEnumerable<IPluginV2> v2Plugins,
-        IAnnouncementService announcementService)
+        IAnnouncementService announcementService,
+        ITwoFactorAuthService twoFactorService)
     {
         _manager = manager;
         _serverDataViewer = serverDataViewer;
@@ -100,6 +103,7 @@ public class WebfrontDataService : IWebfrontDataService
             .Concat(v2Plugins.Select(plugin => (plugin.GetType(), plugin.Name)))
             .ToLookup(selector => selector.Item1, selector => selector.Name);
         _announcementService = announcementService;
+        _twoFactorService = twoFactorService;
     }
 
     public async Task<List<ServerInfo>> GetServersAsync(Reference.Game? game = null)
@@ -154,11 +158,11 @@ public class WebfrontDataService : IWebfrontDataService
                             Name = p.client.Name,
                             ClientId = p.client.ClientId,
                             TimeOnline = (DateTime.UtcNow - p.client.LastConnection).HumanizeForCurrentCulture(),
-                            Level = p.client.Level.ToLocalizedLevelName(),
-                            LevelInt = (int)p.client.Level,
+                            Level = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)? p.client.Level.ToLocalizedLevelName() : Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName(),
+                            LevelInt = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) ? (int)p.client.Level : 0,
                             Tag = p.client.Tag,
-                            IPAddress = p.client.IPAddressString,
-                            NetworkId = p.client.NetworkId,
+                            IPAddress = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read) ? p.client.IPAddressString : null,
+                            NetworkId = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read) ? p.client.NetworkId : 0,
                             Online = true,
                             LastConnection = p.client.LastConnection,
                             Score = p.client.Score,
@@ -168,17 +172,10 @@ public class WebfrontDataService : IWebfrontDataService
                             ZScore = p.stats?.ZScore
                         };
 
-                        if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
-                        {
-                            return playerInfo;
-                        }
-
-                        playerInfo.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
-                        playerInfo.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
                         return playerInfo;
                     })
                     .ToList(),
-                ChatHistory = server.ChatHistory.ToList(),
+                ChatHistory = HasPermission(WebfrontEntity.ChatMessage, WebfrontPermission.Read) ? server.ChatHistory.ToList() : [],
                 Online = !server.Throttled,
                 IPAddress = server.ListenAddress,
                 ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal()
@@ -228,11 +225,11 @@ public class WebfrontDataService : IWebfrontDataService
                         Name = p.client.Name,
                         ClientId = p.client.ClientId,
                         TimeOnline = (DateTime.UtcNow - p.client.LastConnection).HumanizeForCurrentCulture(),
-                        Level = p.client.Level.ToLocalizedLevelName(),
-                        LevelInt = (int)p.client.Level,
+                        Level = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read)? p.client.Level.ToLocalizedLevelName() : Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName(),
+                        LevelInt = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read) ? (int)p.client.Level : 0,
                         Tag = p.client.Tag,
-                        IPAddress = p.client.IPAddressString,
-                        NetworkId = p.client.NetworkId,
+                        IPAddress = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read) ? p.client.IPAddressString : null,
+                        NetworkId = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read) ? p.client.NetworkId : 0,
                         Online = true,
                         LastConnection = p.client.LastConnection,
                         Score = p.client.Score,
@@ -242,17 +239,10 @@ public class WebfrontDataService : IWebfrontDataService
                         ZScore = p.stats?.ZScore
                     };
 
-                    if (HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read))
-                    {
-                        return playerInfo;
-                    }
-
-                    playerInfo.Level = Data.Models.Client.EFClient.Permission.User.ToLocalizedLevelName();
-                    playerInfo.LevelInt = (int)Data.Models.Client.EFClient.Permission.User;
-                    return playerInfo;
+                   return playerInfo;
                 })
                 .ToList(),
-            ChatHistory = server.ChatHistory.ToList(),
+            ChatHistory = HasPermission(WebfrontEntity.ChatMessage, WebfrontPermission.Read) ? server.ChatHistory.ToList() : [],
             Online = !server.Throttled,
             IPAddress = server.ListenAddress,
             ExternalIPAddress = server.ResolvedIpEndPoint.Address.IsInternal()
@@ -324,13 +314,10 @@ public class WebfrontDataService : IWebfrontDataService
             };
         }
 
-        var localization = Utilities.CurrentLocalization.LocalizationIndex.Set;
-
         return new NavigationInfo
         {
             User = user,
             Authorized = authorized,
-            Localization = localization,
             Pages = pages
                 .Select(page => new Page { Name = page.Name, Location = page.Location }),
             Interactions = interactions
@@ -502,6 +489,7 @@ public class WebfrontDataService : IWebfrontDataService
                 PermissionAccess = interaction.PermissionAccess,
                 Source = interaction.Source
             }).ToList(),
+            HasTwoFactor = !string.IsNullOrEmpty(client.TwoFactorSecret)
         };
 
         var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
@@ -934,7 +922,8 @@ public class WebfrontDataService : IWebfrontDataService
                 Level = client.Level,
                 LastConnection = client.LastConnection,
                 Game = client.GameName,
-                IsMasked = client.Masked
+                IsMasked = client.Masked,
+                HasTwoFactor = !string.IsNullOrEmpty(client.TwoFactorSecret)
             })
             .GroupBy(client => client.Level)
             .ToDictionary(folder => folder.Key, IList<ClientInfo> (folder) => folder.ToList());
@@ -1424,6 +1413,19 @@ public class WebfrontDataService : IWebfrontDataService
             throw new UnauthorizedAccessException("Invalid credentials");
         }
 
+        if (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
+        {
+            if (string.IsNullOrEmpty(request.TwoFactorCode) || request.TwoFactorCode == "null")
+            {
+                throw new UnauthorizedAccessException("2FA_REQUIRED");
+            }
+
+            if (!_twoFactorService.Validate(privilegedClient.TwoFactorSecret, request.TwoFactorCode))
+            {
+                throw new UnauthorizedAccessException("Invalid credentials");
+            }
+        }
+
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, privilegedClient.Name),
@@ -1631,6 +1633,104 @@ public class WebfrontDataService : IWebfrontDataService
     public async Task DeactivateAnnouncementAsync(int id)
     {
         await _announcementService.DeactivateAnnouncementAsync(id);
+    }
+
+    public async Task<TwoFactorSetupInfo> EnableTwoFactorAsync()
+    {
+        var executor = await GetExecutorAsync();
+        if (executor == null) throw new UnauthorizedAccessException();
+
+        var (secret, qrCodeUrl, manualEntryKey) = _twoFactorService.GenerateSetup(executor.Name);
+        return new TwoFactorSetupInfo
+        {
+            Secret = secret,
+            QrCodeUrl = qrCodeUrl,
+            ManualEntryKey = manualEntryKey
+        };
+    }
+
+    public async Task<TwoFactorConfirmResponse> ConfirmTwoFactorAsync(string secret, string code)
+    {
+        var executor = await GetExecutorAsync();
+        if (executor == null) throw new UnauthorizedAccessException();
+
+        if (!_twoFactorService.Validate(secret, code))
+        {
+            return new TwoFactorConfirmResponse { Success = false };
+        }
+
+        var client = await _clientService.Get(executor.ClientId);
+        client.TwoFactorSecret = secret;
+        
+        var backupCodes = _twoFactorService.GenerateBackupCodes();
+        var hashedBackupCodes = backupCodes.Select(c => Hashing.Hash(c, client.PasswordSalt)[0]).ToList();
+        client.TwoFactorBackupCodes = System.Text.Json.JsonSerializer.Serialize(hashedBackupCodes);
+        
+        await _clientService.Update(client);
+        return new TwoFactorConfirmResponse
+        {
+            Success = true,
+            BackupCodes = backupCodes
+        };
+    }
+
+    public async Task<bool> ValidateTwoFactorCodeAsync(int clientId, string code)
+    {
+        if (string.IsNullOrEmpty(code) || code == "null")
+        {
+            return false;
+        }
+
+        var client = await _clientService.Get(clientId);
+        if (client == null || string.IsNullOrEmpty(client.TwoFactorSecret))
+        {
+            return false;
+        }
+
+        if (_twoFactorService.Validate(client.TwoFactorSecret, code))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrEmpty(client.TwoFactorBackupCodes))
+        {
+            return false;
+        }
+
+        try
+        {
+            var backupCodes = System.Text.Json.JsonSerializer.Deserialize<List<string>>(client.TwoFactorBackupCodes);
+            if (backupCodes != null)
+            {
+                var hashedInput = Hashing.Hash(code, client.PasswordSalt)[0];
+                var match = backupCodes.FirstOrDefault(c => c == hashedInput);
+                    
+                if (match != null)
+                {
+                    backupCodes.Remove(match);
+                    client.TwoFactorBackupCodes = System.Text.Json.JsonSerializer.Serialize(backupCodes);
+                    await _clientService.Update(client);
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return false;
+    }
+
+    public async Task DisableTwoFactorAsync()
+    {
+        var executor = await GetExecutorAsync();
+        if (executor == null) throw new UnauthorizedAccessException();
+
+        var client = await _clientService.Get(executor.ClientId);
+        client.TwoFactorSecret = null;
+        client.TwoFactorBackupCodes = null;
+        await _clientService.Update(client);
     }
 
     private static AnnouncementInfo MapToAnnouncementInfo(Data.Models.Misc.EFAnnouncement announcement)

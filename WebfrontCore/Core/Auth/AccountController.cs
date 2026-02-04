@@ -62,7 +62,8 @@ public class AccountController(
                     new(ClaimTypes.Role, privilegedClient.Level.ToString()),
                     new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
                     new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
-                    new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
+                    new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString()),
+                    new(WebfrontClaimTypes.HasTwoFactor, (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret)).ToString().ToLower())
                 };
 
                 var appConfig = Manager.GetApplicationSettings().Configuration();
@@ -70,7 +71,7 @@ public class AccountController(
                     privilegedClient.Level >= Data.Models.Client.EFClient.Permission.Moderator &&
                     string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
                 {
-                    claims.Add(new Claim("PendingTwoFactorEnrollment", "true"));
+                    claims.Add(new Claim(WebfrontClaimTypes.PendingTwoFactorEnrollment, "true"));
                 }
 
                 var claimsIdentity = new ClaimsIdentity(claims, "login");
@@ -98,7 +99,7 @@ public class AccountController(
                         : HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
 
-                return Ok(claims.Any(c => c.Type == "PendingTwoFactorEnrollment")
+                return Ok(claims.Any(c => c.Type == WebfrontClaimTypes.PendingTwoFactorEnrollment)
                     ? "2FA_ENROLLMENT_REQUIRED"
                     : Localization["WEBFRONT_ACTION_LOGIN_SUCCESS"].FormatExt(privilegedClient.CleanedName));
             }
@@ -115,7 +116,8 @@ public class AccountController(
     [Authorize]
     public async Task<IActionResult> EnableTwoFactor()
     {
-        if (!Authorized) return Unauthorized();
+        if (!Authorized)
+            return Unauthorized();
 
         var setupInfo = await dataService.EnableTwoFactorAsync();
         return Ok(setupInfo);
@@ -125,7 +127,8 @@ public class AccountController(
     [Authorize]
     public async Task<IActionResult> ConfirmTwoFactor([FromBody] TwoFactorConfirmRequest request)
     {
-        if (!Authorized) return Unauthorized();
+        if (!Authorized)
+            return Unauthorized();
 
         var result = await dataService.ConfirmTwoFactorAsync(request.Secret, request.Code);
 
@@ -141,10 +144,48 @@ public class AccountController(
     [Authorize]
     public async Task<IActionResult> DisableTwoFactor()
     {
-        if (!Authorized) return Unauthorized();
+        if (!Authorized)
+            return Unauthorized();
 
         await dataService.DisableTwoFactorAsync();
         return Ok();
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> Refresh()
+    {
+        var clientIdClaim = User.FindFirst(ClaimTypes.Sid)?.Value;
+        if (!int.TryParse(clientIdClaim, out var clientId))
+        {
+            return Unauthorized();
+        }
+
+        var privilegedClient = await Manager.GetClientService().GetClientForLogin(clientId);
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, privilegedClient.Name),
+            new(ClaimTypes.Role, privilegedClient.Level.ToString()),
+            new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
+            new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
+            new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString()),
+            new(WebfrontClaimTypes.HasTwoFactor, (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret)).ToString().ToLower())
+        };
+
+        var appConfig = Manager.GetApplicationSettings().Configuration();
+        if (appConfig.Webfront.RequireTwoFactorForPrivilegedClients &&
+            privilegedClient.Level >= Data.Models.Client.EFClient.Permission.Moderator &&
+            string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
+        {
+            claims.Add(new Claim(WebfrontClaimTypes.PendingTwoFactorEnrollment, "true"));
+        }
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity));
+
+        var returnUrl = Request.Query["returnUrl"].ToString();
+        return LocalRedirect(string.IsNullOrEmpty(returnUrl) ? "/" : returnUrl);
     }
 
 

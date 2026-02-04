@@ -34,6 +34,7 @@ public partial class Profile
     private string? _error;
     private MetaType? _selectedMetaFilter = null;
     private int _lastLoadedId;
+    private bool _enrollmentModalOpened;
     private bool IsAuthorized => AppState.User != null && (int)AppState.User.Level >= (int)EFClient.Permission.Trusted;
 
     protected override async Task OnParametersSetAsync()
@@ -48,14 +49,15 @@ public partial class Profile
 
         _error = null;
         _selectedMetaFilter = null;
+        _enrollmentModalOpened = false;
 
         try
         {
             State ??= new ProfileState();
-            
+
             State.Client = await DataService.GetClientProfileAsync(Id);
             _lastLoadedId = Id;
-            
+
             if (Client != null)
             {
                 BuildContextMenu();
@@ -65,6 +67,17 @@ public partial class Profile
         {
             _error = ex.Message;
             Logger.LogError(ex, "Error loading profile for client {ClientId}", Id);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && NavManager.Uri.Contains("action=enroll2fa", StringComparison.OrdinalIgnoreCase) &&
+            !_enrollmentModalOpened)
+        {
+            _enrollmentModalOpened = true;
+            await Task.Delay(500); // Give layout components time to initialize
+            OnProfileContextAction(new SideContextMenuItem { Reference = "TwoFactorAuth" });
         }
     }
 
@@ -81,7 +94,8 @@ public partial class Profile
             .Where(meta => !ignoredTypes.Contains(meta))
             .Where(meta =>
             {
-                if (meta == MetaType.All) return true;
+                if (meta == MetaType.All)
+                    return true;
                 var entity = GetEntityForMetaType(meta);
                 return entity == WebfrontEntity.Default || HasPermission(entity, WebfrontPermission.Read);
             })
@@ -97,7 +111,7 @@ public partial class Profile
             MetaType.Penalized => WebfrontEntity.Penalty,
             MetaType.ReceivedPenalty => WebfrontEntity.Penalty,
             MetaType.ConnectionHistory => WebfrontEntity.ClientIPAddress,
-            MetaType.PermissionLevel => WebfrontEntity.ClientLevel, 
+            MetaType.PermissionLevel => WebfrontEntity.ClientLevel,
             _ => WebfrontEntity.Default
         };
     }
@@ -118,10 +132,10 @@ public partial class Profile
     {
         if (Client == null)
             return AppState.Loc("WEBFRONT_CLIENT_PROFILE_TITLE");
-        
+
         var game = AppState.Loc($"GAME_{Client.Game}");
         var lastSeen = Client.LastConnection.HumanizeForCurrentCulture();
-        
+
         return $"{game} • {lastSeen}";
     }
 
@@ -134,15 +148,16 @@ public partial class Profile
         var gravatarHash = Client?.Meta?.FirstOrDefault(m => m.Key == "GravatarEmail")?.Value;
         if (string.IsNullOrEmpty(gravatarHash))
             return null;
-        
+
         return $"https://gravatar.com/avatar/{gravatarHash}?size=168&default=blank&rating=pg";
     }
 
 
     private void BuildContextMenu()
     {
-        if (Client is null) return;
-        
+        if (Client is null)
+            return;
+
         var isFlagged = Client.LevelInt == (int)EFClient.Permission.Flagged;
         var isPermBanned = Client.LevelInt == (int)EFClient.Permission.Banned;
         var isTempBanned = Client.ActivePenalty?.Type == EFPenalty.PenaltyType.TempBan;
@@ -358,6 +373,29 @@ public partial class Profile
                 builder.AddAttribute(3, "OnChanged", EventCallback.Factory.Create<bool>(this, (enabled) =>
                 {
                     Client.HasTwoFactor = enabled;
+                    if (AppState.User?.ClientId == Client.ClientId)
+                    {
+                        var user = AppState.User;
+                        user.HasTwoFactor = enabled;
+
+                        if (enabled)
+                        {
+                            user.PendingTwoFactorEnrollment = false;
+                        }
+                        else
+                        {
+                            user.PendingTwoFactorEnrollment =
+                                AppState.WebfrontConfig.RequireTwoFactorForPrivilegedClients &&
+                                user.Level >= EFClient.Permission.Moderator;
+                        }
+
+                        AppState.SetUser(user);
+
+                        var relativeUrl = NavManager.ToBaseRelativePath(NavManager.Uri);
+                        NavManager.NavigateTo($"/Account/Refresh?returnUrl={Uri.EscapeDataString("/" + relativeUrl)}",
+                            forceLoad: true);
+                    }
+
                     StateHasChanged();
                 }));
                 builder.CloseComponent();

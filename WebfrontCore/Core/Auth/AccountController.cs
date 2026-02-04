@@ -144,10 +144,22 @@ public class AccountController(
     [Authorize]
     public async Task<IActionResult> DisableTwoFactor()
     {
-        if (!Authorized)
-            return Unauthorized();
+        if (!Authorized) return Unauthorized();
 
         await dataService.DisableTwoFactorAsync();
+        return Ok();
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> DisableTwoFactorForClient([FromForm] int clientId)
+    {
+        if (!Authorized || Client.Level < Data.Models.Client.EFClient.Permission.Owner)
+        {
+            return Unauthorized();
+        }
+
+        await dataService.DisableTwoFactorAsync(clientId);
         return Ok();
     }
 

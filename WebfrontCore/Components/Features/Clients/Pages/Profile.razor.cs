@@ -299,6 +299,18 @@ public partial class Profile
             });
         }
 
+        if (userLevel >= EFClient.Permission.Owner && Client.HasTwoFactor && AppState.User?.ClientId != Client.ClientId)
+        {
+            ContextItems.Items.Add(new SideContextMenuItem
+            {
+                Title = AppState.Loc("WEBFRONT_2FA_DISABLE"),
+                IsButton = true,
+                Reference = "DisableTwoFactor",
+                Icon = "ph-shield-slash",
+                EntityId = Client.ClientId
+            });
+        }
+
         // Unban (if banned + higher level + authorized)
         if ((Client.LevelInt < (int)userLevel && isPermBanned || isTempBanned) && IsAuthorized)
         {

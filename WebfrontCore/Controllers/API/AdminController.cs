@@ -53,6 +53,7 @@ namespace WebfrontCore.Controllers.API
         }
 
         [HttpGet("reports")]
+        [Authorize(Policy = "Permissions.Penalty.Read")]
         public async Task<ActionResult<IEnumerable<ServerReportsInfo>>> GetReports()
         {
             var reports = await dataService.GetReportsAsync();

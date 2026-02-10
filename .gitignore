@@ -22,6 +22,11 @@ global.min.js
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# Agents
+.sisyphus/
+.agent/
+.cursor/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

@@ -1189,6 +1189,39 @@ namespace Data.Migrations.MySql
                     b.ToTable("EFServers", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("ConnectionCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("PlayTimeMinutes")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ServerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("UniqueClientCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId");
+
+                    b.ToTable("EFServerDailyActivities", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
                 {
                     b.Property<long>("ServerSnapshotId")
@@ -1698,6 +1731,17 @@ namespace Data.Migrations.MySql
                     b.Navigation("Server");
 
                     b.Navigation("SourceClient");
+                });
+
+            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
+                {
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>

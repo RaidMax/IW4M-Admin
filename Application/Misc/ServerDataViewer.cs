@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,19 +25,22 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
         private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
         private readonly IDataValueCache<EFClientRankingHistory, int> _rankedClientsCache;
+        private readonly IDataValueCache<EFServerDailyActivity, ServerActivitySparklineResult> _serverActivityCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
             Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?) TimeSpan.FromMinutes(10);
 
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
-            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache)
+            IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache,
+            IDataValueCache<EFServerDailyActivity, ServerActivitySparklineResult> serverActivityCache)
         {
             _logger = logger;
             _snapshotCache = snapshotCache;
             _serverStatsCache = serverStatsCache;
             _clientHistoryCache = clientHistoryCache;
             _rankedClientsCache = rankedClientsCache;
+            _serverActivityCache = serverActivityCache;
         }
 
         public async Task<(int?, DateTime?)> 
@@ -214,6 +217,66 @@ namespace IW4MAdmin.Application.Misc
             {
                 _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(RankedClientsCountAsync));
                 return 0;
+            }
+        }
+
+        public async Task<ServerActivitySparklineResult> GetServerActivityAsync(long? serverId = null, Reference.Game? gameCode = null, int days = 30, CancellationToken token = default)
+        {
+            _serverActivityCache.SetCacheItem(async (set, ids, cancellationToken) =>
+            {
+                Reference.Game? game = null;
+                long? id = null;
+
+                if (ids != null && ids.Any())
+                {
+                    game = (Reference.Game?)ids.First();
+                    id = ids.Count() > 1 ? (long?)ids.Last() : null;
+                }
+
+                var thirtyDaysAgo = DateTime.UtcNow.Date.AddDays(-(days - 1));
+
+                var query = set.Include(x => x.Server).AsQueryable()
+                    .Where(x => x.Date >= thirtyDaysAgo);
+
+                if (id.HasValue)
+                {
+                    query = query.Where(x => x.ServerId == id.Value);
+                }
+
+                if (game.HasValue)
+                {
+                    query = query.Where(x => x.Server.GameName == game.Value);
+                }
+
+                var dailyData = await query
+                    .GroupBy(x => x.Date)
+                    .Select(g => new { Date = g.Key, Minutes = g.Sum(x => x.PlayTimeMinutes) })
+                    .ToDictionaryAsync(x => x.Date, x => x.Minutes, cancellationToken);
+
+                var result = new ServerActivitySparklineResult
+                {
+                    DailyPlayTimeMinutes = new double[days],
+                    TotalPlaytimeMinutes = 0
+                };
+
+                for (var i = 0; i < days; i++)
+                {
+                    var date = DateTime.UtcNow.Date.AddDays(-(days - 1) + i);
+                    result.DailyPlayTimeMinutes[i] = dailyData.TryGetValue(date, out var minutes) ? minutes : 0;
+                    result.TotalPlaytimeMinutes += (long)result.DailyPlayTimeMinutes[i];
+                }
+
+                return result;
+            }, nameof(GetServerActivityAsync), [gameCode, serverId], _cacheTimeSpan, true);
+
+            try
+            {
+                return await _serverActivityCache.GetCacheItem(nameof(GetServerActivityAsync), [gameCode, serverId], token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(GetServerActivityAsync));
+                return new ServerActivitySparklineResult { DailyPlayTimeMinutes = new double[days] };
             }
         }
     }

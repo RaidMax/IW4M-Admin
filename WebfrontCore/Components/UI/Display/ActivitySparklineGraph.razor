@@ -1,0 +1,57 @@
+@using Humanizer
+
+<div class="flex items-center gap-3 p-3 bg-surface-alt rounded-lg border border-line mb-6">
+    <div class="flex items-center gap-2 text-muted">
+        <i class="ph ph-activity text-lg text-secondary"></i>
+        <div class="flex flex-col leading-none">
+            <span class="text-xs font-bold uppercase tracking-wider">@AppState.Loc("WEBFRONT_PROFILE_PLAYTIME")</span>
+            @if (TotalPlaytime == TimeSpan.Zero)
+            {
+                <span class="text-[10px] font-medium opacity-70">@AppState.Loc("WEBFRONT_PROFILE_NO_PLAYTIME")</span>
+            }
+            else
+            {
+                <span class="text-[10px] font-medium opacity-70">@FormatPlaytime(TotalPlaytime)</span>
+            }
+        </div>
+    </div>
+
+    <div class="flex-1 flex items-end gap-px h-8">
+        @if (Data != null)
+        {
+            var maxValue = Data.Max() is var max and > 0 ? max : 1;
+            for (var i = 0; i < Data.Length; i++)
+            {
+                var value = Data[i];
+                var date = DateTime.UtcNow.Date.AddDays(-29 + i);
+                var height = value > 0 ? Math.Max(4, (int)(value / maxValue * 32)) : 2;
+                var colorClass = value > 0 ? "bg-primary" : "bg-line";
+                var playTime = TimeSpan.FromMinutes(value);
+                var tooltipText = value > 0
+                    ? $"{FormatPlaytime(playTime)} • {date:MMM d}"
+                    : $"{AppState.Loc("WEBFRONT_PROFILE_NO_PLAYTIME")} • {date:MMM d}";
+
+                <Tooltip Text="@tooltipText" WrapperClass="flex-1 flex items-end">
+                    <div class="w-full rounded-t transition-all hover:opacity-80 @colorClass"
+                         style="height: @(height)px;">
+                    </div>
+                </Tooltip>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Inject] public required AppState AppState { get; set; }
+    
+    [Parameter] public required double[] Data { get; set; }
+    [Parameter] public TimeSpan TotalPlaytime { get; set; }
+
+    /// <summary>
+    /// Formats playtime for tooltips: humanized but capped at hours (no days, weeks, etc.).
+    /// </summary>
+    private static string FormatPlaytime(TimeSpan duration)
+    {
+        return duration.Humanize(maxUnit: TimeUnit.Hour);
+    }
+}

@@ -50,13 +50,12 @@ namespace SharedLibraryCore.Interfaces
         Task<int> RankedClientsCountAsync(long? serverId = null, CancellationToken token = default);
 
         /// <summary>
-        ///     Retrieves aggregated daily playtime for the server activity sparkline (last N days).
+        ///     Retrieves aggregated daily playtime for the server activity sparkline (last N days), by game.
         /// </summary>
-        /// <param name="serverId">Optional server id to filter by</param>
         /// <param name="gameCode">Optional game to filter by</param>
         /// <param name="days">Number of days (default 30)</param>
         /// <param name="token">CancellationToken</param>
         /// <returns>Daily playtime minutes and total for the period</returns>
-        Task<ServerActivitySparklineResult> GetServerActivityAsync(long? serverId = null, Reference.Game? gameCode = null, int days = 30, CancellationToken token = default);
+        Task<ServerActivitySparklineResult> GetServerActivityAsync(Reference.Game? gameCode = null, int days = 30, CancellationToken token = default);
     }
 }

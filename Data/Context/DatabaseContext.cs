@@ -32,7 +32,7 @@ namespace Data.Context
         public DbSet<EFClientMessage> ClientMessages { get; set; }
         
         public DbSet<EFServerStatistics> ServerStatistics { get; set; }
-        public DbSet<EFServerDailyActivity> ServerDailyActivities { get; set; }
+        public DbSet<EFGameStatistic> GameStatistics { get; set; }
         public DbSet<EFClientStatistics> ClientStatistics { get; set; }
         public DbSet<EFHitLocation> HitLocations { get; set; }
         public DbSet<EFClientHitStatistic> HitStatistics { get; set; }
@@ -174,7 +174,7 @@ namespace Data.Context
             modelBuilder.Entity<EFAliasLink>().ToTable("EFAliasLinks");
             modelBuilder.Entity<EFPenalty>().ToTable("EFPenalties");
             modelBuilder.Entity<EFPenaltyIdentifier>().ToTable("EFPenaltyIdentifiers");
-            modelBuilder.Entity<EFServerDailyActivity>().ToTable("EFServerDailyActivities");
+            modelBuilder.Entity<EFGameStatistic>().ToTable("EFGameStatistics");
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
 

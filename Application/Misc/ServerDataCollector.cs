@@ -171,13 +171,13 @@ public class ServerDataCollector : IServerDataCollector
         var pruneDate = endDate.AddDays(-31);
         try
         {
-            var oldRecords = await context.ServerDailyActivities
+            var oldRecords = await context.GameStatistics
                 .Where(x => x.Date < pruneDate)
                 .ToListAsync(token);
 
             if (oldRecords.Count != 0)
             {
-                context.ServerDailyActivities.RemoveRange(oldRecords);
+                context.GameStatistics.RemoveRange(oldRecords);
                 await context.SaveChangesAsync(token);
                 _logger.LogInformation("Pruned {Count} old activity records", oldRecords.Count);
             }
@@ -187,12 +187,25 @@ public class ServerDataCollector : IServerDataCollector
             _logger.LogError(ex, "Error pruning old activity data");
         }
 
-        // Get active servers from manager (only process servers currently configured/running)
+        // Aggregate by game (not per-server); EFServerStatistics covers per-server stats.
         var activeServers = _manager.GetServers().ToList();
+        var gameDailyStats = new Dictionary<(Reference.Game?, DateTime), (long Minutes, int Connections, HashSet<int> Clients)>();
+
+        for (var day = startDate; day <= endDate.Date; day = day.AddDays(1))
+        {
+            foreach (var server in activeServers)
+            {
+                var game = (Reference.Game?)server.GameName;
+                var key = (game, day);
+                if (!gameDailyStats.ContainsKey(key))
+                    gameDailyStats[key] = (0, 0, []);
+            }
+        }
 
         foreach (var server in activeServers)
         {
             var serverId = await server.GetIdForServer();
+            var game = (Reference.Game?)server.GameName;
             var currentlyConnectedClientIds = server.GetClientsAsList()
                 .Where(c => !c.IsBot)
                 .Select(c => c.ClientId)
@@ -204,10 +217,8 @@ public class ServerDataCollector : IServerDataCollector
                 .Select(h => new { h.ClientId, h.ConnectionType, h.CreatedDateTime })
                 .ToListAsync(token);
 
-            // Skip if no connection events for this server in the time window
             if (events.Count == 0) continue;
 
-            // Exclude bots from playtime/connection stats (same heuristic as runtime: name-derived GUID)
             var distinctClientIdsInEvents = events.Select(e => e.ClientId).Distinct().ToList();
             var clientRows = await context.Clients
                 .Where(c => distinctClientIdsInEvents.Contains(c.ClientId))
@@ -220,11 +231,8 @@ public class ServerDataCollector : IServerDataCollector
                 .ToHashSet();
 
             var dailyStats = new Dictionary<DateTime, (long Minutes, int Connections, HashSet<int> Clients)>();
-
             for (var day = startDate; day <= endDate.Date; day = day.AddDays(1))
-            {
                 dailyStats[day] = (0, 0, []);
-            }
 
             var clientEvents = events.GroupBy(e => e.ClientId);
 
@@ -238,7 +246,6 @@ public class ServerDataCollector : IServerDataCollector
                 foreach (var evt in sortedEvents)
                 {
                     var evtDate = evt.CreatedDateTime.Date;
-
                     if (!dailyStats.ContainsKey(evtDate)) continue;
 
                     switch (evt.ConnectionType)
@@ -252,17 +259,12 @@ public class ServerDataCollector : IServerDataCollector
 
                             if (sessionStart.HasValue)
                             {
-                                // Cap session length on reconnect to avoid attributing a huge gap when ClientId was reused (e.g. bot took same slot)
                                 var sessionEnd = evt.CreatedDateTime;
                                 var sessionMinutes = (sessionEnd - sessionStart.Value).TotalMinutes;
                                 if (sessionMinutes > MaxReconnectSessionMinutes)
-                                {
                                     sessionEnd = sessionStart.Value.AddMinutes(MaxReconnectSessionMinutes);
-                                }
-
                                 AddPlaytime(dailyStats, sessionStart.Value, sessionEnd);
                             }
-
                             sessionStart = evt.CreatedDateTime;
                             break;
                         }
@@ -275,42 +277,54 @@ public class ServerDataCollector : IServerDataCollector
                     }
                 }
 
-                // Only add "still connected" time if this client is actually on the server now
-                // (avoids over-counting when disconnect wasn't recorded, e.g. crash, server restart)
                 if (sessionStart.HasValue && currentlyConnectedClientIds.Contains(clientGroup.Key))
-                {
                     AddPlaytime(dailyStats, sessionStart.Value, endDate);
-                }
             }
 
+            // Merge this server's daily stats into game-level aggregates
             foreach (var (date, value) in dailyStats)
             {
-                var (minutes, connections, uniqueClients) = value;
-
-                var record = await context.ServerDailyActivities
-                    .FirstOrDefaultAsync(x => x.ServerId == serverId && x.Date == date, token);
-
-                if (record == null)
+                var key = (game, date);
+                if (!gameDailyStats.TryGetValue(key, out var existing))
+                    gameDailyStats[key] = value;
+                else
                 {
-                    record = new EFServerDailyActivity
-                    {
-                        ServerId = serverId,
-                        Date = date
-                    };
-                    context.ServerDailyActivities.Add(record);
+                    var (min, conn, set) = existing;
+                    foreach (var c in value.Clients) set.Add(c);
+                    gameDailyStats[key] = (min + value.Minutes, conn + value.Connections, set);
                 }
+            }
+        }
 
-                record.PlayTimeMinutes = minutes;
-                record.ConnectionCount = connections;
-                record.UniqueClientCount = uniqueClients.Count;
+        // Persist one row per (Game, Date)
+        foreach (var (key, value) in gameDailyStats)
+        {
+            var (game, date) = key;
+            var (minutes, connections, uniqueClients) = value;
 
-                _logger.LogDebug(
-                    "Activity aggregate: ServerId={ServerId} Date={Date:yyyy-MM-dd} PlayTimeMinutes={PlayTimeMinutes} ConnectionCount={ConnectionCount} UniqueClientCount={UniqueClientCount}",
-                    serverId, date, minutes, connections, uniqueClients.Count);
+            var record = await context.GameStatistics
+                .FirstOrDefaultAsync(x => x.GameName == (int?)game && x.Date == date, token);
+
+            if (record == null)
+            {
+                record = new EFGameStatistic
+                {
+                    GameName = (int?)game,
+                    Date = date
+                };
+                context.GameStatistics.Add(record);
             }
 
-            await context.SaveChangesAsync(token);
+            record.PlayTimeMinutes = minutes;
+            record.ConnectionCount = connections;
+            record.UniqueClientCount = uniqueClients.Count;
+
+            _logger.LogDebug(
+                "Activity aggregate: Game={Game} Date={Date:yyyy-MM-dd} PlayTimeMinutes={PlayTimeMinutes} ConnectionCount={ConnectionCount} UniqueClientCount={UniqueClientCount}",
+                game, date, minutes, connections, uniqueClients.Count);
         }
+
+        await context.SaveChangesAsync(token);
     }
 
     private static void AddPlaytime(Dictionary<DateTime, (long Minutes, int Connections, HashSet<int> Clients)> dailyStats, DateTime start,

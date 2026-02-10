@@ -32,7 +32,7 @@ public partial class ServerActivitySparkline : ComponentBase
     {
         try
         {
-            var result = await DataService.GetServerActivitySparklineAsync(Game, null, CancellationToken.None);
+            var result = await DataService.GetServerActivitySparklineAsync(Game, CancellationToken.None);
 
             _activityData = result.DailyPlayTimeMinutes;
             _maxValue = _activityData.Length > 0 && _activityData.Max() > 0 ? _activityData.Max() : 1;

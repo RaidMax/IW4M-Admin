@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations.MySql
 {
     [DbContext(typeof(MySqlDatabaseContext))]
-    [Migration("20260210155526_AddServerActivity")]
-    partial class AddServerActivity
+    [Migration("20260210203731_AddGameStatistics")]
+    partial class AddGameStatistics
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1164,6 +1164,37 @@ namespace Data.Migrations.MySql
                     b.ToTable("InboxMessages");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFGameStatistic", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("ConnectionCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("GameName")
+                        .HasColumnType("int");
+
+                    b.Property<long>("PlayTimeMinutes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("UniqueClientCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EFGameStatistics", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")
@@ -1190,39 +1221,6 @@ namespace Data.Migrations.MySql
                     b.HasKey("ServerId");
 
                     b.ToTable("EFServers", (string)null);
-                });
-
-            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("ConnectionCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long>("PlayTimeMinutes")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ServerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("UniqueClientCount")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServerId");
-
-                    b.ToTable("EFServerDailyActivities", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
@@ -1734,17 +1732,6 @@ namespace Data.Migrations.MySql
                     b.Navigation("Server");
 
                     b.Navigation("SourceClient");
-                });
-
-            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
-                {
-                    b.HasOne("Data.Models.Server.EFServer", "Server")
-                        .WithMany()
-                        .HasForeignKey("ServerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>

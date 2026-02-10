@@ -1,16 +1,17 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Models.Server;
 
-public class EFServerDailyActivity : SharedEntity
+/// <summary>
+/// Game-level daily statistics (e.g. aggregated playtime). Per-server stats use <see cref="EFServerStatistics"/>.
+/// </summary>
+public class EFGameStatistic : SharedEntity
 {
     [Key]
     public long Id { get; set; }
-    public long ServerId { get; set; }
-    [ForeignKey(nameof(ServerId))]
-    public virtual EFServer Server { get; set; }
+    /// <summary>Matches <see cref="Reference.Game"/>; stored as int for EF.</summary>
+    public int? GameName { get; set; }
     public DateTime Date { get; set; }
     public long PlayTimeMinutes { get; set; }
     public int UniqueClientCount { get; set; }

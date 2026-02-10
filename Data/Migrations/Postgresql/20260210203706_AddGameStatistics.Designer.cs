@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Data.Migrations.Postgresql
 {
     [DbContext(typeof(PostgresqlDatabaseContext))]
-    [Migration("20260210155100_AddServerActivity")]
-    partial class AddServerActivity
+    [Migration("20260210203706_AddGameStatistics")]
+    partial class AddGameStatistics
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1164,6 +1164,37 @@ namespace Data.Migrations.Postgresql
                     b.ToTable("InboxMessages");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFGameStatistic", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ConnectionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("GameName")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("PlayTimeMinutes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("UniqueClientCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EFGameStatistics", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")
@@ -1190,39 +1221,6 @@ namespace Data.Migrations.Postgresql
                     b.HasKey("ServerId");
 
                     b.ToTable("EFServers", (string)null);
-                });
-
-            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<bool>("Active")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("ConnectionCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<long>("PlayTimeMinutes")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ServerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("UniqueClientCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServerId");
-
-                    b.ToTable("EFServerDailyActivities", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
@@ -1734,17 +1732,6 @@ namespace Data.Migrations.Postgresql
                     b.Navigation("Server");
 
                     b.Navigation("SourceClient");
-                });
-
-            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
-                {
-                    b.HasOne("Data.Models.Server.EFServer", "Server")
-                        .WithMany()
-                        .HasForeignKey("ServerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>

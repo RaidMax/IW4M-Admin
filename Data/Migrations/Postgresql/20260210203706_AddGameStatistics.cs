@@ -7,18 +7,18 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Data.Migrations.Postgresql
 {
     /// <inheritdoc />
-    public partial class AddServerActivity : Migration
+    public partial class AddGameStatistics : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "EFServerDailyActivities",
+                name: "EFGameStatistics",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ServerId = table.Column<long>(type: "bigint", nullable: false),
+                    GameName = table.Column<int>(type: "integer", nullable: true),
                     Date = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     PlayTimeMinutes = table.Column<long>(type: "bigint", nullable: false),
                     UniqueClientCount = table.Column<int>(type: "integer", nullable: false),
@@ -27,26 +27,15 @@ namespace Data.Migrations.Postgresql
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EFServerDailyActivities", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_EFServerDailyActivities_EFServers_ServerId",
-                        column: x => x.ServerId,
-                        principalTable: "EFServers",
-                        principalColumn: "ServerId",
-                        onDelete: ReferentialAction.Cascade);
+                    table.PrimaryKey("PK_EFGameStatistics", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EFServerDailyActivities_ServerId",
-                table: "EFServerDailyActivities",
-                column: "ServerId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "EFServerDailyActivities");
+                name: "EFGameStatistics");
         }
     }
 }

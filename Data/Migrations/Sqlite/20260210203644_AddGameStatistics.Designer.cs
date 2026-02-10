@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteDatabaseContext))]
-    [Migration("20260210155043_AddServerActivity")]
-    partial class AddServerActivity
+    [Migration("20260210203644_AddGameStatistics")]
+    partial class AddGameStatistics
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1109,6 +1109,35 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("InboxMessages");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFGameStatistic", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ConnectionCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("GameName")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("PlayTimeMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UniqueClientCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EFGameStatistics", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")
@@ -1135,37 +1164,6 @@ namespace Data.Migrations.Sqlite
                     b.HasKey("ServerId");
 
                     b.ToTable("EFServers", (string)null);
-                });
-
-            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("Active")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ConnectionCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("PlayTimeMinutes")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<long>("ServerId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("UniqueClientCount")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServerId");
-
-                    b.ToTable("EFServerDailyActivities", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
@@ -1671,17 +1669,6 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Server");
 
                     b.Navigation("SourceClient");
-                });
-
-            modelBuilder.Entity("Data.Models.Server.EFServerDailyActivity", b =>
-                {
-                    b.HasOne("Data.Models.Server.EFServer", "Server")
-                        .WithMany()
-                        .HasForeignKey("ServerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>

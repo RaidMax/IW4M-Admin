@@ -25,7 +25,7 @@ namespace IW4MAdmin.Application.Misc
         private readonly IDataValueCache<EFClient, (int, int)> _serverStatsCache;
         private readonly IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> _clientHistoryCache;
         private readonly IDataValueCache<EFClientRankingHistory, int> _rankedClientsCache;
-        private readonly IDataValueCache<EFServerDailyActivity, ServerActivitySparklineResult> _serverActivityCache;
+        private readonly IDataValueCache<EFGameStatistic, ServerActivitySparklineResult> _serverActivityCache;
 
         private readonly TimeSpan? _cacheTimeSpan =
             Utilities.IsDevelopment ? TimeSpan.FromSeconds(30) : (TimeSpan?) TimeSpan.FromMinutes(10);
@@ -33,7 +33,7 @@ namespace IW4MAdmin.Application.Misc
         public ServerDataViewer(ILogger<ServerDataViewer> logger, IDataValueCache<EFServerSnapshot, (int?, DateTime?)> snapshotCache,
             IDataValueCache<EFClient, (int, int)> serverStatsCache,
             IDataValueCache<EFServerSnapshot, List<ClientHistoryInfo>> clientHistoryCache, IDataValueCache<EFClientRankingHistory, int> rankedClientsCache,
-            IDataValueCache<EFServerDailyActivity, ServerActivitySparklineResult> serverActivityCache)
+            IDataValueCache<EFGameStatistic, ServerActivitySparklineResult> serverActivityCache)
         {
             _logger = logger;
             _snapshotCache = snapshotCache;
@@ -220,33 +220,17 @@ namespace IW4MAdmin.Application.Misc
             }
         }
 
-        public async Task<ServerActivitySparklineResult> GetServerActivityAsync(long? serverId = null, Reference.Game? gameCode = null, int days = 30, CancellationToken token = default)
+        public async Task<ServerActivitySparklineResult> GetServerActivityAsync(Reference.Game? gameCode = null, int days = 30, CancellationToken token = default)
         {
             _serverActivityCache.SetCacheItem(async (set, ids, cancellationToken) =>
             {
-                Reference.Game? game = null;
-                long? id = null;
-
-                if (ids != null && ids.Any())
-                {
-                    game = (Reference.Game?)ids.First();
-                    id = ids.Count() > 1 ? (long?)ids.Last() : null;
-                }
+                Reference.Game? game = ids != null && ids.Any() ? (Reference.Game?)ids.First() : null;
 
                 var thirtyDaysAgo = DateTime.UtcNow.Date.AddDays(-(days - 1));
 
-                var query = set.Include(x => x.Server).AsQueryable()
-                    .Where(x => x.Date >= thirtyDaysAgo);
-
-                if (id.HasValue)
-                {
-                    query = query.Where(x => x.ServerId == id.Value);
-                }
-
-                if (game.HasValue)
-                {
-                    query = query.Where(x => x.Server.GameName == game.Value);
-                }
+                var query = set.AsQueryable()
+                    .Where(x => x.Date >= thirtyDaysAgo)
+                    .Where(x => !game.HasValue || x.GameName == (int?)game.Value);
 
                 var dailyData = await query
                     .GroupBy(x => x.Date)
@@ -267,11 +251,11 @@ namespace IW4MAdmin.Application.Misc
                 }
 
                 return result;
-            }, nameof(GetServerActivityAsync), [gameCode, serverId], _cacheTimeSpan, true);
+            }, nameof(GetServerActivityAsync), new object[] { gameCode }, _cacheTimeSpan, true);
 
             try
             {
-                return await _serverActivityCache.GetCacheItem(nameof(GetServerActivityAsync), [gameCode, serverId], token);
+                return await _serverActivityCache.GetCacheItem(nameof(GetServerActivityAsync), new object[] { gameCode }, token);
             }
             catch (Exception ex)
             {

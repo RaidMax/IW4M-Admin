@@ -332,7 +332,8 @@ public class ServerDataCollector : IServerDataCollector
     {
         if ((end - start).TotalHours > 24)
         {
-            return;
+            // Cap the session duration to a maximum of 24 hours to avoid dropping long sessions entirely.
+            end = start.AddHours(24);
         }
 
         var current = start;

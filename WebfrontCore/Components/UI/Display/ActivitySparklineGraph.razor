@@ -17,7 +17,7 @@
     </div>
 
     <div class="flex-1 flex items-end gap-px h-8">
-        @if (Data != null)
+        @if (Data != null && Data.Length > 0)
         {
             var maxValue = Data.Max() is var max and > 0 ? max : 1;
             for (var i = 0; i < Data.Length; i++)

@@ -512,7 +512,7 @@ namespace IW4MAdmin.Application
 
             var appConfig = appConfigHandler.Configuration();
             var masterUri = Utilities.IsDevelopment
-                ? new Uri("https://master.iw4.zip")
+                ? new Uri("http://127.0.0.0:8080")
                 : appConfig?.MasterUrl ?? new ApplicationConfiguration().MasterUrl;
             var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
             {

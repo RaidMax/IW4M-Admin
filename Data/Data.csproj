@@ -28,9 +28,4 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="Migrations\MySql\20260210135942_AddServerActivityStats.cs" />
-      <Compile Remove="Migrations\MySql\20260210135942_AddServerActivityStats.Designer.cs" />
-    </ItemGroup>
-
 </Project>

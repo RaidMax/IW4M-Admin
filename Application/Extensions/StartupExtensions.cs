@@ -49,8 +49,8 @@ public static class StartupExtensions
                     loggerConfig = loggerConfig.WriteTo.Console(
                             outputTemplate:
                             "[{Timestamp:HH:mm:ss} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                        .MinimumLevel.Information();
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                        .MinimumLevel.Debug();
                 }
 
                 _defaultLogger = loggerConfig.CreateLogger();

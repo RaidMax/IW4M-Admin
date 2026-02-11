@@ -1,6 +1,7 @@
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Dtos;
+using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.UI.Layout;
@@ -12,8 +13,9 @@ public partial class MainLayout
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     private bool _isInitialized = false;
+    private bool IsEnrollmentPage => NavManager.Uri.Contains("action=enroll2fa", StringComparison.OrdinalIgnoreCase);
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         try
         {
@@ -39,14 +41,24 @@ public partial class MainLayout
                     var game = Enum.TryParse<Data.Models.Reference.Game>(gameClaim, out var parsedGame)
                         ? parsedGame
                         : Data.Models.Reference.Game.IW4;
+                    var hasTwoFactor = user.HasClaim(c => c.Type == WebfrontClaimTypes.HasTwoFactor && c.Value == "true");
+                    var pendingTwoFactor = user.HasClaim(c => c.Type == WebfrontClaimTypes.PendingTwoFactorEnrollment);
 
-                    AppState.SetUser(new ClientInfo
+                    if (!pendingTwoFactor && !hasTwoFactor &&
+                        AppState.WebfrontConfig.RequireTwoFactorForPrivilegedClients &&
+                        level >= EFClient.Permission.Moderator)
+                    {
+                        pendingTwoFactor = true;
+                    }
+
+                    AppState.InitializeUser(new ClientInfo
                     {
                         ClientId = clientId,
                         Name = nameClaim,
                         Level = level,
                         Game = game,
-                        PendingTwoFactorEnrollment = user.HasClaim(c => c.Type == "PendingTwoFactorEnrollment")
+                        PendingTwoFactorEnrollment = pendingTwoFactor,
+                        HasTwoFactor = hasTwoFactor
                     });
                 }
             }

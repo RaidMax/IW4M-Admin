@@ -32,7 +32,8 @@ public class PermissionAuthorizationHandler(ApplicationConfiguration config)
         // The Role claim contains the Permission level (e.g. "Administrator", "Trusted")
         var levelClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.Role);
         if (levelClaim == null ||
-            !Enum.TryParse<EFClient.Permission>(levelClaim.Value, out var level))
+            !Enum.TryParse<EFClient.Permission>(levelClaim.Value, out var level) || context.User.HasClaim(c => c.Type == WebfrontClaimTypes.PendingTwoFactorEnrollment) &&
+            requirement.Entity != WebfrontEntity.ProfilePage)
         {
             return Task.CompletedTask;
         }

@@ -660,6 +660,8 @@ public class WebfrontDataService : IWebfrontDataService
         if (server is null)
             return Task.FromResult<ScoreboardInfo?>(null);
 
+        var canViewLevel = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
+
         return Task.FromResult<ScoreboardInfo?>(new ScoreboardInfo
         {
             MapName = server.CurrentMap.ToString(),
@@ -687,7 +689,7 @@ public class WebfrontDataService : IWebfrontDataService
                         ? null
                         : clientData.stats.ZScore,
                     Team = clientData.client.Team,
-                    Level = clientData.client.Level
+                    Level = canViewLevel ? clientData.client.Level : Data.Models.Client.EFClient.Permission.User
                 })
                 .ToList()
         });
@@ -695,12 +697,78 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<ResourceQueryHelperResult<BanInfo>?> GetBansAsync(BanInfoRequest request)
     {
-        return await _banQueryHelper.QueryResource(request);
+        var results = await _banQueryHelper.QueryResource(request);
+
+        if (results is null)
+        {
+            return null;
+        }
+
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+        var canViewGuid = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read);
+
+        if (canViewIp && canViewGuid)
+        {
+            return results;
+        }
+
+        foreach (var ban in results.Results)
+        {
+            if (!canViewIp)
+            {
+                ban.IPAddress = null;
+            }
+
+            if (!canViewGuid)
+            {
+                ban.NetworkId = 0;
+            }
+
+            if (ban.AttachedPenalty != null)
+            {
+                StripRelatedClientInfo(ban.AttachedPenalty.OffenderInfo, canViewIp, canViewGuid);
+                StripRelatedClientInfo(ban.AttachedPenalty.PunisherInfo, canViewIp, canViewGuid);
+            }
+
+            foreach (var associated in ban.AssociatedPenalties)
+            {
+                StripRelatedClientInfo(associated.OffenderInfo, canViewIp, canViewGuid);
+                StripRelatedClientInfo(associated.PunisherInfo, canViewIp, canViewGuid);
+            }
+        }
+
+        return results;
+    }
+
+    private static void StripRelatedClientInfo(RelatedClientInfo info, bool canViewIp, bool canViewGuid)
+    {
+        if (!canViewIp)
+        {
+            info.IPAddress = null;
+        }
+
+        if (!canViewGuid)
+        {
+            info.NetworkId = 0;
+        }
     }
 
     public async Task<IList<AuditInfo>> GetAuditLogAsync(AuditFilterRequest request)
     {
-        return await _auditRepository.ListAuditInformation(request);
+        var auditItems = await _auditRepository.ListAuditInformation(request);
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+
+        if (canViewIp)
+        {
+            return auditItems;
+        }
+
+        foreach (var item in auditItems)
+        {
+            item.OriginIPAddress = null;
+        }
+
+        return auditItems;
     }
 
     public async Task<AuditStatistics> GetAuditStatisticsAsync(AuditFilterRequest request)
@@ -953,6 +1021,11 @@ public class WebfrontDataService : IWebfrontDataService
 
     public Task<IEnumerable<ServerReportsInfo>> GetReportsAsync()
     {
+        if (!HasPermission(WebfrontEntity.Penalty, WebfrontPermission.Read))
+        {
+            return Task.FromResult<IEnumerable<ServerReportsInfo>>([]);
+        }
+
         var reports = _manager.GetServers()
             .Select(server => new ServerReportsInfo
             {
@@ -1722,12 +1795,19 @@ public class WebfrontDataService : IWebfrontDataService
         return false;
     }
 
-    public async Task DisableTwoFactorAsync()
+    public async Task DisableTwoFactorAsync(int? clientId = null)
     {
         var executor = await GetExecutorAsync();
         if (executor == null) throw new UnauthorizedAccessException();
 
-        var client = await _clientService.Get(executor.ClientId);
+        var targetId = clientId ?? executor.ClientId;
+
+        if (targetId != executor.ClientId && executor.Level < Data.Models.Client.EFClient.Permission.Owner)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        var client = await _clientService.Get(targetId);
         client.TwoFactorSecret = null;
         client.TwoFactorBackupCodes = null;
         await _clientService.Update(client);

@@ -12,32 +12,65 @@
 }
 else
 {
-    <div class="flex flex-col h-screen w-full bg-background text-primay-100 font-sans">
-        <AntiforgeryToken />
-        
-        <!-- Top Menu Bar (Interactive) -->
-        <TopBar />
-        
-        <div class="flex flex-1 overflow-hidden relative">
-            <!-- Sidebar / NavMenu (Interactive Container) -->
-            <SidebarContainer />
-
-            <!-- Main Content Area -->
-            <main class="flex-1 overflow-auto relative bg-background">
-                 <div id="target_id"></div>
-                 <div id="mainLoadingBar" class="loading-bar hidden"></div>
-                 
-                <!-- Toast Container -->
-                <ToastContainer />
-
-                <!-- Global MOTD Announcement Banner -->
-                <AnnouncementBanner GlobalOnly="true" @rendermode="InteractiveServer" />
-
-                @Body
-                
-                <ActionModal @rendermode="InteractiveServer"/>
-                <AdvancedSearchModal @rendermode="InteractiveServer" />
-            </main>
+    @if (AppState.User?.PendingTwoFactorEnrollment == true && !IsEnrollmentPage)
+    {
+        <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md p-4">
+            <div
+                class="max-w-md w-full bg-surface border border-line rounded-2xl shadow-2xl p-8 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+                <div class="p-4 bg-primary/10 rounded-full w-fit mx-auto text-primary">
+                    <i class="ph ph-shield-warning text-5xl"></i>
+                </div>
+                <div class="space-y-2">
+                    <h2 class="text-2xl font-bold">@AppState.Loc("WEBFRONT_2FA_ENROLL_REQUIRED_TITLE")</h2>
+                    <p class="text-muted">@AppState.Loc("WEBFRONT_2FA_ENROLL_REQUIRED_DESC")</p>
+                </div>
+                <div class="pt-4">
+                    <a href="/Client/Profile/@AppState.User.ClientId?action=enroll2fa"
+                       class="inline-block w-full py-3 px-6 rounded-xl bg-primary hover:bg-primary-hover text-on-primary font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]">
+                        @AppState.Loc("WEBFRONT_2FA_ENROLL_NOW_BTN")
+                    </a>
+                </div>
+                <div class="pt-2">
+                    <form action="/Account/Logout" method="post">
+                        <AntiforgeryToken/>
+                        <button type="submit"
+                                class="text-muted hover:text-foreground text-sm font-medium transition-colors">
+                            @AppState.Loc("WEBFRONT_NAV_LOGOUT")
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="flex flex-col h-screen w-full bg-background text-primay-100 font-sans">
+            <AntiforgeryToken/>
+
+            <!-- Top Menu Bar (Interactive) -->
+            <TopBar/>
+
+            <div class="flex flex-1 overflow-hidden relative">
+                <!-- Sidebar / NavMenu (Interactive Container) -->
+                <SidebarContainer/>
+
+                <!-- Main Content Area -->
+                <main class="flex-1 overflow-auto relative bg-background">
+                    <div id="target_id"></div>
+                    <div id="mainLoadingBar" class="loading-bar hidden"></div>
+
+                    <!-- Toast Container -->
+                    <ToastContainer/>
+
+                    <!-- Global MOTD Announcement Banner -->
+                    <AnnouncementBanner GlobalOnly="true" @rendermode="InteractiveServer"/>
+
+                    @Body
+                </main>
+            </div>
+        </div>
+    }
+
+    <ActionModal @rendermode="InteractiveServer"/>
+    <AdvancedSearchModal @rendermode="InteractiveServer"/>
 }

@@ -89,6 +89,6 @@ public interface IWebfrontDataService
 
     Task<TwoFactorSetupInfo> EnableTwoFactorAsync();
     Task<TwoFactorConfirmResponse> ConfirmTwoFactorAsync(string secret, string code);
-    Task DisableTwoFactorAsync();
+    Task DisableTwoFactorAsync(int? clientId = null);
     Task<bool> ValidateTwoFactorCodeAsync(int clientId, string code);
 }

@@ -142,6 +142,7 @@ public class ActionService : IActionService
             "generatelogintoken" => GetGenerateLoginTokenInfo(),
             "dynamicaction" => GetDynamicActionInfo(targetId, meta),
             "chat" => GetChatInfo(),
+            "disabletwofactor" => GetDisableTwoFactorInfo(),
             _ => throw new ArgumentException($"Unknown action: {actionName}")
         };
     }
@@ -166,6 +167,7 @@ public class ActionService : IActionService
             "generatelogintoken" => ExecuteGenerateLoginToken(origin),
             "dynamicaction" => await ExecuteDynamicAction(targetId, formData, origin),
             "chat" => await ExecuteChat(serverId, formData, origin),
+            "disabletwofactor" => await ExecuteDisableTwoFactor(targetId, origin),
             _ => throw new ArgumentException($"Unknown action: {actionName}")
         };
     }
@@ -744,6 +746,39 @@ public class ActionService : IActionService
         return response == null
             ? (true, "Message Sent")
             : (success, string.Join("\n", response.Select(r => r.Response)));
+    }
+
+    private ActionInfo GetDisableTwoFactorInfo()
+    {
+        return new ActionInfo
+        {
+            ActionButtonLabel = _localization["WEBFRONT_ACTION_LABEL_DISABLE_2FA"],
+            Name = _localization["WEBFRONT_ACTION_LABEL_DISABLE_2FA"],
+            Inputs = [],
+            Action = "DisableTwoFactor",
+            ShouldRefresh = true
+        };
+    }
+
+    private async Task<(bool, string)> ExecuteDisableTwoFactor(int? targetId, EFClient origin)
+    {
+        if (targetId == null)
+            throw new ArgumentNullException(nameof(targetId));
+
+        if (origin.Level < EFClient.Permission.Owner)
+        {
+            return (false, _localization["WEBFRONT_RESPONSE_UNAUTHORIZED"]);
+        }
+
+        using var httpClient = new HttpClient();
+        httpClient.BaseAddress = new Uri(_appConfig.WebfrontBindUrl ?? "http://localhost:1624");
+        
+        var client = await _manager.GetClientService().Get(targetId.Value);
+        client.TwoFactorSecret = null;
+        client.TwoFactorBackupCodes = null;
+        await _manager.GetClientService().Update(client);
+
+        return (true, _localization["WEBFRONT_ACTION_DISABLE_2FA_SUCCESS"]);
     }
 
     #endregion

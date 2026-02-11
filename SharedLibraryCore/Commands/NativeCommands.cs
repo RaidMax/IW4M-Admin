@@ -1187,15 +1187,37 @@ namespace SharedLibraryCore.Commands
 
         public static async Task<string> GetNextMap(Server s, ITranslationLookup lookup)
         {
+            // FIRST: Try sv_maprotationcurrent (GSManager style)
+            var currentRotation = await s.GetDvarAsync<string>("sv_maprotationcurrent", string.Empty, token: s.Manager.CancellationToken);
+    
+            if (!string.IsNullOrEmpty(currentRotation?.Value))
+            {
+                // Parse format: "gametype sd map mp_bloc ..."
+                var pattern = @"^\s*(?:gametype\s+([a-z0-9_]+)\s+)?map\s+([a-z0-9_.-]+)\s*(.*)$";
+                var match = Regex.Match(currentRotation.Value.ToLower(), pattern, RegexOptions.IgnoreCase);
+        
+                if (match.Success)
+                {
+                    var gsNextMapName = match.Groups[2].Value;
+                    var gsNextGametype = !string.IsNullOrEmpty(match.Groups[1].Value)
+                        ? match.Groups[1].Value
+                        : s.Gametype;
+            
+                    var gsNextMap = s.Maps.FirstOrDefault(m => 
+                        m.Name.Equals(gsNextMapName, StringComparison.InvariantCultureIgnoreCase)) ??
+                        new Map { Alias = gsNextMapName, Name = gsNextMapName };
+            
+                    return lookup["COMMANDS_NEXTMAP_SUCCESS"].FormatExt(
+                        gsNextMap.Alias, 
+                        Utilities.GetLocalizedGametype(gsNextGametype));
+                }
+            }
+    
+            // SECOND: Original iw4madmin logic (fallback)
             var mapRotation = (await s.GetDvarAsync<string>("sv_mapRotation", token: s.Manager.CancellationToken)).Value?.ToLower() ?? "";
             var regexMatches = Regex.Matches(mapRotation,
                     @"((?:gametype|exec) +(?:([a-z]{1,4})(?:.cfg)?))? *map ([a-z|_|\d]+)", RegexOptions.IgnoreCase)
                 .ToList();
-
-            // find the current map in the rotation
-            var currentMap = regexMatches.Where(m => m.Groups[3].ToString() == s.CurrentMap.Name);
-            var lastMap = regexMatches.LastOrDefault();
-            Map nextMap = null;
 
             // no maprotation at all
             if (regexMatches.Count() == 0)
@@ -1204,6 +1226,11 @@ namespace SharedLibraryCore.Commands
                     .FormatExt(s.CurrentMap.Alias, Utilities.GetLocalizedGametype(s.Gametype));
             }
 
+            // find the current map in the rotation
+            var currentMap = regexMatches.Where(m => m.Groups[3].ToString() == s.CurrentMap.Name);
+            var lastMap = regexMatches.LastOrDefault();
+            Map nextMap = null;
+
             // the current map is not in rotation
             if (currentMap.Count() == 0)
             {
@@ -1211,7 +1238,6 @@ namespace SharedLibraryCore.Commands
             }
 
             // there's duplicate maps in rotation
-
             if (currentMap.Count() > 1)
             {
                 // gametype has been manually specified
@@ -1222,8 +1248,6 @@ namespace SharedLibraryCore.Commands
                 {
                     currentMap = duplicateMaps.Where(m => m.Groups[2].ToString() == s.Gametype);
                 }
-
-                // else we just have to assume it's the first one
             }
 
             // if the current map is the last map, the next map is the first map

@@ -1188,12 +1188,12 @@ namespace SharedLibraryCore.Commands
         public static async Task<string> GetNextMap(Server s, ITranslationLookup lookup)
         {
             // FIRST: Try sv_maprotationcurrent (GSManager style)
-            var currentRotation = await s.GetDvarAsync<string>("sv_maprotationcurrent", token: s.Manager.CancellationToken);
+            var currentRotation = await s.GetDvarAsync<string>("sv_maprotationcurrent", string.Empty, token: s.Manager.CancellationToken);
     
             if (!string.IsNullOrEmpty(currentRotation?.Value))
             {
                 // Parse format: "gametype sd map mp_bloc ..."
-                var pattern = @"^\s*(?:gametype\s+([a-z]+)\s+)?map\s+([a-z0-9_.-]+)\s*(.*)$";
+                var pattern = @"^\s*(?:gametype\s+([a-z0-9_]+)\s+)?map\s+([a-z0-9_.-]+)\s*(.*)$";
                 var match = Regex.Match(currentRotation.Value.ToLower(), pattern, RegexOptions.IgnoreCase);
         
                 if (match.Success)

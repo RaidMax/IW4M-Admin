@@ -115,8 +115,7 @@
 
                         <!-- Action -->
                         <div class="flex justify-center">
-                            <AuthorizeView
-                                Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Write}")">
+                            <AuthorizeView>
                                 <button @onclick:preventDefault
                                         @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, string.Empty, null))"
                                         class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-muted hover:text-error hover:bg-error/10 rounded transition-all"

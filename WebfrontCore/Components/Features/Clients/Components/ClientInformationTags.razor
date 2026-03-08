@@ -15,7 +15,7 @@ else if (_groupedMeta.Any())
     };
 
     @* Horizontal layout for category sections with dividers *@
-    <div class="grid grid-cols-1 @gridCols divide-y lg:divide-y-0 lg:divide-x divide-line">
+    <div class="grid grid-cols-1 @gridCols lg:divide-x divide-line">
         @foreach (var group in _groupedMeta)
         {
             var (icon, title, accentClass) = GetCategoryDisplay(group.Key);

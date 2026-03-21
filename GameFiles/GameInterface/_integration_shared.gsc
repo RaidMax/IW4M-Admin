@@ -63,14 +63,34 @@ Setup()
     level notify( level.notifyTypes.sharedFunctionsInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
 
-    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.autoBalance, 0 ); 
+    SetDvar( "sv_iw4madmin_latencyprobe", "1" );
+    SetDvar( "sv_iw4madmin_probe", "" );
+    thread MonitorLatencyProbe();
+
+    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.autoBalance, 0 );
 
     if ( GetDvarInt( level.commonKeys.enabled ) != 1 )
     {
         return;
     }
-    
+
     thread OnPlayerConnect();
+}
+
+MonitorLatencyProbe()
+{
+    level endon( "game_ended" );
+
+    for ( ;; )
+    {
+        probeValue = GetDvar( "sv_iw4madmin_probe" );
+        if ( probeValue != "" )
+        {
+            LogPrint( "LP;" + probeValue + "\n" );
+            SetDvar( "sv_iw4madmin_probe", "" );
+        }
+        wait( 0.05 );
+    }
 }
 
 _IsBot( player )

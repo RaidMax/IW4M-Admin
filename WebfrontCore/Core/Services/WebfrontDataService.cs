@@ -184,7 +184,9 @@ public class WebfrontDataService : IWebfrontDataService
                 ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                     server.ResolvedIpEndPoint.Address.IsInternal()
                         ? _manager.ExternalIPAddress
-                        : server.ListenAddress, server.ListenPort)
+                        : server.ListenAddress, server.ListenPort),
+                RconRoundTripMs = server.LatencyMetrics.RconRoundTripMs,
+                LogPipelineMs = server.LatencyMetrics.LogPipelineMs
             }).ToList();
     }
 
@@ -250,7 +252,9 @@ public class WebfrontDataService : IWebfrontDataService
                 : server.ListenAddress,
             ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                 server.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : server.ListenAddress,
-                server.ListenPort)
+                server.ListenPort),
+            RconRoundTripMs = server.LatencyMetrics.RconRoundTripMs,
+            LogPipelineMs = server.LatencyMetrics.LogPipelineMs
         };
     }
 

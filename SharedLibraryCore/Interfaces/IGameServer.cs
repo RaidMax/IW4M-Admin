@@ -109,5 +109,10 @@ namespace SharedLibraryCore.Interfaces
         /// Database id for EFServer table and references
         /// </summary>
         long LegacyDatabaseId { get; }
+
+        /// <summary>
+        /// Latency metrics for this server (RCON round-trip and log pipeline)
+        /// </summary>
+        Helpers.ServerLatencyMetrics LatencyMetrics { get; }
     }
 }

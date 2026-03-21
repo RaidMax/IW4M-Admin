@@ -107,6 +107,12 @@ namespace SharedLibraryCore.Configuration
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_RCON_POLLRATE")]
         public int RConPollRate { get; set; } = 8000;
 
+        [ConfigurationIgnore]
+        public int LatencyProbeIntervalMs { get; set; } = 30000;
+
+        [ConfigurationIgnore]
+        public double LatencyEmaAlpha { get; set; } = 0.3;
+
         [LocalizedDisplayName("WEBFRONT_CONFIGURATION_MAX_TB")]
         public TimeSpan MaximumTempBanTime { get; set; } = new TimeSpan(24 * 30, 0, 0);
 

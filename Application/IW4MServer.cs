@@ -30,6 +30,7 @@ using Humanizer;
 using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Commands;
 using IW4MAdmin.Application.Plugin.Script;
+using IW4MAdmin.Application.Services;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Alerts;
@@ -57,6 +58,7 @@ namespace IW4MAdmin
         private EFServer _cachedDatabaseServer;
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
+        private LatencyService _latencyService;
 
         public override bool IsErrorState => _stateChecker.IsInErrorState();
 
@@ -1554,6 +1556,10 @@ namespace IW4MAdmin
             await _serverCache.InitializeAsync();
             _ = Task.Run(() => LogEvent.PollForChanges());
 
+            LatencyMetrics = new ServerLatencyMetrics(_appConfig.LatencyEmaAlpha);
+            _latencyService = new LatencyService(this, _appConfig, ServerLogger);
+            await _latencyService.StartAsync();
+
             if (!Utilities.IsDevelopment)
             {
                 Broadcast(loc["BROADCAST_ONLINE"]);
@@ -1828,6 +1834,7 @@ namespace IW4MAdmin
 
         public override void Dispose()
         {
+            _latencyService?.StopAsync().GetAwaiter().GetResult();
             LogEvent?.Dispose();
             _stateChecker?.Dispose();
             base.Dispose();

@@ -37,8 +37,10 @@ Setup()
     level.commonKeys.team1         = "allies"; 
     level.commonKeys.team2         = "axis";
     level.commonKeys.teamSpectator = "spectator";
-    level.commonKeys.autoBalance   = "sv_iw4madmin_autobalance";
-    
+    level.commonKeys.autoBalance    = "sv_iw4madmin_autobalance";
+    level.commonKeys.latencyProbe   = "sv_iw4madmin_latencyprobe";
+    level.commonKeys.probe          = "sv_iw4madmin_probe";
+
     level.eventTypes.connect     = "connected";
     level.eventTypes.disconnect  = "disconnect";
     level.eventTypes.joinTeam    = "joined_team";
@@ -63,8 +65,8 @@ Setup()
     level notify( level.notifyTypes.sharedFunctionsInitialized );
     level waittill( level.notifyTypes.gameFunctionsInitialized );
 
-    SetDvar( "sv_iw4madmin_latencyprobe", "1" );
-    SetDvar( "sv_iw4madmin_probe", "" );
+    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.latencyProbe, 1 );
+    scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.probe, "" );
     thread MonitorLatencyProbe();
 
     scripts\_integration_base::_SetDvarIfUninitialized( level.commonKeys.autoBalance, 0 );
@@ -79,15 +81,15 @@ Setup()
 
 MonitorLatencyProbe()
 {
-    level endon( "game_ended" );
+    level endon( level.eventTypes.gameEnd );
 
     for ( ;; )
     {
-        probeValue = GetDvar( "sv_iw4madmin_probe" );
+        probeValue = GetDvar( level.commonKeys.probe );
         if ( probeValue != "" )
         {
-            LogPrint( "LP;" + probeValue + "\n" );
-            SetDvar( "sv_iw4madmin_probe", "" );
+            LogPrint( "LatencyProbe;" + probeValue + "\n" );
+            SetDvar( level.commonKeys.probe, "" );
         }
         wait( 0.05 );
     }

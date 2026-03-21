@@ -185,8 +185,8 @@ public class WebfrontDataService : IWebfrontDataService
                     server.ResolvedIpEndPoint.Address.IsInternal()
                         ? _manager.ExternalIPAddress
                         : server.ListenAddress, server.ListenPort),
-                RconRoundTripMs = server.LatencyMetrics.RconRoundTripMs,
-                LogPipelineMs = server.LatencyMetrics.LogPipelineMs
+                RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
+                GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
             }).ToList();
     }
 
@@ -253,8 +253,8 @@ public class WebfrontDataService : IWebfrontDataService
             ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                 server.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : server.ListenAddress,
                 server.ListenPort),
-            RconRoundTripMs = server.LatencyMetrics.RconRoundTripMs,
-            LogPipelineMs = server.LatencyMetrics.LogPipelineMs
+            RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
+            GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
         };
     }
 

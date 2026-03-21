@@ -58,7 +58,7 @@ namespace IW4MAdmin
         private EFServer _cachedDatabaseServer;
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
-        private LatencyService _latencyService;
+        private ServerLatencyMonitoringService _latencyMonitoringService;
 
         public override bool IsErrorState => _stateChecker.IsInErrorState();
 
@@ -1556,9 +1556,9 @@ namespace IW4MAdmin
             await _serverCache.InitializeAsync();
             _ = Task.Run(() => LogEvent.PollForChanges());
 
-            LatencyMetrics = new ServerLatencyMetrics(_appConfig.LatencyEmaAlpha);
-            _latencyService = new LatencyService(this, _appConfig, ServerLogger);
-            await _latencyService.StartAsync();
+            _latencyMonitoringService = new ServerLatencyMonitoringService(this, _appConfig, ServerLogger);
+            LatencyMetrics = _latencyMonitoringService.LatencyMetrics;
+            _latencyMonitoringService.Start(Manager.CancellationToken);
 
             if (!Utilities.IsDevelopment)
             {
@@ -1834,7 +1834,6 @@ namespace IW4MAdmin
 
         public override void Dispose()
         {
-            _latencyService?.StopAsync().GetAwaiter().GetResult();
             LogEvent?.Dispose();
             _stateChecker?.Dispose();
             base.Dispose();

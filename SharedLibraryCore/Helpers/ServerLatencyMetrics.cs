@@ -31,7 +31,7 @@ public class ServerLatencyMetrics(double alpha = 0.3)
     /// EMA-smoothed total log pipeline latency in milliseconds (one-way: dvar set → log line parsed).
     /// Requires GSC companion. Returns null if not available or insufficient samples.
     /// </summary>
-    public double? LogPipelineMs
+    public double? GameLogPipelineMs
     {
         get
         {
@@ -43,7 +43,7 @@ public class ServerLatencyMetrics(double alpha = 0.3)
     }
 
     /// <summary>
-    /// Estimated log-only overhead in milliseconds (LogPipeline minus estimated one-way RCON delivery).
+    /// Estimated log-only overhead in milliseconds (GameLogPipeline minus estimated one-way RCON delivery).
     /// Returns null if either component is unavailable.
     /// </summary>
     public double? EstimatedLogOverheadMs
@@ -51,7 +51,7 @@ public class ServerLatencyMetrics(double alpha = 0.3)
         get
         {
             var rtt = RconRoundTripMs;
-            var log = LogPipelineMs;
+            var log = GameLogPipelineMs;
             if (rtt is null || log is null)
             {
                 return null;
@@ -60,11 +60,6 @@ public class ServerLatencyMetrics(double alpha = 0.3)
             return Math.Max(0, log.Value - rtt.Value / 2.0);
         }
     }
-
-    /// <summary>
-    /// Whether the GSC latency probe companion is detected and active on this server.
-    /// </summary>
-    public bool LogProbeEnabled { get; set; }
 
     /// <summary>
     /// Timestamp of the most recent RCON RTT sample.

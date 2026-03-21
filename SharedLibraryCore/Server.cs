@@ -148,7 +148,7 @@ namespace SharedLibraryCore
         public string WorkingDirectory { get; protected set; }
         public IRConConnection RemoteConnection { get; protected set; }
         public IRConParser RconParser { get; set; }
-        public ServerLatencyMetrics LatencyMetrics { get; set; } = new();
+        public ServerLatencyMetrics LatencyMetrics { get; set; }
         public IEventParser EventParser { get; set; }
         public string LogPath { get; protected set; }
         public bool RestartRequested { get; set; }

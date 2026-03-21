@@ -111,7 +111,8 @@ namespace SharedLibraryCore.Interfaces
         long LegacyDatabaseId { get; }
 
         /// <summary>
-        /// Latency metrics for this server (RCON round-trip and log pipeline)
+        /// Latency metrics for this server (RCON round-trip and log pipeline).
+        /// Null if the latency monitoring service has not been initialized.
         /// </summary>
         Helpers.ServerLatencyMetrics LatencyMetrics { get; }
     }

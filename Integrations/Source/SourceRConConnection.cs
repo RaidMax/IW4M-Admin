@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -32,6 +33,8 @@ namespace Integrations.Source
         private RconClient _rconClient;
         private bool _authenticated;
         private bool _needNewSocket = true;
+
+        public TimeSpan? LastRtt { get; private set; }
 
         public SourceRConConnection(ILogger<SourceRConConnection> logger, IRConClientFactory rconClientFactory,
             IPEndPoint ipEndPoint, string password)
@@ -105,8 +108,11 @@ namespace Integrations.Source
                     _logger.LogDebug("Sending query {Type} with parameters \"{Parameters}\"", type, parameters);
                 }
 
+                var rttStopwatch = Stopwatch.StartNew();
                 var response = await _rconClient.ExecuteCommandAsync(parameters, multiPacket)
                     .WithTimeout(ConnectionTimeout);
+                rttStopwatch.Stop();
+                LastRtt = rttStopwatch.Elapsed;
 
                 using (LogContext.PushProperty("Server", $"{_ipEndPoint}"))
                 {

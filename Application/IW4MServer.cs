@@ -30,6 +30,7 @@ using Humanizer;
 using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Commands;
 using IW4MAdmin.Application.Plugin.Script;
+using IW4MAdmin.Application.Services;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Alerts;
@@ -57,6 +58,7 @@ namespace IW4MAdmin
         private EFServer _cachedDatabaseServer;
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
+        private ServerLatencyMonitoringService _latencyMonitoringService;
 
         public override bool IsErrorState => _stateChecker.IsInErrorState();
 
@@ -1553,6 +1555,10 @@ namespace IW4MAdmin
 
             await _serverCache.InitializeAsync();
             _ = Task.Run(() => LogEvent.PollForChanges());
+
+            _latencyMonitoringService = new ServerLatencyMonitoringService(this, _appConfig, ServerLogger);
+            LatencyMetrics = _latencyMonitoringService.LatencyMetrics;
+            _latencyMonitoringService.Start(Manager.CancellationToken);
 
             if (!Utilities.IsDevelopment)
             {

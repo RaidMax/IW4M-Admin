@@ -610,6 +610,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton<CsPluginCommandRegistrar>()
                 .AddSingleton<ICsPluginServiceHost, CsPluginServiceHost>()
                 .AddSingleton<IGameScriptEventFactory, GameScriptEventFactory>()
+                .AddSingleton<IGameScriptEvent, SharedLibraryCore.Events.Game.LatencyProbeScriptEvent>()
+                .AddTransient<SharedLibraryCore.Events.Game.LatencyProbeScriptEvent>()
                 .AddSingleton(translationLookup)
                 .AddDatabaseContextOptions(appConfig);
 

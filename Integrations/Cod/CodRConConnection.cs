@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -47,6 +48,8 @@ namespace Integrations.Cod
             Endpoint = ipEndpoint;
             _retryAttempts = retryAttempts;
         }
+
+        public TimeSpan? LastRtt => ActiveQueries.TryGetValue(Endpoint, out var state) ? state.LastRtt : null;
 
         public void SetConfiguration(IRConParser parser)
         {
@@ -241,7 +244,9 @@ namespace Integrations.Cod
                     }
 
                     waitForResponse = waitForResponse && overrideTimeout.HasValue;
+                    var rttStopwatch = Stopwatch.StartNew();
                     response = await SendPayloadAsync(socket, payload, waitForResponse, chainedTokenSource.Token);
+                    rttStopwatch.Stop();
 
                     if ((response?.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
@@ -250,6 +255,7 @@ namespace Integrations.Cod
                     }
 
                     connectionState.ConnectionAttempts = 0;
+                    connectionState.LastRtt = rttStopwatch.Elapsed;
                 }
 
                 catch (OperationCanceledException)

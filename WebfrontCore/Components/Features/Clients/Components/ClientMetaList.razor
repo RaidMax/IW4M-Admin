@@ -44,7 +44,7 @@ else
                 <div class="z-10 min-w-6">
                     @{
                         var (dotColor, _) = GetItemStyle(item);
-                        var utcTime = item.When.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                        var utcTime = item.When.ToStandardFormat();
                         var tooltipText = $"{item.Type.ToTranslatedName()} • {utcTime}";
                     }
                     <Tooltip Text="@tooltipText" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="flex items-center justify-center">

@@ -45,7 +45,7 @@ public sealed class GameInterfacePlugin : IPluginV2
 
     public string Name => "Game Interface";
     public string Author => "RaidMax";
-    public string Version => "2.1";
+    public string Version => "2.2";
 
     private readonly ILogger<GameInterfacePlugin> _logger;
     private readonly GameInterfaceConfig _config;
@@ -83,8 +83,6 @@ public sealed class GameInterfacePlugin : IPluginV2
         _scriptCommandFactory = scriptCommandFactory;
 
         IManagementEventSubscriptions.ClientStateInitialized += OnClientEnteredMatch;
-        IGameServerEventSubscriptions.ServerValueReceived += OnServerValueReceived;
-        IGameServerEventSubscriptions.ServerValueSetCompleted += OnServerValueSetCompleted;
         IGameServerEventSubscriptions.MonitoringStarted += OnServerMonitoringStart;
         IGameServerEventSubscriptions.ServerRemoved += OnServerRemoved;
         IGameEventSubscriptions.MatchStarted += OnMatchStart;
@@ -94,22 +92,21 @@ public sealed class GameInterfacePlugin : IPluginV2
             Name, Version, Author, _config.PollingRate);
     }
 
+    #region Event Handlers
+
     private Task OnClientEnteredMatch(ClientStateInitializeEvent clientEvent, CancellationToken token)
     {
         var server = clientEvent.Client.CurrentServer;
         var serverState = _state.GetServerState(server.Id);
 
-        _logger.LogDebug("[GameInterface] client entered match {Id}, currentState={@State}", server.Id, serverState);
-
         if (serverState is null)
         {
             InitializeServer(server);
         }
-        else if (!serverState.Running && !serverState.InitializationInProgress)
+        else if (serverState.LoopTask is null or { IsCompleted: true })
         {
-            _logger.LogDebug("[GameInterface] starting game interface loop");
-            serverState.Running = true;
-            RequestGetDvar(InDvar, server);
+            _logger.LogDebug("[GameInterface] restarting loop for {ServerId}", server.Id);
+            StartLoop(server, serverState);
         }
 
         return Task.CompletedTask;
@@ -118,9 +115,7 @@ public sealed class GameInterfacePlugin : IPluginV2
     private Task OnPenalty(ClientPenaltyEvent penaltyEvent, CancellationToken token)
     {
         if (penaltyEvent.Penalty.Type != EFPenalty.PenaltyType.Warning || !penaltyEvent.Client.IsIngame)
-        {
             return Task.CompletedTask;
-        }
 
         SendScriptCommand(penaltyEvent.Client.CurrentServer, "Alert",
             penaltyEvent.Penalty.Punisher as EFClient, penaltyEvent.Client,
@@ -133,83 +128,21 @@ public sealed class GameInterfacePlugin : IPluginV2
         return Task.CompletedTask;
     }
 
-    private Task OnServerValueReceived(ServerValueReceiveEvent serverValueEvent, CancellationToken token)
-    {
-        switch (serverValueEvent.Response.Name)
-        {
-            case IntegrationEnabledDvar:
-                HandleInitializeServerData(serverValueEvent);
-                break;
-            case InDvar:
-                HandleIncomingServerData(serverValueEvent);
-                break;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private async Task OnServerValueSetCompleted(ServerValueSetCompleteEvent serverValueEvent, CancellationToken token)
-    {
-        _logger.LogDebug("[GameInterface] set {DvarName}={DvarValue} success={Success} from {Server}",
-            serverValueEvent.ValueName, serverValueEvent.Value, serverValueEvent.Success, serverValueEvent.Server.Id);
-
-        if (serverValueEvent.ValueName is not InDvar and not OutDvar)
-        {
-            _logger.LogDebug("[GameInterface] ignoring set complete of {Name}", serverValueEvent.ValueName);
-            return;
-        }
-
-        var serverState = _state.GetServerState(serverValueEvent.Server.Id);
-        if (serverState is null)
-        {
-            _logger.LogDebug("[GameInterface] server {ServerId} was removed, ignoring value set complete",
-                serverValueEvent.Server.Id);
-            return;
-        }
-
-        serverState.OutQueue.TryDequeue(out _);
-
-        _logger.LogDebug("[GameInterface] outQueue len = {OutLen}, inQueue len = {InLen}",
-            serverState.OutQueue.Count, serverState.InQueue.Count);
-
-        if (!serverValueEvent.Success && !_manager.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogWarning("[GameInterface] set of server value failed... retrying");
-            RequestSetDvar(serverValueEvent.ValueName, serverValueEvent.Value, serverValueEvent.Server);
-            return;
-        }
-
-        if (!serverState.InQueue.IsEmpty && serverValueEvent.ValueName == InDvar)
-        {
-            if (serverState.InQueue.TryDequeue(out var input))
-            {
-                try
-                {
-                    await ProcessEventMessageAsync(input, serverValueEvent.Server, token);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("[GameInterface] could not process event message: {Exception}", ex.ToString());
-                }
-            }
-        }
-
-        _logger.LogDebug("[GameInterface] loop complete");
-        RequestGetDvar(InDvar, serverValueEvent.Server);
-    }
-
     private Task OnServerMonitoringStart(MonitorStartEvent monitorStartEvent, CancellationToken token)
     {
-        InitializeServer(monitorStartEvent.Server);
+        if (monitorStartEvent.Server is Server server)
+            InitializeServer(server);
         return Task.CompletedTask;
     }
 
     private Task OnServerRemoved(ServerRemoveEvent serverRemovedEvent, CancellationToken token)
     {
         var serverId = serverRemovedEvent.Server.Id;
-        if (_state.GetServerState(serverId) is not null)
+        var serverState = _state.GetServerState(serverId);
+        if (serverState is not null)
         {
             _logger.LogInformation("[GameInterface] cleaning up server state for removed server {ServerId}", serverId);
+            serverState.Stop();
             _state.RemoveServerState(serverId);
         }
 
@@ -224,114 +157,158 @@ public sealed class GameInterfacePlugin : IPluginV2
         return Task.CompletedTask;
     }
 
-    private void InitializeServer(IGameServer server)
+    #endregion
+
+    #region Server Loop
+
+    private void InitializeServer(Server server)
     {
-        _state.SetServerState(server.Id, new ServerState());
+        var state = new ServerState(server);
+        _state.SetServerState(server.Id, state);
         _logger.LogDebug("[GameInterface] initializing game interface for {ServerId}", server.Id);
-        RequestGetDvar(IntegrationEnabledDvar, server);
+        StartLoop(server, state);
     }
 
-    private void HandleInitializeServerData(ServerValueReceiveEvent responseEvent)
+    private void StartLoop(Server server, ServerState state)
     {
-        var serverState = _state.GetServerState(responseEvent.Server.Id);
-        if (serverState is null)
-        {
-            _logger.LogDebug("[GameInterface] server {ServerId} was removed, ignoring initialization",
-                responseEvent.Server.Id);
-            return;
-        }
-
-        if (responseEvent.Response.Value != "1")
-        {
-            _logger.LogInformation("[GameInterface] gsc integration is disabled for {Server}",
-                responseEvent.Server.Id);
-            return;
-        }
-
-        _logger.LogInformation("[GameInterface] gsc integration is enabled for {Server}",
-            responseEvent.Server.Id);
-
-        serverState.OutQueue.TryDequeue(out _);
-        serverState.Enabled = true;
-        serverState.Running = true;
-        serverState.InitializationInProgress = false;
-
-        // todo: this might not work for all games
-        responseEvent.Server.RconParser.Configuration.FloodProtectInterval = 150;
-
-        QueueEventMessage(responseEvent.Server, true, "GetBusModeRequested", null, null, null,
-            new Dictionary<string, string>());
-        QueueEventMessage(responseEvent.Server, true, "GetCommandsRequested", null, null, null,
-            new Dictionary<string, string>());
-        RequestGetDvar(InDvar, responseEvent.Server);
+        state.Stop();
+        state.LoopCts = CancellationTokenSource.CreateLinkedTokenSource(_manager.CancellationToken);
+        state.LoopTask = Task.Run(() => RunServerLoopAsync(server, state, state.LoopCts.Token));
     }
 
-    private void HandleIncomingServerData(ServerValueReceiveEvent responseEvent)
+    private async Task RunServerLoopAsync(Server server, ServerState state, CancellationToken token)
     {
-        _logger.LogDebug("[GameInterface] received {DvarName}={DvarValue} success={Success} from {Server}",
-            responseEvent.Response.Name, responseEvent.Response.Value, responseEvent.Success,
-            responseEvent.Server.Id);
-
-        var serverState = _state.GetServerState(responseEvent.Server.Id);
-        if (serverState is null)
+        try
         {
-            _logger.LogDebug("[GameInterface] server {ServerId} was removed, ignoring incoming data",
-                responseEvent.Server.Id);
-            return;
-        }
+            // Phase 1: Check if GSC integration is enabled on this server
+            var enabledDvar = await server.GetDvarAsync(IntegrationEnabledDvar, "", token);
 
-        serverState.OutQueue.TryDequeue(out _);
-
-        if (responseEvent.Server.ConnectedClients.Count == 0 && !Utilities.IsDevelopment)
-        {
-            _logger.LogDebug("[GameInterface] stopping game interface loop");
-            serverState.Running = false;
-            return;
-        }
-
-        if (!responseEvent.Success && !_manager.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogWarning("[GameInterface] get of server value failed... retrying");
-            RequestGetDvar(responseEvent.Response.Name, responseEvent.Server);
-            return;
-        }
-
-        if (_manager.CancellationToken.IsCancellationRequested)
-        {
-            _logger.LogDebug("[GameInterface] shutdown requested so we are ending loop");
-            return;
-        }
-
-        var input = responseEvent.Response.Value;
-        var server = responseEvent.Server;
-
-        if (string.IsNullOrEmpty(input) || input == "null")
-        {
-            _logger.LogDebug("[GameInterface] no data to process from server");
-
-            if (serverState.CommandQueue.TryDequeue(out var nextMessage))
+            if (enabledDvar?.Value != "1")
             {
-                _logger.LogDebug("[GameInterface] sending next out message");
-                RequestSetDvar(OutDvar, nextMessage, server);
-            }
-            else
-            {
-                RequestGetDvar(InDvar, server);
+                _logger.LogInformation("[GameInterface] gsc integration is disabled for {Server}", server.Id);
+                return;
             }
 
+            _logger.LogInformation("[GameInterface] gsc integration is enabled for {Server}", server.Id);
+
+            state.Enabled = true;
+
+            // todo: this might not work for all games
+            server.RconParser.Configuration.FloodProtectInterval = 150;
+
+            // Request bus mode and available commands from the game
+            QueueEventMessage(server, true, "GetBusModeRequested", null, null, null,
+                new Dictionary<string, string>());
+            QueueEventMessage(server, true, "GetCommandsRequested", null, null, null,
+                new Dictionary<string, string>());
+
+            // Phase 2: Main polling loop
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(CalculateDelay(server), token);
+
+                if (server.ConnectedClients.Count == 0 && !Utilities.IsDevelopment)
+                {
+                    _logger.LogDebug("[GameInterface] no clients connected, pausing loop for {ServerId}", server.Id);
+                    return; // loop exits; OnClientEnteredMatch will restart it
+                }
+
+                await PollServerAsync(server, state, token);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogDebug("[GameInterface] loop cancelled for {ServerId}", server.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("[GameInterface] loop terminated unexpectedly for {ServerId}: {Exception}",
+                server.Id, ex.ToString());
+        }
+        finally
+        {
+            _logger.LogDebug("[GameInterface] loop exited for {ServerId}", server.Id);
+        }
+    }
+
+    private async Task PollServerAsync(Server server, ServerState state, CancellationToken token)
+    {
+        try
+        {
+            var input = await GetDvarValueAsync(server, InDvar, token);
+
+            if (string.IsNullOrEmpty(input) || input == "null")
+            {
+                // No data from game — send next outgoing message if queued
+                if (state.CommandQueue.TryDequeue(out var outgoing))
+                {
+                    _logger.LogDebug("[GameInterface] sending queued command to {ServerId}", server.Id);
+                    await SetDvarValueAsync(server, OutDvar, outgoing, token);
+                }
+
+                return;
+            }
+
+            _logger.LogDebug("[GameInterface] received data from {ServerId}: {Input}", server.Id, input);
+
+            // Acknowledge receipt by clearing the inbound dvar
+            await SetDvarValueAsync(server, InDvar, "", token);
+
+            // Process the message from the game
+            await ProcessEventMessageAsync(input, server, token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        } // let the outer loop handle cancellation
+        catch (Exception ex)
+        {
+            _logger.LogWarning("[GameInterface] poll iteration failed for {ServerId}: {Exception}",
+                server.Id, ex.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Reads a dvar value, using file bus or direct RCon depending on current bus mode.
+    /// </summary>
+    private async Task<string> GetDvarValueAsync(Server server, string dvarName, CancellationToken token)
+    {
+        if (_state.BusMode == "file")
+        {
+            var path = Path.Combine(_state.BusDir, FileForDvar(dvarName));
+            return await File.ReadAllTextAsync(path, token);
+        }
+
+        var dvar = await server.GetDvarAsync(dvarName, "", token);
+        return dvar?.Value ?? "";
+    }
+
+    /// <summary>
+    /// Writes a dvar value, using file bus or direct RCon depending on current bus mode.
+    /// </summary>
+    private async Task SetDvarValueAsync(Server server, string dvarName, string value, CancellationToken token)
+    {
+        if (_state.BusMode == "file")
+        {
+            var path = Path.Combine(_state.BusDir, FileForDvar(dvarName));
+            _logger.LogDebug("[GameInterface] writing {Value} to {File}", value, path);
+            await File.WriteAllTextAsync(path, value, token);
             return;
         }
 
-        serverState.InQueue.Enqueue(input);
-        RequestSetDvar(InDvar, "", server);
+        await server.SetDvarAsync(dvarName, value, token);
     }
+
+    #endregion
+
+    #region Event Message Processing
 
     private async Task ProcessEventMessageAsync(string input, IGameServer server, CancellationToken token)
     {
         var eventData = ParseEvent(input);
 
-        _logger.LogDebug("[GameInterface] processing input... {EventType} {SubType} {@Data} {ClientNumber}",
-            eventData.EventType, eventData.SubType, eventData.Data, eventData.ClientNumber);
+        _logger.LogDebug("[GameInterface] processing {EventType} {SubType} {ClientNumber}",
+            eventData.EventType, eventData.SubType, eventData.ClientNumber);
 
         switch (eventData.EventType)
         {
@@ -351,8 +328,6 @@ public sealed class GameInterfacePlugin : IPluginV2
                 HandleGetBusModeRequested(eventData);
                 break;
         }
-
-        _logger.LogDebug("[GameInterface] finished processing input for {Type}", eventData.EventType);
     }
 
     private async Task HandleClientDataRequestedAsync(GameInterfaceEvent eventData, IGameServer server,
@@ -379,7 +354,6 @@ public sealed class GameInterfacePlugin : IPluginV2
             var metaKey = eventData.Data?.ToString() ?? "";
             var meta = await _metaService.GetPersistentMeta(metaKey, client.ClientId, token);
             data = new Dictionary<string, string> { [metaKey] = meta?.Value ?? "" };
-            _logger.LogDebug("[GameInterface] event data is {Data}", metaKey);
         }
         else
         {
@@ -412,8 +386,8 @@ public sealed class GameInterfacePlugin : IPluginV2
                        ?? (dataDict is not null
                            && dataDict.TryGetValue("clientId", out var idStr)
                            && int.TryParse(idStr, out var parsed)
-                               ? parsed
-                               : -1);
+                           ? parsed
+                           : -1);
 
         _logger.LogDebug("[GameInterface] clientId={ClientId}", clientId);
 
@@ -437,6 +411,7 @@ public sealed class GameInterfacePlugin : IPluginV2
         {
             return;
         }
+
         var status = "Complete";
 
         try
@@ -485,7 +460,7 @@ public sealed class GameInterfacePlugin : IPluginV2
         var dataDict = eventData.Data as Dictionary<string, string>;
         if (dataDict is null || !dataDict.TryGetValue("url", out var url) || string.IsNullOrEmpty(url))
         {
-            _logger.LogWarning("[GameInterface] no url provided for gamescript web request - {@Event}", eventData);
+            _logger.LogWarning("[GameInterface] no url provided for gamescript web request");
             return;
         }
 
@@ -516,8 +491,7 @@ public sealed class GameInterfacePlugin : IPluginV2
             using var response = await HttpClient.SendAsync(request, token);
             var responseString = await response.Content.ReadAsStringAsync(token);
 
-            _logger.LogDebug("[GameInterface] got response for gamescript web request - length={Length}",
-                responseString.Length);
+            _logger.LogDebug("[GameInterface] web response length={Length}", responseString.Length);
 
             var quoteReplace = server.GameCode == Reference.Game.T6 ? "\\\\\\\"" : "\\\"";
 
@@ -532,8 +506,7 @@ public sealed class GameInterfacePlugin : IPluginV2
 
             if (chunks.Count > maxChunks)
             {
-                _logger.LogWarning("[GameInterface] response chunks greater than max ({Max}). Data truncated!",
-                    maxChunks);
+                _logger.LogWarning("[GameInterface] response chunks exceed max ({Max}), truncating", maxChunks);
                 chunks = chunks.Take(maxChunks).ToList();
             }
 
@@ -574,6 +547,15 @@ public sealed class GameInterfacePlugin : IPluginV2
 
         var plugin = this;
 
+        var scriptCommand = _scriptCommandFactory.CreateScriptCommand(
+            commandName, alias, description, permission, targetRequired,
+            [], ExecuteAction, supportedGames);
+
+        _manager.RemoveCommandByName(scriptCommand.Name);
+        _manager.AddAdditionalCommand(scriptCommand);
+        _logger.LogDebug("[GameInterface] registered dynamic command {Name}", commandName);
+        return;
+
         Task ExecuteAction(GameEvent gameEvent)
         {
             if (!plugin.ValidateEnabled(gameEvent.Owner, gameEvent.Origin)) return Task.CompletedTask;
@@ -591,14 +573,6 @@ public sealed class GameInterfacePlugin : IPluginV2
 
             return Task.CompletedTask;
         }
-
-        var scriptCommand = _scriptCommandFactory.CreateScriptCommand(
-            commandName, alias, description, permission, targetRequired,
-            [], ExecuteAction, supportedGames);
-
-        _manager.RemoveCommandByName(scriptCommand.Name);
-        _manager.AddAdditionalCommand(scriptCommand);
-        _logger.LogDebug("[GameInterface] registered dynamic command {Name}", commandName);
     }
 
     private void HandleGetBusModeRequested(GameInterfaceEvent eventData)
@@ -622,20 +596,19 @@ public sealed class GameInterfacePlugin : IPluginV2
         _logger.LogDebug("[GameInterface] setting bus mode to {Mode} dir={Dir}", _state.BusMode, _state.BusDir);
     }
 
+    #endregion
+
+    #region Helpers
+
     private void QueueEventMessage(IGameServer server, bool responseExpected, string eventType,
         string? subType, EFClient? origin, EFClient? target, Dictionary<string, string> data)
     {
         var serverState = _state.GetServerState(server.Id);
-        if (serverState is null)
-        {
-            _logger.LogDebug("[GameInterface] skipping QueueEventMessage for removed server {Id}", server.Id);
-            return;
-        }
+        if (serverState is null) return;
 
         var output = FormatEventMessage(responseExpected, eventType, subType,
             origin?.ClientNumber ?? -1, target?.ClientNumber ?? -1, data);
 
-        _logger.LogDebug("[GameInterface] queuing output for server {Output}", output);
         serverState.CommandQueue.Enqueue(output);
     }
 
@@ -667,124 +640,6 @@ public sealed class GameInterfacePlugin : IPluginV2
         return delayMs;
     }
 
-    private void RequestGetDvar(string dvarName, IGameServer server)
-    {
-        var serverState = _state.GetServerState(server.Id);
-        if (serverState is null)
-        {
-            _logger.LogDebug("[GameInterface] skipping requestGetDvar for removed server {Id}", server.Id);
-            return;
-        }
-
-        if (dvarName != IntegrationEnabledDvar && _state.BusMode == "file")
-        {
-            _ = ExecuteFileBusGetAsync(dvarName, server, serverState);
-            return;
-        }
-
-        var requestEvent = new ServerValueRequestEvent(dvarName, server)
-        {
-            DelayMs = CalculateDelay(server),
-            TimeoutMs = 2000,
-            Source = Name
-        };
-
-        _logger.LogDebug("[GameInterface] requesting {Dvar}", dvarName);
-        serverState.OutQueue.Enqueue(requestEvent);
-
-        if (serverState.OutQueue.Count <= 1)
-            _manager.QueueEvent(requestEvent);
-        else
-            _logger.LogError("[GameInterface::requestGetDvar] queue is full!");
-    }
-
-    private void RequestSetDvar(string dvarName, string dvarValue, IGameServer server)
-    {
-        var serverState = _state.GetServerState(server.Id);
-        if (serverState is null)
-        {
-            _logger.LogDebug("[GameInterface] skipping requestSetDvar for removed server {Id}", server.Id);
-            return;
-        }
-
-        if (_state.BusMode == "file")
-        {
-            _ = ExecuteFileBusSetAsync(dvarName, dvarValue, server, serverState);
-            return;
-        }
-
-        var requestEvent = new ServerValueSetRequestEvent(dvarName, dvarValue, server)
-        {
-            DelayMs = CalculateDelay(server),
-            TimeoutMs = 2000,
-            Source = Name
-        };
-
-        serverState.OutQueue.Enqueue(requestEvent);
-        _logger.LogDebug("[GameInterface] outQueue size = {Length}", serverState.OutQueue.Count);
-
-        if (serverState.OutQueue.Count == 1)
-            _manager.QueueEvent(requestEvent);
-        else
-            _logger.LogError("[GameInterface::requestSetDvar] queue is full!");
-    }
-
-    private async Task ExecuteFileBusGetAsync(string dvarName, IGameServer server, ServerState serverState)
-    {
-        await Task.Delay(250, _manager.CancellationToken);
-        serverState.OutQueue.Enqueue(new object());
-
-        try
-        {
-            var content = await File.ReadAllTextAsync(
-                Path.Combine(_state.BusDir, FileForDvar(dvarName)), _manager.CancellationToken);
-
-            await OnServerValueReceived(new ServerValueReceiveEvent
-            {
-                Server = server, Source = server, Success = true,
-                Response = new Dvar<string> { Name = dvarName, Value = content }
-            }, _manager.CancellationToken);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("[GameInterface] could not get bus data {Exception}", e.ToString());
-            await OnServerValueReceived(new ServerValueReceiveEvent
-            {
-                Server = server, Success = false,
-                Response = new Dvar<string> { Name = dvarName }
-            }, _manager.CancellationToken);
-        }
-    }
-
-    private async Task ExecuteFileBusSetAsync(string dvarName, string dvarValue, IGameServer server,
-        ServerState serverState)
-    {
-        await Task.Delay(250, _manager.CancellationToken);
-
-        try
-        {
-            var path = Path.Combine(_state.BusDir, FileForDvar(dvarName));
-            _logger.LogDebug("[GameInterface] writing {Value} to {File}", dvarValue, path);
-            await File.WriteAllTextAsync(path, dvarValue, _manager.CancellationToken);
-
-            serverState.OutQueue.Enqueue(new object());
-            await OnServerValueSetCompleted(new ServerValueSetCompleteEvent
-            {
-                Server = server, Source = server, Success = true,
-                Value = dvarValue, ValueName = dvarName
-            }, _manager.CancellationToken);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("[GameInterface] could not set bus data {Exception}", e.ToString());
-            await OnServerValueSetCompleted(new ServerValueSetCompleteEvent
-            {
-                Server = server, Success = false,
-                ValueName = dvarName, Value = dvarValue
-            }, _manager.CancellationToken);
-        }
-    }
-
     private async Task<EFClientStatistics?> GetClientStatsAsync(int clientId, long serverId, CancellationToken token)
     {
         try
@@ -810,17 +665,24 @@ public sealed class GameInterfacePlugin : IPluginV2
 
     private string FileForDvar(string dvar) => dvar == InDvar ? _state.BusFileIn : _state.BusFileOut;
 
+    #endregion
+
+    #region Dispose
+
     public void Dispose()
     {
         IManagementEventSubscriptions.ClientStateInitialized -= OnClientEnteredMatch;
-        IGameServerEventSubscriptions.ServerValueReceived -= OnServerValueReceived;
-        IGameServerEventSubscriptions.ServerValueSetCompleted -= OnServerValueSetCompleted;
         IGameServerEventSubscriptions.MonitoringStarted -= OnServerMonitoringStart;
         IGameServerEventSubscriptions.ServerRemoved -= OnServerRemoved;
         IGameEventSubscriptions.MatchStarted -= OnMatchStart;
         IManagementEventSubscriptions.ClientPenaltyAdministered -= OnPenalty;
+
+        _state.StopAll();
+
         _logger.LogInformation("[GameInterface] Game Interface unloaded");
     }
+
+    #endregion
 
     #region Message Formatting / Parsing
 
@@ -905,17 +767,30 @@ public class GameInterfaceState
         _servers.TryGetValue(serverId, out var state) ? state : null;
 
     public void SetServerState(string serverId, ServerState state) => _servers[serverId] = state;
+
     public void RemoveServerState(string serverId) => _servers.TryRemove(serverId, out _);
+
+    public void StopAll()
+    {
+        foreach (var state in _servers.Values)
+            state.Stop();
+    }
 }
 
-public class ServerState
+public class ServerState(Server server)
 {
+    public Server Server { get; } = server;
     public bool Enabled { get; set; }
-    public bool Running { get; set; }
-    public bool InitializationInProgress { get; set; } = true;
-    public ConcurrentQueue<string> InQueue { get; } = new();
-    public ConcurrentQueue<object> OutQueue { get; } = new();
     public ConcurrentQueue<string> CommandQueue { get; } = new();
+    public CancellationTokenSource? LoopCts { get; set; }
+    public Task? LoopTask { get; set; }
+
+    public void Stop()
+    {
+        LoopCts?.Cancel();
+        LoopCts?.Dispose();
+        LoopCts = null;
+    }
 }
 
 public class GameInterfaceEvent
@@ -979,7 +854,7 @@ public class GiveWeaponCommand : GameInterfaceCommand
         Alias = "gw";
         Permission = Data.Models.Client.EFClient.Permission.SeniorAdmin;
         RequiresTarget = true;
-        Arguments = [new CommandArgument { Name = "player", Required = true }, new CommandArgument { Name = "weapon name", Required = true }];
+        Arguments = [new CommandArgument { Name = "player", Required = true }, new() { Name = "weapon name", Required = true }];
         SupportedGames = AllScriptGames;
     }
 

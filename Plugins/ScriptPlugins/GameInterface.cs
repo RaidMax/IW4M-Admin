@@ -88,6 +88,13 @@ public sealed class GameInterfacePlugin : IPluginV2
         IGameEventSubscriptions.MatchStarted += OnMatchStart;
         IManagementEventSubscriptions.ClientPenaltyAdministered += OnPenalty;
 
+        // Start loops for any servers already running (handles hot-reload scenario
+        // where MonitoringStarted won't re-fire for existing servers)
+        foreach (var server in _manager.GetServers().OfType<Server>())
+        {
+            InitializeServer(server);
+        }
+
         _logger.LogInformation("[GameInterface] {Name} {Version} by {Author} loaded. PollingRate={PollingRate}ms",
             Name, Version, Author, _config.PollingRate);
     }
@@ -243,11 +250,9 @@ public sealed class GameInterfacePlugin : IPluginV2
             if (string.IsNullOrEmpty(input) || input == "null")
             {
                 // No data from game — send next outgoing message if queued
-                if (state.CommandQueue.TryDequeue(out var outgoing))
-                {
-                    _logger.LogDebug("[GameInterface] sending queued command to {ServerId}", server.Id);
-                    await SetDvarValueAsync(server, OutDvar, outgoing, token);
-                }
+                if (!state.CommandQueue.TryDequeue(out var outgoing)) return;
+                _logger.LogDebug("[GameInterface] sending queued command to {ServerId}", server.Id);
+                await SetDvarValueAsync(server, OutDvar, outgoing, token);
 
                 return;
             }
@@ -629,16 +634,14 @@ public sealed class GameInterfacePlugin : IPluginV2
     {
         var delayMs = _config.PollingRate;
 
-        if (server.MatchEndTime is not null)
-        {
-            const int extraDelay = 15000;
-            var diff = (DateTime.UtcNow - server.MatchEndTime.Value).TotalMilliseconds;
-            if (diff < extraDelay)
-            {
-                delayMs = (int)(extraDelay - diff) + _config.PollingRate;
-                _logger.LogDebug("[GameInterface] increasing delay to {Delay}ms due to recent map change", delayMs);
-            }
-        }
+        if (server.MatchEndTime is null) return delayMs;
+
+        const int extraDelay = 15000;
+        var diff = (DateTime.Now - server.MatchEndTime.Value).TotalMilliseconds;
+        if (diff is < 0 or >= extraDelay) return delayMs;
+
+        delayMs = (int)(extraDelay - diff) + _config.PollingRate;
+        _logger.LogDebug("[GameInterface] increasing delay to {Delay}ms due to recent map change", delayMs);
 
         return delayMs;
     }

@@ -196,6 +196,9 @@ public sealed class GameInterfacePlugin : IPluginV2
             // todo: this might not work for all games
             server.RconParser.Configuration.FloodProtectInterval = 150;
 
+            // Clear any stale dvar state from a previous session
+            await SetDvarValueAsync(server, InDvar, "", token);
+
             // Request bus mode and available commands from the game
             QueueEventMessage(server, true, "GetBusModeRequested", null, null, null,
                 new Dictionary<string, string>());
@@ -689,8 +692,11 @@ public sealed class GameInterfacePlugin : IPluginV2
     internal static string FormatEventMessage(bool responseExpected, string eventType, string? subType,
         int originClientNumber, int targetClientNumber, Dictionary<string, string>? data)
     {
+        // subType must never be empty — CoD GSC strtok collapses consecutive delimiters,
+        // which shifts all subsequent field indices. The JS version produced the literal
+        // string "null" for null values via JavaScript template interpolation.
         return $"{(responseExpected ? '1' : '0')}{GroupSeparator}{eventType}{GroupSeparator}" +
-               $"{subType}{GroupSeparator}{originClientNumber}{GroupSeparator}" +
+               $"{subType ?? "null"}{GroupSeparator}{originClientNumber}{GroupSeparator}" +
                $"{targetClientNumber}{GroupSeparator}{BuildDataString(data)}";
     }
 

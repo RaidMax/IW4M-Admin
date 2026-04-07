@@ -155,27 +155,27 @@ GiveWeaponImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + "^7 is not alive";
+        return self.playername + "^7 is not alive";
     }
 
     self IPrintLnBold( "You have been given a new weapon" );
     self GiveWeapon( data["weaponName"] );
     self SwitchToWeapon( data["weaponName"] );
 
-    return self.name + "^7 has been given ^5" + data["weaponName"];
+    return self.playername + "^7 has been given ^5" + data["weaponName"];
 }
 
 TakeWeaponsImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + "^7 is not alive";
+        return self.playername + "^7 is not alive";
     }
 
     self TakeAllWeapons();
     self IPrintLnBold( "All your weapons have been taken" );
 
-    return "Took weapons from " + self.name;
+    return "Took weapons from " + self.playername;
 }
 
 TeamSwitchImpl( event, data )
@@ -189,7 +189,7 @@ LockControlsImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + "^7 is not alive";
+        return self.playername + "^7 is not alive";
     }
 
     if ( !IsDefined( self.isControlLocked ) )
@@ -211,7 +211,7 @@ LockControlsImpl( event, data )
 
         self.isControlLocked = true;
 
-        return self.name + "\'s controls are locked";
+        return self.playername + "\'s controls are locked";
     }
     else
     {
@@ -221,7 +221,7 @@ LockControlsImpl( event, data )
 
         self.isControlLocked = false;
 
-        return self.name + "\'s controls are unlocked";
+        return self.playername + "\'s controls are unlocked";
     }
 }
 
@@ -275,7 +275,7 @@ AlertImpl( event, data )
 {
     // T4 ZM does not have oldNotifyMessage, use IPrintLnBold instead
     self IPrintLnBold( data["message"] );
-    return "Sent alert to " + self.name;
+    return "Sent alert to " + self.playername;
 }
 
 GotoImpl( event, data )
@@ -307,23 +307,23 @@ GotoPlayerImpl( target )
 {
     if ( !IsAlive( target ) )
     {
-        self IPrintLnBold( target.name + " is not alive" );
+        self IPrintLnBold( target.playername + " is not alive" );
         return;
     }
 
     self SetOrigin( target GetOrigin() );
-    self IPrintLnBold( "Moved to " + target.name );
+    self IPrintLnBold( "Moved to " + target.playername );
 }
 
 PlayerToMeImpl( event, data )
 {
     if ( !IsAlive( self ) )
     {
-        return self.name + " is not alive";
+        return self.playername + " is not alive";
     }
 
     self SetOrigin( event.origin GetOrigin() );
-    return "Moved here " + self.name;
+    return "Moved here " + self.playername;
 }
 
 KillImpl( event, data )

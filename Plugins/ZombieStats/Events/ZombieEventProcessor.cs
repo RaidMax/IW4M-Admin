@@ -295,9 +295,9 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
             // undo that
             if (gameEvent.IsGameOver && !isForfeit)
             {
-                var previousCumulativePoints = (int)matchStat.PointsEarned;
+                var previousCumulativePoints = matchStat.PointsEarned;
                 var lastRoundPoints = gameEvent.TotalScore - previousCumulativePoints;
-                currentScore = lastRoundPoints + (previousCumulativePoints - (int)matchStat.PointsSpent);
+                currentScore = (int)(lastRoundPoints + (previousCumulativePoints - matchStat.PointsSpent));
             }
 
             roundState.PersistentClientRound.Points = currentScore;

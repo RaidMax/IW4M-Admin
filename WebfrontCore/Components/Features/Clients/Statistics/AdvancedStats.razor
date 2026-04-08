@@ -36,7 +36,7 @@
                     <span
                         class="px-4 py-2 rounded-lg bg-surface-alt/50 text-muted border border-line backdrop-blur-sm shadow-sm">
                         <ColorCode
-                            Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
+                            Value="@(Stats.PerformanceBucket != null ? System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Stats.PerformanceBucket.ToLower()) : Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
                     </span>
                 </div>
 

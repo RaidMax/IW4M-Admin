@@ -33,7 +33,7 @@
                         <div class="text-muted mt-1 font-medium flex items-center gap-2 text-sm">
                             <i class="ph ph-globe text-subtle"></i>
                             <ColorCode
-                                Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
+                                Value="@(PerformanceBucket != null ? System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(PerformanceBucket.ToLower()) : SelectedServer?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
                             <span class="text-subtle">•</span>
                             <span
                                 class="text-primary font-bold">@TotalRankedClients.ToString("#,##0")</span> @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE").ToString().ToLower())
@@ -43,7 +43,35 @@
             </div>
 
             <div id="topPlayersContainer" class="flex flex-col gap-4 relative">
-                @if (_hasLoaded && TotalRankedClients == 0)
+                @if (_showBucketSelector && _availableBuckets != null)
+                {
+                    <h3 class="text-lg font-bold text-foreground">Select a Category</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach (var bucket in _availableBuckets)
+                        {
+                            <a href="/stats/top?category=@bucket.Code"
+                               class="group bg-surface rounded-xl border border-line p-6 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:transform hover:scale-[1.02] no-underline">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                                        <i class="ph ph-trophy text-2xl text-primary"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-lg font-bold text-foreground group-hover:text-primary transition-colors capitalize">
+                                            @bucket.Code
+                                        </h3>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-muted text-sm">@bucket.ServerCount server@(bucket.ServerCount != 1 ? "s" : "")</span>
+                                            <span class="text-subtle">•</span>
+                                            <span class="text-muted text-sm">@string.Join(", ", bucket.Games)</span>
+                                        </div>
+                                    </div>
+                                    <i class="ph ph-caret-right text-xl text-subtle group-hover:text-primary transition-colors"></i>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else if (_hasLoaded && TotalRankedClients == 0)
                 {
                     <div
                         class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-16 text-center border border-line flex flex-col items-center">
@@ -125,34 +153,8 @@
                                         </span>
                                     </div>
 
-                                    <!-- Secondary Stats Grid -->
+                                    <!-- Secondary Stats Grid (populated by StatManager + CustomStatsMetrics) -->
                                     <div class="grid grid-cols-2 2xl:grid-cols-4 gap-x-4 gap-y-2 lg:border-l border-line lg:pl-6 h-full">
-                                        <!-- Kills -->
-                                        <div class="flex flex-col min-w-[70px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.Kills.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KILLS")</span>
-                                        </div>
-                                        <!-- Deaths -->
-                                        <div class="flex flex-col min-w-[70px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.Deaths.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_DEATHS")</span>
-                                        </div>
-                                        <!-- KDR -->
-                                        <div class="flex flex-col min-w-[50px]">
-                                            <span
-                                                class="@(stat.KDR >= 2.0 ? "text-success" : stat.KDR >= 1.0 ? "text-foreground" : "text-error") font-mono font-bold">
-                                                @stat.KDR.ToString("F2")
-                                            </span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KDR")</span>
-                                        </div>
-                                        <!-- Time -->
-                                        <div class="flex flex-col min-w-[50px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.TimePlayedValue.TotalHours.ToString("F0")h</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_PLAYED")</span>
-                                        </div>
                                         @foreach (var metric in stat.Metrics)
                                         {
                                             <div class="flex flex-col min-w-[50px]">

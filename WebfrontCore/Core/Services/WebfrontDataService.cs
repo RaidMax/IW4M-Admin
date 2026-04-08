@@ -188,7 +188,8 @@ public class WebfrontDataService : IWebfrontDataService
                         ? _manager.ExternalIPAddress
                         : server.ListenAddress, server.ListenPort),
                 RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
-                GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
+                GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs,
+                PerformanceBucket = server.PerformanceCode
             }).ToList();
     }
 
@@ -890,10 +891,10 @@ public class WebfrontDataService : IWebfrontDataService
         var legacyId = server?.LegacyDatabaseId;
 
         var stats = _statsConfig.EnableAdvancedMetrics
-            ? await _statManager.GetNewTopStats(request.Offset, request.Count, legacyId)
+            ? await _statManager.GetNewTopStats(request.Offset, request.Count, legacyId, request.PerformanceBucketCode)
             : await _statManager.GetTopStats(request.Offset, request.Count, legacyId);
 
-        var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId);
+        var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId, request.PerformanceBucketCode);
 
         return new TopStatsResponse
         {
@@ -902,12 +903,13 @@ public class WebfrontDataService : IWebfrontDataService
         };
     }
 
-    public async Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null)
+    public async Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null, string? performanceBucketCode = null)
     {
         var hitInfo = (await _advancedStatsHelper.QueryResource(new StatsInfoRequest
         {
             ClientId = clientId,
-            ServerEndpoint = serverId
+            ServerEndpoint = serverId,
+            PerformanceBucketCode = performanceBucketCode
         }))?.Results?.First();
 
         if (hitInfo is null)

@@ -938,14 +938,15 @@ namespace IW4MAdmin
                 context.Entry(gameServer).Property(property => property.HostName).IsModified = true;
             }
 
-            if (gameServer.PerformanceBucket?.Code != PerformanceCode && !string.IsNullOrEmpty(PerformanceCode))
+            var normalizedPerformanceCode = PerformanceCode?.ToLowerInvariant();
+            if (gameServer.PerformanceBucket?.Code != normalizedPerformanceCode && !string.IsNullOrEmpty(normalizedPerformanceCode))
             {
                 var bucket = await context.Set<Data.Models.Client.Stats.EFPerformanceBucket>()
-                    .FirstOrDefaultAsync(b => b.Code == PerformanceCode);
+                    .FirstOrDefaultAsync(b => b.Code == normalizedPerformanceCode);
 
                 if (bucket == null)
                 {
-                    bucket = new Data.Models.Client.Stats.EFPerformanceBucket { Code = PerformanceCode };
+                    bucket = new Data.Models.Client.Stats.EFPerformanceBucket { Code = normalizedPerformanceCode };
                     context.Add(bucket);
                     await context.SaveChangesAsync();
                 }

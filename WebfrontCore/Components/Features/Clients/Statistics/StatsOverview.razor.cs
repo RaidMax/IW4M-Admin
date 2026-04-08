@@ -1,6 +1,7 @@
 ﻿using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web.Virtualization;
+using Microsoft.AspNetCore.Http;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
@@ -13,15 +14,22 @@ public partial class StatsOverview : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required ILogger<StatsOverview> Logger { get; set; }
+    [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
 
     [SupplyParameterFromQuery(Name = "serverId")]
     public string? ServerId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "category")]
+    public string? PerformanceBucket { get; set; }
 
     [PersistentState(AllowUpdates = true)]
     public StatsOverviewState? State { get; set; }
 
     private bool _hasLoaded;
     private string? _previousServerId;
+    private string? _previousBucket;
+    private List<BucketInfo>? _availableBuckets;
+    private bool _showBucketSelector;
     private bool _firstLoad = true;
     private Virtualize<TopStatsInfo>? _virtualizeComponent;
     private readonly Dictionary<int, TopStatsInfo> _statsCache = new();
@@ -34,7 +42,7 @@ public partial class StatsOverview : IAsyncDisposable
             State = new StatsOverviewState();
         }
         // Check if we have restored state that matches the current request
-        else if (_firstLoad && State.ServerId == ServerId && State.TopPlayers.Count > 0)
+        else if (_firstLoad && State.ServerId == ServerId && State.PerformanceBucket == PerformanceBucket && State.TopPlayers.Count > 0)
         {
             _firstLoad = false;
             _previousServerId = ServerId;
@@ -62,17 +70,20 @@ public partial class StatsOverview : IAsyncDisposable
             return;
         }
 
-        // Refresh grid when ServerId changes
-        if (_firstLoad || _previousServerId != ServerId)
+        // Refresh grid when ServerId or bucket changes
+        if (_firstLoad || _previousServerId != ServerId || _previousBucket != PerformanceBucket)
         {
             _firstLoad = false;
             _previousServerId = ServerId;
+            _previousBucket = PerformanceBucket;
             _hasLoaded = false;
+            _showBucketSelector = false;
 
-            // Clear cache when server changes
+            // Clear cache when server/bucket changes
             _statsCache.Clear();
             State.TopPlayers.Clear();
             State.ServerId = ServerId;
+            State.PerformanceBucket = PerformanceBucket;
 
             if (_virtualizeComponent != null)
             {
@@ -81,7 +92,56 @@ public partial class StatsOverview : IAsyncDisposable
 
             await GenerateMenu();
 
-            if (ServerId != null)
+            var allServers = await DataService.GetServersAsync();
+            var buckets = allServers
+                .Where(s => !string.IsNullOrEmpty(s.PerformanceBucket))
+                .GroupBy(s => s.PerformanceBucket, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new BucketInfo
+                {
+                    Code = g.Key,
+                    Games = g.Select(s => s.Game.ToString()).Distinct().ToList(),
+                    ServerCount = g.Count()
+                })
+                .ToList();
+
+            // Validate category if provided (case-insensitive)
+            if (PerformanceBucket != null)
+            {
+                var matchedBucket = buckets.FirstOrDefault(b =>
+                    string.Equals(b.Code, PerformanceBucket, StringComparison.OrdinalIgnoreCase));
+                if (matchedBucket == null)
+                {
+                    if (HttpContextAccessor.HttpContext is { } httpContext)
+                    {
+                        httpContext.Response.StatusCode = 404;
+                    }
+                    NavManager.NavigateTo("/NotFound", replace: true);
+                    return;
+                }
+                // Normalize to the canonical case
+                PerformanceBucket = matchedBucket.Code;
+            }
+
+            // When no bucket or server is selected, check for available buckets
+            if (ServerId == null && PerformanceBucket == null)
+            {
+                if (buckets.Count == 1)
+                {
+                    // Auto-select the only bucket (no redirect, just load it directly)
+                    PerformanceBucket = buckets[0].Code;
+                    State.PerformanceBucket = PerformanceBucket;
+                }
+                else if (buckets.Count > 1)
+                {
+                    _availableBuckets = buckets;
+                    _showBucketSelector = true;
+                    _hasLoaded = true;
+                    return;
+                }
+
+                State.SelectedServer = null;
+            }
+            else if (ServerId != null)
             {
                 var servers = await DataService.GetServersAsync();
                 State.SelectedServer = servers.FirstOrDefault(s => s.Endpoint == ServerId);
@@ -95,7 +155,8 @@ public partial class StatsOverview : IAsyncDisposable
             {
                 Count = 3,
                 Offset = 0,
-                ServerId = ServerId
+                ServerId = ServerId,
+                PerformanceBucketCode = PerformanceBucket
             });
 
             State.TopPlayers = topResponse.Players;
@@ -149,7 +210,8 @@ public partial class StatsOverview : IAsyncDisposable
             {
                 Count = fetchCount,
                 Offset = startIndex,
-                ServerId = ServerId
+                ServerId = ServerId,
+                PerformanceBucketCode = PerformanceBucket
             });
 
             // Update total count
@@ -206,24 +268,43 @@ public partial class StatsOverview : IAsyncDisposable
         if (State == null) return;
         var servers = await DataService.GetServersAsync();
 
+        var items = new List<SideContextMenuItem>();
+
+        // "Categories" section header + bucket items
+        var bucketGroups = servers
+            .Where(s => !string.IsNullOrEmpty(s.PerformanceBucket))
+            .GroupBy(s => s.PerformanceBucket, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (bucketGroups.Count > 0)
+        {
+            items.Add(new SideContextMenuItem { IsSectionHeader = true, Title = "Categories" });
+            items.AddRange(bucketGroups.Select(group => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = $"/stats/top?category={group.Key}",
+                Title = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(group.Key.ToLower()),
+                IsActive = string.Equals(PerformanceBucket, group.Key, StringComparison.OrdinalIgnoreCase) && ServerId == null,
+                Meta = group.First().Game.ToString(),
+                IsCollapse = false
+            }));
+        }
+
+        // Individual servers (collapsible, grouped by game)
+        items.AddRange(servers.Select(server => new SideContextMenuItem
+        {
+            IsLink = true,
+            Reference = $"/stats/top?serverId={server.Endpoint}",
+            Title = server.Name.StripColors(),
+            IsActive = ServerId == server.Endpoint,
+            Meta = server.Game.ToString(),
+            IsCollapse = true
+        }));
+
         State.MenuItems = new SideContextMenuItems
         {
             MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
-            Items = servers.Select(server => new SideContextMenuItem
-            {
-                IsLink = true,
-                Reference = $"/stats/top?serverId={server.Endpoint}",
-                Title = server.Name.StripColors(),
-                IsActive = ServerId == server.Endpoint,
-                Meta = server.Game.ToString(),
-                IsCollapse = true
-            }).Prepend(new SideContextMenuItem
-            {
-                IsLink = true,
-                Reference = "/stats/top",
-                Title = AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"),
-                IsActive = ServerId == null
-            }).ToList()
+            Items = items
         };
     }
     
@@ -246,6 +327,7 @@ public partial class StatsOverview : IAsyncDisposable
         public ServerInfo? SelectedServer { get; set; }
         public List<TopStatsInfo> TopPlayers { get; set; } = [];
         public string? ServerId { get; set; }
+        public string? PerformanceBucket { get; set; }
         public SideContextMenuItems? MenuItems { get; set; }
     }
     
@@ -317,5 +399,12 @@ public partial class StatsOverview : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await Task.CompletedTask;
+    }
+
+    public class BucketInfo
+    {
+        public string Code { get; set; }
+        public List<string> Games { get; set; } = [];
+        public int ServerCount { get; set; }
     }
 }

@@ -342,6 +342,7 @@ public class ZombieClientStateManager(
         }
 
         var statValues = await context.ClientStatTagValues
+            .Include(stat => stat.StatTag)
             .Where(stat => stat.ClientId == client.ClientId)
             .ToDictionaryAsync(selector => selector.StatTag.TagName, selector => selector);
 

@@ -301,19 +301,32 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (performanceBucketCode is not null)
             {
-                return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Code == performanceBucketCode) ??
+                return _config.PerformanceBuckets.FirstOrDefault(bucket =>
+                           string.Equals(bucket.Code, performanceBucketCode, StringComparison.OrdinalIgnoreCase)) ??
                        defaultConfig;
             }
 
-            var performanceBucket =
-                (await _serverCache.FirstAsync(server => server.Id == serverId))?.PerformanceBucket?.Code;
+            // The server cache doesn't eagerly load the PerformanceBucket navigation,
+            // so we query the database directly for the bucket code
+            await using var context = _contextFactory.CreateContext(false);
+            var cachedServer = await _serverCache.FirstAsync(server => server.Id == serverId);
+            if (cachedServer == null)
+            {
+                return defaultConfig;
+            }
+
+            var performanceBucket = await context.Set<Data.Models.Client.Stats.EFPerformanceBucket>()
+                .Where(b => b.PerformanceBucketId == cachedServer.PerformanceBucketId)
+                .Select(b => b.Code)
+                .FirstOrDefaultAsync();
 
             if (string.IsNullOrEmpty(performanceBucket))
             {
                 return defaultConfig;
             }
 
-            return _config.PerformanceBuckets.FirstOrDefault(bucket => bucket.Code == performanceBucket) ??
+            return _config.PerformanceBuckets.FirstOrDefault(bucket =>
+                       string.Equals(bucket.Code, performanceBucket, StringComparison.OrdinalIgnoreCase)) ??
                    defaultConfig;
         }
 
@@ -450,13 +463,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 var serverStats = InitializeServerStats(gameServer.LegacyDatabaseId);
 
-                var added = _servers.TryAdd(cachedServer.ServerId, new ServerStats(cachedServer, serverStats, gameServer as Server)
+                _servers.TryAdd(cachedServer.ServerId, new ServerStats(cachedServer, serverStats, gameServer as Server)
                 {
                     IsTeamBased = gameServer.Gametype != "dm"
                 });
-
-                _log.LogDebug("[Stats::EnsureServerAdded] Server {Endpoint} cachedServerId={CachedId} legacyId={LegacyId} added={Added} totalServers={Count}",
-                    gameServer.Id, cachedServer.ServerId, gameServer.LegacyDatabaseId, added, _servers.Count);
             }
 
             catch (Exception ex)

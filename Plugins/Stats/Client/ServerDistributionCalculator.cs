@@ -100,7 +100,7 @@ namespace Stats.Client
                 return distributions;
             }, DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromHours(1));
 
-            foreach (var performanceBucket in _appConfig.Servers.Select(s => s.PerformanceBucketCode).Distinct())
+            foreach (var performanceBucket in _appConfig.Servers.Select(s => s.PerformanceBucketCode ?? string.Empty).Distinct())
             {
                 _maxZScoreCache.SetCacheItem(async (set, ids, token) =>
                     {
@@ -210,8 +210,15 @@ namespace Stats.Client
 
         public async Task<double?> GetRatingForZScore(double? value, string performanceBucket)
         {
-            var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new[] { performanceBucket });
-            return maxZScore == 0 ? null : value.GetRatingForZScore(maxZScore);
+            try
+            {
+                var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new[] { performanceBucket ?? string.Empty });
+                return maxZScore == 0 ? null : value.GetRatingForZScore(maxZScore);
+            }
+            catch (KeyNotFoundException)
+            {
+                return null;
+            }
         }
     }
 }

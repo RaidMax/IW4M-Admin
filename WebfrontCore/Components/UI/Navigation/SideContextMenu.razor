@@ -67,6 +67,11 @@
 
             @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
             {
+                if (item.IsSectionHeader)
+                {
+                    <div class="text-xs font-bold text-muted uppercase tracking-wider mt-4 mb-2 px-2">@item.Title</div>
+                    continue;
+                }
                 var isLong = item.Title.Length > 30; // Threshold for marquee
                 <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
                    target="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "_blank" : null)"
@@ -137,6 +142,11 @@
 
             @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
             {
+                if (item.IsSectionHeader)
+                {
+                    <div class="text-xs font-bold text-muted uppercase tracking-wider mt-4 mb-2 px-2">@item.Title</div>
+                    continue;
+                }
                 <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
                    target="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "_blank" : null)"
                    rel="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "noopener noreferrer" : null)"

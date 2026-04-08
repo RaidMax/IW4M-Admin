@@ -18,7 +18,7 @@ using Data.Models.Server;
 using Microsoft.Extensions.Logging;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Events;
-using IW4MAdmin.Plugins.Stats.TalkerPoC;
+
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Game.GameScript;
@@ -49,7 +49,6 @@ public class Plugin : IPluginV2
     private readonly StatsConfiguration _statsConfig;
     private readonly StatManager _statManager;
     private readonly IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> _queryHelper;
-    private readonly CodResponseService responsePoc = new("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");
     private IStatusResponse lastResponse;
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)

@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-<<<<<<< HEAD
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <TargetFramework>net10.0</TargetFramework>
@@ -18,29 +17,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-       <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+      <ProjectReference Include="..\..\Data\Data.csproj" />
+      <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
     </ItemGroup>
-=======
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ApplicationIcon />
-    <StartupObject />
-    <PackageId>RaidMax.IW4MAdmin.Plugins.Stats</PackageId>
-    <Authors>RaidMax</Authors>
-    <Company>Forever None</Company>
-    <Product>Client Statistics</Product>
-    <Description>Client Statistics Plugin for IW4MAdmin</Description>
-    <Copyright>2018</Copyright>
-    <Configurations>Debug;Release;Prerelease</Configurations>
-    <LangVersion>Latest</LangVersion>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Data\Data.csproj" />
-    <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
-  </ItemGroup>
->>>>>>> 79bd6ca8 (zombie stats code)
 
 </Project>

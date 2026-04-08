@@ -388,6 +388,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("MeansOfDeathId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("PerformanceBucketId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ReceivedHitCount")
                         .HasColumnType("INTEGER");
 
@@ -418,6 +421,8 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("MeansOfDeathId");
 
+                    b.HasIndex("PerformanceBucketId");
+
                     b.HasIndex("ServerId");
 
                     b.HasIndex("WeaponAttachmentComboId");
@@ -444,8 +449,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("Newest")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("PerformanceBucket")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("PerformanceBucketId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<double?>("PerformanceMetric")
                         .HasColumnType("REAL");
@@ -467,6 +472,8 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("ClientId");
 
                     b.HasIndex("CreatedDateTime");
+
+                    b.HasIndex("PerformanceBucketId");
 
                     b.HasIndex("Ranking");
 
@@ -643,6 +650,25 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("EFClientStatisticsClientId", "EFClientStatisticsServerId");
 
                     b.ToTable("EFHitLocationCounts", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFPerformanceBucket", b =>
+                {
+                    b.Property<int>("PerformanceBucketId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PerformanceBucketId");
+
+                    b.ToTable("PerformanceBuckets");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -1180,13 +1206,15 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("IsPasswordProtected")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("PerformanceBucket")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("PerformanceBucketId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Port")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ServerId");
+
+                    b.HasIndex("PerformanceBucketId");
 
                     b.ToTable("EFServers", (string)null);
                 });
@@ -1286,7 +1314,7 @@ namespace Data.Migrations.Sqlite
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("DamageDealt")
+                    b.Property<long>("DamageDealt")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("DamageReceived")
@@ -1296,6 +1324,9 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Downs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HeadshotKills")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Headshots")
@@ -1334,13 +1365,9 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("MatchId");
 
-<<<<<<< HEAD
-                    b.ToTable("EFZombieClientStat", (string)null);
-=======
                     b.ToTable("EFZombieClientStats", (string)null);
 
                     b.UseTptMappingStrategy();
->>>>>>> 79bd6ca8 (zombie stats code)
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
@@ -1382,6 +1409,47 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("EFZombieClientStatRecords", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieEventLog", b =>
+                {
+                    b.Property<long>("ZombieEventLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AssociatedClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedDateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EventType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("NumericalValue")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("SourceClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TextualValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("UpdatedDateTime")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ZombieEventLogId");
+
+                    b.HasIndex("AssociatedClientId");
+
+                    b.HasIndex("MatchId");
+
+                    b.HasIndex("SourceClientId");
+
+                    b.ToTable("EFZombieEvents", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
                 {
                     b.Property<int>("ZombieMatchId")
@@ -1393,9 +1461,6 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("EFClientClientId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("MapId")
                         .HasColumnType("INTEGER");
@@ -1413,8 +1478,6 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("TEXT");
 
                     b.HasKey("ZombieMatchId");
-
-                    b.HasIndex("EFClientClientId");
 
                     b.HasIndex("MapId");
 
@@ -1448,13 +1511,13 @@ namespace Data.Migrations.Sqlite
                     b.Property<double>("AverageRoundReached")
                         .HasColumnType("REAL");
 
-                    b.Property<int?>("EFClientClientId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<double>("HeadshotPercentage")
                         .HasColumnType("REAL");
 
                     b.Property<int>("HighestRound")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ServerId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TotalMatchesCompleted")
@@ -1466,7 +1529,7 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("TotalRoundsPlayed")
                         .HasColumnType("INTEGER");
 
-                    b.HasIndex("EFClientClientId");
+                    b.HasIndex("ServerId");
 
                     b.ToTable("EFZombieClientStatAggregates", (string)null);
                 });
@@ -1475,16 +1538,7 @@ namespace Data.Migrations.Sqlite
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
 
-<<<<<<< HEAD
-                    b.Property<int?>("EFClientClientId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasIndex("EFClientClientId");
-
-                    b.ToTable("EFZombieMatchClientStat", (string)null);
-=======
                     b.ToTable("EFZombieMatchClientStats", (string)null);
->>>>>>> 79bd6ca8 (zombie stats code)
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
@@ -1493,9 +1547,6 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("TEXT");
-
-                    b.Property<int?>("EFClientClientId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("EndTime")
                         .HasColumnType("TEXT");
@@ -1512,13 +1563,7 @@ namespace Data.Migrations.Sqlite
                     b.Property<TimeSpan?>("TimeAlive")
                         .HasColumnType("TEXT");
 
-<<<<<<< HEAD
-                    b.HasIndex("EFClientClientId");
-
-                    b.ToTable("EFZombieRoundClientStat", (string)null);
-=======
                     b.ToTable("EFZombieRoundClientStats", (string)null);
->>>>>>> 79bd6ca8 (zombie stats code)
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
@@ -1707,6 +1752,10 @@ namespace Data.Migrations.Sqlite
                         .WithMany()
                         .HasForeignKey("MeansOfDeathId");
 
+                    b.HasOne("Data.Models.Client.Stats.EFPerformanceBucket", "PerformanceBucket")
+                        .WithMany()
+                        .HasForeignKey("PerformanceBucketId");
+
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
@@ -1725,6 +1774,8 @@ namespace Data.Migrations.Sqlite
 
                     b.Navigation("MeansOfDeath");
 
+                    b.Navigation("PerformanceBucket");
+
                     b.Navigation("Server");
 
                     b.Navigation("Weapon");
@@ -1740,11 +1791,17 @@ namespace Data.Migrations.Sqlite
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Data.Models.Client.Stats.EFPerformanceBucket", "PerformanceBucket")
+                        .WithMany()
+                        .HasForeignKey("PerformanceBucketId");
+
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
 
                     b.Navigation("Client");
+
+                    b.Navigation("PerformanceBucket");
 
                     b.Navigation("Server");
                 });
@@ -1962,6 +2019,15 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("SourceClient");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFServer", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.EFPerformanceBucket", "PerformanceBucket")
+                        .WithMany()
+                        .HasForeignKey("PerformanceBucketId");
+
+                    b.Navigation("PerformanceBucket");
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
                 {
                     b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
@@ -2001,7 +2067,7 @@ namespace Data.Migrations.Sqlite
                         .IsRequired();
 
                     b.HasOne("Data.Models.Zombie.ZombieMatch", "Match")
-                        .WithMany("ClientStats")
+                        .WithMany()
                         .HasForeignKey("MatchId");
 
                     b.Navigation("Client");
@@ -2024,12 +2090,29 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Round");
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieEventLog", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "AssociatedClient")
+                        .WithMany()
+                        .HasForeignKey("AssociatedClientId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieMatch", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId");
+
+                    b.HasOne("Data.Models.Client.EFClient", "SourceClient")
+                        .WithMany()
+                        .HasForeignKey("SourceClientId");
+
+                    b.Navigation("AssociatedClient");
+
+                    b.Navigation("Match");
+
+                    b.Navigation("SourceClient");
+                });
+
             modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
                 {
-                    b.HasOne("Data.Models.Client.EFClient", null)
-                        .WithMany("ZombieMatches")
-                        .HasForeignKey("EFClientClientId");
-
                     b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
                         .WithMany()
                         .HasForeignKey("MapId");
@@ -2045,23 +2128,21 @@ namespace Data.Migrations.Sqlite
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
                 {
-                    b.HasOne("Data.Models.Client.EFClient", null)
-                        .WithMany("ZombieAggregateClientStats")
-                        .HasForeignKey("EFClientClientId");
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
 
                     b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
                         .WithOne()
                         .HasForeignKey("Data.Models.Zombie.ZombieAggregateClientStat", "ZombieClientStatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieMatchClientStat", b =>
                 {
-                    b.HasOne("Data.Models.Client.EFClient", null)
-                        .WithMany("ZombieMatchClientStats")
-                        .HasForeignKey("EFClientClientId");
-
                     b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
                         .WithOne()
                         .HasForeignKey("Data.Models.Zombie.ZombieMatchClientStat", "ZombieClientStatId")
@@ -2071,10 +2152,6 @@ namespace Data.Migrations.Sqlite
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
                 {
-                    b.HasOne("Data.Models.Client.EFClient", null)
-                        .WithMany("ZombieRoundClientStats")
-                        .HasForeignKey("EFClientClientId");
-
                     b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
                         .WithOne()
                         .HasForeignKey("Data.Models.Zombie.ZombieRoundClientStat", "ZombieClientStatId")
@@ -2090,15 +2167,7 @@ namespace Data.Migrations.Sqlite
 
                     b.Navigation("ReceivedPenalties");
 
-                    b.Navigation("ZombieAggregateClientStats");
-
                     b.Navigation("ZombieClientStats");
-
-                    b.Navigation("ZombieMatchClientStats");
-
-                    b.Navigation("ZombieMatches");
-
-                    b.Navigation("ZombieRoundClientStats");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFACSnapshot", b =>
@@ -2121,11 +2190,6 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Children");
 
                     b.Navigation("ReceivedPenalties");
-                });
-
-            modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
-                {
-                    b.Navigation("ClientStats");
                 });
 #pragma warning restore 612, 618
         }

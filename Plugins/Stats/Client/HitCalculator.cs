@@ -439,15 +439,7 @@ public class HitCalculator : IClientStatisticCalculator
         }
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    private Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null,
-=======
-    private async Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null, string performanceBucket = null,
->>>>>>> 79bd6ca8 (zombie stats code)
-=======
-    private async Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null, string performanceBucketCode = null,
->>>>>>> 98e2be86 (Using Code from EFPerformanceBucket for references)
+    private Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null, string performanceBucketCode = null,
         int? hitLocationId = null, int? weaponId = null, int? attachmentComboId = null,
         int? meansOfDeathId = null)
     {

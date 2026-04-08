@@ -153,6 +153,13 @@
                                                 class="text-foreground font-mono font-bold">@stat.TimePlayedValue.TotalHours.ToString("F0")h</span>
                                             <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_PLAYED")</span>
                                         </div>
+                                        @foreach (var metric in stat.Metrics)
+                                        {
+                                            <div class="flex flex-col min-w-[50px]">
+                                                <span class="text-foreground font-mono font-bold">@metric.Value</span>
+                                                <span class="text-muted text-[10px] uppercase font-bold">@metric.Key</span>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             </div>

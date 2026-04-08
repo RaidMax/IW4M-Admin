@@ -31,7 +31,7 @@ namespace Stats.Helpers
         : IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
             IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo>
     {
-        private readonly ILogger _logger = logger;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger = logger;
 
         public async Task<ResourceQueryHelperResult<AdvancedStatsInfo>> QueryResource(StatsInfoRequest query)
         {

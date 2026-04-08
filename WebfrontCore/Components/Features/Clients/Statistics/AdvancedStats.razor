@@ -150,6 +150,17 @@
                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"), Stats.ActiveTime?.HumanizeForCurrentCulture())
                 </div>
 
+                @if (Stats.CustomMetrics.Count > 0)
+                {
+                    <!-- Custom Metrics (e.g. Zombie Stats) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        @foreach (var metric in Stats.CustomMetrics)
+                        {
+                            @RenderStatCard(metric.Key, metric.Value)
+                        }
+                    </div>
+                }
+
                 <!-- Bottom Section: Models & Tables -->
                 <div class="grid grid-cols-1 2xl:grid-cols-2 gap-8">
                     <!-- Hit Locations -->

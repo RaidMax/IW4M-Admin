@@ -1233,6 +1233,11 @@ namespace SharedLibraryCore
             return value.ToString("#,##0", CurrentLocalization.Culture);
         }
 
+        public static string ToNumericalString(this long value)
+        {
+            return value.ToString("#,##0", CurrentLocalization.Culture);
+        }
+
         public static string ToNumericalString(this double value, int precision = 0)
         {
             return value.ToString(

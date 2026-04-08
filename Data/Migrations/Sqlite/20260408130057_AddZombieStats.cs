@@ -6,21 +6,27 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Data.Migrations.Sqlite
 {
     /// <inheritdoc />
-    public partial class InitialZombieStats : Migration
+    public partial class AddZombieStats : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "PerformanceBucket",
+            migrationBuilder.AddColumn<int>(
+                name: "PerformanceBucketId",
                 table: "EFServers",
-                type: "TEXT",
+                type: "INTEGER",
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
-                name: "PerformanceBucket",
+            migrationBuilder.AddColumn<int>(
+                name: "PerformanceBucketId",
                 table: "EFClientRankingHistory",
-                type: "TEXT",
+                type: "INTEGER",
+                nullable: true);
+
+            migrationBuilder.AddColumn<int>(
+                name: "PerformanceBucketId",
+                table: "EFClientHitStatistics",
+                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.CreateTable(
@@ -65,6 +71,20 @@ namespace Data.Migrations.Sqlite
                         column: x => x.ServerId,
                         principalTable: "EFServers",
                         principalColumn: "ServerId");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PerformanceBuckets",
+                columns: table => new
+                {
+                    PerformanceBucketId = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Code = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PerformanceBuckets", x => x.PerformanceBucketId);
                 });
 
             migrationBuilder.CreateTable(
@@ -279,6 +299,21 @@ namespace Data.Migrations.Sqlite
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_EFServers_PerformanceBucketId",
+                table: "EFServers",
+                column: "PerformanceBucketId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFClientRankingHistory_PerformanceBucketId",
+                table: "EFClientRankingHistory",
+                column: "PerformanceBucketId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EFClientHitStatistics_PerformanceBucketId",
+                table: "EFClientHitStatistics",
+                column: "PerformanceBucketId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EFClientStatTagValues_ClientId",
                 table: "EFClientStatTagValues",
                 column: "ClientId");
@@ -337,11 +372,44 @@ namespace Data.Migrations.Sqlite
                 name: "IX_EFZombieMatches_ServerId",
                 table: "EFZombieMatches",
                 column: "ServerId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFClientHitStatistics_PerformanceBuckets_PerformanceBucketId",
+                table: "EFClientHitStatistics",
+                column: "PerformanceBucketId",
+                principalTable: "PerformanceBuckets",
+                principalColumn: "PerformanceBucketId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucketId",
+                table: "EFClientRankingHistory",
+                column: "PerformanceBucketId",
+                principalTable: "PerformanceBuckets",
+                principalColumn: "PerformanceBucketId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_EFServers_PerformanceBuckets_PerformanceBucketId",
+                table: "EFServers",
+                column: "PerformanceBucketId",
+                principalTable: "PerformanceBuckets",
+                principalColumn: "PerformanceBucketId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_EFClientHitStatistics_PerformanceBuckets_PerformanceBucketId",
+                table: "EFClientHitStatistics");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucketId",
+                table: "EFClientRankingHistory");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_EFServers_PerformanceBuckets_PerformanceBucketId",
+                table: "EFServers");
+
             migrationBuilder.DropTable(
                 name: "EFClientStatTagValues");
 
@@ -358,6 +426,9 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieMatchClientStats");
 
             migrationBuilder.DropTable(
+                name: "PerformanceBuckets");
+
+            migrationBuilder.DropTable(
                 name: "EFClientStatTags");
 
             migrationBuilder.DropTable(
@@ -369,13 +440,29 @@ namespace Data.Migrations.Sqlite
             migrationBuilder.DropTable(
                 name: "EFZombieMatches");
 
+            migrationBuilder.DropIndex(
+                name: "IX_EFServers_PerformanceBucketId",
+                table: "EFServers");
+
+            migrationBuilder.DropIndex(
+                name: "IX_EFClientRankingHistory_PerformanceBucketId",
+                table: "EFClientRankingHistory");
+
+            migrationBuilder.DropIndex(
+                name: "IX_EFClientHitStatistics_PerformanceBucketId",
+                table: "EFClientHitStatistics");
+
             migrationBuilder.DropColumn(
-                name: "PerformanceBucket",
+                name: "PerformanceBucketId",
                 table: "EFServers");
 
             migrationBuilder.DropColumn(
-                name: "PerformanceBucket",
+                name: "PerformanceBucketId",
                 table: "EFClientRankingHistory");
+
+            migrationBuilder.DropColumn(
+                name: "PerformanceBucketId",
+                table: "EFClientHitStatistics");
         }
     }
 }

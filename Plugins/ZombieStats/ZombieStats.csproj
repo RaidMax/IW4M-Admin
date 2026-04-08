@@ -1,19 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <OutputType>Library</OutputType>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>IW4MAdmin.Plugins.ZombieStats</RootNamespace>
+        <PackageId>RaidMax.IW4MAdmin.Plugins.ZombieStats</PackageId>
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Product>Zombie Statistics</Product>
+        <Description>Zombie Statistics Plugin for IW4MAdmin</Description>
+        <Copyright>2026</Copyright>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <LangVersion>Latest</LangVersion>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\Data\Data.csproj" />
         <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
     </ItemGroup>
-
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="dotnet publish $(ProjectPath) -c $(ConfigurationName) -o $(ProjectDir)..\..\Build\Plugins --no-build --no-restore --no-dependencies" />
-    </Target>
 
 </Project>

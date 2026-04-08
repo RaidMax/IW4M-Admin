@@ -43,12 +43,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private readonly SemaphoreSlim _addPlayerWaiter = new(1, 1);
         private readonly IServerDistributionCalculator _serverDistributionCalculator;
         private readonly ILookupCache<EFServer> _serverCache;
-        private readonly IManager _manager;
 
         public StatManager(ILogger<StatManager> logger, IDatabaseContextFactory contextFactory,
             StatsConfiguration statsConfig,
-            IServerDistributionCalculator serverDistributionCalculator, ILookupCache<EFServer> serverCache,
-            IManager manager)
+            IServerDistributionCalculator serverDistributionCalculator, ILookupCache<EFServer> serverCache)
         {
             _servers = new ConcurrentDictionary<long, ServerStats>();
             _log = logger;
@@ -56,7 +54,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             _config = statsConfig;
             _serverDistributionCalculator = serverDistributionCalculator;
             _serverCache = serverCache;
-            _manager = manager;
         }
 
         ~StatManager()
@@ -279,7 +276,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 });
             }
             
-            foreach (var customMetricFunc in _manager.CustomStatsMetrics)
+            foreach (var customMetricFunc in Plugin.ServerManager.CustomStatsMetrics)
             {
                 await customMetricFunc(finished.ToDictionary(kvp => kvp.ClientId, kvp => kvp.Metrics), serverId,
                     performanceBucketCode, true);
@@ -444,12 +441,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 // check to see if the stats have ever been initialized
                 var cachedServer =
                     await _serverCache.FirstAsync(cachedServer => cachedServer.EndPoint == gameServer.Id);
+
+                if (cachedServer == null)
+                {
+                    _log.LogError("[Stats::EnsureServerAdded] cachedServer is null for endpoint {Endpoint}", gameServer.Id);
+                    return;
+                }
+
                 var serverStats = InitializeServerStats(gameServer.LegacyDatabaseId);
 
-                _servers.TryAdd(cachedServer.ServerId, new ServerStats(cachedServer, serverStats, gameServer as Server)
+                var added = _servers.TryAdd(cachedServer.ServerId, new ServerStats(cachedServer, serverStats, gameServer as Server)
                 {
                     IsTeamBased = gameServer.Gametype != "dm"
                 });
+
+                _log.LogDebug("[Stats::EnsureServerAdded] Server {Endpoint} cachedServerId={CachedId} legacyId={LegacyId} added={Added} totalServers={Count}",
+                    gameServer.Id, cachedServer.ServerId, gameServer.LegacyDatabaseId, added, _servers.Count);
             }
 
             catch (Exception ex)
@@ -738,7 +745,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
 
                 waiter = clientStats.ProcessingHit;
-                await waiter.WaitAsync(Utilities.DefaultCommandTimeout, _manager.CancellationToken);
+                await waiter.WaitAsync(Utilities.DefaultCommandTimeout, Plugin.ServerManager.CancellationToken);
 
                 // increment their hit count
                 if (hit.DeathType == (int)IW4Info.MeansOfDeath.MOD_PISTOL_BULLET ||
@@ -1055,7 +1062,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     // we need to make this thread safe because we can potentially have kills qualify
                     // for stat history update, but one is already processing that invalidates the original
                     await attackerStats.ProcessingHit.WaitAsync(Utilities.DefaultCommandTimeout,
-                        _manager.CancellationToken);
+                        Plugin.ServerManager.CancellationToken);
                     if (_config.EnableAdvancedMetrics)
                     {
                         await UpdateHistoricalRanking(attacker.ClientId, attackerStats, serverId);

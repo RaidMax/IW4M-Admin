@@ -22,7 +22,7 @@ using IW4MAdmin.Plugins.Stats.Events;
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Game.GameScript;
-using SharedLibraryCore.Events.Game.GameScript.Zombie;
+
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces.Events;
 using Stats.Client.Abstractions;
@@ -46,9 +46,9 @@ public class Plugin : IPluginV2
     private readonly ILogger<Plugin> _logger;
     private readonly List<IClientStatisticCalculator> _statCalculators;
     private readonly IServerDistributionCalculator _serverDistributionCalculator;
+    private readonly IServerDataViewer _serverDataViewer;
     private readonly StatsConfiguration _statsConfig;
     private readonly StatManager _statManager;
-    private readonly IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> _queryHelper;
     private IStatusResponse lastResponse;
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)
@@ -61,9 +61,8 @@ public class Plugin : IPluginV2
         ITranslationLookup translationLookup, IMetaServiceV2 metaService,
         IResourceQueryHelper<ChatSearchQuery, MessageResponse> chatQueryHelper,
         IEnumerable<IClientStatisticCalculator> statCalculators,
-        IServerDistributionCalculator serverDistributionCalculator, 
-        StatsConfiguration statsConfig, StatManager statManager, 
-        IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo> queryHelper)
+        IServerDistributionCalculator serverDistributionCalculator, IServerDataViewer serverDataViewer,
+        StatsConfiguration statsConfig, StatManager statManager)
     {
         _databaseContextFactory = databaseContextFactory;
         _translationLookup = translationLookup;
@@ -72,9 +71,9 @@ public class Plugin : IPluginV2
         _logger = logger;
         _statCalculators = statCalculators.ToList();
         _serverDistributionCalculator = serverDistributionCalculator;
+        _serverDataViewer = serverDataViewer;
         _statsConfig = statsConfig;
         _statManager = statManager;
-        _queryHelper = queryHelper;
 
         IGameServerEventSubscriptions.MonitoringStopped +=
             async (monitorEvent, token) => await _statManager.Sync(monitorEvent.Server, token);
@@ -282,10 +281,7 @@ public class Plugin : IPluginV2
             var performance =
                 Math.Round(validPerformanceValues.Sum(c => c.Performance * c.TimePlayed / performancePlayTime), 2);
             var spm = Math.Round(clientStats.Sum(c => c.SPM) / clientStats.Count(c => c.SPM > 0), 1);
-            var ranking = (await _queryHelper.QueryResource(new ClientRankingInfoRequest
-            {
-                ClientId = request.ClientId,
-            })).Results.First();
+            var overallRanking = await _statManager.GetClientOverallRanking(request.ClientId);
 
             return new List<InformationResponse>
             {
@@ -294,12 +290,12 @@ public class Plugin : IPluginV2
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING"],
                     Value = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_CLIENT_META_RANKING_FORMAT"]
                         .FormatExt(
-                            (ranking.CurrentRanking == 0
+                            (overallRanking == 0
                                 ? "--"
-                                : ranking.CurrentRanking.ToString("#,##0",
+                                : overallRanking.ToString("#,##0",
                                     new System.Globalization.CultureInfo(Utilities.CurrentLocalization
                                         .LocalizationName))),
-                            ranking.TotalRankedClients.ToString("#,##0",
+                            (await _serverDataViewer.RankedClientsCountAsync(token: token)).ToString("#,##0",
                                 new System.Globalization.CultureInfo(Utilities.CurrentLocalization.LocalizationName))
                         ),
                     Column = 0,

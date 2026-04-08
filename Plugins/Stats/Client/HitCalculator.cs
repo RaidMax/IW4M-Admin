@@ -18,7 +18,7 @@ using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Game.GameScript;
-using SharedLibraryCore.Events.Game.GameScript.Zombie;
+
 using SharedLibraryCore.Events.Management;
 using Stats.Client.Abstractions;
 using Stats.Client.Game;
@@ -454,7 +454,7 @@ public class HitCalculator : IClientStatisticCalculator
                                    && hit.WeaponId == weaponId
                                    && hit.WeaponAttachmentComboId == attachmentComboId
                                    && hit.MeansOfDeathId == meansOfDeathId
-                                   && (performanceBucketCode is not null && performanceBucketCode == hit.Server.PerformanceBucket.Code || (performanceBucketCode is null && hit.ServerId == serverId)));
+                                   && (performanceBucketCode is not null && performanceBucketCode == hit.Server?.PerformanceBucket?.Code || (performanceBucketCode is null && hit.ServerId == serverId)));
 
         if (hitStat != null)
         {

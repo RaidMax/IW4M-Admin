@@ -171,7 +171,7 @@ namespace Stats.Client
                 await using var context = _contextFactory.CreateContext(false);
                 _serverIds.AddRange(await context.Servers
                     .Where(s => s.EndPoint != null && s.HostName != null)
-                    .Select(s => new Tuple<long, string>(s.ServerId, s.PerformanceBucket.Code))
+                    .Select(s => new Tuple<long, string>(s.ServerId, s.PerformanceBucket == null ? null : s.PerformanceBucket.Code))
                     .ToListAsync());
             }
         }

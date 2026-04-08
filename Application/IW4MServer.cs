@@ -938,10 +938,20 @@ namespace IW4MAdmin
                 context.Entry(gameServer).Property(property => property.HostName).IsModified = true;
             }
 
-            if (gameServer.PerformanceBucket.Code != PerformanceCode)
+            if (gameServer.PerformanceBucket?.Code != PerformanceCode && !string.IsNullOrEmpty(PerformanceCode))
             {
-                gameServer.PerformanceBucket.Code = PerformanceCode;
-                context.Entry(gameServer).Property(property => property.PerformanceBucket).IsModified = true;
+                var bucket = await context.Set<Data.Models.Client.Stats.EFPerformanceBucket>()
+                    .FirstOrDefaultAsync(b => b.Code == PerformanceCode);
+
+                if (bucket == null)
+                {
+                    bucket = new Data.Models.Client.Stats.EFPerformanceBucket { Code = PerformanceCode };
+                    context.Add(bucket);
+                    await context.SaveChangesAsync();
+                }
+
+                gameServer.PerformanceBucketId = bucket.PerformanceBucketId;
+                context.Entry(gameServer).Property(p => p.PerformanceBucketId).IsModified = true;
             }
 
             if (gameServer.IsPasswordProtected != !string.IsNullOrEmpty(GamePassword))

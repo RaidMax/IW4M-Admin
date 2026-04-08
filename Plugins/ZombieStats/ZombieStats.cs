@@ -58,11 +58,19 @@ public class ZombieStats : IPluginV2
         }
         
         _stateManager.TrackEventForLog(clientEvent.Client.CurrentServer, EventLogType.LeftMatch, clientEvent.Client);
-        _zombieEventProcessor.ProcessEvent(new PlayerRoundDataGameEvent
+
+        // Finalize the round state directly instead of sending a synthetic event with zeros
+        // (which would trigger isForfeit and drop the round's points data)
+        var matchState = _stateManager.GetStateForClient(clientEvent.Client);
+        if (matchState?.RoundStates.TryGetValue(clientEvent.Client.NetworkId, out var roundState) == true)
         {
-            Origin = clientEvent.Client,
-            Owner = clientEvent.Client.CurrentServer
-        });
+            roundState.PersistentClientRound.EndTime = DateTimeOffset.UtcNow;
+            roundState.PersistentClientRound.Duration =
+                roundState.PersistentClientRound.EndTime - roundState.PersistentClientRound.StartTime;
+            roundState.PersistentClientRound.TimeAlive ??= roundState.PersistentClientRound.Duration;
+            _stateManager.TrackUpdatedState(roundState.PersistentClientRound);
+        }
+
         _stateManager.UntrackClient(clientEvent.Client, clientEvent.Client.CurrentServer);
         await _stateManager.UpdateState(token);
     }
@@ -117,12 +125,14 @@ public class ZombieStats : IPluginV2
         switch (parsedScriptEvent)
         {
             case ZombieKilledGameEvent zombieKilledGameEvent:
+                var zkAttacker = scriptEvent.Server.ConnectedClients.FirstOrDefault(client =>
+                    client.NetworkId == zombieKilledGameEvent.Attacker.NetworkId);
+                if (zkAttacker == null) break;
                 scriptEvent.Owner.Manager.QueueEvent(new ClientKillEvent
                 {
                     Type = GameEvent.EventType.Kill,
                     Data = string.Join(';', scriptEvent.ScriptData.Split(';')[1..]).TrimStart('A'),
-                    Origin = scriptEvent.Server.ConnectedClients.First(client =>
-                        client.NetworkId == zombieKilledGameEvent.Attacker.NetworkId),
+                    Origin = zkAttacker,
                     Target = zombieClient,
                     GameTime = scriptEvent.GameTime,
                     Source = GameEvent.EventSource.Log,
@@ -130,12 +140,14 @@ public class ZombieStats : IPluginV2
                 });
                 break;
             case ZombieDamageGameEvent zombieDamageGameEvent:
+                var zdAttacker = scriptEvent.Server.ConnectedClients.FirstOrDefault(client =>
+                    client.NetworkId == zombieDamageGameEvent.Attacker.NetworkId);
+                if (zdAttacker == null) break;
                 scriptEvent.Owner.Manager.QueueEvent(new ClientDamageEvent
                 {
                     Type = GameEvent.EventType.Kill,
                     Data = string.Join(';', scriptEvent.ScriptData.Split(';')[1..]).TrimStart('A'),
-                    Origin = scriptEvent.Server.ConnectedClients.First(client =>
-                        client.NetworkId == zombieDamageGameEvent.Attacker.NetworkId),
+                    Origin = zdAttacker,
                     Target = zombieClient,
                     GameTime = scriptEvent.GameTime,
                     Source = GameEvent.EventSource.Log,
@@ -143,12 +155,14 @@ public class ZombieStats : IPluginV2
                 });
                 break;
             case PlayerKilledGameEvent playerKilledGameEvent:
+                var pkTarget = scriptEvent.Server.ConnectedClients.FirstOrDefault(client =>
+                    client.NetworkId == playerKilledGameEvent.Target.NetworkId);
+                if (pkTarget == null) break;
                 scriptEvent.Owner.Manager.QueueEvent(new ClientKillEvent
                 {
                     Type = GameEvent.EventType.Kill,
                     Data = string.Join(';', scriptEvent.ScriptData.Split(';')[1..]).TrimStart('A'),
-                    Target = scriptEvent.Server.ConnectedClients.First(client =>
-                        client.NetworkId == playerKilledGameEvent.Target.NetworkId),
+                    Target = pkTarget,
                     Origin = zombieClient,
                     GameTime = scriptEvent.GameTime,
                     Source = GameEvent.EventSource.Log,

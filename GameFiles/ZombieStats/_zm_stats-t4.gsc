@@ -313,6 +313,15 @@ WaitForRoundChange()
             LogPrint( "GSE;K;" + playerInfo + ";-1;-1;axis;Zombie;default_weapon;0;MOD_MELEE;none\n");
         }
 
+        // IW4MAdmin reads the game log and processes events concurrently.
+        // When K (death) and RD (round data) events are emitted in the same
+        // server frame, they arrive simultaneously and IW4MAdmin may process
+        // the RD event's stat rollup before the K event's death increment,
+        // causing Deaths to be missing from match/aggregate totals.
+        // This wait ensures the K events are written to the log and processed
+        // before RD/RC events arrive.
+        wait ( 0.1 );
+
         isGameOver = IsDefined( result ) && result == "intermission";
         PrintPlayerRoundData( isGameOver );
 

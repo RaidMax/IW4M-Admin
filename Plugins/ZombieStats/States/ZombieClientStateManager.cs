@@ -71,9 +71,9 @@ public class ZombieClientStateManager(
                     entry.State = EntityState.Added;
                     await context.SaveChangesAsync(token);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException ex)
                 {
-                    // ignored
+                    _logger.LogWarning(ex, "[ZM] Could not persist new entity");
                 }
                 finally
                 {
@@ -107,9 +107,9 @@ public class ZombieClientStateManager(
                     entry.State = EntityState.Modified;
                     await context.SaveChangesAsync(token);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException ex)
                 {
-                    // ignored
+                    _logger.LogWarning(ex, "[ZM] Could not persist updated entity");
                 }
                 finally
                 {
@@ -615,7 +615,11 @@ public class ZombieClientStateManager(
                 Value = stat.TotalRoundsPlayed.ToNumericalString(),
                 Key = "Total Rounds Played"
             });
-            meta[stat.ClientId].First(m => m.Extra == "Deaths").Value = stat.Deaths.ToNumericalString();
+            var deathsMeta = meta[stat.ClientId].FirstOrDefault(m => m.Extra == "Deaths");
+            if (deathsMeta != null)
+            {
+                deathsMeta.Value = stat.Deaths.ToNumericalString();
+            }
         }
     }
 

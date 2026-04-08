@@ -47,9 +47,9 @@ namespace IW4MAdmin.Application.Extensions
                 {
                     loggerConfig = loggerConfig.WriteTo.Console(
                             outputTemplate:
-                            "{Message:lj}{NewLine}{Exception}")
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                            .MinimumLevel.Warning();
+                            "[{Timestamp:HH:mm:ss} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                        .MinimumLevel.Debug();
                 }
 
                 _defaultLogger = loggerConfig.CreateLogger();
@@ -83,10 +83,10 @@ namespace IW4MAdmin.Application.Extensions
                     : currentPath;
 
                 var connectionStringBuilder = new SqliteConnectionStringBuilder
-                    {DataSource = Path.Join(currentPath, "Database", "Database.db")};
+                    { DataSource = Path.Join(currentPath, "Database", "Database.db") };
                 var connectionString = connectionStringBuilder.ToString();
 
-                services.AddSingleton(sp => (DbContextOptions) new DbContextOptionsBuilder<SqliteDatabaseContext>()
+                services.AddSingleton(sp => (DbContextOptions)new DbContextOptionsBuilder<SqliteDatabaseContext>()
                     .UseSqlite(connectionString)
                     .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>())
                     .EnableSensitiveDataLogging().Options);
@@ -100,7 +100,7 @@ namespace IW4MAdmin.Application.Extensions
                         StringComparison.InvariantCultureIgnoreCase);
                     var connectionString =
                         appConfig.ConnectionString + (appendTimeout ? ";default command timeout=0" : "");
-                    services.AddSingleton(sp => (DbContextOptions) new DbContextOptionsBuilder<MySqlDatabaseContext>()
+                    services.AddSingleton(sp => (DbContextOptions)new DbContextOptionsBuilder<MySqlDatabaseContext>()
                         .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString),
                             mysqlOptions => mysqlOptions.EnableRetryOnFailure())
                         .UseLoggerFactory(sp.GetRequiredService<ILoggerFactory>()).Options);
@@ -109,7 +109,7 @@ namespace IW4MAdmin.Application.Extensions
                     appendTimeout = !appConfig.ConnectionString.Contains("Command Timeout",
                         StringComparison.InvariantCultureIgnoreCase);
                     services.AddSingleton(sp =>
-                        (DbContextOptions) new DbContextOptionsBuilder<PostgresqlDatabaseContext>()
+                        (DbContextOptions)new DbContextOptionsBuilder<PostgresqlDatabaseContext>()
                             .UseNpgsql(appConfig.ConnectionString + (appendTimeout ? ";Command Timeout=0" : ""),
                                 postgresqlOptions =>
                                 {

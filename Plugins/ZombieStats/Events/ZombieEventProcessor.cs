@@ -188,7 +188,7 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
         {
             curr.PersistentClientRound.DamageDealt += gameEvent.Damage;
             
-            if (gameEvent.HitLocation == "head" || gameEvent.MeansOfDeath == "MOD_HEADSHOT")
+            if (gameEvent.HitLocation.StartsWith("head") || gameEvent.MeansOfDeath == "MOD_HEADSHOT")
             {
                 curr.PersistentClientRound.Headshots++;
             }
@@ -316,7 +316,8 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
             }
 
             var earnedPoints = isForfeit ? 0 : gameEvent.TotalScore - matchStat.PointsEarned;
-            var spentPoints = isForfeit ? 0 : Math.Abs(currentScore - earnedPoints - (matchStat.PointsEarned - matchStat.PointsSpent));
+            var priorBalance = matchStat.PointsEarned - matchStat.PointsSpent;
+            var spentPoints = isForfeit ? 0 : Math.Max(0, earnedPoints + priorBalance - currentScore);
 
             roundState.PersistentClientRound.PointsSpent = spentPoints;
             roundState.PersistentClientRound.PointsEarned = earnedPoints;
@@ -432,10 +433,14 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
             return;
         }
 
-        var currentRoundState = match.RoundStates[client.NetworkId];
-        var matchStat = match.PersistentMatchAggregateStats[client.NetworkId];
-        var lifetimeAggregateStat = match.PersistentLifetimeAggregateStats[client.NetworkId];
-        var lifetimeServerAggregateState = match.PersistentLifetimeServerAggregateStats[client.NetworkId];
+        if (!match.RoundStates.TryGetValue(client.NetworkId, out var currentRoundState) ||
+            !match.PersistentMatchAggregateStats.TryGetValue(client.NetworkId, out var matchStat) ||
+            !match.PersistentLifetimeAggregateStats.TryGetValue(client.NetworkId, out var lifetimeAggregateStat) ||
+            !match.PersistentLifetimeServerAggregateStats.TryGetValue(client.NetworkId, out var lifetimeServerAggregateState))
+        {
+            logger.LogWarning("[ZM] Missing state data for client {Client} in RunAggregateCalculation", client.ToString());
+            return;
+        }
 
         action(match, currentRoundState, matchStat, lifetimeAggregateStat, lifetimeServerAggregateState);
 

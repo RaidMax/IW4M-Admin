@@ -1,35 +1,71 @@
 using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
-using Data.Models.Zombie;
-using IW4MAdmin.Plugins.ZombieStats.States;
+using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.ZombieStats;
 
 /// <summary>
-/// Optional interface for premium zombie stats calculations.
-/// When implemented and registered in DI, enables advanced analytics
-/// (skill scoring, rolling averages, rich webfront metrics).
-/// The free plugin works without this — basic stat tracking continues normally.
+/// Optional interface for premium zombie stats functionality.
+/// When implemented and registered in DI, enables full zombie stat tracking,
+/// skill scoring, rolling averages, and rich webfront metrics.
+/// Without this, the free plugin only bridges zombie kills/damage/deaths
+/// to the standard Stats plugin (K/D/Score like MP).
 /// </summary>
 public interface IZombieStatsEnhancer
 {
     /// <summary>
-    /// Called after basic round stats are rolled up into match/lifetime aggregates.
-    /// Computes rolling averages, personal records, and other derived metrics.
+    /// Called once on plugin load to initialize caches and DB state.
     /// </summary>
-    void OnRoundDataAggregated(MatchState matchState, RoundState roundState,
-        ZombieMatchClientStat matchStat, ZombieAggregateClientStat lifetimeStat);
+    Task Initialize();
+
+    /// <summary>
+    /// Process a parsed zombie game event (kills, deaths, downs, revives,
+    /// perks, powerups, round data, stat updates, etc.).
+    /// </summary>
+    void ProcessEvent(GameEventV2 parsedEvent);
+
+    /// <summary>
+    /// Called when a client connects to a zombie server.
+    /// Sets up match/round state, loads aggregate stats from DB.
+    /// </summary>
+    Task OnClientAuthorized(EFClient client, IGameServer server);
+
+    /// <summary>
+    /// Called when a client disconnects from a zombie server.
+    /// Finalizes round state and cleans up tracking.
+    /// </summary>
+    Task OnClientDisposed(EFClient client, IGameServer server);
+
+    /// <summary>
+    /// Called when a new match starts on a zombie server.
+    /// </summary>
+    void OnMatchStarted(IGameServer server);
+
+    /// <summary>
+    /// Called when a match ends on a zombie server.
+    /// </summary>
+    void OnMatchEnded(IGameServer server);
+
+    /// <summary>
+    /// Persists all pending state changes to the database.
+    /// </summary>
+    Task UpdateState(CancellationToken token);
 
     /// <summary>
     /// Returns the skill calculation function for zombie clients.
-    /// When not available, a no-op function is used (existing skill unchanged).
     /// </summary>
     Func<EFClient, EFClientStatistics, double> GetSkillCalculation();
 
     /// <summary>
-    /// Provides advanced webfront metrics (percentages, averages, quit rate, stat tags)
-    /// for the advanced stats page. Registered as a CustomStatsMetrics delegate.
+    /// Provides zombie-specific metrics for the top stats leaderboard page.
+    /// </summary>
+    Task GetTopStatsMetrics(Dictionary<int, List<EFMeta>> meta,
+        long? serverId, string performanceBucketCode, bool isTopStats);
+
+    /// <summary>
+    /// Provides advanced zombie metrics for the player stats page.
     /// </summary>
     Task GetAdvancedStatsMetrics(Dictionary<int, List<EFMeta>> meta,
         long? serverId, string performanceBucketCode, bool isTopStats);

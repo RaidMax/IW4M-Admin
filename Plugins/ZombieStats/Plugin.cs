@@ -1,15 +1,14 @@
-﻿using Data.Models;
+using Data.Abstractions;
+using Data.Models;
 using Data.Models.Client.Stats;
-using Data.Models.Zombie;
 using Humanizer;
 using IW4MAdmin.Plugins.ZombieStats.Events;
-using IW4MAdmin.Plugins.ZombieStats.States;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events.Game;
-using SharedLibraryCore.Events.Game.GameScript;
 using SharedLibraryCore.Events.Game.GameScript.Zombie;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces;
@@ -17,25 +16,24 @@ using SharedLibraryCore.Interfaces.Events;
 
 namespace IW4MAdmin.Plugins.ZombieStats;
 
-public class ZombieStats : IPluginV2
+public class Plugin : IPluginV2
 {
-    private readonly ILogger<ZombieStats> _logger;
+    private readonly ILogger<Plugin> _logger;
     private readonly ZombieEventParser _zombieEventParser;
-    private readonly ZombieEventProcessor _zombieEventProcessor;
-    private readonly ZombieClientStateManager _stateManager;
+    private readonly IDatabaseContextFactory _contextFactory;
     private readonly IZombieStatsEnhancer? _enhancer;
-    public string Name { get; } = nameof(ZombieStats).Titleize();
-    public string Author => "RaidMax";
-    public string Version => "2023.4-alpha";
+    private readonly HashSet<long> _knownZombieServerIds = [];
 
-    public ZombieStats(ILogger<ZombieStats> logger, ZombieEventParser zombieEventParser,
-        ZombieEventProcessor zombieEventProcessor, ZombieClientStateManager stateManager,
-        IServiceProvider serviceProvider)
+    public string Name { get; } = nameof(Plugin).Titleize();
+    public string Author => "RaidMax";
+    public string Version => Utilities.GetVersionAsString();
+
+    public Plugin(ILogger<Plugin> logger, ZombieEventParser zombieEventParser,
+        IDatabaseContextFactory contextFactory, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _zombieEventParser = zombieEventParser;
-        _zombieEventProcessor = zombieEventProcessor;
-        _stateManager = stateManager;
+        _contextFactory = contextFactory;
         _enhancer = serviceProvider.GetService(typeof(IZombieStatsEnhancer)) as IZombieStatsEnhancer;
 
         IManagementEventSubscriptions.Load += OnLoad;
@@ -45,12 +43,10 @@ public class ZombieStats : IPluginV2
         IGameEventSubscriptions.MatchEnded += OnMatchEnded;
         IGameEventSubscriptions.MatchStarted += OnMatchStarted;
     }
-    
+
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
-        serviceCollection.AddSingleton<ZombieEventParser>()
-            .AddSingleton<ZombieEventProcessor>()
-            .AddSingleton<ZombieClientStateManager>();
+        serviceCollection.AddSingleton<ZombieEventParser>();
     }
 
     private async Task OnClientDisposed(ClientStateDisposeEvent clientEvent, CancellationToken token)
@@ -59,23 +55,12 @@ public class ZombieStats : IPluginV2
         {
             return;
         }
-        
-        _stateManager.TrackEventForLog(clientEvent.Client.CurrentServer, EventLogType.LeftMatch, clientEvent.Client);
 
-        // Finalize the round state directly instead of sending a synthetic event with zeros
-        // (which would trigger isForfeit and drop the round's points data)
-        var matchState = _stateManager.GetStateForClient(clientEvent.Client);
-        if (matchState?.RoundStates.TryGetValue(clientEvent.Client.NetworkId, out var roundState) == true)
+        if (_enhancer is not null)
         {
-            roundState.PersistentClientRound.EndTime = DateTimeOffset.UtcNow;
-            roundState.PersistentClientRound.Duration =
-                roundState.PersistentClientRound.EndTime - roundState.PersistentClientRound.StartTime;
-            roundState.PersistentClientRound.TimeAlive ??= roundState.PersistentClientRound.Duration;
-            _stateManager.TrackUpdatedState(roundState.PersistentClientRound);
+            await _enhancer.OnClientDisposed(clientEvent.Client, clientEvent.Client.CurrentServer);
+            await _enhancer.UpdateState(token);
         }
-
-        _stateManager.UntrackClient(clientEvent.Client, clientEvent.Client.CurrentServer);
-        await _stateManager.UpdateState(token);
     }
 
     private async Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)
@@ -84,12 +69,16 @@ public class ZombieStats : IPluginV2
         {
             return;
         }
-        
-        clientEvent.Client.SetAdditionalProperty("SkillFunction", _zombieEventProcessor.SkillCalculation());
+
+        var skillFunc = _enhancer?.GetSkillCalculation() ?? ((_, stats) => stats.Skill);
+        clientEvent.Client.SetAdditionalProperty("SkillFunction", skillFunc);
         clientEvent.Client.SetAdditionalProperty("EloRatingFunction", (EFClient _, EFClientStatistics _) => 1.0);
-        await _stateManager.TrackClient(clientEvent.Client, clientEvent.Client.CurrentServer);
-        _stateManager.TrackEventForLog(clientEvent.Client.CurrentServer, EventLogType.JoinedMatch, clientEvent.Client);
-        await _stateManager.UpdateState(token);
+
+        if (_enhancer is not null)
+        {
+            await _enhancer.OnClientAuthorized(clientEvent.Client, clientEvent.Client.CurrentServer);
+            await _enhancer.UpdateState(token);
+        }
     }
 
     private async Task OnScriptEvent(GameScriptEvent scriptEvent, CancellationToken token)
@@ -98,7 +87,9 @@ public class ZombieStats : IPluginV2
         {
             return;
         }
-        
+
+        _knownZombieServerIds.Add(scriptEvent.Server.LegacyDatabaseId);
+
         var parsedScriptEvent = _zombieEventParser.ParseScriptEvent(scriptEvent);
 
         if (parsedScriptEvent is null)
@@ -107,10 +98,16 @@ public class ZombieStats : IPluginV2
         }
 
         parsedScriptEvent.Owner = scriptEvent.Owner;
-        _zombieEventProcessor.ProcessEvent(parsedScriptEvent);
-        await _stateManager.UpdateState(token);
 
+        // Bridge zombie kills/damage/deaths to the standard Stats plugin (K/D/Score/hit locations)
         ConvertToStatsEvent(scriptEvent, parsedScriptEvent);
+
+        // Forward to premium for full zombie-specific processing
+        if (_enhancer is not null)
+        {
+            _enhancer.ProcessEvent(parsedScriptEvent);
+            await _enhancer.UpdateState(token);
+        }
     }
 
     private static void ConvertToStatsEvent(GameScriptEvent scriptEvent, GameEventV2 parsedScriptEvent)
@@ -172,9 +169,6 @@ public class ZombieStats : IPluginV2
                     Owner = playerKilledGameEvent.Owner
                 });
                 break;
-            case RoundEndEvent roundEndEvent:
-                scriptEvent.Owner.Manager.QueueEvent(roundEndEvent);
-                break;
         }
     }
 
@@ -184,10 +178,12 @@ public class ZombieStats : IPluginV2
         {
             return;
         }
-        
-        _stateManager.TrackEventForLog(matchEvent.Server, EventLogType.MatchEnded);
-        _stateManager.EndMatch(matchEvent.Server);
-        await _stateManager.UpdateState(token);
+
+        if (_enhancer is not null)
+        {
+            _enhancer.OnMatchEnded(matchEvent.Server);
+            await _enhancer.UpdateState(token);
+        }
     }
 
     private async Task OnMatchStarted(MatchStartEvent matchEvent, CancellationToken token)
@@ -197,26 +193,59 @@ public class ZombieStats : IPluginV2
             return;
         }
 
-        _stateManager.CreateMatch(matchEvent.Server);
-        _stateManager.TrackEventForLog(matchEvent.Server, EventLogType.MatchStarted);
-        await _stateManager.UpdateState(token);
+        _knownZombieServerIds.Add(matchEvent.Server.LegacyDatabaseId);
+
+        if (_enhancer is not null)
+        {
+            _enhancer.OnMatchStarted(matchEvent.Server);
+            await _enhancer.UpdateState(token);
+        }
     }
 
     private async Task OnLoad(IManager manager, CancellationToken token)
     {
         _logger.LogInformation("{Plugin} by {Author} v{Version} loading...", Name, Author, Version);
-        
-        manager.CustomStatsMetrics.Add(_stateManager.GetTopStatsMetrics);
 
         if (_enhancer is not null)
         {
+            await _enhancer.Initialize();
+            manager.CustomStatsMetrics.Add(_enhancer.GetTopStatsMetrics);
             manager.CustomStatsMetrics.Add(_enhancer.GetAdvancedStatsMetrics);
         }
         else
         {
-            manager.CustomStatsMetrics.Add(_stateManager.GetPremiumUpsellMetrics);
+            manager.CustomStatsMetrics.Add(GetPremiumUpsellMetrics);
+        }
+    }
+
+    private async Task GetPremiumUpsellMetrics(Dictionary<int, List<EFMeta>> meta, long? serverId,
+        string performanceBucketCode, bool isTopStats)
+    {
+        if (isTopStats || !meta.Any() || serverId is null)
+        {
+            return;
         }
 
-        await _stateManager.Initialize();
+        // Check in-memory first (servers we've seen zombie events from this session)
+        var isZombieServer = _knownZombieServerIds.Contains(serverId.Value);
+
+        // Fall back to DB check (zombie data may exist from a previous session with premium)
+        if (!isZombieServer)
+        {
+            await using var context = _contextFactory.CreateContext(false);
+            isZombieServer = await context.ZombieClientStatAggregates
+                .AnyAsync(stat => stat.ServerId == serverId);
+        }
+
+        if (!isZombieServer)
+        {
+            return;
+        }
+
+        meta.First().Value.Add(new EFMeta
+        {
+            Key = "Advanced Zombie Stats",
+            Value = "Available with Zombie Stats Premium"
+        });
     }
 }

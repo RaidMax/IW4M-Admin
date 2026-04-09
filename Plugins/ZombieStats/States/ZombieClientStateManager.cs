@@ -624,171 +624,35 @@ public class ZombieClientStateManager(
         }
     }
 
-    public async Task GetAdvancedStatsMetrics(Dictionary<int, List<EFMeta>> meta, long? serverId,
-        string performanceBucketCode,
-        bool isTopStats)
+    public async Task GetPremiumUpsellMetrics(Dictionary<int, List<EFMeta>> meta, long? serverId,
+        string performanceBucketCode, bool isTopStats)
     {
-        if (isTopStats || !meta.Any())
+        if (isTopStats || !meta.Any() || serverId is null)
         {
             return;
         }
 
-        var clientId = meta.First().Key;
+        // Only show on zombie servers — don't show on multiplayer
+        // Check active matches first, then fall back to database
+        var isZombieServer = _matches.Any(m => m.PersistentMatch.ServerId == serverId);
 
-        await using var context = contextFactory.CreateContext(false);
-        var iqStats = context.ZombieClientStatAggregates
-            .Where(stat => stat.ClientId == clientId);
+        if (!isZombieServer)
+        {
+            await using var context = contextFactory.CreateContext(false);
+            isZombieServer = await context.ZombieClientStatAggregates
+                .AnyAsync(stat => stat.ServerId == serverId);
+        }
 
-        iqStats = !string.IsNullOrEmpty(performanceBucketCode)
-            ? iqStats.Where(stat => stat.Server.PerformanceBucket.Code == performanceBucketCode)
-            : iqStats.Where(stat => stat.ServerId == serverId);
-
-        var stats = await iqStats.Select(stat => new
-            {
-                stat.HeadshotKills,
-                stat.DamageDealt,
-                stat.DamageReceived,
-                stat.Downs,
-                stat.Revives,
-                stat.PointsEarned,
-                stat.PointsSpent,
-                stat.PerksConsumed,
-                stat.PowerupsGrabbed,
-                stat.HighestRound,
-                stat.TotalRoundsPlayed,
-                stat.TotalMatchesPlayed,
-                stat.TotalMatchesCompleted,
-                stat.HeadshotPercentage,
-                stat.AverageRoundReached,
-                stat.AveragePoints,
-                stat.AverageDowns,
-                stat.AverageRevives
-            })
-            .FirstOrDefaultAsync();
-
-        if (stats is null)
+        if (!isZombieServer)
         {
             return;
         }
 
-        var tagValues = await context.ClientStatTagValues
-            .Where(tag => tag.ClientId == clientId)
-            .Select(tag => new
-            {
-                tag.StatValue,
-                tag.StatTag.TagName
-            })
-            .ToListAsync();
-
-        meta.First().Value.AddRange(new List<EFMeta>
+        meta.First().Value.Add(new EFMeta
         {
-            new()
-            {
-                Key = "Headshot Kills",
-                Value = stats.HeadshotKills.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Damage Dealt",
-                Value = stats.DamageDealt.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Damage Received",
-                Value = stats.DamageReceived.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Downs",
-                Value = stats.Downs.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Revives",
-                Value = stats.Revives.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Points Earned",
-                Value = stats.PointsEarned.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Points Spent",
-                Value = stats.PointsSpent.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Perks Consumed",
-                Value = stats.PerksConsumed.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Powerups Grabbed",
-                Value = stats.PowerupsGrabbed.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Highest Round",
-                Value = stats.HighestRound.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Rounds Played",
-                Value = stats.TotalRoundsPlayed.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Matches Played",
-                Value = stats.TotalMatchesPlayed.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Matches Completed",
-                Value = stats.TotalMatchesCompleted.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Quit Rate",
-                Value = (stats.TotalMatchesCompleted == 0
-                        ? 100
-                        : stats.TotalMatchesCompleted - stats.TotalMatchesPlayed == 0
-                            ? 0
-                            : (int)Math.Round((1 - stats.TotalMatchesCompleted / (double)stats.TotalMatchesPlayed) *
-                                              100.0))
-                    .ToNumericalString() + "%"
-            },
-            new()
-            {
-                Key = "Headshot Percentage",
-                Value = (stats.HeadshotPercentage * 100.0).ToNumericalString() + "%"
-            },
-            new()
-            {
-                Key = "Avg. Round Reached",
-                Value = stats.AverageRoundReached.ToNumericalString(1)
-            },
-            new()
-            {
-                Key = "Avg. Points",
-                Value = stats.AveragePoints.ToNumericalString()
-            },
-            new()
-            {
-                Key = "Avg. Downs",
-                Value = stats.AverageDowns.ToNumericalString(2)
-            },
-            new()
-            {
-                Key = "Avg. Revives",
-                Value = stats.AverageRevives.ToNumericalString(2)
-            }
+            Key = "Advanced Zombie Stats",
+            Value = "Available with Zombie Stats Premium"
         });
-        meta.First().Value.AddRange(tagValues.Select(tag => new EFMeta
-        {
-            Key = translations[$"WEBFRONT_STAT_TAG_{tag.TagName.ToUpper()}"],
-            Value = tag.StatValue?.ToNumericalString() ?? "-"
-        }));
     }
 
     public void TrackEventForLog(IGameServer gameServer, EventLogType eventType, EFClient? sourceClient = null,

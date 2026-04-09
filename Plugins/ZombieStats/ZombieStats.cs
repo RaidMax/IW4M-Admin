@@ -23,17 +23,20 @@ public class ZombieStats : IPluginV2
     private readonly ZombieEventParser _zombieEventParser;
     private readonly ZombieEventProcessor _zombieEventProcessor;
     private readonly ZombieClientStateManager _stateManager;
+    private readonly IZombieStatsEnhancer? _enhancer;
     public string Name { get; } = nameof(ZombieStats).Titleize();
     public string Author => "RaidMax";
     public string Version => "2023.4-alpha";
 
     public ZombieStats(ILogger<ZombieStats> logger, ZombieEventParser zombieEventParser,
-        ZombieEventProcessor zombieEventProcessor, ZombieClientStateManager stateManager)
+        ZombieEventProcessor zombieEventProcessor, ZombieClientStateManager stateManager,
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
         _zombieEventParser = zombieEventParser;
         _zombieEventProcessor = zombieEventProcessor;
         _stateManager = stateManager;
+        _enhancer = serviceProvider.GetService(typeof(IZombieStatsEnhancer)) as IZombieStatsEnhancer;
 
         IManagementEventSubscriptions.Load += OnLoad;
         IManagementEventSubscriptions.ClientStateAuthorized += OnClientAuthorized;
@@ -204,7 +207,16 @@ public class ZombieStats : IPluginV2
         _logger.LogInformation("{Plugin} by {Author} v{Version} loading...", Name, Author, Version);
         
         manager.CustomStatsMetrics.Add(_stateManager.GetTopStatsMetrics);
-        manager.CustomStatsMetrics.Add(_stateManager.GetAdvancedStatsMetrics);
+
+        if (_enhancer is not null)
+        {
+            manager.CustomStatsMetrics.Add(_enhancer.GetAdvancedStatsMetrics);
+        }
+        else
+        {
+            manager.CustomStatsMetrics.Add(_stateManager.GetPremiumUpsellMetrics);
+        }
+
         await _stateManager.Initialize();
     }
 }

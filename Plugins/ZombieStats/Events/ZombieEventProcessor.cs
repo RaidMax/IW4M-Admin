@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using Data.Models;
+﻿using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Zombie;
@@ -11,9 +10,9 @@ using SharedLibraryCore.Events.Game.GameScript.Zombie;
 
 namespace IW4MAdmin.Plugins.ZombieStats.Events;
 
-public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieClientStateManager stateManager)
+public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieClientStateManager stateManager, IServiceProvider serviceProvider)
 {
-    private const int RoundsConsidered = 200;
+    private readonly IZombieStatsEnhancer? _enhancer = serviceProvider.GetService(typeof(IZombieStatsEnhancer)) as IZombieStatsEnhancer;
 
     public void ProcessEvent(GameEventV2 gameEvent)
     {
@@ -67,73 +66,7 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
     
     public Func<EFClient, EFClientStatistics, double> SkillCalculation()
     {
-        return (client, clientStats) =>
-        {
-            var state = stateManager.GetStateForClient(client);
-
-            if (state is null)
-            {
-                return clientStats.Skill;
-            }
-
-            if (!state.PersistentLifetimeAggregateStats.TryGetValue(client.NetworkId, out var aggregateStats))
-            {
-                return clientStats.Skill;
-            }
-
-            var currentClientRound = state.RoundStates[client.NetworkId];
-            var normalizedValues = new List<double>();
-
-            foreach (var key in ZombieAggregateClientStat.RecordsKeys)
-            {
-                var clientValue =
-                    Convert.ToDouble(aggregateStats.GetType().GetProperty(key)!.GetValue(aggregateStats)?.ToString(),
-                        CultureInfo.InvariantCulture);
-                var maxRecord = stateManager.GetClientNumericalRecord(key) ??
-                                stateManager.CreateClientNumericalRecord(
-                                    client, currentClientRound.PersistentClientRound, key, clientValue);
-
-                var maxValue = Convert.ToDouble(maxRecord.Value, CultureInfo.InvariantCulture);
-
-                if (clientValue > maxValue)
-                {
-                    maxRecord.Value = clientValue.ToString(CultureInfo.InvariantCulture);
-                    maxRecord.Client = client;
-                    maxRecord.Round = currentClientRound.PersistentClientRound;
-                    stateManager.TrackUpdatedState(maxRecord);
-                }
-
-                if (!ZombieAggregateClientStat.SkillKeys.Contains(key))
-                {
-                    continue;
-                }
-
-                var normalizedValue = clientValue / maxValue;
-
-                if (double.IsNaN(normalizedValue))
-                {
-                    normalizedValue = 1;
-                }
-
-                normalizedValues.Add(normalizedValue);
-            }
-
-            var avg = normalizedValues.Any() ? normalizedValues.Average() : 0.0;
-            avg *= 1000.0;
-
-            var roundWeightFactor = Math.Max(1, aggregateStats.TotalRoundsPlayed) <= RoundsConsidered
-                ? 1.0 / Math.Max(1, aggregateStats.TotalRoundsPlayed)
-                : 2.0 / (RoundsConsidered + 1);
-
-            var average = CalculateAverage(clientStats.Skill, avg, roundWeightFactor);
-
-            if (double.IsInfinity(average))
-            {
-                average = 0;
-            }
-            
-            return average;
-        };
+        return _enhancer?.GetSkillCalculation() ?? ((_, stats) => stats.Skill);
     }
 
     private void OnPlayerKilled(PlayerKilledGameEvent gameEvent)
@@ -350,8 +283,11 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
                 lifetimeServerStat.TotalMatchesCompleted++;
             }
 
-            CalculateAveragesAndTotals(matchState, lifetimeStat, roundState, matchStat);
-            CalculateAveragesAndTotals(matchState, lifetimeServerStat, roundState, matchStat);
+            CalculateBasicTotals(matchState, lifetimeStat, roundState, matchStat);
+            CalculateBasicTotals(matchState, lifetimeServerStat, roundState, matchStat);
+
+            _enhancer?.OnRoundDataAggregated(matchState, roundState, matchStat, lifetimeStat);
+            _enhancer?.OnRoundDataAggregated(matchState, roundState, matchStat, lifetimeServerStat);
 
             stateManager.TrackEventForLog(gameEvent.Server, EventLogType.RoundCompleted, matchStat.Client,
                 numericalValue: gameEvent.CurrentRound);
@@ -360,49 +296,22 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
         });
     }
 
-    private static void CalculateAveragesAndTotals(MatchState matchState,
+    private static void CalculateBasicTotals(MatchState matchState,
         ZombieAggregateClientStat lifetimeStat, RoundState roundState, ZombieMatchClientStat matchStat)
     {
         var currentRoundNumber = roundState.PersistentClientRound.RoundNumber;
-        // don't credit if played less than 50%
+        // don't credit highest round if played less than 50% of rounds
         var shouldCountHighestRound = matchState.RoundNumber > lifetimeStat.HighestRound &&
                                       matchStat.JoinedRound is not null &&
                                       currentRoundNumber - matchStat.JoinedRound.Value >=
                                       currentRoundNumber / 2.0;
-        
+
         if (shouldCountHighestRound)
         {
             lifetimeStat.HighestRound = matchState.RoundNumber;
         }
-        
+
         lifetimeStat.TotalRoundsPlayed++;
-
-        var roundWeightFactor = lifetimeStat.TotalRoundsPlayed <= RoundsConsidered
-            ? 1.0 / lifetimeStat.TotalRoundsPlayed
-            : 2.0 / (RoundsConsidered + 1);
-
-        var roundKpd = roundState.PersistentClientRound.Kills / Math.Max(1,
-            roundState.PersistentClientRound.Deaths + roundState.PersistentClientRound.Downs);
-        lifetimeStat.AverageKillsPerDown =
-            CalculateAverage(lifetimeStat.AverageKillsPerDown, roundKpd, roundWeightFactor);
-        lifetimeStat.AverageDowns =
-            CalculateAverage(lifetimeStat.AverageDowns, matchStat.Downs, roundWeightFactor);
-        lifetimeStat.AverageRevives =
-            CalculateAverage(lifetimeStat.AverageRevives, matchStat.Revives, roundWeightFactor);
-        lifetimeStat.AverageRoundReached = CalculateAverage(lifetimeStat.AverageRoundReached,
-            matchState.RoundNumber, roundWeightFactor);
-        lifetimeStat.AverageMelees =
-            CalculateAverage(lifetimeStat.AverageMelees, matchStat.Melees, roundWeightFactor);
-
-        var hsp = roundState.PersistentClientRound.Headshots / (double)Math.Max(1, roundState.Hits);
-        lifetimeStat.HeadshotPercentage = CalculateAverage(lifetimeStat.HeadshotPercentage, hsp, roundWeightFactor);
-
-        lifetimeStat.AlivePercentage = CalculateAverage(lifetimeStat.AlivePercentage,
-            roundState.PersistentClientRound.TimeAlive!.Value.TotalMilliseconds /
-            roundState.PersistentClientRound.Duration!.Value.TotalMilliseconds, roundWeightFactor);
-
-        lifetimeStat.AveragePoints = CalculateAverage(lifetimeStat.AveragePoints,
-            roundState.PersistentClientRound.PointsEarned, roundWeightFactor);
     }
 
     private void RunCalculation(EFClient client, Action<RoundState> calculation)
@@ -450,6 +359,4 @@ public class ZombieEventProcessor(ILogger<ZombieEventProcessor> logger, ZombieCl
         stateManager.TrackUpdatedState(lifetimeServerAggregateState);
     }
     
-    private static double CalculateAverage(double previousAverage, double currentValue, double factor) =>
-        Math.Round(currentValue * factor + previousAverage * (1 - factor), 2);
 }

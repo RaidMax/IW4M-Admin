@@ -211,6 +211,7 @@ public class Plugin : IPluginV2
             await _enhancer.Initialize();
             manager.CustomStatsMetrics.Add(_enhancer.GetTopStatsMetrics);
             manager.CustomStatsMetrics.Add(_enhancer.GetAdvancedStatsMetrics);
+            manager.GetPageList().Pages.Add("Zombie Leaderboard", "/stats/zombies");
         }
         else
         {

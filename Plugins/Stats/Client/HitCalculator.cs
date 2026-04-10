@@ -117,14 +117,24 @@ public class HitCalculator : IClientStatisticCalculator
             return;
         }
 
-        if (coreEvent is RoundEndEvent roundEndEvent)
+        if (coreEvent is RoundEndEvent or MatchEndEvent)
         {
-            foreach (var client in roundEndEvent.Server.ConnectedClients)
+            var server = ((GameEventV2)coreEvent).Server;
+            _logger.LogDebug("[HitCalc] {EventType} fired. ConnectedClients={ClientCount}, TrackedClients={TrackedCount}",
+                coreEvent.GetType().Name, server.ConnectedClients.Count(),
+                _clientHitStatistics.Count);
+
+            foreach (var client in server.ConnectedClients)
             {
                 if (!_clientHitStatistics.TryGetValue(client.ClientId, out var state))
                 {
+                    _logger.LogDebug("[HitCalc] Client {ClientId} not in hit statistics tracking", client.ClientId);
                     continue;
                 }
+
+                _logger.LogDebug("[HitCalc] Persisting {HitCount} hit stats for client {ClientId} ({NewCount} new)",
+                    state.Hits.Count, client.ClientId,
+                    state.Hits.Count(h => h.ClientHitStatisticId == 0));
 
                 try
                 {
@@ -225,7 +235,11 @@ public class HitCalculator : IClientStatisticCalculator
         {
             if (hitInfo.MeansOfDeath == null || hitInfo.Location == null || hitInfo.Weapon == null || hitInfo.EntityId == 0)
             {
-                _logger.LogDebug("Skipping hit because it does not contain the required data");
+                _logger.LogDebug("Skipping hit for EntityId={EntityId}: MoD={MeansOfDeath}, Location={Location}, Weapon={Weapon}",
+                    hitInfo.EntityId,
+                    hitInfo.MeansOfDeath ?? "NULL",
+                    hitInfo.Location ?? "NULL",
+                    hitInfo.Weapon?.Name ?? "NULL");
                 continue;
             }
 
@@ -316,6 +330,9 @@ public class HitCalculator : IClientStatisticCalculator
         var matchingLocation = await GetOrAddHitLocation(hitInfo.Location, hitInfo.Game);
         var meansOfDeath = await GetOrAddMeansOfDeath(hitInfo.MeansOfDeath, hitInfo.Game);
 
+        _logger.LogDebug("[HitCalc] RunTasks for Entity={EntityId} Server={ServerId} Weapon={WeaponName}(Id={WeaponId}) Location={Location}(Id={LocationId}) MoD={MoD}(Id={MoDId})",
+            hitInfo.EntityId, serverId, weapon.Name, weapon.WeaponId, matchingLocation.Name, matchingLocation.HitLocationId, meansOfDeath.Name, meansOfDeath.MeansOfDeathId);
+
         List<Task<EFClientHitStatistic>> baseTasks =
         [
             // just the client
@@ -327,9 +344,9 @@ public class HitCalculator : IClientStatisticCalculator
             // location and server
             GetOrAddClientHit(hitInfo.EntityId, serverId, hitLocationId: matchingLocation.HitLocationId),
             // per weapon
-            GetOrAddClientHit(hitInfo.EntityId, null, null, weapon.WeaponId),
+            GetOrAddClientHit(hitInfo.EntityId, weaponId: weapon.WeaponId),
             // per weapon and server
-            GetOrAddClientHit(hitInfo.EntityId, serverId, null, weapon.WeaponId),
+            GetOrAddClientHit(hitInfo.EntityId, serverId, weaponId: weapon.WeaponId),
             // means of death aggregate
             GetOrAddClientHit(hitInfo.EntityId, meansOfDeathId: meansOfDeath.MeansOfDeathId),
             // means of death per server aggregate
@@ -343,10 +360,10 @@ public class HitCalculator : IClientStatisticCalculator
         {
             allTasks = allTasks
                 // per weapon per attachment combo
-                .Append(GetOrAddClientHit(hitInfo.EntityId, null, null,
-                    weapon.WeaponId, attachmentCombo.WeaponAttachmentComboId))
-                .Append(GetOrAddClientHit(hitInfo.EntityId, serverId, null,
-                    weapon.WeaponId, attachmentCombo.WeaponAttachmentComboId));
+                .Append(GetOrAddClientHit(hitInfo.EntityId,
+                    weaponId: weapon.WeaponId, attachmentComboId: attachmentCombo.WeaponAttachmentComboId))
+                .Append(GetOrAddClientHit(hitInfo.EntityId, serverId,
+                    weaponId: weapon.WeaponId, attachmentComboId: attachmentCombo.WeaponAttachmentComboId));
         }
 
         return await Task.WhenAll(allTasks);
@@ -400,8 +417,9 @@ public class HitCalculator : IClientStatisticCalculator
     {
         try
         {
-            await using var context = _contextFactory.CreateContext();
+            await using var context = _contextFactory.CreateContext(false);
             var hitLocations = await context.Set<EFClientHitStatistic>()
+                .AsNoTracking()
                 .Where(stat => stat.ClientId == clientId)
                 .ToListAsync();
 
@@ -429,7 +447,33 @@ public class HitCalculator : IClientStatisticCalculator
         try
         {
             await using var context = _contextFactory.CreateContext();
-            context.Set<EFClientHitStatistic>().UpdateRange(state.Hits);
+
+            // Clear navigation properties to prevent EF Core from trying to
+            // insert/update related entities when attaching to this new context
+            foreach (var hit in state.Hits)
+            {
+                hit.Server = null;
+                hit.HitLocation = null;
+                hit.Weapon = null;
+                hit.WeaponAttachmentCombo = null;
+                hit.MeansOfDeath = null;
+                hit.PerformanceBucket = null;
+                hit.Client = null;
+            }
+
+            var existingHits = state.Hits.Where(h => h.ClientHitStatisticId != 0).ToList();
+            var newHits = state.Hits.Where(h => h.ClientHitStatisticId == 0).ToList();
+
+            if (existingHits.Count > 0)
+            {
+                context.Set<EFClientHitStatistic>().UpdateRange(existingHits);
+            }
+
+            if (newHits.Count > 0)
+            {
+                context.Set<EFClientHitStatistic>().AddRange(newHits);
+            }
+
             await context.SaveChangesAsync();
         }
 
@@ -458,6 +502,9 @@ public class HitCalculator : IClientStatisticCalculator
 
         if (hitStat != null)
         {
+            _logger.LogDebug("[HitCalc] MATCHED existing: Id={Id} Server={ServerId} Weapon={WeaponId} Location={LocationId} MoD={MoDId} (looking for: Server={QServerId} Weapon={QWeaponId} Location={QLocationId} MoD={QMoDId})",
+                hitStat.ClientHitStatisticId, hitStat.ServerId, hitStat.WeaponId, hitStat.HitLocationId, hitStat.MeansOfDeathId,
+                serverId, weaponId, hitLocationId, meansOfDeathId);
             return Task.FromResult(hitStat);
         }
 
@@ -470,6 +517,9 @@ public class HitCalculator : IClientStatisticCalculator
             HitLocationId = hitLocationId,
             MeansOfDeathId = meansOfDeathId
         };
+
+        _logger.LogDebug("[HitCalc] Creating NEW hit stat: Client={ClientId} Server={ServerId} Weapon={WeaponId} Location={LocationId} MoD={MoDId} (total now: {Count})",
+            clientId, serverId, weaponId, hitLocationId, meansOfDeathId, state.Hits.Count + 1);
 
         try
         {

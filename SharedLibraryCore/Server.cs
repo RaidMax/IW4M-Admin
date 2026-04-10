@@ -85,7 +85,9 @@ namespace SharedLibraryCore
             RConConnectionFactory = rconConnectionFactory;
             ServerLogger = logger;
             DefaultSettings = serviceProvider.GetRequiredService<DefaultSettings>();
-            PerformanceCode = ServerConfig.PerformanceBucketCode?.ToLowerInvariant();
+            PerformanceCode = string.IsNullOrWhiteSpace(ServerConfig.PerformanceBucketCode)
+                ? "default"
+                : ServerConfig.PerformanceBucketCode.ToLowerInvariant();
             InitializeTokens();
             InitializeAutoMessages();
         }

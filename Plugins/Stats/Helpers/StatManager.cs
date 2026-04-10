@@ -1296,7 +1296,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (clientStats.TimePlayed >= bucketConfig.ClientMinPlayTime.TotalSeconds)
             {
-                await UpdateForServer(clientId, clientStats, context, (int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration, serverId);
+                await UpdateForServer(clientId, clientStats, context, (int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration, serverId, bucketConfig.Code);
                 clientStats.Server = await _serverCache.FirstAsync(server => server.Id == serverId);
                 performances.Add(clientStats);
             }
@@ -1353,7 +1353,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         }
 
         private async Task UpdateForServer(int clientId, EFClientStatistics clientStats, DatabaseContext context,
-            int minPlayTime, TimeSpan oldestStat, long? serverId = null)
+            int minPlayTime, TimeSpan oldestStat, long? serverId = null, string performanceBucketCode = null)
         {
             clientStats.ZScore =
                 await _serverDistributionCalculator.GetZScoreForServerOrBucket(clientStats.Performance, serverId);
@@ -1364,6 +1364,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     clientStats.ZScore, serverId))
                 .CountAsync();
 
+            int? performanceBucketId = null;
+            if (!string.IsNullOrEmpty(performanceBucketCode))
+            {
+                performanceBucketId = (await context.PerformanceBuckets
+                    .FirstOrDefaultAsync(x => x.Code == performanceBucketCode))?.PerformanceBucketId;
+            }
+
             var serverRankingSnapshot = new EFClientRankingHistory
             {
                 ClientId = clientId,
@@ -1371,11 +1378,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 ZScore = clientStats.ZScore,
                 Ranking = serverRanking,
                 PerformanceMetric = clientStats.Performance,
+                PerformanceBucketId = performanceBucketId,
                 Newest = true
             };
 
             context.Add(serverRankingSnapshot);
-            await PruneOldRankings(context, clientId, serverId);
+            await PruneOldRankings(context, clientId, serverId, performanceBucketCode);
             await context.SaveChangesAsync();
         }
 
@@ -1549,6 +1557,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
             clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
+
+            var skillFunc =
+                client.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("SkillFunction");
+            if (skillFunc is not null)
+            {
+                clientStats.Skill = Math.Round(skillFunc(client, clientStats), 3);
+            }
 
             // fixme: how does this happen?
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill) || double.IsInfinity(clientStats.Skill))

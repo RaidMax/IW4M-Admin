@@ -426,6 +426,13 @@ PrintPlayerRoundData( isGameOver )
 
     for( i = 0; i < players.size; i++ )
 	{
+        // Skip players who never spawned (e.g. joined mid-game into spectator)
+        // to avoid crediting them with starting points they never earned
+        if ( IsDefined( players[i].sessionstate ) && players[i].sessionstate == "spectator" )
+        {
+            continue;
+        }
+
         totalScore = 0;
         currentScore = 0;
 
@@ -433,7 +440,7 @@ PrintPlayerRoundData( isGameOver )
         {
             currentRound = level.round_number;
         }
-        
+
         if ( IsDefined ( players[i].score_total ) )
         {
             totalScore = players[i].score_total;
@@ -446,6 +453,11 @@ PrintPlayerRoundData( isGameOver )
 
 		LogPrint( "GSE;RD;" + BuildPlayerInfoString( players[i] ) + ";" + totalScore + ";" + currentScore + ";" + currentRound + ";" + isGameOver + "\n" );
     }
+
+    // Ensure all RD events are processed before RC triggers StartNextRound
+    // which clears round states. Without this wait, RC can race ahead of
+    // late-arriving RD events due to IW4MAdmin's concurrent event processing.
+    wait ( 0.1 );
 
     LogPrint( "GSE;RC;" + currentRound + "\n" );
 }

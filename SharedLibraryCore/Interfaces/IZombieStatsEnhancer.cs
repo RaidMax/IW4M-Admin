@@ -2,9 +2,8 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using SharedLibraryCore.Events.Game;
-using SharedLibraryCore.Interfaces;
 
-namespace IW4MAdmin.Plugins.ZombieStats;
+namespace SharedLibraryCore.Interfaces;
 
 /// <summary>
 /// Optional interface for premium zombie stats functionality.

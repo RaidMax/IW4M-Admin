@@ -22,7 +22,7 @@ namespace IW4MAdmin.Plugins.Stats.Web.Dtos
         public List<PerformanceHistory> PerformanceHistory { get; set; }
         public double? ZScore { get; set; }
         public long? ServerId { get; set; }
-        public List<EFMeta> Metrics { get; } = new();
+        public List<EFMeta> Metrics { get; set; } = new();
     }
 
     public class PerformanceHistory

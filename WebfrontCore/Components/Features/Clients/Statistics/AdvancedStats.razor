@@ -150,15 +150,24 @@
                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"), Stats.ActiveTime?.HumanizeForCurrentCulture())
                 </div>
 
-                @if (Stats.CustomMetrics.Count > 0)
+                @{
+                    var statCardMetrics = Stats.CustomMetrics.Where(m => m.Extra != "zombie_section").ToList();
+                }
+
+                @if (statCardMetrics.Count > 0)
                 {
                     <!-- Custom Metrics (e.g. Zombie Stats) -->
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        @foreach (var metric in Stats.CustomMetrics)
+                        @foreach (var metric in statCardMetrics)
                         {
                             @RenderStatCard(metric.Key, metric.Value)
                         }
                     </div>
+                }
+
+                @if (_matchHistory is { Count: > 0 })
+                {
+                    <ZombieMatchHistory Matches="_matchHistory"/>
                 }
 
                 <!-- Bottom Section: Models & Tables -->

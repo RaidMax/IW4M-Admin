@@ -1537,6 +1537,9 @@ namespace Data.Migrations.MySql
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("HighestRound")
+                        .HasColumnType("int");
+
                     b.Property<int?>("MapId")
                         .HasColumnType("int");
 
@@ -1545,6 +1548,9 @@ namespace Data.Migrations.MySql
 
                     b.Property<DateTimeOffset>("MatchStartDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("PlayerCount")
+                        .HasColumnType("int");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");

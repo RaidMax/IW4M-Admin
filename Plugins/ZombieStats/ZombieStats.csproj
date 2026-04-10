@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
@@ -20,6 +20,11 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Data\Data.csproj" />
         <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Abstractions\" />
+      <Folder Include="Components\" />
     </ItemGroup>
 
 </Project>

@@ -1462,6 +1462,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("HighestRound")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("MapId")
                         .HasColumnType("INTEGER");
 
@@ -1470,6 +1473,9 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<DateTimeOffset>("MatchStartDate")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("PlayerCount")
+                        .HasColumnType("INTEGER");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("INTEGER");

@@ -1,0 +1,313 @@
+@page "/stats/zombies"
+@rendermode InteractiveServer
+
+<PageTitle>Zombie Leaderboard | @AppState.WebfrontBranding</PageTitle>
+
+@if (!_serviceAvailable || !_hasLoaded)
+{
+    return;
+}
+
+<div class="flex flex-col xl:flex-row h-full">
+
+    @* ================================================================ *@
+    @* MAIN CONTENT AREA - Scrollable *@
+    @* ================================================================ *@
+    <div class="flex-1 min-w-0 p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden">
+        <div class="max-w-[1400px] mx-auto space-y-8">
+
+            @* ================================================================ *@
+            @* HEADER *@
+            @* ================================================================ *@
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center p-3 rounded-xl bg-surface-alt/50 border border-line shadow-sm">
+                        <i class="ph ph-skull text-2xl text-primary"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-gradient-title tracking-tight text-left">
+                            Zombie Leaderboard
+                        </h2>
+                        <div class="text-muted mt-1 font-medium flex items-center gap-2 text-sm">
+                            <i class="ph ph-game-controller text-subtle"></i>
+                            @if (_selectedGame is not null)
+                            {
+                                <span>@_selectedGame.DisplayName</span>
+                                <span class="text-subtle">&bull;</span>
+                            }
+                            @if (_selectedMap is not null)
+                            {
+                                <span>@_selectedMap.MapName</span>
+                                <span class="text-subtle">&bull;</span>
+                            }
+                            <span class="text-primary font-bold">@GetPlayerCountLabel(_selectedPlayerCount)</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (_selectedMap is not null)
+                {
+                    <div class="flex items-center gap-1.5 p-1 bg-surface-alt/50 border border-line rounded-xl">
+                        @foreach (var pc in _selectedMap.PlayerCounts)
+                        {
+                            var isPcSelected = _selectedPlayerCount == pc;
+                            <a href="@BuildFilterUrl(players: pc.ToString())"
+                               class="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 no-underline
+                                      @(isPcSelected
+                                          ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
+                                          : "text-muted hover:text-foreground hover:bg-surface-hover")">
+                                @GetPlayerCountLabel(pc)
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (_metadata is null || _metadata.Games.Count == 0)
+            {
+                <div class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-16 text-center border border-line flex flex-col items-center">
+                    <div class="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 shadow-inner">
+                        <i class="ph ph-skull text-5xl text-subtle"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-foreground">No Zombie Records Yet</h3>
+                    <p class="text-muted mt-2 max-w-md mx-auto">
+                        Play some zombie matches to start building the leaderboard.
+                    </p>
+                </div>
+            }
+            else if (_selectedMap is not null)
+            {
+                @* ================================================================ *@
+                @* LEADERBOARD LIST *@
+                @* ================================================================ *@
+                <div class="flex flex-col gap-5 relative">
+                    <Virtualize @ref="_virtualizeComponent" Context="entry" ItemsProvider="LoadEntries"
+                                OverscanCount="10" ItemSize="120">
+                        <ItemContent>
+                            @{
+                                var rankConfig = GetRankConfig(entry.Rank);
+                                var isCompact = entry.Players.Count < 3;
+                                var gridCols = entry.Players.Count switch
+                                {
+                                    3 => "grid-cols-1 sm:grid-cols-3",
+                                    _ => "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                                };
+                            }
+
+                            <div class="cursor-pointer" @onclick="() => ToggleMatchDetail(entry.MatchId)">
+                                @if (isCompact)
+                                {
+                                    @* ── COMPACT ROW LAYOUT (1-2 players) ── *@
+                                    <div class="flex flex-col md:flex-row bg-surface border border-line rounded-2xl overflow-hidden @rankConfig.Glow transition-all hover:border-line/80">
+
+                                        @* Left: Rank & Round *@
+                                        <div class="w-full md:w-48 flex md:flex-col items-center justify-between md:justify-center gap-2 p-4 bg-surface-alt border-b md:border-b-0 md:border-r border-line shrink-0">
+                                            <span class="px-3 py-1.5 rounded-lg border font-black text-xs tracking-widest @rankConfig.Colors">
+                                                @rankConfig.Label
+                                            </span>
+                                            <div class="flex items-center gap-1.5 text-foreground">
+                                                <span class="font-semibold text-sm">Round @entry.HighestRound</span>
+                                            </div>
+                                        </div>
+
+                                        @* Center: Players *@
+                                        <div class="flex-1 p-4 md:p-5 flex flex-col gap-3 justify-center">
+                                            @foreach (var player in entry.Players)
+                                            {
+                                                @RenderRowPlayer(player)
+                                            }
+                                        </div>
+
+                                        @* Right: Time *@
+                                        <div class="w-full md:w-36 flex md:flex-col items-center justify-between md:justify-center gap-3 p-4 bg-surface-alt border-t md:border-t-0 md:border-l border-line shrink-0">
+                                            <span class="flex items-center gap-1.5 text-xs text-muted font-medium">
+                                                <i class="ph ph-clock text-primary/70"></i>
+                                                @entry.MatchDate
+                                            </span>
+                                            <i class="ph @(_expandedMatches.ContainsKey(entry.MatchId) ? "ph-caret-up" : "ph-caret-down") text-sm text-subtle"></i>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @* ── GRID LAYOUT (3+ players) ── *@
+                                    <div class="flex flex-col bg-surface border border-line rounded-2xl overflow-hidden @rankConfig.Glow transition-all hover:border-line/80">
+
+                                        @* Header *@
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:px-6 md:py-4 bg-surface-alt border-b border-line">
+                                            <div class="flex items-center gap-4">
+                                                <span class="px-3 py-1.5 rounded-lg border font-black text-xs sm:text-sm tracking-widest @rankConfig.Colors">
+                                                    @rankConfig.Label
+                                                </span>
+                                                <div class="flex items-center gap-2 text-foreground">
+                                                    <i class="ph ph-game-controller text-subtle"></i>
+                                                    <span class="font-semibold text-sm">Round @entry.HighestRound</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-3 text-xs text-muted font-medium bg-surface px-3 py-1.5 rounded-lg border border-line">
+                                                <span class="flex items-center gap-1.5">
+                                                    <i class="ph ph-clock text-primary/70"></i>
+                                                    @entry.MatchDate
+                                                </span>
+                                                <i class="ph @(_expandedMatches.ContainsKey(entry.MatchId) ? "ph-caret-up" : "ph-caret-down") text-sm text-subtle"></i>
+                                            </div>
+                                        </div>
+
+                                        @* Grid body *@
+                                        <div class="p-4 md:p-6">
+                                            <div class="grid gap-3 md:gap-4 @gridCols">
+                                                @foreach (var player in entry.Players)
+                                                {
+                                                    @RenderGridPlayer(player)
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @* Expanded match detail *@
+                            @if (_expandedMatches.TryGetValue(entry.MatchId, out var matchDetail))
+                            {
+                                @if (matchDetail is not null)
+                                {
+                                    <ZombieMatchDetail Detail="matchDetail"/>
+                                }
+                                else
+                                {
+                                    <div class="border border-line rounded-xl bg-surface-alt/30 mt-2 p-8 flex items-center justify-center">
+                                        <div class="flex items-center gap-3 text-muted">
+                                            <i class="ph ph-spinner animate-spin text-lg"></i>
+                                            <span class="text-sm">Loading match detail...</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </ItemContent>
+                        <Placeholder>
+                            <div class="bg-surface border border-line rounded-2xl overflow-hidden animate-pulse">
+                                <div class="flex flex-col md:flex-row">
+                                    <div class="md:w-48 bg-surface-alt p-4 flex items-center justify-center gap-3 border-b md:border-b-0 md:border-r border-line">
+                                        <div class="w-20 h-6 bg-surface/30 rounded-lg"></div>
+                                    </div>
+                                    <div class="flex-1 p-4">
+                                        <div class="h-10 w-full bg-surface-alt/50 rounded-xl"></div>
+                                    </div>
+                                    <div class="md:w-36 bg-surface-alt p-4 flex items-center justify-center border-t md:border-t-0 md:border-l border-line">
+                                        <div class="w-20 h-4 bg-surface/20 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </Placeholder>
+                    </Virtualize>
+
+                    @if (_entriesLoaded && _totalEntries == 0)
+                    {
+                        <div class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-12 text-center border border-line flex flex-col items-center mt-4">
+                            <div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 shadow-inner">
+                                <i class="ph ph-timer text-4xl text-subtle"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-foreground">No Records Yet</h3>
+                            <p class="text-muted mt-2 max-w-md mx-auto text-sm">
+                                No completed matches found for this combination.
+                            </p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ================================================================ *@
+    @* SIDEBAR - Fixed position *@
+    @* ================================================================ *@
+    <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
+        @if (MenuItems != null)
+        {
+            <div class="sticky top-6">
+                <SideContextMenu Model="MenuItems"/>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    private record RankStyle(string Label, string Colors, string Glow);
+
+    private static RankStyle GetRankConfig(int rank) => rank switch
+    {
+        1 => new("1ST PLACE", "text-yellow-400 bg-yellow-400/10 border-yellow-400/30", "shadow-[0_0_30px_rgba(250,204,21,0.05)]"),
+        2 => new("2ND PLACE", "text-zinc-300 bg-zinc-300/10 border-zinc-300/30", "shadow-[0_0_30px_rgba(203,213,225,0.03)]"),
+        3 => new("3RD PLACE", "text-amber-500 bg-amber-600/10 border-amber-600/30", "shadow-[0_0_30px_rgba(217,119,6,0.03)]"),
+        _ => new($"{rank}TH", "text-muted bg-surface-alt border-line", "")
+    };
+
+    private static string GetInitials(string name) =>
+        name.Length >= 2 ? name[..2].ToUpperInvariant() : name.ToUpperInvariant();
+
+    private RenderFragment RenderRowPlayer(ZombieLeaderboardPlayer player) => __builder =>
+    {
+        <div class="group flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:px-4 rounded-xl bg-surface-alt border border-line hover:bg-surface-hover hover:border-line/80 transition-all duration-300 w-full gap-3 sm:gap-0">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-surface-alt to-surface text-muted flex items-center justify-center font-bold text-xs shrink-0 shadow-inner group-hover:from-primary/80 group-hover:to-primary/60 group-hover:text-white transition-all duration-300">
+                    @GetInitials(player.Name)
+                </div>
+                <a href="/client/@player.ClientId" @onclick:stopPropagation="true"
+                   class="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                    <ColorCode Value="@player.Name"/>
+                </a>
+            </div>
+            <div class="flex items-center gap-4 sm:gap-6 bg-surface sm:bg-transparent p-2.5 sm:p-0 rounded-lg justify-between sm:justify-end">
+                <div class="flex items-center gap-1.5">
+                    <i class="ph ph-crosshair text-success/70 text-xs"></i>
+                    <span class="text-foreground font-mono text-sm">@player.Kills</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <i class="ph ph-skull text-error/70 text-xs"></i>
+                    <span class="text-foreground font-mono text-sm">@player.Deaths</span>
+                </div>
+                <div class="flex items-center gap-1.5 sm:ml-2">
+                    <i class="ph ph-lightning text-warning/70 text-xs"></i>
+                    <span class="text-yellow-400 font-mono font-bold text-sm">@player.PointsEarned.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderGridPlayer(ZombieLeaderboardPlayer player) => __builder =>
+    {
+        <div class="group flex flex-col p-3 rounded-xl bg-surface-alt border border-line hover:bg-surface-hover hover:border-line/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <div class="flex items-center gap-3 mb-3 border-b border-line/60 pb-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-surface-alt to-surface text-muted flex items-center justify-center font-bold text-xs shrink-0 shadow-inner group-hover:from-primary/80 group-hover:to-primary/60 group-hover:text-white transition-all duration-300">
+                    @GetInitials(player.Name)
+                </div>
+                <a href="/client/@player.ClientId" @onclick:stopPropagation="true"
+                   class="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                    <ColorCode Value="@player.Name"/>
+                </a>
+            </div>
+            <div class="flex items-center justify-between px-1">
+                <div class="flex flex-col items-center gap-0.5">
+                    <span class="flex items-center gap-1 text-[9px] font-bold text-subtle tracking-wider">
+                        <i class="ph ph-crosshair text-success/70 text-[10px]"></i> KILLS
+                    </span>
+                    <span class="text-foreground font-mono text-sm">@player.Kills</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5">
+                    <span class="flex items-center gap-1 text-[9px] font-bold text-subtle tracking-wider">
+                        <i class="ph ph-skull text-error/70 text-[10px]"></i> DEATHS
+                    </span>
+                    <span class="text-foreground font-mono text-sm">@player.Deaths</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5">
+                    <span class="flex items-center gap-1 text-[9px] font-bold text-subtle tracking-wider">
+                        <i class="ph ph-lightning text-warning/70 text-[10px]"></i> SCORE
+                    </span>
+                    <span class="text-yellow-400 font-mono font-bold text-sm">@player.PointsEarned.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+    };
+
+}

@@ -1,15 +1,17 @@
-@* Tooltip component - hover on desktop, tap on mobile *@
+@inject IJSRuntime JS
+
+@* Tooltip component - uses fixed positioning via JS to escape overflow containers *@
 @if (!string.IsNullOrEmpty(Text))
 {
-    <div class="tooltip-wrapper group/tooltip relative @WrapperClass" @onclick="ToggleTooltip" @onclick:stopPropagation>
+    <div class="tooltip-wrapper @WrapperClass"
+         @ref="_triggerRef"
+         @onmouseenter="ShowTooltip"
+         @onmouseleave="HideTooltip"
+         @onfocus="ShowTooltip"
+         @onblur="HideTooltip"
+         @onclick="ToggleTooltip"
+         @onclick:stopPropagation>
         @ChildContent
-        <div class="@TooltipClasses tooltip-content" @onclick:stopPropagation>
-            <div
-                class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] text-center whitespace-normal break-words @(_showMobile ? "select-text" : "")">
-                @Text
-            </div>
-            <div class="@ArrowClasses"></div>
-        </div>
     </div>
 }
 else
@@ -32,37 +34,52 @@ else
     [Parameter] public TooltipDirection Direction { get; set; } = TooltipDirection.Up;
     [Parameter] public string? WrapperClass { get; set; }
 
+    private ElementReference _triggerRef;
     private bool _showMobile;
 
-    private string TooltipClasses => Direction switch
+    private string DirectionString => Direction switch
     {
-        TooltipDirection.Up => $"absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 " + BaseVisibilityClasses,
-        TooltipDirection.Down => $"absolute z-[9999] top-full left-1/2 -translate-x-1/2 mt-2 " + BaseVisibilityClasses,
-        TooltipDirection.Left => $"absolute z-[9999] right-full top-1/2 -translate-y-1/2 mr-2 " + BaseVisibilityClasses,
-        TooltipDirection.Right => $"absolute z-[9999] left-full top-1/2 -translate-y-1/2 ml-2 " + BaseVisibilityClasses,
-        _ => $"absolute z-[9999] bottom-full left-1/2 -translate-x-1/2 mb-2 " + BaseVisibilityClasses
+        TooltipDirection.Down => "down",
+        TooltipDirection.Left => "left",
+        TooltipDirection.Right => "right",
+        _ => "up"
     };
 
-    private string ArrowClasses => Direction switch
+    private async Task ShowTooltip()
     {
-        TooltipDirection.Up => "absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-surface-alt border-r border-b border-line rotate-45",
-        TooltipDirection.Down => "absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-surface-alt border-l border-t border-line rotate-45",
-        TooltipDirection.Left => "absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-surface-alt border-t border-r border-line rotate-45",
-        TooltipDirection.Right => "absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-surface-alt border-b border-l border-line rotate-45",
-        _ => "absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-surface-alt border-r border-b border-line rotate-45"
-    };
-
-    private string BaseVisibilityClasses =>
-        "opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible " +
-        (_showMobile ? "!opacity-100 !visible " : "") +
-        "transition-all duration-200 " +
-        (_showMobile ? "" : "pointer-events-none");
-
-    private void ToggleTooltip()
-    {
-        // Only toggle on touch devices (mobile)
-        // Clicks on tooltip content are prevented from reaching here via @onclick:stopPropagation
-        _showMobile = !_showMobile;
+        if (string.IsNullOrEmpty(Text)) return;
+        try
+        {
+            await JS.InvokeVoidAsync("tooltipFixed.show", _triggerRef, Text, DirectionString);
+        }
+        catch
+        {
+            // Component may have been disposed
+        }
     }
 
+    private async Task HideTooltip()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tooltipFixed.hide");
+        }
+        catch
+        {
+            // Component may have been disposed
+        }
+    }
+
+    private async Task ToggleTooltip()
+    {
+        _showMobile = !_showMobile;
+        if (_showMobile)
+        {
+            await ShowTooltip();
+        }
+        else
+        {
+            await HideTooltip();
+        }
+    }
 }

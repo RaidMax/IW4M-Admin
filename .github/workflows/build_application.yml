@@ -2,7 +2,7 @@ name: Application build
 
 on:
   push:
-    branches: [ develop, release/pre, master ]
+    branches: [ develop, release/pre, master, feature/zombie-stats ]
     paths:
       - Application/**
       - WebfrontCore/**
@@ -235,7 +235,7 @@ jobs:
   build_and_push_docker_dev:
     runs-on: ubuntu-latest
     needs: [ make_version, build ]
-    if: ${{ github.ref == 'refs/heads/develop' }}
+    if: ${{ github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feature/zombie-stats' }}
     permissions:
       contents: read
       packages: write
@@ -270,10 +270,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/iw4madmin
           tags: |
-            # push to develop branch: tags as 'develop'
-            type=raw,value=develop
-            # tag with the build number and -dev suffix (e.g., 2025.8.13.1-dev)
-            type=raw,value=${{ env.buildNumber }}-dev
+            # branch name as tag (e.g., 'develop' or 'zombie-stats')
+            type=ref,event=branch
+            # tag with the build number and branch suffix (e.g., 2025.8.13.1-dev)
+            type=raw,value=${{ env.buildNumber }}-${{ github.ref_name == 'develop' && 'dev' || github.ref_name }}
             # tag with the short git sha (e.g., f15fbd3)
             type=sha,prefix=
           labels: |

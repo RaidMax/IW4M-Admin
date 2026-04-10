@@ -27,7 +27,6 @@ function getStatsChart(id, rankingText, data) {
 
     // Get theme colors from shared utility
     const theme = window.chartTheme.getChartColors();
-    const tooltipConfig = window.chartTheme.getTooltipConfig();
 
     const labels = [];
     const values = [];
@@ -68,10 +67,51 @@ function getStatsChart(id, rankingText, data) {
         maintainAspectRatio: false,
         legend: false,
         tooltips: {
-            ...tooltipConfig,
-            callbacks: {
-                label: context => moment.utc(context.label).local().calendar(),
-                title: items => Math.round(items[0].yLabel) + ' ' + rankingText
+            enabled: false,
+            custom: function (tooltipModel) {
+                let tooltipEl = document.getElementById('chartjs-stats-tooltip');
+
+                const styles = getComputedStyle(document.documentElement);
+                const surfaceColor = styles.getPropertyValue('--color-surface-alt').trim() || styles.getPropertyValue('--color-surface').trim() || 'hsl(0 0% 13%)';
+                const lineColor = styles.getPropertyValue('--color-line').trim() || 'hsl(0 0% 25%)';
+                const foregroundColor = styles.getPropertyValue('--color-foreground').trim() || 'hsl(0 0% 98%)';
+                const subtleColor = styles.getPropertyValue('--color-subtle').trim() || 'hsl(0 0% 75%)';
+
+                if (!tooltipEl) {
+                    tooltipEl = document.createElement('div');
+                    tooltipEl.id = 'chartjs-stats-tooltip';
+                    tooltipEl.style.position = 'absolute';
+                    tooltipEl.style.borderRadius = '6px';
+                    tooltipEl.style.pointerEvents = 'none';
+                    tooltipEl.style.zIndex = '9999';
+                    tooltipEl.style.transition = 'all .1s ease';
+                    tooltipEl.style.transform = 'translate(-50%, 0)';
+                    tooltipEl.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                    document.body.appendChild(tooltipEl);
+                }
+
+                tooltipEl.style.background = surfaceColor;
+                tooltipEl.style.border = '1px solid ' + lineColor;
+
+                if (tooltipModel.opacity === 0) {
+                    tooltipEl.style.opacity = '0';
+                    return;
+                }
+
+                if (tooltipModel.body) {
+                    const value = Math.round(tooltipModel.dataPoints[0].yLabel);
+                    const dateStr = moment.utc(tooltipModel.dataPoints[0].label).local().calendar();
+                    tooltipEl.innerHTML =
+                        '<div style="padding: 8px 12px;">' +
+                        '<div style="color: ' + foregroundColor + '; font-size: 11px; font-weight: 600; margin-bottom: 4px; font-family: ui-sans-serif, system-ui, sans-serif;">' + value + ' ' + rankingText + '</div>' +
+                        '<div style="color: ' + subtleColor + '; font-size: 11px; font-family: ui-sans-serif, system-ui, sans-serif;">' + dateStr + '</div>' +
+                        '</div>';
+                }
+
+                const position = this._chart.canvas.getBoundingClientRect();
+                tooltipEl.style.opacity = '1';
+                tooltipEl.style.left = position.left + window.scrollX + tooltipModel.caretX + 'px';
+                tooltipEl.style.top = position.top + window.scrollY + tooltipModel.caretY - tooltipEl.clientHeight - 10 + 'px';
             }
         },
         hover: {

@@ -24,6 +24,18 @@ public class ZombieMatch : DatedRecord
     
     public int ClientsCompleted { get; set; }
 
+    /// <summary>
+    /// Number of qualifying players (>50% round participation) in this match.
+    /// Calculated at match end.
+    /// </summary>
+    public int? PlayerCount { get; set; }
+
+    /// <summary>
+    /// The highest round number reached in this match.
+    /// Calculated at match end.
+    /// </summary>
+    public int HighestRound { get; set; }
+
     public DateTimeOffset MatchStartDate { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? MatchEndDate { get; set; }
 }

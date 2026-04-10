@@ -25,6 +25,97 @@ window.visibilityObserver = {
 };
 
 // ============================================
+// Fixed Tooltip Positioning
+// ============================================
+window.tooltipFixed = {
+    _el: null,
+
+    _getEl: function () {
+        if (!this._el) {
+            this._el = document.getElementById('fixed-tooltip');
+            if (!this._el) {
+                this._el = document.createElement('div');
+                this._el.id = 'fixed-tooltip';
+                this._el.className = 'fixed z-[9999] pointer-events-none opacity-0 transition-opacity duration-150';
+                document.body.appendChild(this._el);
+            }
+        }
+        return this._el;
+    },
+
+    show: function (triggerElement, text, direction) {
+        const el = this._getEl();
+        const rect = triggerElement.getBoundingClientRect();
+
+        // Render content
+        el.innerHTML =
+            '<div class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] text-center whitespace-normal break-words">' +
+            this._escapeHtml(text) +
+            '</div>' +
+            '<div class="' + this._arrowClass(direction) + '"></div>';
+
+        el.style.opacity = '0';
+        el.style.display = 'block';
+
+        // Measure tooltip size after rendering content
+        const tipRect = el.getBoundingClientRect();
+        let top, left;
+
+        switch (direction || 'up') {
+            case 'down':
+                top = rect.bottom + 8;
+                left = rect.left + rect.width / 2 - tipRect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + rect.height / 2 - tipRect.height / 2;
+                left = rect.left - tipRect.width - 8;
+                break;
+            case 'right':
+                top = rect.top + rect.height / 2 - tipRect.height / 2;
+                left = rect.right + 8;
+                break;
+            default: // up
+                top = rect.top - tipRect.height - 8;
+                left = rect.left + rect.width / 2 - tipRect.width / 2;
+                break;
+        }
+
+        // Clamp to viewport
+        left = Math.max(4, Math.min(left, window.innerWidth - tipRect.width - 4));
+        top = Math.max(4, top);
+
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        el.style.opacity = '1';
+    },
+
+    hide: function () {
+        const el = this._getEl();
+        el.style.opacity = '0';
+    },
+
+    _escapeHtml: function (text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    _arrowClass: function (direction) {
+        const base = 'absolute w-2 h-2 bg-surface-alt border-line rotate-45 ';
+        switch (direction || 'up') {
+            case 'down':
+                return base + 'left-1/2 -translate-x-1/2 -top-1 border-l border-t';
+            case 'left':
+                return base + 'top-1/2 -translate-y-1/2 -right-1 border-t border-r';
+            case 'right':
+                return base + 'top-1/2 -translate-y-1/2 -left-1 border-b border-l';
+            default:
+                return base + 'left-1/2 -translate-x-1/2 -bottom-1 border-r border-b';
+        }
+    }
+};
+
+// ============================================
 // Global Navigation Loading Bar
 // ============================================
 window.loadingBar = {

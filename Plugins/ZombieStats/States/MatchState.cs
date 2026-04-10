@@ -1,10 +1,10 @@
-﻿using Data.Models.Client.Stats;
+using Data.Models.Client.Stats;
 using Data.Models.Zombie;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Plugins.ZombieStats.States;
 
-public record MatchState(IGameServer Server, ZombieMatch PersistentMatch) 
+public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
 {
     public Dictionary<long, RoundState> RoundStates { get; } = new();
     public Dictionary<long, ZombieMatchClientStat> PersistentMatchAggregateStats { get; } = new();

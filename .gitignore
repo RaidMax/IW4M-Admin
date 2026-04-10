@@ -250,6 +250,7 @@ Application/WebfrontCore/*
 /Data/IW4MAdmin_Migration.db-wal
 bundle/
 WebfrontCore/Tools/*
+_PRIVATE/
 
 # LLM folders
 .claude/

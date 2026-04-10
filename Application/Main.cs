@@ -578,7 +578,7 @@ namespace IW4MAdmin.Application
             var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
             {
                 BaseAddress = masterUri,
-                Timeout = TimeSpan.FromSeconds(15)
+                Timeout = Utilities.IsDevelopment ? TimeSpan.FromMilliseconds(500) : TimeSpan.FromSeconds(15)
             };
             var masterRestClient = RestService.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);

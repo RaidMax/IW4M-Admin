@@ -1,0 +1,216 @@
+@using SharedLibraryCore.Interfaces
+@* Match detail panel with per-player tabs, timeline, and round breakdown *@
+
+@if (Detail.Players.Count == 0)
+{
+    return;
+}
+
+<div class="border border-line rounded-xl bg-surface-alt/30 mt-2 overflow-hidden">
+
+    @* ── PLAYER TABS ── *@
+    <div class="flex items-center gap-1 p-2 border-b border-line bg-surface-alt/50 overflow-x-auto" style="scrollbar-width: thin;">
+        @foreach (var player in Detail.Players)
+        {
+            var isActive = player.ClientId == _selectedClientId;
+            <button @onclick="() => SelectPlayer(player.ClientId)"
+                    @onclick:stopPropagation="true"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shrink-0
+                           @(isActive
+                               ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
+                               : "text-muted hover:text-foreground hover:bg-surface-hover")">
+                <i class="ph ph-user text-xs"></i>
+                <ColorCode Value="@player.Name"/>
+            </button>
+        }
+    </div>
+
+    @{
+        var activePlayer = SelectedPlayer;
+    }
+
+    @if (activePlayer is not null)
+    {
+        <div class="p-4 sm:p-6 space-y-8">
+
+            @* ── PLAYER SUMMARY ── *@
+            <div class="flex flex-wrap gap-6">
+                @RenderStat("ph-sword", "Kills", activePlayer.Kills.ToString("N0"))
+                @RenderStat("ph-skull", "Deaths", activePlayer.Deaths.ToString())
+                @RenderStat("ph-warning-circle", "Downs", activePlayer.Downs.ToString())
+                @RenderStat("ph-first-aid", "Revives", activePlayer.Revives.ToString())
+                @RenderStat("ph-coins", "Points", activePlayer.PointsEarned.ToString("N0"))
+                @RenderStat("ph-crosshair", "Headshots", activePlayer.Headshots.ToString())
+            </div>
+
+            @* ── TIMELINE ── *@
+            @if (activePlayer.Events.Count > 0)
+            {
+                @RenderTimeline(activePlayer.Events)
+            }
+
+            @* ── ROUND TABLE ── *@
+            @if (activePlayer.Rounds.Count > 0)
+            {
+                @RenderRoundTable(activePlayer.Rounds)
+            }
+        </div>
+    }
+</div>
+
+@code {
+
+    private RenderFragment RenderStat(string icon, string label, string value) => __builder =>
+    {
+        <div class="flex flex-col">
+            <div class="flex items-center gap-1.5 text-muted text-[10px] uppercase font-bold tracking-wider mb-1">
+                <i class="ph @icon text-xs"></i>
+                <span>@label</span>
+            </div>
+            <span class="font-mono text-sm font-bold text-foreground">@value</span>
+        </div>
+    };
+
+    // Timeline and round table rendering mirrors ZombieMatchHistory.razor patterns
+
+    private RenderFragment RenderTimeline(List<ZombieMatchHistoryEvent> events) => __builder =>
+    {
+        var filteredEvents = events.Where(e => EventMatchesFilter(e, _timelineFilter)).ToList();
+        var allTimes = events.Select(e => e.Seconds).ToList();
+        var minTime = allTimes.Count > 0 ? allTimes.Min() : 0;
+        var maxTime = allTimes.Count > 0 ? allTimes.Max() : 1;
+        var duration = Math.Max(maxTime - minTime, 1);
+
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h5 class="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-2">
+                    <i class="ph ph-crosshair text-sm"></i>
+                    Match Timeline
+                </h5>
+
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-md border border-line">
+                        @RenderFilterButton("all", "All", _timelineFilter)
+                        @RenderFilterButton("critical", "Danger", _timelineFilter, "text-error")
+                        @RenderFilterButton("powerups", "Drops", _timelineFilter, "text-yellow-400")
+                    </div>
+
+                    <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-md border border-line">
+                        <button @onclick="() => SetZoom(-0.5)" @onclick:stopPropagation="true"
+                                disabled="@(_zoomLevel <= 1)"
+                                class="p-1 text-muted hover:text-foreground transition-colors disabled:opacity-30">
+                            <i class="ph ph-minus text-xs"></i>
+                        </button>
+                        <span class="text-xs font-mono text-subtle px-1.5 w-10 text-center">@(_zoomLevel)x</span>
+                        <button @onclick="() => SetZoom(0.5)" @onclick:stopPropagation="true"
+                                disabled="@(_zoomLevel >= 5)"
+                                class="p-1 text-muted hover:text-foreground transition-colors disabled:opacity-30">
+                            <i class="ph ph-plus text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full bg-surface rounded-xl border border-line p-4 overflow-x-auto"
+                 style="scrollbar-width: thin;"
+                 @onwheel="OnTimelineWheel" @onwheel:preventDefault="true">
+                <div class="relative h-12 flex items-center my-2" style="width: @(_zoomLevel * 100)%;">
+
+                    <div class="absolute h-2 bg-surface-alt rounded-full inset-y-0 my-auto shadow-inner border border-line" style="left: 1%; right: 1%;"></div>
+
+                    @foreach (var evt in filteredEvents)
+                    {
+                        var pct = 1 + ((evt.Seconds - minTime) / duration) * 98;
+                        var visuals = GetEventVisuals(evt.Category);
+                        var leftStyle = $"left: {pct.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)}%; z-index: {visuals.ZIndex};";
+
+                        <div class="absolute top-1/2 -translate-y-1/2" style="@leftStyle">
+                            @if (visuals.IsTick)
+                            {
+                                <Tooltip Text="@FormatTooltipText(evt)">
+                                    <div class="w-1 h-5 bg-muted/50 rounded-full hover:bg-foreground/50 transition-colors shadow-sm -translate-x-1/2 cursor-pointer"></div>
+                                </Tooltip>
+                            }
+                            else
+                            {
+                                <Tooltip Text="@FormatTooltipText(evt)">
+                                    <div class="w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-surface cursor-pointer transition-transform duration-200 hover:scale-150 @visuals.Bg -translate-x-1/2">
+                                        <i class="ph @visuals.Icon" style="font-size: 10px; color: white;"></i>
+                                    </div>
+                                </Tooltip>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderFilterButton(string filter, string label, string currentFilter, string? activeTextColor = null) => __builder =>
+    {
+        var isActive = currentFilter == filter;
+        var activeClass = isActive
+            ? $"bg-surface-alt {activeTextColor ?? "text-foreground"}"
+            : "text-subtle hover:text-muted";
+
+        <button @onclick="() => SetFilter(filter)" @onclick:stopPropagation="true"
+                class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded transition-colors @activeClass">
+            @label
+        </button>
+    };
+
+    private RenderFragment RenderRoundTable(List<ZombieMatchHistoryRound> rounds) => __builder =>
+    {
+        var maxKills = Math.Max(rounds.Max(r => r.Kills), 1);
+
+        <div>
+            <h5 class="text-xs font-bold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
+                <i class="ph ph-chart-bar text-sm"></i>
+                Round Breakdown
+            </h5>
+
+            <div class="overflow-x-auto overflow-y-auto max-h-[400px] border border-line rounded-lg" style="scrollbar-width: thin;">
+                <table class="w-full text-left text-sm whitespace-nowrap relative">
+                    <thead class="sticky top-0 bg-surface-alt z-10 shadow-sm">
+                        <tr class="text-[10px] uppercase tracking-wider text-muted border-b border-line">
+                            <th class="py-3 pl-4 font-medium">Round</th>
+                            <th class="py-3 font-medium pr-4 w-1/3">Kills</th>
+                            <th class="py-3 font-medium pr-4">Downs / Deaths</th>
+                            <th class="py-3 font-medium pr-4">Points</th>
+                            <th class="py-3 font-medium pr-4 text-right">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line/50">
+                        @foreach (var round in rounds)
+                        {
+                            <tr class="group hover:bg-surface-hover/20 transition-colors">
+                                <td class="py-2.5 pl-4 font-mono text-subtle w-24">
+                                    <span class="inline-flex w-6 h-6 items-center justify-center rounded bg-surface-alt text-xs text-muted mr-2">
+                                        @round.RoundNumber
+                                    </span>
+                                </td>
+                                <td class="py-2.5 pr-4 relative">
+                                    <div class="flex items-center gap-3">
+                                        <span class="font-mono text-foreground w-8">@round.Kills</span>
+                                        <div class="flex-1 h-4 bg-surface-alt rounded overflow-hidden">
+                                            <div class="h-full bg-primary/30 rounded transition-all duration-500"
+                                                 style="width: @(((double)round.Kills / maxKills * 100).ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2.5 pr-4 font-mono text-muted">
+                                    <span class="@(round.Downs > 0 ? "text-orange-400 font-bold" : "")">@round.Downs</span>
+                                    <span class="opacity-50 mx-1">/</span>
+                                    <span class="@(round.Deaths > 0 ? "text-error font-bold" : "")">@round.Deaths</span>
+                                </td>
+                                <td class="py-2.5 pr-4 font-mono text-yellow-400/90">@round.Points.ToString("N0")</td>
+                                <td class="py-2.5 pr-4 text-right font-mono text-subtle text-xs">@($"{round.DurationSeconds:F0}s")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    };
+}

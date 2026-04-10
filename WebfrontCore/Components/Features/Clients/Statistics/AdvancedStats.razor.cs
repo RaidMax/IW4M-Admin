@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -15,6 +16,7 @@ public partial class AdvancedStats
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ILogger<AdvancedStats> Logger { get; set; }
+    [Inject] public required IServiceProvider ServiceProvider { get; set; }
 
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string? serverId { get; set; }
@@ -29,6 +31,7 @@ public partial class AdvancedStats
     private bool _chartsInitialized;
     private bool _showAllHitLocations;
     private bool _showAllWeapons;
+    private List<ZombieMatchHistoryMatch>? _matchHistory;
     private const int DefaultTableRowCount = 10;
     private int _lastLoadedId;
     private string? _lastLoadedServerId;
@@ -62,10 +65,18 @@ public partial class AdvancedStats
             _lastLoadedServerId = serverId;
             _lastLoadedBucket = performanceBucket;
 
+            // Load match history from premium service if available
+            var matchHistoryService = ServiceProvider.GetService<IZombieMatchHistoryService>();
+            if (matchHistoryService is not null)
+            {
+                _matchHistory = await matchHistoryService.GetPlayerMatchHistoryAsync(ClientId, serverId);
+            }
+
             GenerateMenu();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to load advanced stats for client {ClientId}", ClientId);
             NavManager.NavigateTo("/client/" + ClientId);
         }
     }
@@ -113,15 +124,16 @@ public partial class AdvancedStats
             }
         };
 
-        // "Categories" section header + bucket items
+        // "Category" section header + bucket items (alphabetical)
         var bucketGroups = Stats.Servers
             .Where(s => !string.IsNullOrEmpty(s.PerformanceBucket))
             .GroupBy(s => s.PerformanceBucket, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         if (bucketGroups.Count > 0)
         {
-            items.Add(new SideContextMenuItem { IsSectionHeader = true, Title = "Categories" });
+            items.Add(new SideContextMenuItem { IsSectionHeader = true, Title = "Category" });
             items.AddRange(bucketGroups.Select(group => new SideContextMenuItem
             {
                 IsLink = true,
@@ -133,8 +145,12 @@ public partial class AdvancedStats
             }));
         }
 
-        // Individual servers (collapsible, grouped by game)
-        items.AddRange(Stats.Servers.Select(server => new SideContextMenuItem
+        // Individual servers filtered by selected bucket (collapsible, grouped by game)
+        var filteredServers = performanceBucket != null
+            ? Stats.Servers.Where(s => string.Equals(s.PerformanceBucket, performanceBucket, StringComparison.OrdinalIgnoreCase))
+            : Stats.Servers;
+
+        items.AddRange(filteredServers.Select(server => new SideContextMenuItem
         {
             IsLink = true,
             Reference = $"/client/{ClientId}/stats?serverId={server.Endpoint}",

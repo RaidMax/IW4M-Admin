@@ -8,6 +8,7 @@ using Data.Models.Client;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using Stats.Client.Abstractions;
@@ -24,6 +25,7 @@ namespace Stats.Client
             _distributionCache;
 
         private readonly IDataValueCache<EFClientStatistics, double> _maxZScoreCache;
+        private readonly ILogger<ServerDistributionCalculator> _logger;
 
         private readonly StatsConfiguration _configuration;
         private readonly ApplicationConfiguration _appConfig;
@@ -35,13 +37,15 @@ namespace Stats.Client
         public ServerDistributionCalculator(IDatabaseContextFactory contextFactory,
             IDataValueCache<EFClientStatistics, Dictionary<string, Extensions.LogParams>> distributionCache,
             IDataValueCache<EFClientStatistics, double> maxZScoreCache,
-            StatsConfiguration config, ApplicationConfiguration appConfig)
+            StatsConfiguration config, ApplicationConfiguration appConfig,
+            ILogger<ServerDistributionCalculator> logger)
         {
             _contextFactory = contextFactory;
             _distributionCache = distributionCache;
             _maxZScoreCache = maxZScoreCache;
             _configuration = config;
             _appConfig = appConfig;
+            _logger = logger;
         }
 
         public async Task Initialize()
@@ -128,6 +132,7 @@ namespace Stats.Client
                                 group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed))
                             .MaxAsync(avgZScore => (double?)avgZScore, token);
 
+                        _logger.LogDebug("[MaxZScore] Bucket={Bucket} QueryResult={Result}", localPerformanceBucket, zScore);
                         return zScore ?? 0;
                     }, MaxZScoreCacheKey, new[] { performanceBucket },
                     Utilities.IsDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(30));
@@ -212,11 +217,15 @@ namespace Stats.Client
         {
             try
             {
-                var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new[] { performanceBucket ?? string.Empty });
+                var cacheKey = performanceBucket ?? string.Empty;
+                var maxZScore = await _maxZScoreCache.GetCacheItem(MaxZScoreCacheKey, new[] { cacheKey });
+                _logger.LogDebug("[Rating] GetRatingForZScore: bucket={Bucket} cacheKey={Key} zScore={ZScore} maxZScore={MaxZScore} result={Result}",
+                    performanceBucket, cacheKey, value, maxZScore, maxZScore == 0 ? "null (maxZScore=0)" : value.GetRatingForZScore(maxZScore)?.ToString() ?? "null");
                 return maxZScore == 0 ? null : value.GetRatingForZScore(maxZScore);
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException e)
             {
+                _logger.LogWarning(e, "[Rating] KeyNotFoundException for bucket={Bucket}", performanceBucket);
                 return null;
             }
         }

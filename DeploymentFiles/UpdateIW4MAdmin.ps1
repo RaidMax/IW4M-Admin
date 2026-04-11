@@ -103,6 +103,15 @@ if ($Clean)
 Write-Output "Removing temporary files..."
 Remove-Item -Force $fullPath
 
+# Handle JS → CS script plugin migrations
+Get-ChildItem -Path "$outputDir/Plugins" -Filter "*.cs" -ErrorAction SilentlyContinue | ForEach-Object {
+    $jsFile = Join-Path $_.DirectoryName ($_.BaseName + ".js")
+    if (Test-Path $jsFile) {
+        Write-Output "Migrating plugin: $($_.BaseName).js → $($_.BaseName).cs"
+        Rename-Item $jsFile "$jsFile.disabled"
+    }
+}
+
 $stopwatch.Stop()
 $executionTime = [math]::Round($stopwatch.Elapsed.TotalSeconds, 0)
 

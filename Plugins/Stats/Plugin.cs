@@ -151,12 +151,6 @@ public class Plugin : IPluginV2
 
     private async Task OnClientKilled(ClientKillEvent killEvent, CancellationToken token)
     {
-        _logger.LogDebug("[StatsKill] Attacker={AttackerName}(NID={AttackerNID},CID={AttackerCID}) Victim={VictimName}(NID={VictimNID},CID={VictimCID}) Ignored={Ignored} WorldDmg={World}",
-            killEvent.Attacker?.CleanedName, killEvent.Attacker?.NetworkId, killEvent.Attacker?.ClientId,
-            killEvent.Victim?.CleanedName, killEvent.Victim?.NetworkId, killEvent.Victim?.ClientId,
-            ShouldIgnoreEvent(killEvent.Attacker, killEvent.Victim),
-            IsWorldDamage(killEvent.Attacker));
-
         if (!ShouldIgnoreEvent(killEvent.Attacker, killEvent.Victim))
         {
             // this treats "world" damage as self damage

@@ -1,9 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Data.Migrations.Sqlite
+namespace Data.Migrations.Postgresql
 {
     /// <inheritdoc />
     public partial class AddZombieStats : Migration
@@ -14,30 +15,30 @@ namespace Data.Migrations.Sqlite
             migrationBuilder.AddColumn<int>(
                 name: "PerformanceBucketId",
                 table: "EFServers",
-                type: "INTEGER",
+                type: "integer",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "PerformanceBucketId",
                 table: "EFClientRankingHistory",
-                type: "INTEGER",
+                type: "integer",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "PerformanceBucketId",
                 table: "EFClientHitStatistics",
-                type: "INTEGER",
+                type: "integer",
                 nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "EFClientStatTags",
                 columns: table => new
                 {
-                    ZombieStatTagId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    TagName = table.Column<string>(type: "TEXT", maxLength: 128, nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    ZombieStatTagId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TagName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,15 +49,17 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieMatches",
                 columns: table => new
                 {
-                    ZombieMatchId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    MapId = table.Column<int>(type: "INTEGER", nullable: true),
-                    ServerId = table.Column<long>(type: "INTEGER", nullable: true),
-                    ClientsCompleted = table.Column<int>(type: "INTEGER", nullable: false),
-                    MatchStartDate = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    MatchEndDate = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    ZombieMatchId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MapId = table.Column<int>(type: "integer", nullable: true),
+                    ServerId = table.Column<long>(type: "bigint", nullable: true),
+                    ClientsCompleted = table.Column<int>(type: "integer", nullable: false),
+                    PlayerCount = table.Column<int>(type: "integer", nullable: true),
+                    HighestRound = table.Column<int>(type: "integer", nullable: false),
+                    MatchStartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    MatchEndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -77,10 +80,10 @@ namespace Data.Migrations.Sqlite
                 name: "PerformanceBuckets",
                 columns: table => new
                 {
-                    PerformanceBucketId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Code = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true)
+                    PerformanceBucketId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Code = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -91,13 +94,13 @@ namespace Data.Migrations.Sqlite
                 name: "EFClientStatTagValues",
                 columns: table => new
                 {
-                    ZombieClientStatTagValueId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    StatValue = table.Column<int>(type: "INTEGER", nullable: true),
-                    StatTagId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ClientId = table.Column<int>(type: "INTEGER", nullable: false),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    ZombieClientStatTagValueId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StatValue = table.Column<int>(type: "integer", nullable: true),
+                    StatTagId = table.Column<int>(type: "integer", nullable: false),
+                    ClientId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -120,25 +123,25 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieClientStats",
                 columns: table => new
                 {
-                    ZombieClientStatId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    MatchId = table.Column<int>(type: "INTEGER", nullable: true),
-                    ClientId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Kills = table.Column<int>(type: "INTEGER", nullable: false),
-                    Deaths = table.Column<int>(type: "INTEGER", nullable: false),
-                    DamageDealt = table.Column<long>(type: "INTEGER", nullable: false),
-                    DamageReceived = table.Column<int>(type: "INTEGER", nullable: false),
-                    Headshots = table.Column<int>(type: "INTEGER", nullable: false),
-                    HeadshotKills = table.Column<int>(type: "INTEGER", nullable: false),
-                    Melees = table.Column<int>(type: "INTEGER", nullable: false),
-                    Downs = table.Column<int>(type: "INTEGER", nullable: false),
-                    Revives = table.Column<int>(type: "INTEGER", nullable: false),
-                    PointsEarned = table.Column<long>(type: "INTEGER", nullable: false),
-                    PointsSpent = table.Column<long>(type: "INTEGER", nullable: false),
-                    PerksConsumed = table.Column<int>(type: "INTEGER", nullable: false),
-                    PowerupsGrabbed = table.Column<int>(type: "INTEGER", nullable: false),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MatchId = table.Column<int>(type: "integer", nullable: true),
+                    ClientId = table.Column<int>(type: "integer", nullable: false),
+                    Kills = table.Column<int>(type: "integer", nullable: false),
+                    Deaths = table.Column<int>(type: "integer", nullable: false),
+                    DamageDealt = table.Column<long>(type: "bigint", nullable: false),
+                    DamageReceived = table.Column<int>(type: "integer", nullable: false),
+                    Headshots = table.Column<int>(type: "integer", nullable: false),
+                    HeadshotKills = table.Column<int>(type: "integer", nullable: false),
+                    Melees = table.Column<int>(type: "integer", nullable: false),
+                    Downs = table.Column<int>(type: "integer", nullable: false),
+                    Revives = table.Column<int>(type: "integer", nullable: false),
+                    PointsEarned = table.Column<long>(type: "bigint", nullable: false),
+                    PointsSpent = table.Column<long>(type: "bigint", nullable: false),
+                    PerksConsumed = table.Column<int>(type: "integer", nullable: false),
+                    PowerupsGrabbed = table.Column<int>(type: "integer", nullable: false),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -160,16 +163,16 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieEvents",
                 columns: table => new
                 {
-                    ZombieEventLogId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    EventType = table.Column<int>(type: "INTEGER", nullable: false),
-                    SourceClientId = table.Column<int>(type: "INTEGER", nullable: true),
-                    AssociatedClientId = table.Column<int>(type: "INTEGER", nullable: true),
-                    NumericalValue = table.Column<double>(type: "REAL", nullable: true),
-                    TextualValue = table.Column<string>(type: "TEXT", nullable: true),
-                    MatchId = table.Column<int>(type: "INTEGER", nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    ZombieEventLogId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    EventType = table.Column<int>(type: "integer", nullable: false),
+                    SourceClientId = table.Column<int>(type: "integer", nullable: true),
+                    AssociatedClientId = table.Column<int>(type: "integer", nullable: true),
+                    NumericalValue = table.Column<double>(type: "double precision", nullable: true),
+                    TextualValue = table.Column<string>(type: "text", nullable: true),
+                    MatchId = table.Column<int>(type: "integer", nullable: true),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -195,21 +198,20 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieClientStatAggregates",
                 columns: table => new
                 {
-                    ZombieClientStatId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    ServerId = table.Column<long>(type: "INTEGER", nullable: true),
-                    AverageKillsPerDown = table.Column<double>(type: "REAL", nullable: false),
-                    AverageDowns = table.Column<double>(type: "REAL", nullable: false),
-                    AverageRevives = table.Column<double>(type: "REAL", nullable: false),
-                    HeadshotPercentage = table.Column<double>(type: "REAL", nullable: false),
-                    AlivePercentage = table.Column<double>(type: "REAL", nullable: false),
-                    AverageMelees = table.Column<double>(type: "REAL", nullable: false),
-                    AverageRoundReached = table.Column<double>(type: "REAL", nullable: false),
-                    AveragePoints = table.Column<double>(type: "REAL", nullable: false),
-                    HighestRound = table.Column<int>(type: "INTEGER", nullable: false),
-                    TotalRoundsPlayed = table.Column<int>(type: "INTEGER", nullable: false),
-                    TotalMatchesPlayed = table.Column<int>(type: "INTEGER", nullable: false),
-                    TotalMatchesCompleted = table.Column<int>(type: "INTEGER", nullable: false)
+                    ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false),
+                    ServerId = table.Column<long>(type: "bigint", nullable: true),
+                    AverageKillsPerDown = table.Column<double>(type: "double precision", nullable: false),
+                    AverageDowns = table.Column<double>(type: "double precision", nullable: false),
+                    AverageRevives = table.Column<double>(type: "double precision", nullable: false),
+                    HeadshotPercentage = table.Column<double>(type: "double precision", nullable: false),
+                    AlivePercentage = table.Column<double>(type: "double precision", nullable: false),
+                    AverageMelees = table.Column<double>(type: "double precision", nullable: false),
+                    AverageRoundReached = table.Column<double>(type: "double precision", nullable: false),
+                    AveragePoints = table.Column<double>(type: "double precision", nullable: false),
+                    HighestRound = table.Column<int>(type: "integer", nullable: false),
+                    TotalRoundsPlayed = table.Column<int>(type: "integer", nullable: false),
+                    TotalMatchesPlayed = table.Column<int>(type: "integer", nullable: false),
+                    TotalMatchesCompleted = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -220,7 +222,7 @@ namespace Data.Migrations.Sqlite
                         principalTable: "EFServers",
                         principalColumn: "ServerId");
                     table.ForeignKey(
-                        name: "FK_EFZombieClientStatAggregates_EFZombieClientStats_ZombieClientStatId",
+                        name: "FK_EFZombieClientStatAggregates_EFZombieClientStats_ZombieClie~",
                         column: x => x.ZombieClientStatId,
                         principalTable: "EFZombieClientStats",
                         principalColumn: "ZombieClientStatId",
@@ -231,14 +233,13 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieMatchClientStats",
                 columns: table => new
                 {
-                    ZombieClientStatId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true)
+                    ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFZombieMatchClientStats", x => x.ZombieClientStatId);
                     table.ForeignKey(
-                        name: "FK_EFZombieMatchClientStats_EFZombieClientStats_ZombieClientStatId",
+                        name: "FK_EFZombieMatchClientStats_EFZombieClientStats_ZombieClientSt~",
                         column: x => x.ZombieClientStatId,
                         principalTable: "EFZombieClientStats",
                         principalColumn: "ZombieClientStatId",
@@ -249,20 +250,19 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieRoundClientStats",
                 columns: table => new
                 {
-                    ZombieClientStatId = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    StartTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    EndTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
-                    Duration = table.Column<TimeSpan>(type: "TEXT", nullable: true),
-                    TimeAlive = table.Column<TimeSpan>(type: "TEXT", nullable: true),
-                    RoundNumber = table.Column<int>(type: "INTEGER", nullable: false),
-                    Points = table.Column<int>(type: "INTEGER", nullable: false)
+                    ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false),
+                    StartTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Duration = table.Column<TimeSpan>(type: "interval", nullable: true),
+                    TimeAlive = table.Column<TimeSpan>(type: "interval", nullable: true),
+                    RoundNumber = table.Column<int>(type: "integer", nullable: false),
+                    Points = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFZombieRoundClientStats", x => x.ZombieClientStatId);
                     table.ForeignKey(
-                        name: "FK_EFZombieRoundClientStats_EFZombieClientStats_ZombieClientStatId",
+                        name: "FK_EFZombieRoundClientStats_EFZombieClientStats_ZombieClientSt~",
                         column: x => x.ZombieClientStatId,
                         principalTable: "EFZombieClientStats",
                         principalColumn: "ZombieClientStatId",
@@ -273,15 +273,15 @@ namespace Data.Migrations.Sqlite
                 name: "EFZombieClientStatRecords",
                 columns: table => new
                 {
-                    ZombieClientStatRecordId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    Type = table.Column<string>(type: "TEXT", nullable: false),
-                    Value = table.Column<string>(type: "TEXT", nullable: false),
-                    ClientId = table.Column<int>(type: "INTEGER", nullable: true),
-                    RoundId = table.Column<long>(type: "INTEGER", nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    ZombieClientStatRecordId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    Value = table.Column<string>(type: "text", nullable: false),
+                    ClientId = table.Column<int>(type: "integer", nullable: true),
+                    RoundId = table.Column<long>(type: "bigint", nullable: true),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -381,7 +381,7 @@ namespace Data.Migrations.Sqlite
                 principalColumn: "PerformanceBucketId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucketId",
+                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucket~",
                 table: "EFClientRankingHistory",
                 column: "PerformanceBucketId",
                 principalTable: "PerformanceBuckets",
@@ -403,7 +403,7 @@ namespace Data.Migrations.Sqlite
                 table: "EFClientHitStatistics");
 
             migrationBuilder.DropForeignKey(
-                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucketId",
+                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucket~",
                 table: "EFClientRankingHistory");
 
             migrationBuilder.DropForeignKey(

@@ -120,21 +120,12 @@ public class HitCalculator : IClientStatisticCalculator
         if (coreEvent is RoundEndEvent or MatchEndEvent)
         {
             var server = ((GameEventV2)coreEvent).Server;
-            _logger.LogDebug("[HitCalc] {EventType} fired. ConnectedClients={ClientCount}, TrackedClients={TrackedCount}",
-                coreEvent.GetType().Name, server.ConnectedClients.Count(),
-                _clientHitStatistics.Count);
-
             foreach (var client in server.ConnectedClients)
             {
                 if (!_clientHitStatistics.TryGetValue(client.ClientId, out var state))
                 {
-                    _logger.LogDebug("[HitCalc] Client {ClientId} not in hit statistics tracking", client.ClientId);
                     continue;
                 }
-
-                _logger.LogDebug("[HitCalc] Persisting {HitCount} hit stats for client {ClientId} ({NewCount} new)",
-                    state.Hits.Count, client.ClientId,
-                    state.Hits.Count(h => h.ClientHitStatisticId == 0));
 
                 try
                 {
@@ -330,9 +321,6 @@ public class HitCalculator : IClientStatisticCalculator
         var matchingLocation = await GetOrAddHitLocation(hitInfo.Location, hitInfo.Game);
         var meansOfDeath = await GetOrAddMeansOfDeath(hitInfo.MeansOfDeath, hitInfo.Game);
 
-        _logger.LogDebug("[HitCalc] RunTasks for Entity={EntityId} Server={ServerId} Weapon={WeaponName}(Id={WeaponId}) Location={Location}(Id={LocationId}) MoD={MoD}(Id={MoDId})",
-            hitInfo.EntityId, serverId, weapon.Name, weapon.WeaponId, matchingLocation.Name, matchingLocation.HitLocationId, meansOfDeath.Name, meansOfDeath.MeansOfDeathId);
-
         List<Task<EFClientHitStatistic>> baseTasks =
         [
             // just the client
@@ -502,9 +490,6 @@ public class HitCalculator : IClientStatisticCalculator
 
         if (hitStat != null)
         {
-            _logger.LogDebug("[HitCalc] MATCHED existing: Id={Id} Server={ServerId} Weapon={WeaponId} Location={LocationId} MoD={MoDId} (looking for: Server={QServerId} Weapon={QWeaponId} Location={QLocationId} MoD={QMoDId})",
-                hitStat.ClientHitStatisticId, hitStat.ServerId, hitStat.WeaponId, hitStat.HitLocationId, hitStat.MeansOfDeathId,
-                serverId, weaponId, hitLocationId, meansOfDeathId);
             return Task.FromResult(hitStat);
         }
 
@@ -517,9 +502,6 @@ public class HitCalculator : IClientStatisticCalculator
             HitLocationId = hitLocationId,
             MeansOfDeathId = meansOfDeathId
         };
-
-        _logger.LogDebug("[HitCalc] Creating NEW hit stat: Client={ClientId} Server={ServerId} Weapon={WeaponId} Location={LocationId} MoD={MoDId} (total now: {Count})",
-            clientId, serverId, weaponId, hitLocationId, meansOfDeathId, state.Hits.Count + 1);
 
         try
         {

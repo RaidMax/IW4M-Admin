@@ -1,10 +1,10 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Data.Migrations.Postgresql
+namespace Data.Migrations.MySql
 {
     /// <inheritdoc />
     public partial class AddZombieStats : Migration
@@ -15,49 +15,53 @@ namespace Data.Migrations.Postgresql
             migrationBuilder.AddColumn<int>(
                 name: "PerformanceBucketId",
                 table: "EFServers",
-                type: "integer",
+                type: "int",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "PerformanceBucketId",
                 table: "EFClientRankingHistory",
-                type: "integer",
+                type: "int",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "PerformanceBucketId",
                 table: "EFClientHitStatistics",
-                type: "integer",
+                type: "int",
                 nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "EFClientStatTags",
                 columns: table => new
                 {
-                    ZombieStatTagId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    TagName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    ZombieStatTagId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TagName = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFClientStatTags", x => x.ZombieStatTagId);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieMatches",
                 columns: table => new
                 {
-                    ZombieMatchId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    MapId = table.Column<int>(type: "integer", nullable: true),
+                    ZombieMatchId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    MapId = table.Column<int>(type: "int", nullable: true),
                     ServerId = table.Column<long>(type: "bigint", nullable: true),
-                    ClientsCompleted = table.Column<int>(type: "integer", nullable: false),
-                    MatchStartDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    MatchEndDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    ClientsCompleted = table.Column<int>(type: "int", nullable: false),
+                    PlayerCount = table.Column<int>(type: "int", nullable: true),
+                    HighestRound = table.Column<int>(type: "int", nullable: false),
+                    MatchStartDate = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    MatchEndDate = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -72,33 +76,37 @@ namespace Data.Migrations.Postgresql
                         column: x => x.ServerId,
                         principalTable: "EFServers",
                         principalColumn: "ServerId");
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "PerformanceBuckets",
                 columns: table => new
                 {
-                    PerformanceBucketId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Code = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true)
+                    PerformanceBucketId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PerformanceBuckets", x => x.PerformanceBucketId);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFClientStatTagValues",
                 columns: table => new
                 {
                     ZombieClientStatTagValueId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    StatValue = table.Column<int>(type: "integer", nullable: true),
-                    StatTagId = table.Column<int>(type: "integer", nullable: false),
-                    ClientId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    StatValue = table.Column<int>(type: "int", nullable: true),
+                    StatTagId = table.Column<int>(type: "int", nullable: false),
+                    ClientId = table.Column<int>(type: "int", nullable: false),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -115,31 +123,32 @@ namespace Data.Migrations.Postgresql
                         principalTable: "EFClients",
                         principalColumn: "ClientId",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieClientStats",
                 columns: table => new
                 {
                     ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    MatchId = table.Column<int>(type: "integer", nullable: true),
-                    ClientId = table.Column<int>(type: "integer", nullable: false),
-                    Kills = table.Column<int>(type: "integer", nullable: false),
-                    Deaths = table.Column<int>(type: "integer", nullable: false),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    MatchId = table.Column<int>(type: "int", nullable: true),
+                    ClientId = table.Column<int>(type: "int", nullable: false),
+                    Kills = table.Column<int>(type: "int", nullable: false),
+                    Deaths = table.Column<int>(type: "int", nullable: false),
                     DamageDealt = table.Column<long>(type: "bigint", nullable: false),
-                    DamageReceived = table.Column<int>(type: "integer", nullable: false),
-                    Headshots = table.Column<int>(type: "integer", nullable: false),
-                    HeadshotKills = table.Column<int>(type: "integer", nullable: false),
-                    Melees = table.Column<int>(type: "integer", nullable: false),
-                    Downs = table.Column<int>(type: "integer", nullable: false),
-                    Revives = table.Column<int>(type: "integer", nullable: false),
+                    DamageReceived = table.Column<int>(type: "int", nullable: false),
+                    Headshots = table.Column<int>(type: "int", nullable: false),
+                    HeadshotKills = table.Column<int>(type: "int", nullable: false),
+                    Melees = table.Column<int>(type: "int", nullable: false),
+                    Downs = table.Column<int>(type: "int", nullable: false),
+                    Revives = table.Column<int>(type: "int", nullable: false),
                     PointsEarned = table.Column<long>(type: "bigint", nullable: false),
                     PointsSpent = table.Column<long>(type: "bigint", nullable: false),
-                    PerksConsumed = table.Column<int>(type: "integer", nullable: false),
-                    PowerupsGrabbed = table.Column<int>(type: "integer", nullable: false),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    PerksConsumed = table.Column<int>(type: "int", nullable: false),
+                    PowerupsGrabbed = table.Column<int>(type: "int", nullable: false),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -155,22 +164,24 @@ namespace Data.Migrations.Postgresql
                         column: x => x.MatchId,
                         principalTable: "EFZombieMatches",
                         principalColumn: "ZombieMatchId");
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieEvents",
                 columns: table => new
                 {
                     ZombieEventLogId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    EventType = table.Column<int>(type: "integer", nullable: false),
-                    SourceClientId = table.Column<int>(type: "integer", nullable: true),
-                    AssociatedClientId = table.Column<int>(type: "integer", nullable: true),
-                    NumericalValue = table.Column<double>(type: "double precision", nullable: true),
-                    TextualValue = table.Column<string>(type: "text", nullable: true),
-                    MatchId = table.Column<int>(type: "integer", nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    EventType = table.Column<int>(type: "int", nullable: false),
+                    SourceClientId = table.Column<int>(type: "int", nullable: true),
+                    AssociatedClientId = table.Column<int>(type: "int", nullable: true),
+                    NumericalValue = table.Column<double>(type: "double", nullable: true),
+                    TextualValue = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    MatchId = table.Column<int>(type: "int", nullable: true),
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -190,7 +201,8 @@ namespace Data.Migrations.Postgresql
                         column: x => x.MatchId,
                         principalTable: "EFZombieMatches",
                         principalColumn: "ZombieMatchId");
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieClientStatAggregates",
@@ -198,18 +210,18 @@ namespace Data.Migrations.Postgresql
                 {
                     ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false),
                     ServerId = table.Column<long>(type: "bigint", nullable: true),
-                    AverageKillsPerDown = table.Column<double>(type: "double precision", nullable: false),
-                    AverageDowns = table.Column<double>(type: "double precision", nullable: false),
-                    AverageRevives = table.Column<double>(type: "double precision", nullable: false),
-                    HeadshotPercentage = table.Column<double>(type: "double precision", nullable: false),
-                    AlivePercentage = table.Column<double>(type: "double precision", nullable: false),
-                    AverageMelees = table.Column<double>(type: "double precision", nullable: false),
-                    AverageRoundReached = table.Column<double>(type: "double precision", nullable: false),
-                    AveragePoints = table.Column<double>(type: "double precision", nullable: false),
-                    HighestRound = table.Column<int>(type: "integer", nullable: false),
-                    TotalRoundsPlayed = table.Column<int>(type: "integer", nullable: false),
-                    TotalMatchesPlayed = table.Column<int>(type: "integer", nullable: false),
-                    TotalMatchesCompleted = table.Column<int>(type: "integer", nullable: false)
+                    AverageKillsPerDown = table.Column<double>(type: "double", nullable: false),
+                    AverageDowns = table.Column<double>(type: "double", nullable: false),
+                    AverageRevives = table.Column<double>(type: "double", nullable: false),
+                    HeadshotPercentage = table.Column<double>(type: "double", nullable: false),
+                    AlivePercentage = table.Column<double>(type: "double", nullable: false),
+                    AverageMelees = table.Column<double>(type: "double", nullable: false),
+                    AverageRoundReached = table.Column<double>(type: "double", nullable: false),
+                    AveragePoints = table.Column<double>(type: "double", nullable: false),
+                    HighestRound = table.Column<int>(type: "int", nullable: false),
+                    TotalRoundsPlayed = table.Column<int>(type: "int", nullable: false),
+                    TotalMatchesPlayed = table.Column<int>(type: "int", nullable: false),
+                    TotalMatchesCompleted = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -220,12 +232,13 @@ namespace Data.Migrations.Postgresql
                         principalTable: "EFServers",
                         principalColumn: "ServerId");
                     table.ForeignKey(
-                        name: "FK_EFZombieClientStatAggregates_EFZombieClientStats_ZombieClie~",
+                        name: "FK_EFZombieClientStatAggregates_EFZombieClientStats_ZombieClien~",
                         column: x => x.ZombieClientStatId,
                         principalTable: "EFZombieClientStats",
                         principalColumn: "ZombieClientStatId",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieMatchClientStats",
@@ -237,49 +250,54 @@ namespace Data.Migrations.Postgresql
                 {
                     table.PrimaryKey("PK_EFZombieMatchClientStats", x => x.ZombieClientStatId);
                     table.ForeignKey(
-                        name: "FK_EFZombieMatchClientStats_EFZombieClientStats_ZombieClientSt~",
+                        name: "FK_EFZombieMatchClientStats_EFZombieClientStats_ZombieClientSta~",
                         column: x => x.ZombieClientStatId,
                         principalTable: "EFZombieClientStats",
                         principalColumn: "ZombieClientStatId",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieRoundClientStats",
                 columns: table => new
                 {
                     ZombieClientStatId = table.Column<long>(type: "bigint", nullable: false),
-                    StartTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    EndTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Duration = table.Column<TimeSpan>(type: "interval", nullable: true),
-                    TimeAlive = table.Column<TimeSpan>(type: "interval", nullable: true),
-                    RoundNumber = table.Column<int>(type: "integer", nullable: false),
-                    Points = table.Column<int>(type: "integer", nullable: false)
+                    StartTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    EndTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
+                    Duration = table.Column<TimeSpan>(type: "time(6)", nullable: true),
+                    TimeAlive = table.Column<TimeSpan>(type: "time(6)", nullable: true),
+                    RoundNumber = table.Column<int>(type: "int", nullable: false),
+                    Points = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_EFZombieRoundClientStats", x => x.ZombieClientStatId);
                     table.ForeignKey(
-                        name: "FK_EFZombieRoundClientStats_EFZombieClientStats_ZombieClientSt~",
+                        name: "FK_EFZombieRoundClientStats_EFZombieClientStats_ZombieClientSta~",
                         column: x => x.ZombieClientStatId,
                         principalTable: "EFZombieClientStats",
                         principalColumn: "ZombieClientStatId",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "EFZombieClientStatRecords",
                 columns: table => new
                 {
-                    ZombieClientStatRecordId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Type = table.Column<string>(type: "text", nullable: false),
-                    Value = table.Column<string>(type: "text", nullable: false),
-                    ClientId = table.Column<int>(type: "integer", nullable: true),
+                    ZombieClientStatRecordId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Type = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Value = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ClientId = table.Column<int>(type: "int", nullable: true),
                     RoundId = table.Column<long>(type: "bigint", nullable: true),
-                    CreatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    CreatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    UpdatedDateTime = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -294,7 +312,8 @@ namespace Data.Migrations.Postgresql
                         column: x => x.RoundId,
                         principalTable: "EFZombieRoundClientStats",
                         principalColumn: "ZombieClientStatId");
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EFServers_PerformanceBucketId",
@@ -379,7 +398,7 @@ namespace Data.Migrations.Postgresql
                 principalColumn: "PerformanceBucketId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucket~",
+                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucketId",
                 table: "EFClientRankingHistory",
                 column: "PerformanceBucketId",
                 principalTable: "PerformanceBuckets",
@@ -401,7 +420,7 @@ namespace Data.Migrations.Postgresql
                 table: "EFClientHitStatistics");
 
             migrationBuilder.DropForeignKey(
-                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucket~",
+                name: "FK_EFClientRankingHistory_PerformanceBuckets_PerformanceBucketId",
                 table: "EFClientRankingHistory");
 
             migrationBuilder.DropForeignKey(

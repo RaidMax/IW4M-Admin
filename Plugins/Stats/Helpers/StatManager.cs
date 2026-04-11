@@ -1,5 +1,4 @@
 ﻿using IW4MAdmin.Plugins.Stats.Cheat;
-using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore;
 using SharedLibraryCore.Helpers;
@@ -19,6 +18,7 @@ using Data.Models.Client;
 using Data.Models.Client.Stats;
 using Data.Models.Server;
 using Humanizer;
+using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Stats.Client.Abstractions;
@@ -30,31 +30,21 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Plugins.Stats.Helpers
 {
-    public class StatManager
+    public class StatManager(
+        ILogger<StatManager> logger,
+        IDatabaseContextFactory contextFactory,
+        StatsConfiguration statsConfig,
+        IServerDistributionCalculator serverDistributionCalculator,
+        ILookupCache<EFServer> serverCache)
     {
         private const int MAX_CACHED_HITS = 100;
-        private readonly ConcurrentDictionary<long, ServerStats> _servers;
-        private readonly ILogger _log;
-        private readonly IDatabaseContextFactory _contextFactory;
-        private readonly StatsConfiguration _config;
+        private readonly ConcurrentDictionary<long, ServerStats> _servers = new();
+        private readonly ILogger _log = logger;
         public static string CLIENT_STATS_KEY = "ClientStats";
         public static string CLIENT_DETECTIONS_KEY = "ClientDetections";
         public static string ESTIMATED_SCORE = "EstimatedScore";
         private readonly SemaphoreSlim _addPlayerWaiter = new(1, 1);
-        private readonly IServerDistributionCalculator _serverDistributionCalculator;
-        private readonly ILookupCache<EFServer> _serverCache;
-
-        public StatManager(ILogger<StatManager> logger, IDatabaseContextFactory contextFactory,
-            StatsConfiguration statsConfig,
-            IServerDistributionCalculator serverDistributionCalculator, ILookupCache<EFServer> serverCache)
-        {
-            _servers = new ConcurrentDictionary<long, ServerStats>();
-            _log = logger;
-            _contextFactory = contextFactory;
-            _config = statsConfig;
-            _serverDistributionCalculator = serverDistributionCalculator;
-            _serverCache = serverCache;
-        }
+        private readonly ConcurrentDictionary<string, int> _performanceBucketIdCache = new();
 
         ~StatManager()
         {
@@ -68,7 +58,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                           r.When > fifteenDaysAgo &&
                           r.RatingHistory.Client.Level != EFClient.Permission.Banned &&
                           r.Newest &&
-                          r.ActivityAmount >= _config.TopPlayersMinPlayTime;
+                          r.ActivityAmount >= statsConfig.TopPlayersMinPlayTime;
         }
 
         /// <summary>
@@ -80,18 +70,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         /// <returns></returns>
         public async Task<int> GetClientOverallRanking(int clientId, long? serverId = null, string performanceBucket = null)
         {
-            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = contextFactory.CreateContext(enableTracking: false);
 
-            if (_config.EnableAdvancedMetrics)
+            if (statsConfig.EnableAdvancedMetrics)
             {
                 var bucketConfig = await GetBucketConfig(null, performanceBucket);
-                
+
                 var clientRanking = await context.Set<EFClientRankingHistory>()
                     .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId, bucketConfig.Code))
                     .Where(r => r.ClientId == clientId)
                     .Where(r => r.Newest)
                     .FirstOrDefaultAsync();
-                    
+
                 return clientRanking?.Ranking + 1 ?? 0;
             }
 
@@ -115,7 +105,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return 0;
         }
 
-        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime, long? serverId = null, string performanceBucketCode = null)
+        private Expression<Func<EFClientRankingHistory, bool>> GetNewRankingFunc(TimeSpan oldestStat, TimeSpan minPlayTime,
+            long? serverId = null, string performanceBucketCode = null)
         {
             var oldestDate = DateTime.UtcNow - oldestStat;
             return ranking => ranking.ServerId == serverId
@@ -132,10 +123,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             var bucketConfig = await GetBucketConfig(serverId, performanceBucket);
 
-            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = contextFactory.CreateContext(enableTracking: false);
 
             return await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId, bucketConfig.Code))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId,
+                    bucketConfig.Code))
                 .CountAsync();
         }
 
@@ -150,13 +142,15 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             public DateTime CreatedDateTime { get; set; }
         }
 
-        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null, string performanceBucketCode = null)
+        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null,
+            string performanceBucketCode = null)
         {
             var bucketConfig = await GetBucketConfig(serverId, performanceBucketCode);
 
-            await using var context = _contextFactory.CreateContext(false);
+            await using var context = contextFactory.CreateContext(false);
             var clientIdsList = await context.Set<EFClientRankingHistory>()
-                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId, bucketConfig.Code))
+                .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId,
+                    bucketConfig.Code))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
                 .Select(ranking => ranking.ClientId)
                 .Skip(start)
@@ -275,7 +269,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 });
             }
-            
+
             foreach (var customMetricFunc in Plugin.ServerManager.CustomStatsMetrics)
             {
                 await customMetricFunc(finished.ToDictionary(kvp => kvp.ClientId, kvp => kvp.Metrics), serverId,
@@ -290,7 +284,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             var defaultConfig = new PerformanceBucketConfiguration
             {
-                ClientMinPlayTime = TimeSpan.FromSeconds(_config.TopPlayersMinPlayTime),
+                ClientMinPlayTime = TimeSpan.FromSeconds(statsConfig.TopPlayersMinPlayTime),
                 RankingExpiration = DateTime.UtcNow - Extensions.FifteenDaysAgo()
             };
 
@@ -301,7 +295,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (performanceBucketCode is not null)
             {
-                var configured = _config.PerformanceBuckets.FirstOrDefault(bucket =>
+                var configured = statsConfig.PerformanceBuckets.FirstOrDefault(bucket =>
                     string.Equals(bucket.Code, performanceBucketCode, StringComparison.OrdinalIgnoreCase));
 
                 if (configured is not null)
@@ -315,8 +309,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // The server cache doesn't eagerly load the PerformanceBucket navigation,
             // so we query the database directly for the bucket code
-            await using var context = _contextFactory.CreateContext(false);
-            var cachedServer = await _serverCache.FirstAsync(server => server.Id == serverId);
+            await using var context = contextFactory.CreateContext(false);
+            var cachedServer = await serverCache.FirstAsync(server => server.Id == serverId);
             if (cachedServer == null)
             {
                 return defaultConfig;
@@ -332,7 +326,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return defaultConfig;
             }
 
-            var matchedConfig = _config.PerformanceBuckets.FirstOrDefault(bucket =>
+            var matchedConfig = statsConfig.PerformanceBuckets.FirstOrDefault(bucket =>
                 string.Equals(bucket.Code, performanceBucket, StringComparison.OrdinalIgnoreCase));
 
             if (matchedConfig is not null)
@@ -346,12 +340,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null, string performanceBucket = null)
         {
-            if (_config.EnableAdvancedMetrics)
+            if (statsConfig.EnableAdvancedMetrics)
             {
                 return await GetNewTopStats(start, count, serverId, performanceBucket);
             }
 
-            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = contextFactory.CreateContext(enableTracking: false);
             // setup the query for the clients within the given rating range
             var iqClientRatings = (from rating in context.Set<EFRating>()
                         .Where(GetRankingFunc(serverId))
@@ -467,7 +461,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 // check to see if the stats have ever been initialized
                 var cachedServer =
-                    await _serverCache.FirstAsync(cachedServer => cachedServer.EndPoint == gameServer.Id);
+                    await serverCache.FirstAsync(cachedServer => cachedServer.EndPoint == gameServer.Id);
 
                 if (cachedServer == null)
                 {
@@ -526,7 +520,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 EFClientStatistics clientStats;
 
-                await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+                await using var ctx = contextFactory.CreateContext(enableTracking: false);
                 var clientStatsSet = ctx.Set<EFClientStatistics>();
                 clientStats = clientStatsSet
                     .Include(cl => cl.HitLocations)
@@ -594,7 +588,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 clientStats.SessionScore = pl.Score;
                 clientStats.LastScore = pl.Score;
 
-                pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats, _config));
+                pl.SetAdditionalProperty(CLIENT_DETECTIONS_KEY, new Detection(_log, clientStats, statsConfig));
                 _log.LogDebug("Added {client} to stats", pl.ToString());
 
                 return clientStats;
@@ -649,7 +643,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats = UpdateStats(clientStats, client);
                 await SaveClientStats(clientStats);
-                if (_config.EnableAdvancedMetrics)
+                if (statsConfig.EnableAdvancedMetrics)
                 {
                     await UpdateHistoricalRanking(client.ClientId, clientStats, serverId);
                 }
@@ -667,7 +661,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         private async Task SaveClientStats(EFClientStatistics clientStats)
         {
-            await using var ctx = _contextFactory.CreateContext();
+            await using var ctx = contextFactory.CreateContext();
             ctx.Update(clientStats);
             await ctx.SaveChangesAsync();
         }
@@ -784,7 +778,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     return;
                 }
 
-                if (_config.StoreClientKills)
+                if (statsConfig.StoreClientKills)
                 {
                     var serverWaiter = _servers[serverId].OnSaving;
                     try
@@ -813,7 +807,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     }
                 }
 
-                if (_config.AnticheatConfiguration.Enable && !attacker.IsBot &&
+                if (statsConfig.AnticheatConfiguration.Enable && !attacker.IsBot &&
                     attacker.ClientId != victim.ClientId)
                 {
                     clientDetection.TrackedHits.Add(hit);
@@ -888,7 +882,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public async Task SaveHitCache(long serverId)
         {
-            await using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            await using var ctx = contextFactory.CreateContext(enableTracking: false);
             var server = _servers[serverId];
             ctx.AddRange(server.HitCache.ToList());
             await ctx.SaveChangesAsync();
@@ -898,10 +892,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private bool ShouldUseDetection(Server server, DetectionType detectionType, long clientId)
         {
 #pragma warning disable CS0612
-            var serverDetectionTypes = _config.AnticheatConfiguration.ServerDetectionTypes;
+            var serverDetectionTypes = statsConfig.AnticheatConfiguration.ServerDetectionTypes;
 #pragma warning restore CS0612
-            var gameDetectionTypes = _config.AnticheatConfiguration.GameDetectionTypes;
-            var ignoredClients = _config.AnticheatConfiguration.IgnoredClientIds;
+            var gameDetectionTypes = statsConfig.AnticheatConfiguration.GameDetectionTypes;
+            var ignoredClients = statsConfig.AnticheatConfiguration.IgnoredClientIds;
 
             if (ignoredClients.Contains(clientId))
             {
@@ -989,7 +983,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             EFACSnapshot change;
 
-            await using var ctx = _contextFactory.CreateContext();
+            await using var ctx = contextFactory.CreateContext();
             while ((change = clientDetection.Tracker.GetNextChange()) != default(EFACSnapshot))
             {
                 ctx.Add(change);
@@ -1005,16 +999,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var attackerStats = attacker.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
             var victimStats = victim.GetAdditionalProperty<EFClientStatistics>(CLIENT_STATS_KEY);
 
-            _log.LogDebug("[StatsKill] AddStandardKill: Attacker={Attacker}(CID={ACID}) Victim={Victim}(CID={VCID}) AttackerStats={HasA} VictimStats={HasV}",
-                attacker.CleanedName, attacker.ClientId, victim.CleanedName, victim.ClientId,
-                attackerStats != null, victimStats != null);
-
             // update the total stats
             _servers[serverId].ServerStatistics.TotalKills += 1;
 
             if (attackerStats == null)
             {
-                _log.LogWarning("[StatsKill] Attacker stats null for {Client}, returning", attacker.ToString());
+                _log.LogWarning("Stats for {Client} are not yet initialized", attacker.ToString());
                 return;
             }
 
@@ -1023,12 +1013,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 if (attackerStats.ClientId == victim.ClientId)
                 {
-                    _log.LogDebug("[StatsKill] Self-kill with no victim stats, skipping");
                     return;
                 }
-
-                _log.LogDebug("[StatsKill] PvE kill — crediting attacker {Attacker} (Kills so far: {Kills}, TimePlayed: {TP})",
-                    attacker.CleanedName, attackerStats.Kills, attackerStats.TimePlayed);
 
                 // Credit the attacker for the kill (PvE scenario like zombies)
                 attackerStats.Kills += 1;
@@ -1047,7 +1033,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 attackerStats.TimePlayed += (int)(DateTime.UtcNow - attackerStats.LastActive).TotalSeconds;
                 attackerStats.LastActive = DateTime.UtcNow;
 
-                if (double.IsNaN(attackerStats.SPM) || double.IsNaN(attackerStats.Skill))
+                if (double.IsNaN(attackerStats.SPM) || double.IsNaN(attackerStats.Skill) || double.IsInfinity(attackerStats.Skill))
                 {
                     attackerStats.SPM = 0.0;
                     attackerStats.Skill = 0.0;
@@ -1055,13 +1041,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 // update ranking on the same interval as PvP
                 if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >=
-                    (Utilities.IsDevelopment ? 0.5 : _config.EnableAdvancedMetrics ? 5.0 : 2.5))
+                    (Utilities.IsDevelopment ? 0.5 : statsConfig.EnableAdvancedMetrics ? 5.0 : 2.5))
                 {
                     try
                     {
                         await attackerStats.ProcessingHit.WaitAsync(Utilities.DefaultCommandTimeout,
                             Plugin.ServerManager.CancellationToken);
-                        if (_config.EnableAdvancedMetrics)
+                        if (statsConfig.EnableAdvancedMetrics)
                         {
                             await UpdateHistoricalRanking(attacker.ClientId, attackerStats, serverId);
                         }
@@ -1069,6 +1055,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         {
                             await UpdateStatHistory(attacker, attackerStats);
                         }
+
                         attackerStats.LastStatHistoryUpdate = DateTime.UtcNow;
                     }
                     catch (Exception e)
@@ -1119,9 +1106,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             victimStats.LastScore = estimatedVictimScore;
 
             // show encouragement/discouragement
-            var streakMessage = attacker.CurrentServer.IsZombieServer() ? string.Empty : attackerStats.ClientId != victimStats.ClientId
-                ? StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak, _config)
-                : StreakMessage.MessageOnStreak(-1, -1, _config);
+            var streakMessage = attacker.CurrentServer.IsZombieServer()
+                ? string.Empty
+                : attackerStats.ClientId != victimStats.ClientId
+                    ? StreakMessage.MessageOnStreak(attackerStats.KillStreak, attackerStats.DeathStreak, statsConfig)
+                    : StreakMessage.MessageOnStreak(-1, -1, statsConfig);
 
             if (streakMessage != string.Empty)
             {
@@ -1145,7 +1134,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             // update their performance
             if ((DateTime.UtcNow - attackerStats.LastStatHistoryUpdate).TotalMinutes >=
-                (Utilities.IsDevelopment ? 0.5 : _config.EnableAdvancedMetrics ? 5.0 : 2.5))
+                (Utilities.IsDevelopment ? 0.5 : statsConfig.EnableAdvancedMetrics ? 5.0 : 2.5))
             {
                 try
                 {
@@ -1154,7 +1143,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     // for stat history update, but one is already processing that invalidates the original
                     await attackerStats.ProcessingHit.WaitAsync(Utilities.DefaultCommandTimeout,
                         Plugin.ServerManager.CancellationToken);
-                    if (_config.EnableAdvancedMetrics)
+                    if (statsConfig.EnableAdvancedMetrics)
                     {
                         await UpdateHistoricalRanking(attacker.ClientId, attackerStats, serverId);
                     }
@@ -1200,7 +1189,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             int currentServerTotalPlaytime = clientStats.TimePlayed + currentSessionTime;
 
-            await using var ctx = _contextFactory.CreateContext(enableTracking: true);
+            await using var ctx = contextFactory.CreateContext(enableTracking: true);
             // select the rating history for client
             var iqHistoryLink = from history in ctx.Set<EFClientRatingHistory>()
                     .Include(h => h.Ratings)
@@ -1362,8 +1351,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public async Task UpdateHistoricalRanking(int clientId, EFClientStatistics clientStats, long serverId)
         {
             var bucketConfig = await GetBucketConfig(serverId);
-            
-            await using var context = _contextFactory.CreateContext();
+
+            await using var context = contextFactory.CreateContext();
             var oldestStateDate = DateTime.UtcNow - bucketConfig.RankingExpiration;
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
@@ -1377,8 +1366,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (clientStats.TimePlayed >= bucketConfig.ClientMinPlayTime.TotalSeconds)
             {
-                await UpdateForServer(clientId, clientStats, context, (int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration, serverId, bucketConfig.Code);
-                clientStats.Server = await _serverCache.FirstAsync(server => server.Id == serverId);
+                await UpdateForServer(clientId, clientStats, context, (int)bucketConfig.ClientMinPlayTime.TotalSeconds,
+                    bucketConfig.RankingExpiration, serverId, bucketConfig.Code);
+                clientStats.Server = await serverCache.FirstAsync(server => server.Id == serverId);
                 performances.Add(clientStats);
             }
 
@@ -1388,7 +1378,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
         }
 
-        private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context, List<EFClientStatistics> performances, PerformanceBucketConfiguration bucketConfig)
+        private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context,
+            List<EFClientStatistics> performances, PerformanceBucketConfiguration bucketConfig)
         {
             var aggregateZScore =
                 performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), (int)bucketConfig.ClientMinPlayTime.TotalSeconds);
@@ -1396,7 +1387,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var aggregateRanking = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId != clientId)
                 .Where(stat => bucketConfig.Code == stat.Server.PerformanceBucket.Code)
-                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration))
+                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds,
+                    bucketConfig.RankingExpiration))
                 .GroupBy(stat => stat.ClientId)
                 .Where(group =>
                     group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
@@ -1404,7 +1396,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Select(c => c.Key)
                 .CountAsync();
 
-            var newPerformanceMetric = await _serverDistributionCalculator.GetRatingForZScore(aggregateZScore, bucketConfig.Code);
+            var newPerformanceMetric = await serverDistributionCalculator.GetRatingForZScore(aggregateZScore, bucketConfig.Code);
 
             if (newPerformanceMetric == null)
             {
@@ -1413,9 +1405,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            // TODO: CACHE THE EFPERFORMANCEBUCKET SO WE DON'T NEED TO LOOK IT UP - THERE WILL BE A REALISTIC LIMIT TO HOW MANY BUCKETS SHOULD BE LIVE
-            var performanceBucketId = (await context.PerformanceBuckets.FirstOrDefaultAsync(x => x.Code == bucketConfig.Code))
-                ?.PerformanceBucketId;
+            var performanceBucketId = await GetOrCachePerformanceBucketId(context, bucketConfig.Code);
 
             var aggregateRankingSnapshot = new EFClientRankingHistory
             {
@@ -1437,7 +1427,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int minPlayTime, TimeSpan oldestStat, long? serverId = null, string performanceBucketCode = null)
         {
             clientStats.ZScore =
-                await _serverDistributionCalculator.GetZScoreForServerOrBucket(clientStats.Performance, serverId);
+                await serverDistributionCalculator.GetZScoreForServerOrBucket(clientStats.Performance, serverId);
 
             // Persist ZScore back to EFClientStatistics so the distribution/maxZScore caches
             // can find non-zero values on subsequent refreshes
@@ -1451,12 +1441,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     clientStats.ZScore, serverId))
                 .CountAsync();
 
-            int? performanceBucketId = null;
-            if (!string.IsNullOrEmpty(performanceBucketCode))
-            {
-                performanceBucketId = (await context.PerformanceBuckets
-                    .FirstOrDefaultAsync(x => x.Code == performanceBucketCode))?.PerformanceBucketId;
-            }
+            int? performanceBucketId = !string.IsNullOrEmpty(performanceBucketCode)
+                ? await GetOrCachePerformanceBucketId(context, performanceBucketCode)
+                : null;
 
             var serverRankingSnapshot = new EFClientRankingHistory
             {
@@ -1474,7 +1461,31 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             await context.SaveChangesAsync();
         }
 
-        private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null, string performanceBucketCode = null)
+        private async Task<int?> GetOrCachePerformanceBucketId(DatabaseContext context, string bucketCode)
+        {
+            if (string.IsNullOrEmpty(bucketCode))
+            {
+                return null;
+            }
+
+            if (_performanceBucketIdCache.TryGetValue(bucketCode, out var cachedId))
+            {
+                return cachedId;
+            }
+
+            var bucketId = (await context.PerformanceBuckets
+                .FirstOrDefaultAsync(x => x.Code == bucketCode))?.PerformanceBucketId;
+
+            if (bucketId.HasValue)
+            {
+                _performanceBucketIdCache.TryAdd(bucketCode, bucketId.Value);
+            }
+
+            return bucketId;
+        }
+
+        private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null,
+            string performanceBucketCode = null)
         {
             var totalRankingEntries = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
@@ -1559,7 +1570,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             attackerStats.EloRating =
                 attackerEloRatingFunc?.Invoke(attacker, attackerStats) ?? attackerStats.EloRating;
-            
+
             // Unused? New code. TODO: Check if needed?
             //var victimEloRatingFunc =
             //    victim.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("EloRatingFunction");
@@ -1673,7 +1684,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
         public EFServerStatistics InitializeServerStats(long serverId)
         {
-            using var ctx = _contextFactory.CreateContext(enableTracking: false);
+            using var ctx = contextFactory.CreateContext(enableTracking: false);
             var serverStatsSet = ctx.Set<EFServerStatistics>();
             var serverStats = serverStatsSet.FirstOrDefault(s => s.ServerId == serverId);
 
@@ -1739,7 +1750,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 return;
             }
 
-            await using var context = _contextFactory.CreateContext(enableTracking: false);
+            await using var context = contextFactory.CreateContext(enableTracking: false);
             context.Set<EFClientMessage>().Add(new EFClientMessage()
             {
                 ClientId = clientId,
@@ -1760,7 +1771,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 await waiter.WaitAsync(token);
 
-                await using var context = _contextFactory.CreateContext();
+                await using var context = contextFactory.CreateContext();
                 var serverStatsSet = context.Set<EFServerStatistics>();
                 serverStatsSet.Update(_servers[serverId].ServerStatistics);
                 await context.SaveChangesAsync(token);

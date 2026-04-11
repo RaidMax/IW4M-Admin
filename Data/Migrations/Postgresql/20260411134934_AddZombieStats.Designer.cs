@@ -3,17 +3,17 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Data.Migrations.MySql
+namespace Data.Migrations.Postgresql
 {
-    [DbContext(typeof(MySqlDatabaseContext))]
-    [Migration("20260410111109_AddZombieMatchLeaderboardColumns")]
-    partial class AddZombieMatchLeaderboardColumns
+    [DbContext(typeof(PostgresqlDatabaseContext))]
+    [Migration("20260411134934_AddZombieStats")]
+    partial class AddZombieStats
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,26 +21,26 @@ namespace Data.Migrations.MySql
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "9.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
                     b.Property<int>("ACSnapshotVector3Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ACSnapshotVector3Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ACSnapshotVector3Id"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("SnapshotId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Vector3Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("ACSnapshotVector3Id");
 
@@ -55,54 +55,54 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("ClientId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ClientId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ClientId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("AliasLinkId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Connections")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("CurrentAliasId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("FirstConnection")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("GameName")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("LastConnection")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Level")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("Masked")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<long>("NetworkId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Password")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("PasswordSalt")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int>("TotalConnectionTime")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("TwoFactorBackupCodes")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("TwoFactorSecret")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.HasKey("ClientId");
 
@@ -125,22 +125,22 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ClientConnectionId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ClientConnectionId"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("ConnectionType")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<long>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("ClientConnectionId");
 
@@ -159,58 +159,58 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("KillId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("KillId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("AttackerId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Damage")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("DeathOriginVector3Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("DeathType")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("Fraction")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("HitLoc")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsKill")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("KillOriginVector3Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Map")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("VictimId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("ViewAnglesVector3Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("VisibilityPercentage")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Weapon")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("WeaponReference")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("When")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("KillId");
 
@@ -235,25 +235,25 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("MessageId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MessageId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Message")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<bool>("SentIngame")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<long>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("TimeSent")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("MessageId");
 
@@ -270,93 +270,93 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("SnapshotId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SnapshotId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SnapshotId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("CurrentSessionLength")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("CurrentStrain")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("CurrentViewAngleId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Deaths")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("Distance")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("EloRating")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("HitDestinationId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("HitLocation")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("HitLocationReference")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int>("HitOriginId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("HitType")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Hits")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Kills")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("LastStrainAngleId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("RecoilOffset")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<double>("SessionAngleOffset")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("SessionAverageSnapValue")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("SessionSPM")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("SessionScore")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("SessionSnapHits")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("StrainAngleBetween")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("TimeSinceLastEvent")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("WeaponId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("WeaponReference")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("When")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("SnapshotId");
 
@@ -379,63 +379,63 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("ClientHitStatisticId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ClientHitStatisticId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ClientHitStatisticId"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("DamageInflicted")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("DamageReceived")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("DeathCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("HitCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("HitLocationId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("KillCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("MeansOfDeathId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("PerformanceBucketId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("ReceivedHitCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("Score")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("SuicideCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("UsageSeconds")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("WeaponAttachmentComboId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("WeaponId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("ClientHitStatisticId");
 
@@ -462,34 +462,34 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ClientRankingHistoryId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ClientRankingHistoryId"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("Newest")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("PerformanceBucketId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double?>("PerformanceMetric")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int?>("Ranking")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<double?>("ZScore")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.HasKey("ClientRankingHistoryId");
 
@@ -514,15 +514,15 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("RatingHistoryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RatingHistoryId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RatingHistoryId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("RatingHistoryId");
 
@@ -535,19 +535,19 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("ZombieStatTagId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ZombieStatTagId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ZombieStatTagId"));
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TagName")
                         .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
+                        .HasColumnType("character varying(128)");
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ZombieStatTagId");
 
@@ -560,22 +560,22 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ZombieClientStatTagValueId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieClientStatTagValueId"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("StatTagId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("StatValue")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ZombieClientStatTagValueId");
 
@@ -589,49 +589,49 @@ namespace Data.Migrations.MySql
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatistics", b =>
                 {
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<double>("AverageSnapValue")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Deaths")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("EloRating")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Kills")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double>("MaxStrain")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("RollingWeightedKDR")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("SPM")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("Skill")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("SnapHitCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TimePlayed")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<double>("ZScore")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.HasKey("ClientId", "ServerId");
 
@@ -648,15 +648,15 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("HitLocationCountId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("HitLocationCountId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HitLocationCountId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("EFClientStatisticsClientId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("EFClientStatisticsClientId");
 
                     b.Property<long>("EFClientStatisticsServerId")
@@ -664,16 +664,16 @@ namespace Data.Migrations.MySql
                         .HasColumnName("EFClientStatisticsServerId");
 
                     b.Property<int>("HitCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<float>("HitOffsetAverage")
-                        .HasColumnType("float");
+                        .HasColumnType("real");
 
                     b.Property<int>("Location")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<float>("MaxAngleDistance")
-                        .HasColumnType("float");
+                        .HasColumnType("real");
 
                     b.HasKey("HitLocationCountId");
 
@@ -688,17 +688,17 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("PerformanceBucketId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PerformanceBucketId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PerformanceBucketId"));
 
                     b.Property<string>("Code")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("PerformanceBucketId");
 
@@ -709,33 +709,33 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("RatingId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RatingId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RatingId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("ActivityAmount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("Newest")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<double>("Performance")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Ranking")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("RatingHistoryId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("When")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("RatingId");
 
@@ -754,22 +754,22 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("HitLocationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("HitLocationId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HitLocationId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Game")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("HitLocationId");
 
@@ -782,22 +782,22 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("MapId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MapId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MapId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Game")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("MapId");
 
@@ -808,22 +808,22 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("MeansOfDeathId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MeansOfDeathId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MeansOfDeathId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Game")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("MeansOfDeathId");
 
@@ -834,22 +834,22 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("WeaponId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("WeaponId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WeaponId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Game")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("WeaponId");
 
@@ -862,22 +862,22 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("WeaponAttachmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("WeaponAttachmentId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WeaponAttachmentId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Game")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("WeaponAttachmentId");
 
@@ -888,27 +888,27 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("WeaponAttachmentComboId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("WeaponAttachmentComboId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WeaponAttachmentComboId"));
 
                     b.Property<int>("Attachment1Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("Attachment2Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("Attachment3Id")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Game")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("WeaponAttachmentComboId");
 
@@ -925,36 +925,36 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("AliasId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AliasId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AliasId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("DateAdded")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("IPAddress")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("LinkId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(24)
-                        .HasColumnType("varchar(24)");
+                        .HasColumnType("character varying(24)");
 
                     b.Property<string>("SearchableIPAddress")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasComputedColumnSql("((IPAddress & 255) || '.' || ((IPAddress >> 8) & 255)) || '.' || ((IPAddress >> 16) & 255) || '.' || ((IPAddress >> 24) & 255)", true);
 
                     b.Property<string>("SearchableName")
                         .HasMaxLength(24)
-                        .HasColumnType("varchar(24)");
+                        .HasColumnType("character varying(24)");
 
                     b.HasKey("AliasId");
 
@@ -977,12 +977,12 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("AliasLinkId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AliasLinkId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AliasLinkId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.HasKey("AliasLinkId");
 
@@ -993,37 +993,37 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("ChangeHistoryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ChangeHistoryId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ChangeHistoryId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
+                        .HasColumnType("character varying(128)");
 
                     b.Property<string>("CurrentValue")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int?>("ImpersonationEntityId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("OriginEntityId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("PreviousValue")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int>("TargetEntityId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("TimeChanged")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("TypeOfChange")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("ChangeHistoryId");
 
@@ -1034,36 +1034,36 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("MetaId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("MetaId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MetaId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Extra")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("varchar(32)");
+                        .HasColumnType("character varying(32)");
 
                     b.Property<int?>("LinkedMetaId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("Updated")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.HasKey("MetaId");
 
@@ -1080,40 +1080,40 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("PenaltyId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PenaltyId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PenaltyId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("AutomatedOffense")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("Expires")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsEvadedOffense")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("LinkId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("OffenderId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Offense")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int>("PunisherId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Type")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("When")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("PenaltyId");
 
@@ -1130,24 +1130,24 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("PenaltyIdentifierId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PenaltyIdentifierId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PenaltyIdentifierId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("IPv4Address")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long>("NetworkId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("PenaltyId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("PenaltyIdentifierId");
 
@@ -1164,40 +1164,40 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("AnnouncementId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AnnouncementId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AnnouncementId"));
 
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(4096)
-                        .HasColumnType("varchar(4096)");
+                        .HasColumnType("character varying(4096)");
 
                     b.Property<int>("CreatedByClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime?>("EndAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsGlobalNotice")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("StartAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("AnnouncementId");
 
@@ -1214,30 +1214,30 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("InboxMessageId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("InboxMessageId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InboxMessageId"));
 
                     b.Property<DateTime>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("DestinationClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsDelivered")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Message")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("SourceClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("InboxMessageId");
 
@@ -1256,25 +1256,25 @@ namespace Data.Migrations.MySql
                         .HasColumnType("bigint");
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("EndPoint")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int?>("GameName")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("HostName")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsPasswordProtected")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("PerformanceBucketId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Port")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("ServerId");
 
@@ -1289,25 +1289,25 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ServerSnapshotId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ServerSnapshotId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("CapturedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("ClientCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool?>("ConnectionInterrupted")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("MapId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("PeriodBlock")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long>("ServerId")
                         .HasColumnType("bigint");
@@ -1327,12 +1327,12 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("StatisticId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("StatisticId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StatisticId"));
 
                     b.Property<bool>("Active")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<long>("ServerId")
                         .HasColumnType("bigint");
@@ -1354,18 +1354,18 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("Vector3Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Vector3Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Vector3Id"));
 
                     b.Property<float>("X")
-                        .HasColumnType("float");
+                        .HasColumnType("real");
 
                     b.Property<float>("Y")
-                        .HasColumnType("float");
+                        .HasColumnType("real");
 
                     b.Property<float>("Z")
-                        .HasColumnType("float");
+                        .HasColumnType("real");
 
                     b.HasKey("Vector3Id");
 
@@ -1378,43 +1378,43 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ZombieClientStatId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieClientStatId"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("DamageDealt")
                         .HasColumnType("bigint");
 
                     b.Property<int>("DamageReceived")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Deaths")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Downs")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("HeadshotKills")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Headshots")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Kills")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("MatchId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Melees")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("PerksConsumed")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long>("PointsEarned")
                         .HasColumnType("bigint");
@@ -1423,13 +1423,13 @@ namespace Data.Migrations.MySql
                         .HasColumnType("bigint");
 
                     b.Property<int>("PowerupsGrabbed")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Revives")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ZombieClientStatId");
 
@@ -1446,33 +1446,33 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("ZombieClientStatRecordId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ZombieClientStatRecordId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ZombieClientStatRecordId"));
 
                     b.Property<int?>("ClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<long?>("RoundId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.HasKey("ZombieClientStatRecordId");
 
@@ -1489,31 +1489,31 @@ namespace Data.Migrations.MySql
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ZombieEventLogId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieEventLogId"));
 
                     b.Property<int?>("AssociatedClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("EventType")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("MatchId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<double?>("NumericalValue")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int?>("SourceClientId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("TextualValue")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ZombieEventLogId");
 
@@ -1530,36 +1530,36 @@ namespace Data.Migrations.MySql
                 {
                     b.Property<int>("ZombieMatchId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ZombieMatchId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ZombieMatchId"));
 
                     b.Property<int>("ClientsCompleted")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("HighestRound")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("MapId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("MatchEndDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("MatchStartDate")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("PlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ZombieMatchId");
 
@@ -1575,43 +1575,43 @@ namespace Data.Migrations.MySql
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
 
                     b.Property<double>("AlivePercentage")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("AverageDowns")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("AverageKillsPerDown")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("AverageMelees")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("AveragePoints")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("AverageRevives")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("AverageRoundReached")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<double>("HeadshotPercentage")
-                        .HasColumnType("double");
+                        .HasColumnType("double precision");
 
                     b.Property<int>("HighestRound")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<long?>("ServerId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("TotalMatchesCompleted")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TotalMatchesPlayed")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TotalRoundsPlayed")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasIndex("ServerId");
 
@@ -1630,22 +1630,22 @@ namespace Data.Migrations.MySql
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
 
                     b.Property<TimeSpan?>("Duration")
-                        .HasColumnType("time(6)");
+                        .HasColumnType("interval");
 
                     b.Property<DateTimeOffset?>("EndTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Points")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("RoundNumber")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("StartTime")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<TimeSpan?>("TimeAlive")
-                        .HasColumnType("time(6)");
+                        .HasColumnType("interval");
 
                     b.ToTable("EFZombieRoundClientStats", (string)null);
                 });

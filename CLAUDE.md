@@ -54,6 +54,32 @@ EF Core 9.0 with three supported providers (each has its own migration context i
 
 Migrations live in `Data/Migrations/{Sqlite,Postgresql,MySql}/`. When adding a migration, you must add it for each provider using the corresponding context class.
 
+### Generating Migrations
+
+The `MigrationContext` classes require `ASPNETCORE_ENVIRONMENT=Migration` to enable their parameterless constructors. Use the `Data` project as both the project and startup project (not `Application`, which has a PreBuild script that fails under `dotnet ef`).
+
+```bash
+# SQLite
+ASPNETCORE_ENVIRONMENT=Migration dotnet ef migrations add <MigrationName> \
+  -p Data/Data.csproj -s Data/Data.csproj \
+  -c Data.MigrationContext.SqliteDatabaseContext \
+  -o Migrations/Sqlite --configuration Release
+
+# PostgreSQL
+ASPNETCORE_ENVIRONMENT=Migration dotnet ef migrations add <MigrationName> \
+  -p Data/Data.csproj -s Data/Data.csproj \
+  -c Data.MigrationContext.PostgresqlDatabaseContext \
+  -o Migrations/Postgresql --configuration Release
+
+# MySQL (requires a live MySQL server for ServerVersion.AutoDetect —
+# if unavailable, temporarily replace AutoDetect in MySqlDatabaseContext.cs
+# with: new MySqlServerVersion(new Version(8, 0, 35)), then revert after)
+ASPNETCORE_ENVIRONMENT=Migration dotnet ef migrations add <MigrationName> \
+  -p Data/Data.csproj -s Data/Data.csproj \
+  -c Data.MigrationContext.MySqlDatabaseContext \
+  -o Migrations/MySql --configuration Release
+```
+
 ## Architecture
 
 ### Project Dependency Graph

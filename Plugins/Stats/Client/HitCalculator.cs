@@ -117,9 +117,9 @@ public class HitCalculator : IClientStatisticCalculator
             return;
         }
 
-        if (coreEvent is RoundEndEvent or MatchEndEvent)
+        if (coreEvent is GameEventV2 { Server: not null } gameEventV2 and (RoundEndEvent or MatchEndEvent))
         {
-            var server = ((GameEventV2)coreEvent).Server;
+            var server = gameEventV2.Server;
             foreach (var client in server.ConnectedClients)
             {
                 if (!_clientHitStatistics.TryGetValue(client.ClientId, out var state))

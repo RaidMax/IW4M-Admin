@@ -12,4 +12,10 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     public Dictionary<long, ZombieAggregateClientStat> PersistentLifetimeServerAggregateStats { get; } = new();
     public Dictionary<long, Dictionary<string, EFClientStatTagValue>> PersistentStatTagValues { get; } = new();
     public int RoundNumber { get; set; }
+
+    /// <summary>
+    /// Number of players who started the most recent round.
+    /// Used for PlayerCount at match end — avoids edge cases with late disconnects.
+    /// </summary>
+    public int LastRoundPlayerCount { get; set; }
 }

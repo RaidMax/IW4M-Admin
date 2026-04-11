@@ -18,8 +18,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Data\Data.csproj" PrivateAssets="All" />
-        <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" PrivateAssets="All" />
+        <ProjectReference Include="..\..\Data\Data.csproj" PrivateAssets="All">
+            <Private>false</Private>
+        </ProjectReference>
+        <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" PrivateAssets="All">
+            <Private>false</Private>
+        </ProjectReference>
     </ItemGroup>
 
 </Project>

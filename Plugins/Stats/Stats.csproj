@@ -17,8 +17,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Data\Data.csproj" />
-      <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+      <ProjectReference Include="..\..\Data\Data.csproj" PrivateAssets="All" />
+      <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" PrivateAssets="All" />
     </ItemGroup>
 
 

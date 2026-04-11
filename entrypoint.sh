@@ -70,9 +70,29 @@ if [ ! -f "$CONFIG_DIR/LoggingConfiguration.json" ]; then
     cp -n /app_defaults/Configuration/* "$CONFIG_DIR/"
 fi
 
-if [ ! -f "$PLUGINS_DIR/Stats.dll" ]; then
-    echo "Default plugins not found, populating..."
-    cp -n -r /app_defaults/Plugins/* "$PLUGINS_DIR/"
+# Sync core plugins — only update if the image version is newer than the mounted version
+if [ -d "/app_defaults/Plugins" ]; then
+    for ref_file in /app_defaults/Plugins/*; do
+        [ -f "$ref_file" ] || continue
+        filename=$(basename "$ref_file")
+        live_file="$PLUGINS_DIR/$filename"
+
+        if [ ! -f "$live_file" ] || [ "$ref_file" -nt "$live_file" ]; then
+            echo "Updating plugin: $filename"
+            cp -f "$ref_file" "$live_file"
+        fi
+    done
+
+    # Handle JS → CS script plugin migrations
+    for cs_file in /app_defaults/Plugins/*.cs; do
+        [ -f "$cs_file" ] || continue
+        basename_no_ext=$(basename "$cs_file" .cs)
+        js_file="$PLUGINS_DIR/${basename_no_ext}.js"
+        if [ -f "$js_file" ]; then
+            echo "Migrating plugin: ${basename_no_ext}.js → ${basename_no_ext}.cs"
+            mv "$js_file" "${js_file}.disabled"
+        fi
+    done
 fi
 
 if [ ! -f "$LOCALIZATION_DIR/IW4MAdmin.en-US.json" ]; then

@@ -130,7 +130,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZombieStats", "Plugins\Zomb
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ZombieStats", "ZombieStats", "{033B7724-0EFD-428E-AF15-A5DA74B35DAA}"
 	ProjectSection(SolutionItems) = preProject
-		GameFiles\ZombieStats\_zm_stats-t4.gsc = GameFiles\ZombieStats\_zm_stats-t4.gsc
+		GameFiles\ZombieStats\_zm_stats_t4.gsc = GameFiles\ZombieStats\_zm_stats_t4.gsc
+		GameFiles\ZombieStats\_zm_stats_t5.gsc = GameFiles\ZombieStats\_zm_stats_t5.gsc
+		GameFiles\ZombieStats\_zm_stats_t6.gsc = GameFiles\ZombieStats\_zm_stats_t6.gsc
 	EndProjectSection
 EndProject
 Global

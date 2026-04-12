@@ -53,6 +53,9 @@ public class ZombieLeaderboardEntry
     public int MatchId { get; set; }
     public int HighestRound { get; set; }
     public string MatchDate { get; set; } = string.Empty;
+    public string MapName { get; set; } = string.Empty;
+    public string? Duration { get; set; }
+    public string? ServerName { get; set; }
     public List<ZombieLeaderboardPlayer> Players { get; set; } = [];
 }
 
@@ -65,5 +68,8 @@ public class ZombieLeaderboardPlayer
     public int Downs { get; set; }
     public int Revives { get; set; }
     public long PointsEarned { get; set; }
+    public long PointsSpent { get; set; }
     public int Headshots { get; set; }
+    public long DamageDealt { get; set; }
+    public int DamageReceived { get; set; }
 }

@@ -151,17 +151,17 @@
                         var visuals = GetEventVisuals(evt.Category);
                         var leftStyle = $"left: {pct.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)}%; z-index: {visuals.ZIndex};";
 
-                        <div class="absolute top-1/2 -translate-y-1/2" style="@leftStyle">
+                        <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2" style="@leftStyle">
                             @if (visuals.IsTick)
                             {
-                                <Tooltip Text="@FormatTooltipText(evt)">
-                                    <div class="w-1 h-5 bg-muted/50 rounded-full hover:bg-foreground/50 transition-colors shadow-sm -translate-x-1/2 cursor-pointer"></div>
+                                <Tooltip Text="@FormatTooltipText(evt)" WrapperClass="w-fit">
+                                    <div class="w-1 h-5 bg-muted/50 rounded-full hover:bg-foreground/50 transition-colors shadow-sm cursor-pointer"></div>
                                 </Tooltip>
                             }
                             else
                             {
-                                <Tooltip Text="@FormatTooltipText(evt)">
-                                    <div class="w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-surface cursor-pointer transition-transform duration-200 hover:scale-150 @visuals.Bg -translate-x-1/2">
+                                <Tooltip Text="@FormatTooltipText(evt)" WrapperClass="w-fit">
+                                    <div class="w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-surface cursor-pointer transition-transform duration-200 hover:scale-150 @visuals.Bg">
                                         <i class="ph @visuals.Icon" style="font-size: 10px; color: white;"></i>
                                     </div>
                                 </Tooltip>

@@ -6,24 +6,27 @@
     return;
 }
 
-<div class="border border-line rounded-xl bg-surface-alt/30 mt-2 overflow-hidden">
+<div class="bg-surface-alt/30 overflow-hidden border-t border-line">
 
-    @* ── PLAYER TABS ── *@
-    <div class="flex items-center gap-1 p-2 border-b border-line bg-surface-alt/50 overflow-x-auto" style="scrollbar-width: thin;">
-        @foreach (var player in Detail.Players)
-        {
-            var isActive = player.ClientId == _selectedClientId;
-            <button @onclick="() => SelectPlayer(player.ClientId)"
-                    @onclick:stopPropagation="true"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shrink-0
-                           @(isActive
-                               ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
-                               : "text-muted hover:text-foreground hover:bg-surface-hover")">
-                <i class="ph ph-user text-xs"></i>
-                <ColorCode Value="@player.Name"/>
-            </button>
-        }
-    </div>
+    @* ── PLAYER TABS (hidden when selection is controlled externally) ── *@
+    @if (SelectedClientId is null)
+    {
+        <div class="flex items-center gap-1 p-2 border-b border-line bg-surface-alt/50 overflow-x-auto" style="scrollbar-width: thin;">
+            @foreach (var player in Detail.Players)
+            {
+                var isActive = player.ClientId == ActiveClientId;
+                <button @onclick="() => SelectPlayer(player.ClientId)"
+                        @onclick:stopPropagation="true"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shrink-0
+                               @(isActive
+                                   ? "bg-primary text-on-primary shadow-lg shadow-primary/20"
+                                   : "text-muted hover:text-foreground hover:bg-surface-hover")">
+                    <i class="ph ph-user text-xs"></i>
+                    <ColorCode Value="@player.Name"/>
+                </button>
+            }
+        </div>
+    }
 
     @{
         var activePlayer = SelectedPlayer;
@@ -124,17 +127,17 @@
                         var visuals = GetEventVisuals(evt.Category);
                         var leftStyle = $"left: {pct.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)}%; z-index: {visuals.ZIndex};";
 
-                        <div class="absolute top-1/2 -translate-y-1/2" style="@leftStyle">
+                        <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2" style="@leftStyle">
                             @if (visuals.IsTick)
                             {
-                                <Tooltip Text="@FormatTooltipText(evt)">
-                                    <div class="w-1 h-5 bg-muted/50 rounded-full hover:bg-foreground/50 transition-colors shadow-sm -translate-x-1/2 cursor-pointer"></div>
+                                <Tooltip Text="@FormatTooltipText(evt)" WrapperClass="w-fit">
+                                    <div class="w-1 h-5 bg-muted/50 rounded-full hover:bg-foreground/50 transition-colors shadow-sm cursor-pointer"></div>
                                 </Tooltip>
                             }
                             else
                             {
-                                <Tooltip Text="@FormatTooltipText(evt)">
-                                    <div class="w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-surface cursor-pointer transition-transform duration-200 hover:scale-150 @visuals.Bg -translate-x-1/2">
+                                <Tooltip Text="@FormatTooltipText(evt)" WrapperClass="w-fit">
+                                    <div class="w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-surface cursor-pointer transition-transform duration-200 hover:scale-150 @visuals.Bg">
                                         <i class="ph @visuals.Icon" style="font-size: 10px; color: white;"></i>
                                     </div>
                                 </Tooltip>

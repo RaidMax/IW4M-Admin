@@ -1,33 +1,43 @@
-#include maps\_utility; 
-#include common_scripts\utility; 
-#include maps\_zombiemode_utility; 
+#include maps\_utility;
+#include common_scripts\utility;
+#include maps\_zombiemode_utility;
 
-Init()
+// ─────────────────────────────────────────────────────────────────
+// T5 Zombie Stats — Game Log Event Emitter
+// ─────────────────────────────────────────────────────────────────
+//
+// This script is the T5 (Black Ops 1) port of _zm_stats_t4.gsc.
+// T5 shares T4's CamelCase callback naming and stable callback
+// chain, but has one key difference:
+//
+//   - Ascension and Shangri La override level.perk_bought_func
+//     with ::monkey_perk_bought for monkey round perk tracking,
+//     silently discarding any prior hook.
+//
+// To avoid this, we use the "perk_bought" player notify fired by
+// _zombiemode_perks::give_perk() on every perk acquisition,
+// rather than hooking level.perk_bought_func directly.
+//
+// ─────────────────────────────────────────────────────────────────
+
+init()
 {
-	thread WaitForRoundChange();
+    thread WaitForRoundChange();
     thread WaitForPlayerConnect();
     thread WaitForPowerupSpawned();
 
-    // --- Zombie Round Stats --- //
-    // -------------------------- //
-    // Kills               AK = Actor Killed
-    // Damage              AD = Actor Damaged
-    // Downs               PD = Player Downed          
-    // Revives             PR = Player Revived        
-    // Points              RD = Round Data
-    // Round Num           RC = Round Completed
-    // PerksConsumed       PC = Perk Consumed
-    // PowerupsGrabbed     PG = Powerup Grabbed
-    // Game Ended          ME = Match Ended
-
-    // -- Leaderboard (AVG PER GAME?) --
-    // Kills / Downs         0.05
-    // Headshot Percentage    0.15
-    // Melee Kills?           0.225
-    // Percentage Alive       0.20
-    // Points                 0.175
-    // Revives                0.15
-    // Highest Round   
+    // --- Zombie Round Stats (Game Log Events) --- //
+    // AK  = Actor Killed        (zombie killed by player)
+    // AD  = Actor Damaged       (zombie damaged by player, non-lethal)
+    // K   = Kill                (player death, zombie/bleedout)
+    // D   = Damage              (player damaged by zombie)
+    // PD  = Player Downed       (player entered last stand)
+    // PR  = Player Revived      (downed player revived)
+    // PC  = Perk Consumed       (player purchased a perk)
+    // PG  = Powerup Grabbed     (player picked up a powerup)
+    // SU  = Stat Update         (generic stat increment)
+    // RD  = Round Data          (per-player score snapshot)
+    // RC  = Round Completed     (round number milestone)
 
     SetupCallbacks();
 }
@@ -35,8 +45,9 @@ Init()
 SetupCallbacks()
 {
     waittillframeend;
-    
+
     // zombie damage events
+    // T5 uses CamelCase callback names (same as T4)
     level.callbackActorDamageOriginal = level.callbackActorDamage;
     level.callbackActorKilledOriginal = level.callbackActorKilled;
     level.callbackActorDamage = ::OnActorDamage;
@@ -46,17 +57,9 @@ SetupCallbacks()
     level.callbackPlayerDamageOriginal = level.callbackPlayerDamage;
     level.callbackPlayerDamage = ::OnPlayerDamaged;
 
-    // not used in zm
-    // level.callbackPlayerKilledOriginal = level.callbackPlayerKilled;
-    // level.callbackPlayerKilled = ::OnPlayerKilled;
-
     // down/revive events
     level.callbackPlayerLastStandOriginal = level.callbackPlayerLastStand;
     level.callbackPlayerLastStand = ::OnPlayerDowned;
-
-    // powerup event 
-    // not used as implementing disables regular function
-    // level.zombie_powerup_grab_func = ::OnPowerupGrabbed;
 }
 
 //-----------------//
@@ -71,19 +74,21 @@ WaitForPlayerConnect()
 {
     for ( ;; )
     {
-        level waittill( "connecting", player );     
-        
-        // the PlayerRevived callback is not setup to allow overriding
-        // so we need to wait for the hard-coded player notify
-        player thread WaitForPlayerRevive();
+        level waittill( "connecting", player );
 
-        // verruckt does not track the perks as stats like der reise and shi no,
-        // so we wait for the weapon to switch to perk weapon bottle
-        player thread WaitForPlayerWeaponSwitch();
+        // T5 passes the reviver as a parameter to the player_revived notify
+        // so we do not need weapon switch monitoring to identify the reviver
+        player thread WaitForPlayerRevive();
 
         // zm mode does not actually kill a player after down timer expires
         // they get put into spectator without a kill callback
         player thread WaitForPlayerZombified();
+
+        // _zombiemode_perks::give_perk() fires "perk_bought" on the player
+        // for every perk acquisition on every map. This is more reliable than
+        // level.perk_bought_func which can be overridden by map-specific
+        // scripts (e.g. Ascension/Shangri La monkey round tracking)
+        player thread WaitForPerkBought();
     }
 }
 
@@ -94,15 +99,15 @@ WaitForPlayerConnect()
 WaitForPlayerZombified()
 {
     self endon( "disconnect" );
-    
+
     for ( ;; )
     {
         // zombified notify occurs when a player is moved to spectator
         // after downed timer expires
         self waittill( "zombified" );
         playerInfo = BuildPlayerInfoString( self );
-        
-        LogPrint( "GSE;K;" + playerInfo + ";-1;-1;axis;Zombie;default_weapon;0;MOD_MELEE;none\n");
+
+        logPrint( "GSE;K;" + playerInfo + ";-1;-1;axis;Zombie;default_weapon;0;MOD_MELEE;none\n");
     }
 }
 
@@ -113,81 +118,32 @@ WaitForPlayerZombified()
 WaitForPlayerRevive()
 {
     self endon ( "disconnect" );
-    
+
     for ( ;; )
     {
+        // T5 passes the reviver as a parameter to the notify
         self waittill( "player_revived", reviver );
 
-        // give time for the weapon switch to occur
-        wait ( 0.1 ); 
-
-        if ( !IsDefined( reviver ) || !IsPlayer( reviver ) )
-        {
-            players = get_players();
-
-            // reviver only passed on der riese, so we have check if anyone
-            // has used the revive weapon recently instead
-            for ( i = 0; i < players.size; i++ )
-            {
-                didPerformRevive = IsPlayer( players[i] ) && 
-                    IsDefined( players[i].lastUsedSyrette ) && 
-                    gettime() - players[i].lastUsedSyrette <= 250;
-
-                if ( didPerformRevive )
-                {
-                    reviver = players[i];
-                    players[i].lastUsedSyrette = 0;
-                    break;
-                }
-            }
-        }
-        
-        LogPrint( "GSE;PR;" + BuildPlayerInfoString( self ) + ";" + BuildPlayerInfoString( reviver ) + "\n" );
+        logPrint( "GSE;PR;" + BuildPlayerInfoString( self ) + ";" + BuildPlayerInfoString( reviver ) + "\n" );
     }
 }
 
 /////////////////////////////////////////////////////////
-// Waits until player changes weapons and checks to see
-// if weapon is a perk weapon. Prints to gamelog if true
+// Waits for the "perk_bought" notify fired by
+// _zombiemode_perks::give_perk() whenever a perk is
+// acquired. This works on all maps regardless of
+// level.perk_bought_func overrides.
 /////////////////////////////////////////////////////////
-WaitForPlayerWeaponSwitch()
+WaitForPerkBought()
 {
     self endon( "disconnect" );
 
-    self waittill( "spawned_player" );
-    currentWeapon = self getCurrentWeapon();
-
-    ///#
-    // todo: remove
-    //self.score = 1000000;
-    //#/
-
     for ( ;; )
     {
-        wait ( 0.1 );
+        self waittill( "perk_bought", perk );
 
-        if ( !IsAlive ( self ) )
-        {
-            continue;
-        }
-
-        newWeapon = self getCurrentWeapon();
-
-        if ( currentWeapon != newWeapon )
-        {
-            if ( currentWeapon == "syrette" )
-            {
-                self.lastUsedSyrette = gettime();
-            }
-
-            currentWeapon = newWeapon;
-
-            if ( IsSubStr( currentWeapon, "zombie_perk" ) )
-            {
-                LogPrint( "GSE;PC;" + BuildPlayerInfoString( self ) + ";" + currentWeapon + "\n" );
-                LogPrint( "GSE;SU;" + BuildPlayerInfoString( self ) + ";" + "perks_drank" + ";" + "+1" + "\n" );
-            }
-        }
+        logPrint( "GSE;PC;" + BuildPlayerInfoString( self ) + ";" + perk + "\n" );
+        logPrint( "GSE;SU;" + BuildPlayerInfoString( self ) + ";" + "perks_drank" + ";" + "+1" + "\n" );
     }
 }
 
@@ -201,11 +157,11 @@ WaitForPowerupSpawned()
 
     for ( ;; )
     {
-        // the powerup ent is not named and there are 
+        // the powerup ent is not named and there are
         // no events to tell us when one is spawned
-        // so we need to periodically check for changes 
+        // so we need to periodically check for changes
         // and wait for a player to get in range
-        // additionally, overriding the level.zombie_powerup_grab_func 
+        // additionally, overriding the level.zombie_powerup_grab_func
         // prevents original powerup code from running
         models = GetEntArray( "script_model", "classname" );
         powerupEnts = [];
@@ -229,7 +185,7 @@ WaitForPowerupSpawned()
         }
 
         powerupEntCount = powerupEnts.size;
-    
+
         wait ( 0.05 );
     }
 }
@@ -247,12 +203,12 @@ WaitForPowerupGrab()
 
     while ( IsDefined( self ) )
 	{
-		players = Get_Players();
+		players = get_players();
 
 		for ( i = 0; i < players.size; i++ )
 		{
-            // this is not ideal, but this is the only way 
-            // to properly replicate how the powerup grab 
+            // this is not ideal, but this is the only way
+            // to properly replicate how the powerup grab
             // is determined in the original code
 			if ( Distance( players[i].origin, self.origin ) < 64 )
             {
@@ -265,8 +221,8 @@ WaitForPowerupGrab()
 
                 self.isWaiting = false;
 
-                LogPrint( "GSE;PG;" + BuildPlayerInfoString( players[i] ) + ";" + powerup + "\n" );
-                LogPrint( "GSE;SU;" + BuildPlayerInfoString( players[i] ) + ";" + powerup + "_pickedup" + ";" + "+1" + "\n" );
+                logPrint( "GSE;PG;" + BuildPlayerInfoString( players[i] ) + ";" + powerup + "\n" );
+                logPrint( "GSE;SU;" + BuildPlayerInfoString( players[i] ) + ";" + powerup + "_pickedup" + ";" + "+1" + "\n" );
 
                 return;
             }
@@ -289,9 +245,9 @@ WaitForRoundChange()
         result = level waittill_any_return( "intermission", "between_round_over" );
 
         /#
-        PrintLn( "WaitForRoundStart TRIGGERED" );
+        println( "WaitForRoundStart TRIGGERED" );
         #/
-        
+
         players = get_players();
 
         for ( i = 0; i < players.size; i++ )
@@ -301,16 +257,16 @@ WaitForRoundChange()
             {
                 continue;
             }
-    
+
             // if there are no zombies alive, then the game is not over
-            if ( Get_Enemy_Count() == 0 )
+            if ( get_enemy_count() == 0 )
             {
                 continue;
             }
 
             // game is over so we print out their death
             playerInfo = BuildPlayerInfoString( players[i] );
-            LogPrint( "GSE;K;" + playerInfo + ";-1;-1;axis;Zombie;default_weapon;0;MOD_MELEE;none\n");
+            logPrint( "GSE;K;" + playerInfo + ";-1;-1;axis;Zombie;default_weapon;0;MOD_MELEE;none\n");
         }
 
         // IW4MAdmin reads the game log and processes events concurrently.
@@ -336,6 +292,7 @@ WaitForRoundChange()
 //---- Callbacks ----//
 //-------------------//
 
+// T5 actor damage signature matches T4: (eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset)
 OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset )
 {
     if ( IsPlayer( eInflictor ) || IsPlayer( eAttacker ) || IsPlayer( self ) )
@@ -351,13 +308,14 @@ OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, 
         // we only want to log damage if they aren't going to die
         if ( IsDefined( self.health ) && iDamage < self.health )
         {
-            LogPrint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+            logPrint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
         }
     }
 
-	[[level.callbackActorDamageOriginal]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset );
+	[[ level.callbackActorDamageOriginal ]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset );
 }
 
+// T5 actor killed signature matches T4: (eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, iTimeOffset)
 OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, iTimeOffset )
 {
     if ( IsPlayer( eInflictor ) || IsPlayer( eAttacker ) || IsPlayer( self ) )
@@ -377,12 +335,13 @@ OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHi
             damage = min( eInflictor.health, iDamage );
         }
 
-        LogPrint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+        logPrint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
     }
 
-    [[level.callbackActorKilledOriginal]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, iTimeOffset );
+    [[ level.callbackActorKilledOriginal ]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, iTimeOffset );
 }
 
+// T5 player damage signature matches T4: (eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, timeOffset)
 OnPlayerDamaged( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, timeOffset )
 {
     if ( IsPlayer( eInflictor ) || IsPlayer( eAttacker ) || IsPlayer( self ) )
@@ -395,24 +354,25 @@ OnPlayerDamaged( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon
             attackerInfo = BuildPlayerInfoString( eInflictor );
         }
 
-        LogPrint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" ); 
+        logPrint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
     }
 
-    [[level.callbackPlayerDamageOriginal]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, timeOffset );
+    [[ level.callbackPlayerDamageOriginal ]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, timeOffset );
 }
 
+// T5 laststand signature matches T4: (eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
 OnPlayerDowned( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration )
 {
     // sometimes this callback can be executed multiple times while the player is still downed
     // this struct is set to undefined when they die or get revived
     if ( IsDefined( self.revivetrigger ) )
-    {    
+    {
         return;
     }
 
-    LogPrint( "GSE;PD;" + BuildPlayerInfoString( self ) + "\n" );
+    logPrint( "GSE;PD;" + BuildPlayerInfoString( self ) + "\n" );
 
-    [[level.callbackPlayerLastStandOriginal]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
+    [[ level.callbackPlayerLastStandOriginal ]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }
 
 //-----------------//
@@ -422,7 +382,7 @@ OnPlayerDowned( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sH
 PrintPlayerRoundData( isGameOver )
 {
     players = get_players();
-     currentRound = 1;
+    currentRound = 1;
 
     for( i = 0; i < players.size; i++ )
 	{
@@ -451,7 +411,7 @@ PrintPlayerRoundData( isGameOver )
             currentScore = players[i].score;
         }
 
-		LogPrint( "GSE;RD;" + BuildPlayerInfoString( players[i] ) + ";" + totalScore + ";" + currentScore + ";" + currentRound + ";" + isGameOver + "\n" );
+		logPrint( "GSE;RD;" + BuildPlayerInfoString( players[i] ) + ";" + totalScore + ";" + currentScore + ";" + currentRound + ";" + isGameOver + "\n" );
     }
 
     // Ensure all RD events are processed before RC triggers StartNextRound
@@ -459,7 +419,7 @@ PrintPlayerRoundData( isGameOver )
     // late-arriving RD events due to IW4MAdmin's concurrent event processing.
     wait ( 0.1 );
 
-    LogPrint( "GSE;RC;" + currentRound + "\n" );
+    logPrint( "GSE;RC;" + currentRound + "\n" );
 }
 
 BuildPlayerInfoString( entity )
@@ -478,6 +438,6 @@ BuildPlayerInfoString( entity )
 
         return guid + ";" + clientNumber + ";" + team + ";" + name;
     }
-   
+
     return "-1;-1;axis;Zombie";
 }

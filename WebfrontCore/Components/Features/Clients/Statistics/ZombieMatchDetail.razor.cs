@@ -9,22 +9,30 @@ public partial class ZombieMatchDetail
     [Parameter, EditorRequired]
     public SharedLibraryCore.Interfaces.ZombieMatchDetail Detail { get; set; } = default!;
 
-    private int _selectedClientId;
+    /// <summary>
+    /// When set, the player tab bar is hidden — selection is controlled externally.
+    /// </summary>
+    [Parameter]
+    public int? SelectedClientId { get; set; }
+
+    private int _internalSelectedClientId;
     private double _zoomLevel = 1;
     private string _timelineFilter = "all";
 
+    private int ActiveClientId => SelectedClientId ?? _internalSelectedClientId;
+
     protected override void OnParametersSet()
     {
-        if (Detail.Players.Count > 0 && Detail.Players.All(p => p.ClientId != _selectedClientId))
+        if (Detail.Players.Count > 0 && Detail.Players.All(p => p.ClientId != ActiveClientId))
         {
-            _selectedClientId = Detail.Players[0].ClientId;
+            _internalSelectedClientId = Detail.Players[0].ClientId;
         }
     }
 
     private ZombieMatchDetailPlayer? SelectedPlayer =>
-        Detail.Players.FirstOrDefault(p => p.ClientId == _selectedClientId);
+        Detail.Players.FirstOrDefault(p => p.ClientId == ActiveClientId);
 
-    private void SelectPlayer(int clientId) => _selectedClientId = clientId;
+    private void SelectPlayer(int clientId) => _internalSelectedClientId = clientId;
 
     private void SetZoom(double delta) =>
         _zoomLevel = Math.Clamp(_zoomLevel + delta, 1, 5);

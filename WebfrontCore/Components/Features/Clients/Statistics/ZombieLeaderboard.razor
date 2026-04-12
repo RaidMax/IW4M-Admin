@@ -80,121 +80,209 @@
                 @* ================================================================ *@
                 @* LEADERBOARD LIST *@
                 @* ================================================================ *@
-                <div class="flex flex-col gap-5 relative">
+                <div class="flex flex-col gap-1 relative">
+
+                    @* Table header (desktop) *@
+                    <div class="hidden md:flex px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-subtle bg-surface-alt border border-line rounded-lg mb-1">
+                        <div class="w-16 text-center">Rank</div>
+                        <div class="w-24 text-center">Round</div>
+                        <div class="w-48 pl-2">Match Info</div>
+                        <div class="flex-1 pl-2">Player Performance <span class="normal-case tracking-normal text-subtle/60 font-normal ml-1" title="Kills / Downs / Revives">(K / D / R)</span></div>
+                    </div>
+
                     <Virtualize @ref="_virtualizeComponent" Context="entry" ItemsProvider="LoadEntries"
-                                OverscanCount="10" ItemSize="120">
+                                OverscanCount="10" ItemSize="64">
                         <ItemContent>
                             @{
-                                var rankConfig = GetRankConfig(entry.Rank);
-                                var isCompact = entry.Players.Count < 3;
-                                var gridCols = entry.Players.Count switch
-                                {
-                                    3 => "grid-cols-1 sm:grid-cols-3",
-                                    _ => "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                                };
+                                var isExpanded = _expandedMatches.ContainsKey(entry.MatchId);
                             }
 
-                            <div class="cursor-pointer" @onclick="() => ToggleMatchDetail(entry.MatchId)">
-                                @if (isCompact)
-                                {
-                                    @* ── COMPACT ROW LAYOUT (1-2 players) ── *@
-                                    <div class="flex flex-col md:flex-row bg-surface border border-line rounded-2xl overflow-hidden @rankConfig.Glow transition-all hover:border-line/80">
+                            <div class="bg-surface border rounded-lg overflow-hidden transition-colors duration-150
+                                        @(isExpanded ? "border-line" : "border-line/50 hover:bg-surface-hover cursor-pointer")
+                                        @(entry.Rank == 1 && !isExpanded ? "border-l-4 border-l-yellow-500" : "")">
 
-                                        @* Left: Rank & Round *@
-                                        <div class="w-full md:w-48 flex md:flex-col items-center justify-between md:justify-center gap-2 p-4 bg-surface-alt border-b md:border-b-0 md:border-r border-line shrink-0">
-                                            <span class="px-3 py-1.5 rounded-lg border font-black text-xs tracking-widest @rankConfig.Colors">
-                                                @rankConfig.Label
+                                @* ── DENSE ROW (Collapsed) ── *@
+                                <div class="flex flex-col md:flex-row items-start md:items-stretch min-h-[60px]"
+                                     @onclick="() => ToggleMatchDetail(entry.MatchId)">
+
+                                    @* Left: Rank & Round *@
+                                    <div class="flex items-stretch w-full md:w-40 shrink-0 border-b md:border-b-0 md:border-r border-line/50">
+                                        <div class="flex items-center justify-center w-16 shrink-0 bg-surface-alt/50">
+                                            <span class="font-black text-xl @(entry.Rank switch {
+                                                1 => "text-yellow-500",
+                                                2 => "text-zinc-300",
+                                                3 => "text-amber-600",
+                                                _ => "text-subtle"
+                                            })">
+                                                #@entry.Rank
                                             </span>
-                                            <div class="flex items-center gap-1.5 text-foreground">
-                                                <span class="font-semibold text-sm">Round @entry.HighestRound</span>
+                                        </div>
+                                        <div class="flex flex-col justify-center items-center w-24 bg-surface-alt/30">
+                                            <span class="text-[28px] font-black text-foreground leading-none">@entry.HighestRound</span>
+                                        </div>
+                                    </div>
+
+                                    @* Middle: Map & Time *@
+                                    <div class="flex flex-col justify-center px-4 py-3 md:py-0 w-full md:w-48 shrink-0 border-b md:border-b-0 md:border-r border-line/50 bg-surface-alt/10">
+                                        <span class="text-sm font-bold text-foreground">@entry.MapName</span>
+                                        <span class="text-[11px] text-muted font-medium">
+                                            @entry.MatchDate
+                                            @if (entry.Duration is not null)
+                                            {
+                                                <text> &bull; @entry.Duration</text>
+                                            }
+                                        </span>
+                                    </div>
+
+                                    @* Right: Player Performance (compact K/D/R) *@
+                                    @{
+                                        var isLowDensity = entry.Players.Count <= 2;
+                                        var statSize = isLowDensity ? "text-sm" : "text-[11px]";
+                                        var nameSize = isLowDensity ? "text-sm" : "text-[10px]";
+                                        var nameMax = isLowDensity ? "max-w-[200px]" : "max-w-[80px]";
+                                        var gapSize = isLowDensity ? "gap-x-8" : "gap-x-6";
+                                    }
+                                    <div class="flex-1 flex flex-wrap content-center @gapSize gap-y-3 p-4">
+                                        @foreach (var player in entry.Players)
+                                        {
+                                            <div class="flex flex-col">
+                                                <span class="@statSize font-mono tracking-tight">
+                                                    <span class="text-foreground font-medium">@FormatK(player.Kills)</span>
+                                                    <span class="text-subtle mx-0.5">/</span>
+                                                    <span class="text-error">@player.Downs</span>
+                                                    <span class="text-subtle mx-0.5">/</span>
+                                                    <span class="text-success">@player.Revives</span>
+                                                </span>
+                                                <span class="@nameSize text-muted font-medium truncate mt-0.5 @nameMax">
+                                                    <ColorCode Value="@player.Name"/>
+                                                </span>
                                             </div>
+                                        }
+                                    </div>
+
+                                    @* Expand chevron *@
+                                    <div class="hidden md:flex items-center justify-center w-12 shrink-0 border-l border-line/50 text-subtle bg-surface-alt/30 hover:bg-surface-hover">
+                                        <i class="ph @(isExpanded ? "ph-caret-up" : "ph-caret-down") text-sm"></i>
+                                    </div>
+                                </div>
+
+                                @* ── EXPANDED SCOREBOARD ── *@
+                                @if (isExpanded)
+                                {
+                                    <div class="border-t border-line bg-surface-alt/30">
+
+                                        @* Scoreboard table *@
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                                <thead class="bg-surface-alt text-[10px] font-bold uppercase tracking-widest text-subtle border-b border-line">
+                                                    <tr>
+                                                        <th class="py-2.5 px-4">Player</th>
+                                                        <th class="py-2.5 px-4 text-center" title="Points Earned">Score</th>
+                                                        <th class="py-2.5 px-4 text-center" title="Points Earned minus Points Spent">Net</th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground" title="Kills">K</th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground" title="Downs">D</th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground" title="Revives">R</th>
+                                                        <th class="py-2.5 px-4 text-right" title="Kills per Down">KPD</th>
+                                                        <th class="py-2.5 px-4 text-right" title="Headshot Percentage">HS%</th>
+                                                        <th class="py-2.5 px-4 text-right pr-6" title="Damage Dealt / Received">Dmg Ratio</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-line/50">
+                                                    @foreach (var p in entry.Players)
+                                                    {
+                                                        var kpd = p.Downs == 0 ? p.Kills : (double)p.Kills / p.Downs;
+                                                        var hsPercent = p.Kills == 0 ? 0 : (double)p.Headshots / p.Kills * 100;
+                                                        var netPoints = p.PointsEarned - p.PointsSpent;
+                                                        var dmgRatio = p.DamageReceived == 0 ? 0 : (double)p.DamageDealt / p.DamageReceived;
+
+                                                        <tr class="hover:bg-surface-hover transition-colors">
+                                                            <td class="py-2 px-4">
+                                                                <div class="flex items-center gap-2">
+                                                                    @if (_showTimeline.Contains(entry.MatchId))
+                                                                    {
+                                                                        var isSelected = GetTimelinePlayer(entry.MatchId) == p.ClientId;
+                                                                        <button @onclick="() => SetTimelinePlayer(entry.MatchId, p.ClientId)"
+                                                                                @onclick:stopPropagation="true"
+                                                                                class="w-4 h-4 rounded-full border-2 shrink-0 transition-colors
+                                                                                       @(isSelected ? "border-primary bg-primary" : "border-subtle hover:border-muted")">
+                                                                        </button>
+                                                                    }
+                                                                    <a href="/client/@p.ClientId" @onclick:stopPropagation="true"
+                                                                       class="font-bold text-foreground hover:text-primary transition-colors no-underline">
+                                                                        <ColorCode Value="@p.Name"/>
+                                                                    </a>
+                                                                </div>
+                                                            </td>
+                                                            <td class="py-2 px-4 text-center font-mono text-muted text-xs">
+                                                                @p.PointsEarned.ToString("N0")
+                                                            </td>
+                                                            <td class="py-2 px-4 text-center font-mono text-xs @(netPoints > 0 ? "text-success" : netPoints < 0 ? "text-error" : "text-muted")">
+                                                                @(netPoints > 0 ? "+" : "")@FormatK((int)netPoints)
+                                                            </td>
+                                                            <td class="py-2 px-3 text-right font-mono text-foreground">@p.Kills.ToString("N0")</td>
+                                                            <td class="py-2 px-3 text-right font-mono text-muted">@p.Downs</td>
+                                                            <td class="py-2 px-3 text-right font-mono text-muted">@p.Revives</td>
+                                                            <td class="py-2 px-4 text-right font-mono font-medium @(kpd >= 1000 ? "text-success" : kpd <= 50 ? "text-error" : "text-foreground")">
+                                                                @(kpd > 999 ? FormatK((int)kpd) : kpd.ToString("F1"))
+                                                            </td>
+                                                            <td class="py-2 px-4 text-right font-mono text-foreground">
+                                                                @hsPercent.ToString("F0")%
+                                                            </td>
+                                                            <td class="py-2 px-4 text-right pr-6 font-mono text-muted">
+                                                                @(dmgRatio > 999 ? "∞" : dmgRatio.ToString("F1"))
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
                                         </div>
 
-                                        @* Center: Players *@
-                                        <div class="flex-1 p-4 md:p-5 flex flex-col gap-3 justify-center">
-                                            @foreach (var player in entry.Players)
+                                        @* Footer with server name and timeline toggle *@
+                                        <div class="p-3 bg-surface-alt border-t border-line flex justify-between items-center text-xs">
+                                            <div class="flex items-center gap-1.5 text-muted font-mono">
+                                                @if (entry.ServerName is not null)
+                                                {
+                                                    <i class="ph ph-desktop-tower text-subtle"></i>
+                                                    <ColorCode Value="@entry.ServerName"/>
+                                                }
+                                            </div>
+                                            @if (_expandedMatches.TryGetValue(entry.MatchId, out var matchDetail) && matchDetail is not null)
                                             {
-                                                @RenderRowPlayer(player)
+                                                <button @onclick="() => ToggleTimeline(entry.MatchId)" @onclick:stopPropagation="true"
+                                                        class="px-4 py-1.5 rounded font-bold transition-colors
+                                                               @(_showTimeline.Contains(entry.MatchId)
+                                                                   ? "bg-surface text-foreground border border-line"
+                                                                   : "bg-primary text-on-primary hover:bg-primary/80")">
+                                                    @(_showTimeline.Contains(entry.MatchId) ? "Hide Timeline" : "View Timeline")
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <div class="flex items-center gap-2 text-muted">
+                                                    <i class="ph ph-spinner animate-spin"></i>
+                                                    <span>Loading...</span>
+                                                </div>
                                             }
                                         </div>
 
-                                        @* Right: Time *@
-                                        <div class="w-full md:w-36 flex md:flex-col items-center justify-between md:justify-center gap-3 p-4 bg-surface-alt border-t md:border-t-0 md:border-l border-line shrink-0">
-                                            <span class="flex items-center gap-1.5 text-xs text-muted font-medium">
-                                                <i class="ph ph-clock text-primary/70"></i>
-                                                @entry.MatchDate
-                                            </span>
-                                            <i class="ph @(_expandedMatches.ContainsKey(entry.MatchId) ? "ph-caret-up" : "ph-caret-down") text-sm text-subtle"></i>
-                                        </div>
-                                    </div>
-                                }
-                                else
-                                {
-                                    @* ── GRID LAYOUT (3+ players) ── *@
-                                    <div class="flex flex-col bg-surface border border-line rounded-2xl overflow-hidden @rankConfig.Glow transition-all hover:border-line/80">
-
-                                        @* Header *@
-                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:px-6 md:py-4 bg-surface-alt border-b border-line">
-                                            <div class="flex items-center gap-4">
-                                                <span class="px-3 py-1.5 rounded-lg border font-black text-xs sm:text-sm tracking-widest @rankConfig.Colors">
-                                                    @rankConfig.Label
-                                                </span>
-                                                <div class="flex items-center gap-2 text-foreground">
-                                                    <i class="ph ph-game-controller text-subtle"></i>
-                                                    <span class="font-semibold text-sm">Round @entry.HighestRound</span>
-                                                </div>
-                                            </div>
-                                            <div class="flex items-center gap-3 text-xs text-muted font-medium bg-surface px-3 py-1.5 rounded-lg border border-line">
-                                                <span class="flex items-center gap-1.5">
-                                                    <i class="ph ph-clock text-primary/70"></i>
-                                                    @entry.MatchDate
-                                                </span>
-                                                <i class="ph @(_expandedMatches.ContainsKey(entry.MatchId) ? "ph-caret-up" : "ph-caret-down") text-sm text-subtle"></i>
-                                            </div>
-                                        </div>
-
-                                        @* Grid body *@
-                                        <div class="p-4 md:p-6">
-                                            <div class="grid gap-3 md:gap-4 @gridCols">
-                                                @foreach (var player in entry.Players)
-                                                {
-                                                    @RenderGridPlayer(player)
-                                                }
-                                            </div>
-                                        </div>
+                                        @* Timeline (existing component) *@
+                                        @if (_showTimeline.Contains(entry.MatchId) &&
+                                             _expandedMatches.TryGetValue(entry.MatchId, out var detail) && detail is not null)
+                                        {
+                                            <ZombieMatchDetail Detail="detail" SelectedClientId="GetTimelinePlayer(entry.MatchId)"/>
+                                        }
                                     </div>
                                 }
                             </div>
-
-                            @* Expanded match detail *@
-                            @if (_expandedMatches.TryGetValue(entry.MatchId, out var matchDetail))
-                            {
-                                @if (matchDetail is not null)
-                                {
-                                    <ZombieMatchDetail Detail="matchDetail"/>
-                                }
-                                else
-                                {
-                                    <div class="border border-line rounded-xl bg-surface-alt/30 mt-2 p-8 flex items-center justify-center">
-                                        <div class="flex items-center gap-3 text-muted">
-                                            <i class="ph ph-spinner animate-spin text-lg"></i>
-                                            <span class="text-sm">Loading match detail...</span>
-                                        </div>
-                                    </div>
-                                }
-                            }
                         </ItemContent>
                         <Placeholder>
-                            <div class="bg-surface border border-line rounded-2xl overflow-hidden animate-pulse">
-                                <div class="flex flex-col md:flex-row">
-                                    <div class="md:w-48 bg-surface-alt p-4 flex items-center justify-center gap-3 border-b md:border-b-0 md:border-r border-line">
-                                        <div class="w-20 h-6 bg-surface/30 rounded-lg"></div>
+                            <div class="bg-surface border border-line/50 rounded-lg overflow-hidden animate-pulse">
+                                <div class="flex flex-col md:flex-row min-h-[60px]">
+                                    <div class="md:w-40 bg-surface-alt/50 flex items-center justify-center border-r border-line/50">
+                                        <div class="w-20 h-6 bg-surface/30 rounded"></div>
                                     </div>
                                     <div class="flex-1 p-4">
-                                        <div class="h-10 w-full bg-surface-alt/50 rounded-xl"></div>
-                                    </div>
-                                    <div class="md:w-36 bg-surface-alt p-4 flex items-center justify-center border-t md:border-t-0 md:border-l border-line">
-                                        <div class="w-20 h-4 bg-surface/20 rounded"></div>
+                                        <div class="h-6 w-full bg-surface-alt/50 rounded"></div>
                                     </div>
                                 </div>
                             </div>
@@ -233,81 +321,41 @@
 
 @code {
 
-    private record RankStyle(string Label, string Colors, string Glow);
+    private readonly HashSet<int> _showTimeline = new();
+    private readonly Dictionary<int, int> _timelinePlayerSelection = new();
 
-    private static RankStyle GetRankConfig(int rank) => rank switch
+    private static string FormatK(int num) =>
+        num >= 1000 ? $"{num / 1000.0:F1}".TrimEnd('0').TrimEnd('.') + "k" : num.ToString();
+
+    private void ToggleTimeline(int matchId)
     {
-        1 => new("1ST PLACE", "text-yellow-400 bg-yellow-400/10 border-yellow-400/30", "shadow-[0_0_30px_rgba(250,204,21,0.05)]"),
-        2 => new("2ND PLACE", "text-zinc-300 bg-zinc-300/10 border-zinc-300/30", "shadow-[0_0_30px_rgba(203,213,225,0.03)]"),
-        3 => new("3RD PLACE", "text-amber-500 bg-amber-600/10 border-amber-600/30", "shadow-[0_0_30px_rgba(217,119,6,0.03)]"),
-        _ => new($"{rank}TH", "text-muted bg-surface-alt border-line", "")
-    };
+        if (!_showTimeline.Remove(matchId))
+        {
+            _showTimeline.Add(matchId);
+        }
+    }
 
-    private static string GetInitials(string name) =>
-        name.Length >= 2 ? name[..2].ToUpperInvariant() : name.ToUpperInvariant();
-
-    private RenderFragment RenderRowPlayer(ZombieLeaderboardPlayer player) => __builder =>
+    private int GetTimelinePlayer(int matchId)
     {
-        <div class="group flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:px-4 rounded-xl bg-surface-alt border border-line hover:bg-surface-hover hover:border-line/80 transition-all duration-300 w-full gap-3 sm:gap-0">
-            <div class="flex items-center gap-3 w-full sm:w-auto">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-surface-alt to-surface text-muted flex items-center justify-center font-bold text-xs shrink-0 shadow-inner group-hover:from-primary/80 group-hover:to-primary/60 group-hover:text-white transition-all duration-300">
-                    @GetInitials(player.Name)
-                </div>
-                <a href="/client/@player.ClientId" @onclick:stopPropagation="true"
-                   class="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
-                    <ColorCode Value="@player.Name"/>
-                </a>
-            </div>
-            <div class="flex items-center gap-4 sm:gap-6 bg-surface sm:bg-transparent p-2.5 sm:p-0 rounded-lg justify-between sm:justify-end">
-                <div class="flex items-center gap-1.5">
-                    <i class="ph ph-crosshair text-success/70 text-xs"></i>
-                    <span class="text-foreground font-mono text-sm">@player.Kills</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <i class="ph ph-skull text-error/70 text-xs"></i>
-                    <span class="text-foreground font-mono text-sm">@player.Deaths</span>
-                </div>
-                <div class="flex items-center gap-1.5 sm:ml-2">
-                    <i class="ph ph-lightning text-warning/70 text-xs"></i>
-                    <span class="text-yellow-400 font-mono font-bold text-sm">@player.PointsEarned.ToString("N0")</span>
-                </div>
-            </div>
-        </div>
-    };
+        if (_timelinePlayerSelection.TryGetValue(matchId, out var clientId))
+        {
+            return clientId;
+        }
 
-    private RenderFragment RenderGridPlayer(ZombieLeaderboardPlayer player) => __builder =>
+        // Default to first player
+        if (_expandedMatches.TryGetValue(matchId, out var detail) && detail?.Players.Count > 0)
+        {
+            var first = detail.Players[0].ClientId;
+            _timelinePlayerSelection[matchId] = first;
+            return first;
+        }
+
+        return 0;
+    }
+
+    private void SetTimelinePlayer(int matchId, int clientId)
     {
-        <div class="group flex flex-col p-3 rounded-xl bg-surface-alt border border-line hover:bg-surface-hover hover:border-line/80 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-            <div class="flex items-center gap-3 mb-3 border-b border-line/60 pb-2">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-surface-alt to-surface text-muted flex items-center justify-center font-bold text-xs shrink-0 shadow-inner group-hover:from-primary/80 group-hover:to-primary/60 group-hover:text-white transition-all duration-300">
-                    @GetInitials(player.Name)
-                </div>
-                <a href="/client/@player.ClientId" @onclick:stopPropagation="true"
-                   class="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
-                    <ColorCode Value="@player.Name"/>
-                </a>
-            </div>
-            <div class="flex items-center justify-between px-1">
-                <div class="flex flex-col items-center gap-0.5">
-                    <span class="flex items-center gap-1 text-[9px] font-bold text-subtle tracking-wider">
-                        <i class="ph ph-crosshair text-success/70 text-[10px]"></i> KILLS
-                    </span>
-                    <span class="text-foreground font-mono text-sm">@player.Kills</span>
-                </div>
-                <div class="flex flex-col items-center gap-0.5">
-                    <span class="flex items-center gap-1 text-[9px] font-bold text-subtle tracking-wider">
-                        <i class="ph ph-skull text-error/70 text-[10px]"></i> DEATHS
-                    </span>
-                    <span class="text-foreground font-mono text-sm">@player.Deaths</span>
-                </div>
-                <div class="flex flex-col items-center gap-0.5">
-                    <span class="flex items-center gap-1 text-[9px] font-bold text-subtle tracking-wider">
-                        <i class="ph ph-lightning text-warning/70 text-[10px]"></i> SCORE
-                    </span>
-                    <span class="text-yellow-400 font-mono font-bold text-sm">@player.PointsEarned.ToString("N0")</span>
-                </div>
-            </div>
-        </div>
-    };
+        _timelinePlayerSelection[matchId] = clientId;
+    }
 
 }

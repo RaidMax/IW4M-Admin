@@ -37,11 +37,8 @@ public partial class ZombieMatchHistory
     private void SetFilter(int matchId, string filter) =>
         GetCardState(matchId).TimelineFilter = filter;
 
-    private static string FormatTooltipText(ZombieMatchHistoryEvent evt)
-    {
-        var visuals = GetEventVisuals(evt.Category);
-        return $"{evt.Time} — {evt.Label}";
-    }
+    private static string FormatTooltipText(ZombieMatchHistoryEvent evt) =>
+        $"{evt.Time} • {evt.Label}";
 
     private static (string Bg, string Text, string Icon, int ZIndex, bool IsTick) GetEventVisuals(string category) =>
         category switch

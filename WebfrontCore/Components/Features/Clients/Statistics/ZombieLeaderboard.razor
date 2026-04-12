@@ -84,10 +84,10 @@
 
                     @* Table header (desktop) *@
                     <div class="hidden md:flex px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-subtle bg-surface-alt border border-line rounded-lg mb-1">
-                        <div class="w-16 text-center">Rank</div>
-                        <div class="w-24 text-center">Round</div>
-                        <div class="w-48 pl-2">Match Info</div>
-                        <div class="flex-1 pl-2">Player Performance <span class="normal-case tracking-normal text-subtle/60 font-normal ml-1" title="Kills / Downs / Revives">(K / D / R)</span></div>
+                        <div class="w-16">Rank</div>
+                        <div class="w-24">Round</div>
+                        <div class="w-48">Match Info</div>
+                        <div class="flex-1">Player Performance <span class="normal-case tracking-normal text-subtle/60 font-normal ml-1" title="Kills / Downs / Revives">(K / D / R)</span></div>
                     </div>
 
                     <Virtualize @ref="_virtualizeComponent" Context="entry" ItemsProvider="LoadEntries"
@@ -129,7 +129,7 @@
                                             @entry.MatchDate
                                             @if (entry.Duration is not null)
                                             {
-                                                <text> &bull; @entry.Duration</text>
+                                                <text> &bull; lasted @entry.Duration</text>
                                             }
                                         </span>
                                     </div>
@@ -177,14 +177,15 @@
                                                 <thead class="bg-surface-alt text-[10px] font-bold uppercase tracking-widest text-subtle border-b border-line">
                                                     <tr>
                                                         <th class="py-2.5 px-4">Player</th>
-                                                        <th class="py-2.5 px-4 text-center" title="Points Earned">Score</th>
-                                                        <th class="py-2.5 px-4 text-center" title="Points Earned minus Points Spent">Net</th>
-                                                        <th class="py-2.5 px-3 text-right text-foreground" title="Kills">K</th>
-                                                        <th class="py-2.5 px-3 text-right text-foreground" title="Downs">D</th>
-                                                        <th class="py-2.5 px-3 text-right text-foreground" title="Revives">R</th>
-                                                        <th class="py-2.5 px-4 text-right" title="Kills per Down">KPD</th>
-                                                        <th class="py-2.5 px-4 text-right" title="Headshot Percentage">HS%</th>
-                                                        <th class="py-2.5 px-4 text-right pr-6" title="Damage Dealt / Received">Dmg Ratio</th>
+                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="Points Earned" WrapperClass="w-fit inline-block">Score</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="Points Earned minus Points Spent" WrapperClass="w-fit inline-block">Net</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="Points Spent on perks, doors, weapons, etc." WrapperClass="w-fit inline-block">Spent</Tooltip></th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="Kills" WrapperClass="w-fit inline-block">K</Tooltip></th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="Downs" WrapperClass="w-fit inline-block">D</Tooltip></th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="Revives" WrapperClass="w-fit inline-block">R</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="Kills per Down" WrapperClass="w-fit inline-block">KPD</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="Headshot Percentage" WrapperClass="w-fit inline-block">HS%</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right pr-6"><Tooltip Text="Damage Dealt / Received" WrapperClass="w-fit inline-block">Dmg Ratio</Tooltip></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="divide-y divide-line/50">
@@ -207,7 +208,7 @@
                                                                                        @(isSelected ? "border-primary bg-primary" : "border-subtle hover:border-muted")">
                                                                         </button>
                                                                     }
-                                                                    <a href="/client/@p.ClientId" @onclick:stopPropagation="true"
+                                                                    <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
                                                                        class="font-bold text-foreground hover:text-primary transition-colors no-underline">
                                                                         <ColorCode Value="@p.Name"/>
                                                                     </a>
@@ -218,6 +219,9 @@
                                                             </td>
                                                             <td class="py-2 px-4 text-center font-mono text-xs @(netPoints > 0 ? "text-success" : netPoints < 0 ? "text-error" : "text-muted")">
                                                                 @(netPoints > 0 ? "+" : "")@FormatK((int)netPoints)
+                                                            </td>
+                                                            <td class="py-2 px-4 text-center font-mono text-xs text-error">
+                                                                @FormatK((int)p.PointsSpent)
                                                             </td>
                                                             <td class="py-2 px-3 text-right font-mono text-foreground">@p.Kills.ToString("N0")</td>
                                                             <td class="py-2 px-3 text-right font-mono text-muted">@p.Downs</td>
@@ -325,7 +329,7 @@
     private readonly Dictionary<int, int> _timelinePlayerSelection = new();
 
     private static string FormatK(int num) =>
-        num >= 1000 ? $"{num / 1000.0:F1}".TrimEnd('0').TrimEnd('.') + "k" : num.ToString();
+        num >= 1000 ? ((double)num).ToMetric(decimals: 1) : num.ToString();
 
     private void ToggleTimeline(int matchId)
     {

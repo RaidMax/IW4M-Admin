@@ -47,7 +47,7 @@ public partial class ZombieMatchDetail
 
     // Mirrors ZombieMatchHistory visual helpers
     private static string FormatTooltipText(ZombieMatchHistoryEvent evt) =>
-        $"{evt.Time} — {evt.Label}";
+        $"{evt.Time} • {evt.Label}";
 
     private static (string Bg, string Text, string Icon, int ZIndex, bool IsTick) GetEventVisuals(string category) =>
         category switch

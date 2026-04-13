@@ -63,6 +63,37 @@
                 }
             </div>
 
+            @if (_mapRecords.Count > 0)
+            {
+                <style>
+                    @@keyframes zm-marquee {
+                        from { transform: translateX(0); }
+                        to { transform: translateX(-50%); }
+                    }
+                </style>
+                <div class="relative overflow-hidden rounded-xl bg-surface-alt border border-line shadow-sm"
+                     @onmouseenter="() => _marqueePaused = true"
+                     @onmouseleave="() => _marqueePaused = false">
+                    <div class="flex gap-3 px-4 py-2"
+                         style="width: max-content; animation: zm-marquee 30s linear infinite; @(_marqueePaused ? "animation-play-state: paused;" : "")">
+                        @for (var i = 0; i < 2; i++)
+                        {
+                            @foreach (var record in _mapRecords)
+                            {
+                                <a href="/client/@record.ClientId/stats"
+                                   class="flex items-center gap-4 no-underline bg-surface hover:bg-surface-hover border border-line rounded-lg px-4 py-2 transition-colors shrink-0">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] uppercase tracking-wider font-bold text-muted">@record.Label</span>
+                                        <span class="text-xs text-subtle truncate max-w-[120px]">@record.PlayerName</span>
+                                    </div>
+                                    <span class="font-mono text-lg font-bold text-foreground">@record.Value</span>
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
             @if (_metadata is null || _metadata.Games.Count == 0)
             {
                 <div class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-16 text-center border border-line flex flex-col items-center">
@@ -325,6 +356,7 @@
 
 @code {
 
+    private bool _marqueePaused;
     private readonly HashSet<int> _showTimeline = new();
     private readonly Dictionary<int, int> _timelinePlayerSelection = new();
 

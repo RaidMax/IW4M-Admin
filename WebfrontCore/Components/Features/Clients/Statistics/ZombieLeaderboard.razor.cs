@@ -37,6 +37,7 @@ public partial class ZombieLeaderboard
     private SharedLibraryCore.Dtos.SideContextMenuItems? MenuItems { get; set; }
     private readonly Dictionary<int, SharedLibraryCore.Interfaces.ZombieMatchDetail?> _expandedMatches = new();
     private readonly HashSet<int> _loadingMatches = new();
+    private List<ZombieMapStatRecord> _mapRecords = [];
 
     private string? _previousGame;
     private string? _previousMap;
@@ -144,6 +145,13 @@ public partial class ZombieLeaderboard
         }
 
         _hasLoaded = true;
+
+        // Load map records for the marquee
+        if (_selectedMap is not null)
+        {
+            _mapRecords = await _leaderboardService.GetMapRecordsAsync(_selectedGame.Game, _selectedMap.MapId);
+            Random.Shared.Shuffle(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_mapRecords));
+        }
 
         if (_virtualizeComponent is not null)
         {

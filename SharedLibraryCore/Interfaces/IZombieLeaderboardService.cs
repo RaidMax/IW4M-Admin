@@ -20,6 +20,19 @@ public interface IZombieLeaderboardService
     Task<ZombieLeaderboardResponse> GetLeaderboardEntriesAsync(
         Reference.Game game, int mapId, int playerCount,
         int offset, int count);
+
+    /// <summary>
+    /// Returns the stat records for a specific map (across all player counts).
+    /// </summary>
+    Task<List<ZombieMapStatRecord>> GetMapRecordsAsync(Reference.Game game, int mapId);
+}
+
+public class ZombieMapStatRecord
+{
+    public string Label { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public string PlayerName { get; set; } = string.Empty;
+    public int ClientId { get; set; }
 }
 
 public class ZombieLeaderboardMetadata

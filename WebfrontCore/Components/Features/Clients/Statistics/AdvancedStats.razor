@@ -168,9 +168,37 @@
                 @if (_matchHistory is { Count: > 0 })
                 {
                     <ZombieMatchHistory Matches="_matchHistory"/>
+
+                    @if (_hasMoreMatches)
+                    {
+                        <div class="flex justify-center mt-4">
+                            <button @onclick="LoadMoreMatches" disabled="@_loadingMoreMatches"
+                                    class="px-6 py-2 text-sm font-semibold text-subtle bg-surface border border-line rounded-lg
+                                           hover:bg-surface-hover hover:text-foreground transition-colors disabled:opacity-50">
+                                @if (_loadingMoreMatches)
+                                {
+                                    <span class="flex items-center gap-2">
+                                        <i class="ph ph-spinner animate-spin text-sm"></i>
+                                        Loading...
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="flex items-center gap-2">
+                                        <i class="ph ph-caret-down text-sm"></i>
+                                        Load More Matches
+                                    </span>
+                                }
+                            </button>
+                        </div>
+                    }
                 }
 
                 <!-- Bottom Section: Models & Tables -->
+                <div class="flex items-center gap-3">
+                    <i class="ph ph-chart-bar text-lg text-primary"></i>
+                    <h4 class="text-lg font-bold text-foreground">Combat Breakdown</h4>
+                </div>
                 <div class="grid grid-cols-1 2xl:grid-cols-2 gap-8">
                     <!-- Hit Locations -->
                     <div class="bg-surface rounded-xl shadow-lg border border-line overflow-hidden flex flex-col">

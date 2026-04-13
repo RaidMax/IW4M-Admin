@@ -8,7 +8,8 @@ namespace SharedLibraryCore.Interfaces;
 /// </summary>
 public interface IZombieMatchHistoryService
 {
-    Task<List<ZombieMatchHistoryMatch>> GetPlayerMatchHistoryAsync(int clientId, string? serverEndpoint);
+    Task<List<ZombieMatchHistoryMatch>> GetPlayerMatchHistoryAsync(int clientId, string? serverEndpoint,
+        int offset = 0, int count = 5);
 
     /// <summary>
     /// Returns full match detail with all players' round breakdowns and event timelines.

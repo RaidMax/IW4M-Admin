@@ -69,7 +69,7 @@ public class ZombieLeaderboardPlayer
     public int Revives { get; set; }
     public long PointsEarned { get; set; }
     public long PointsSpent { get; set; }
-    public int Headshots { get; set; }
+    public int HeadshotKills { get; set; }
     public long DamageDealt { get; set; }
     public int DamageReceived { get; set; }
 }

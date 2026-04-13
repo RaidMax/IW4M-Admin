@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript;
 using SharedLibraryCore.Events.Game.GameScript.Zombie;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces;
@@ -99,6 +100,17 @@ public class Plugin : IPluginV2
 
         parsedScriptEvent.Owner = scriptEvent.Owner;
 
+        // Track current round number on the server for webfront display
+        switch (parsedScriptEvent)
+        {
+            case PlayerRoundDataGameEvent roundData:
+                scriptEvent.Owner.ZombieRoundNumber = roundData.CurrentRound;
+                break;
+            case RoundEndEvent roundEnd:
+                scriptEvent.Owner.ZombieRoundNumber = roundEnd.RoundNumber;
+                break;
+        }
+
         // Bridge zombie kills/damage/deaths to the standard Stats plugin (K/D/Score/hit locations)
         ConvertToStatsEvent(scriptEvent, parsedScriptEvent);
 
@@ -179,6 +191,8 @@ public class Plugin : IPluginV2
             return;
         }
 
+        matchEvent.Owner.ZombieRoundNumber = null;
+
         if (_enhancer is not null)
         {
             _enhancer.OnMatchEnded(matchEvent.Server);
@@ -194,6 +208,7 @@ public class Plugin : IPluginV2
         }
 
         _knownZombieServerIds.Add(matchEvent.Server.LegacyDatabaseId);
+        matchEvent.Owner.ZombieRoundNumber = null;
 
         if (_enhancer is not null)
         {

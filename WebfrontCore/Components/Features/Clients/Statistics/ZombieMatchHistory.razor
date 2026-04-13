@@ -232,7 +232,7 @@
                                     <span class="@(round.Deaths > 0 ? "text-error font-bold" : "")">@round.Deaths</span>
                                 </td>
                                 <td class="py-2.5 pr-4 font-mono text-success">@round.Points.ToString("N0")</td>
-                                <td class="py-2.5 pr-4 text-right font-mono text-subtle text-xs">@($"{round.DurationSeconds:F0}s")</td>
+                                <td class="py-2.5 pr-4 text-right font-mono text-subtle text-xs">@FormatRoundTime(round.DurationSeconds)</td>
                             </tr>
                         }
                     </tbody>
@@ -240,4 +240,12 @@
             </div>
         </div>
     };
+
+    private static string FormatRoundTime(double seconds)
+    {
+        var ts = TimeSpan.FromSeconds(seconds);
+        return ts.TotalHours >= 1
+            ? ts.ToString(@"h\:mm\:ss")
+            : ts.ToString(@"m\:ss");
+    }
 }

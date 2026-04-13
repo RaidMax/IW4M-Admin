@@ -38,6 +38,8 @@ public class ZombieMatchDetailPlayer
     public int Revives { get; set; }
     public long PointsEarned { get; set; }
     public int Headshots { get; set; }
+    public long DamageDealt { get; set; }
+    public int DamageReceived { get; set; }
     public List<ZombieMatchHistoryRound> Rounds { get; set; } = [];
     public List<ZombieMatchHistoryEvent> Events { get; set; } = [];
 }

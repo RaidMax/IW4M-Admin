@@ -192,7 +192,7 @@
                                                     @foreach (var p in entry.Players)
                                                     {
                                                         var kpd = p.Downs == 0 ? p.Kills : (double)p.Kills / p.Downs;
-                                                        var hsPercent = p.Kills == 0 ? 0 : (double)p.Headshots / p.Kills * 100;
+                                                        var hsPercent = p.Kills == 0 ? 0 : (double)p.HeadshotKills / p.Kills * 100;
                                                         var netPoints = p.PointsEarned - p.PointsSpent;
                                                         var dmgRatio = p.DamageReceived == 0 ? 0 : (double)p.DamageDealt / p.DamageReceived;
 

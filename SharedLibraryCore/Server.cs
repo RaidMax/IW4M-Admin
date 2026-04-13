@@ -133,6 +133,11 @@ namespace SharedLibraryCore
         public Map CurrentMap { get; set; }
         public Map Map => CurrentMap;
 
+        /// <summary>
+        /// Current zombie round number. Null when not in a zombie match.
+        /// </summary>
+        public int? ZombieRoundNumber { get; set; }
+
         public int ClientNum
         {
             get { return IsErrorState ? 0 : Clients.Count(p => p != null && (Utilities.IsDevelopment || !p.IsBot)); }

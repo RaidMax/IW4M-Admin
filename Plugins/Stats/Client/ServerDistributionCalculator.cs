@@ -16,6 +16,18 @@ using Stats.Helpers;
 
 namespace Stats.Client
 {
+    /// <summary>
+    /// Computes log-normal distribution parameters and Z-scores for player performance,
+    /// scoped per server and per performance bucket. During initialization, it builds two caches:
+    /// <list type="bullet">
+    ///   <item><b>Distribution cache</b> — fits a log-normal (mean/sigma) to each server's and
+    ///     each bucket's player performance values (⅓ Elo + ⅔ Skill). Refreshed hourly (1 min in dev).</item>
+    ///   <item><b>Max Z-score cache</b> — tracks the highest playtime-weighted average Z-score per bucket,
+    ///     used to normalize raw Z-scores into a 0–1 performance rating. Refreshed every 30 min.</item>
+    /// </list>
+    /// These caches are keyed by serverId (for per-server lookups) and by bucket code
+    /// (for cross-server aggregate rankings within a bucket).
+    /// </summary>
     public class ServerDistributionCalculator(
         IDatabaseContextFactory contextFactory,
         IDataValueCache<EFClientStatistics, Dictionary<string, Extensions.LogParams>> distributionCache,
@@ -161,6 +173,11 @@ namespace Stats.Client
             }
         }
 
+        /// <summary>
+        /// Converts a raw performance value into a Z-score using the cached log-normal distribution
+        /// for the given server or bucket. Looks up server-specific params first, falls back to bucket-level.
+        /// Returns 0 if no distribution data is available (e.g. too few players).
+        /// </summary>
         public async Task<double> GetZScoreForServerOrBucket(double value, long? serverId = null,
             string performanceBucket = null)
         {
@@ -193,6 +210,10 @@ namespace Stats.Client
             return zScore;
         }
 
+        /// <summary>
+        /// Normalizes a Z-score into a 0–1 performance rating by dividing by the max Z-score
+        /// in the bucket. Returns null if no max is available (empty bucket or cache miss).
+        /// </summary>
         public async Task<double?> GetRatingForZScore(double? value, string performanceBucket)
         {
             try

@@ -279,6 +279,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return finished;
         }
 
+        /// <summary>
+        /// Resolves the <see cref="PerformanceBucketConfiguration"/> for a server or bucket code.
+        /// Resolution order: explicit bucket code → config match → DB lookup by serverId → defaults.
+        /// Returns default config (global min-playtime / 15-day expiry) when no bucket applies.
+        /// </summary>
         public async Task<PerformanceBucketConfiguration> GetBucketConfig(long? serverId = null,
             string performanceBucketCode = null)
         {
@@ -1348,6 +1353,12 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             await ctx.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Creates a point-in-time ranking snapshot for the client within their server's performance bucket.
+        /// Aggregates stats across all servers sharing the same bucket, weights Z-scores by playtime,
+        /// converts to a percentile-based performance metric, and persists as <see cref="EFClientRankingHistory"/>.
+        /// Only includes stats from servers in the same bucket that meet min-playtime and recency thresholds.
+        /// </summary>
         public async Task UpdateHistoricalRanking(int clientId, EFClientStatistics clientStats, long serverId)
         {
             var bucketConfig = await GetBucketConfig(serverId);
@@ -1461,6 +1472,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             await context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Resolves a bucket code to its database ID, caching the result for the process lifetime
+        /// to avoid repeated DB lookups on every ranking update.
+        /// </summary>
         private async Task<int?> GetOrCachePerformanceBucketId(DatabaseContext context, string bucketCode)
         {
             if (string.IsNullOrEmpty(bucketCode))
@@ -1484,6 +1499,11 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             return bucketId;
         }
 
+        /// <summary>
+        /// Caps ranking history entries per client/server/bucket combination to avoid unbounded growth.
+        /// Marks the previous "newest" entry as historical, then deletes the oldest entry when the
+        /// count exceeds <c>maxRankingCount</c> (1728 ≈ 3 days at one sample every 2.5 minutes).
+        /// </summary>
         private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null,
             string performanceBucketCode = null)
         {

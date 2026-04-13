@@ -486,7 +486,7 @@ public class HitCalculator : IClientStatisticCalculator
                                    && hit.WeaponId == weaponId
                                    && hit.WeaponAttachmentComboId == attachmentComboId
                                    && hit.MeansOfDeathId == meansOfDeathId
-                                   && (performanceBucketCode is not null && performanceBucketCode == hit.Server?.PerformanceBucket?.Code || (performanceBucketCode is null && hit.ServerId == serverId)));
+                                   && (performanceBucketCode is not null && performanceBucketCode == hit.PerformanceBucket?.Code || (performanceBucketCode is null && hit.ServerId == serverId)));
 
         if (hitStat != null)
         {
@@ -684,7 +684,7 @@ public class HitCalculator : IClientStatisticCalculator
 
             if (sessionScores.Count == 0)
             {
-                stat.Score += client.Score > 0 ? client.Score : client.GetAdditionalProperty<int?>(Helpers.StatManager.ESTIMATED_SCORE) ?? 0 * 50;
+                stat.Score += client.Score > 0 ? client.Score : (client.GetAdditionalProperty<int?>(StatManager.ESTIMATED_SCORE) ?? 0) * 50;
             }
 
             else

@@ -187,6 +187,7 @@ public class WebfrontDataService : IWebfrontDataService
                     server.ResolvedIpEndPoint.Address.IsInternal()
                         ? _manager.ExternalIPAddress
                         : server.ListenAddress, server.ListenPort),
+                IsZombieServer = server.IsZombieServer(),
                 ZombieRoundNumber = server.ZombieRoundNumber,
                 RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
                 GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs,
@@ -257,6 +258,7 @@ public class WebfrontDataService : IWebfrontDataService
             ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                 server.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : server.ListenAddress,
                 server.ListenPort),
+            IsZombieServer = server.IsZombieServer(),
             ZombieRoundNumber = server.ZombieRoundNumber,
             RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
             GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs

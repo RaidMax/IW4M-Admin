@@ -19,7 +19,15 @@ public enum EventLogType
     JoinedMatch = 10,
     LeftMatch = 11,
     MatchStarted = 12,
-    MatchEnded = 13
+    MatchEnded = 13,
+    WeaponPurchased = 14,
+    WeaponUpgraded = 15,
+    BoxTake = 16,
+    BoxPass = 17,
+    BoxTeddy = 18,
+    DoorPurchased = 19,
+    TrapActivated = 20,
+    BuildComplete = 21
 }
 
 public class ZombieEventLog : DatedRecord

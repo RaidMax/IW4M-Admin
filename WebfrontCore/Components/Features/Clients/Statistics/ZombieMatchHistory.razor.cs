@@ -54,7 +54,8 @@ public partial class ZombieMatchHistory
     private static bool EventMatchesFilter(ZombieMatchHistoryEvent evt, string filter) => filter switch
     {
         "critical" => evt.Category is "danger" or "critical",
-        "powerups" => evt.Category == "powerup",
+        "powerups" => evt.Category is "powerup" or "perk",
+        "economy" => evt.Category is "weapon" or "box" or "box-pass" or "door" or "trap" or "build",
         _ => true
     };
 

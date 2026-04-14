@@ -75,7 +75,7 @@
                      @onmouseenter="() => _marqueePaused = true"
                      @onmouseleave="() => _marqueePaused = false">
                     <div class="flex gap-3 px-4 py-2"
-                         style="width: max-content; animation: zm-marquee 30s linear infinite; @(_marqueePaused ? "animation-play-state: paused;" : "")">
+                         style="width: max-content; animation: zm-marquee 60s linear infinite; @(_marqueePaused ? "animation-play-state: paused;" : "")">
                         @for (var i = 0; i < 2; i++)
                         {
                             @foreach (var record in _mapRecords)
@@ -157,11 +157,11 @@
                                     <div class="flex flex-col justify-center px-4 py-3 md:py-0 w-full md:w-48 shrink-0 border-b md:border-b-0 md:border-r border-line/50 bg-surface-alt/10">
                                         <span class="text-sm font-bold text-foreground">@entry.MapName</span>
                                         <span class="text-[11px] text-muted font-medium">
-                                            @entry.MatchDate
                                             @if (entry.Duration is not null)
                                             {
-                                                <text> &bull; duration of @entry.Duration</text>
+                                                <text>duration of @entry.Duration</text>
                                             }
+                                            <text>@entry.MatchDate</text>
                                         </span>
                                     </div>
 

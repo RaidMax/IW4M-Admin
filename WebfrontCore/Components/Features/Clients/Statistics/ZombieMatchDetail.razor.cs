@@ -56,14 +56,21 @@ public partial class ZombieMatchDetail
             "danger" => ("bg-orange-500", "text-orange-500", "ph-warning", 40, false),
             "critical" => ("bg-error", "text-error", "ph-skull", 50, false),
             "success" => ("bg-success", "text-success", "ph-heartbeat", 30, false),
-            "info" => ("bg-info", "text-info", "ph-pill", 20, false),
+            "perk" => ("bg-purple-500", "text-purple-500", "ph-pill", 25, false),
+            "weapon" => ("bg-info", "text-info", "ph-knife", 20, false),
+            "box" => ("bg-blue-400", "text-blue-400", "ph-cube", 20, false),
+            "box-pass" => ("bg-orange-400", "text-orange-400", "ph-cube", 20, false),
+            "door" => ("bg-amber-500", "text-amber-500", "ph-door-open", 15, false),
+            "trap" => ("bg-red-400", "text-red-400", "ph-lightning", 25, false),
+            "build" => ("bg-emerald-500", "text-emerald-500", "ph-wrench", 20, false),
             _ => ("bg-muted", "text-muted", "", 10, true)
         };
 
     private static bool EventMatchesFilter(ZombieMatchHistoryEvent evt, string filter) => filter switch
     {
         "critical" => evt.Category is "danger" or "critical",
-        "powerups" => evt.Category == "powerup",
+        "powerups" => evt.Category is "powerup" or "perk",
+        "economy" => evt.Category is "weapon" or "box" or "box-pass" or "door" or "trap" or "build",
         _ => true
     };
 }

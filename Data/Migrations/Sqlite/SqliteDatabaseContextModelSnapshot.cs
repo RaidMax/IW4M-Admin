@@ -1308,6 +1308,12 @@ namespace Data.Migrations.Sqlite
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("BoxUses")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BuildablesCompleted")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("INTEGER");
 
@@ -1321,6 +1327,9 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Deaths")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DoorsOpened")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Downs")
@@ -1356,8 +1365,17 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("Revives")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("TrapsActivated")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("WeaponsPurchased")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WeaponsUpgraded")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("ZombieClientStatId");
 

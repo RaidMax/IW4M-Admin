@@ -151,17 +151,38 @@
                 </div>
 
                 @{
-                    var statCardMetrics = Stats.CustomMetrics.Where(m => m.Extra != "zombie_section").ToList();
+                    var metricGroups = Stats.CustomMetrics
+                        .GroupBy(m => string.IsNullOrEmpty(m.Extra) ? "General" : m.Extra)
+                        .OrderBy(g => g.Key switch
+                        {
+                            "Zombie Combat" => 0,
+                            "Zombie Economy" => 1,
+                            "Zombie Progress" => 2,
+                            "Zombie Averages" => 3,
+                            _ => 99
+                        })
+                        .ToList();
                 }
 
-                @if (statCardMetrics.Count > 0)
+                @foreach (var group in metricGroups)
                 {
-                    <!-- Custom Metrics (e.g. Zombie Stats) -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        @foreach (var metric in statCardMetrics)
-                        {
-                            @RenderStatCard(metric.Key, metric.Value)
-                        }
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <i class="ph @(group.Key switch {
+                                "Zombie Combat" => "ph-crosshair",
+                                "Zombie Economy" => "ph-coins",
+                                "Zombie Progress" => "ph-trophy",
+                                "Zombie Averages" => "ph-chart-line",
+                                _ => "ph-squares-four"
+                            }) text-primary text-sm"></i>
+                            <h4 class="text-xs font-bold uppercase tracking-widest text-muted">@group.Key</h4>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            @foreach (var metric in group)
+                            {
+                                @RenderStatCard(metric.Key, metric.Value)
+                            }
+                        </div>
                     </div>
                 }
 

@@ -1377,6 +1377,12 @@ namespace Data.Migrations.MySql
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("ZombieClientStatId"));
 
+                    b.Property<int>("BoxUses")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BuildablesCompleted")
+                        .HasColumnType("int");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -1390,6 +1396,9 @@ namespace Data.Migrations.MySql
                         .HasColumnType("int");
 
                     b.Property<int>("Deaths")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DoorsOpened")
                         .HasColumnType("int");
 
                     b.Property<int>("Downs")
@@ -1425,8 +1434,17 @@ namespace Data.Migrations.MySql
                     b.Property<int>("Revives")
                         .HasColumnType("int");
 
+                    b.Property<int>("TrapsActivated")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("WeaponsPurchased")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WeaponsUpgraded")
+                        .HasColumnType("int");
 
                     b.HasKey("ZombieClientStatId");
 

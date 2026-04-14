@@ -69,6 +69,8 @@ public partial class ZombieLeaderboard
             return;
         }
 
+        var mapChanged = _firstLoad || _previousGame != GameParam || _previousMap != MapParam;
+
         _firstLoad = false;
         _previousGame = GameParam;
         _previousMap = MapParam;
@@ -146,8 +148,8 @@ public partial class ZombieLeaderboard
 
         _hasLoaded = true;
 
-        // Load map records for the marquee
-        if (_selectedMap is not null)
+        // Load map records for the marquee — only reload when game/map changes, not player count
+        if (_selectedMap is not null && mapChanged)
         {
             _mapRecords = await _leaderboardService.GetMapRecordsAsync(_selectedGame.Game, _selectedMap.MapId);
             Random.Shared.Shuffle(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_mapRecords));

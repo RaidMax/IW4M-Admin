@@ -3251,11 +3251,55 @@
       "kar98k_upgraded": "Armageddon",
       "m7_launcher_upgraded_nonade": "The Imploder",
       "zombie_knuckle_crack":  "Pack A Punch Knuckle Crack",
-      "cymbal_monkey": "Cymbal Monkey"
+      "cymbal_monkey": "Cymbal Monkey",
+
+      "zombie_perk_bottle_jugg": "Juggernog",
+      "zombie_perk_bottle_revive": "Quick Revive",
+      "zombie_perk_bottle_sleight": "Speed Cola",
+      "zombie_perk_bottle_doubletap": "Double Tap",
+      "specialty_armorvest": "Juggernog",
+      "specialty_quickrevive": "Quick Revive",
+      "specialty_fastreload": "Speed Cola",
+      "specialty_rof": "Double Tap",
+      "specialty_juggernaut_zombies": "Juggernog",
+      "specialty_quickrevive_zombies": "Quick Revive",
+      "specialty_fastreload_zombies": "Speed Cola",
+      "specialty_doubletap_zombies": "Double Tap",
+
+      "full_ammo": "Max Ammo",
+      "double_points": "Double Points",
+      "insta_kill": "Insta-Kill",
+      "nuke": "Nuke",
+      "carpenter": "Carpenter",
+      "fire_sale": "Fire Sale"
     },
-	
-	"T6" : {
-        
+
+    "T5": {
+      "specialty_armorvest": "Juggernog",
+      "specialty_quickrevive": "Quick Revive",
+      "specialty_fastreload": "Speed Cola",
+      "specialty_rof": "Double Tap",
+      "specialty_deadshot": "Deadshot Daiquiri",
+      "specialty_longersprint": "Stamin-Up",
+      "specialty_flakjacket": "PhD Flopper",
+      "specialty_additionalprimaryweapon": "Mule Kick",
+
+      "full_ammo": "Max Ammo",
+      "double_points": "Double Points",
+      "insta_kill": "Insta-Kill",
+      "nuke": "Nuke",
+      "carpenter": "Carpenter",
+      "fire_sale": "Fire Sale",
+      "bonfire_sale": "Bonfire Sale",
+      "all_revive": "All Revive",
+      "minigun": "Death Machine",
+      "free_perk": "Random Perk",
+      "tesla": "Wunderwaffe",
+      "random_weapon": "Random Weapon",
+      "monkey_swarm": "Monkey Swarm"
+    },
+
+    "T6" : {
         "mp7": "MP7",
         "pdw57": "PDW-57",
         "vector": "Vector K10",
@@ -3369,8 +3413,42 @@
         "remote_mortar": "Lodestar",
         "player_gunner": "VTOL Warship",
         "dogs": "K9 Unit",
-        "missile_swarm": "Swarm"
-        
+        "missile_swarm": "Swarm",
+
+        "specialty_armorvest": "Juggernog",
+        "specialty_quickrevive": "Quick Revive",
+        "specialty_fastreload": "Speed Cola",
+        "specialty_rof": "Double Tap",
+        "specialty_deadshot": "Deadshot Daiquiri",
+        "specialty_longersprint": "Stamin-Up",
+        "specialty_additionalprimaryweapon": "Mule Kick",
+        "specialty_scavenger": "Tombstone Soda",
+        "specialty_finalstand": "Who's Who",
+        "specialty_grenadepulldeath": "Electric Cherry",
+        "specialty_nomotionsensor": "Vulture Aid",
+        "specialty_weapupgrade": "Pack-a-Punch",
+
+        "full_ammo": "Max Ammo",
+        "double_points": "Double Points",
+        "insta_kill": "Insta-Kill",
+        "insta_kill_ug": "Insta-Kill",
+        "nuke": "Nuke",
+        "carpenter": "Carpenter",
+        "fire_sale": "Fire Sale",
+        "bonfire_sale": "Bonfire Sale",
+        "all_revive": "All Revive",
+        "free_perk": "Random Perk",
+        "random_weapon": "Random Weapon",
+        "bonus_points_player": "Bonus Points",
+        "bonus_points_team": "Team Bonus Points",
+        "lose_points_team": "Lose Points",
+        "lose_perk": "Lose Perk",
+        "empty_clip": "Empty Clip",
+        "zombie_blood": "Zombie Blood",
+        "the_cure": "The Cure",
+        "teller_withdrawl": "Bank Withdrawal",
+        "blue_monkey": "Blue Monkey",
+        "meat_stink": "Meat"
     }
   }
 }

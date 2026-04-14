@@ -6,4 +6,5 @@ public class PlayerConsumedPerkGameEvent : ClientGameEvent
 {
     public EFClient Consumer => Origin;
     public string PerkName { get; init; }
+    public int Cost { get; init; }
 }

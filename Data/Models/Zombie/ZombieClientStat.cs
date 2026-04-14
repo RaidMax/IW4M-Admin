@@ -34,4 +34,10 @@ public abstract class ZombieClientStat : DatedRecord
     public long PointsSpent { get; set; }
     public int PerksConsumed { get; set; }
     public int PowerupsGrabbed { get; set; }
+    public int WeaponsPurchased { get; set; }
+    public int WeaponsUpgraded { get; set; }
+    public int BoxUses { get; set; }
+    public int DoorsOpened { get; set; }
+    public int TrapsActivated { get; set; }
+    public int BuildablesCompleted { get; set; }
 }

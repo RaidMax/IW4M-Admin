@@ -1377,6 +1377,12 @@ namespace Data.Migrations.Postgresql
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieClientStatId"));
 
+                    b.Property<int>("BoxUses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BuildablesCompleted")
+                        .HasColumnType("integer");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
@@ -1390,6 +1396,9 @@ namespace Data.Migrations.Postgresql
                         .HasColumnType("integer");
 
                     b.Property<int>("Deaths")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DoorsOpened")
                         .HasColumnType("integer");
 
                     b.Property<int>("Downs")
@@ -1425,8 +1434,17 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("Revives")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TrapsActivated")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WeaponsPurchased")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WeaponsUpgraded")
+                        .HasColumnType("integer");
 
                     b.HasKey("ZombieClientStatId");
 

@@ -1766,7 +1766,8 @@ namespace IW4MAdmin
                 Offender = targetClient,
                 Offense = reason,
                 Punisher = originClient,
-                IsEvadedOffense = isEvade
+                IsEvadedOffense = isEvade,
+                Link = targetClient.AliasLink
             };
 
             ServerLogger.LogDebug("Creating ban penalty for {TargetClient}", targetClient.ToString());

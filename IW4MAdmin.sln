@@ -80,6 +80,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameFiles", "GameFiles", "{6CBF412C-EFEE-45F7-80FD-AC402C22CDB9}"
 	ProjectSection(SolutionItems) = preProject
 		GameFiles\deploy.bat = GameFiles\deploy.bat
+		GameFiles\README.MD = GameFiles\README.MD
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GameInterface", "GameInterface", "{5C2BE2A8-EA1D-424F-88E1-7FC33EEC2E55}"

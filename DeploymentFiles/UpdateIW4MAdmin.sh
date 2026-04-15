@@ -102,16 +102,5 @@ fi
 chmod +x "$directory/StartIW4MAdmin.sh"
 chmod +x "$directory/UpdateIW4MAdmin.sh"
 
-# Handle JS → CS script plugin migrations
-for cs_file in "$directory/Plugins"/*.cs; do
-    [ -f "$cs_file" ] || continue
-    basename_no_ext=$(basename "$cs_file" .cs)
-    js_file="$directory/Plugins/${basename_no_ext}.js"
-    if [ -f "$js_file" ]; then
-        echo "Migrating plugin: ${basename_no_ext}.js → ${basename_no_ext}.cs"
-        mv "$js_file" "${js_file}.disabled"
-    fi
-done
-
 executionTime=$(($SECONDS - start))
 echo "Update completed successfully in $executionTime seconds!"

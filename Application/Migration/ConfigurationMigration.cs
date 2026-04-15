@@ -61,6 +61,41 @@ namespace IW4MAdmin.Application.Migration
             config.EventParserVersion = "Plutonium T6 Parser (2024)";
         }
 
+        /// <summary>
+        /// disables .js script plugins that have been replaced by .cs versions
+        /// </summary>
+        public static void MigrateJsToCsPlugins()
+        {
+            var pluginsDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
+
+            if (!Directory.Exists(pluginsDir))
+            {
+                return;
+            }
+
+            var csFiles = Directory.GetFiles(pluginsDir, "*.cs");
+
+            foreach (var csFile in csFiles)
+            {
+                var jsFile = Path.ChangeExtension(csFile, ".js");
+
+                if (!File.Exists(jsFile))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    File.Move(jsFile, jsFile + ".disabled", overwrite: true);
+                    Console.WriteLine($"Migrated plugin: {Path.GetFileNameWithoutExtension(jsFile)}.js → .cs");
+                }
+                catch (IOException)
+                {
+                    // best effort — file may be locked
+                }
+            }
+        }
+
         public static void RemoveObsoletePlugins20210322()
         {
             var files = new[] {"StatsWeb.dll", "StatsWeb.Views.dll", "IW4ScriptCommands.dll"};

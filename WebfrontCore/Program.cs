@@ -9,6 +9,8 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
@@ -27,6 +29,12 @@ using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore;
+
+internal sealed class NoopHostLifetime : IHostLifetime
+{
+    public Task WaitForStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
 
 public class Program
 {
@@ -62,6 +70,14 @@ public class Program
 
         // Register dependencies first so we can access ApplicationConfiguration
         registerDependenciesAction(builder.Services);
+
+        // Suppress the default ConsoleLifetime. It registers its own CancelKeyPress
+        // and ProcessExit handlers which race with the ones in Application.Main,
+        // only cancelling the host's internal token and leaving the ApplicationManager
+        // token live. Under Docker SIGTERM that produced partial shutdowns that
+        // exceeded the 10s grace and triggered SIGKILL. Shutdown is driven from
+        // Application.Main via ApplicationManager.Stop().
+        builder.Services.Replace(ServiceDescriptor.Singleton<IHostLifetime, NoopHostLifetime>());
         
         // before the migration has run we still need to respect the old bind url
 #pragma warning disable CS0618 // Type or member is obsolete

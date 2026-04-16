@@ -710,23 +710,49 @@ namespace IW4MAdmin.Application
         public async Task Start()
         {
             _eventHandlerTokenSource = new CancellationTokenSource();
-            
+
             var eventHandlerThread = new Thread(() =>
             {
                 _coreEventHandler.StartProcessing(_eventHandlerTokenSource.Token);
             })
             {
-                Name = nameof(CoreEventHandler)
+                Name = nameof(CoreEventHandler),
+                IsBackground = true
             };
 
             eventHandlerThread.Start();
-            await UpdateServerStates();
-            _eventHandlerTokenSource.Cancel();
-            eventHandlerThread.Join();
+            try
+            {
+                await UpdateServerStates();
+            }
+            catch (OperationCanceledException)
+            {
+                // shutdown sentinel in UpdateServerStates faults Task.WhenAll on cancellation;
+                // swallow so the cleanup below still runs
+            }
+            finally
+            {
+                _eventHandlerTokenSource.Cancel();
+                eventHandlerThread.Join();
+            }
         }
 
         public async Task Stop()
         {
+            // Detach the config-watcher callback before cancelling the token so a
+            // concurrent file change can't re-enter SyncServersWithConfigurationAsync
+            // on a manager that's already shutting down. The watcher and handler are
+            // owned by the DI container and will be replaced on restart.
+            ConfigHandler.Updated -= SyncServersWithConfigurationAsync;
+            try
+            {
+                _watcher.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error disposing configuration watcher during shutdown");
+            }
+
             foreach (var plugin in Plugins.Where(plugin => !plugin.IsParser))
             {
                 try
@@ -748,7 +774,7 @@ namespace IW4MAdmin.Application
         {
             IsRestartRequested = true;
             await Stop();
-            
+
             using var subscriptionTimeoutToken = new CancellationTokenSource();
             subscriptionTimeoutToken.CancelAfter(Utilities.DefaultCommandTimeout);
 
@@ -757,12 +783,13 @@ namespace IW4MAdmin.Application
             IGameEventSubscriptions.ClearEventInvocations();
             IGameServerEventSubscriptions.ClearEventInvocations();
             IManagementEventSubscriptions.ClearEventInvocations();
-            
-            _isRunningTokenSource.Dispose();
-            _isRunningTokenSource = new CancellationTokenSource();
-            
-            _eventHandlerTokenSource.Dispose();
-            _eventHandlerTokenSource = new CancellationTokenSource();
+
+            // Token sources are deliberately NOT disposed/recreated here. Start() is still
+            // awaiting UpdateServerStates on _isRunningTokenSource, and the event handler
+            // thread is still reading _eventHandlerTokenSource.Token. Disposing either one
+            // races with the unwind in Start(). LaunchAsync constructs a fresh
+            // ApplicationManager via the DI container on its restart loop, so the current
+            // instance (and both CTSs) become garbage after this method returns.
         }
 
         [Obsolete]
@@ -1077,20 +1104,36 @@ namespace IW4MAdmin.Application
         
         private async void SyncServersWithConfigurationAsync(ApplicationConfiguration newConfig)
         {
-            _pendingSyncConfig = newConfig;
-
-            if (!await _syncSemaphore.WaitAsync(0, CancellationToken))
+            // async void — any exception that escapes this method crashes the process,
+            // so every path below must swallow. The manager from a previous generation
+            // can still receive this callback after Restart() has cancelled its token
+            // (the old ConfigurationWatcher/ConfigHandler stay alive until GC), which
+            // is why the cancellation token is treated as "skip" rather than an error.
+            if (_isRunningTokenSource.IsCancellationRequested)
             {
-                _logger.LogDebug("Config sync already in progress, queued for re-sync");
                 return;
             }
 
+            _pendingSyncConfig = newConfig;
+
+            var entered = false;
             try
             {
+                entered = await _syncSemaphore.WaitAsync(0, CancellationToken);
+                if (!entered)
+                {
+                    _logger.LogDebug("Config sync already in progress, queued for re-sync");
+                    return;
+                }
+
                 while (Interlocked.Exchange(ref _pendingSyncConfig, null) is { } configToSync)
                 {
                     await ReconcileServersWithConfigAsync(configToSync);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // manager is shutting down or being restarted — drop the sync
             }
             catch (Exception ex)
             {
@@ -1098,7 +1141,10 @@ namespace IW4MAdmin.Application
             }
             finally
             {
-                _syncSemaphore.Release();
+                if (entered)
+                {
+                    _syncSemaphore.Release();
+                }
             }
         }
 

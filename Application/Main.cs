@@ -318,7 +318,7 @@ namespace IW4MAdmin.Application
             // because we can't exit early from waiting on console input, and it prevents us from restarting
             async void ReadInput() => await ReadConsoleInput(logger);
 
-            var inputThread = new Thread(ReadInput);
+            var inputThread = new Thread(ReadInput) { IsBackground = true };
             inputThread.Start();
 
             var tasks = new[]

@@ -1,4 +1,3 @@
-using Humanizer;
 using Microsoft.AspNetCore.Components;
 using WebfrontCore.Core.Services;
 
@@ -12,8 +11,7 @@ public partial class ServerActivitySparkline : ComponentBase
 
     [Parameter] public Data.Models.Reference.Game? Game { get; set; }
 
-    private double[] _activityData = new double[30];
-    private double _maxValue = 1;
+    private IReadOnlyList<double> _activityData = new List<double>(new double[30]);
     private TimeSpan _totalPlaytime;
     private Data.Models.Reference.Game? _previousGame;
     private bool _initialized;
@@ -35,19 +33,13 @@ public partial class ServerActivitySparkline : ComponentBase
             var result = await DataService.GetServerActivitySparklineAsync(Game, CancellationToken.None);
 
             _activityData = result.DailyPlayTimeMinutes;
-            _maxValue = _activityData.Length > 0 && _activityData.Max() > 0 ? _activityData.Max() : 1;
             _totalPlaytime = TimeSpan.FromMinutes(result.TotalPlaytimeMinutes);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading server activity sparkline data");
-            _activityData = new double[30];
+            _activityData = new List<double>(new double[30]);
             _totalPlaytime = TimeSpan.Zero;
         }
-    }
-
-    private static string FormatPlaytime(TimeSpan duration)
-    {
-        return duration.Humanize();
     }
 }

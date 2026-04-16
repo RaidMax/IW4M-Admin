@@ -171,15 +171,13 @@ public class ServerDataCollector : IServerDataCollector
         var pruneDate = endDate.AddDays(-31);
         try
         {
-            var oldRecords = await context.GameStatistics
+            var deleted = await context.GameStatistics
                 .Where(x => x.Date < pruneDate)
-                .ToListAsync(token);
+                .ExecuteDeleteAsync(token);
 
-            if (oldRecords.Count != 0)
+            if (deleted > 0)
             {
-                context.GameStatistics.RemoveRange(oldRecords);
-                await context.SaveChangesAsync(token);
-                _logger.LogInformation("Pruned {Count} old activity records", oldRecords.Count);
+                _logger.LogInformation("Pruned {Count} old activity records", deleted);
             }
         }
         catch (Exception ex)
@@ -223,10 +221,15 @@ public class ServerDataCollector : IServerDataCollector
             var clientRows = await context.Clients
                 .Where(c => distinctClientIdsInEvents.Contains(c.ClientId))
                 .Include(c => c.CurrentAlias)
-                .Select(c => new { c.ClientId, c.NetworkId, Name = c.CurrentAlias != null ? c.CurrentAlias.Name : null })
                 .ToListAsync(token);
             var botClientIds = clientRows
-                .Where(c => c.NetworkId == (c.Name ?? "").StripColors().GenerateGuidFromString())
+                .Select(c => new SharedLibraryCore.Database.Models.EFClient
+                {
+                    ClientId = c.ClientId,
+                    NetworkId = c.NetworkId,
+                    CurrentAlias = c.CurrentAlias
+                })
+                .Where(c => c.IsBot)
                 .Select(c => c.ClientId)
                 .ToHashSet();
 
@@ -246,13 +249,12 @@ public class ServerDataCollector : IServerDataCollector
                 foreach (var evt in sortedEvents)
                 {
                     var evtDate = evt.CreatedDateTime.Date;
-                    if (!dailyStats.ContainsKey(evtDate)) continue;
+                    if (!dailyStats.TryGetValue(evtDate, out var stats)) continue;
 
                     switch (evt.ConnectionType)
                     {
                         case Reference.ConnectionType.Connect:
                         {
-                            var stats = dailyStats[evtDate];
                             stats.Connections++;
                             stats.Clients.Add(clientGroup.Key);
                             dailyStats[evtDate] = stats;
@@ -303,13 +305,13 @@ public class ServerDataCollector : IServerDataCollector
             var (minutes, connections, uniqueClients) = value;
 
             var record = await context.GameStatistics
-                .FirstOrDefaultAsync(x => x.GameName == (int?)game && x.Date == date, token);
+                .FirstOrDefaultAsync(x => x.GameName == game && x.Date == date, token);
 
             if (record == null)
             {
                 record = new EFGameStatistic
                 {
-                    GameName = (int?)game,
+                    GameName = game,
                     Date = date
                 };
                 context.GameStatistics.Add(record);

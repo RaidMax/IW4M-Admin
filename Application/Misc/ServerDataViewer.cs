@@ -226,31 +226,27 @@ namespace IW4MAdmin.Application.Misc
             {
                 Reference.Game? game = ids != null && ids.Any() ? (Reference.Game?)ids.First() : null;
 
-                var thirtyDaysAgo = DateTime.UtcNow.Date.AddDays(-(days - 1));
+                var oldestDataConsidered = DateTime.UtcNow.Date.AddDays(-(days - 1));
 
                 var query = set.AsQueryable()
-                    .Where(x => x.Date >= thirtyDaysAgo)
-                    .Where(x => !game.HasValue || x.GameName == (int?)game.Value);
+                    .Where(x => x.Date >= oldestDataConsidered)
+                    .Where(x => !game.HasValue || x.GameName == game.Value);
 
                 var dailyData = await query
                     .GroupBy(x => x.Date)
                     .Select(g => new { Date = g.Key, Minutes = g.Sum(x => x.PlayTimeMinutes) })
                     .ToDictionaryAsync(x => x.Date, x => x.Minutes, cancellationToken);
 
-                var result = new ServerActivitySparklineResult
+                var today = DateTime.UtcNow.Date;
+                var dailyPlayTime = Enumerable.Range(0, days)
+                    .Select(i => (double)(dailyData.TryGetValue(today.AddDays(-(days - 1) + i), out var m) ? m : 0))
+                    .ToList();
+
+                return new ServerActivitySparklineResult
                 {
-                    DailyPlayTimeMinutes = new double[days],
-                    TotalPlaytimeMinutes = 0
+                    DailyPlayTimeMinutes = dailyPlayTime,
+                    TotalPlaytimeMinutes = (long)dailyPlayTime.Sum()
                 };
-
-                for (var i = 0; i < days; i++)
-                {
-                    var date = DateTime.UtcNow.Date.AddDays(-(days - 1) + i);
-                    result.DailyPlayTimeMinutes[i] = dailyData.TryGetValue(date, out var minutes) ? minutes : 0;
-                    result.TotalPlaytimeMinutes += (long)result.DailyPlayTimeMinutes[i];
-                }
-
-                return result;
             }, nameof(GetServerActivityAsync), new object[] { gameCode }, _cacheTimeSpan, true);
 
             try
@@ -260,7 +256,7 @@ namespace IW4MAdmin.Application.Misc
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not retrieve data for {Name}", nameof(GetServerActivityAsync));
-                return new ServerActivitySparklineResult { DailyPlayTimeMinutes = new double[days] };
+                return new ServerActivitySparklineResult { DailyPlayTimeMinutes = new List<double>(new double[days]) };
             }
         }
     }

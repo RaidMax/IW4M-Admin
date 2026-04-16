@@ -17,13 +17,13 @@
     </div>
 
     <div class="flex-1 flex items-end gap-px h-8">
-        @if (Data != null && Data.Length > 0)
+        @if (Data is { Count: > 0 })
         {
             var maxValue = Data.Max() is var max and > 0 ? max : 1;
-            for (var i = 0; i < Data.Length; i++)
+            for (var i = 0; i < Data.Count; i++)
             {
                 var value = Data[i];
-                var date = DateTime.UtcNow.Date.AddDays(-29 + i);
+                var date = DateTime.UtcNow.Date.AddDays(-(Data.Count - 1) + i);
                 var height = value > 0 ? Math.Max(4, (int)(value / maxValue * 32)) : 2;
                 var colorClass = value > 0 ? "bg-primary" : "bg-line";
                 var playTime = TimeSpan.FromMinutes(value);
@@ -40,18 +40,3 @@
         }
     </div>
 </div>
-
-@code {
-    [Inject] public required AppState AppState { get; set; }
-    
-    [Parameter] public required double[] Data { get; set; }
-    [Parameter] public TimeSpan TotalPlaytime { get; set; }
-
-    /// <summary>
-    /// Formats playtime for tooltips: humanized but capped at hours (no days, weeks, etc.).
-    /// </summary>
-    private static string FormatPlaytime(TimeSpan duration)
-    {
-        return duration.Humanize(maxUnit: TimeUnit.Hour);
-    }
-}

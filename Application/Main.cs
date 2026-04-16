@@ -198,6 +198,7 @@ namespace IW4MAdmin.Application
                 // do any needed housekeeping file/folder migrations
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
+                ConfigurationMigration.MigrateJsToCsPlugins();
 
                 logger.LogDebug("Configuring services...");
 

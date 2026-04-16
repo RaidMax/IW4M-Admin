@@ -20,15 +20,17 @@ namespace IW4MAdmin.Application.Plugin
     /// implementation of IPluginImporter
     /// discovers plugins and script plugins
     /// </summary>
-    public class PluginImporter : IPluginImporter
+    public class PluginImporter(
+        ILogger<PluginImporter> logger,
+        ApplicationConfiguration appConfig,
+        IMasterApi masterApi,
+        IRemoteAssemblyHandler remoteAssemblyHandler)
+        : IPluginImporter
     {
         private IEnumerable<PluginSubscriptionContent> _pluginSubscription;
         private const string PluginDir = "Plugins";
         private const string PluginV2Match = "^ *((?:var|const|let) +init)|function init";
-        private readonly ILogger _logger;
-        private readonly IRemoteAssemblyHandler _remoteAssemblyHandler;
-        private readonly IMasterApi _masterApi;
-        private readonly ApplicationConfiguration _appConfig;
+        private readonly ILogger _logger = logger;
 
         private static readonly Type[] FilterTypes =
         {
@@ -37,15 +39,6 @@ namespace IW4MAdmin.Application.Plugin
             typeof(Command),
             typeof(IBaseConfiguration)
         };
-
-        public PluginImporter(ILogger<PluginImporter> logger, ApplicationConfiguration appConfig, IMasterApi masterApi,
-            IRemoteAssemblyHandler remoteAssemblyHandler)
-        {
-            _logger = logger;
-            _masterApi = masterApi;
-            _remoteAssemblyHandler = remoteAssemblyHandler;
-            _appConfig = appConfig;
-        }
 
         /// <summary>
         /// discovers all the script plugins in the plugins dir
@@ -61,7 +54,16 @@ namespace IW4MAdmin.Application.Plugin
             }
 
             var scriptPluginFiles =
-                Directory.GetFiles(pluginDir, "*.js").AsEnumerable().Union(GetRemoteScripts()).ToList();
+                Directory.GetFiles(pluginDir, "*.js")
+                    .Where(jsFile =>
+                    {
+                        var csFile = Path.ChangeExtension(jsFile, ".cs");
+                        if (!File.Exists(csFile)) return true;
+                        _logger.LogInformation("Skipping {JsPlugin} — superseded by {CsPlugin}",
+                            Path.GetFileName(jsFile), Path.GetFileName(csFile));
+                        return false;
+                    })
+                    .Union(GetRemoteScripts()).ToList();
 
             var bothVersionPlugins = scriptPluginFiles.Select(fileName =>
             {
@@ -183,10 +185,10 @@ namespace IW4MAdmin.Application.Plugin
         {
             try
             {
-                _pluginSubscription ??= _masterApi
-                    .GetPluginSubscription(_appConfig.Id, _appConfig.SubscriptionId).Result;
+                _pluginSubscription ??= masterApi
+                    .GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result;
 
-                return _remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription
+                return remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription
                     .Where(sub => sub.Type == PluginType.Binary).Select(sub => sub.Content).ToArray());
             }
 
@@ -201,10 +203,10 @@ namespace IW4MAdmin.Application.Plugin
         {
             try
             {
-                _pluginSubscription ??= _masterApi
-                    .GetPluginSubscription(_appConfig.Id, _appConfig.SubscriptionId).Result;
+                _pluginSubscription ??= masterApi
+                    .GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result;
 
-                return _remoteAssemblyHandler.DecryptScripts(_pluginSubscription
+                return remoteAssemblyHandler.DecryptScripts(_pluginSubscription
                     .Where(sub => sub.Type == PluginType.Script).Select(sub => sub.Content).ToArray());
             }
 

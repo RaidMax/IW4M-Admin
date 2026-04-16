@@ -60,13 +60,14 @@ namespace WebfrontCore.Controllers.API
         [HttpGet("top")]
         [ProducesResponseType<TopStatsResponse>(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTopPlayers([FromQuery] int count = 25, [FromQuery] int offset = 0,
-            [FromQuery] string? serverId = null)
+            [FromQuery] string? serverId = null, [FromQuery] string? performanceBucketCode = null)
         {
             var response = await dataService.GetTopStatsAsync(new Models.TopStatsRequest
             {
                 Count = count,
                 Offset = offset,
-                ServerId = serverId
+                ServerId = serverId,
+                PerformanceBucketCode = performanceBucketCode
             });
             return Ok(response);
         }

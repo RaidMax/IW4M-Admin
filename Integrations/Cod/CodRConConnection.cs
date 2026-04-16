@@ -80,11 +80,18 @@ namespace Integrations.Cod
             }
             finally
             {
-                _log.LogDebug("Releasing OnComplete {Count}", ActiveQueries[Endpoint].OnComplete.CurrentCount);
-
-                if (ActiveQueries[Endpoint].OnComplete.CurrentCount == 0)
+                if (ActiveQueries.TryGetValue(Endpoint, out var finalState))
                 {
-                    ActiveQueries[Endpoint].OnComplete.Release();
+                    _log.LogDebug("Releasing OnComplete {Count}", finalState.OnComplete.CurrentCount);
+
+                    if (finalState.OnComplete.CurrentCount == 0)
+                    {
+                        finalState.OnComplete.Release();
+                    }
+                }
+                else
+                {
+                    _log.LogDebug("Connection state already disposed for {Endpoint}, skipping release", Endpoint);
                 }
             }
         }

@@ -89,6 +89,8 @@ namespace IW4MAdmin.Application
         private readonly IServiceProvider _serviceProvider;
         private readonly ChangeHistoryService _changeHistoryService;
         private readonly ApplicationConfiguration _appConfig;
+        private readonly SemaphoreSlim _syncSemaphore = new(1, 1);
+        private volatile ApplicationConfiguration _pendingSyncConfig;
         public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } = new();
 
         public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
@@ -255,12 +257,18 @@ namespace IW4MAdmin.Application
         private Task UpdateServerStates()
         {
             var index = 0;
-            return Task.WhenAll(_servers.Values.Select(server =>
+            var serverTasks = _servers.Values.Select(server =>
             {
                 var thisIndex = index;
                 Interlocked.Increment(ref index);
                 return ProcessUpdateHandler(server, thisIndex);
-            }));
+            }).ToList();
+
+            // Prevent Task.WhenAll from completing when all servers are dynamically removed,
+            // which would cause Start() to kill the event handler prematurely.
+            serverTasks.Add(Task.Delay(Timeout.Infinite, _isRunningTokenSource.Token));
+
+            return Task.WhenAll(serverTasks);
         }
 
         private async Task ProcessUpdateHandler(Server server, int index)
@@ -895,8 +903,18 @@ namespace IW4MAdmin.Application
                     var serverTokenSource = new CancellationTokenSource();
                     _serverCancellationTokens[serverInstance.Id] = serverTokenSource;
                     
-                    // Add to server collection
-                    _servers[serverInstance.Id] = serverInstance;
+                    // Add to server collection (TryAdd guards against duplicate from concurrent sync)
+                    if (!_servers.TryAdd(serverInstance.Id, serverInstance))
+                    {
+                        _logger.LogWarning("Server {ServerKey} was already added by another operation, disposing duplicate", serverKey);
+                        serverTokenSource.Dispose();
+                        _serverCancellationTokens.TryRemove(serverInstance.Id, out _);
+                        if (serverInstance is IDisposable disposable)
+                        {
+                            disposable.Dispose();
+                        }
+                        return null;
+                    }
                     
                     Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"]
                         .FormatExt(serverInstance.Hostname.StripColors()));
@@ -1059,51 +1077,76 @@ namespace IW4MAdmin.Application
         
         private async void SyncServersWithConfigurationAsync(ApplicationConfiguration newConfig)
         {
+            _pendingSyncConfig = newConfig;
+
+            if (!await _syncSemaphore.WaitAsync(0, CancellationToken))
+            {
+                _logger.LogDebug("Config sync already in progress, queued for re-sync");
+                return;
+            }
+
             try
             {
-                _logger.LogInformation("Syncing servers with configuration file...");
-                
-                var configuredServers = newConfig?.Servers ?? [];
-                
-                // Get current running server IDs
-                var currentServerIds = _servers.Keys.ToHashSet();
-                
-                // Build configured server IDs
-                var configuredServerIds = configuredServers
-                    .Select(s => $"{s.IPAddress}:{s.Port}")
-                    .ToHashSet();
-                
-                // Find servers to remove (in current but not in config)
-                var serversToRemove = currentServerIds.Except(configuredServerIds).ToList();
-                
-                // Find servers to add (in config but not current)
-                var serversToAdd = configuredServers
-                    .Where(s => !currentServerIds.Contains($"{s.IPAddress}:{s.Port}"))
-                    .ToList();
-                
-                // Remove servers that are no longer in config
-                foreach (var serverId in serversToRemove)
+                while (Interlocked.Exchange(ref _pendingSyncConfig, null) is { } configToSync)
                 {
-                    _logger.LogInformation("Configuration sync: Removing server {ServerId}", serverId);
-                    _serverCancellationTokens.TryGetValue(serverId, out var serverTokenSource);
-                    await RemoveServerAsync(serverId, persistConfig: false, serverTokenSource?.Token ?? CancellationToken.None);
+                    await ReconcileServersWithConfigAsync(configToSync);
                 }
-                
-                // Add new servers from config
-                foreach (var serverConfig in serversToAdd)
-                {
-                    _logger.LogInformation("Configuration sync: Adding server {IPAddress}:{Port}", 
-                        serverConfig.IPAddress, serverConfig.Port);
-                    await AddServerAsync(serverConfig, persistConfig: false, CancellationToken.None);
-                }
-                
-                _logger.LogInformation("Configuration sync complete. Added: {Added}, Removed: {Removed}", 
-                    serversToAdd.Count, serversToRemove.Count);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error syncing servers with configuration");
             }
+            finally
+            {
+                _syncSemaphore.Release();
+            }
+        }
+
+        /// <summary>
+        /// Diffs running servers against the provided configuration and applies changes.
+        /// Servers present in config but not running are added; servers running but absent from config are removed.
+        /// Safe to call with an unchanged config — produces a no-op when there is no diff.
+        /// </summary>
+        private async Task ReconcileServersWithConfigAsync(ApplicationConfiguration newConfig)
+        {
+            _logger.LogInformation("Syncing servers with configuration file...");
+
+            var configuredServers = newConfig?.Servers ?? [];
+
+            // Get current running server IDs
+            var currentServerIds = _servers.Keys.ToHashSet();
+
+            // Build configured server IDs
+            var configuredServerIds = configuredServers
+                .Select(s => $"{s.IPAddress}:{s.Port}")
+                .ToHashSet();
+
+            // Find servers to remove (in current but not in config)
+            var serversToRemove = currentServerIds.Except(configuredServerIds).ToList();
+
+            // Find servers to add (in config but not current)
+            var serversToAdd = configuredServers
+                .Where(s => !currentServerIds.Contains($"{s.IPAddress}:{s.Port}"))
+                .ToList();
+
+            // Remove servers that are no longer in config
+            foreach (var serverId in serversToRemove)
+            {
+                _logger.LogInformation("Configuration sync: Removing server {ServerId}", serverId);
+                _serverCancellationTokens.TryGetValue(serverId, out var serverTokenSource);
+                await RemoveServerAsync(serverId, persistConfig: false, serverTokenSource?.Token ?? CancellationToken.None);
+            }
+
+            // Add new servers from config
+            foreach (var serverConfig in serversToAdd)
+            {
+                _logger.LogInformation("Configuration sync: Adding server {IPAddress}:{Port}",
+                    serverConfig.IPAddress, serverConfig.Port);
+                await AddServerAsync(serverConfig, persistConfig: false, CancellationToken.None);
+            }
+
+            _logger.LogInformation("Configuration sync complete. Added: {Added}, Removed: {Removed}",
+                serversToAdd.Count, serversToRemove.Count);
         }
         
         private async Task OnServerValueRequested(ServerValueRequestEvent requestEvent, CancellationToken token)

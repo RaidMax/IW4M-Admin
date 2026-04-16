@@ -2,9 +2,13 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Data.Abstractions;
 using Data.Helpers;
+using Data.Models.Client;
+using Microsoft.AspNetCore.Authorization;
+using Scalar.AspNetCore;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -211,7 +215,21 @@ public class Program
 
         services.AddScoped<IActionService, ActionService>();
         services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
+
+        services.AddOpenApi();
+
+        services.AddAuthorizationBuilder()
+            .AddPolicy(ApiDocsPolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireAssertion(ctx =>
+                {
+                    var role = ctx.User.FindFirst(ClaimTypes.Role)?.Value;
+                    return Enum.TryParse<EFClient.Permission>(role, out var level)
+                           && level >= EFClient.Permission.SeniorAdmin;
+                }));
     }
+
+    private const string ApiDocsPolicy = "ApiDocs.View";
 
     private static void ConfigureMiddleware(WebApplication app)
     {
@@ -253,6 +271,19 @@ public class Program
 
         app.MapControllers()
             .RequireRateLimiting("concurrencyPolicy");
+
+        var openApi = app.MapOpenApi("/openapi/{documentName}.json");
+        var scalar = app.MapScalarApiReference("/api-docs", options =>
+        {
+            options.WithTitle("IW4MAdmin API")
+                .WithOpenApiRoutePattern("/openapi/{documentName}.json");
+        });
+
+        if (!app.Environment.IsDevelopment())
+        {
+            openApi.RequireAuthorization(ApiDocsPolicy);
+            scalar.RequireAuthorization(ApiDocsPolicy);
+        }
 
         app.MapStaticAssets();
 

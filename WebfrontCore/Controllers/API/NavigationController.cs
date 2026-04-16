@@ -8,6 +8,7 @@ namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class NavigationController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         [HttpGet]

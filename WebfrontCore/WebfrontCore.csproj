@@ -21,6 +21,8 @@
         <Configurations>Debug;Release;Prerelease</Configurations>
         <ImplicitUsings>true</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -45,6 +47,8 @@
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
         <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="10.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.14.0" />
         <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
     </ItemGroup>

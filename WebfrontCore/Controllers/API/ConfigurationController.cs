@@ -11,6 +11,9 @@ namespace WebfrontCore.Controllers.API
     [ApiController]
     [Authorize(Roles = nameof(EFClient.Permission.Owner))]
     [Route("api/[controller]")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public class ConfigurationController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         [HttpGet("files")]

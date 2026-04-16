@@ -12,6 +12,9 @@ namespace WebfrontCore.Controllers.API
     [ApiController]
     [Authorize]
     [Route("api/[controller]")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public class AdminController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         [HttpGet("audit")]

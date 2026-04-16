@@ -12,6 +12,7 @@ namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class PenaltyController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         [Authorize(Policy = $"Permissions.{nameof(WebfrontEntity.Penalty)}.{nameof(WebfrontPermission.Read)}")]

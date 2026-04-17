@@ -1,11 +1,18 @@
+using System.Net.Mime;
 using Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore.Controllers.API;
 
+/// <summary>
+/// Zombie match data — leaderboards, map records, and per-player match history.
+/// All endpoints require the Zombie Stats Premium plugin; without it every route returns 404.
+/// </summary>
 [ApiController]
 [Route("api/zombie")]
+[Tags("Zombie Stats")]
+[Produces(MediaTypeNames.Application.Json)]
 public class ZombieStatsController(
     ILogger<ZombieStatsController> logger,
     IServiceProvider serviceProvider) : ControllerBase
@@ -16,8 +23,15 @@ public class ZombieStatsController(
     private readonly IZombieMatchHistoryService? _matchHistoryService =
         serviceProvider.GetService<IZombieMatchHistoryService>();
 
+    /// <remarks>
+    /// Returns the games, maps, and player counts that can be used to filter leaderboard entries.
+    /// Use the values returned here to populate the <c>game</c>, <c>mapId</c>, and <c>playerCount</c>
+    /// query parameters on <c>GET /api/zombie/leaderboard</c>.
+    /// </remarks>
+    /// <response code="200">Metadata returned.</response>
+    /// <response code="404">Zombie Stats Premium plugin is not installed.</response>
     [HttpGet("leaderboard/metadata")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ZombieLeaderboardMetadata>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLeaderboardMetadata()
     {
@@ -30,8 +44,19 @@ public class ZombieStatsController(
         return Ok(metadata);
     }
 
+    /// <remarks>
+    /// Returns ranked entries for a game/map/player-count, sorted by highest round descending.
+    /// Page size is capped at 100.
+    /// </remarks>
+    /// <param name="game">Game code (e.g. <c>T4</c>, <c>T5</c>, <c>T6</c>).</param>
+    /// <param name="mapId">Map identifier, from <c>/api/zombie/leaderboard/metadata</c>.</param>
+    /// <param name="playerCount">Player count filter, from metadata.</param>
+    /// <param name="offset">Pagination offset. Defaults to 0.</param>
+    /// <param name="count">Page size. Defaults to 25, capped at 100.</param>
+    /// <response code="200">Leaderboard page returned.</response>
+    /// <response code="404">Zombie Stats Premium plugin is not installed.</response>
     [HttpGet("leaderboard")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ZombieLeaderboardResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLeaderboardEntries(
         [FromQuery] Reference.Game game,
@@ -50,8 +75,16 @@ public class ZombieStatsController(
         return Ok(response);
     }
 
+    /// <remarks>
+    /// Returns notable records for a map across all player counts (highest round, most kills,
+    /// best economy, etc.).
+    /// </remarks>
+    /// <param name="game">Game code (e.g. <c>T4</c>, <c>T5</c>, <c>T6</c>).</param>
+    /// <param name="mapId">Map identifier, from <c>/api/zombie/leaderboard/metadata</c>.</param>
+    /// <response code="200">Records returned (may be empty).</response>
+    /// <response code="404">Zombie Stats Premium plugin is not installed.</response>
     [HttpGet("leaderboard/records")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<List<ZombieMapStatRecord>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMapRecords(
         [FromQuery] Reference.Game game,
@@ -66,8 +99,14 @@ public class ZombieStatsController(
         return Ok(records);
     }
 
+    /// <remarks>
+    /// Returns all players' stats, per-round breakdowns, and the full event timeline for one match.
+    /// </remarks>
+    /// <param name="matchId">Match identifier, from a leaderboard or match-history entry.</param>
+    /// <response code="200">Match detail returned.</response>
+    /// <response code="404">Match not found, or Zombie Stats Premium is not installed.</response>
     [HttpGet("match/{matchId:int}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ZombieMatchDetail>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMatchDetail(int matchId)
     {
@@ -88,8 +127,18 @@ public class ZombieStatsController(
         }
     }
 
+    /// <remarks>
+    /// Returns a player's recent zombie matches with round breakdowns and event timelines.
+    /// Page size is capped at 50.
+    /// </remarks>
+    /// <param name="clientId">Player's IW4MAdmin client ID.</param>
+    /// <param name="serverEndpoint">Optional server endpoint (<c>ip:port</c>) to filter by.</param>
+    /// <param name="offset">Pagination offset. Defaults to 0.</param>
+    /// <param name="count">Page size. Defaults to 10, capped at 50.</param>
+    /// <response code="200">Match history returned (may be empty).</response>
+    /// <response code="404">Zombie Stats Premium plugin is not installed.</response>
     [HttpGet("client/{clientId:int}/history")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<List<ZombieMatchHistoryMatch>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPlayerMatchHistory(
         int clientId,

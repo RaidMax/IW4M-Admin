@@ -3,6 +3,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Components.Features.Home.Models;
 using WebfrontCore.Components.Features.Console.Models;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
@@ -15,6 +16,8 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Information")]
     [Produces("application/json")]
+    [TagDescription(
+        "General information about the IW4MAdmin instance — About page content, command help index, and runtime/system stats.")]
     public class InformationController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         /// <remarks>

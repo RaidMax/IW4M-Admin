@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Controllers.API.Models;
 
@@ -15,6 +16,7 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Console")]
     [Produces("application/json")]
+    [TagDescription("Execute IW4MAdmin commands against a specific game server from the webfront console.")]
     public class ConsoleController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         /// <remarks>

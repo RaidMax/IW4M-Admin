@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.UI.Navigation.Models;
 
@@ -14,6 +15,8 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Navigation")]
     [Produces("application/json")]
+    [TagDescription(
+        "Webfront navigation data — the entries shown in the top bar and side menu, filtered to pages the caller is allowed to see.")]
     public class NavigationController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         /// <remarks>

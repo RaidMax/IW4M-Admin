@@ -232,7 +232,10 @@ public class Program
         services.AddScoped<IActionService, ActionService>();
         services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
-        services.AddOpenApi();
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer<Core.OpenApi.TagDescriptionsTransformer>();
+        });
 
         services.AddAuthorizationBuilder()
             .AddPolicy(ApiDocsPolicy, policy => policy

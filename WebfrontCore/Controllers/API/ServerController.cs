@@ -7,6 +7,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Components.Features.Servers.Models;
 using WebfrontCore.Controllers.API.Models;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
@@ -19,6 +20,8 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Servers")]
     [Produces("application/json")]
+    [TagDescription(
+        "Monitored game servers — live status, scoreboards, client history, and dynamic add/remove at runtime (Owner only).")]
     public class ServerController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         /// <remarks>

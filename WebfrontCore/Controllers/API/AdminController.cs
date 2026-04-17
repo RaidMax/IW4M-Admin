@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Components.Features.Servers.Models;
@@ -19,6 +20,9 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Admin")]
     [Produces("application/json")]
+    [TagDescription(
+        "Administrative endpoints — audit log, bans list, alerts, and reports. " +
+        "All routes require an authenticated session; individual endpoints may require additional permission policies.")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public class AdminController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Controllers.API.Models;
+using WebfrontCore.Core.OpenApi;
 
 namespace WebfrontCore.Controllers.API
 {
@@ -13,6 +14,8 @@ namespace WebfrontCore.Controllers.API
     [Route("api/stats")]
     [Tags("Stats")]
     [Produces("application/json")]
+    [TagDescription(
+        "Player statistics — advanced hit data, top-player leaderboards, chat search and context, and automated-penalty context.")]
     public class StatsController(
         ILogger<StatsController> logger,
         Core.Services.IWebfrontDataService dataService)
@@ -52,6 +55,7 @@ namespace WebfrontCore.Controllers.API
         /// <param name="count">Page size (defaults to 25).</param>
         /// <param name="offset">Pagination offset.</param>
         /// <param name="serverId">Optional server id to scope the leaderboard to.</param>
+        /// <param name="performanceBucketCode">Optional performance-bucket code to scope the leaderboard to a specific ranking pool.</param>
         /// <response code="200">Top players returned.</response>
         [HttpGet("top")]
         [ProducesResponseType<TopStatsResponse>(StatusCodes.Status200OK)]

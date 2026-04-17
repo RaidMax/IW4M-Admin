@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 using Data.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +18,7 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Penalties")]
     [Produces("application/json")]
+    [TagDescription("Penalty listing and unban operations. Bans, kicks, warnings, mutes and related records.")]
     public class PenaltyController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)
     {
         /// <remarks>
@@ -30,6 +32,7 @@ namespace WebfrontCore.Controllers.API
         /// <param name="ignoreAutomated">Hide automated penalties when <c>true</c> (default).</param>
         /// <response code="200">Penalty list returned.</response>
         /// <response code="403">Caller lacks <c>Permissions.Penalty.Read</c>.</response>
+        [HttpGet]
         [Authorize(Policy = $"Permissions.{nameof(WebfrontEntity.Penalty)}.{nameof(WebfrontPermission.Read)}")]
         [ProducesResponseType<IList<PenaltyInfo>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

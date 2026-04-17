@@ -4,6 +4,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using WebfrontCore.Components.Features.Admin.Models;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
@@ -17,6 +18,8 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Configuration")]
     [Produces("application/json")]
+    [TagDescription(
+        "IW4MAdmin JSON configuration file management. Owner-only — all endpoints require the caller to be signed in as the server Owner.")]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public class ConfigurationController(IManager manager, IWebfrontDataService dataService) : BaseController(manager)

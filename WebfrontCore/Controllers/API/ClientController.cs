@@ -9,6 +9,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Controllers.API.Models;
@@ -22,6 +23,7 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Clients")]
     [Produces("application/json")]
+    [TagDescription("Player (client) lookups, profile and meta data, plus login/logout for the web session cookie.")]
     public class ClientController(
         ILogger<ClientController> logger,
         IManager manager,

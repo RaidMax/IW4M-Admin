@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Controllers.API.Models;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Controllers.API
@@ -14,6 +15,8 @@ namespace WebfrontCore.Controllers.API
     [Route("api/[controller]")]
     [Tags("Interactions")]
     [Produces("application/json")]
+    [TagDescription(
+        "Plugin-provided \"interactions\" — named UI fragments (forms, action buttons, embedded HTML) that plugins register with the webfront. Each interaction is rendered on demand by name.")]
     public class InteractionController(IManager manager, IWebfrontDataService dataService)
         : BaseController(manager)
     {

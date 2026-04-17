@@ -234,6 +234,7 @@ public class Program
 
         services.AddOpenApi(options =>
         {
+            options.AddDocumentTransformer<Core.OpenApi.ServerUrlTransformer>();
             options.AddDocumentTransformer<Core.OpenApi.TagDescriptionsTransformer>();
         });
 
@@ -254,6 +255,22 @@ public class Program
     {
         var appConfig = app.Services.GetRequiredService<ApplicationConfiguration>();
         var manager = app.Services.GetRequiredService<IManager>();
+
+        // Honour X-Forwarded-* from Cloudflare / nginx / reverse proxies so Request.Scheme
+        // and Request.Host reflect the public URL the browser used. Without this, Scalar
+        // and any absolute URL generation default to the Kestrel HTTP bind address and
+        // trigger mixed-content blocking when the site is fronted by TLS termination.
+        var forwardedOptions = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+        {
+            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+                               | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost
+                               | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+        };
+        // Accept headers from any upstream — the reverse proxy is expected to be the
+        // only ingress. Users who expose Kestrel directly won't send these headers.
+        forwardedOptions.KnownNetworks.Clear();
+        forwardedOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedOptions);
 
         if (app.Environment.IsDevelopment())
         {

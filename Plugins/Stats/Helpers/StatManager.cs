@@ -109,15 +109,23 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             long? serverId = null, string performanceBucketCode = null)
         {
             var oldestDate = DateTime.UtcNow - oldestStat;
+            // Pre-bucket-migration rankings have PerformanceBucketId == null. Treat those
+            // as belonging to the "default" bucket so established servers don't lose their
+            // existing top-stats history once a bucket is configured.
+            var isDefaultBucket = IsDefaultBucketCode(performanceBucketCode);
             return ranking => ranking.ServerId == serverId
                               && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
                               && ranking.CreatedDateTime >= oldestDate
                               && ranking.ZScore != null
                               && ranking.PerformanceMetric != null
                               && ranking.Newest
-                              && ranking.PerformanceBucket.Code == performanceBucketCode
+                              && (ranking.PerformanceBucket.Code == performanceBucketCode
+                                  || (isDefaultBucket && ranking.PerformanceBucketId == null))
                               && ranking.Client.TotalConnectionTime >= (int)minPlayTime.TotalSeconds;
         }
+
+        private static bool IsDefaultBucketCode(string code) =>
+            string.IsNullOrEmpty(code) || string.Equals(code, "default", StringComparison.OrdinalIgnoreCase);
 
         public async Task<int> GetTotalRankedPlayers(long? serverId = null, string performanceBucket = null)
         {
@@ -159,12 +167,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
 
+            var includeNullBucket = IsDefaultBucketCode(bucketConfig.Code);
             foreach (var clientId in clientIdsList)
             {
                 var eachRank = await context.Set<EFClientRankingHistory>()
                     .Where(ranking => ranking.ClientId == clientId)
                     .Where(ranking => ranking.ServerId == serverId)
-                    .Where(ranking => ranking.PerformanceBucket.Code == bucketConfig.Code)
+                    .Where(ranking => ranking.PerformanceBucket.Code == bucketConfig.Code
+                                      || (includeNullBucket && ranking.PerformanceBucketId == null))
                     .OrderByDescending(ranking => ranking.CreatedDateTime)
                     .Select(ranking => new RankingSnapshot
                     {
@@ -1507,22 +1517,30 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private async Task PruneOldRankings(DatabaseContext context, int clientId, long? serverId = null,
             string performanceBucketCode = null)
         {
+            // Pre-bucket rankings have PerformanceBucketId == null — treat them as
+            // part of the default bucket so the transition to bucketed ranking doesn't
+            // leave two Newest=true rows per client/server.
+            var includeNullBucket = IsDefaultBucketCode(performanceBucketCode);
+
             var totalRankingEntries = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
-                .Where(r => r.PerformanceBucket.Code == performanceBucketCode)
+                .Where(r => r.PerformanceBucket.Code == performanceBucketCode
+                            || (includeNullBucket && r.PerformanceBucketId == null))
                 .CountAsync();
 
-            var mostRecent = await context.Set<EFClientRankingHistory>()
+            var staleNewest = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
-                .Where(r => r.PerformanceBucket.Code == performanceBucketCode)
-                .FirstOrDefaultAsync(r => r.Newest);
+                .Where(r => r.PerformanceBucket.Code == performanceBucketCode
+                            || (includeNullBucket && r.PerformanceBucketId == null))
+                .Where(r => r.Newest)
+                .ToListAsync();
 
-            if (mostRecent != null)
+            foreach (var stale in staleNewest)
             {
-                mostRecent.Newest = false;
-                context.Update(mostRecent);
+                stale.Newest = false;
+                context.Update(stale);
             }
 
             const int maxRankingCount = 1728; // 60 / 2.5 * 24 * 3 ( 3 days at sample every 2.5 minutes)
@@ -1532,7 +1550,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var lastRating = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == clientId)
                     .Where(r => r.ServerId == serverId)
-                    .Where(r => r.PerformanceBucket.Code == performanceBucketCode)
+                    .Where(r => r.PerformanceBucket.Code == performanceBucketCode
+                                || (includeNullBucket && r.PerformanceBucketId == null))
                     .OrderBy(r => r.CreatedDateTime)
                     .FirstOrDefaultAsync();
 

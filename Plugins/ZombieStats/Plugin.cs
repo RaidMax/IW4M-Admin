@@ -38,6 +38,7 @@ public class Plugin : IPluginV2
         _enhancer = serviceProvider.GetService(typeof(IZombieStatsEnhancer)) as IZombieStatsEnhancer;
 
         IManagementEventSubscriptions.Load += OnLoad;
+        IManagementEventSubscriptions.Unload += OnUnload;
         IManagementEventSubscriptions.ClientStateAuthorized += OnClientAuthorized;
         IManagementEventSubscriptions.ClientStateDisposed += OnClientDisposed;
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
@@ -214,6 +215,23 @@ public class Plugin : IPluginV2
         {
             _enhancer.OnMatchStarted(matchEvent.Server);
             await _enhancer.UpdateState(token);
+        }
+    }
+
+    private async Task OnUnload(IManager manager, CancellationToken token)
+    {
+        // Flush any queued zombie persistence so in-flight match/round/event rows
+        // don't leave the DB in an inconsistent state on restart.
+        if (_enhancer is not null)
+        {
+            try
+            {
+                await _enhancer.UpdateState(token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to flush zombie stats on unload");
+            }
         }
     }
 

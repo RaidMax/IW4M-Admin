@@ -6,6 +6,7 @@ namespace WebfrontCore.Controllers.API
 {
     [ApiController]
     [Route("api/stats")]
+    [Produces("application/json")]
     public class StatsController(
         ILogger<StatsController> logger,
         Core.Services.IWebfrontDataService dataService)

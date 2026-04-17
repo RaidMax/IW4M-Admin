@@ -20,6 +20,7 @@ namespace WebfrontCore.Controllers.API
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class ClientController(
         ILogger<ClientController> logger,
         IManager manager,

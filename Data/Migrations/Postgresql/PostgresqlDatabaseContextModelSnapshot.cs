@@ -798,9 +798,6 @@ namespace Data.Migrations.Postgresql
 
                     b.HasKey("MapId");
 
-                    b.HasIndex("Name", "Game")
-                        .IsUnique();
-
                     b.ToTable("EFMaps", (string)null);
                 });
 

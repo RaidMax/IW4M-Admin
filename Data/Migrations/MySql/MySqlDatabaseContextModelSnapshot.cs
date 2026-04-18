@@ -791,15 +791,12 @@ namespace Data.Migrations.MySql
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedDateTime")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("MapId");
-
-                    b.HasIndex("Name", "Game")
-                        .IsUnique();
 
                     b.ToTable("EFMaps", (string)null);
                 });

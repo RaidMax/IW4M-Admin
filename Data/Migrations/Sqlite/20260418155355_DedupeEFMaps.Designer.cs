@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations.Sqlite
 {
     [DbContext(typeof(SqliteDatabaseContext))]
-    [Migration("20260418153226_DedupeEFMapsAddUniqueNameGameIndex")]
-    partial class DedupeEFMapsAddUniqueNameGameIndex
+    [Migration("20260418155355_DedupeEFMaps")]
+    partial class DedupeEFMaps
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -763,9 +763,6 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("TEXT");
 
                     b.HasKey("MapId");
-
-                    b.HasIndex("Name", "Game")
-                        .IsUnique();
 
                     b.ToTable("EFMaps", (string)null);
                 });

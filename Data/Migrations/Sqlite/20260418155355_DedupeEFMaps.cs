@@ -5,17 +5,17 @@
 namespace Data.Migrations.Sqlite
 {
     /// <inheritdoc />
-    public partial class DedupeEFMapsAddUniqueNameGameIndex : Migration
+    public partial class DedupeEFMaps : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Before adding the unique index, merge any pre-existing duplicates created by
-            // the pre-fix race in ServerDataCollector.GetOrCreateMap (two concurrent server
-            // scans both inserting the same (Name, Game) row). Re-point FK references onto
-            // the canonical (lowest) MapId per group, then delete the orphans.
+            // Merge pre-existing duplicate EFMaps rows that share (Name, Game). These were
+            // produced by the pre-fix race in ServerDataCollector.GetOrCreateMap — two
+            // concurrent server scans both inserting the same (Name, Game) row.
+            // Re-point FK references onto the canonical (lowest) MapId per group, then
+            // delete the orphans. No schema change; data cleanup only.
 
-            // Re-point EFServerSnapshot.MapId onto the canonical MapId.
             migrationBuilder.Sql(@"
                 UPDATE ""EFServerSnapshot""
                 SET ""MapId"" = (
@@ -27,7 +27,6 @@ namespace Data.Migrations.Sqlite
                 )
                 WHERE ""MapId"" IS NOT NULL;");
 
-            // Re-point EFZombieMatches.MapId onto the canonical MapId.
             migrationBuilder.Sql(@"
                 UPDATE ""EFZombieMatches""
                 SET ""MapId"" = (
@@ -39,26 +38,17 @@ namespace Data.Migrations.Sqlite
                 )
                 WHERE ""MapId"" IS NOT NULL;");
 
-            // Delete the now-orphan EFMaps rows.
             migrationBuilder.Sql(@"
                 DELETE FROM ""EFMaps""
                 WHERE ""MapId"" NOT IN (
                     SELECT MIN(""MapId"") FROM ""EFMaps"" GROUP BY ""Name"", ""Game""
                 );");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EFMaps_Name_Game",
-                table: "EFMaps",
-                columns: new[] { "Name", "Game" },
-                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_EFMaps_Name_Game",
-                table: "EFMaps");
+            // Dedupe is not reversible — the orphan rows are gone.
         }
     }
 }

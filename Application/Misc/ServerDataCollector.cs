@@ -30,6 +30,12 @@ namespace IW4MAdmin.Application.Misc
         private bool _inProgress;
         private TimeSpan _period;
 
+        // Serializes GetOrCreateMap across all servers in a single collection tick so that
+        // two servers discovering the same new map cannot both insert an EFMaps row for it.
+        // Contention is negligible — collection runs on a long interval, serving ~1 call
+        // per server per tick, and EFMaps reads/writes are cheap.
+        private readonly SemaphoreSlim _getOrCreateMapLock = new(1, 1);
+
         public ServerDataCollector(ILogger<ServerDataCollector> logger, ApplicationConfiguration appConfig,
             IManager manager, IDatabaseContextFactory contextFactory)
         {
@@ -97,41 +103,31 @@ namespace IW4MAdmin.Application.Misc
 
         private async Task<int> GetOrCreateMap(string mapName, Reference.Game game, CancellationToken token)
         {
-            await using var context = _contextFactory.CreateContext();
-            var existingMap =
-                await context.Maps.FirstOrDefaultAsync(map => map.Name == mapName && map.Game == game, token);
-
-            if (existingMap != null)
-            {
-                return existingMap.MapId;
-            }
-
-            var newMap = new EFMap
-            {
-                Name = mapName,
-                Game = game
-            };
-
-            context.Maps.Add(newMap);
-
+            await _getOrCreateMapLock.WaitAsync(token);
             try
             {
+                await using var context = _contextFactory.CreateContext();
+                var existingMap = await context.Maps
+                    .FirstOrDefaultAsync(map => map.Name == mapName && map.Game == game, token);
+
+                if (existingMap != null)
+                {
+                    return existingMap.MapId;
+                }
+
+                var newMap = new EFMap
+                {
+                    Name = mapName,
+                    Game = game
+                };
+
+                context.Maps.Add(newMap);
                 await context.SaveChangesAsync(token);
                 return newMap.MapId;
             }
-            catch (DbUpdateException)
+            finally
             {
-                // A concurrent collector won the race for the unique (Name, Game) row.
-                // Detach our losing insert and return the winner's MapId.
-                context.Entry(newMap).State = EntityState.Detached;
-                var winner = await context.Maps
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(m => m.Name == mapName && m.Game == game, token);
-                if (winner is null)
-                {
-                    throw;
-                }
-                return winner.MapId;
+                _getOrCreateMapLock.Release();
             }
         }
 

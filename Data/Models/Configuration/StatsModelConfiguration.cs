@@ -75,7 +75,13 @@ namespace Data.Models.Configuration
                 entity.ToTable("EFWeapons");
             });
 
-            builder.Entity<EFMap>(entity => { entity.ToTable("EFMaps"); });
+            builder.Entity<EFMap>(entity =>
+            {
+                entity.ToTable("EFMaps");
+                // Prevents ServerDataCollector.GetOrCreateMap from racing duplicates into
+                // this table (two servers discovering the same new map at the same tick).
+                entity.HasIndex(m => new { m.Name, m.Game }).IsUnique();
+            });
             builder.Entity<EFClientHitStatistic>(entity =>
             {
                 entity.ToTable("EFClientHitStatistics");

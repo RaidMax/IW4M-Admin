@@ -761,6 +761,9 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("MapId");
 
+                    b.HasIndex("Name", "Game")
+                        .IsUnique();
+
                     b.ToTable("EFMaps", (string)null);
                 });
 

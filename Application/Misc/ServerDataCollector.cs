@@ -113,9 +113,26 @@ namespace IW4MAdmin.Application.Misc
             };
 
             context.Maps.Add(newMap);
-            await context.SaveChangesAsync(token);
 
-            return newMap.MapId;
+            try
+            {
+                await context.SaveChangesAsync(token);
+                return newMap.MapId;
+            }
+            catch (DbUpdateException)
+            {
+                // A concurrent collector won the race for the unique (Name, Game) row.
+                // Detach our losing insert and return the winner's MapId.
+                context.Entry(newMap).State = EntityState.Detached;
+                var winner = await context.Maps
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.Name == mapName && m.Game == game, token);
+                if (winner is null)
+                {
+                    throw;
+                }
+                return winner.MapId;
+            }
         }
 
         private async Task SaveData(IEnumerable<EFServerSnapshot> snapshots, CancellationToken token)

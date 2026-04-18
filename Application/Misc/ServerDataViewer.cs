@@ -197,7 +197,7 @@ namespace IW4MAdmin.Application.Misc
         public async Task<int> RankedClientsCountAsync(long? serverId = null, string performanceBucketCode = null,
             CancellationToken token = default)
         {
-            _rankedClientsCache.SetCacheItem((set, idsList, cancellationToken) =>
+            _rankedClientsCache.SetCacheItem(async (set, idsList, cancellationToken) =>
             {
                 long? id = null;
                 string bucket = null;
@@ -213,8 +213,10 @@ namespace IW4MAdmin.Application.Misc
                     bucket = (string)ids.Last();
                 }
 
-                return _statManager.GetBucketConfig(serverId)
-                    .ContinueWith(result => _statManager.GetTotalRankedPlayers(id, bucket), cancellationToken).Result;
+                // GetTotalRankedPlayers resolves its own bucket config — no need to pre-fetch.
+                // The prior .ContinueWith(...).Result pattern blocked sync-over-async and
+                // orphaned the DbContext inside GetBucketConfig, leaking Npgsql connections.
+                return await _statManager.GetTotalRankedPlayers(id, bucket);
             }, nameof(_rankedClientsCache), [serverId, performanceBucketCode], _cacheTimeSpan);
 
             try

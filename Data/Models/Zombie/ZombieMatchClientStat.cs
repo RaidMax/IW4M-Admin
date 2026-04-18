@@ -5,4 +5,5 @@ namespace Data.Models.Zombie;
 public class ZombieMatchClientStat : ZombieClientStat
 {
     [NotMapped] public int? JoinedRound { get; set; }
+    [NotMapped] public int? LastRoundReached { get; set; }
 }

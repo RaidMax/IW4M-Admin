@@ -196,7 +196,7 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            _enhancer.OnMatchEnded(matchEvent.Server);
+            await _enhancer.OnMatchEnded(matchEvent.Server);
             await _enhancer.UpdateState(token);
         }
     }

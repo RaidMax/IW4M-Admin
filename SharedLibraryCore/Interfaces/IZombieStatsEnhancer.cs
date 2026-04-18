@@ -45,7 +45,7 @@ public interface IZombieStatsEnhancer
     /// <summary>
     /// Called when a match ends on a zombie server.
     /// </summary>
-    void OnMatchEnded(IGameServer server);
+    Task OnMatchEnded(IGameServer server);
 
     /// <summary>
     /// Persists all pending state changes to the database.

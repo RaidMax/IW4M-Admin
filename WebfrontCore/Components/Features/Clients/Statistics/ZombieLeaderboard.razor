@@ -161,7 +161,7 @@
                                             {
                                                 <p>duration of @entry.Duration</p>
                                             }
-                                            <p>happened <Tooltip Text="@entry.MatchDate.UtcDateTime.ToStandardFormat()">@entry.MatchDate.Humanize()</Tooltip></p>
+                                            <p>happened <Tooltip Text="@entry.MatchDate.UtcDateTime.ToStandardFormat()" WrapperClass="inline-block">@entry.MatchDate.Humanize()</Tooltip></p>
                                         </span>
                                     </div>
 
@@ -281,7 +281,7 @@
                                                     <i class="ph ph-desktop-tower text-subtle"></i>
                                                     <ColorCode Value="@entry.ServerName"/>
                                                 }
-                                                <Tooltip Text="Match ID — pass to !zmdelete to remove this record (Owner only)">
+                                                <Tooltip Text="Match ID">
                                                     <span class="ml-1 px-1.5 py-0.5 rounded border border-line/60 bg-surface text-[10px] font-semibold text-subtle tracking-wide">
                                                         #@entry.MatchId
                                                     </span>

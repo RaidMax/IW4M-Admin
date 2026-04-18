@@ -54,8 +54,10 @@ public partial class ZombieMatchHistory
     private static bool EventMatchesFilter(ZombieMatchHistoryEvent evt, string filter) => filter switch
     {
         "critical" => evt.Category is "danger" or "critical",
-        "powerups" => evt.Category is "powerup" or "perk",
-        "economy" => evt.Category is "weapon" or "box" or "box-pass" or "door" or "trap" or "build",
+        // "Drops" = things that fall from zombies (nukes, max ammo, insta-kill, etc.)
+        "powerups" => evt.Category is "powerup",
+        // Perks are bought with points, so they belong to Economy alongside weapons/doors/etc.
+        "economy" => evt.Category is "weapon" or "box" or "box-pass" or "door" or "trap" or "build" or "perk",
         _ => true
     };
 

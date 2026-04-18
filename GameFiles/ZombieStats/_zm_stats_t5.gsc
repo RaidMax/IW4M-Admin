@@ -312,7 +312,16 @@ OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, 
         // we only want to log damage if they aren't going to die
         if ( IsDefined( self.health ) && iDamage < self.health )
         {
-            logPrint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+            // Cap reported damage at the victim's max HP — the engine can pass
+            // iDamage values far in excess of what the zombie could actually absorb
+            // (splash / environmental damage at high rounds).
+            reportedDamage = iDamage;
+            if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && reportedDamage > self.maxhealth )
+            {
+                reportedDamage = self.maxhealth;
+            }
+
+            logPrint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
         }
     }
 
@@ -326,17 +335,18 @@ OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHi
     {
         victimInfo = BuildPlayerInfoString( self );
         attackerInfo = BuildPlayerInfoString( eAttacker );
-        damage = iDamage;
-
-        if ( IsDefined( eAttacker.maxhealth ) && eAttacker.maxhealth > 0 )
-        {
-            damage = min( eAttacker.health, iDamage );
-        }
 
         if ( IsPlayer( eInflictor ) )
         {
             attackerInfo = BuildPlayerInfoString( eInflictor );
-            damage = min( eInflictor.health, iDamage );
+        }
+
+        // Cap kill damage at the victim's max HP so the final blow doesn't
+        // include overkill / engine-inflated iDamage.
+        damage = iDamage;
+        if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && damage > self.maxhealth )
+        {
+            damage = self.maxhealth;
         }
 
         logPrint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );

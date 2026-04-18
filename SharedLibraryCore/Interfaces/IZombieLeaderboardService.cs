@@ -65,7 +65,7 @@ public class ZombieLeaderboardEntry
     public int Rank { get; set; }
     public int MatchId { get; set; }
     public int HighestRound { get; set; }
-    public string MatchDate { get; set; } = string.Empty;
+    public DateTimeOffset MatchDate { get; set; }
     public string MapName { get; set; } = string.Empty;
     public string? Duration { get; set; }
     public string? ServerName { get; set; }

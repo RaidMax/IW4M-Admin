@@ -546,7 +546,16 @@ OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, 
         // so we check if the zombie is still alive after the hit
         if ( IsDefined( self.health ) && self.health > 0 )
         {
-            logprint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+            // Cap reported damage at the victim's max HP — the engine can pass
+            // iDamage values far in excess of what the zombie could actually absorb
+            // (seen in Die Rise at round 30: MOD_PROJECTILE_SPLASH reporting ~5.5M/hit).
+            reportedDamage = iDamage;
+            if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && reportedDamage > self.maxhealth )
+            {
+                reportedDamage = self.maxhealth;
+            }
+
+            logprint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
         }
     }
 
@@ -560,17 +569,18 @@ OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHi
     {
         victimInfo = BuildPlayerInfoString( self );
         attackerInfo = BuildPlayerInfoString( eAttacker );
-        damage = iDamage;
-
-        if ( IsDefined( eAttacker.maxhealth ) && eAttacker.maxhealth > 0 )
-        {
-            damage = min( eAttacker.health, iDamage );
-        }
 
         if ( IsPlayer( eInflictor ) )
         {
             attackerInfo = BuildPlayerInfoString( eInflictor );
-            damage = min( eInflictor.health, iDamage );
+        }
+
+        // Cap kill damage at the victim's max HP so the final blow doesn't
+        // include overkill / engine-inflated iDamage.
+        damage = iDamage;
+        if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && damage > self.maxhealth )
+        {
+            damage = self.maxhealth;
         }
 
         logprint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );

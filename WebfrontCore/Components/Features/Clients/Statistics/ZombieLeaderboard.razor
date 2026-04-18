@@ -161,7 +161,7 @@
                                             {
                                                 <p>duration of @entry.Duration</p>
                                             }
-                                            <p>happened @entry.MatchDate</p>
+                                            <p>happened <Tooltip Text="@entry.MatchDate.UtcDateTime.ToStandardFormat()">@entry.MatchDate.Humanize()</Tooltip></p>
                                         </span>
                                     </div>
 
@@ -225,7 +225,8 @@
                                                         var kpd = p.Downs == 0 ? p.Kills : (double)p.Kills / p.Downs;
                                                         var hsPercent = p.Kills == 0 ? 0 : (double)p.HeadshotKills / p.Kills * 100;
                                                         var netPoints = p.PointsEarned - p.PointsSpent;
-                                                        var dmgRatio = p.DamageReceived == 0 ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                                                        var dmgRatioInfinite = p.DamageReceived == 0;
+                                                        var dmgRatio = dmgRatioInfinite ? 0 : (double)p.DamageDealt / p.DamageReceived;
 
                                                         <tr class="hover:bg-surface-hover transition-colors">
                                                             <td class="py-2 px-4">
@@ -264,7 +265,7 @@
                                                                 @hsPercent.ToString("F0")%
                                                             </td>
                                                             <td class="py-2 px-4 text-right pr-6 font-mono text-muted">
-                                                                @(dmgRatio > 999 ? "∞" : dmgRatio.ToString("F1"))
+                                                                @(dmgRatioInfinite ? "∞" : dmgRatio.ToString("N1"))
                                                             </td>
                                                         </tr>
                                                     }
@@ -280,6 +281,11 @@
                                                     <i class="ph ph-desktop-tower text-subtle"></i>
                                                     <ColorCode Value="@entry.ServerName"/>
                                                 }
+                                                <Tooltip Text="Match ID — pass to !zmdelete to remove this record (Owner only)">
+                                                    <span class="ml-1 px-1.5 py-0.5 rounded border border-line/60 bg-surface text-[10px] font-semibold text-subtle tracking-wide">
+                                                        #@entry.MatchId
+                                                    </span>
+                                                </Tooltip>
                                             </div>
                                             @if (_expandedMatches.TryGetValue(entry.MatchId, out var matchDetail) && matchDetail is not null)
                                             {

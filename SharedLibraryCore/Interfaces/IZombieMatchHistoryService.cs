@@ -22,7 +22,8 @@ public class ZombieMatchDetail
 {
     public int MatchId { get; set; }
     public string Map { get; set; } = string.Empty;
-    public string Date { get; set; } = string.Empty;
+    public DateTimeOffset Date { get; set; }
+    public string? ServerName { get; set; }
     public double DurationMinutes { get; set; }
     public int HighestRound { get; set; }
     public bool Completed { get; set; }

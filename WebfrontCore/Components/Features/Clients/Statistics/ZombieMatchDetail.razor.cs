@@ -63,6 +63,8 @@ public partial class ZombieMatchDetail
             "door" => ("bg-amber-500", "text-amber-500", "ph-door-open", 15, false),
             "trap" => ("bg-red-400", "text-red-400", "ph-lightning", 25, false),
             "build" => ("bg-emerald-500", "text-emerald-500", "ph-wrench", 20, false),
+            "session-join" => ("bg-slate-400", "text-slate-400", "ph-sign-in", 15, false),
+            "session-leave" => ("bg-slate-500", "text-slate-500", "ph-sign-out", 15, false),
             _ => ("bg-muted", "text-muted", "", 10, true)
         };
 

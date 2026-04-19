@@ -48,6 +48,8 @@ public partial class ZombieMatchHistory
             "critical" => ("bg-error", "text-error", "ph-skull", 50, false),
             "success" => ("bg-success", "text-success", "ph-heartbeat", 30, false),
             "info" => ("bg-info", "text-info", "ph-pill", 20, false),
+            "session-join" => ("bg-slate-400", "text-slate-400", "ph-sign-in", 15, false),
+            "session-leave" => ("bg-slate-500", "text-slate-500", "ph-sign-out", 15, false),
             _ => ("bg-muted", "text-muted", "", 10, true)
         };
 

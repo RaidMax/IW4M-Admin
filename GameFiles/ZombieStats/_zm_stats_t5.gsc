@@ -22,7 +22,11 @@
 
 init()
 {
-    logPrint( "ZM_STATS_T5 v17 loaded\n" );
+    // Seed the bootstrap dvar so IW4MAdmin can recover the current round
+    // when it starts (or reconnects to RCon) mid-match. Updated after every
+    // RC event in PrintPlayerRoundData. Defaults to round 1 here so a
+    // bootstrap during the very first round still resolves correctly.
+    setdvar( "sv_iw4m_zm_round", 1 );
 
     thread WaitForRoundChange();
     thread WaitForPlayerConnect();
@@ -433,6 +437,7 @@ PrintPlayerRoundData( isGameOver )
     // late-arriving RD events due to IW4MAdmin's concurrent event processing.
     wait ( 0.1 );
 
+    setdvar( "sv_iw4m_zm_round", currentRound );
     logPrint( "GSE;RC;" + currentRound + "\n" );
 }
 

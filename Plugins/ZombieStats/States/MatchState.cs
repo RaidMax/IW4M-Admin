@@ -14,21 +14,6 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     public int RoundNumber { get; set; }
 
     /// <summary>
-    /// Number of players who started the most recent round.
-    /// Used for PlayerCount at match end — avoids edge cases with late disconnects.
-    /// </summary>
-    public int LastRoundPlayerCount { get; set; }
-
-    /// <summary>
-    /// High-water mark of simultaneous players observed during the match
-    /// (max <c>RoundStates.Count</c> across all <c>StartNextRound</c> invocations).
-    /// Persisted as <c>EFZombieMatch.PlayerCount</c> at match end so leaderboard
-    /// buckets reflect the slot-cap reality (e.g. T5 ZM caps at 4) rather than
-    /// the count of distinct players who passed through across player swaps.
-    /// </summary>
-    public int MaxRoundPlayerCount { get; set; }
-
-    /// <summary>
     /// Timestamp of the last <c>StartNextRound</c> for this match.
     /// Diagnostic-only — surfaced in "Missing state data" warnings to correlate
     /// an RD failure with a recent round transition that may have wiped state.

@@ -250,10 +250,10 @@
                                                         <ColorCode Value="@p.Name"/>
                                                     </a>
                                                     <div class="flex-1 border-b border-dashed border-line/60 mx-3 min-w-[12px]"></div>
-                                                    <span class="font-mono tracking-tight shrink-0 flex items-center">
-                                                        <span class="text-foreground w-12 text-right">@p.Kills.ToString("N0")<span class="text-[10px] text-subtle font-sans ml-0.5">K</span></span>
+                                                    <span class="font-mono tracking-tight tabular-nums shrink-0 flex items-center">
+                                                        <span class="text-foreground text-right">@p.Kills.ToString("N0")<span class="text-[10px] text-subtle font-sans ml-0.5">K</span></span>
                                                         <span class="text-line mx-2.5">|</span>
-                                                        <span class="text-muted w-20 text-right flex items-center justify-end">
+                                                        <span class="text-muted text-right flex items-center justify-end">
                                                             @if (inf)
                                                             {
                                                                 <i class="ph ph-infinity"></i>

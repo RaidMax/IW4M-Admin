@@ -111,90 +111,163 @@
                 @* ================================================================ *@
                 @* LEADERBOARD LIST *@
                 @* ================================================================ *@
-                <div class="flex flex-col gap-1 relative">
-
-                    @* Table header (desktop) *@
-                    <div class="hidden md:flex px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-subtle bg-surface-alt border border-line rounded-lg mb-1">
-                        <div class="w-16">Rank</div>
-                        <div class="w-24">Round</div>
-                        <div class="w-48">Match Info</div>
-                        <div class="flex-1">Player Performance <span class="normal-case tracking-normal text-subtle/60 font-normal ml-1" title="Kills / Downs / Revives">(K / D / R)</span></div>
-                    </div>
+                <div class="flex flex-col gap-3 relative">
 
                     <Virtualize @ref="_virtualizeComponent" Context="entry" ItemsProvider="LoadEntries"
-                                OverscanCount="10" ItemSize="64">
+                                OverscanCount="10" ItemSize="120">
                         <ItemContent>
                             @{
                                 var isExpanded = _expandedMatches.ContainsKey(entry.MatchId);
                             }
 
-                            <div class="bg-surface border rounded-lg overflow-hidden transition-colors duration-150
-                                        @(isExpanded ? "border-line" : "border-line/50 hover:bg-surface-hover cursor-pointer")
-                                        @(entry.Rank == 1 && !isExpanded ? "border-l-4 border-l-yellow-500" : "")">
+                            <div class="bg-surface border rounded-md overflow-hidden transition-colors duration-150
+                                        @(isExpanded ? "border-line" : "border-line/80 hover:bg-surface-hover cursor-pointer")">
 
-                                @* ── DENSE ROW (Collapsed) ── *@
-                                <div class="flex flex-col md:flex-row items-start md:items-stretch min-h-[60px]"
+                                @* ── HORIZONTAL LEDGER (Collapsed) ── *@
+                                @{
+                                    var (badgeBg, badgeText, badgeBorder, badgeIcon, badgeLabel) = entry.Rank switch
+                                    {
+                                        1 => ("bg-yellow-500/10", "text-yellow-500", "border-yellow-500/20", "ph-trophy", "1st Place"),
+                                        2 => ("bg-slate-300/10", "text-slate-300", "border-slate-300/20", "ph-medal", "2nd Place"),
+                                        3 => ("bg-amber-600/10", "text-amber-500", "border-amber-600/20", "ph-medal", "3rd Place"),
+                                        _ => ("bg-surface-alt", "text-subtle", "border-line/50", (string?)null, $"#{entry.Rank} Place")
+                                    };
+                                }
+
+                                @* Top bar: rank badge + round / map / duration + time + chevron *@
+                                <div class="flex items-center justify-between gap-3 px-4 py-2 border-b border-line bg-surface-alt/50"
                                      @onclick="() => ToggleMatchDetail(entry.MatchId)">
-
-                                    @* Left: Rank & Round *@
-                                    <div class="flex items-stretch w-full md:w-40 shrink-0 border-b md:border-b-0 md:border-r border-line/50">
-                                        <div class="flex items-center justify-center w-16 shrink-0 bg-surface-alt/50">
-                                            <span class="font-black text-xl @(entry.Rank switch {
-                                                1 => "text-yellow-500",
-                                                2 => "text-zinc-300",
-                                                3 => "text-amber-600",
-                                                _ => "text-subtle"
-                                            })">
-                                                #@entry.Rank
-                                            </span>
-                                        </div>
-                                        <div class="flex flex-col justify-center items-center w-24 bg-surface-alt/30">
-                                            <span class="text-[28px] font-black text-foreground leading-none">@entry.HighestRound</span>
-                                        </div>
-                                    </div>
-
-                                    @* Middle: Map & Time *@
-                                    <div class="flex flex-col justify-center px-4 py-3 md:py-0 w-full md:w-48 shrink-0 border-b md:border-b-0 md:border-r border-line/50 bg-surface-alt/10">
-                                        <span class="text-sm font-bold text-foreground">@entry.MapName</span>
-                                        <span class="text-[11px] text-muted font-medium">
-                                            @if (entry.Duration is not null)
+                                    <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                                        <div class="inline-flex items-center gap-1.5 @badgeBg @badgeText px-2 py-0.5 rounded text-xs font-bold border @badgeBorder shrink-0">
+                                            @if (badgeIcon is not null)
                                             {
-                                                <p>duration of @entry.Duration</p>
+                                                <i class="ph @badgeIcon text-xs"></i>
                                             }
-                                            <p>happened <Tooltip Text="@entry.MatchDate.UtcDateTime.ToStandardFormat()" WrapperClass="inline-block">@entry.MatchDate.Humanize()</Tooltip></p>
-                                        </span>
+                                            <span>@badgeLabel</span>
+                                        </div>
+                                        <div class="text-foreground font-bold text-sm shrink-0">Round @entry.HighestRound</div>
+                                        <div class="text-xs text-subtle font-medium truncate hidden md:block">@entry.MapName</div>
                                     </div>
-
-                                    @* Right: Player Performance (compact K/D/R) *@
-                                    @{
-                                        var isLowDensity = entry.Players.Count <= 2;
-                                        var statSize = isLowDensity ? "text-sm" : "text-[11px]";
-                                        var nameSize = isLowDensity ? "text-sm" : "text-[10px]";
-                                        var nameMax = isLowDensity ? "max-w-[200px]" : "max-w-[80px]";
-                                        var gapSize = isLowDensity ? "gap-x-8" : "gap-x-6";
-                                    }
-                                    <div class="flex-1 flex flex-wrap content-center @gapSize gap-y-3 p-4">
-                                        @foreach (var player in entry.Players)
+                                    <div class="flex items-center gap-2 text-xs text-subtle font-medium shrink-0">
+                                        @if (entry.Duration is not null)
                                         {
-                                            <div class="flex flex-col">
-                                                <span class="@statSize font-mono tracking-tight">
-                                                    <span class="text-foreground font-medium">@FormatK(player.Kills)</span>
-                                                    <span class="text-subtle mx-0.5">/</span>
-                                                    <span class="text-error">@player.Downs</span>
-                                                    <span class="text-subtle mx-0.5">/</span>
-                                                    <span class="text-success">@player.Revives</span>
-                                                </span>
-                                                <span class="@nameSize text-muted font-medium truncate mt-0.5 @nameMax">
-                                                    <ColorCode Value="@player.Name"/>
+                                            <span>@entry.Duration</span>
+                                            <span class="text-line">•</span>
+                                        }
+                                        <Tooltip Text="@entry.MatchDate.UtcDateTime.ToStandardFormat()" WrapperClass="inline-block">
+                                            @entry.MatchDate.Humanize()
+                                        </Tooltip>
+                                        <i class="ph @(isExpanded ? "ph-caret-up" : "ph-caret-down") text-xs ml-1"></i>
+                                    </div>
+                                </div>
+
+                                @* Body: player layouts vary by count (1 / 2 / 3-8) *@
+                                <div class="p-4" @onclick="() => ToggleMatchDetail(entry.MatchId)">
+                                    @if (entry.Players.Count == 1)
+                                    {
+                                        var p = entry.Players[0];
+                                        var soloInf = p.DamageReceived == 0;
+                                        var soloRatio = soloInf ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                                        <div class="flex flex-col sm:flex-row items-stretch bg-surface-alt/30 rounded-md border border-line/50 overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-line/50">
+                                            <div class="flex-1 p-4 flex flex-col justify-center bg-surface/20 min-w-0">
+                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
+                                                <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                                                   class="text-lg font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                                                    <ColorCode Value="@p.Name"/>
+                                                </a>
+                                            </div>
+                                            <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
+                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Kills</span>
+                                                <span class="text-2xl font-mono font-medium text-foreground leading-none">@p.Kills.ToString("N0")</span>
+                                            </div>
+                                            <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
+                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Dmg Ratio</span>
+                                                <span class="text-2xl font-mono font-medium text-muted leading-none flex items-center">
+                                                    @if (soloInf)
+                                                    {
+                                                        <i class="ph ph-infinity"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        @soloRatio.ToString("N1")<span class="text-base text-subtle ml-0.5">x</span>
+                                                    }
                                                 </span>
                                             </div>
-                                        }
-                                    </div>
-
-                                    @* Expand chevron *@
-                                    <div class="hidden md:flex items-center justify-center w-12 shrink-0 border-l border-line/50 text-subtle bg-surface-alt/30 hover:bg-surface-hover">
-                                        <i class="ph @(isExpanded ? "ph-caret-up" : "ph-caret-down") text-sm"></i>
-                                    </div>
+                                        </div>
+                                    }
+                                    else if (entry.Players.Count == 2)
+                                    {
+                                        <div class="grid grid-cols-1 md:grid-cols-2 bg-surface-alt/30 rounded-md border border-line/50 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-line/50">
+                                            @foreach (var p in entry.Players)
+                                            {
+                                                var inf = p.DamageReceived == 0;
+                                                var ratio = inf ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                                                <div class="flex items-center justify-between gap-2 p-3 sm:p-4 bg-surface/10 min-w-0">
+                                                    <div class="flex flex-col justify-center pr-2 min-w-0">
+                                                        <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
+                                                        <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                                                           class="text-base font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                                                            <ColorCode Value="@p.Name"/>
+                                                        </a>
+                                                    </div>
+                                                    <div class="flex items-center gap-5 shrink-0">
+                                                        <div class="flex flex-col items-center">
+                                                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Kills</span>
+                                                            <span class="text-xl font-mono font-medium text-foreground leading-none">@p.Kills.ToString("N0")</span>
+                                                        </div>
+                                                        <div class="flex flex-col items-center">
+                                                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Dmg</span>
+                                                            <span class="text-xl font-mono font-medium text-muted leading-none flex items-center">
+                                                                @if (inf)
+                                                                {
+                                                                    <i class="ph ph-infinity"></i>
+                                                                }
+                                                                else
+                                                                {
+                                                                    @ratio.ToString("N1")<span class="text-sm text-subtle ml-0.5">x</span>
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        @* 3-8 players: compact list with dotted leader, two-column on md+ *@
+                                        <div class="grid gap-x-12 gap-y-1.5 grid-cols-1 md:grid-cols-2">
+                                            @{ var idx = 0; }
+                                            @foreach (var p in entry.Players)
+                                            {
+                                                idx++;
+                                                var inf = p.DamageReceived == 0;
+                                                var ratio = inf ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                                                <div class="flex items-center text-[13px] min-w-0">
+                                                    <span class="text-subtle w-5 text-right shrink-0">@(idx).</span>
+                                                    <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                                                       class="font-semibold text-muted truncate ml-2 hover:text-primary transition-colors no-underline">
+                                                        <ColorCode Value="@p.Name"/>
+                                                    </a>
+                                                    <div class="flex-1 border-b border-dashed border-line/60 mx-3 min-w-[12px]"></div>
+                                                    <span class="font-mono tracking-tight shrink-0 flex items-center">
+                                                        <span class="text-foreground w-12 text-right">@p.Kills.ToString("N0")<span class="text-[10px] text-subtle font-sans ml-0.5">K</span></span>
+                                                        <span class="text-line mx-2.5">|</span>
+                                                        <span class="text-muted w-20 text-right flex items-center justify-end">
+                                                            @if (inf)
+                                                            {
+                                                                <i class="ph ph-infinity"></i>
+                                                            }
+                                                            else
+                                                            {
+                                                                @ratio.ToString("N1")<span class="text-[10px] text-subtle font-sans ml-0.5">x</span>
+                                                            }
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                 </div>
 
                                 @* ── EXPANDED SCOREBOARD ── *@
@@ -317,14 +390,16 @@
                             </div>
                         </ItemContent>
                         <Placeholder>
-                            <div class="bg-surface border border-line/50 rounded-lg overflow-hidden animate-pulse">
-                                <div class="flex flex-col md:flex-row min-h-[60px]">
-                                    <div class="md:w-40 bg-surface-alt/50 flex items-center justify-center border-r border-line/50">
-                                        <div class="w-20 h-6 bg-surface/30 rounded"></div>
+                            <div class="bg-surface border border-line/50 rounded-md overflow-hidden animate-pulse">
+                                <div class="flex items-center justify-between gap-3 px-4 py-2 border-b border-line bg-surface-alt/50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-20 h-5 bg-surface-alt rounded"></div>
+                                        <div class="w-24 h-4 bg-surface-alt/70 rounded"></div>
                                     </div>
-                                    <div class="flex-1 p-4">
-                                        <div class="h-6 w-full bg-surface-alt/50 rounded"></div>
-                                    </div>
+                                    <div class="w-28 h-4 bg-surface-alt/70 rounded"></div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="h-12 bg-surface-alt/40 rounded"></div>
                                 </div>
                             </div>
                         </Placeholder>

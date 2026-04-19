@@ -197,12 +197,12 @@
                                     }
                                     else if (entry.Players.Count == 2)
                                     {
-                                        <div class="grid grid-cols-1 md:grid-cols-2 bg-surface-alt/30 rounded-md border border-line/50 overflow-hidden md:divide-x divide-line/50">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             @foreach (var p in entry.Players)
                                             {
                                                 var inf = p.DamageReceived == 0;
                                                 var ratio = inf ? 0 : (double)p.DamageDealt / p.DamageReceived;
-                                                <div class="flex items-center justify-between gap-2 p-3 sm:p-4 bg-surface/10 min-w-0">
+                                                <div class="flex items-center justify-between gap-2 p-3 sm:p-4 bg-surface-alt/30 rounded-md border border-line/50 min-w-0">
                                                     <div class="flex flex-col justify-center pr-2 min-w-0">
                                                         <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
                                                         <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"

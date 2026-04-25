@@ -6,7 +6,15 @@ namespace IW4MAdmin.Plugins.ZombieStats.States;
 
 public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
 {
-    public Dictionary<long, RoundState> RoundStates { get; } = new();
+    /// <summary>
+    /// Per-round client state, keyed by (NetworkId, RoundNumber). Composite key lets
+    /// late-arriving end-of-round (RD) events find their original round entry even
+    /// after StartNextRound has advanced to the next round — eliminates the
+    /// Clear/repopulate race that produced Points=0 and zero-duration rounds.
+    /// Old-round entries remain until <see cref="ZombieClientStateManager.EndMatch"/>;
+    /// memory cost is bounded by rounds × players per match.
+    /// </summary>
+    public Dictionary<(long NetworkId, int RoundNumber), RoundState> RoundStates { get; } = new();
     public Dictionary<long, ZombieMatchClientStat> PersistentMatchAggregateStats { get; } = new();
     public Dictionary<long, ZombieAggregateClientStat> PersistentLifetimeAggregateStats { get; } = new();
     public Dictionary<long, ZombieAggregateClientStat> PersistentLifetimeServerAggregateStats { get; } = new();

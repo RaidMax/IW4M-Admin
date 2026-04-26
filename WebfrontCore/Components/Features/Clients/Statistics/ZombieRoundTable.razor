@@ -1,0 +1,123 @@
+@using SharedLibraryCore.Interfaces
+@*
+    Shared per-round breakdown table. Stateless — pass in the rounds list, get a sortable
+    visual table back. Used by both ZombieMatchHistory (per-client) and ZombieMatchDetail
+    (per-match, per-player tab).
+
+    When MatchHighestRound is supplied, gaps in the player's round set are surfaced as
+    dashed-red rows so users don't read "rounds 8-11 are missing from my record" as a bug.
+    The "joined late" gap (player's first round > 1) is also rendered when applicable.
+*@
+
+@if (Rounds.Count == 0)
+{
+    return;
+}
+
+@{
+    var maxKills = Math.Max(Rounds.Max(r => r.Kills), 1);
+    var orderedRounds = Rounds.OrderBy(r => r.RoundNumber).ToList();
+    var firstRound = orderedRounds[0].RoundNumber;
+    var lastRound = orderedRounds[^1].RoundNumber;
+    var showJoinedLateGap = firstRound > 1;
+    var showLeftEarlyGap = MatchHighestRound is { } highest && lastRound < highest;
+}
+
+<div>
+    <h5 class="text-xs font-bold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
+        <i class="ph ph-chart-bar text-sm"></i>
+        Round Breakdown
+    </h5>
+
+    <div class="overflow-x-auto overflow-y-auto max-h-[400px] border border-line rounded-lg" style="scrollbar-width: thin;">
+        <table class="w-full text-left text-sm whitespace-nowrap relative">
+            <thead class="sticky top-0 bg-surface-alt z-10 shadow-sm">
+                <tr class="text-[10px] uppercase tracking-wider text-muted border-b border-line">
+                    <th class="py-3 pl-4 font-medium">Round</th>
+                    <th class="py-3 font-medium pr-4 w-1/3">Kills</th>
+                    <th class="py-3 font-medium pr-4">Downs / Deaths</th>
+                    <th class="py-3 font-medium pr-4">Points</th>
+                    <th class="py-3 font-medium pr-4 text-right">Time</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-line/50">
+
+                @if (showJoinedLateGap)
+                {
+                    @RenderGapRow(1, firstRound - 1, "Player joined the match late")
+                }
+
+                @for (var i = 0; i < orderedRounds.Count; i++)
+                {
+                    var round = orderedRounds[i];
+                    <tr class="group hover:bg-surface-hover/20 transition-colors">
+                        <td class="py-2.5 pl-4 font-mono text-subtle w-24">
+                            <span class="inline-flex w-6 h-6 items-center justify-center rounded bg-surface-alt text-xs text-muted mr-2">
+                                @round.RoundNumber
+                            </span>
+                        </td>
+                        <td class="py-2.5 pr-4 relative">
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono text-foreground w-8">@round.Kills</span>
+                                <div class="flex-1 h-4 bg-surface-alt rounded overflow-hidden">
+                                    <div class="h-full bg-primary/30 rounded transition-all duration-500"
+                                         style="width: @(((double)round.Kills / maxKills * 100).ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%">
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-2.5 pr-4 font-mono text-muted">
+                            <span class="@(round.Downs > 0 ? "text-orange-400 font-bold" : "")">@round.Downs</span>
+                            <span class="opacity-50 mx-1">/</span>
+                            <span class="@(round.Deaths > 0 ? "text-error font-bold" : "")">@round.Deaths</span>
+                        </td>
+                        <td class="py-2.5 pr-4 font-mono text-success">@round.Points.ToString("N0")</td>
+                        <td class="py-2.5 pr-4 text-right font-mono text-subtle text-xs">@FormatRoundTime(round.DurationSeconds)</td>
+                    </tr>
+
+                    @if (i < orderedRounds.Count - 1)
+                    {
+                        var next = orderedRounds[i + 1];
+                        if (next.RoundNumber > round.RoundNumber + 1)
+                        {
+                            @RenderGapRow(round.RoundNumber + 1, next.RoundNumber - 1,
+                                "Player wasn't tracked here")
+                        }
+                    }
+                }
+
+                @if (showLeftEarlyGap)
+                {
+                    @RenderGapRow(lastRound + 1, MatchHighestRound!.Value, "Player left or disconnected before the match ended")
+                }
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+
+    private RenderFragment RenderGapRow(int from, int to, string tooltip) => __builder =>
+    {
+        var label = from == to ? $"Round {from} not played" : $"Rounds {from}–{to} not played";
+        @* Tooltip wraps the inner content (a real flex div with a measurable rect)
+           rather than the <tr>/<td> — those are unreliable hover targets and JS
+           bounding-rect can be quirky on table rows. *@
+        <tr class="bg-error/5">
+            <td colspan="5" class="py-2 px-4">
+                <Tooltip Text="@tooltip" WrapperClass="flex items-center gap-3 text-error/80 text-xs font-mono cursor-help">
+                    <div class="flex-1 h-px"
+                         style="background-image: repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);">
+                    </div>
+                    <span class="shrink-0">
+                        <i class="ph ph-warning-circle mr-1"></i>@label
+                    </span>
+                    <div class="flex-1 h-px"
+                         style="background-image: repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);">
+                    </div>
+                </Tooltip>
+            </td>
+        </tr>
+    };
+}

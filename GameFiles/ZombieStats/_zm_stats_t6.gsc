@@ -49,6 +49,16 @@ init()
     // bootstrap during the very first round still resolves correctly.
     setdvar( "sv_iw4m_zm_round", 1 );
 
+    // Stable per-match ID so IW4MAdmin can stitch a restarted/reconnected
+    // process back onto the existing EFZombieMatch row instead of creating
+    // a new orphaned match. Two randomints give ~10^12 collision space —
+    // overkill for the "at most a few open matches per server" lookup.
+    // gettime() returns 0 at init time (engine clock not yet running), so
+    // we don't use it here. The lookup index is (ServerId, GameMatchId)
+    // so cross-server collisions are harmless either way.
+    // Set once per init (= once per map load).
+    setdvar( "sv_iw4m_zm_matchid", "" + randomint( 1000000 ) + "_" + randomint( 1000000 ) );
+
     thread WaitForRoundChange();
     thread WaitForPlayerConnect();
     thread WaitForPowerupSpawned();

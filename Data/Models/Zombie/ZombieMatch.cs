@@ -38,4 +38,13 @@ public class ZombieMatch : DatedRecord
 
     public DateTimeOffset MatchStartDate { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? MatchEndDate { get; set; }
+
+    /// <summary>
+    /// Per-map-load identifier emitted by the GSC's <c>sv_iw4m_zm_matchid</c> dvar.
+    /// Lets IW4MAdmin re-attach to an existing match row across restarts/reconnects
+    /// instead of creating a new orphaned match. Server-scoped via the (ServerId,
+    /// GameMatchId) lookup; null for matches predating the GSC dvar deploy.
+    /// </summary>
+    [MaxLength(64)]
+    public string? GameMatchId { get; set; }
 }

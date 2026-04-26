@@ -1,0 +1,26 @@
+@using SharedLibraryCore.Interfaces
+@using WebfrontCore.Components.Features.Clients.Statistics
+
+@if (_isLoading)
+{
+    <div class="flex justify-center items-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+}
+else if (_error != null)
+{
+    <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm text-center">
+        @_error
+    </div>
+}
+else if (_snapshot == null)
+{
+    <div class="bg-surface-alt/50 border border-line text-muted p-6 rounded-lg text-sm text-center">
+        <i class="ph ph-info text-2xl block mb-2 text-subtle"></i>
+        No active zombie match on this server right now.
+    </div>
+}
+else
+{
+    <ZombieLiveSnapshot Snapshot="_snapshot" />
+}

@@ -4,6 +4,7 @@
 @if (!string.IsNullOrEmpty(Text))
 {
     <div class="tooltip-wrapper @WrapperClass"
+         style="@WrapperStyle"
          @ref="_triggerRef"
          @onmouseenter="ShowTooltip"
          @onmouseleave="HideTooltip"
@@ -30,9 +31,10 @@ else
     }
 
     [Parameter] public string? Text { get; set; }
-    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public TooltipDirection Direction { get; set; } = TooltipDirection.Up;
     [Parameter] public string? WrapperClass { get; set; }
+    [Parameter] public string? WrapperStyle { get; set; }
 
     private ElementReference _triggerRef;
     private bool _showMobile;

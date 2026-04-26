@@ -35,4 +35,13 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// Cleared when a real RC event arrives and force-rebases the match.
     /// </summary>
     public bool BootstrapPendingFirstRound { get; set; }
+
+    /// <summary>
+    /// First-observed disconnection timestamp per NetworkId. Populated lazily by the
+    /// live-snapshot service when a tracked player no longer appears in the server's
+    /// ConnectedClients list. Cleared on reconnect. Used to age disconnected players
+    /// out of the live modal after a TTL — they linger briefly so a brief drop is
+    /// visible, then disappear so the modal doesn't accumulate ghosts.
+    /// </summary>
+    public Dictionary<long, DateTimeOffset> DisconnectedFirstSeen { get; } = new();
 }

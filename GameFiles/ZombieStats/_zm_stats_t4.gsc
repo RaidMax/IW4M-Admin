@@ -10,23 +10,29 @@ Init()
     // bootstrap during the very first round still resolves correctly.
     setdvar( "sv_iw4m_zm_round", 1 );
 
+    // Stable per-match ID so IW4MAdmin can stitch a restarted/reconnected
+    // process back onto the existing EFZombieMatch row instead of creating
+    // a new orphaned match. Two randomints give ~10^12 collision space —
+    // overkill for the "at most a few open matches per server" lookup.
+    // gettime() returns 0 at Init time on T4 (engine clock not yet running),
+    // so we don't use it here. The lookup index is (ServerId, GameMatchId)
+    // so cross-server collisions are harmless either way.
+    // Set once per Init (= once per map load).
+    setdvar( "sv_iw4m_zm_matchid", "" + randomint( 1000000 ) + "_" + randomint( 1000000 ) );
+
     thread WaitForRoundChange();
     thread WaitForPlayerConnect();
     thread WaitForPowerupSpawned();
     thread WaitForWeaponPurchases();
     thread WaitForPackAPunch();
     thread WaitForDoorPurchases();
-    // Box detection only works reliably on Der Riese (nazi_zombie_factory).
-    // Earlier maps (Nacht, Verrückt, Shi No Numa) don't set chest_user —
-    // they use treasure_chest_user_hint instead. Without chest_user,
-    // grab_weapon_hint is the only signal, but it transitions within a
-    // single frame on grabs, making take/pass indistinguishable via polling.
-    // Der Riese's chest_user persists long enough for reliable detection.
-    if ( IsDefined( level.script ) && level.script == "nazi_zombie_factory" )
-    {
-        thread WaitForMysteryBox();
-        thread WaitForBoxTeddySuppression();
-    }
+    // Box detection: Der Riese + Der-Riese-derived custom maps (anything that
+    // ports Der Riese's _zombiemode_weapons.gsc). No map-name check — gating
+    // is on `IsDefined(self.timedOut)` per chest, which only Der-Riese-style
+    // chests assign. Other stock T4 maps silently no-op. See the long header
+    // comment above WaitForMysteryBox for the full design.
+    thread WaitForMysteryBox();
+    thread WaitForBoxTeddySuppression();
     thread WaitForTrapActivations();
 
     // --- Zombie Event Log Format --- //
@@ -678,45 +684,63 @@ WatchDoorPurchase()
 }
 
 /////////////////////////////////////////////////////////
-// T4 Mystery Box Detection — WEAPON STRING STABILIZATION
+// T4 Mystery Box Detection (Der Riese + Der-Riese-derived custom maps).
 //
-// Three approaches were tried and failed before arriving here:
-//
-// 1. waittill("trigger") — FAILS. GSC waittill is exclusive per
-//    entity per notify. treasure_chest_think() already consumes
-//    the trigger notify. Our listener never fires.
-//
-// 2. waittill("user_grabbed_weapon") — FAILS. GSC notify()
-//    schedules waiting threads to resume, but they don't run
-//    until the notifying code yields. By then, chest_user and
-//    weapon_string are already cleared.
-//
-// 3. Polling chest_user — FAILS for fast grabs. chest_user is
-//    set AFTER the ~3.9s randomization animation completes, on
-//    the same frame the trigger re-enables. F-spamming players
-//    grab instantly, so chest_user is set AND cleared in one
-//    frame — before any poll interval can catch it.
-//
-// SOLUTION: poll weapon_spawn_org.weapon_string instead.
-//   - weapon_string changes DURING the animation (40 cycles, ~3.9s
-//     of wait() calls), giving a wide detection window.
-//   - We detect animation start (weapon_string differs from last
-//     known value), then wait for stabilization (0.5s of no change
-//     = animation done, final weapon chosen).
-//   - For player identity: try chest_user first. If already cleared
-//     (fast grab), fall back to nearest player.
-//   - For outcome: chest_user + timedOut if available. If chest_user
-//     was missed, it's always a "take" (timeouts are 12s).
-//
-// Teddy bear handled separately by WaitForBoxTeddy (proximity-based,
-// because T4's teddy code path never sets chest_user).
-//
-// T4 entity layout:
-//   - Chest trigger: targetname "treasure_chest_use"
+// Engine reference: `_zombiemode_weapons.gsc` from the official T4 Der Riese
+// scripts. Key entities/state:
+//   - Chest trigger: targetname "treasure_chest_use" (all stock T4 maps)
 //   - Entity chain: chest → lid (self.target) → weapon_spawn_org (lid.target)
-//   - weapon_spawn_org.weapon_string: cycles during animation, final value persists
-//   - self.chest_user: set after randomization, cleared on grab/timeout
-//   - self.timedOut: false at box open, true after 12s timeout
+//   - weapon_spawn_org.weapon_string: cycles ~40 times during the ~3.9s
+//     randomization animation; final value persists until the next pull
+//   - self.chest_user: assigned ~immediately after randomization_done, on
+//     Der-Riese-derived chests ONLY (Nacht/Verrückt/Shi No Numa never set it,
+//     and on Der Riese the teddy-bear branch in treasure_chest_think skips
+//     the assignment). Cleared on grab or 12s timeout.
+//   - self.timedOut: assigned to false at the top of every treasure_chest_think
+//     iteration on Der-Riese-derived chests, true after 12s no-grab timeout.
+//     Used here as the per-chest "is Der-Riese-derived" discriminator (no
+//     map-name check).
+//   - "trigger" notify on the chest entity: fires whenever a player presses
+//     USE on the chest (both BUY phase and GRAB phase).
+//   - level "weapon_fly_away_start" notify: fires ~0.5s after randomization_done
+//     on the teddy-bear path only.
+//
+// Why three resolution sources for the buyer:
+//
+// `chest_user` is set and cleared inside one cooperative-scheduler frame on
+// instant ("F-spammed") grabs — treasure_chest_think runs L797 (set), L808
+// (waittill trigger, immediately resumed by buffered trigger), L838 (clear)
+// without any wait between them. Polling at 0.1s cannot observe state that
+// doesn't survive cross-frame, so polling alone misses every instant grab.
+//
+// We therefore combine:
+//   1. Phase-2 polling capture of chest_user — wins when the player is
+//      patient enough that chest_user lives across at least one tick.
+//   2. Live chest_user read in Phase 3 — cheap fallback for the rare case
+//      where the poll timing aligned but the state was missed.
+//   3. Trigger-waittill capture of the most recent USE press, used as
+//      ground-truth fallback ONLY when the above two failed AND the chest
+//      is Der-Riese-derived (`IsDefined(self.timedOut)`).
+//
+// Teddy bears: the engine fires `level notify("weapon_fly_away_start")` when
+// the box becomes a teddy. We mark the currently-active chest's
+// `iw4m_box_teddy_marker` from a global suppression thread, then in Phase 3
+// emit a `box;teddy;{cost}` event (matches T6's emit format) using the trigger
+// fallback as the buyer (chest_user is never set on teddy, so paths 1+2 always
+// miss). The marker is scoped to chests in late phase (Phase 2/3) so it can't
+// bleed across iterations.
+//
+// Per-chest state used by this subsystem:
+//   - self.iw4m_box_teddy_marker    — set by suppression, consumed in Phase 3
+//   - self.iw4m_box_in_late_phase   — true between Phase 1 exit and iter end
+//   - self.iw4m_box_last_trigger    — most recent player who pressed USE on
+//                                     this chest; reset at iter end
+//
+// Map gating: nothing is gated on `level.script`. Stock Nacht/Verrückt/
+// Shi No Numa silently no-op because their treasure_chest_think never assigns
+// `self.timedOut`, so the trigger fallback's gate fails and Phase 1+2 never
+// see a chest_user to capture. Custom maps that port Der Riese's chest code
+// inherit both signals and work transparently.
 /////////////////////////////////////////////////////////
 WaitForMysteryBox()
 {
@@ -731,14 +755,79 @@ WaitForMysteryBox()
 
     for ( i = 0; i < chests.size; i++ )
     {
+        chests[i].iw4m_box_teddy_marker = false;
+        chests[i].iw4m_box_in_late_phase = false;
         chests[i] thread WatchBoxOutcome();
+        chests[i] thread WatchBoxTriggerForBuyer();
+    }
+}
+
+/////////////////////////////////////////////////////////
+// Teddy bear suppression.
+//
+// The level-scoped notify is too broad on its own — marking every chest
+// indiscriminately caused stale markers to bleed across iterations (an idle
+// chest that hadn't entered Phase 1 since the previous teddy carried the
+// mark forward and false-skipped its next pull). We therefore only mark
+// chests with `iw4m_box_in_late_phase == true`, which is set by
+// WatchBoxOutcome on Phase 1 exit and cleared at iteration end. On Der Riese
+// only one chest is active at a time, so in practice exactly one chest gets
+// marked per teddy event.
+/////////////////////////////////////////////////////////
+WaitForBoxTeddySuppression()
+{
+    wait ( 5 );
+    for ( ;; )
+    {
+        level waittill( "weapon_fly_away_start" );
+
+        chests = getEntArray( "treasure_chest_use", "targetname" );
+        if ( !IsDefined( chests ) || chests.size == 0 )
+        {
+            continue;
+        }
+
+        for ( k = 0; k < chests.size; k++ )
+        {
+            if ( IsDefined( chests[k].iw4m_box_in_late_phase ) && chests[k].iw4m_box_in_late_phase )
+            {
+                chests[k].iw4m_box_teddy_marker = true;
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////
+// Parallel ground-truth capture of who pressed USE on the chest.
+//
+// `treasure_chest_think` consumes "trigger" via `self waittill("trigger", user)`
+// to read the buyer. GSC's notify model lets multiple threads waittill on the
+// same notify and all of them resume — so this thread peacefully co-exists,
+// stashing the most recent player on `self.iw4m_box_last_trigger`. Phase 3
+// uses this as the third-tier resolution source for instant-grab cases where
+// chest_user couldn't be polled in time, and as the only available source for
+// teddy attribution.
+//
+// The trigger fires for both BUY and GRAB presses; latest wins. Failed-
+// affordability presses also fire trigger but the engine enforces buyer ==
+// grabber on Der Riese, so the value is correct either way.
+/////////////////////////////////////////////////////////
+WatchBoxTriggerForBuyer()
+{
+    for ( ;; )
+    {
+        self waittill( "trigger", who );
+        if ( !IsDefined( who ) || !IsPlayer( who ) )
+        {
+            continue;
+        }
+        self.iw4m_box_last_trigger = who;
     }
 }
 
 WatchBoxOutcome()
 {
-    // Cache the weapon spawn origin entity — it's a persistent map entity
-    // Entity chain: chest (self) → lid (self.target) → weapon_spawn_org (lid.target)
+    // Cache the weapon spawn origin entity — persistent map entity.
     lid = getent( self.target, "targetname" );
     if ( !IsDefined( lid ) )
     {
@@ -752,27 +841,18 @@ WatchBoxOutcome()
     }
 
     // Sentinel value — never matches any real weapon name.
-    // On first use, weapon_string is undefined. Comparing undefined == "__none__"
-    // could be unreliable in GSC, so we also guard with IsDefined.
-    // On subsequent uses, prevWeapon holds the final weapon from the last box use.
+    // On first use, weapon_string is undefined. Comparing undefined != "__none__"
+    // would short-circuit incorrectly, so we guard with IsDefined.
+    // On subsequent iterations, prevWeapon holds the final weapon from the
+    // previous box use (kept stable until the next animation starts).
     prevWeapon = "__none__";
 
     for ( ;; )
     {
         // Phase 1: Wait for weapon_string to START changing.
-        // During randomization, weapon_string cycles through 40 random
-        // weapons over ~3.9s (wait gaps: 0.05s→0.1s→0.2s→0.3s).
-        //
-        // prevWeapon is updated inside the loop so it tracks the current
-        // stable value between box uses. When a new animation starts and
-        // weapon_string changes to a different weapon, the loop breaks.
-        //
-        // First use:  prevWeapon = "__none__", weapon_string undefined → wait.
-        //             weapon_string becomes "wp1" → doesn't match "__none__" → break.
-        // Subsequent: prevWeapon = last final weapon (matches current stable value).
-        //             New animation starts, weapon_string changes → break.
-        // T4 GSC does NOT short-circuit || — both sides always evaluate.
-        // So we must use nested ifs instead to guard against undefined.
+        // During randomization the engine cycles through ~40 weapons over
+        // ~3.9s (wait gaps 0.05–0.3s). Detecting the change is our signal
+        // that a player just bought the box.
         animStarted = false;
         while ( !animStarted )
         {
@@ -794,12 +874,19 @@ WatchBoxOutcome()
             }
         }
 
-        // Phase 2: Wait for weapon_string to STABILIZE (stop changing).
-        // The animation cycles have gaps of 0.05s–0.3s between changes.
-        // After the final weapon is chosen (cycle 40), no more changes.
-        // If weapon_string is unchanged for 0.5s, animation is done.
+        // Mark this chest as the currently-active one. The teddy suppression
+        // thread uses this flag to scope its marking — without it, the
+        // level-wide notify would mark every chest and idle chests stuck in
+        // Phase 1 would carry stale teddy marks until their next purchase.
+        self.iw4m_box_in_late_phase = true;
+
+        // Phase 2: Wait for weapon_string to STABILIZE (5 polls × 0.1s of
+        // unchanged value). While polling, opportunistically capture
+        // chest_user as soon as it's observed — this is best-effort because
+        // chest_user can be set+cleared inside one frame on instant grabs.
         stableFrames = 0;
         stableWeapon = weaponSpawnOrg.weapon_string;
+        capturedUser = undefined;
         while ( stableFrames < 5 )
         {
             wait ( 0.1 );
@@ -813,9 +900,13 @@ WatchBoxOutcome()
                 stableFrames = 0;
                 stableWeapon = weaponSpawnOrg.weapon_string;
             }
+
+            if ( !IsDefined( capturedUser ) && IsDefined( self.chest_user ) && IsPlayer( self.chest_user ) )
+            {
+                capturedUser = self.chest_user;
+            }
         }
 
-        // weapon_string now has the FINAL weapon value
         weaponName = stableWeapon;
 
         cost = 950;
@@ -828,128 +919,92 @@ WatchBoxOutcome()
             cost = self.zombie_cost;
         }
 
-        // Phase 3: Determine outcome (Der Riese only).
-        //
-        // Der Riese sets chest_user after randomization. We capture the
-        // user, then wait for chest_user to clear (grab or timeout).
-        //
-        // timedOut is checked AFTER the while loop exits, not inside it.
-        // Both timedOut=true and chest_user=undefined happen in the same
-        // frame (no waits between them), so our poll never sees timedOut=true
-        // while chest_user is still defined. BUT timedOut persists after
-        // chest_user clears — the new treasure_chest_think doesn't start
-        // until after a `wait 3`, so timedOut is still readable here.
-        user = undefined;
-        if ( IsDefined( self.chest_user ) )
+        // Phase 3: Determine outcome. Resolution order documented in the
+        // header comment above.
+        timedOutDefined = 0;
+        if ( IsDefined( self.timedOut ) )
         {
-            if ( IsPlayer( self.chest_user ) )
-            {
-                user = self.chest_user;
-            }
+            timedOutDefined = 1;
         }
 
-        // Wait for box to close
+        user = capturedUser;
+        if ( !IsDefined( user ) && IsDefined( self.chest_user ) && IsPlayer( self.chest_user ) )
+        {
+            user = self.chest_user;
+        }
+
+        // Wait for box to close. Normal grab: loops until engine clears
+        // chest_user (~when player presses USE). Teddy / no-user iteration:
+        // exits immediately because chest_user was never set.
         while ( IsDefined( self.chest_user ) )
         {
             wait ( 0.1 );
         }
 
-        // If chest_user was never caught (fast grab), find nearest player
+        // If we still have no user, give the teddy notify time to arrive
+        // before the trigger fallback decides. weapon_fly_away_start fires
+        // ~0.5s after randomization_done; our Phase 2 already burned ~0.5s
+        // on stabilization, so the notify lands within this 1s window. Normal
+        // grabs (user already resolved) skip this wait.
         if ( !IsDefined( user ) )
         {
-            players = get_players();
-            closestDist = 99999;
+            wait ( 1.0 );
+        }
 
-            for ( i = 0; i < players.size; i++ )
-            {
-                if ( !IsAlive( players[i] ) )
-                {
-                    continue;
-                }
+        isTeddy = false;
+        if ( IsDefined( self.iw4m_box_teddy_marker ) && self.iw4m_box_teddy_marker )
+        {
+            isTeddy = true;
+        }
+        self.iw4m_box_teddy_marker = false;
 
-                dist = distance( players[i].origin, self.origin );
-                if ( dist < closestDist )
-                {
-                    closestDist = dist;
-                    user = players[i];
-                }
-            }
+        // Trigger fallback. Resolves the buyer for two distinct cases:
+        //   - Instant-grab take/pass: Phase 2 missed chest_user, the trigger
+        //     waittill thread captured the buyer; emit normal take/pass.
+        //   - Teddy: chest_user never set on the teddy path, the trigger
+        //     thread is the only signal for who paid; emit teddy event.
+        // Gated on `IsDefined(self.timedOut)` — only Der-Riese-derived
+        // chests reach this path.
+        if ( !IsDefined( user ) && timedOutDefined == 1
+             && IsDefined( self.iw4m_box_last_trigger ) && IsPlayer( self.iw4m_box_last_trigger ) )
+        {
+            user = self.iw4m_box_last_trigger;
         }
 
         if ( IsDefined( user ) )
         {
-            // Check timedOut — still valid here because the new
-            // treasure_chest_think doesn't re-thread until after wait 3.
-            isPass = false;
-            if ( IsDefined( self.timedOut ) )
+            if ( isTeddy )
             {
-                if ( self.timedOut )
-                {
-                    isPass = true;
-                }
-            }
-
-            if ( isPass )
-            {
-                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
+                // Teddy bear: cost field only (no weapon — engine refunded
+                // the 950). Matches T6's `box;teddy;{cost}` emit shape.
+                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
             }
             else
             {
-                // Wait for teddy suppression flag before logging take
-                wait ( 1.5 );
-
-                isTeddy = false;
-                if ( IsDefined( self._zm_stats_teddy ) )
+                isPass = false;
+                if ( IsDefined( self.timedOut ) && self.timedOut )
                 {
-                    if ( self._zm_stats_teddy )
-                    {
-                        isTeddy = true;
-                        self._zm_stats_teddy = false;
-                    }
+                    isPass = true;
                 }
 
-                if ( !isTeddy )
+                if ( isPass )
+                {
+                    LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
+                }
+                else
                 {
                     LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
                 }
             }
         }
 
-        // Set prevWeapon to the final weapon so the next iteration's Phase 1
-        // correctly waits for the NEXT animation to change it
+        // Per-iteration cleanup.
+        self.iw4m_box_last_trigger = undefined;
+        self.iw4m_box_in_late_phase = false;
+
+        // Seed prevWeapon with this iteration's final weapon so Phase 1 of
+        // the next iteration correctly waits for the NEXT animation start.
         prevWeapon = weaponName;
-    }
-}
-
-/////////////////////////////////////////////////////////
-// T4 Teddy Bear Suppression
-//
-// We don't log teddy events (the score refund is captured implicitly
-// via RD events). But we MUST still detect teddies to suppress false
-// "box;take" loglines in WatchBoxOutcome's proximity fallback.
-//
-// T4's teddy path never sets chest_user, so WatchBoxOutcome falls
-// into the proximity fallback. Without this suppression flag,
-// it would log a false take for whatever weapon the animation
-// last showed before the teddy.
-/////////////////////////////////////////////////////////
-WaitForBoxTeddySuppression()
-{
-    for ( ;; )
-    {
-        level waittill( "weapon_fly_away_start" );
-
-        chests = getEntArray( "treasure_chest_use", "targetname" );
-        if ( !IsDefined( chests ) )
-        {
-            continue;
-        }
-
-        // Mark ALL chests so WatchBoxOutcome skips its proximity fallback
-        for ( k = 0; k < chests.size; k++ )
-        {
-            chests[k]._zm_stats_teddy = true;
-        }
     }
 }
 

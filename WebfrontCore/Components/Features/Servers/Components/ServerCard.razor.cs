@@ -107,6 +107,21 @@ public partial class ServerCard : IAsyncDisposable
         builder.CloseComponent();
     };
 
+    private void OpenZombieLive()
+    {
+        var serverName = Model.Name.StripColors();
+        var mapName = string.IsNullOrEmpty(Model.Map) ? null : Model.Map;
+        var title = mapName is null ? serverName : $"{serverName} — {mapName}";
+        ActionService.OpenCustom(ZombieLiveContent(Model.Id), title, "max-w-4xl");
+    }
+
+    private RenderFragment ZombieLiveContent(string serverId) => builder =>
+    {
+        builder.OpenComponent(0, typeof(ZombieLiveModalWrapper));
+        builder.AddAttribute(1, nameof(ZombieLiveModalWrapper.ServerId), serverId);
+        builder.CloseComponent();
+    };
+
     public async ValueTask DisposeAsync()
     {
         await _cts.CancelAsync();

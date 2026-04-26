@@ -23,6 +23,9 @@ public class ZombieStatsController(
     private readonly IZombieMatchHistoryService? _matchHistoryService =
         serviceProvider.GetService<IZombieMatchHistoryService>();
 
+    private readonly IZombieLiveMatchService? _liveMatchService =
+        serviceProvider.GetService<IZombieLiveMatchService>();
+
     /// <remarks>
     /// Returns the games, maps, and player counts that can be used to filter leaderboard entries.
     /// Use the values returned here to populate the <c>game</c>, <c>mapId</c>, and <c>playerCount</c>
@@ -154,5 +157,28 @@ public class ZombieStatsController(
         count = Math.Min(count, 50);
         var history = await _matchHistoryService.GetPlayerMatchHistoryAsync(clientId, serverEndpoint, offset, count);
         return Ok(history);
+    }
+
+    /// <remarks>
+    /// Returns a live snapshot of an in-progress zombie match for a server: per-player
+    /// current/cumulative stats, recent events, and rounds completed so far. Returns 404
+    /// when the server has no active match. Designed for periodic polling (recommended
+    /// interval: 5s, matching the standard scoreboard).
+    /// </remarks>
+    /// <param name="serverId">Server identifier (typically <c>ip:port</c>).</param>
+    /// <response code="200">Live snapshot returned.</response>
+    /// <response code="404">Server has no active match, or Zombie Stats Premium is not installed.</response>
+    [HttpGet("server/{serverId}/live-match")]
+    [ProducesResponseType<ZombieLiveMatchSnapshot>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLiveMatchSnapshot(string serverId)
+    {
+        if (_liveMatchService is null)
+        {
+            return NotFound();
+        }
+
+        var snapshot = await _liveMatchService.GetLiveMatchSnapshotAsync(serverId);
+        return snapshot is null ? NotFound() : Ok(snapshot);
     }
 }

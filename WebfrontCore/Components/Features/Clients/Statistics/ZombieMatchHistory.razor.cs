@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
@@ -24,44 +23,6 @@ public partial class ZombieMatchHistory
 
     private void ToggleExpand(int matchId) =>
         GetCardState(matchId).IsExpanded = !GetCardState(matchId).IsExpanded;
-
-    private void SetZoom(int matchId, double delta) =>
-        GetCardState(matchId).ZoomLevel = Math.Clamp(GetCardState(matchId).ZoomLevel + delta, 1, 5);
-
-    private void OnTimelineWheel(WheelEventArgs e, int matchId)
-    {
-        var delta = e.DeltaY < 0 ? 0.25 : -0.25;
-        SetZoom(matchId, delta);
-    }
-
-    private void SetFilter(int matchId, string filter) =>
-        GetCardState(matchId).TimelineFilter = filter;
-
-    private static string FormatTooltipText(ZombieMatchHistoryEvent evt) =>
-        $"{evt.Time} • {evt.Label}";
-
-    private static (string Bg, string Text, string Icon, int ZIndex, bool IsTick) GetEventVisuals(string category) =>
-        category switch
-        {
-            "powerup" => ("bg-yellow-400", "text-yellow-400", "ph-lightning", 30, false),
-            "danger" => ("bg-orange-500", "text-orange-500", "ph-warning", 40, false),
-            "critical" => ("bg-error", "text-error", "ph-skull", 50, false),
-            "success" => ("bg-success", "text-success", "ph-heartbeat", 30, false),
-            "info" => ("bg-info", "text-info", "ph-pill", 20, false),
-            "session-join" => ("bg-slate-400", "text-slate-400", "ph-sign-in", 15, false),
-            "session-leave" => ("bg-slate-500", "text-slate-500", "ph-sign-out", 15, false),
-            _ => ("bg-muted", "text-muted", "", 10, true)
-        };
-
-    private static bool EventMatchesFilter(ZombieMatchHistoryEvent evt, string filter) => filter switch
-    {
-        "critical" => evt.Category is "danger" or "critical",
-        // "Drops" = things that fall from zombies (nukes, max ammo, insta-kill, etc.)
-        "powerups" => evt.Category is "powerup",
-        // Perks are bought with points, so they belong to Economy alongside weapons/doors/etc.
-        "economy" => evt.Category is "weapon" or "box" or "box-pass" or "door" or "trap" or "build" or "perk",
-        _ => true
-    };
 
     private class MatchCardState
     {

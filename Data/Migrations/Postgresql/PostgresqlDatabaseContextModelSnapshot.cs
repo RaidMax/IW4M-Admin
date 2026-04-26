@@ -1555,6 +1555,10 @@ namespace Data.Migrations.Postgresql
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GameMatchId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int>("HighestRound")
                         .HasColumnType("integer");
 
@@ -1580,7 +1584,7 @@ namespace Data.Migrations.Postgresql
 
                     b.HasIndex("MapId");
 
-                    b.HasIndex("ServerId");
+                    b.HasIndex("ServerId", "GameMatchId", "MatchEndDate");
 
                     b.ToTable("EFZombieMatches", (string)null);
                 });
@@ -1636,6 +1640,12 @@ namespace Data.Migrations.Postgresql
             modelBuilder.Entity("Data.Models.Zombie.ZombieMatchClientStat", b =>
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<int?>("AssistedRounds")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SoloFromRound")
+                        .HasColumnType("integer");
 
                     b.ToTable("EFZombieMatchClientStats", (string)null);
                 });

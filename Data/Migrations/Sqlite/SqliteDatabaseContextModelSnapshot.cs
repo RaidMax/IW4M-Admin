@@ -511,15 +511,15 @@ namespace Data.Migrations.Sqlite
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("TagName")
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("ZombieStatTagId");
 
@@ -535,8 +535,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("ClientId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("StatTagId")
                         .HasColumnType("INTEGER");
@@ -544,8 +544,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("StatValue")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("ZombieClientStatTagValueId");
 
@@ -1317,8 +1317,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("ClientId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<long>("DamageDealt")
                         .HasColumnType("INTEGER");
@@ -1368,8 +1368,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("TrapsActivated")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("WeaponsPurchased")
                         .HasColumnType("INTEGER");
@@ -1397,8 +1397,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("ClientId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1411,8 +1411,8 @@ namespace Data.Migrations.Sqlite
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Value")
                         .IsRequired()
@@ -1436,8 +1436,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("AssociatedClientId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("EventType")
                         .HasColumnType("INTEGER");
@@ -1454,8 +1454,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<string>("TextualValue")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("ZombieEventLogId");
 
@@ -1477,7 +1477,11 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("ClientsCompleted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("CreatedDateTime")
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GameMatchId")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("HighestRound")
@@ -1486,11 +1490,11 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("MapId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("MatchEndDate")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("MatchEndDate")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("MatchStartDate")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("MatchStartDate")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("PlayerCount")
                         .HasColumnType("INTEGER");
@@ -1498,14 +1502,14 @@ namespace Data.Migrations.Sqlite
                     b.Property<long?>("ServerId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("UpdatedDateTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("ZombieMatchId");
 
                     b.HasIndex("MapId");
 
-                    b.HasIndex("ServerId");
+                    b.HasIndex("ServerId", "GameMatchId", "MatchEndDate");
 
                     b.ToTable("EFZombieMatches", (string)null);
                 });
@@ -1562,6 +1566,12 @@ namespace Data.Migrations.Sqlite
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
 
+                    b.Property<int?>("AssistedRounds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SoloFromRound")
+                        .HasColumnType("INTEGER");
+
                     b.ToTable("EFZombieMatchClientStats", (string)null);
                 });
 
@@ -1572,8 +1582,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("EndTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("EndTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Points")
                         .HasColumnType("INTEGER");
@@ -1581,8 +1591,8 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("RoundNumber")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("StartTime")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("StartTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<TimeSpan?>("TimeAlive")
                         .HasColumnType("TEXT");

@@ -147,6 +147,21 @@
                                         </div>
                                         <div class="text-foreground font-bold text-sm shrink-0">Round @entry.HighestRound</div>
                                         <div class="text-xs text-subtle font-medium truncate hidden md:block">@entry.MapName</div>
+                                        @* Surfaces matches whose listing-shown player count is smaller than the
+                                           actual concurrent participants — bucketed by the qualifier (a 2-player
+                                           match where one player joined too late lands in the 1-player bucket).
+                                           The badge tells viewers the entry isn't a true solo run; bucket+listing
+                                           invariant stays intact. *@
+                                        @if (entry.TotalPlayerCount > entry.Players.Count)
+                                        {
+                                            var unqualified = entry.TotalPlayerCount - entry.Players.Count;
+                                            <Tooltip Text="@($"{entry.Players.Count} of {entry.TotalPlayerCount} players qualified for the leaderboard. " + $"{unqualified} other player{(unqualified == 1 ? string.Empty : "s")} were in the match but didn't play enough rounds to be listed.")" WrapperClass="inline-flex shrink-0">
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-alt border border-line/60 text-subtle text-[10px] font-bold uppercase tracking-wider cursor-help shrink-0">
+                                                    <i class="ph ph-users-three text-[10px]"></i>
+                                                    @entry.Players.Count of @entry.TotalPlayerCount
+                                                </span>
+                                            </Tooltip>
+                                        }
                                     </div>
                                     <div class="flex items-center gap-2 text-xs text-subtle font-medium shrink-0">
                                         @if (entry.Duration is not null)
@@ -171,10 +186,13 @@
                                         <div class="flex flex-col sm:flex-row items-stretch bg-surface-alt/30 rounded-md border border-line/50 overflow-hidden sm:divide-x divide-line/50">
                                             <div class="flex-1 p-4 flex flex-col justify-center bg-surface/20 min-w-0">
                                                 <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
-                                                <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
-                                                   class="text-lg font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
-                                                    <ColorCode Value="@p.Name"/>
-                                                </a>
+                                                <div class="flex items-center gap-2 min-w-0">
+                                                    <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                                                       class="text-lg font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                                                        <ColorCode Value="@p.Name"/>
+                                                    </a>
+                                                    <ZombieAssistanceBadge SoloFromRound="p.SoloFromRound" HighestRound="entry.HighestRound" />
+                                                </div>
                                             </div>
                                             <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
                                                 <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Kills</span>
@@ -205,10 +223,13 @@
                                                 <div class="flex items-center justify-between gap-2 p-3 sm:p-4 bg-surface-alt/30 rounded-md border border-line/50 min-w-0">
                                                     <div class="flex flex-col justify-center pr-2 min-w-0">
                                                         <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
-                                                        <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
-                                                           class="text-base font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
-                                                            <ColorCode Value="@p.Name"/>
-                                                        </a>
+                                                        <div class="flex items-center gap-1.5 min-w-0">
+                                                            <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                                                               class="text-base font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                                                                <ColorCode Value="@p.Name"/>
+                                                            </a>
+                                                            <ZombieAssistanceBadge SoloFromRound="p.SoloFromRound" HighestRound="entry.HighestRound" />
+                                                        </div>
                                                     </div>
                                                     <div class="flex items-center gap-5 shrink-0">
                                                         <div class="flex flex-col items-center">
@@ -249,6 +270,9 @@
                                                        class="font-semibold text-muted truncate ml-2 hover:text-primary transition-colors no-underline">
                                                         <ColorCode Value="@p.Name"/>
                                                     </a>
+                                                    <span class="ml-1.5">
+                                                        <ZombieAssistanceBadge SoloFromRound="p.SoloFromRound" HighestRound="entry.HighestRound" />
+                                                    </span>
                                                     <div class="flex-1 border-b border-dashed border-line/60 mx-3 min-w-[12px]"></div>
                                                     <span class="font-mono tracking-tight tabular-nums shrink-0 flex items-center">
                                                         <span class="text-foreground text-right">@p.Kills.ToString("N0")<span class="text-[10px] text-subtle font-sans ml-0.5">K</span></span>

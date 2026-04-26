@@ -70,6 +70,17 @@ public class ZombieLeaderboardEntry
     public string? Duration { get; set; }
     public string? ServerName { get; set; }
     public List<ZombieLeaderboardPlayer> Players { get; set; } = [];
+
+    /// <summary>
+    /// Total distinct players that participated in the match (any round entry),
+    /// before the leaderboard qualifier filtered the list. When this exceeds
+    /// <see cref="Players"/>.Count, the bucket entry is showing fewer players
+    /// than were actually in the match (e.g. a 2-player match where one player
+    /// joined too late or played too few rounds to qualify lands in the 1-player
+    /// bucket). The card surfaces this so viewers know the entry isn't a true
+    /// solo run. Equal to <see cref="Players"/>.Count for honest entries.
+    /// </summary>
+    public int TotalPlayerCount { get; set; }
 }
 
 public class ZombieLeaderboardPlayer
@@ -85,4 +96,17 @@ public class ZombieLeaderboardPlayer
     public int HeadshotKills { get; set; }
     public long DamageDealt { get; set; }
     public int DamageReceived { get; set; }
+
+    /// <summary>
+    /// Rounds in this match where this player had at least one other tracked teammate.
+    /// Null on legacy rows.
+    /// </summary>
+    public int? AssistedRounds { get; set; }
+
+    /// <summary>
+    /// First round at which this player became "solo to the end". Drives the
+    /// "Solo from R&lt;N&gt;" badge on the leaderboard card. Null when player was assisted
+    /// to the final round or the metric wasn't computed.
+    /// </summary>
+    public int? SoloFromRound { get; set; }
 }

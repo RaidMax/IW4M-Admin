@@ -1,0 +1,40 @@
+@*
+    Renders the "Solo from R<N>" badge when a qualifying player did less than 20% of
+    the match's rounds without help (mirrors the ZombieMatchQualifier 20% rule on the
+    other end). Absence of badge = either a clean run or genuinely solo throughout —
+    the absence itself is the positive signal.
+
+    Used on every match-record card: leaderboard player slot, per-client match-history
+    header, and per-player match-detail tab. One component, one rule, one tooltip.
+*@
+
+@if (ShouldShow())
+{
+    var soloRounds = HighestRound - SoloFromRound!.Value + 1;
+    var soloPct = (int)Math.Round(soloRounds / (double)HighestRound * 100);
+    var assistedPct = 100 - soloPct;
+    var tooltip = $"This player had teammates for ~{assistedPct}% of the match (rounds 1–{SoloFromRound - 1}). " +
+                  $"They were solo for the final {soloRounds} round{(soloRounds == 1 ? "" : "s")}.";
+
+    <Tooltip Text="@tooltip" WrapperClass="inline-flex shrink-0">
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/10 border border-warning/30 text-warning text-[10px] font-bold uppercase tracking-wider cursor-help">
+            <i class="ph ph-handshake text-[10px]"></i>
+            Solo from R@(SoloFromRound)
+        </span>
+    </Tooltip>
+}
+
+@code {
+    [Parameter] public int? SoloFromRound { get; set; }
+    [Parameter, EditorRequired] public int HighestRound { get; set; }
+
+    private bool ShouldShow()
+    {
+        if (SoloFromRound is null || HighestRound <= 0) return false;
+        var soloRounds = HighestRound - SoloFromRound.Value + 1;
+        if (soloRounds <= 0) return false;
+        // Same 20% threshold the qualifier uses, mirrored.
+        var soloThreshold = Math.Max(2, (int)Math.Ceiling(HighestRound * 0.2));
+        return soloRounds < soloThreshold;
+    }
+}

@@ -35,11 +35,12 @@
 
                 @if (Model.ZombieRoundNumber is not null)
                 {
-                    <div class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-surface text-xs border border-line shadow-sm"
-                         title="Current Round">
+                    <button @onclick:preventDefault @onclick="OpenZombieLive" @onclick:stopPropagation
+                            class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-surface text-xs border border-line shadow-sm hover:border-warning/40 hover:bg-warning/10 cursor-pointer transition-colors"
+                            title="Click for live match snapshot — current round @Model.ZombieRoundNumber">
                         <i class="ph-bold ph-skull text-warning text-[10px]"></i>
                         <span class="font-mono font-bold text-foreground">@Model.ZombieRoundNumber</span>
-                    </div>
+                    </button>
                 }
 
                 <!-- 4. Player Count -->

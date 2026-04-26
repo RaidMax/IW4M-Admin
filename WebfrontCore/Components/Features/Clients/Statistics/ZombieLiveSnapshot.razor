@@ -1,0 +1,421 @@
+@using SharedLibraryCore.Interfaces
+
+@*
+    Live snapshot of an in-progress zombie match. Distinct from the post-match
+    ZombieMatchDetail — emphasises "happening right now" rather than "review past
+    performance". Refreshes via the parent ZombieLiveModalWrapper every 5s.
+
+    Layout adapts to player count, mirroring ZombieLeaderboard's pattern:
+      - 1P  → wide hero card with full stat strip + current-round footer
+      - 2P  → side-by-side condensed cards
+      - 3-8 → compact rows with Streak / Kills / Dmg columns
+*@
+
+<div class="flex flex-col h-full">
+
+    <div class="p-4 md:p-5 overflow-y-auto space-y-5 flex-1" style="scrollbar-width: thin;">
+
+        @* ── BANNER: round + round timer + match elapsed + map ── *@
+        <div class="relative overflow-hidden rounded-xl bg-surface-alt/40 border border-line p-5">
+            <div class="absolute top-0 left-0 w-1 h-full bg-warning"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">Current Round</span>
+                    <div class="flex items-baseline gap-3">
+                        <span class="text-4xl md:text-5xl font-mono font-bold text-warning leading-none">@Snapshot.CurrentRound</span>
+                        @if (_roundElapsedSeconds is { } rs)
+                        {
+                            <span class="text-base font-mono text-muted tabular-nums" title="Time since current round started">+@FormatElapsed(rs)</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="w-px h-12 bg-line/50"></div>
+
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">Match Elapsed</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl font-mono font-medium text-foreground leading-none tabular-nums">@FormatElapsed(_elapsedSeconds)</span>
+                        <span class="relative flex h-2 w-2" title="Live match in progress">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
+                        </span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Snapshot.Map))
+                {
+                    <div class="ml-auto flex items-center gap-1.5 text-muted text-xs">
+                        <i class="ph ph-map-trifold text-subtle text-sm"></i>
+                        <span class="truncate">@Snapshot.Map</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── PLAYERS ── *@
+        @if (Snapshot.Players.Count > 0)
+        {
+            <div>
+                <h5 class="text-[11px] font-bold uppercase tracking-widest text-subtle mb-3 flex items-center gap-2">
+                    <i class="ph ph-users text-sm"></i> Players (@Snapshot.Players.Count)
+                </h5>
+
+                @if (Snapshot.Players.Count == 1)
+                {
+                    @RenderSoloHero(Snapshot.Players[0])
+                }
+                else if (Snapshot.Players.Count == 2)
+                {
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach (var p in Snapshot.Players)
+                        {
+                            @RenderDuoCard(p)
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="bg-surface-alt/40 border border-line rounded-xl overflow-hidden">
+                        @{ var rank = 0; }
+                        @foreach (var p in Snapshot.Players)
+                        {
+                            rank++;
+                            @RenderCompactRow(p, rank)
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        @* ── RECENT ACTIVITY: vertical thread ── *@
+        @if (Snapshot.RecentEvents.Count > 0)
+        {
+            <div>
+                <h5 class="text-[11px] font-bold uppercase tracking-widest text-subtle mb-3 flex items-center gap-2">
+                    <i class="ph ph-activity text-sm"></i> Recent Activity
+                </h5>
+                <div class="bg-surface-alt/20 border border-line rounded-xl p-4 max-h-80 overflow-y-auto" style="scrollbar-width: thin;">
+                    @{ var orderedEvents = Snapshot.RecentEvents.AsEnumerable().Reverse().ToList(); }
+                    @* Timeline thread alignment:
+                       - Row uses `items-center` so all three columns (time, icon, text)
+                         share a vertical centre. Row height = tallest child = w-6 disc
+                         = 24px. Text-xs and text-sm line-boxes both centre to y=12.
+                       - mb-4 between rows (instead of pb-4 on text column) keeps vertical
+                         spacing without breaking the items-center alignment.
+                       - Icon column horizontal: w-16 (time) + gap-3 (12) → icon column
+                         starts at 76px; w-6 disc centre at 76 + 12 = 88px.
+                       - Connecting line at left-[88px], top-[24px] (icon bottom),
+                         bottom-[-16px] (extends through the mb-4 gap to next row's
+                         icon top). *@
+                    @for (var i = 0; i < orderedEvents.Count; i++)
+                    {
+                        var evt = orderedEvents[i];
+                        var visuals = GetEventVisuals(evt.Category);
+                        var isLast = i == orderedEvents.Count - 1;
+                        var isRound = evt.Category == "round";
+
+                        <div class="relative flex items-center gap-3 group @(isLast ? "" : "mb-4")">
+                            @if (!isLast)
+                            {
+                                <div class="absolute left-[88px] top-[24px] bottom-[-16px] w-px bg-line/60 group-hover:bg-line transition-colors"></div>
+                            }
+
+                            <div class="w-16 shrink-0 text-right">
+                                <span class="font-mono text-xs text-subtle">@evt.Time</span>
+                            </div>
+
+                            <div class="relative z-10 flex items-center justify-center w-6 h-6 shrink-0">
+                                @if (isRound)
+                                {
+                                    <div class="w-2.5 h-2.5 rounded-full bg-line border-2 border-surface"></div>
+                                }
+                                else
+                                {
+                                    @* Solid surface bg behind the tinted overlay so the connecting line
+                                       behind the disc doesn't bleed through the (translucent) /15 fill. *@
+                                    <div class="w-6 h-6 rounded-full flex items-center justify-center border border-line/50 bg-surface">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center @visuals.Bg/15">
+                                            <i class="ph @visuals.Icon @visuals.Text" style="font-size: 11px;"></i>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="flex-1">
+                                <span class="text-sm font-medium @(isRound ? "text-foreground font-bold" : visuals.Text)">
+                                    @evt.Label
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    private double _elapsedSeconds;
+    private double? _roundElapsedSeconds;
+
+    protected override void OnParametersSet()
+    {
+        var now = DateTimeOffset.UtcNow;
+        _elapsedSeconds = Math.Max(0, (now - Snapshot.MatchStartedAt).TotalSeconds);
+        _roundElapsedSeconds = Snapshot.CurrentRoundStartedAt is { } rs
+            ? Math.Max(0, (now - rs).TotalSeconds)
+            : null;
+    }
+
+    @* ─────────── 1P: hero card ─────────── *@
+    private RenderFragment RenderSoloHero(ZombieLivePlayerSnapshot p) => __builder =>
+    {
+        var dmgInf = p.MatchDamageReceived == 0;
+        var dmgRatio = dmgInf ? 0 : (double)p.MatchDamageDealt / p.MatchDamageReceived;
+        var hsPct = p.MatchKills == 0 ? 0 : (double)p.MatchHeadshotKills / p.MatchKills * 100;
+        var kpd = p.MatchDowns == 0 ? p.MatchKills : (double)p.MatchKills / p.MatchDowns;
+        var net = p.MatchPointsEarned - p.MatchPointsSpent;
+
+        <div class="bg-surface-alt/40 border border-line rounded-xl overflow-hidden @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
+            <div class="flex items-center justify-between gap-3 px-5 py-3 bg-surface-alt/60 border-b border-line">
+                <div class="flex items-center gap-2 min-w-0">
+                    <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                       class="text-lg font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                        <ColorCode Value="@p.Name" />
+                    </a>
+                    @RenderJoinedBadge(p)
+                </div>
+                @RenderStatusPill(p)
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-px bg-line/40">
+                @RenderHeroCell("ph-sword", "Kills", p.MatchKills.ToString("N0"), "text-foreground")
+                @RenderHeroCellInline("ph-activity", "Dmg", dmgInf, dmgRatio, "x")
+                @RenderHeroCellNet("ph-lightning", "Net Pts", net)
+                @RenderHeroCell("ph-target", "HS%", $"{hsPct:F0}%", "text-foreground")
+                @RenderHeroCell("ph-crosshair", "KPD", kpd >= 1000 ? FormatCompactNumber((long)kpd) : kpd.ToString("F1"), "text-foreground")
+            </div>
+
+            <div class="grid grid-cols-3 gap-px bg-line/40 border-t border-line">
+                @RenderRoundCell("Round Kills", p.CurrentRoundKills, "text-warning")
+                @RenderRoundCell("Downs", p.CurrentRoundDowns, "text-orange-400")
+                @RenderRoundCell("Deaths", p.CurrentRoundDeaths, "text-error")
+            </div>
+        </div>
+    };
+
+    @* ─────────── 2P: condensed card ─────────── *@
+    private RenderFragment RenderDuoCard(ZombieLivePlayerSnapshot p) => __builder =>
+    {
+        var dmgInf = p.MatchDamageReceived == 0;
+        var dmgRatio = dmgInf ? 0 : (double)p.MatchDamageDealt / p.MatchDamageReceived;
+        var net = p.MatchPointsEarned - p.MatchPointsSpent;
+
+        <div class="bg-surface-alt/40 border border-line rounded-xl p-4 @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
+            <div class="flex items-center justify-between gap-2 mb-4">
+                <div class="flex items-center gap-2 min-w-0">
+                    <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                       class="font-bold text-foreground text-base truncate hover:text-primary transition-colors no-underline">
+                        <ColorCode Value="@p.Name" />
+                    </a>
+                    @RenderJoinedBadge(p)
+                </div>
+                @RenderStatusPill(p)
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-3">
+                @RenderDuoStat("Kills", p.MatchKills.ToString("N0"), "text-foreground")
+                @RenderDuoStatInline("Dmg", dmgInf, dmgRatio, "x")
+                @RenderDuoStat("Pts", FormatCompactNumber(net), net >= 0 ? "text-foreground" : "text-error")
+            </div>
+
+            <div class="flex items-center justify-between text-xs bg-surface/40 border border-line/40 rounded-lg px-3 py-2">
+                <span class="text-[9px] uppercase tracking-widest text-subtle font-bold">This round</span>
+                <span class="font-mono tracking-tight">
+                    <span class="text-warning font-bold">@p.CurrentRoundKills</span><span class="text-subtle ml-0.5 mr-2">k</span>
+                    <span class="text-orange-400 font-bold">@p.CurrentRoundDowns</span><span class="text-subtle ml-0.5 mr-2">d</span>
+                    <span class="text-error font-bold">@p.CurrentRoundDeaths</span><span class="text-subtle ml-0.5">x</span>
+                </span>
+            </div>
+        </div>
+    };
+
+    @* ─────────── 3-8P: compact rows ─────────── *@
+    private RenderFragment RenderCompactRow(ZombieLivePlayerSnapshot p, int rank) => __builder =>
+    {
+        var dmgInf = p.MatchDamageReceived == 0;
+        var dmgRatio = dmgInf ? 0 : (double)p.MatchDamageDealt / p.MatchDamageReceived;
+
+        <div class="flex items-center px-4 py-3 border-b border-line/30 last:border-0 transition-colors hover:bg-surface-hover/20 @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
+            <span class="w-6 text-subtle font-mono text-xs shrink-0">@(rank).</span>
+            @{
+                var (label, colorClass, _, dotClass, animate, tooltip) = StatusVisuals(p.Status);
+            }
+            <span class="w-2 h-2 rounded-full @dotClass @(animate ? "animate-pulse" : "") mr-2 shrink-0" title="@tooltip"></span>
+            <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+               class="font-medium text-foreground truncate hover:text-primary transition-colors no-underline max-w-[8rem]">
+                <ColorCode Value="@p.Name" />
+            </a>
+            <span class="ml-2 shrink-0">@RenderJoinedBadge(p)</span>
+            @if (p.Status != ZombieLivePlayerStatus.Alive)
+            {
+                <span class="text-[9px] uppercase tracking-wider @colorClass ml-2 shrink-0 font-bold">@label</span>
+            }
+
+            <div class="flex-1"></div>
+
+            <div class="flex items-center font-mono tabular-nums text-sm gap-6">
+                <div class="flex flex-col items-end w-16">
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">Streak</span>
+                    <span class="text-warning">+@p.CurrentRoundKills</span>
+                </div>
+                <div class="flex flex-col items-end w-16">
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">Kills</span>
+                    <span class="text-foreground">@p.MatchKills.ToString("N0")</span>
+                </div>
+                <div class="flex-col items-end w-16 hidden sm:flex">
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5">Dmg</span>
+                    <span class="text-muted flex items-center justify-end">
+                        @if (dmgInf)
+                        {
+                            <i class="ph ph-infinity"></i>
+                        }
+                        else
+                        {
+                            @dmgRatio.ToString("N1")<span class="text-[10px] text-subtle ml-0.5">x</span>
+                        }
+                    </span>
+                </div>
+            </div>
+        </div>
+    };
+
+    @* ─────────── shared bits ─────────── *@
+
+    @* "Joined late" badge — inline next to the player name across all layouts so the
+       indicator never changes the host card's height (the previous footer-row variant
+       made duo cards uneven and hung pad off solo cards). Renders nothing when the
+       player was present from round 1. *@
+    private RenderFragment RenderJoinedBadge(ZombieLivePlayerSnapshot p) => __builder =>
+    {
+        if (p.JoinedRound is not { } jr || jr <= 1) return;
+        <Tooltip Text="@($"Joined the match at round {jr}")" WrapperClass="inline-flex">
+            <span class="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-subtle bg-surface-alt/60 border border-line/50 px-1.5 py-0.5 rounded shrink-0">
+                <i class="ph ph-sign-in" style="font-size: 9px;"></i>R@(jr)
+            </span>
+        </Tooltip>
+    };
+
+    private RenderFragment RenderStatusPill(ZombieLivePlayerSnapshot p) => __builder =>
+    {
+        var (label, colorClass, bgClass, dotClass, animate, tooltip) = StatusVisuals(p.Status);
+        <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider @colorClass @bgClass px-2 py-0.5 rounded-full shrink-0"
+              title="@tooltip">
+            <span class="w-1.5 h-1.5 rounded-full @dotClass @(animate ? "animate-pulse" : "")"></span>@label
+        </span>
+    };
+
+    private static (string Label, string Color, string Bg, string Dot, bool Animate, string Tooltip)
+        StatusVisuals(ZombieLivePlayerStatus status) => status switch
+    {
+        ZombieLivePlayerStatus.Alive => ("Alive", "text-success", "bg-success/10", "bg-success", true, "Player is up and active"),
+        ZombieLivePlayerStatus.Down => ("Down", "text-orange-400", "bg-orange-400/10", "bg-orange-400", true, "Player is downed — needs reviving"),
+        ZombieLivePlayerStatus.Dead => ("Dead", "text-error", "bg-error/10", "bg-error", false, "Player died this round — spectating until next"),
+        _ => ("Disconnected", "text-subtle", "bg-subtle/10", "bg-subtle", false, "Player isn't currently connected — likely disconnected mid-match"),
+    };
+
+    private RenderFragment RenderHeroCell(string icon, string label, string value, string colorClass) => __builder =>
+    {
+        <div class="flex flex-col items-center justify-center p-4 bg-surface-alt/80">
+            <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1.5 flex items-center gap-1">
+                <i class="ph @icon" style="font-size: 12px;"></i> @label
+            </span>
+            <span class="font-mono text-2xl font-bold @colorClass leading-none">@value</span>
+        </div>
+    };
+
+    private RenderFragment RenderHeroCellInline(string icon, string label, bool inf, double value, string suffix) => __builder =>
+    {
+        <div class="flex flex-col items-center justify-center p-4 bg-surface-alt/80">
+            <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1.5 flex items-center gap-1">
+                <i class="ph @icon" style="font-size: 12px;"></i> @label
+            </span>
+            <span class="font-mono text-2xl font-bold text-muted leading-none flex items-baseline">
+                @if (inf)
+                {
+                    <i class="ph ph-infinity"></i>
+                }
+                else
+                {
+                    @value.ToString("N1")<span class="text-sm text-subtle ml-0.5">@suffix</span>
+                }
+            </span>
+        </div>
+    };
+
+    private RenderFragment RenderHeroCellNet(string icon, string label, long value) => __builder =>
+    {
+        var colorClass = value >= 0 ? "text-success" : "text-error";
+        <div class="flex flex-col items-center justify-center p-4 bg-surface-alt/80">
+            <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1.5 flex items-center gap-1">
+                <i class="ph @icon" style="font-size: 12px;"></i> @label
+            </span>
+            <span class="font-mono text-2xl font-bold @colorClass leading-none">@FormatSigned(value)</span>
+        </div>
+    };
+
+    private RenderFragment RenderRoundCell(string label, int value, string colorClass) => __builder =>
+    {
+        <div class="flex flex-col items-center justify-center py-3 bg-surface-alt/40">
+            <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">@label</span>
+            <span class="font-mono text-lg font-bold @colorClass leading-none">@value</span>
+        </div>
+    };
+
+    private RenderFragment RenderDuoStat(string label, string value, string colorClass) => __builder =>
+    {
+        <div class="flex flex-col bg-surface/50 rounded-lg p-2 border border-line/30">
+            <span class="text-[9px] uppercase tracking-widest text-subtle font-bold mb-1">@label</span>
+            <span class="font-mono text-base font-bold @colorClass">@value</span>
+        </div>
+    };
+
+    private RenderFragment RenderDuoStatInline(string label, bool inf, double value, string suffix) => __builder =>
+    {
+        <div class="flex flex-col bg-surface/50 rounded-lg p-2 border border-line/30">
+            <span class="text-[9px] uppercase tracking-widest text-subtle font-bold mb-1">@label</span>
+            <span class="font-mono text-base font-bold text-muted flex items-baseline">
+                @if (inf)
+                {
+                    <i class="ph ph-infinity"></i>
+                }
+                else
+                {
+                    @value.ToString("N1")<span class="text-[10px] text-subtle ml-0.5">@suffix</span>
+                }
+            </span>
+        </div>
+    };
+
+    private static string FormatElapsed(double seconds)
+    {
+        var span = TimeSpan.FromSeconds(seconds);
+        return span.TotalHours >= 1
+            ? $"{(int)span.TotalHours}h {span.Minutes}m"
+            : $"{span.Minutes}m {span.Seconds}s";
+    }
+
+    private static string FormatCompactNumber(long value) => value switch
+    {
+        <= -1_000_000 or >= 1_000_000 => $"{value / 1_000_000.0:F1}M",
+        <= -1_000 or >= 1_000 => $"{value / 1_000.0:F1}k",
+        _ => value.ToString("N0")
+    };
+
+    private static string FormatSigned(long value) =>
+        (value > 0 ? "+" : "") + FormatCompactNumber(value);
+}

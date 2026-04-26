@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,6 +97,33 @@ namespace Data.Context
             return base.SaveChanges();
         }
 
+        /// <summary>
+        /// SQLite has no native <see cref="DateTimeOffset"/> type and the EF Core
+        /// SQLite provider can't translate <c>ORDER BY</c> on DateTimeOffset columns
+        /// to SQL (throws <c>NotSupportedException</c> at query compile time). The
+        /// canonical fix is a value converter that stores DateTimeOffset as a long
+        /// (binary tick representation) — comparable, ORDER BY-able, and round-trips
+        /// the offset losslessly via <see cref="DateTimeOffset.ToBinary"/>.
+        ///
+        /// Postgres + MySQL handle DateTimeOffset natively, so the converter is only
+        /// applied when running on SQLite (detected via <see cref="DatabaseFacade.ProviderName"/>).
+        /// Apply via <c>ConfigureConventions</c> so it covers every DateTimeOffset
+        /// property in every entity globally — no risk of forgetting one as new
+        /// models are added.
+        /// </summary>
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            base.ConfigureConventions(configurationBuilder);
+
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                configurationBuilder.Properties<DateTimeOffset>()
+                    .HaveConversion<DateTimeOffsetToBinaryConverter>();
+                configurationBuilder.Properties<DateTimeOffset?>()
+                    .HaveConversion<DateTimeOffsetToBinaryConverter>();
+            }
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // make network id unique
@@ -188,7 +216,13 @@ namespace Data.Context
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
             
-            modelBuilder.Entity<ZombieMatch>().ToTable($"EF{nameof(ZombieMatches)}");
+            modelBuilder.Entity<ZombieMatch>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieMatches)}");
+                // Index supports the GSC stitching lookup: TrackClient checks
+                // for an open match on this server with the same GameMatchId.
+                ent.HasIndex(m => new { m.ServerId, m.GameMatchId, m.MatchEndDate });
+            });
             
             modelBuilder.Entity<ZombieClientStat>(ent =>
             {

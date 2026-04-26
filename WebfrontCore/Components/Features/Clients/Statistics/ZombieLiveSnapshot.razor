@@ -8,7 +8,7 @@
     Layout adapts to player count, mirroring ZombieLeaderboard's pattern:
       - 1P  → wide hero card with full stat strip + current-round footer
       - 2P  → side-by-side condensed cards
-      - 3-8 → compact rows with Streak / Kills / Dmg columns
+      - 3-8 → compact rows with Round / Kills / Dmg columns
 *@
 
 <div class="flex flex-col h-full">
@@ -270,7 +270,7 @@
 
             <div class="flex items-center font-mono tabular-nums text-sm gap-6">
                 <div class="flex flex-col items-end w-16">
-                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">Streak</span>
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">Round</span>
                     <span class="text-warning">+@p.CurrentRoundKills</span>
                 </div>
                 <div class="flex flex-col items-end w-16">

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using WebfrontCore.Core.QueryHelpers.Models;
@@ -12,7 +11,6 @@ public partial class BanManagement
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
-    [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ApplicationConfiguration AppConfig { get; set; }
 
     private BanInfoRequest Request { get; set; } = new();
@@ -22,18 +20,6 @@ public partial class BanManagement
     private bool IsLoading { get; set; }
     private long TotalCount { get; set; }
     private string? ValidationError { get; set; }
-
-    private DotNetObjectReference<BanManagement>? _dotNetRef;
-
-    protected override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-        }
-
-        return Task.CompletedTask;
-    }
 
     private async Task Search()
     {
@@ -59,23 +45,9 @@ public partial class BanManagement
         TotalCount = result?.TotalResultCount ?? 0;
         HasMoreResults = Results.Count >= Request.Count && Results.Count < TotalCount;
         StateHasChanged();
-
-        // Initialize infinite scroll after first results are loaded
-        if (_dotNetRef != null && HasMoreResults)
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreBansTrigger");
-            }
-            catch (InvalidOperationException)
-            {
-                // JS interop not available - safe to ignore
-            }
-        }
     }
 
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (IsLoading || !HasMoreResults)
             return;
@@ -96,32 +68,9 @@ public partial class BanManagement
         if (result?.RetrievedResultCount < Request.Count || Results.Count >= TotalCount)
         {
             HasMoreResults = false;
-            // Disconnect the observer when no more results
-            try
-            {
-                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-            }
-            catch (InvalidOperationException)
-            {
-                // JS interop not available - safe to ignore
-            }
         }
 
         StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-        }
-        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException)
-        {
-            // JS interop not available during static rendering - safe to ignore
-        }
-
-        _dotNetRef?.Dispose();
     }
 
     private int _unbanTargetId;

@@ -1,6 +1,5 @@
 @page "/Penalty/List"
 @page "/penalties"
-@implements IAsyncDisposable
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = "Permissions.Penalty.Read")]
 
@@ -180,23 +179,23 @@
         </div>
     </div>
 
-    <!-- Infinite scroll trigger element -->
-    <!-- Infinite scroll trigger element -->
-    <div id="loadMoreTrigger" class="w-full text-center py-8">
-        @if (_isLoading && State is not null && State.Penalties.Count > 0)
-        {
-            <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-        }
-        else if (State?.HasMoreResults ?? false)
-        {
-            <div class="h-10"></div>
-            <!-- Sentinel spacer -->
-        }
-        else if (State?.Penalties.Count > 0)
-        {
+    @if (State?.HasMoreResults ?? false)
+    {
+        <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                HasMore="@(State?.HasMoreResults ?? false)"
+                                IsLoading="@(_isLoading && State is not null && State.Penalties.Count > 0)"
+                                ContainerClass="w-full text-center py-8">
+            <LoadingTemplate>
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </LoadingTemplate>
+        </InfiniteScrollSentinel>
+    }
+    else if (State?.Penalties.Count > 0)
+    {
+        <div class="w-full text-center py-8">
             <span class="text-muted text-sm">@AppState.Loc("WEBFRONT_PENALTY_NO_MORE")</span>
-        }
-    </div>
+        </div>
+    }
 
 </div>
 

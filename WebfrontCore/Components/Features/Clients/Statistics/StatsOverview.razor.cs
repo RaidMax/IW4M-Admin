@@ -1,6 +1,5 @@
 ﻿using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
 using Microsoft.AspNetCore.Http;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -30,8 +29,10 @@ public partial class StatsOverview : IAsyncDisposable
     private List<BucketInfo>? _availableBuckets;
     private bool _showBucketSelector;
     private bool _firstLoad = true;
-    private Virtualize<TopStatsInfo>? _virtualizeComponent;
-    private readonly Dictionary<int, TopStatsInfo> _statsCache = new();
+    private bool _isLoadingMore;
+
+    private const int InitialBatchSize = 25;
+    private const int LoadMoreBatchSize = 25;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -45,23 +46,10 @@ public partial class StatsOverview : IAsyncDisposable
         {
             _firstLoad = false;
             _previousServerId = ServerId;
+            _previousBucket = PerformanceBucket;
             _hasLoaded = true;
 
-            // Restore cache from state
-            _statsCache.Clear();
-            for (var i = 0; i < State.TopPlayers.Count; i++)
-            {
-                _statsCache[i] = State.TopPlayers[i];
-            }
-
-            if (State.MenuItems != null)
-            {
-                // We manually set the backing field of the wrapper (which proxies to state, so actually we just need to Ensure state is set, which it is)
-                // Actually MenuItems property SETTER writes to State.MenuItems.
-                // So we don't need to do anything if it's already there.
-                // But the property getter handles null coalescence.
-            }
-            else
+            if (State.MenuItems is null)
             {
                 await GenerateMenu();
             }
@@ -78,16 +66,11 @@ public partial class StatsOverview : IAsyncDisposable
             _hasLoaded = false;
             _showBucketSelector = false;
 
-            // Clear cache when server/bucket changes
-            _statsCache.Clear();
+            // Clear loaded items on filter change.
             State.TopPlayers.Clear();
+            State.HasMore = true;
             State.ServerId = ServerId;
             State.PerformanceBucket = PerformanceBucket;
-
-            if (_virtualizeComponent != null)
-            {
-                await _virtualizeComponent.RefreshDataAsync();
-            }
 
             var allServers = await DataService.GetServersAsync();
             var buckets = allServers
@@ -144,116 +127,53 @@ public partial class StatsOverview : IAsyncDisposable
             }
 
             await GenerateMenu();
-
-            var topResponse = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
-            {
-                Count = 3,
-                Offset = 0,
-                ServerId = ServerId,
-                PerformanceBucketCode = PerformanceBucket
-            });
-
-            State.TopPlayers = topResponse.Players;
-            State.TotalRankedClients = topResponse.TotalRankedClients;
+            await LoadBatch(InitialBatchSize);
             _hasLoaded = true;
         }
     }
 
-    private const int BatchSize = 50;
-
-    private async ValueTask<ItemsProviderResult<TopStatsInfo>> LoadPlayerStats(ItemsProviderRequest request)
+    private async Task LoadBatch(int count)
     {
-        // Ensure state is initialized (should be by OnParametersSet)
-        if (State == null) return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), 0);
-
-        var startIndex = request.StartIndex;
-        var requestedCount = request.Count;
-
-        // Try to fulfill entirely from cache first
-        if (State.TotalRankedClients > 0)
-        {
-            var cachedItems = new List<TopStatsInfo>();
-            var allCached = true;
-
-            var actualEnd = Math.Min(startIndex + requestedCount, (int)State.TotalRankedClients);
-            for (var i = startIndex; i < actualEnd; i++)
-            {
-                if (_statsCache.TryGetValue(i, out var item))
-                {
-                    cachedItems.Add(item);
-                }
-                else
-                {
-                    allCached = false;
-                    break;
-                }
-            }
-
-            if (allCached && cachedItems.Count > 0)
-            {
-                return new ItemsProviderResult<TopStatsInfo>(cachedItems, (int)State.TotalRankedClients);
-            }
-        }
+        if (State is null) return;
 
         try
         {
-            // Fetch a batch starting from a position that covers the request
-            var fetchCount = Math.Max(BatchSize, requestedCount);
-
             var response = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
             {
-                Count = fetchCount,
-                Offset = startIndex,
+                Count = count,
+                Offset = State.TopPlayers.Count,
                 ServerId = ServerId,
                 PerformanceBucketCode = PerformanceBucket
             });
 
-            // Update total count
             State.TotalRankedClients = response.TotalRankedClients;
-            if (!_hasLoaded)
-            {
-                _hasLoaded = true;
-                StateHasChanged();
-            }
+            State.TopPlayers.AddRange(response.Players);
 
-            // Cache all fetched items
-            var playersList = response.Players.ToList();
-            for (var i = 0; i < playersList.Count; i++)
-            {
-                var absoluteIndex = startIndex + i;
-                _statsCache[absoluteIndex] = playersList[i];
-
-                // Persist the first batch (approx) to State for restoration
-                if (absoluteIndex < BatchSize)
-                {
-                    if (State.TopPlayers.Count <= absoluteIndex)
-                    {
-                        State.TopPlayers.Add(playersList[i]);
-                    }
-                    else
-                    {
-                        State.TopPlayers[absoluteIndex] = playersList[i];
-                    }
-                }
-            }
-
-            // Return items for the requested range
-            var result = new List<TopStatsInfo>();
-            var resultEnd = Math.Min(startIndex + requestedCount, (int)response.TotalRankedClients);
-            for (var i = startIndex; i < resultEnd; i++)
-            {
-                if (_statsCache.TryGetValue(i, out var item))
-                {
-                    result.Add(item);
-                }
-            }
-
-            return new ItemsProviderResult<TopStatsInfo>(result, (int)response.TotalRankedClients);
+            // No more pages when the server returned fewer than asked, or we've
+            // reached the total count it advertised.
+            State.HasMore = response.Players.Count >= count
+                            && State.TopPlayers.Count < (int)response.TotalRankedClients;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading stats for virtualized list");
-            return new ItemsProviderResult<TopStatsInfo>(new List<TopStatsInfo>(), (int)State.TotalRankedClients);
+            Logger.LogError(ex, "Error loading stats batch");
+            State.HasMore = false;
+        }
+    }
+
+    private async Task LoadMore()
+    {
+        if (_isLoadingMore || State is null || !State.HasMore) return;
+        _isLoadingMore = true;
+        StateHasChanged();
+        try
+        {
+            await LoadBatch(LoadMoreBatchSize);
+        }
+        finally
+        {
+            _isLoadingMore = false;
+            StateHasChanged();
         }
     }
 
@@ -329,6 +249,7 @@ public partial class StatsOverview : IAsyncDisposable
         public string? ServerId { get; set; }
         public string? PerformanceBucket { get; set; }
         public SideContextMenuItems? MenuItems { get; set; }
+        public bool HasMore { get; set; } = true;
     }
 
     // Existing helper methods...

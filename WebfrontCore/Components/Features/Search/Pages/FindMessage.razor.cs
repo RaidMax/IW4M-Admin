@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using Stats.Dtos;
@@ -7,11 +6,10 @@ using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Search.Pages;
 
-public partial class FindMessage : IAsyncDisposable
+public partial class FindMessage
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
-    [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ILogger<FindMessage> Logger { get; set; }
 
     [SupplyParameterFromQuery(Name = "messageContains")]
@@ -50,8 +48,6 @@ public partial class FindMessage : IAsyncDisposable
     private List<MessageResponse> Results => State?.Results ?? [];
     private bool _hasMore => State?.HasMore ?? false;
     private long _totalCount => State?.TotalCount ?? 0;
-
-    private DotNetObjectReference<FindMessage>? _dotNetRef;
 
     // Context modal state (not persisted - ephemeral UI state)
     private bool _showContextModal;
@@ -114,17 +110,7 @@ public partial class FindMessage : IAsyncDisposable
                state.Direction == Direction;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreMessageTrigger");
-        }
-    }
-
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (_isLoading || !_hasMore || State == null)
             return;
@@ -243,24 +229,6 @@ public partial class FindMessage : IAsyncDisposable
         _showContextModal = false;
         _selectedMessage = null;
         _contextMessages = null;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-        }
-        catch (JSDisconnectedException)
-        {
-            // Circuit disconnected, allowed
-        }
-        catch (InvalidOperationException)
-        {
-            // JS interop not available during static prerendering, allowed
-        }
-
-        _dotNetRef?.Dispose();
     }
 
     public class FindMessageState

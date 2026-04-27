@@ -91,7 +91,10 @@ else
 
     @if (HasMore)
     {
-        <div id="loadMoreMetaTrigger" class="h-px w-full"></div>
+        <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                HasMore="@HasMore"
+                                IsLoading="@Loading"
+                                ContainerClass="h-px w-full" />
     }
 }
 

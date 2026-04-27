@@ -1,6 +1,5 @@
 ﻿using Data.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using WebfrontCore.Core.Services;
 using PenaltyInfo = SharedLibraryCore.Dtos.PenaltyInfo;
 
@@ -10,7 +9,6 @@ public partial class PenaltyList
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required ILogger<PenaltyList> Logger { get; set; }
 
@@ -24,7 +22,6 @@ public partial class PenaltyList
     private bool IgnoreAutomated { get; set; } = true;
     private EFPenalty.PenaltyType ShowOnly { get; set; } = EFPenalty.PenaltyType.Any;
     private bool _isLoading;
-    private DotNetObjectReference<PenaltyList>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,17 +38,7 @@ public partial class PenaltyList
         await LoadData();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
-        }
-    }
-
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (!(State?.HasMoreResults ?? false) || _isLoading)
         {
@@ -131,20 +118,6 @@ public partial class PenaltyList
             _isLoading = false;
             StateHasChanged();
         }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
-        {
-            // JS interop not available during static rendering - safe to ignore
-        }
-
-        _dotNetRef?.Dispose();
     }
 
     /// <summary>

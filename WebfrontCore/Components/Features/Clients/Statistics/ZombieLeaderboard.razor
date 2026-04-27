@@ -113,12 +113,9 @@
                 @* ================================================================ *@
                 <div class="flex flex-col gap-3 relative">
 
-                    <Virtualize @ref="_virtualizeComponent" Context="entry" ItemsProvider="LoadEntries"
-                                OverscanCount="10" ItemSize="120">
-                        <ItemContent>
-                            @{
+                    @foreach (var entry in _entries)
+                    {
                                 var isExpanded = _expandedMatches.ContainsKey(entry.MatchId);
-                            }
 
                             <div class="bg-surface border rounded-md overflow-hidden transition-colors duration-150
                                         @(isExpanded ? "border-line" : "border-line/80 hover:bg-surface-hover cursor-pointer")">
@@ -412,22 +409,29 @@
                                     </div>
                                 }
                             </div>
-                        </ItemContent>
-                        <Placeholder>
-                            <div class="bg-surface border border-line/50 rounded-md overflow-hidden animate-pulse">
-                                <div class="flex items-center justify-between gap-3 px-4 py-2 border-b border-line bg-surface-alt/50">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-20 h-5 bg-surface-alt rounded"></div>
-                                        <div class="w-24 h-4 bg-surface-alt/70 rounded"></div>
+                    }
+
+                    @if (_entriesLoaded && _hasMore)
+                    {
+                        <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                                HasMore="@_hasMore"
+                                                IsLoading="@_isLoadingMore">
+                            <LoadingTemplate>
+                                <div class="bg-surface border border-line/50 rounded-md overflow-hidden animate-pulse">
+                                    <div class="flex items-center justify-between gap-3 px-4 py-2 border-b border-line bg-surface-alt/50">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-20 h-5 bg-surface-alt rounded"></div>
+                                            <div class="w-24 h-4 bg-surface-alt/70 rounded"></div>
+                                        </div>
+                                        <div class="w-28 h-4 bg-surface-alt/70 rounded"></div>
                                     </div>
-                                    <div class="w-28 h-4 bg-surface-alt/70 rounded"></div>
+                                    <div class="p-4">
+                                        <div class="h-12 bg-surface-alt/40 rounded"></div>
+                                    </div>
                                 </div>
-                                <div class="p-4">
-                                    <div class="h-12 bg-surface-alt/40 rounded"></div>
-                                </div>
-                            </div>
-                        </Placeholder>
-                    </Virtualize>
+                            </LoadingTemplate>
+                        </InfiniteScrollSentinel>
+                    }
 
                     @if (_entriesLoaded && _totalEntries == 0)
                     {

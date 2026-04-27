@@ -1,6 +1,5 @@
 using Data.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Services;
 
@@ -33,11 +32,16 @@ public partial class ZombieLeaderboard
     private bool _serviceAvailable;
     private int _totalEntries;
     private bool _entriesLoaded;
-    private Virtualize<ZombieLeaderboardEntry>? _virtualizeComponent;
+    private bool _isLoadingMore;
+    private bool _hasMore = true;
+    private readonly List<ZombieLeaderboardEntry> _entries = [];
     private SharedLibraryCore.Dtos.SideContextMenuItems? MenuItems { get; set; }
     private readonly Dictionary<int, SharedLibraryCore.Interfaces.ZombieMatchDetail?> _expandedMatches = new();
     private readonly HashSet<int> _loadingMatches = new();
     private List<ZombieMapStatRecord> _mapRecords = [];
+
+    private const int InitialBatchSize = 25;
+    private const int LoadMoreBatchSize = 25;
 
     private string? _previousGame;
     private string? _previousMap;
@@ -155,21 +159,17 @@ public partial class ZombieLeaderboard
             Random.Shared.Shuffle(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_mapRecords));
         }
 
-        if (_virtualizeComponent is not null)
-        {
-            await _virtualizeComponent.RefreshDataAsync();
-        }
+        // Reset paging on filter change and fetch the first batch.
+        _entries.Clear();
+        _expandedMatches.Clear();
+        _loadingMatches.Clear();
+        _hasMore = true;
+        await LoadBatch(InitialBatchSize);
     }
 
-    private const int BatchSize = 50;
-
-    private async ValueTask<ItemsProviderResult<ZombieLeaderboardEntry>> LoadEntries(
-        ItemsProviderRequest request)
+    private async Task LoadBatch(int count)
     {
-        if (_leaderboardService is null || _selectedGame is null || _selectedMap is null)
-        {
-            return new ItemsProviderResult<ZombieLeaderboardEntry>([], 0);
-        }
+        if (_leaderboardService is null || _selectedGame is null || _selectedMap is null) return;
 
         try
         {
@@ -177,17 +177,34 @@ public partial class ZombieLeaderboard
                 _selectedGame.Game,
                 _selectedMap.MapId,
                 _selectedPlayerCount,
-                request.StartIndex,
-                Math.Max(BatchSize, request.Count));
+                _entries.Count,
+                count);
 
             _totalEntries = response.TotalCount;
+            _entries.AddRange(response.Entries);
+            _hasMore = response.Entries.Count >= count && _entries.Count < response.TotalCount;
             _entriesLoaded = true;
-            return new ItemsProviderResult<ZombieLeaderboardEntry>(response.Entries, response.TotalCount);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading zombie leaderboard entries");
-            return new ItemsProviderResult<ZombieLeaderboardEntry>([], _totalEntries);
+            _hasMore = false;
+        }
+    }
+
+    private async Task LoadMore()
+    {
+        if (_isLoadingMore || !_hasMore) return;
+        _isLoadingMore = true;
+        StateHasChanged();
+        try
+        {
+            await LoadBatch(LoadMoreBatchSize);
+        }
+        finally
+        {
+            _isLoadingMore = false;
+            StateHasChanged();
         }
     }
 

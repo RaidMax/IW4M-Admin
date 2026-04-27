@@ -1,16 +1,14 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Components;
 
-public partial class ClientMetaList : IAsyncDisposable
+public partial class ClientMetaList
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ILogger<ClientMetaList> Logger { get; set; }
 
     [Parameter] public int ClientId { get; set; }
@@ -25,8 +23,6 @@ public partial class ClientMetaList : IAsyncDisposable
     private bool HasMore { get; set; } = true;
     private int _previousClientId;
     private MetaType? _previousMetaFilter;
-    private DotNetObjectReference<ClientMetaList>? _objRef;
-    private bool _observerSetup;
 
     // State container for individual meta items (expansion, loading, extra data)
     private Dictionary<object, MetaItemState> _itemStates = new();
@@ -56,22 +52,11 @@ public partial class ClientMetaList : IAsyncDisposable
             HasMore = true;
             _previousClientId = ClientId;
             _previousMetaFilter = MetaFilterType;
-            _observerSetup = false;
         }
 
         if (MetaItems.Count == 0)
         {
             await LoadData();
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (MetaItems.Count != 0 && HasMore && !_observerSetup)
-        {
-            _objRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _objRef, "loadMoreMetaTrigger");
-            _observerSetup = true;
         }
     }
 
@@ -148,28 +133,10 @@ public partial class ClientMetaList : IAsyncDisposable
         }
     }
 
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         await LoadData();
         StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_observerSetup)
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
-            {
-                // ignored
-            }
-        }
-
-        _objRef?.Dispose();
     }
 
     // --- Item Logic ---

@@ -1,4 +1,5 @@
 @using SharedLibraryCore.Interfaces
+@inject AppState AppState
 @* Match detail panel with per-player tabs, timeline, and round breakdown *@
 
 @if (Detail.Players.Count == 0)
@@ -52,14 +53,14 @@
 
             @* ── PLAYER SUMMARY ── *@
             <div class="flex flex-wrap gap-6">
-                @RenderStat("ph-sword", "Kills", activePlayer.Kills.ToString("N0"))
-                @RenderStat("ph-skull", "Deaths", activePlayer.Deaths.ToString())
-                @RenderStat("ph-warning-circle", "Downs", activePlayer.Downs.ToString())
-                @RenderStat("ph-first-aid", "Revives", activePlayer.Revives.ToString())
-                @RenderStat("ph-coins", "Points", activePlayer.PointsEarned.ToString("N0"))
-                @RenderStat("ph-crosshair", "Headshots", activePlayer.Headshots.ToString())
-                @RenderStat("ph-fire", "Dmg Dealt", activePlayer.DamageDealt.ToString("N0"))
-                @RenderStat("ph-shield-warning", "Dmg Taken", activePlayer.DamageReceived.ToString("N0"))
+                @RenderStat("ph-sword", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_KILLS"), activePlayer.Kills.ToString("N0"))
+                @RenderStat("ph-skull", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_DEATHS"), activePlayer.Deaths.ToString())
+                @RenderStat("ph-warning-circle", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_DOWNS"), activePlayer.Downs.ToString())
+                @RenderStat("ph-first-aid", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_REVIVES"), activePlayer.Revives.ToString())
+                @RenderStat("ph-coins", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_POINTS"), activePlayer.PointsEarned.ToString("N0"))
+                @RenderStat("ph-crosshair", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_HEADSHOTS"), activePlayer.Headshots.ToString())
+                @RenderStat("ph-fire", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_DMG_DEALT"), activePlayer.DamageDealt.ToString("N0"))
+                @RenderStat("ph-shield-warning", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_DETAIL_DMG_TAKEN"), activePlayer.DamageReceived.ToString("N0"))
             </div>
 
             @* ── TIMELINE ── *@

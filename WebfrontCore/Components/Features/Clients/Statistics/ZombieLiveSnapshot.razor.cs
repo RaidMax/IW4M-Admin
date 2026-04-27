@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Interfaces;
+using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
 
@@ -7,6 +8,21 @@ public partial class ZombieLiveSnapshot
 {
     [Parameter, EditorRequired]
     public ZombieLiveMatchSnapshot Snapshot { get; set; } = default!;
+
+    [Inject] public required AppState AppState { get; set; }
+
+    private static (string Label, string Color, string Bg, string Dot, bool Animate, string Tooltip)
+        StatusVisuals(ZombieLivePlayerStatus status, AppState appState) => status switch
+    {
+        ZombieLivePlayerStatus.Alive => (appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_ALIVE"), "text-success", "bg-success/10", "bg-success", true,
+            appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_ALIVE_TOOLTIP")),
+        ZombieLivePlayerStatus.Down => (appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DOWN"), "text-orange-400", "bg-orange-400/10", "bg-orange-400", true,
+            appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DOWN_TOOLTIP")),
+        ZombieLivePlayerStatus.Dead => (appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DEAD"), "text-error", "bg-error/10", "bg-error", false,
+            appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DEAD_TOOLTIP")),
+        _ => (appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DISCONNECTED"), "text-subtle", "bg-subtle/10", "bg-subtle", false,
+            appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DISCONNECTED_TOOLTIP")),
+    };
 
     // Mirrors ZombieTimeline.GetEventVisuals — same icons/colors so the live activity
     // feed matches the post-match timeline. Kept inline (rather than reusing the

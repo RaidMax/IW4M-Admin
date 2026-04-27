@@ -244,7 +244,9 @@ public class Plugin : IPluginV2
             await _enhancer.Initialize();
             manager.CustomStatsMetrics.Add(_enhancer.GetTopStatsMetrics);
             manager.CustomStatsMetrics.Add(_enhancer.GetAdvancedStatsMetrics);
-            manager.GetPageList().Pages.Add("Zombie Leaderboard", "/stats/zombies");
+            manager.GetPageList().Pages.Add(
+                Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_ZOMBIE_STATS_PAGE_NAME"],
+                "/stats/zombies");
         }
         else
         {
@@ -278,8 +280,8 @@ public class Plugin : IPluginV2
 
         meta.First().Value.Add(new EFMeta
         {
-            Key = "Advanced Zombie Stats",
-            Value = "Available with Zombie Stats Premium"
+            Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_ZOMBIE_STATS_PREMIUM_UPSELL_KEY"],
+            Value = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_ZOMBIE_STATS_PREMIUM_UPSELL_VALUE"]
         });
     }
 }

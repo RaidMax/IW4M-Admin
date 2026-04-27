@@ -1,7 +1,7 @@
 @page "/stats/zombies"
 @rendermode InteractiveServer
 
-<PageTitle>Zombie Leaderboard | @AppState.WebfrontBranding</PageTitle>
+<PageTitle>@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_TITLE") | @AppState.WebfrontBranding</PageTitle>
 
 @if (!_serviceAvailable || !_hasLoaded)
 {
@@ -26,7 +26,7 @@
                     </div>
                     <div>
                         <h2 class="text-2xl font-black text-gradient-title tracking-tight text-left">
-                            Zombie Leaderboard
+                            @AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_TITLE")
                         </h2>
                         <div class="text-muted mt-1 font-medium flex items-center gap-2 text-sm">
                             <i class="ph ph-game-controller text-subtle"></i>
@@ -100,9 +100,9 @@
                     <div class="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 shadow-inner">
                         <i class="ph ph-skull text-5xl text-subtle"></i>
                     </div>
-                    <h3 class="text-2xl font-bold text-foreground">No Zombie Records Yet</h3>
+                    <h3 class="text-2xl font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_NO_RECORDS_TITLE")</h3>
                     <p class="text-muted mt-2 max-w-md mx-auto">
-                        Play some zombie matches to start building the leaderboard.
+                        @AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_NO_RECORDS_DESC")
                     </p>
                 </div>
             }
@@ -124,10 +124,10 @@
                                 @{
                                     var (badgeBg, badgeText, badgeBorder, badgeIcon, badgeLabel) = entry.Rank switch
                                     {
-                                        1 => ("bg-yellow-500/10", "text-yellow-500", "border-yellow-500/20", "ph-trophy", "1st Place"),
-                                        2 => ("bg-slate-300/10", "text-slate-300", "border-slate-300/20", "ph-medal", "2nd Place"),
-                                        3 => ("bg-amber-600/10", "text-amber-500", "border-amber-600/20", "ph-medal", "3rd Place"),
-                                        _ => ("bg-surface-alt", "text-subtle", "border-line/50", (string?)null, $"#{entry.Rank} Place")
+                                        1 => ("bg-yellow-500/10", "text-yellow-500", "border-yellow-500/20", "ph-trophy", AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_RANK_FIRST")),
+                                        2 => ("bg-slate-300/10", "text-slate-300", "border-slate-300/20", "ph-medal", AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_RANK_SECOND")),
+                                        3 => ("bg-amber-600/10", "text-amber-500", "border-amber-600/20", "ph-medal", AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_RANK_THIRD")),
+                                        _ => ("bg-surface-alt", "text-subtle", "border-line/50", (string?)null, AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_RANK_OTHER").FormatExt(entry.Rank))
                                     };
                                 }
 
@@ -142,7 +142,7 @@
                                             }
                                             <span>@badgeLabel</span>
                                         </div>
-                                        <div class="text-foreground font-bold text-sm shrink-0">Round @entry.HighestRound</div>
+                                        <div class="text-foreground font-bold text-sm shrink-0">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_ROUND").FormatExt(entry.HighestRound)</div>
                                         <div class="text-xs text-subtle font-medium truncate hidden md:block">@entry.MapName</div>
                                         @* Surfaces matches whose listing-shown player count is smaller than the
                                            actual concurrent participants — bucketed by the qualifier (a 2-player
@@ -152,10 +152,10 @@
                                         @if (entry.TotalPlayerCount > entry.Players.Count)
                                         {
                                             var unqualified = entry.TotalPlayerCount - entry.Players.Count;
-                                            <Tooltip Text="@($"{entry.Players.Count} of {entry.TotalPlayerCount} players qualified for the leaderboard. " + $"{unqualified} other player{(unqualified == 1 ? string.Empty : "s")} were in the match but didn't play enough rounds to be listed.")" WrapperClass="inline-flex shrink-0">
+                                            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_QUALIFIED_TOOLTIP").FormatExt(entry.Players.Count, entry.TotalPlayerCount, unqualified)" WrapperClass="inline-flex shrink-0">
                                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-alt border border-line/60 text-subtle text-[10px] font-bold uppercase tracking-wider cursor-help shrink-0">
                                                     <i class="ph ph-users-three text-[10px]"></i>
-                                                    @entry.Players.Count of @entry.TotalPlayerCount
+                                                    @AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_QUALIFIED_BADGE").FormatExt(entry.Players.Count, entry.TotalPlayerCount)
                                                 </span>
                                             </Tooltip>
                                         }
@@ -182,7 +182,7 @@
                                         var soloRatio = soloInf ? 0 : (double)p.DamageDealt / p.DamageReceived;
                                         <div class="flex flex-col sm:flex-row items-stretch bg-surface-alt/30 rounded-md border border-line/50 overflow-hidden sm:divide-x divide-line/50">
                                             <div class="flex-1 p-4 flex flex-col justify-center bg-surface/20 min-w-0">
-                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
+                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PLAYER")</span>
                                                 <div class="flex items-center gap-2 min-w-0">
                                                     <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
                                                        class="text-lg font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
@@ -192,11 +192,11 @@
                                                 </div>
                                             </div>
                                             <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
-                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Kills</span>
+                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KILLS")</span>
                                                 <span class="text-2xl font-mono font-medium text-foreground leading-none">@p.Kills.ToString("N0")</span>
                                             </div>
                                             <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
-                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Dmg Ratio</span>
+                                                <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO")</span>
                                                 <span class="text-2xl font-mono font-medium text-muted leading-none flex items-center">
                                                     @if (soloInf)
                                                     {
@@ -219,7 +219,7 @@
                                                 var ratio = inf ? 0 : (double)p.DamageDealt / p.DamageReceived;
                                                 <div class="flex items-center justify-between gap-2 p-3 sm:p-4 bg-surface-alt/30 rounded-md border border-line/50 min-w-0">
                                                     <div class="flex flex-col justify-center pr-2 min-w-0">
-                                                        <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Player</span>
+                                                        <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PLAYER")</span>
                                                         <div class="flex items-center gap-1.5 min-w-0">
                                                             <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
                                                                class="text-base font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
@@ -230,11 +230,11 @@
                                                     </div>
                                                     <div class="flex items-center gap-5 shrink-0">
                                                         <div class="flex flex-col items-center">
-                                                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Kills</span>
+                                                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KILLS")</span>
                                                             <span class="text-xl font-mono font-medium text-foreground leading-none">@p.Kills.ToString("N0")</span>
                                                         </div>
                                                         <div class="flex flex-col items-center">
-                                                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">Dmg</span>
+                                                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG")</span>
                                                             <span class="text-xl font-mono font-medium text-muted leading-none flex items-center">
                                                                 @if (inf)
                                                                 {
@@ -301,16 +301,16 @@
                                             <table class="w-full text-left text-sm whitespace-nowrap">
                                                 <thead class="bg-surface-alt text-[10px] font-bold uppercase tracking-widest text-subtle border-b border-line">
                                                     <tr>
-                                                        <th class="py-2.5 px-4">Player</th>
-                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="Points Earned" WrapperClass="w-fit inline-block">Score</Tooltip></th>
-                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="Points Earned minus Points Spent" WrapperClass="w-fit inline-block">Net</Tooltip></th>
-                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="Points Spent on perks, doors, weapons, etc." WrapperClass="w-fit inline-block">Spent</Tooltip></th>
-                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="Kills" WrapperClass="w-fit inline-block">K</Tooltip></th>
-                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="Downs" WrapperClass="w-fit inline-block">D</Tooltip></th>
-                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="Revives" WrapperClass="w-fit inline-block">R</Tooltip></th>
-                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="Kills per Down" WrapperClass="w-fit inline-block">KPD</Tooltip></th>
-                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="Headshot Percentage" WrapperClass="w-fit inline-block">HS%</Tooltip></th>
-                                                        <th class="py-2.5 px-4 text-right pr-6"><Tooltip Text="Damage Dealt / Received" WrapperClass="w-fit inline-block">Dmg Ratio</Tooltip></th>
+                                                        <th class="py-2.5 px-4">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PLAYER")</th>
+                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SCORE_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SCORE")</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_NET_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_NET")</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-center"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SPENT_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SPENT")</Tooltip></th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KILLS")" WrapperClass="w-fit inline-block">K</Tooltip></th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DOWNS")" WrapperClass="w-fit inline-block">D</Tooltip></th>
+                                                        <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_REVIVES")" WrapperClass="w-fit inline-block">R</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KPD_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KPD")</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HS_PCT_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HS_PCT")</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right pr-6"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO")</Tooltip></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="divide-y divide-line/50">
@@ -375,7 +375,7 @@
                                                     <i class="ph ph-desktop-tower text-subtle"></i>
                                                     <ColorCode Value="@entry.ServerName"/>
                                                 }
-                                                <Tooltip Text="Match ID">
+                                                <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_MATCH_ID_TOOLTIP")">
                                                     <span class="ml-1 px-1.5 py-0.5 rounded border border-line/60 bg-surface text-[10px] font-semibold text-subtle tracking-wide">
                                                         #@entry.MatchId
                                                     </span>
@@ -388,14 +388,14 @@
                                                                @(_showTimeline.Contains(entry.MatchId)
                                                                    ? "bg-surface text-foreground border border-line"
                                                                    : "bg-primary text-on-primary hover:bg-primary/80")">
-                                                    @(_showTimeline.Contains(entry.MatchId) ? "Hide Timeline" : "View Timeline")
+                                                    @(_showTimeline.Contains(entry.MatchId) ? AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HIDE_TIMELINE") : AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_VIEW_TIMELINE"))
                                                 </button>
                                             }
                                             else
                                             {
                                                 <div class="flex items-center gap-2 text-muted">
                                                     <i class="ph ph-spinner animate-spin"></i>
-                                                    <span>Loading...</span>
+                                                    <span>@AppState.Loc("WEBFRONT_LOADING")</span>
                                                 </div>
                                             }
                                         </div>
@@ -439,9 +439,9 @@
                             <div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center mb-4 shadow-inner">
                                 <i class="ph ph-timer text-4xl text-subtle"></i>
                             </div>
-                            <h3 class="text-xl font-bold text-foreground">No Records Yet</h3>
+                            <h3 class="text-xl font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_NO_MATCHES_TITLE")</h3>
                             <p class="text-muted mt-2 max-w-md mx-auto text-sm">
-                                No completed matches found for this combination.
+                                @AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_NO_MATCHES_DESC")
                             </p>
                         </div>
                     }

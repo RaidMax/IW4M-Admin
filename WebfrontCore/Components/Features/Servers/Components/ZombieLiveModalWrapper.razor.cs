@@ -14,6 +14,7 @@ public partial class ZombieLiveModalWrapper : IAsyncDisposable
     [Parameter, EditorRequired] public string ServerId { get; set; } = default!;
     [Inject] public IZombieLiveMatchService? LiveMatchService { get; set; }
     [Inject] public required ILogger<ZombieLiveModalWrapper> Logger { get; set; }
+    [Inject] public required WebfrontCore.Core.Services.AppState AppState { get; set; }
 
     private bool _isLoading = true;
     private string? _error;
@@ -44,7 +45,7 @@ public partial class ZombieLiveModalWrapper : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _error = "Could not load live match data";
+            _error = AppState.Loc("WEBFRONT_ZOMBIE_LIVE_LOAD_ERROR");
             Logger.LogError(ex, "Error loading live match snapshot for server {ServerId}", ServerId);
         }
         finally

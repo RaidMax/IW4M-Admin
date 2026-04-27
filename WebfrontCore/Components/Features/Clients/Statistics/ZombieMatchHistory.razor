@@ -1,4 +1,5 @@
 @using SharedLibraryCore.Interfaces
+@inject AppState AppState
 @if (Matches.Count == 0)
 {
     return;
@@ -7,7 +8,7 @@
 <div class="space-y-4">
     <div class="flex items-center gap-3">
         <i class="ph ph-clock-counter-clockwise text-lg text-primary"></i>
-        <h4 class="text-lg font-bold text-foreground">Match History</h4>
+        <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_TITLE")</h4>
     </div>
 
     @foreach (var match in Matches)
@@ -44,22 +45,22 @@
                 </div>
 
                 <div class="grid grid-cols-5 sm:flex items-center gap-4 sm:gap-8 flex-1 justify-between sm:justify-end">
-                    @RenderStatBadge("ph-flag-checkered", "Round", match.HighestRound.ToString(), true)
-                    @RenderStatBadge("ph-clock", "Duration", $"{match.DurationMinutes:F0}m", false)
-                    @RenderStatBadge("ph-sword", "Kills", match.Kills.ToString("N0"), true)
-                    @RenderStatBadge("ph-skull", "Deaths", match.Deaths.ToString(), false)
-                    @RenderStatBadge("ph-coins", "Points", match.PointsEarned.ToString("N0"), true)
+                    @RenderStatBadge("ph-flag-checkered", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_ROUND"), match.HighestRound.ToString(), true)
+                    @RenderStatBadge("ph-clock", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_DURATION"), $"{match.DurationMinutes:F0}m", false)
+                    @RenderStatBadge("ph-sword", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_KILLS"), match.Kills.ToString("N0"), true)
+                    @RenderStatBadge("ph-skull", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_DEATHS"), match.Deaths.ToString(), false)
+                    @RenderStatBadge("ph-coins", AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_POINTS"), match.PointsEarned.ToString("N0"), true)
 
                     <div class="hidden sm:flex items-center gap-3 ml-4 pl-4 border-l border-line">
                         @if (match.Completed)
                         {
                             <span class="flex items-center gap-1.5 text-xs font-bold text-success bg-success/10 px-2.5 py-1 rounded-full">
-                                <i class="ph ph-trophy text-xs"></i> WON
+                                <i class="ph ph-trophy text-xs"></i> @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_WON")
                             </span>
                         }
                         else
                         {
-                            <span class="text-xs font-bold text-subtle bg-surface-alt px-2.5 py-1 rounded-full">DNF</span>
+                            <span class="text-xs font-bold text-subtle bg-surface-alt px-2.5 py-1 rounded-full">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_DNF")</span>
                         }
                         <div class="w-6 h-6 flex items-center justify-center rounded-full bg-surface-alt text-muted">
                             <i class="ph @(state.IsExpanded ? "ph-caret-up" : "ph-caret-down") text-sm"></i>
@@ -94,7 +95,7 @@
             else if (state.IsExpanded)
             {
                 <div class="border-t border-line bg-surface-alt/30 p-8 text-center text-muted text-sm">
-                    No detailed round or event data available for this match.
+                    @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_NO_DATA")
                 </div>
             }
         </div>

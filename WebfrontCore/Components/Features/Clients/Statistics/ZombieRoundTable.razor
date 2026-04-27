@@ -1,4 +1,5 @@
 @using SharedLibraryCore.Interfaces
+@inject AppState AppState
 @*
     Shared per-round breakdown table. Stateless — pass in the rounds list, get a sortable
     visual table back. Used by both ZombieMatchHistory (per-client) and ZombieMatchDetail
@@ -26,25 +27,25 @@
 <div>
     <h5 class="text-xs font-bold uppercase tracking-wider text-muted mb-4 flex items-center gap-2">
         <i class="ph ph-chart-bar text-sm"></i>
-        Round Breakdown
+        @AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_TITLE")
     </h5>
 
     <div class="overflow-x-auto overflow-y-auto max-h-[400px] border border-line rounded-lg" style="scrollbar-width: thin;">
         <table class="w-full text-left text-sm whitespace-nowrap relative">
             <thead class="sticky top-0 bg-surface-alt z-10 shadow-sm">
                 <tr class="text-[10px] uppercase tracking-wider text-muted border-b border-line">
-                    <th class="py-3 pl-4 font-medium">Round</th>
-                    <th class="py-3 font-medium pr-4 w-1/3">Kills</th>
-                    <th class="py-3 font-medium pr-4">Downs / Deaths</th>
-                    <th class="py-3 font-medium pr-4">Points</th>
-                    <th class="py-3 font-medium pr-4 text-right">Time</th>
+                    <th class="py-3 pl-4 font-medium">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_ROUND")</th>
+                    <th class="py-3 font-medium pr-4 w-1/3">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_KILLS")</th>
+                    <th class="py-3 font-medium pr-4">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_DOWNS_DEATHS")</th>
+                    <th class="py-3 font-medium pr-4">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_POINTS")</th>
+                    <th class="py-3 font-medium pr-4 text-right">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_TIME")</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line/50">
 
                 @if (showJoinedLateGap)
                 {
-                    @RenderGapRow(1, firstRound - 1, "Player joined the match late")
+                    @RenderGapRow(1, firstRound - 1, AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_JOINED_LATE"))
                 }
 
                 @for (var i = 0; i < orderedRounds.Count; i++)
@@ -81,14 +82,14 @@
                         if (next.RoundNumber > round.RoundNumber + 1)
                         {
                             @RenderGapRow(round.RoundNumber + 1, next.RoundNumber - 1,
-                                "Player wasn't tracked here")
+                                AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_NOT_TRACKED"))
                         }
                     }
                 }
 
                 @if (showLeftEarlyGap)
                 {
-                    @RenderGapRow(lastRound + 1, MatchHighestRound!.Value, "Player left or disconnected before the match ended")
+                    @RenderGapRow(lastRound + 1, MatchHighestRound!.Value, AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_LEFT_EARLY"))
                 }
 
             </tbody>
@@ -100,7 +101,9 @@
 
     private RenderFragment RenderGapRow(int from, int to, string tooltip) => __builder =>
     {
-        var label = from == to ? $"Round {from} not played" : $"Rounds {from}–{to} not played";
+        var label = from == to
+            ? AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_GAP_SINGLE").FormatExt(from)
+            : AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_GAP_RANGE").FormatExt(from, to);
         @* Tooltip wraps the inner content (a real flex div with a measurable rect)
            rather than the <tr>/<td> — those are unreliable hover targets and JS
            bounding-rect can be quirky on table rows. *@

@@ -22,12 +22,12 @@
 
             <div class="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div class="flex flex-col">
-                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">Current Round</span>
+                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_CURRENT_ROUND")</span>
                     <div class="flex items-baseline gap-3">
                         <span class="text-4xl md:text-5xl font-mono font-bold text-warning leading-none">@Snapshot.CurrentRound</span>
                         @if (_roundElapsedSeconds is { } rs)
                         {
-                            <span class="text-base font-mono text-muted tabular-nums" title="Time since current round started">+@FormatElapsed(rs)</span>
+                            <span class="text-base font-mono text-muted tabular-nums" title="@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_CURRENT_ROUND_TOOLTIP")">+@FormatElapsed(rs)</span>
                         }
                     </div>
                 </div>
@@ -35,10 +35,10 @@
                 <div class="w-px h-12 bg-line/50"></div>
 
                 <div class="flex flex-col">
-                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">Match Elapsed</span>
+                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_MATCH_ELAPSED")</span>
                     <div class="flex items-center gap-3">
                         <span class="text-2xl font-mono font-medium text-foreground leading-none tabular-nums">@FormatElapsed(_elapsedSeconds)</span>
-                        <span class="relative flex h-2 w-2" title="Live match in progress">
+                        <span class="relative flex h-2 w-2" title="@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_LIVE_TOOLTIP")">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span>
                         </span>
@@ -60,7 +60,7 @@
         {
             <div>
                 <h5 class="text-[11px] font-bold uppercase tracking-widest text-subtle mb-3 flex items-center gap-2">
-                    <i class="ph ph-users text-sm"></i> Players (@Snapshot.Players.Count)
+                    <i class="ph ph-users text-sm"></i> @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PLAYERS") (@Snapshot.Players.Count)
                 </h5>
 
                 @if (Snapshot.Players.Count == 1)
@@ -95,7 +95,7 @@
         {
             <div>
                 <h5 class="text-[11px] font-bold uppercase tracking-widest text-subtle mb-3 flex items-center gap-2">
-                    <i class="ph ph-activity text-sm"></i> Recent Activity
+                    <i class="ph ph-activity text-sm"></i> @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_RECENT_ACTIVITY")
                 </h5>
                 <div class="bg-surface-alt/20 border border-line rounded-xl p-4 max-h-80 overflow-y-auto" style="scrollbar-width: thin;">
                     @{ var orderedEvents = Snapshot.RecentEvents.AsEnumerable().Reverse().ToList(); }
@@ -193,17 +193,17 @@
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-px bg-line/40">
-                @RenderHeroCell("ph-sword", "Kills", p.MatchKills.ToString("N0"), "text-foreground")
-                @RenderHeroCellInline("ph-activity", "Dmg", dmgInf, dmgRatio, "x")
-                @RenderHeroCellNet("ph-lightning", "Net Pts", net)
-                @RenderHeroCell("ph-target", "HS%", $"{hsPct:F0}%", "text-foreground")
-                @RenderHeroCell("ph-crosshair", "KPD", kpd >= 1000 ? FormatCompactNumber((long)kpd) : kpd.ToString("F1"), "text-foreground")
+                @RenderHeroCell("ph-sword", AppState.Loc("WEBFRONT_ZOMBIE_LIVE_KILLS"), p.MatchKills.ToString("N0"), "text-foreground")
+                @RenderHeroCellInline("ph-activity", AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DMG"), dmgInf, dmgRatio, "x")
+                @RenderHeroCellNet("ph-lightning", AppState.Loc("WEBFRONT_ZOMBIE_LIVE_NET_PTS"), net)
+                @RenderHeroCell("ph-target", AppState.Loc("WEBFRONT_ZOMBIE_LIVE_HS_PCT"), $"{hsPct:F0}%", "text-foreground")
+                @RenderHeroCell("ph-crosshair", AppState.Loc("WEBFRONT_ZOMBIE_LIVE_KPD"), kpd >= 1000 ? FormatCompactNumber((long)kpd) : kpd.ToString("F1"), "text-foreground")
             </div>
 
             <div class="grid grid-cols-3 gap-px bg-line/40 border-t border-line">
-                @RenderRoundCell("Round Kills", p.CurrentRoundKills, "text-warning")
-                @RenderRoundCell("Downs", p.CurrentRoundDowns, "text-orange-400")
-                @RenderRoundCell("Deaths", p.CurrentRoundDeaths, "text-error")
+                @RenderRoundCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_ROUND_KILLS"), p.CurrentRoundKills, "text-warning")
+                @RenderRoundCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DOWNS"), p.CurrentRoundDowns, "text-orange-400")
+                @RenderRoundCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DEATHS"), p.CurrentRoundDeaths, "text-error")
             </div>
         </div>
     };
@@ -228,13 +228,13 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 mb-3">
-                @RenderDuoStat("Kills", p.MatchKills.ToString("N0"), "text-foreground")
-                @RenderDuoStatInline("Dmg", dmgInf, dmgRatio, "x")
-                @RenderDuoStat("Pts", FormatCompactNumber(net), net >= 0 ? "text-foreground" : "text-error")
+                @RenderDuoStat(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_KILLS"), p.MatchKills.ToString("N0"), "text-foreground")
+                @RenderDuoStatInline(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DMG"), dmgInf, dmgRatio, "x")
+                @RenderDuoStat(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PTS"), FormatCompactNumber(net), net >= 0 ? "text-foreground" : "text-error")
             </div>
 
             <div class="flex items-center justify-between text-xs bg-surface/40 border border-line/40 rounded-lg px-3 py-2">
-                <span class="text-[9px] uppercase tracking-widest text-subtle font-bold">This round</span>
+                <span class="text-[9px] uppercase tracking-widest text-subtle font-bold">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_THIS_ROUND")</span>
                 <span class="font-mono tracking-tight">
                     <span class="text-warning font-bold">@p.CurrentRoundKills</span><span class="text-subtle ml-0.5 mr-2">k</span>
                     <span class="text-orange-400 font-bold">@p.CurrentRoundDowns</span><span class="text-subtle ml-0.5 mr-2">d</span>
@@ -253,7 +253,7 @@
         <div class="flex items-center px-4 py-3 border-b border-line/30 last:border-0 transition-colors hover:bg-surface-hover/20 @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
             <span class="w-6 text-subtle font-mono text-xs shrink-0">@(rank).</span>
             @{
-                var (label, colorClass, _, dotClass, animate, tooltip) = StatusVisuals(p.Status);
+                var (label, colorClass, _, dotClass, animate, tooltip) = StatusVisuals(p.Status, AppState);
             }
             <span class="w-2 h-2 rounded-full @dotClass @(animate ? "animate-pulse" : "") mr-2 shrink-0" title="@tooltip"></span>
             <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
@@ -270,15 +270,15 @@
 
             <div class="flex items-center font-mono tabular-nums text-sm gap-6">
                 <div class="flex flex-col items-end w-16">
-                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">Round</span>
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_ROUND")</span>
                     <span class="text-warning">+@p.CurrentRoundKills</span>
                 </div>
                 <div class="flex flex-col items-end w-16">
-                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">Kills</span>
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5 hidden sm:block">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_KILLS")</span>
                     <span class="text-foreground">@p.MatchKills.ToString("N0")</span>
                 </div>
                 <div class="flex-col items-end w-16 hidden sm:flex">
-                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5">Dmg</span>
+                    <span class="text-[9px] text-subtle font-sans uppercase mb-0.5">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DMG")</span>
                     <span class="text-muted flex items-center justify-end">
                         @if (dmgInf)
                         {
@@ -303,7 +303,7 @@
     private RenderFragment RenderJoinedBadge(ZombieLivePlayerSnapshot p) => __builder =>
     {
         if (p.JoinedRound is not { } jr || jr <= 1) return;
-        <Tooltip Text="@($"Joined the match at round {jr}")" WrapperClass="inline-flex">
+        <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_JOINED_LATE_TOOLTIP").FormatExt(jr)" WrapperClass="inline-flex">
             <span class="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-subtle bg-surface-alt/60 border border-line/50 px-1.5 py-0.5 rounded shrink-0">
                 <i class="ph ph-sign-in" style="font-size: 9px;"></i>R@(jr)
             </span>
@@ -312,20 +312,11 @@
 
     private RenderFragment RenderStatusPill(ZombieLivePlayerSnapshot p) => __builder =>
     {
-        var (label, colorClass, bgClass, dotClass, animate, tooltip) = StatusVisuals(p.Status);
+        var (label, colorClass, bgClass, dotClass, animate, tooltip) = StatusVisuals(p.Status, AppState);
         <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider @colorClass @bgClass px-2 py-0.5 rounded-full shrink-0"
               title="@tooltip">
             <span class="w-1.5 h-1.5 rounded-full @dotClass @(animate ? "animate-pulse" : "")"></span>@label
         </span>
-    };
-
-    private static (string Label, string Color, string Bg, string Dot, bool Animate, string Tooltip)
-        StatusVisuals(ZombieLivePlayerStatus status) => status switch
-    {
-        ZombieLivePlayerStatus.Alive => ("Alive", "text-success", "bg-success/10", "bg-success", true, "Player is up and active"),
-        ZombieLivePlayerStatus.Down => ("Down", "text-orange-400", "bg-orange-400/10", "bg-orange-400", true, "Player is downed — needs reviving"),
-        ZombieLivePlayerStatus.Dead => ("Dead", "text-error", "bg-error/10", "bg-error", false, "Player died this round — spectating until next"),
-        _ => ("Disconnected", "text-subtle", "bg-subtle/10", "bg-subtle", false, "Player isn't currently connected — likely disconnected mid-match"),
     };
 
     private RenderFragment RenderHeroCell(string icon, string label, string value, string colorClass) => __builder =>

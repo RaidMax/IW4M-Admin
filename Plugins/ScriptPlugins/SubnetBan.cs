@@ -72,8 +72,9 @@ public class SubnetBanPlugin : IPluginV2
         {
             var interaction = new InteractionData
             {
-                Name = "Subnet Banlist",
-                Description = $"List of banned subnets ({_config.SubnetBanList.Count} Total)",
+                Name = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_SUBNETBAN_INTERACTION_TITLE"],
+                Description = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_SUBNETBAN_INTERACTION_DESC"]
+                    .FormatExt(_config.SubnetBanList.Count),
                 DisplayMeta = "ph-x-circle",
                 InteractionId = SubnetBanlistKey,
                 MinimumPermission = EFClient.Permission.Moderator,
@@ -89,13 +90,13 @@ public class SubnetBanPlugin : IPluginV2
                 {
                     { "InteractionId", "command" },
                     { "Data", "unbansubnet" },
-                    { "ActionButtonLabel", "Unban" },
-                    { "Name", "Unban Subnet" }
+                    { "ActionButtonLabel", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_SUBNETBAN_UNBAN_BUTTON"] },
+                    { "Name", Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_SUBNETBAN_UNBAN_LABEL"] }
                 };
 
                 if (_config.SubnetBanList.Count == 0)
                 {
-                    table += "<tr><td colspan=\"2\" class=\"px-6 py-8 text-center text-muted\">No subnets are banned.</td></tr>";
+                    table += $"<tr><td colspan=\"2\" class=\"px-6 py-8 text-center text-muted\">{Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_SUBNETBAN_EMPTY_TABLE"]}</td></tr>";
                 }
                 else
                 {
@@ -104,6 +105,7 @@ public class SubnetBanPlugin : IPluginV2
                         unbanSubnetInteraction["Data"] = "unbansubnet " + subnet;
                         var encodedMeta = Uri.EscapeDataString(System.Text.Json.JsonSerializer.Serialize(unbanSubnetInteraction));
                         
+                        var unbanSubnetLabel = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_SUBNETBAN_UNBAN_LABEL"];
                         table += $@"<tr class=""border-t border-line hover:bg-surface-hover/30 transition-colors"">
                                     <td class=""px-6 py-4 whitespace-nowrap"">
                                         <span class=""font-mono text-sm text-foreground"">{subnet}</span>
@@ -113,7 +115,7 @@ public class SubnetBanPlugin : IPluginV2
                                            data-action-meta=""{encodedMeta}"">
                                             <div class=""inline-flex items-center px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 transition-colors text-sm font-medium"">
                                                 <i class=""ph ph-x-circle mr-2 text-sm""></i>
-                                                <span class=""truncate"">Unban Subnet</span>
+                                                <span class=""truncate"">{unbanSubnetLabel}</span>
                                             </div>
                                         </button>
                                     </td>
@@ -208,7 +210,7 @@ public class BanSubnetCommand : Command
         : base(config, translationLookup)
     {
         Name = "bansubnet";
-        Description = "bans an IPv4 subnet";
+        Description = translationLookup["PLUGINS_SUBNETBAN_COMMANDS_BAN_DESC"];
         Alias = "bs";
         Permission = EFClient.Permission.SeniorAdmin;
         RequiresTarget = false;
@@ -222,14 +224,14 @@ public class BanSubnetCommand : Command
 
         if (!IsValidCidr(input))
         {
-            gameEvent.Origin.Tell("Invalid CIDR input");
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_SUBNETBAN_COMMANDS_INVALID_CIDR"]);
             return;
         }
 
         // Check if already banned
         if (_config.SubnetBanList.Contains(input))
         {
-            gameEvent.Origin.Tell($"Subnet {input} is already banned");
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_SUBNETBAN_COMMANDS_ALREADY_BANNED"].FormatExt(input));
             return;
         }
 
@@ -239,7 +241,7 @@ public class BanSubnetCommand : Command
         // Save configuration to disk
         await _configHandler.Set(_config);
 
-        gameEvent.Origin.Tell($"Added {input} to subnet banlist");
+        gameEvent.Origin.Tell(_translationLookup["PLUGINS_SUBNETBAN_COMMANDS_BAN_SUCCESS"].FormatExt(input));
     }
 
     private static bool IsValidCidr(string input)
@@ -262,7 +264,7 @@ public class UnbanSubnetCommand : Command
         : base(config, translationLookup)
     {
         Name = "unbansubnet";
-        Description = "unbans an IPv4 subnet";
+        Description = translationLookup["PLUGINS_SUBNETBAN_COMMANDS_UNBAN_DESC"];
         Alias = "ubs";
         Permission = EFClient.Permission.SeniorAdmin;
         RequiresTarget = false;
@@ -276,13 +278,13 @@ public class UnbanSubnetCommand : Command
 
         if (!IsValidCidr(input))
         {
-            gameEvent.Origin.Tell("Invalid CIDR input");
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_SUBNETBAN_COMMANDS_INVALID_CIDR"]);
             return;
         }
 
         if (!_config.SubnetBanList.Contains(input))
         {
-            gameEvent.Origin.Tell("Subnet is not banned");
+            gameEvent.Origin.Tell(_translationLookup["PLUGINS_SUBNETBAN_COMMANDS_NOT_BANNED"]);
             return;
         }
 
@@ -292,7 +294,7 @@ public class UnbanSubnetCommand : Command
         // Save configuration to disk
         await _configHandler.Set(_config);
 
-        gameEvent.Origin.Tell($"Removed {input} from subnet banlist");
+        gameEvent.Origin.Tell(_translationLookup["PLUGINS_SUBNETBAN_COMMANDS_UNBAN_SUCCESS"].FormatExt(input));
     }
 
     private static bool IsValidCidr(string input)

@@ -1,4 +1,5 @@
 @using SharedLibraryCore.Interfaces
+@inject AppState AppState
 @*
     Shared zombie match timeline. Used by both ZombieMatchHistory (per-client advanced
     stats) and ZombieMatchDetail (leaderboard match expand). State (Zoom, Filter) is
@@ -22,26 +23,26 @@
     <div class="flex items-center justify-between mb-4">
         <h5 class="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-2">
             <i class="ph ph-crosshair text-sm"></i>
-            Match Timeline
+            @AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_TITLE")
         </h5>
 
         <div class="flex items-center gap-2">
             <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-md border border-line">
                 <button type="button" @onclick='() => SelectFilter("all")' @onclick:stopPropagation="true"
                         class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded transition-colors @(Filter == "all" ? "bg-surface-alt text-foreground" : "text-subtle hover:text-muted")">
-                    All
+                    @AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_FILTER_ALL")
                 </button>
                 <button type="button" @onclick='() => SelectFilter("critical")' @onclick:stopPropagation="true"
                         class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded transition-colors @(Filter == "critical" ? "bg-surface-alt text-error" : "text-subtle hover:text-muted")">
-                    Danger
+                    @AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_FILTER_DANGER")
                 </button>
                 <button type="button" @onclick='() => SelectFilter("powerups")' @onclick:stopPropagation="true"
                         class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded transition-colors @(Filter == "powerups" ? "bg-surface-alt text-yellow-400" : "text-subtle hover:text-muted")">
-                    Drops
+                    @AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_FILTER_DROPS")
                 </button>
                 <button type="button" @onclick='() => SelectFilter("economy")' @onclick:stopPropagation="true"
                         class="px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded transition-colors @(Filter == "economy" ? "bg-surface-alt text-primary" : "text-subtle hover:text-muted")">
-                    Economy
+                    @AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_FILTER_ECONOMY")
                 </button>
             </div>
 

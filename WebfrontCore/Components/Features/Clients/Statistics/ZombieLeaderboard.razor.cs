@@ -1,5 +1,6 @@
 using Data.Models;
 using Microsoft.AspNetCore.Components;
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Services;
 
@@ -216,10 +217,10 @@ public partial class ZombieLeaderboard
         return $"/stats/zombies?game={g}&map={m}&players={p}";
     }
 
-    private static string GetPlayerCountLabel(int count) => count switch
+    private string GetPlayerCountLabel(int count) => count switch
     {
-        1 => "Solo",
-        _ => $"{count} Players"
+        1 => AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SOLO"),
+        _ => AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PLAYER_COUNT").FormatExt(count)
     };
 
     private static string GetGameImagePath(Reference.Game game) =>

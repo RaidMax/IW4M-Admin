@@ -87,7 +87,7 @@
             {
                 <div class="text-center py-12 text-muted bg-surface rounded-lg border border-line border-dashed">
                     <i class="ph ph-chat-circle-text text-4xl mb-3 text-subtle mx-auto"></i>
-                    <div>No messages found</div>
+                    <div>@AppState.Loc("WEBFRONT_SEARCH_NO_MESSAGES")</div>
                 </div>
             }
             else
@@ -154,7 +154,7 @@
                 <div class="flex items-center gap-2">
                     <i class="ph ph-chat-circle-text text-secondary"></i>
                     <h3 class="font-semibold text-foreground">@AppState.Loc("WEBFRONT_CHAT_CONTEXT")</h3>
-                    <span class="text-xs text-muted">±5 minutes</span>
+                    <span class="text-xs text-muted">@AppState.Loc("WEBFRONT_CHAT_CONTEXT_WINDOW")</span>
                 </div>
                 <button @onclick="CloseContextModal" class="text-muted hover:text-foreground transition-colors">
                     <i class="ph ph-x text-xl"></i>

@@ -47,6 +47,11 @@
 else
 {
     <script src="/js/app.min.js?Version=@Program.Manager.Version"></script>
+    @* Konva + zombie-scrubber are loaded standalone (NUglify can't minify Konva's
+       ES2018+ regex syntax, so they're excluded from app.min.js). Konva must load
+       before zombie-scrubber.js — the latter calls window.Konva at use time. *@
+    <script src="/lib/konva/konva.min.js?Version=@Program.Manager.Version"></script>
+    <script src="/js/zombie-scrubber.js?Version=@Program.Manager.Version"></script>
     <script src="/js/user/user.js?Version=@Program.Manager.Version"></script>
 }
 

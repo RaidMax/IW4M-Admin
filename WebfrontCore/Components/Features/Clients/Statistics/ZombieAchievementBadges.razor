@@ -9,10 +9,10 @@
       • EE Complete (R{n})   — yellow, ph-trophy. Always shown when EE fired.
       • All Built (X/Y)      — green, ph-wrench. Only when X == Y && Y > 0.
       • Marathon (R30/50/100+) — amber/orange/red, ph-fire. Tiered.
-      • No-Down              — pink, ph-heart. Only on match-wide path (TotalDowns
-                               provided AND HighestRound ≥ 5 to filter trivial games).
-                               Per-player path uses PlayerDowns instead, badged as
-                               "Personal No-Down".
+      • Flawless             — pink, ph-heart. Match-wide when TotalDowns is provided
+                               (zero across all qualified players); per-player when
+                               PlayerDowns is provided (zero for that player). Same
+                               label, scope-aware tooltip. Floored at HighestRound ≥ 5.
 
     Pass null for any signal you don't have / don't want surfaced. Component never
     renders an empty container — it returns nothing when no badges qualify.
@@ -27,11 +27,11 @@
         >= 30  => 1,
         _      => 0
     };
-    var showNoDown = HighestRound >= 5
-                     && (TotalDowns is 0 || (TotalDowns is null && PlayerDowns is 0));
-    var noDownIsPersonal = TotalDowns is null && PlayerDowns is 0;
+    var showFlawless = HighestRound >= 5
+                       && (TotalDowns is 0 || (TotalDowns is null && PlayerDowns is 0));
+    var flawlessIsPersonal = TotalDowns is null && PlayerDowns is 0;
     var hasAny = EasterEggRound is not null || EasterEggOccurredAt is not null
-                 || allBuilt || marathonTier > 0 || showNoDown;
+                 || allBuilt || marathonTier > 0 || showFlawless;
 }
 
 @if (hasAny)
@@ -77,18 +77,15 @@
             </Tooltip>
         }
 
-        @if (showNoDown)
+        @if (showFlawless)
         {
-            var ndLabel = noDownIsPersonal
-                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_PERSONAL_LABEL")
-                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_LABEL");
-            var ndTooltip = noDownIsPersonal
-                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_PERSONAL_TOOLTIP")
-                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_TOOLTIP");
-            <Tooltip Text="@ndTooltip" WrapperClass="inline-flex shrink-0">
+            var flTooltip = flawlessIsPersonal
+                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_PERSONAL_TOOLTIP")
+                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_TOOLTIP");
+            <Tooltip Text="@flTooltip" WrapperClass="inline-flex shrink-0">
                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
                     <i class="ph ph-heart text-[10px]"></i>
-                    <span>@ndLabel</span>
+                    <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_LABEL")</span>
                 </span>
             </Tooltip>
         }

@@ -92,35 +92,124 @@ else
             </div>
         </div>
 
-        @* ── EASTER EGG BANNER (when completed) ── *@
-        @if (Detail.EasterEggOccurredAt is not null)
+        @* ── ACHIEVEMENT TROPHIES ── prominent "trophy case" row for the share page.
+             Each earned achievement renders as a colored card (icon + title + value).
+             Compact compact-strip lives on the leaderboard row titlebar; this is the
+             dedicated-page rich version. *@
+        @{
+            var allBuilt = Detail.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
+            var marathonTier = Detail.HighestRound switch
+            {
+                >= 100 => 3,
+                >= 50  => 2,
+                >= 30  => 1,
+                _      => 0
+            };
+            var matchDowns = Detail.Players.Sum(p => p.Downs);
+            var showFlawless = Detail.HighestRound >= 5 && matchDowns == 0;
+            var hasAnyTrophy = Detail.EasterEggOccurredAt is not null
+                               || allBuilt || marathonTier > 0 || showFlawless;
+        }
+
+        @if (hasAnyTrophy)
         {
-            var bannerTitle = Detail.EasterEggRound is { } r
-                ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE_WITH_ROUND"), r)
-                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE");
-            <div class="bg-gradient-to-r from-yellow-400/15 via-amber-500/10 to-yellow-400/15 border-2 border-yellow-400/40 rounded-2xl p-6 shadow-xl shadow-yellow-400/10">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-full bg-yellow-400/20 border-2 border-yellow-400/50 flex items-center justify-center shrink-0">
-                        <i class="ph ph-trophy text-3xl text-yellow-400"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h2 class="text-xl font-bold text-yellow-400">
-                            @bannerTitle
-                        </h2>
-                        <p class="text-sm text-muted mt-0.5">
-                            @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TEXT")
-                        </p>
-                    </div>
+            <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-muted mb-4 flex items-center gap-2">
+                    <i class="ph ph-medal text-base text-primary"></i>
+                    @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_ACHIEVEMENTS_TITLE")
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+                    @if (Detail.EasterEggOccurredAt is not null)
+                    {
+                        var eeSubtitle = Detail.EasterEggRound is { } r
+                            ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE_WITH_ROUND"), r)
+                            : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE");
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-yellow-400/30 bg-yellow-400/10 hover:border-yellow-400/50 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-yellow-400/15 border border-yellow-400/30 flex items-center justify-center shrink-0">
+                                <i class="ph ph-trophy text-xl text-yellow-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-yellow-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL")</div>
+                                <div class="text-xs text-muted mt-0.5 truncate">@eeSubtitle</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (allBuilt)
+                    {
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-success/30 bg-success/10 hover:border-success/50 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-success/15 border border-success/30 flex items-center justify-center shrink-0">
+                                <i class="ph ph-wrench text-xl text-success"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-success truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_COMPLETE")</div>
+                                <div class="text-xs text-muted mt-0.5 truncate">@(Detail.BuildablesBuilt)/@(Detail.BuildablesTotal!.Value) @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (marathonTier == 3)
+                    {
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-red-400/30 bg-red-400/10 hover:border-red-400/50 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-red-400/15 border border-red-400/30 flex items-center justify-center shrink-0">
+                                <i class="ph ph-fire text-xl text-red-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-red-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TITLE_T3")</div>
+                                <div class="text-xs text-muted mt-0.5 truncate">@string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP"), Detail.HighestRound)</div>
+                            </div>
+                        </div>
+                    }
+                    else if (marathonTier == 2)
+                    {
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-orange-400/30 bg-orange-400/10 hover:border-orange-400/50 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-orange-400/15 border border-orange-400/30 flex items-center justify-center shrink-0">
+                                <i class="ph ph-fire text-xl text-orange-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-orange-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TITLE_T2")</div>
+                                <div class="text-xs text-muted mt-0.5 truncate">@string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP"), Detail.HighestRound)</div>
+                            </div>
+                        </div>
+                    }
+                    else if (marathonTier == 1)
+                    {
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-amber-400/30 bg-amber-400/10 hover:border-amber-400/50 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-amber-400/15 border border-amber-400/30 flex items-center justify-center shrink-0">
+                                <i class="ph ph-fire text-xl text-amber-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-amber-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TITLE_T1")</div>
+                                <div class="text-xs text-muted mt-0.5 truncate">@string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP"), Detail.HighestRound)</div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (showFlawless)
+                    {
+                        <div class="flex items-start gap-3 p-4 rounded-xl border border-pink-400/30 bg-pink-400/10 hover:border-pink-400/50 transition-colors">
+                            <div class="w-10 h-10 rounded-lg bg-pink-400/15 border border-pink-400/30 flex items-center justify-center shrink-0">
+                                <i class="ph ph-heart text-xl text-pink-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-pink-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_LABEL")</div>
+                                <div class="text-xs text-muted mt-0.5 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_TOOLTIP")</div>
+                            </div>
+                        </div>
+                    }
+
                 </div>
             </div>
         }
 
-        @* ── ACHIEVEMENTS STRIP (buildables) ── *@
+        @* ── BUILDABLES DETAIL ── chip list of which items were built. Separate from
+             the trophy above (which only fires on all-built); this card surfaces partial
+             progress and the per-item breakdown on completed runs. *@
         @if (Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue)
         {
-            var allBuilt = Detail.BuildablesTotal.HasValue && Detail.BuildablesBuilt >= Detail.BuildablesTotal.Value;
-            var pct = Detail.BuildablesTotal.HasValue && Detail.BuildablesTotal.Value > 0
-                ? Math.Min(100, Detail.BuildablesBuilt * 100 / Detail.BuildablesTotal.Value)
+            var pct = Detail.BuildablesTotal is { } t2 && t2 > 0
+                ? Math.Min(100, Detail.BuildablesBuilt * 100 / t2)
                 : 100;
             <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
                 <div class="flex items-start gap-4">
@@ -132,10 +221,6 @@ else
                             <h2 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</h2>
                             <span class="text-sm font-mono font-bold @(allBuilt ? "text-success" : "text-muted")">
                                 @Detail.BuildablesBuilt @(Detail.BuildablesTotal.HasValue ? $"/ {Detail.BuildablesTotal.Value}" : "")
-                                @if (allBuilt)
-                                {
-                                    <span class="ml-2 text-xs uppercase tracking-wider">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_COMPLETE")</span>
-                                }
                             </span>
                         </div>
 

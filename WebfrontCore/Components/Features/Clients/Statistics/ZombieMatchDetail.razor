@@ -9,40 +9,9 @@
 
 <div class="bg-surface-alt/30 overflow-hidden border-t border-line">
 
-    @* ── MATCH-LEVEL BADGES (buildables + EE) — compact, always visible ── *@
-    @if (Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue || Detail.EasterEggOccurredAt is not null)
-    {
-        <div class="flex items-center gap-2 px-3 py-2 border-b border-line bg-surface-alt/40 text-xs flex-wrap">
-            @if (Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue)
-            {
-                var allBuilt = Detail.BuildablesTotal.HasValue && Detail.BuildablesBuilt >= Detail.BuildablesTotal.Value;
-                var labelText = Detail.BuildablesTotal.HasValue
-                    ? $"{Detail.BuildablesBuilt} / {Detail.BuildablesTotal.Value}"
-                    : Detail.BuildablesBuilt.ToString();
-
-                <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_TOOLTIP")">
-                    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full border @(allBuilt ? "bg-success/10 border-success/30 text-success" : "bg-surface border-line text-muted")">
-                        <i class="ph ph-wrench text-sm"></i>
-                        <span class="font-mono font-bold">@labelText</span>
-                        <span class="hidden sm:inline">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</span>
-                    </span>
-                </Tooltip>
-            }
-
-            @if (Detail.EasterEggOccurredAt is not null)
-            {
-                var eeLabel = Detail.EasterEggRound is { } r
-                    ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL_WITH_ROUND"), r)
-                    : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL");
-                <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_TOOLTIP")">
-                    <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full border bg-yellow-400/10 border-yellow-400/30 text-yellow-400">
-                        <i class="ph ph-trophy text-sm"></i>
-                        <span class="font-bold">@eeLabel</span>
-                    </span>
-                </Tooltip>
-            }
-        </div>
-    }
+    @* Match-level achievement badges live on the consumer's titlebar (leaderboard
+       row, history row, share-page hero) via ZombieAchievementBadges; surfacing
+       them again inside the expanded view duplicates the same signal. *@
 
     @* ── PLAYER TABS (hidden when selection is controlled externally) ── *@
     @if (SelectedClientId is null)

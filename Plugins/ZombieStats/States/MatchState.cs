@@ -44,4 +44,17 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// visible, then disappear so the modal doesn't accumulate ghosts.
     /// </summary>
     public Dictionary<long, DateTimeOffset> DisconnectedFirstSeen { get; } = new();
+
+    /// <summary>
+    /// Round number captured at EE-fire time. Null when EE hasn't fired or
+    /// RoundNumber was 0/indeterminate at fire time.
+    /// </summary>
+    public int? EasterEggRound { get; set; }
+
+    /// <summary>
+    /// UTC timestamp captured at EE-fire time. Authoritative "EE fired" signal —
+    /// presence is used to gate re-emit and to flag persistence. Flushed to
+    /// <see cref="ZombieMatch.EasterEggOccurredAt"/> on match-end persist.
+    /// </summary>
+    public DateTimeOffset? EasterEggOccurredAt { get; set; }
 }

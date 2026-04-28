@@ -1,5 +1,6 @@
 using Data.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Services;
@@ -10,6 +11,7 @@ public partial class ZombieLeaderboard
 {
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+    [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ILogger<ZombieLeaderboard> Logger { get; set; }
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public required IServiceProvider ServiceProvider { get; set; }

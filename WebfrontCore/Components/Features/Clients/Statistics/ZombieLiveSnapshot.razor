@@ -47,9 +47,14 @@
 
                 @if (!string.IsNullOrEmpty(Snapshot.Map))
                 {
-                    <div class="ml-auto flex items-center gap-1.5 text-muted text-xs">
-                        <i class="ph ph-map-trifold text-subtle text-sm"></i>
-                        <span class="truncate">@Snapshot.Map</span>
+                    <div class="ml-auto flex items-center gap-3">
+                        <ZombieAchievementBadges
+                            EasterEggRound="Snapshot.EasterEggRound"
+                            HighestRound="Snapshot.CurrentRound" />
+                        <div class="flex items-center gap-1.5 text-muted text-xs">
+                            <i class="ph ph-map-trifold text-subtle text-sm"></i>
+                            <span class="truncate">@Snapshot.Map</span>
+                        </div>
                     </div>
                 }
             </div>

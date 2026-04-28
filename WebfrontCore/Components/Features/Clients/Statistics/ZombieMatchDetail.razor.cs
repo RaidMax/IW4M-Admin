@@ -15,8 +15,25 @@ public partial class ZombieMatchDetail
     public int? SelectedClientId { get; set; }
 
     private int _internalSelectedClientId;
-    private double _zoomLevel = 1;
-    private string _timelineFilter = "all";
+
+    // Memoized to keep reference stable across renders — scrubber treats payload
+    // identity change as a full reinit (which discards zoom/scroll). Recomputed
+    // only when Detail itself changes.
+    private SharedLibraryCore.Interfaces.ZombieMatchDetail? _memoizedDetailKey;
+    private ZombieScrubberPayload? _memoizedPayload;
+
+    private ZombieScrubberPayload ScrubberPayload
+    {
+        get
+        {
+            if (!ReferenceEquals(_memoizedDetailKey, Detail) || _memoizedPayload is null)
+            {
+                _memoizedPayload = ZombieScrubberPayload.From(Detail);
+                _memoizedDetailKey = Detail;
+            }
+            return _memoizedPayload;
+        }
+    }
 
     private int ActiveClientId => SelectedClientId ?? _internalSelectedClientId;
 
@@ -32,7 +49,4 @@ public partial class ZombieMatchDetail
         Detail.Players.FirstOrDefault(p => p.ClientId == ActiveClientId);
 
     private void SelectPlayer(int clientId) => _internalSelectedClientId = clientId;
-
-    private void OnFilterChanged(string filter) => _timelineFilter = filter;
-    private void OnZoomLevelChanged(double zoom) => _zoomLevel = zoom;
 }

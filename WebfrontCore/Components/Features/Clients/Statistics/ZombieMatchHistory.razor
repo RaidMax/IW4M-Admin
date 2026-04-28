@@ -16,7 +16,7 @@
         var state = GetCardState(match.MatchId);
         var hasDetails = match.Rounds.Count > 0 || match.Events.Count > 0;
 
-        <div class="bg-surface rounded-xl border border-line transition-all duration-300 hover:border-line/80">
+        <div class="bg-surface rounded-xl border transition-all duration-300 @(match.EasterEggOccurredAt is not null ? "border-yellow-400/50 hover:border-yellow-400/70 shadow-yellow-400/10" : "border-line hover:border-line/80")">
 
             @* ── CARD HEADER ── *@
             <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-surface-hover/30 transition-colors"
@@ -27,11 +27,17 @@
                         <i class="ph ph-map-trifold text-xl text-subtle"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="flex items-center gap-2 min-w-0">
+                        <div class="flex items-center gap-2 min-w-0 flex-wrap">
                             <h4 class="text-base font-bold text-foreground truncate">
                                 @match.Map
                             </h4>
                             <ZombieAssistanceBadge SoloFromRound="match.SoloFromRound" HighestRound="match.HighestRound" />
+                            <ZombieAchievementBadges
+                                EasterEggRound="match.EasterEggRound"
+                                BuildablesBuilt="match.BuildablesBuilt"
+                                BuildablesTotal="match.BuildablesTotal"
+                                HighestRound="match.HighestRound"
+                                PlayerDowns="match.Downs" />
                         </div>
                         @if (!string.IsNullOrEmpty(match.ServerName))
                         {
@@ -76,13 +82,7 @@
 
                     @if (match.Events.Count > 0)
                     {
-                        var gapRanges = ZombieTimelineGaps.Compute(match.Rounds, match.Events, match.HighestRound);
-                        <ZombieTimeline Events="match.Events"
-                                        GapRanges="gapRanges"
-                                        ZoomLevel="state.ZoomLevel"
-                                        Filter="@state.TimelineFilter"
-                                        ZoomLevelChanged="z => state.ZoomLevel = z"
-                                        FilterChanged="f => state.TimelineFilter = f" />
+                        <ZombieMatchScrubber Payload="ZombieScrubberPayload.From(match, string.Empty, ClientId)" />
                     }
 
                     @if (match.Rounds.Count > 0)

@@ -8,6 +8,9 @@ public partial class ZombieMatchHistory
     [Parameter, EditorRequired]
     public List<ZombieMatchHistoryMatch> Matches { get; set; } = [];
 
+    [Parameter, EditorRequired]
+    public int ClientId { get; set; }
+
     private readonly Dictionary<int, MatchCardState> _cardStates = new();
 
     private MatchCardState GetCardState(int matchId)
@@ -27,7 +30,5 @@ public partial class ZombieMatchHistory
     private class MatchCardState
     {
         public bool IsExpanded { get; set; }
-        public double ZoomLevel { get; set; } = 1;
-        public string TimelineFilter { get; set; } = "all";
     }
 }

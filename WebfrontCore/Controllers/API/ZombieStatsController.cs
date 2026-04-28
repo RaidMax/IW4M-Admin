@@ -121,7 +121,16 @@ public class ZombieStatsController(
         try
         {
             var detail = await _matchHistoryService.GetMatchDetailAsync(matchId);
-            return detail is null ? NotFound() : Ok(detail);
+            if (detail is null) return NotFound();
+
+            // Completed matches are immutable — let CDNs and browsers cache them.
+            // In-progress matches stay uncached so the share page reflects current state.
+            if (detail.Completed)
+            {
+                Response.Headers.CacheControl = "public, max-age=300, immutable";
+            }
+
+            return Ok(detail);
         }
         catch (Exception e)
         {

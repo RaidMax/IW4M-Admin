@@ -1,0 +1,170 @@
+@page "/zombie/match/{MatchId:int}"
+@page "/zombie/match/{MatchId:int}/{ClientId:int?}"
+@rendermode InteractiveServer
+@using SharedLibraryCore.Interfaces
+@inject AppState AppState
+@inject NavigationManager NavManager
+@inject IServiceProvider ServiceProvider
+
+@*
+    Public, anonymous, deep-linkable share page for one zombie match. Mirrors the
+    Profile.razor OG-meta pattern: PersistentState carries server-rendered detail
+    through the SSR→interactive handoff so Discord/Twitter crawlers see the meta
+    tags without running JS.
+*@
+
+<PageTitle>@(_ogTitle) | @AppState.WebfrontBranding</PageTitle>
+
+<HeadContent>
+    <meta property="og:title" content="@(_ogTitle) | @AppState.WebfrontBranding" />
+    <meta property="og:site_name" content="IW4MAdmin" />
+    <meta property="og:description" content="@_ogDescription" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@NavManager.Uri" />
+    <meta name="twitter:card" content="summary" />
+</HeadContent>
+
+@if (_premiumMissing)
+{
+    <div class="max-w-7xl mx-auto mt-8 px-6">
+        <div class="bg-warning/10 border border-warning/20 text-warning p-6 rounded-lg flex items-center gap-3" role="alert">
+            <i class="ph ph-warning text-2xl"></i>
+            <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NOT_FOUND").FormatExt(MatchId)</span>
+        </div>
+    </div>
+}
+else if (Detail is null)
+{
+    @if (_loading)
+    {
+        <div class="max-w-7xl mx-auto mt-8 px-6 text-muted">
+            <i class="ph ph-spinner-gap animate-spin mr-2"></i>
+            @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_LOADING")
+        </div>
+    }
+    else
+    {
+        <div class="max-w-7xl mx-auto mt-8 px-6">
+            <div class="bg-warning/10 border border-warning/20 text-warning p-6 rounded-lg flex items-center gap-3" role="alert">
+                <i class="ph ph-warning text-2xl"></i>
+                <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NOT_FOUND").FormatExt(MatchId)</span>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+
+        @* ── HEADER ── *@
+        <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-14 h-14 rounded-xl bg-surface-alt flex items-center justify-center border border-line shrink-0">
+                        <i class="ph ph-map-trifold text-2xl text-primary"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-2xl md:text-3xl font-bold text-foreground truncate">@Detail.Map</h1>
+                        <div class="flex flex-wrap items-center gap-3 text-sm text-muted mt-1">
+                            <span class="font-bold text-foreground">
+                                @AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_ROUND").FormatExt(Detail.HighestRound)
+                            </span>
+                            <span>•</span>
+                            <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_DURATION"): @Detail.DurationMinutes.ToString("F0")m</span>
+                            <span>•</span>
+                            <span>@Detail.Date.UtcDateTime.ToStandardFormat()</span>
+                            @if (!string.IsNullOrEmpty(Detail.ServerName))
+                            {
+                                <span>•</span>
+                                <span class="truncate"><ColorCode Value="@Detail.ServerName" /></span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <button @onclick="CopyShareLink"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold text-sm hover:opacity-90 transition shrink-0">
+                    <i class="ph @(_copied ? "ph-check" : "ph-link")"></i>
+                    @(_copied
+                        ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_COPIED")
+                        : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON"))
+                </button>
+            </div>
+        </div>
+
+        @* ── EASTER EGG BANNER (when completed) ── *@
+        @if (Detail.EasterEggOccurredAt is not null)
+        {
+            var bannerTitle = Detail.EasterEggRound is { } r
+                ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE_WITH_ROUND"), r)
+                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE");
+            <div class="bg-gradient-to-r from-yellow-400/15 via-amber-500/10 to-yellow-400/15 border-2 border-yellow-400/40 rounded-2xl p-6 shadow-xl shadow-yellow-400/10">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full bg-yellow-400/20 border-2 border-yellow-400/50 flex items-center justify-center shrink-0">
+                        <i class="ph ph-trophy text-3xl text-yellow-400"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-xl font-bold text-yellow-400">
+                            @bannerTitle
+                        </h2>
+                        <p class="text-sm text-muted mt-0.5">
+                            @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TEXT")
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── ACHIEVEMENTS STRIP (buildables) ── *@
+        @if (Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue)
+        {
+            var allBuilt = Detail.BuildablesTotal.HasValue && Detail.BuildablesBuilt >= Detail.BuildablesTotal.Value;
+            var pct = Detail.BuildablesTotal.HasValue && Detail.BuildablesTotal.Value > 0
+                ? Math.Min(100, Detail.BuildablesBuilt * 100 / Detail.BuildablesTotal.Value)
+                : 100;
+            <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 @(allBuilt ? "bg-success/15 text-success" : "bg-surface-alt text-primary")">
+                        <i class="ph ph-wrench text-2xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <h2 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</h2>
+                            <span class="text-sm font-mono font-bold @(allBuilt ? "text-success" : "text-muted")">
+                                @Detail.BuildablesBuilt @(Detail.BuildablesTotal.HasValue ? $"/ {Detail.BuildablesTotal.Value}" : "")
+                                @if (allBuilt)
+                                {
+                                    <span class="ml-2 text-xs uppercase tracking-wider">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_COMPLETE")</span>
+                                }
+                            </span>
+                        </div>
+
+                        @if (Detail.BuildablesTotal.HasValue)
+                        {
+                            <div class="mt-2 h-2 bg-surface-alt rounded-full overflow-hidden border border-line">
+                                <div class="h-full transition-all duration-500 @(allBuilt ? "bg-success" : "bg-primary")"
+                                     style="width: @(pct)%;"></div>
+                            </div>
+                        }
+
+                        @if (Detail.BuildableNames.Count > 0)
+                        {
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                @foreach (var name in Detail.BuildableNames)
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-alt border border-line text-xs text-muted">
+                                        <i class="ph ph-check-circle text-success text-xs"></i>
+                                        @FormatBuildableName(name)
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── DETAIL (existing component, scrubber + share button inside) ── *@
+        <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" />
+    </div>
+}

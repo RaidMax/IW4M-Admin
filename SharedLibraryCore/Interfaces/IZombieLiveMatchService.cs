@@ -37,6 +37,13 @@ public class ZombieLiveMatchSnapshot
     /// Same shape as the post-match timeline so the modal can reuse rendering helpers.
     /// </summary>
     public List<ZombieMatchHistoryEvent> RecentEvents { get; set; } = [];
+
+    /// <summary>
+    /// Round at which the EE-complete event fired during this live match, if any.
+    /// Null when EE hasn't fired yet (or the map has no watcher). Surfaced as a
+    /// "EE R{n}" badge in the live modal.
+    /// </summary>
+    public int? EasterEggRound { get; set; }
 }
 
 /// <summary>

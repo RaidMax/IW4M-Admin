@@ -1,0 +1,127 @@
+@inject AppState AppState
+@*
+    Compact achievement-badge strip for match titlebars (leaderboard row + per-client
+    history + live snapshot). Surfaces match-level milestones that would otherwise
+    require expanding the row to discover. One component, one source of truth, one
+    visual style — every titlebar reads the same way.
+
+    Badges (in render order, all conditionally rendered):
+      • EE Complete (R{n})   — yellow, ph-trophy. Always shown when EE fired.
+      • All Built (X/Y)      — green, ph-wrench. Only when X == Y && Y > 0.
+      • Marathon (R30/50/100+) — amber/orange/red, ph-fire. Tiered.
+      • No-Down              — pink, ph-heart. Only on match-wide path (TotalDowns
+                               provided AND HighestRound ≥ 5 to filter trivial games).
+                               Per-player path uses PlayerDowns instead, badged as
+                               "Personal No-Down".
+
+    Pass null for any signal you don't have / don't want surfaced. Component never
+    renders an empty container — it returns nothing when no badges qualify.
+*@
+
+@{
+    var allBuilt = BuildablesTotal is { } total && total > 0 && BuildablesBuilt >= total;
+    var marathonTier = HighestRound switch
+    {
+        >= 100 => 3,
+        >= 50  => 2,
+        >= 30  => 1,
+        _      => 0
+    };
+    var showNoDown = HighestRound >= 5
+                     && (TotalDowns is 0 || (TotalDowns is null && PlayerDowns is 0));
+    var noDownIsPersonal = TotalDowns is null && PlayerDowns is 0;
+    var hasAny = EasterEggRound is not null || EasterEggOccurredAt is not null
+                 || allBuilt || marathonTier > 0 || showNoDown;
+}
+
+@if (hasAny)
+{
+    <div class="inline-flex items-center gap-1.5 flex-wrap">
+
+        @if (EasterEggOccurredAt is not null || EasterEggRound is not null)
+        {
+            var eeLabel = EasterEggRound is { } r
+                ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL_WITH_ROUND"), r)
+                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL");
+            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_TOOLTIP")" WrapperClass="inline-flex shrink-0">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
+                    <i class="ph ph-trophy text-[10px]"></i>
+                    <span>@eeLabel</span>
+                </span>
+            </Tooltip>
+        }
+
+        @if (allBuilt)
+        {
+            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_TOOLTIP")" WrapperClass="inline-flex shrink-0">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-success/10 border border-success/30 text-success text-[10px] font-bold uppercase tracking-wider cursor-help font-mono">
+                    <i class="ph ph-wrench text-[10px]"></i>
+                    <span>@BuildablesBuilt/@BuildablesTotal!.Value</span>
+                </span>
+            </Tooltip>
+        }
+
+        @if (marathonTier > 0)
+        {
+            var (mBg, mBorder, mText) = marathonTier switch
+            {
+                3 => ("bg-red-500/10",    "border-red-500/30",    "text-red-400"),
+                2 => ("bg-orange-500/10", "border-orange-500/30", "text-orange-400"),
+                _ => ("bg-amber-500/10",  "border-amber-500/30",  "text-amber-400")
+            };
+            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP").FormatExt(HighestRound)" WrapperClass="inline-flex shrink-0">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded @mBg border @mBorder @mText text-[10px] font-bold uppercase tracking-wider cursor-help">
+                    <i class="ph ph-fire text-[10px]"></i>
+                    <span>R@HighestRound</span>
+                </span>
+            </Tooltip>
+        }
+
+        @if (showNoDown)
+        {
+            var ndLabel = noDownIsPersonal
+                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_PERSONAL_LABEL")
+                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_LABEL");
+            var ndTooltip = noDownIsPersonal
+                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_PERSONAL_TOOLTIP")
+                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_NO_DOWN_TOOLTIP");
+            <Tooltip Text="@ndTooltip" WrapperClass="inline-flex shrink-0">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
+                    <i class="ph ph-heart text-[10px]"></i>
+                    <span>@ndLabel</span>
+                </span>
+            </Tooltip>
+        }
+
+    </div>
+}
+
+@code {
+    /// <summary>Round at which the EE fired. Null hides the EE badge (unless OccurredAt is set with no round).</summary>
+    [Parameter] public int? EasterEggRound { get; set; }
+
+    /// <summary>UTC timestamp at which the EE fired. Null hides the EE badge (unless Round is set).</summary>
+    [Parameter] public DateTimeOffset? EasterEggOccurredAt { get; set; }
+
+    /// <summary>Distinct buildables completed this match.</summary>
+    [Parameter] public int BuildablesBuilt { get; set; }
+
+    /// <summary>Total iconic buildables on this map. Null = no denominator known.</summary>
+    [Parameter] public int? BuildablesTotal { get; set; }
+
+    /// <summary>Match's highest round. Drives Marathon tier and the No-Down floor.</summary>
+    [Parameter, EditorRequired] public int HighestRound { get; set; }
+
+    /// <summary>
+    /// Match-wide downs across all qualified players. Set this on the leaderboard row
+    /// where we want the match-level "No-Down Match" badge. Leave null on per-player
+    /// views — pass <see cref="PlayerDowns"/> instead.
+    /// </summary>
+    [Parameter] public int? TotalDowns { get; set; }
+
+    /// <summary>
+    /// This player's downs across the match. Set this on per-client history rows.
+    /// When zero (and TotalDowns null), shows a "Personal No-Down" variant.
+    /// </summary>
+    [Parameter] public int? PlayerDowns { get; set; }
+}

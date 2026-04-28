@@ -81,6 +81,28 @@ public class ZombieLeaderboardEntry
     /// solo run. Equal to <see cref="Players"/>.Count for honest entries.
     /// </summary>
     public int TotalPlayerCount { get; set; }
+
+    /// <summary>Round at which the EE fired (when known). Drives the "EE R{n}" titlebar badge.</summary>
+    public int? EasterEggRound { get; set; }
+
+    /// <summary>
+    /// Distinct buildables completed in this match. Drives the "All Built" titlebar badge
+    /// when equal to <see cref="BuildablesTotal"/>.
+    /// </summary>
+    public int BuildablesBuilt { get; set; }
+
+    /// <summary>
+    /// Total iconic buildables on this map (per <c>MapBuildableConfig</c>), or null when
+    /// the map has no configured total. Null hides the All-Built badge.
+    /// </summary>
+    public int? BuildablesTotal { get; set; }
+
+    /// <summary>
+    /// Total downs across all qualified players in this match. Drives the
+    /// "No-Down" titlebar badge when zero (and <see cref="HighestRound"/> ≥ 5
+    /// to filter trivially short matches).
+    /// </summary>
+    public int TotalDowns { get; set; }
 }
 
 public class ZombieLeaderboardPlayer

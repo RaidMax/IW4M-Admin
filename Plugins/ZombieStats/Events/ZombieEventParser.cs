@@ -20,6 +20,7 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {"RD", ParsePlayerRoundDataEvent},
         {"RC", ParseRoundCompleteEvent},
         {"ZE", ParseZombieEvent},
+        {"EE", ParseEasterEggCompleteEvent},
     };
 
     public GameEventV2? ParseScriptEvent(GameScriptEvent scriptEvent)
@@ -131,6 +132,16 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         return new RoundEndEvent
         {
             RoundNumber = Convert.ToInt32(data[0])
+        };
+    }
+
+    // Format: GSE;EE;{mapName} — match-level, fires once per match when map's
+    // main Easter Egg quest completes. GSC guards re-emit with level.zm_stats_ee_fired.
+    private static GameEventV2 ParseEasterEggCompleteEvent(GameScriptEvent scriptEvent, string[] data)
+    {
+        return new EasterEggCompleteGameEvent
+        {
+            MapName = data.ElementAtOrDefault(0) ?? string.Empty
         };
     }
 

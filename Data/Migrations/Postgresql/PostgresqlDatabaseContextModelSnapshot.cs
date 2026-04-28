@@ -1555,6 +1555,12 @@ namespace Data.Migrations.Postgresql
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("EasterEggOccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("EasterEggRound")
+                        .HasColumnType("integer");
+
                     b.Property<string>("GameMatchId")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");

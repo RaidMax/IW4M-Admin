@@ -34,6 +34,7 @@ Init()
     thread WaitForMysteryBox();
     thread WaitForBoxTeddySuppression();
     thread WaitForTrapActivations();
+    thread WaitForEasterEggComplete();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -1354,6 +1355,57 @@ BuildPlayerInfoString( entity )
 
         return guid + ";" + clientNumber + ";" + team + ";" + name;
     }
-   
+
     return "-1;-1;axis;Zombie";
+}
+
+/////////////////////////////////////////////////////////
+// Easter Egg main quest detection.
+//
+// T4 has only one map with a tracked EE — Der Riese's "Fly Trap"
+// (achievement DLC3_ZOMBIE_ANTI_GRAVITY at nazi_zombie_factory.gsc:1530).
+// The engine fires achievement_notify directly with no `level notify`.
+//
+// Phases:
+//   1. Player shoots fly trap control panel with an upgraded weapon
+//      → flag_set("hide_and_seek")  [phase START — NOT completion]
+//   2. Player must then shoot all 3 hidden targets
+//      (ee_exp_monkey, ee_bowie_bear, ee_perk_bear). Each shot increments
+//      level.flytrap_counter. When counter == 3, EE is complete.
+//
+// We poll level.flytrap_counter rather than flag_wait on the per-target
+// flags because those flags are flag_init'd inside hide_and_seek_target()
+// only after flytrap() runs — flag_wait on an uninitialized flag asserts.
+// Polling an integer is safe regardless of init order.
+//
+// Other T4 maps (Nacht, Verruckt, Shi No Numa) have no main EE → no-op.
+/////////////////////////////////////////////////////////
+WaitForEasterEggComplete()
+{
+    level endon( "end_game" );
+
+    if ( level.script != "nazi_zombie_factory" )
+    {
+        logprint( "[ZM-EE] No EE watcher configured for map=" + level.script + "\n" );
+        return;
+    }
+
+    logprint( "[ZM-EE] Watcher armed: map=" + level.script + " counter=level.flytrap_counter target=3\n" );
+
+    while ( !IsDefined( level.flytrap_counter ) || level.flytrap_counter < 3 )
+    {
+        wait ( 1 );
+    }
+
+    if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
+    {
+        logprint( "[ZM-EE] Suppressed re-emit on map=" + level.script + " (already fired)\n" );
+        return;
+    }
+    level.iw4m_ee_fired = true;
+
+    roundStr = "?";
+    if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
+    logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
+    logprint( "GSE;EE;" + level.script + "\n" );
 }

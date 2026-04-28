@@ -47,4 +47,21 @@ public class ZombieMatch : DatedRecord
     /// </summary>
     [MaxLength(64)]
     public string? GameMatchId { get; set; }
+
+    /// <summary>
+    /// Round number at the moment the EE-complete event fired. Captured from
+    /// <c>MatchState.RoundNumber</c> at fire time. Null on legacy matches,
+    /// when no EE fired, or when the round was indeterminate at fire time
+    /// (RoundNumber 0/negative — pre-round-1 edge).
+    /// </summary>
+    public int? EasterEggRound { get; set; }
+
+    /// <summary>
+    /// UTC timestamp at the moment the EE-complete event fired. Authoritative
+    /// "EE happened" signal — non-null implies the EE was completed in this
+    /// match. Drives the scrubber timeline marker so it lands at the actual
+    /// EE moment instead of match-end. Null on legacy matches and when no
+    /// watcher fired.
+    /// </summary>
+    public DateTimeOffset? EasterEggOccurredAt { get; set; }
 }

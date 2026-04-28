@@ -7,7 +7,7 @@ namespace WebfrontCore.Components.Features.Clients.Statistics;
 /// from a player's round set + the match's round-marker events. Lets both
 /// <see cref="ZombieMatchHistory"/> (per-client) and <see cref="ZombieMatchDetail"/>
 /// (per-match-per-player) compute gap ranges identically before handing them to
-/// <see cref="ZombieTimeline"/> for rendering.
+/// <see cref="ZombieMatchScrubber"/> for rendering.
 ///
 /// A gap is any contiguous span of rounds the player wasn't tracked in. The endpoints
 /// of each gap are looked up in the round-marker events: gap (R_a..R_b) maps to

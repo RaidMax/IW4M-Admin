@@ -52,6 +52,7 @@ init()
     thread WaitForPackAPunch();
     thread WaitForTrapActivations();
     thread WaitForAutoTurrets();
+    thread WaitForEasterEggComplete();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -1373,4 +1374,48 @@ BuildPlayerInfoString( entity )
     }
 
     return "-1;-1;axis;Zombie";
+}
+
+/////////////////////////////////////////////////////////
+// Easter Egg main quest detection.
+//
+// Each T5 map with a "main" sidequest has a level notify fired when the
+// quest reaches its terminal state. Ascension is intentionally omitted —
+// its EE is a series of small step rewards (Death Machine, etc.) with no
+// single terminal flag, so no "completion" can be reliably detected.
+//
+// Reference: pulled from t5-scripts-main per-map *_sq.gsc / *_achievement.gsc.
+// Custom maps / Five / Kino / Verruckt / Nacht / Shi No / Dead Ops have no
+// main EE → silently no-op (debug log records "no watcher configured").
+/////////////////////////////////////////////////////////
+WaitForEasterEggComplete()
+{
+    level endon( "end_game" );
+
+    notifyName = "";
+    switch ( level.script )
+    {
+        case "zombie_coast":  notifyName = "coast_easter_egg_achieved";       break;  // Call of the Dead
+        case "zombie_temple": notifyName = "temple_sidequest_achieved";       break;  // Shangri-La
+        case "zombie_moon":   notifyName = "moon_sidequest_big_bang_achieved"; break;  // Moon
+        default:
+            logprint( "[ZM-EE] No EE watcher configured for map=" + level.script + "\n" );
+            return;
+    }
+
+    logprint( "[ZM-EE] Watcher armed: map=" + level.script + " notify=" + notifyName + "\n" );
+
+    level waittill( notifyName );
+
+    if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
+    {
+        logprint( "[ZM-EE] Suppressed re-emit on map=" + level.script + " (already fired)\n" );
+        return;
+    }
+    level.iw4m_ee_fired = true;
+
+    roundStr = "?";
+    if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
+    logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
+    logprint( "GSE;EE;" + level.script + "\n" );
 }

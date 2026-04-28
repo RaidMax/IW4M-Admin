@@ -72,6 +72,8 @@ init()
     thread WaitForBoxTeddySuppression();
     thread WaitForTrapActivations();
     thread WaitForBuildables();
+    thread WaitForCraftables();
+    thread WaitForEasterEggComplete();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format):
@@ -1371,6 +1373,55 @@ WatchBuildableComplete( buildableName )
     }
 }
 
+/////////////////////////////////////////////////////////
+// Monitors craftable completion via level notifies.
+//
+// Origins (zm_tomb) and Mob of the Dead (zm_prison) use the parallel
+// _zm_craftables system instead of _zm_buildables, registering items
+// in level.zombie_craftablestubs and emitting "<name>_crafted" on level
+// (see _zm_craftables.gsc:1581 — `level notify( name + "_crafted", player )`).
+//
+// Origins items: 4 elemental staffs, zombie shield, dieseldrone (G-Strike),
+// gramophone. MotD items: riot shield, packasplat (Acid Gat Kit), plane,
+// refuelable_plane, quest_key1.
+//
+// We emit identical `GSE;ZE;...;build;complete;<name>` events so the
+// downstream pipeline (BuildComplete event log, MapBuildableConfig) treats
+// them uniformly. DISTINCT-by-name aggregation in the leaderboard service
+// collapses any duplicate notifies (e.g. MotD's repeated refuelable_plane).
+/////////////////////////////////////////////////////////
+WaitForCraftables()
+{
+    wait ( 3 );
+
+    if ( !IsDefined( level.zombie_craftablestubs ) )
+    {
+        return;
+    }
+
+    names = getArrayKeys( level.zombie_craftablestubs );
+
+    for ( i = 0; i < names.size; i++ )
+    {
+        thread WatchCraftableComplete( names[i] );
+    }
+}
+
+WatchCraftableComplete( craftableName )
+{
+    for ( ;; )
+    {
+        level waittill( craftableName + "_crafted", player );
+
+        if ( !IsDefined( player ) || !IsPlayer( player ) )
+        {
+            continue;
+        }
+
+        logprint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";build;complete;" + craftableName + "\n" );
+    }
+}
+
 //-----------------------//
 //---- Utility/Infra ----//
 //-----------------------//
@@ -1406,3 +1457,51 @@ BuildPlayerInfoString( entity )
 
     return "-1;-1;axis;Zombie";
 }
+
+/////////////////////////////////////////////////////////
+// Easter Egg main quest detection.
+//
+// Each T6 stock map has a single notify fired on `level` when the EE main
+// quest reaches its terminal state (cinematic kickoff / final showdown / etc).
+// We arm a per-map watcher based on level.script and emit a one-shot
+// "GSE;EE;<map>" log line. Re-emit is guarded by level.iw4m_ee_fired so even
+// if the engine fires the notify twice (rare but possible) we only count once.
+//
+// Reference: pulled from t6-scripts-main per-map *_sq.gsc / *_achievement.gsc.
+// Custom maps: no notify match → silently no-op (debug log records "no
+// watcher configured" so you can spot it in server console).
+/////////////////////////////////////////////////////////
+WaitForEasterEggComplete()
+{
+    level endon( "end_game" );
+
+    notifyName = "";
+    switch ( level.script )
+    {
+        case "zm_transit":   notifyName = "transit_sidequest_achieved";   break;
+        case "zm_highrise":  notifyName = "highrise_sidequest_achieved";  break;
+        case "zm_buried":    notifyName = "buried_sidequest_achieved";    break;
+        case "zm_prison":    notifyName = "pop_goes_the_weasel_achieved"; break;
+        case "zm_tomb":      notifyName = "tomb_sidequest_complete";      break;
+        default:
+            logprint( "[ZM-EE] No EE watcher configured for map=" + level.script + "\n" );
+            return;
+    }
+
+    logprint( "[ZM-EE] Watcher armed: map=" + level.script + " notify=" + notifyName + "\n" );
+
+    level waittill( notifyName );
+
+    if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
+    {
+        logprint( "[ZM-EE] Suppressed re-emit on map=" + level.script + " (already fired)\n" );
+        return;
+    }
+    level.iw4m_ee_fired = true;
+
+    roundStr = "?";
+    if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
+    logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
+    logprint( "GSE;EE;" + level.script + "\n" );
+}
+

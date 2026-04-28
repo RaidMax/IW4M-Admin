@@ -144,6 +144,12 @@
                                         </div>
                                         <div class="text-foreground font-bold text-sm shrink-0">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_ROUND").FormatExt(entry.HighestRound)</div>
                                         <div class="text-xs text-subtle font-medium truncate hidden md:block">@entry.MapName</div>
+                                        <ZombieAchievementBadges
+                                            EasterEggRound="entry.EasterEggRound"
+                                            BuildablesBuilt="entry.BuildablesBuilt"
+                                            BuildablesTotal="entry.BuildablesTotal"
+                                            HighestRound="entry.HighestRound"
+                                            TotalDowns="entry.TotalDowns" />
                                         @* Surfaces matches whose listing-shown player count is smaller than the
                                            actual concurrent participants — bucketed by the qualifier (a 2-player
                                            match where one player joined too late lands in the 1-player bucket).
@@ -383,13 +389,24 @@
                                             </div>
                                             @if (_expandedMatches.TryGetValue(entry.MatchId, out var matchDetail) && matchDetail is not null)
                                             {
-                                                <button @onclick="() => ToggleTimeline(entry.MatchId)" @onclick:stopPropagation="true"
-                                                        class="px-4 py-1.5 rounded font-bold transition-colors
-                                                               @(_showTimeline.Contains(entry.MatchId)
-                                                                   ? "bg-surface text-foreground border border-line"
-                                                                   : "bg-primary text-on-primary hover:bg-primary/80")">
-                                                    @(_showTimeline.Contains(entry.MatchId) ? AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HIDE_TIMELINE") : AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_VIEW_TIMELINE"))
-                                                </button>
+                                                <div class="flex items-center gap-2">
+                                                    <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON")">
+                                                        <button @onclick="() => CopyShareLink(entry.MatchId)" @onclick:stopPropagation="true"
+                                                                class="px-4 py-1.5 rounded font-bold transition-colors bg-surface text-muted hover:text-foreground border border-line inline-flex items-center gap-1.5">
+                                                            <i class="ph @(_copiedMatchId == entry.MatchId ? "ph-check text-success" : "ph-link")"></i>
+                                                            <span>@(_copiedMatchId == entry.MatchId
+                                                                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_COPIED")
+                                                                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON"))</span>
+                                                        </button>
+                                                    </Tooltip>
+                                                    <button @onclick="() => ToggleTimeline(entry.MatchId)" @onclick:stopPropagation="true"
+                                                            class="px-4 py-1.5 rounded font-bold transition-colors
+                                                                   @(_showTimeline.Contains(entry.MatchId)
+                                                                       ? "bg-surface text-foreground border border-line"
+                                                                       : "bg-primary text-on-primary hover:bg-primary/80")">
+                                                        @(_showTimeline.Contains(entry.MatchId) ? AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HIDE_TIMELINE") : AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_VIEW_TIMELINE"))
+                                                    </button>
+                                                </div>
                                             }
                                             else
                                             {
@@ -468,6 +485,7 @@
     private bool _marqueePaused;
     private readonly HashSet<int> _showTimeline = new();
     private readonly Dictionary<int, int> _timelinePlayerSelection = new();
+    private int? _copiedMatchId;
 
     private static string FormatK(int num) =>
         num >= 1000 ? ((double)num).ToMetric(decimals: 1) : num.ToString();
@@ -477,6 +495,24 @@
         if (!_showTimeline.Remove(matchId))
         {
             _showTimeline.Add(matchId);
+        }
+    }
+
+    private async Task CopyShareLink(int matchId)
+    {
+        var url = $"{NavManager.BaseUri.TrimEnd('/')}/zombie/match/{matchId}";
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            _copiedMatchId = matchId;
+            StateHasChanged();
+            await Task.Delay(2000);
+            if (_copiedMatchId == matchId) _copiedMatchId = null;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Clipboard API requires HTTPS or localhost — fail silently
         }
     }
 

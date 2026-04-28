@@ -1480,6 +1480,12 @@ namespace Data.Migrations.Sqlite
                     b.Property<long>("CreatedDateTime")
                         .HasColumnType("INTEGER");
 
+                    b.Property<long?>("EasterEggOccurredAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("EasterEggRound")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("GameMatchId")
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");

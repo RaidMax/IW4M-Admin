@@ -27,6 +27,11 @@
       "destination": "wwwroot/lib/vanillajs-datepicker"
     },
     {
+      "library": "konva@9.3.16",
+      "destination": "wwwroot/lib/konva",
+      "files": [ "konva.min.js" ]
+    },
+    {
       "provider": "unpkg",
       "library": "@phosphor-icons/web@2.1.1",
       "destination": "wwwroot/lib/phosphor-icons",

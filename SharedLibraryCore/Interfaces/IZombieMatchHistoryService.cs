@@ -28,6 +28,34 @@ public class ZombieMatchDetail
     public int HighestRound { get; set; }
     public bool Completed { get; set; }
     public List<ZombieMatchDetailPlayer> Players { get; set; } = [];
+
+    /// <summary>
+    /// Distinct buildables completed in this match. Sourced from event-log entries
+    /// of type <c>BuildComplete</c> with the buildable name in <c>TextualValue</c>.
+    /// </summary>
+    public int BuildablesBuilt { get; set; }
+
+    /// <summary>
+    /// Total iconic buildables on this map (per <c>MapBuildableConfig</c>), or null
+    /// when the map has no configured total — custom maps, T4/T5 (no buildable
+    /// system), or unmapped maps. Null hides the denominator in the UI.
+    /// </summary>
+    public int? BuildablesTotal { get; set; }
+
+    /// <summary>
+    /// Names of buildables completed (distinct, in build order). Used by the
+    /// dedicated share page's rich card; the leaderboard compact badge ignores it.
+    /// </summary>
+    public List<string> BuildableNames { get; set; } = [];
+
+    /// <summary>Round at which the EE fired (when known).</summary>
+    public int? EasterEggRound { get; set; }
+
+    /// <summary>
+    /// UTC timestamp at which the EE fired. Authoritative "EE happened" signal —
+    /// non-null implies completed. Drives the scrubber timeline marker.
+    /// </summary>
+    public DateTimeOffset? EasterEggOccurredAt { get; set; }
 }
 
 public class ZombieMatchDetailPlayer
@@ -71,6 +99,23 @@ public class ZombieMatchHistoryMatch
     public long Deaths { get; set; }
     public long PointsEarned { get; set; }
     public bool Completed { get; set; }
+
+    /// <summary>Round at which the EE fired (when known).</summary>
+    public int? EasterEggRound { get; set; }
+
+    /// <summary>
+    /// UTC timestamp at which the EE fired. Non-null implies completed.
+    /// </summary>
+    public DateTimeOffset? EasterEggOccurredAt { get; set; }
+
+    /// <summary>Distinct buildables completed in this match.</summary>
+    public int BuildablesBuilt { get; set; }
+
+    /// <summary>Total iconic buildables on this map (per <c>MapBuildableConfig</c>), or null.</summary>
+    public int? BuildablesTotal { get; set; }
+
+    /// <summary>This player's total downs across the match — drives the "Personal No-Down" badge.</summary>
+    public int Downs { get; set; }
 
     /// <summary>
     /// Rounds in this match where this player had at least one other tracked teammate.

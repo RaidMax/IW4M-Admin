@@ -251,6 +251,7 @@ Application/WebfrontCore/*
 bundle/
 WebfrontCore/Tools/*
 _PRIVATE/
+translation_temp.csv
 
 # LLM folders
 .claude/

@@ -235,17 +235,33 @@ WaitForPerkBought()
 // getCurrentWeapon() returns "none" (weapon not given yet).
 // Same approach as T4/T5: poll the PaP trigger's .current_weapon
 // property which is set when the player places their weapon.
+/////////////////////////////////////////////////////////
+// T6 Pack-a-Punch — DEBUG INSTRUMENTED BUILD
+//
+// Mirrors the T4 redesign (notify-driven, lock-first buyer attribution,
+// distinct outcomes via pap_taken/pap_timeout). T6 adds a third notify:
+// pap_player_disconnected (engine fires when buyer disconnects mid-iter).
+// We track it via WatchPapDisconnectFlag and skip emission on disconnect
+// (no player to credit).
+//
+// T6 engine reference (`_zm_perks.gsc::vending_weapon_upgrade`):
+//   - Trigger discovery: targetname "zombie_vending" + script_noteworthy
+//     "specialty_weapupgrade", OR legacy targetname "zombie_vending_upgrade"
+//   - Field: self.current_weapon (~L630 set, ~L645 clear)
+//   - Take notify: self notify("pap_taken")  ~L742
+//   - Timeout notify: self notify("pap_timeout")  ~L793
+//   - Disconnect notify: self notify("pap_player_disconnected")  ~L816
+//   - Cost: 5000 base
+//   - Timeout: level.packapunch_timeout = 15s
+/////////////////////////////////////////////////////////
 WaitForPackAPunch()
 {
-    self endon( "disconnect" );
-
     wait ( 2 );
 
     // T6 PaP triggers come from two sources:
     //   1. targetname "zombie_vending" with script_noteworthy "specialty_weapupgrade"
     //   2. targetname "zombie_vending_upgrade" (legacy fallback)
     // Both get threaded with vending_weapon_upgrade() by the game.
-    // We replicate the same lookup to find them.
     papTriggers = [];
 
     vendingTriggers = getEntArray( "zombie_vending", "targetname" );
@@ -279,74 +295,234 @@ WaitForPackAPunch()
 
     for ( i = 0; i < papTriggers.size; i++ )
     {
-        papTriggers[i] thread WatchPackAPunch();
+        papTriggers[i].iw4m_pap_buyer = undefined;
+        papTriggers[i].iw4m_pap_buyer_weapon = undefined;
+        papTriggers[i].iw4m_pap_taken_flag = false;
+        papTriggers[i].iw4m_pap_timeout_flag = false;
+        papTriggers[i].iw4m_pap_disconnect_flag = false;
+
+        papTriggers[i] thread WatchPapOutcome();
+        papTriggers[i] thread WatchPapTriggerForBuyer();
+        papTriggers[i] thread WatchPapTakenFlag();
+        papTriggers[i] thread WatchPapTimeoutFlag();
+        papTriggers[i] thread WatchPapDisconnectFlag();
     }
 }
 
-// Polls the PaP trigger's .current_weapon property.
-// Set when player places weapon in machine (line 630 ref),
-// cleared after collection or timeout (line 645 ref).
-// waittill("pap_taken") doesn't work — GSC resumes our thread
-// AFTER the game clears current_weapon and gives the upgraded
-// weapon, so we'd read empty state. Polling captures the
-// weapon name while it's still valid.
-WatchPackAPunch()
+// First-notify-wins. Engine has stale per-iter threads (wait_for_player_to_take,
+// wait_for_timeout) that can outlive their iter and fire pap_taken/pap_timeout
+// AFTER another notify has already resolved the iter. Ignoring later notifies
+// prevents misclassification (e.g., abandon emitted as upgrade when a stale
+// take notify fires after timeout cleared the iter).
+WatchPapTakenFlag()
 {
     for ( ;; )
     {
-        // Wait for a weapon to be placed in the machine
-        while ( true )
+        self waittill( "pap_taken" );
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
         {
-            if ( IsDefined( self.current_weapon ) )
+            continue;
+        }
+        self.iw4m_pap_taken_flag = true;
+    }
+}
+
+WatchPapTimeoutFlag()
+{
+    for ( ;; )
+    {
+        self waittill( "pap_timeout" );
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
+        {
+            continue;
+        }
+        self.iw4m_pap_timeout_flag = true;
+    }
+}
+
+WatchPapDisconnectFlag()
+{
+    for ( ;; )
+    {
+        self waittill( "pap_player_disconnected" );
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
+        {
+            continue;
+        }
+        self.iw4m_pap_disconnect_flag = true;
+    }
+}
+
+WatchPapTriggerForBuyer()
+{
+    for ( ;; )
+    {
+        self waittill( "trigger", who );
+
+        if ( IsDefined( self.iw4m_pap_buyer ) )
+        {
+            continue;
+        }
+        if ( !IsDefined( who ) || !IsPlayer( who ) )
+        {
+            continue;
+        }
+
+        // Phase2 path: engine already accepted a buy (current_weapon set).
+        // The buyer is the player whose weapon engine just took — their
+        // GetCurrentWeapon() is now empty/none. Late F-pressers in phase2
+        // still hold their own weapon, so this discriminates cleanly.
+        // Lock immediately with engine's current_weapon as authority; skip
+        // verify (engine already accepted). Without this path, scheduler
+        // ordering that runs the engine handler before ours causes legit
+        // buyers to be rejected as phase2 late-pressers, dropping the emit.
+        if ( IsDefined( self.current_weapon ) && self.current_weapon != "" )
+        {
+            buyerWeapon = who GetCurrentWeapon();
+            if ( IsDefined( buyerWeapon ) && buyerWeapon != "" && buyerWeapon != "none" )
             {
-                if ( self.current_weapon != "" )
-                {
-                    break;
-                }
+                continue;
             }
-            wait ( 0.2 );
+            self.iw4m_pap_buyer = who;
+            self.iw4m_pap_buyer_weapon = self.current_weapon;
+            continue;
+        }
+
+        // Phase1 path: engine hasn't accepted yet. Replicate engine gates
+        // (score, upgradeable weapon) so we don't lock on rejected presses.
+        if ( !IsDefined( who.score ) || who.score < 5000 )
+        {
+            continue;
+        }
+
+        // T6 weapons have _zm suffix; upgrade variant is at
+        // level.zombie_weapons[weapon].upgrade_name (NOT weapon + "_upgraded"
+        // — that produces "weapon_zm_upgraded" vs real "weapon_upgraded_zm").
+        weapon = who GetCurrentWeapon();
+        if ( weapon == "" || weapon == "none" )
+        {
+            continue;
+        }
+        if ( !IsDefined( level.zombie_weapons ) || !IsDefined( level.zombie_weapons[weapon] ) )
+        {
+            continue;
+        }
+        if ( !IsDefined( level.zombie_weapons[weapon].upgrade_name ) )
+        {
+            continue;
+        }
+
+        self.iw4m_pap_buyer = who;
+        self.iw4m_pap_buyer_weapon = weapon;
+
+        // Verify engine actually accepted; unlock otherwise. Handles engine-
+        // side gates we don't replicate (laststand, throwing grenade,
+        // switching weapons).
+        self thread VerifyPapBuyerLock();
+    }
+}
+
+VerifyPapBuyerLock()
+{
+    // Poll for engine acceptance up to 2s. Single 0.25s wait was too short on
+    // T6 (engine sometimes delays setting self.current_weapon past 0.25s,
+    // unlocking legit buyer → later stale F-press re-locks wrong weapon →
+    // false mismatch → skipped emit). Polling fix is identical across
+    // T4/T5/T6 even though only T6 was observed failing — defensive
+    // consistency.
+    timeoutMs = 2000;
+    pollMs = 50;
+    elapsedMs = 0;
+    while ( elapsedMs < timeoutMs )
+    {
+        if ( IsDefined( self.current_weapon ) && self.current_weapon != "" )
+        {
+            return;
+        }
+        wait ( 0.05 );
+        elapsedMs = elapsedMs + pollMs;
+    }
+
+    if ( IsDefined( self.iw4m_pap_buyer ) )
+    {
+        self.iw4m_pap_buyer = undefined;
+        self.iw4m_pap_buyer_weapon = undefined;
+    }
+}
+
+WatchPapOutcome()
+{
+    for ( ;; )
+    {
+        // Reset per-iter state
+        self.iw4m_pap_taken_flag = false;
+        self.iw4m_pap_timeout_flag = false;
+        self.iw4m_pap_disconnect_flag = false;
+        self.iw4m_pap_buyer = undefined;
+        self.iw4m_pap_buyer_weapon = undefined;
+
+        // Phase 1: wait for engine to accept a buy (current_weapon set).
+        while ( !IsDefined( self.current_weapon ) || self.current_weapon == "" )
+        {
+            wait ( 0.05 );
         }
 
         oldWeapon = self.current_weapon;
 
-        // Find closest player to PaP
-        players = get_players();
-        closest = undefined;
-        closestDist = 99999;
-
-        for ( i = 0; i < players.size; i++ )
+        // Phase 2: wait for iter boundary. Boundary = current_weapon changes
+        // (clears OR engine immediately starts a new iter with a different
+        // weapon in the same frame our poll would otherwise miss). Detecting
+        // weapon-change as an exit prevents losing back-to-back iters when
+        // engine clears + re-sets within one 50ms poll window.
+        while ( IsDefined( self.current_weapon ) && self.current_weapon == oldWeapon )
         {
-            if ( !IsAlive( players[i] ) )
-            {
-                continue;
-            }
-
-            dist = distance( players[i].origin, self.origin );
-            if ( dist < closestDist )
-            {
-                closestDist = dist;
-                closest = players[i];
-            }
+            wait ( 0.05 );
         }
 
-        // Wait for weapon to be collected or timeout
-        while ( true )
+        // Disconnect short-circuits emission (no player to credit).
+        if ( self.iw4m_pap_disconnect_flag )
         {
-            if ( !IsDefined( self.current_weapon ) )
-            {
-                break;
-            }
-            if ( self.current_weapon == "" )
-            {
-                break;
-            }
-            wait ( 0.2 );
+            continue;
         }
 
-        if ( IsDefined( closest ) )
+        // Emit policy: engine_weapon (oldWeapon) is authoritative for what got
+        // upgraded/abandoned. Locked buyer is best-effort attribution. Lock-vs-
+        // engine weapon mismatch happens when player switches weapons between
+        // F-presses or when scheduler ordering causes our lock to fire after
+        // engine commits — engine's choice wins. Skip emission only when no
+        // buyer was ever locked.
+        if ( !IsDefined( self.iw4m_pap_buyer ) || !IsPlayer( self.iw4m_pap_buyer ) )
+        {
+            continue;
+        }
+
+        // Resolve actual cost engine charged. Engine sets self.cost (5000
+        // base, 1000 during bonfire sale) and self.attachment_cost (2000
+        // base, 1000 sale) on the trigger via vending_weapon_upgrade_cost.
+        // Attachment-only upgrade fires on already-upgraded weapons on
+        // re-PaP-enabled maps (BO2 attachment-perk maps); engine charges
+        // attachment_cost in that case. Substring check on _upgraded is a
+        // proxy for engine's will_upgrade_weapon_as_attachment gate (engine
+        // also requires zombiemode_reusing_pack_a_punch + supports_attachments
+        // — but those gates already passed if we're at phase1_enter with an
+        // upgraded weapon). Misses pers_upgrade double_points modifier
+        // (per-player premium feature, rare).
+        cost = 5000;
+        if ( IsDefined( self.cost ) ) { cost = self.cost; }
+        if ( IsDefined( self.attachment_cost ) && IsSubStr( oldWeapon, "_upgraded" ) ) { cost = self.attachment_cost; }
+
+        if ( self.iw4m_pap_taken_flag )
         {
             newWeapon = oldWeapon + "_upgraded";
-            logprint( "GSE;ZE;" + BuildPlayerInfoString( closest ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";5000\n" );
+            if ( IsDefined( level.zombie_weapons ) && IsDefined( level.zombie_weapons[oldWeapon] ) && IsDefined( level.zombie_weapons[oldWeapon].upgrade_name ) )
+            {
+                newWeapon = level.zombie_weapons[oldWeapon].upgrade_name;
+            }
+            logprint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";" + cost + "\n" );
+        }
+        else if ( self.iw4m_pap_timeout_flag )
+        {
+            logprint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";" + cost + "\n" );
         }
     }
 }

@@ -27,7 +27,8 @@ public enum EventLogType
     BoxTeddy = 18,
     DoorPurchased = 19,
     TrapActivated = 20,
-    BuildComplete = 21
+    BuildComplete = 21,
+    WeaponAbandoned = 22
 }
 
 public class ZombieEventLog : DatedRecord

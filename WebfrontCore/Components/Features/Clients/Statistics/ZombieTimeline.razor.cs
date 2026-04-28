@@ -44,6 +44,10 @@ public partial class ZombieTimeline
             "success" => ("bg-success", "text-success", "ph-heartbeat", 30, false),
             "perk" => ("bg-purple-500", "text-purple-500", "ph-pill", 25, false),
             "weapon" => ("bg-info", "text-info", "ph-knife", 20, false),
+            // Abandon = walked away from PaP, lost 5000pts. Mirrors box-pass
+            // (orange = wasted spend) but keeps the weapon-family icon so it
+            // still reads as a PaP event in the timeline.
+            "weapon-abandon" => ("bg-orange-400", "text-orange-400", "ph-knife", 20, false),
             "box" => ("bg-blue-400", "text-blue-400", "ph-cube", 20, false),
             "box-pass" => ("bg-orange-400", "text-orange-400", "ph-cube", 20, false),
             // Teddy bear: distinct from take/pass — engine refunds the cost
@@ -69,7 +73,7 @@ public partial class ZombieTimeline
             // "Drops" = things that fall from zombies (nukes, max ammo, insta-kill, etc.)
             "powerups" => evt.Category is "powerup",
             // Perks are bought with points, so they belong to Economy alongside weapons/doors/etc.
-            "economy" => evt.Category is "weapon" or "box" or "box-pass" or "door" or "trap" or "build" or "perk",
+            "economy" => evt.Category is "weapon" or "weapon-abandon" or "box" or "box-pass" or "door" or "trap" or "build" or "perk",
             _ => true
         };
     }

@@ -212,6 +212,7 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
 
     // ZE;{player};weapon;buy;{weaponName};{cost}
     // ZE;{player};weapon;upgrade;{oldWeapon};{newWeapon};{cost}
+    // ZE;{player};weapon;abandon;{weaponName};{cost}
     private static GameEventV2 ParseZeWeapon(GameScriptEvent scriptEvent, string[] data)
     {
         var action = data[5];
@@ -225,12 +226,20 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
                 WeaponName = data[6],
                 Cost = Convert.ToInt32(data[7])
             },
-            "upgrade" => new WeaponUpgradeGameEvent
+            "upgrade" => new PackAPunchGameEvent
             {
                 Origin = client,
+                Outcome = PackAPunchGameEvent.PaPOutcome.Upgrade,
                 OldWeapon = data[6],
                 NewWeapon = data[7],
                 Cost = Convert.ToInt32(data[8])
+            },
+            "abandon" => new PackAPunchGameEvent
+            {
+                Origin = client,
+                Outcome = PackAPunchGameEvent.PaPOutcome.Abandon,
+                OldWeapon = data[6],
+                Cost = Convert.ToInt32(data[7])
             },
             _ => throw new ArgumentException($"Unknown weapon action: {action}")
         };

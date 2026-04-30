@@ -86,8 +86,9 @@ public class ZombieLeaderboardEntry
     public int? EasterEggRound { get; set; }
 
     /// <summary>
-    /// Distinct buildables completed in this match. Drives the "All Built" titlebar badge
-    /// when equal to <see cref="BuildablesTotal"/>.
+    /// Iconic buildables completed (distinct, capped at <see cref="BuildablesTotal"/>).
+    /// Drives the "All Built" titlebar badge when equal to <see cref="BuildablesTotal"/>.
+    /// On unconfigured maps falls back to all distinct names built.
     /// </summary>
     public int BuildablesBuilt { get; set; }
 
@@ -96,6 +97,12 @@ public class ZombieLeaderboardEntry
     /// the map has no configured total. Null hides the All-Built badge.
     /// </summary>
     public int? BuildablesTotal { get; set; }
+
+    /// <summary>
+    /// Distinct non-iconic buildables completed (side-quest / extras). Drives the "+N
+    /// extra" indicator alongside the All-Built badge. Always 0 on unconfigured maps.
+    /// </summary>
+    public int ExtraBuildablesBuilt { get; set; }
 
     /// <summary>
     /// Total downs across all qualified players in this match. Drives the

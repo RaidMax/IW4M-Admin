@@ -244,6 +244,28 @@ else
                                 }
                             </div>
                         }
+
+                        @* Extras: side-quest / non-iconic buildables that the engine reports
+                           as built. Surfaced separately so they don't dilute the main count;
+                           the heading flags them as bonus rather than core progression. *@
+                        @if (Detail.ExtraBuildableNames.Count > 0)
+                        {
+                            <div class="mt-4 pt-3 border-t border-line/40">
+                                <div class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-2 flex items-center gap-1.5">
+                                    <i class="ph ph-plus-circle text-xs"></i>
+                                    @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_LABEL").FormatExt(Detail.ExtraBuildablesBuilt)
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var name in Detail.ExtraBuildableNames)
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300/90">
+                                            <i class="ph ph-plus-circle text-amber-400 text-xs"></i>
+                                            @FormatBuildableName(name)
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

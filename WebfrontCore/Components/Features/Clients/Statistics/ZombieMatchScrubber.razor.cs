@@ -22,6 +22,9 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     private int? _lastFocusedClientId;
     private double _zoomLevel = 1;
     private string _filter = "all";
+    // Mirrors JS-side default: 'qualified' when any lane qualifies, else 'all'. Re-evaluated
+    // on payload change so a per-client view (single qualified lane) opens correctly.
+    private string _laneMode = "qualified";
     private double _scrubSeconds;
     private string _scrubTimeLabel = string.Empty;
     private int _scrubRoundLabel;
@@ -43,6 +46,7 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         if (!ReferenceEquals(_payload, Payload))
         {
             _payload = Payload;
+            _laneMode = _payload.Lanes.Any(l => l.IsQualified) ? "qualified" : "all";
             _lastFocusedClientId = FocusedClientId;
             if (_initialized)
             {
@@ -87,14 +91,26 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         }
     }
 
-    private async Task ChangeZoom(double delta)
+    private async Task ToggleLaneMode()
     {
-        _zoomLevel = Math.Clamp(_zoomLevel + delta, 1, 5);
+        _laneMode = _laneMode == "qualified" ? "all" : "qualified";
+        if (_initialized)
+        {
+            await JS.InvokeVoidAsync("zombieScrubber.setLaneMode", _elementId, _laneMode);
+        }
+    }
+
+    private async Task MultiplyZoom(double factor)
+    {
+        _zoomLevel = Math.Clamp(_zoomLevel * factor, 1, 20);
         if (_initialized)
         {
             await JS.InvokeVoidAsync("zombieScrubber.setZoom", _elementId, _zoomLevel);
         }
     }
+
+    private static string FormatZoom(double level) =>
+        level >= 10 ? $"{level:F0}" : $"{level:F1}";
 
     /// <summary>
     /// Called from JS after wheel-zoom applies, so the toolbar +/- display reflects

@@ -30,8 +30,11 @@ public class ZombieMatchDetail
     public List<ZombieMatchDetailPlayer> Players { get; set; } = [];
 
     /// <summary>
-    /// Distinct buildables completed in this match. Sourced from event-log entries
-    /// of type <c>BuildComplete</c> with the buildable name in <c>TextualValue</c>.
+    /// Distinct iconic buildables completed in this match (capped at
+    /// <see cref="BuildablesTotal"/>). Sourced from event-log entries of type
+    /// <c>BuildComplete</c>, classified against <c>MapBuildableConfig</c>'s iconic
+    /// list. For unconfigured maps (custom maps, T4/T5), this falls back to all
+    /// distinct names built — same value <c>BuildableNames.Count</c>.
     /// </summary>
     public int BuildablesBuilt { get; set; }
 
@@ -43,10 +46,23 @@ public class ZombieMatchDetail
     public int? BuildablesTotal { get; set; }
 
     /// <summary>
-    /// Names of buildables completed (distinct, in build order). Used by the
-    /// dedicated share page's rich card; the leaderboard compact badge ignores it.
+    /// Iconic buildables completed (distinct, in build order). Used by the dedicated
+    /// share page's rich card; the leaderboard compact badge ignores it.
     /// </summary>
     public List<string> BuildableNames { get; set; } = [];
+
+    /// <summary>
+    /// Distinct non-iconic buildables completed — side-quest items, PaP-on-Tranzit,
+    /// situational extras, etc. Always 0 on unconfigured maps (everything lands in
+    /// iconic by default). Drives the "+N extra" chip alongside the All-Built badge.
+    /// </summary>
+    public int ExtraBuildablesBuilt { get; set; }
+
+    /// <summary>
+    /// Names of non-iconic buildables completed (distinct, in build order). Empty on
+    /// unconfigured maps. Surfaced in the share page's "Extras" sub-section.
+    /// </summary>
+    public List<string> ExtraBuildableNames { get; set; } = [];
 
     /// <summary>Round at which the EE fired (when known).</summary>
     public int? EasterEggRound { get; set; }
@@ -83,6 +99,13 @@ public class ZombieMatchDetailPlayer
     /// </summary>
     public int? SoloFromRound { get; set; }
 
+    /// <summary>
+    /// Whether this player meets the canonical match-qualifier rule (same one driving
+    /// the leaderboard listing). Drives the scrubber's default lane visibility — the
+    /// timeline shows qualified players first, with a toggle to surface drop-ins.
+    /// </summary>
+    public bool IsQualified { get; set; }
+
     public List<ZombieMatchHistoryRound> Rounds { get; set; } = [];
     public List<ZombieMatchHistoryEvent> Events { get; set; } = [];
 }
@@ -108,11 +131,14 @@ public class ZombieMatchHistoryMatch
     /// </summary>
     public DateTimeOffset? EasterEggOccurredAt { get; set; }
 
-    /// <summary>Distinct buildables completed in this match.</summary>
+    /// <summary>Iconic buildables completed (capped at <see cref="BuildablesTotal"/>; falls back to all distinct on unconfigured maps).</summary>
     public int BuildablesBuilt { get; set; }
 
     /// <summary>Total iconic buildables on this map (per <c>MapBuildableConfig</c>), or null.</summary>
     public int? BuildablesTotal { get; set; }
+
+    /// <summary>Distinct non-iconic buildables completed (side-quest / extras). 0 on unconfigured maps.</summary>
+    public int ExtraBuildablesBuilt { get; set; }
 
     /// <summary>This player's total downs across the match — drives the "Personal No-Down" badge.</summary>
     public int Downs { get; set; }

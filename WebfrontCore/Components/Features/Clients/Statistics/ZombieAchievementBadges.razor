@@ -61,6 +61,19 @@
             </Tooltip>
         }
 
+        @* "+N extra" chip — only when all iconic are built AND there are non-iconic
+           extras (side-quest items, PaP-on-Tranzit, etc.). Sits next to the All-Built
+           badge so the achievement reads "8/8 +2 extra". Hidden if no extras logged. *@
+        @if (allBuilt && ExtraBuildablesBuilt > 0)
+        {
+            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_TOOLTIP").FormatExt(ExtraBuildablesBuilt)" WrapperClass="inline-flex shrink-0">
+                <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider cursor-help font-mono">
+                    <i class="ph ph-plus-circle text-[10px]"></i>
+                    <span>@ExtraBuildablesBuilt</span>
+                </span>
+            </Tooltip>
+        }
+
         @if (marathonTier > 0)
         {
             var (mBg, mBorder, mText) = marathonTier switch
@@ -72,7 +85,7 @@
             <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP").FormatExt(HighestRound)" WrapperClass="inline-flex shrink-0">
                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded @mBg border @mBorder @mText text-[10px] font-bold uppercase tracking-wider cursor-help">
                     <i class="ph ph-fire text-[10px]"></i>
-                    <span>R@HighestRound</span>
+                    <span>R@(HighestRound)</span>
                 </span>
             </Tooltip>
         }
@@ -100,11 +113,18 @@
     /// <summary>UTC timestamp at which the EE fired. Null hides the EE badge (unless Round is set).</summary>
     [Parameter] public DateTimeOffset? EasterEggOccurredAt { get; set; }
 
-    /// <summary>Distinct buildables completed this match.</summary>
+    /// <summary>Distinct iconic buildables completed this match.</summary>
     [Parameter] public int BuildablesBuilt { get; set; }
 
     /// <summary>Total iconic buildables on this map. Null = no denominator known.</summary>
     [Parameter] public int? BuildablesTotal { get; set; }
+
+    /// <summary>
+    /// Count of non-iconic buildables also completed (side-quest / extras). Drives the
+    /// "+N extra" chip alongside the All-Built badge — only renders when every iconic
+    /// is built AND extras > 0.
+    /// </summary>
+    [Parameter] public int ExtraBuildablesBuilt { get; set; }
 
     /// <summary>Match's highest round. Drives Marathon tier and the No-Down floor.</summary>
     [Parameter, EditorRequired] public int HighestRound { get; set; }

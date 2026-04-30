@@ -7,7 +7,8 @@
 //   init(elementId, payload, dotnetRef, focusClientId?)   — build stage, attach handlers
 //   dispose(elementId)                                    — destroy stage, free refs
 //   setFilter(elementId, filter)                          — toggle category visibility
-//   setZoom(elementId, level)                             — scale time axis (1..5x)
+//   setZoom(elementId, level)                             — scale time axis (1..20x)
+//   setLaneMode(elementId, mode)                          — 'qualified' (default) | 'all'
 //   setScrubTime(elementId, seconds)                      — move cursor (programmatic)
 //   focusClient(elementId, clientId | null)               — dim other lanes; null = reset
 
@@ -68,6 +69,11 @@
             this.dotnetRef = dotnetRef;
             this.focusClientId = focusClientId ?? null;
             this.filter = 'all';
+            // Default lane mode: hide drop-ins so the timeline matches the leaderboard's
+            // qualified roster. If the payload has zero qualified lanes (legacy match where
+            // the qualifier wasn't computed), fall back to 'all' to avoid an empty stage.
+            const anyQualified = (payload.lanes || []).some(l => l.isQualified);
+            this.laneMode = anyQualified ? 'qualified' : 'all';
             this.zoom = 1;
             this.scrubSeconds = payload.minSeconds;
             this._scrubDebounce = null;
@@ -81,10 +87,17 @@
         }
 
         _firstEventSeconds() {
-            for (const lane of this.payload.lanes) {
+            for (const lane of this._visibleLanes()) {
                 if (lane.events.length > 0) return lane.events[0].seconds;
             }
             return null;
+        }
+
+        // Lanes drawn at the current laneMode. 'qualified' hides drop-ins; 'all' shows
+        // every lane. Drives stage height, lane Y positions, and event placement.
+        _visibleLanes() {
+            if (this.laneMode === 'all') return this.payload.lanes;
+            return this.payload.lanes.filter(l => l.isQualified);
         }
 
         _container() {
@@ -104,11 +117,11 @@
         }
 
         _sidePad() {
-            return this.payload.lanes.length > 1 ? SIDE_PAD_MULTI : SIDE_PAD_SINGLE;
+            return this._visibleLanes().length > 1 ? SIDE_PAD_MULTI : SIDE_PAD_SINGLE;
         }
 
         _stageHeight() {
-            return TOP_PAD + this.payload.lanes.length * (LANE_HEIGHT + LANE_GAP) + BOTTOM_PAD;
+            return TOP_PAD + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP) + BOTTOM_PAD;
         }
 
         _build() {
@@ -158,6 +171,7 @@
         }
 
         _drawBackground() {
+            const lanes = this._visibleLanes();
             // Round bands — alternating tint
             this.payload.roundBands.forEach((band, i) => {
                 const x1 = this._timeToX(band.startSeconds);
@@ -165,7 +179,7 @@
                 const w = Math.max(x2 - x1, 0.5);
                 this.bgLayer.add(new Konva.Rect({
                     x: x1, y: TOP_PAD - 6, width: w,
-                    height: this.payload.lanes.length * (LANE_HEIGHT + LANE_GAP),
+                    height: lanes.length * (LANE_HEIGHT + LANE_GAP),
                     fill: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'
                 }));
                 // Round label
@@ -181,8 +195,8 @@
             });
 
             // Lane name labels (skipped on single-lane — no need)
-            const showLaneLabels = this.payload.lanes.length > 1;
-            this.payload.lanes.forEach((lane, idx) => {
+            const showLaneLabels = lanes.length > 1;
+            lanes.forEach((lane, idx) => {
                 if (showLaneLabels) {
                     this.bgLayer.add(new Konva.Text({
                         x: 8, y: this._laneY(idx) - 6,
@@ -206,7 +220,7 @@
         }
 
         _drawLanes() {
-            this.payload.lanes.forEach((lane, idx) => {
+            this._visibleLanes().forEach((lane, idx) => {
                 const y = this._laneY(idx);
 
                 // Gaps (behind events)
@@ -294,7 +308,7 @@
         _drawScrubber() {
             const x = this._timeToX(this.scrubSeconds);
             const top = TOP_PAD - 8;
-            const bottom = TOP_PAD + this.payload.lanes.length * (LANE_HEIGHT + LANE_GAP);
+            const bottom = TOP_PAD + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
 
             this.scrubLine = new Konva.Line({
                 points: [x, top, x, bottom],
@@ -366,9 +380,11 @@
             // under the cursor stays under the cursor.
             this.stage.on('wheel', (e) => {
                 e.evt.preventDefault();
-                const delta = e.evt.deltaY < 0 ? 0.25 : -0.25;
-                const newZoom = Math.min(Math.max(this.zoom + delta, 1), 5);
-                if (newZoom === this.zoom) return;
+                // Multiplicative step keeps wheel-feel consistent across the 1..20 range
+                // (linear step at 0.25 took ~80 ticks to hit 20x; 1.15x scale = ~22 ticks).
+                const factor = e.evt.deltaY < 0 ? 1.15 : 1 / 1.15;
+                const newZoom = Math.min(Math.max(this.zoom * factor, 1), 20);
+                if (Math.abs(newZoom - this.zoom) < 0.01) return;
 
                 const pointer = this.stage.getPointerPosition();
                 const anchorStageX = pointer ? pointer.x : this._stageWidth() / 2;
@@ -505,7 +521,7 @@
             this.scrubSeconds = seconds;
             const x = this._timeToX(seconds);
             const top = TOP_PAD - 8;
-            const bottom = TOP_PAD + this.payload.lanes.length * (LANE_HEIGHT + LANE_GAP);
+            const bottom = TOP_PAD + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
             if (this.scrubHandle) this.scrubHandle.x(x - 6);
             if (this.scrubLine) this.scrubLine.points([x, top, x, bottom]);
             this.scrubLayer.batchDraw();
@@ -516,6 +532,13 @@
             this.focusClientId = clientId;
             this._applyFocus();
             this.laneLayer.batchDraw();
+        }
+
+        setLaneMode(mode) {
+            if (mode !== 'qualified' && mode !== 'all') return;
+            if (this.laneMode === mode) return;
+            this.laneMode = mode;
+            this._redrawAll();
         }
 
         dispose() {
@@ -559,6 +582,7 @@
         },
         setFilter(elementId, filter) { const i = stages.get(elementId); if (i) i.setFilter(filter); },
         setZoom(elementId, level)    { const i = stages.get(elementId); if (i) i.setZoom(level); },
+        setLaneMode(elementId, mode) { const i = stages.get(elementId); if (i) i.setLaneMode(mode); },
         setScrubTime(elementId, sec) { const i = stages.get(elementId); if (i) i.setScrubTime(sec); },
         focusClient(elementId, cid)  { const i = stages.get(elementId); if (i) i.focusClient(cid); }
     };

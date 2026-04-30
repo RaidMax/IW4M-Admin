@@ -32,6 +32,7 @@ public sealed class ZombieScrubberPayload
                 {
                     ClientId = p.ClientId,
                     Name = p.Name,
+                    IsQualified = p.IsQualified,
                     Events = events,
                     Gaps = ZombieTimelineGaps.Compute(p.Rounds, p.Events, detail.HighestRound)
                         .Select(g => new ScrubberGap
@@ -68,6 +69,9 @@ public sealed class ZombieScrubberPayload
         {
             ClientId = clientId,
             Name = playerName,
+            // Per-client view: the row only renders when the player qualified, so the
+            // lane is always qualified by construction.
+            IsQualified = true,
             Events = laneEvents,
             Gaps = ZombieTimelineGaps.Compute(match.Rounds, match.Events, match.HighestRound)
                 .Select(g => new ScrubberGap
@@ -177,6 +181,7 @@ public sealed class ScrubberLane
 {
     public int ClientId { get; set; }
     public string Name { get; set; } = string.Empty;
+    public bool IsQualified { get; set; }
     public List<ScrubberEvent> Events { get; set; } = [];
     public List<ScrubberGap> Gaps { get; set; } = [];
 }

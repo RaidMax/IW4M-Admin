@@ -17,15 +17,49 @@ public sealed class ZombieScrubberPayload
     public List<ScrubberRoundBand> RoundBands { get; set; } = [];
     public List<ScrubberLane> Lanes { get; set; } = [];
 
+    /// <summary>
+    /// Match-level events (no per-player attribution) — EE step markers, canonical
+    /// EE-complete marker. JS renders these in a tick band above the lanes rather
+    /// than duplicating them onto every lane. Empty on the per-client view.
+    /// </summary>
+    public List<ScrubberEvent> MatchLevelEvents { get; set; } = [];
+
     public static ZombieScrubberPayload From(SharedLibraryCore.Interfaces.ZombieMatchDetail detail)
     {
+        // Match-level events (steps + canonical EE) live in their own band rather
+        // than getting cloned onto every lane — keeps the visual layout clean and
+        // gives the team-milestone semantics a dedicated visual home.
+        var matchLevelEvents = new List<ScrubberEvent>();
         var eeEvent = BuildEasterEggMarker(detail.EasterEggOccurredAt, detail.EasterEggRound, detail.Date);
+        if (eeEvent is not null) matchLevelEvents.Add(eeEvent);
+
+        // Step records: each becomes a tick on the band, in fire order. Label uses
+        // the inventory's loc-key when available (so step name is human-readable);
+        // falls back to the raw key when the step came from outside the inventory.
+        // Inventory + records pulled from each quest in turn — step keys are globally
+        // unique, so the merged dictionary collapses safely.
+        var inventoryLabels = detail.EasterEggQuests
+            .SelectMany(q => q.Inventory)
+            .GroupBy(s => s.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().LocKey, StringComparer.OrdinalIgnoreCase);
+        foreach (var step in detail.EasterEggQuests.SelectMany(q => q.Steps))
+        {
+            var elapsed = Math.Max(0, (step.OccurredAt - detail.Date).TotalSeconds);
+            matchLevelEvents.Add(new ScrubberEvent
+            {
+                Seconds = elapsed,
+                Time = FormatElapsed(elapsed),
+                Label = inventoryLabels.GetValueOrDefault(step.Key, step.Key),
+                Category = "easter-egg-step",
+                RoundNumber = step.RoundNumber
+            });
+        }
+        matchLevelEvents = matchLevelEvents.OrderBy(e => e.Seconds).ToList();
 
         var lanes = detail.Players
             .Select(p =>
             {
                 var events = p.Events.Select(ScrubberEvent.From).ToList();
-                if (eeEvent is not null) events.Add(eeEvent);
                 events = events.OrderBy(e => e.Seconds).ToList();
 
                 return new ScrubberLane
@@ -47,7 +81,7 @@ public sealed class ZombieScrubberPayload
             })
             .ToList();
 
-        return Build(lanes, detail.HighestRound, detail.Players.SelectMany(p => p.Events));
+        return Build(lanes, detail.HighestRound, detail.Players.SelectMany(p => p.Events), matchLevelEvents);
     }
 
     public static ZombieScrubberPayload From(ZombieMatchHistoryMatch match, string playerName, int clientId)
@@ -84,7 +118,7 @@ public sealed class ZombieScrubberPayload
                 .ToList()
         };
 
-        return Build([lane], match.HighestRound, match.Events);
+        return Build([lane], match.HighestRound, match.Events, []);
     }
 
     /// <summary>
@@ -118,7 +152,8 @@ public sealed class ZombieScrubberPayload
     private static ZombieScrubberPayload Build(
         List<ScrubberLane> lanes,
         int highestRound,
-        IEnumerable<ZombieMatchHistoryEvent> allEventsForBands)
+        IEnumerable<ZombieMatchHistoryEvent> allEventsForBands,
+        List<ScrubberEvent> matchLevelEvents)
     {
         // Round bands derive from any player's round-marker events. Group by round, take
         // the earliest second-mark per round (covers the case where a late joiner has a
@@ -151,6 +186,7 @@ public sealed class ZombieScrubberPayload
         var allTimes = lanes.SelectMany(l => l.Events).Select(e => e.Seconds)
             .Concat(lanes.SelectMany(l => l.Gaps).SelectMany(g => new[] { g.Start, g.End }))
             .Concat(bands.SelectMany(b => new[] { b.StartSeconds, b.EndSeconds }))
+            .Concat(matchLevelEvents.Select(e => e.Seconds))
             .ToList();
 
         return new ZombieScrubberPayload
@@ -159,7 +195,8 @@ public sealed class ZombieScrubberPayload
             MaxSeconds = allTimes.Count > 0 ? allTimes.Max() : 1,
             HighestRound = highestRound,
             RoundBands = bands,
-            Lanes = lanes
+            Lanes = lanes,
+            MatchLevelEvents = matchLevelEvents
         };
     }
 

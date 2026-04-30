@@ -49,7 +49,7 @@
                 {
                     <div class="ml-auto flex items-center gap-3">
                         <ZombieAchievementBadges
-                            EasterEggRound="Snapshot.EasterEggRound"
+                            EasterEggQuests="Snapshot.EasterEggQuests"
                             HighestRound="Snapshot.CurrentRound" />
                         <div class="flex items-center gap-1.5 text-muted text-xs">
                             <i class="ph ph-map-trifold text-subtle text-sm"></i>
@@ -59,6 +59,50 @@
                 }
             </div>
         </div>
+
+        @* ── EE PROGRESS MINI-STRIPS ── one strip per configured quest. Each pill =
+             one step in config order; filled when fired (timestamp tooltip), muted
+             otherwise. Hidden once the quest's canonical / derived completion fires
+             (the titlebar trophy says "you're done"). *@
+        @foreach (var quest in Snapshot.EasterEggQuests.Where(q => !q.IsComplete && q.Total > 0))
+        {
+            var firedKeys = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
+            var stepsDone = quest.Completed;
+            var stepsTotal = quest.Total;
+            var pct = stepsTotal > 0 ? Math.Min(100, stepsDone * 100 / stepsTotal) : 0;
+            <div class="relative overflow-hidden rounded-xl bg-surface-alt/30 border border-line p-3">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-1.5 text-amber-400 text-[10px] uppercase tracking-widest font-bold shrink-0">
+                        <i class="ph @quest.Icon text-xs"></i>
+                        <span>@AppState.Loc(quest.LocKey)</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-wrap flex-1">
+                        @foreach (var step in quest.Inventory)
+                        {
+                            var fired = firedKeys.TryGetValue(step.Key, out var rec);
+                            var label = AppState.Loc(step.LocKey);
+                            var tooltip = fired && rec is not null
+                                ? (rec.RoundNumber is { } rn && rn > 0
+                                    ? $"{label} • R{rn}"
+                                    : label)
+                                : $"{label} — pending";
+                            <Tooltip Text="@tooltip" WrapperClass="inline-flex">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-colors @(fired ? "bg-amber-500/15 border-amber-500/40 text-amber-300" : "bg-surface/40 border-line/40 text-subtle/60")">
+                                    <i class="ph @step.Icon text-xs"></i>
+                                    <span>@label</span>
+                                </span>
+                            </Tooltip>
+                        }
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <div class="w-24 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/40">
+                            <div class="h-full bg-amber-400 transition-all duration-500" style="width: @(pct)%;"></div>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-amber-400 tabular-nums">@stepsDone / @stepsTotal</span>
+                    </div>
+                </div>
+            </div>
+        }
 
         @* ── PLAYERS ── *@
         @if (Snapshot.Players.Count > 0)

@@ -73,14 +73,24 @@ namespace Stats.Client
                     distributions.Add(serverId.ToString(), distributionParams);
                 }
 
-                foreach (var performanceBucket in appConfig.Servers.Select(server => server.PerformanceBucketCode).Distinct())
+                // DB stores PerformanceBucket.Code lowercased (the writer in
+                // IW4MServer normalizes via ToLowerInvariant on insert), but the
+                // server config may have mixed case ("Zombies"). Normalize the
+                // iterator here so the LINQ comparison against the DB column at
+                // line `perf.Server.PerformanceBucket.Code == performanceBucketCode`
+                // doesn't silently miss every row in PostgreSQL (case-sensitive
+                // string equality). Same fix applies to the maxZScore seed below.
+                foreach (var performanceBucket in appConfig.Servers
+                             .Select(server => server.PerformanceBucketCode?.ToLowerInvariant())
+                             .Distinct())
                 {
                     // TODO: ?
                     var performanceBucketCode = performanceBucket ?? "null";
 
                     var bucketConfig =
                         config.PerformanceBuckets.FirstOrDefault(bucket =>
-                            bucket.Code == performanceBucketCode) ?? new PerformanceBucketConfiguration();
+                            string.Equals(bucket.Code, performanceBucketCode, StringComparison.OrdinalIgnoreCase))
+                        ?? new PerformanceBucketConfiguration();
 
                     var oldestPerf = DateTime.UtcNow - bucketConfig.RankingExpiration;
                     var performances = await iqPerformances
@@ -97,7 +107,16 @@ namespace Stats.Client
                 return distributions;
             }, DistributionCacheKey, Utilities.IsDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromHours(1));
 
-            foreach (var performanceBucket in appConfig.Servers.Select(s => s.PerformanceBucketCode ?? string.Empty).Distinct())
+            // Same case-mismatch defense as the distribution-cache loop above —
+            // see comment there. This seeds the maxZScore cache that
+            // GetRatingForZScore reads, which is what gates the aggregate-ranking
+            // writer at StatManager.UpdateAggregateForServerOrBucket. Without
+            // normalization, the DB filter returns no rows, max becomes 0, and
+            // every aggregate-ranking insert silently early-returns — leaving
+            // the per-bucket leaderboard empty.
+            foreach (var performanceBucket in appConfig.Servers
+                         .Select(s => s.PerformanceBucketCode?.ToLowerInvariant() ?? string.Empty)
+                         .Distinct())
             {
                 maxZScoreCache.SetCacheItem(async (set, ids, token) =>
                     {
@@ -109,7 +128,8 @@ namespace Stats.Client
                         {
                             var bucketConfig =
                                 config.PerformanceBuckets.FirstOrDefault(cfg =>
-                                    cfg.Code == localPerformanceBucket) ?? new PerformanceBucketConfiguration();
+                                    string.Equals(cfg.Code, localPerformanceBucket, StringComparison.OrdinalIgnoreCase))
+                                ?? new PerformanceBucketConfiguration();
 
                             validPlayTime = (int)bucketConfig.ClientMinPlayTime.TotalSeconds;
                             oldestStat = bucketConfig.RankingExpiration;

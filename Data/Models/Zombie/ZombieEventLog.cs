@@ -29,7 +29,14 @@ public enum EventLogType
     TrapActivated = 20,
     BuildComplete = 21,
     WeaponAbandoned = 22,
-    EasterEggCompleted = 23
+    EasterEggCompleted = 23,
+    /// <summary>
+    /// Per-step EE progress marker. <see cref="ZombieEventLog.TextualValue"/> holds
+    /// the step key (e.g. "t4_vr_radio_1"); <see cref="ZombieEventLog.NumericalValue"/>
+    /// holds the round number at fire time. Match-level event (no SourceClientId).
+    /// Idempotent — premium handler dedups via (MatchId, EventType, TextualValue).
+    /// </summary>
+    EasterEggStep = 24
 }
 
 public class ZombieEventLog : DatedRecord

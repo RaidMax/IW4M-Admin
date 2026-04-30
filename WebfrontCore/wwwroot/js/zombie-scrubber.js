@@ -39,26 +39,32 @@
         'session-join':  { fill: '#94a3b8', glyph: PH(0xe428), z: 15, tick: false }, // ph-sign-in
         'session-leave': { fill: '#64748b', glyph: PH(0xe42a), z: 15, tick: false }, // ph-sign-out
         'round':         { fill: '#94a3b8', glyph: '',        z: 60, tick: true  }, // round markers = tick lines
-        // EE marker — match-level milestone, drawn on every lane at the same time so it
-        // visually reads as a vertical column of trophies (collective achievement).
-        'easter-egg':    { fill: '#fbbf24', glyph: PH(0xe67e), z: 55, tick: false }, // ph-trophy
-        'default':       { fill: '#94a3b8', glyph: '',        z: 10, tick: true  }
+        // Match-level events live in their own top-axis tick band (drawn once, not
+        // per-lane). Both the canonical EE-complete trophy and the per-step progress
+        // markers render up there; the per-step variant uses a smaller dimmer disc
+        // so it visually reads as "progress" not "achievement".
+        'easter-egg':      { fill: '#fbbf24', glyph: PH(0xe67e), z: 55, tick: false }, // ph-trophy
+        'easter-egg-step': { fill: '#f59e0b', glyph: PH(0xe67e), z: 50, tick: false }, // ph-trophy (step)
+        'default':         { fill: '#94a3b8', glyph: '',        z: 10, tick: true  }
     };
 
     const FILTER_RULES = {
         'all':      () => true,
-        'critical': c => c === 'danger' || c === 'critical' || c === 'round' || c === 'easter-egg',
-        'powerups': c => c === 'powerup' || c === 'round' || c === 'easter-egg',
-        'economy':  c => ['weapon','weapon-abandon','box','box-pass','door','trap','build','perk','round','easter-egg'].includes(c)
+        'critical': c => c === 'danger' || c === 'critical' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step',
+        'powerups': c => c === 'powerup' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step',
+        'economy':  c => ['weapon','weapon-abandon','box','box-pass','door','trap','build','perk','round','easter-egg','easter-egg-step'].includes(c)
     };
 
     const LANE_HEIGHT = 36;
     const LANE_GAP = 8;
-    const TOP_PAD = 24;            // axis labels
+    const TOP_PAD = 24;            // axis labels (round-number text)
+    const TICKBAND_HEIGHT = 28;    // match-level event row above lanes
+    const TICKBAND_GAP = 4;        // separator between tickband and first lane
     const SIDE_PAD_MULTI = 96;     // lane name labels (left) when multi-lane
     const SIDE_PAD_SINGLE = 16;    // single-lane: no labels, narrow margin
     const BOTTOM_PAD = 12;
     const DOT_RADIUS = 8;
+    const TICKBAND_DOT_RADIUS = 6; // smaller than lane dots so band reads "secondary"
     const TICK_HEIGHT = 18;
     const SCRUB_DEBOUNCE_MS = 50;
 
@@ -120,8 +126,19 @@
             return this._visibleLanes().length > 1 ? SIDE_PAD_MULTI : SIDE_PAD_SINGLE;
         }
 
+        // Y-coord at which lane content begins. When match-level events exist, lanes
+        // shift down to make room for the top-axis tick band; otherwise lanes sit
+        // immediately under the round-label TOP_PAD.
+        _laneAreaTop() {
+            return TOP_PAD + (this._hasMatchLevelEvents() ? TICKBAND_HEIGHT + TICKBAND_GAP : 0);
+        }
+
+        _hasMatchLevelEvents() {
+            return (this.payload.matchLevelEvents || []).length > 0;
+        }
+
         _stageHeight() {
-            return TOP_PAD + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP) + BOTTOM_PAD;
+            return this._laneAreaTop() + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP) + BOTTOM_PAD;
         }
 
         _build() {
@@ -144,13 +161,67 @@
             this.stage.add(this.scrubLayer);
 
             this._drawBackground();
+            this._drawMatchLevelBand();
             this._drawLanes();
             this._drawScrubber();
 
-            this.bgLayer.cache();   // static — cache for redraw perf
+            // Mirror _redrawAll: skip cache at large widths (see comment there).
+            if (this._stageWidth() <= 4000) this.bgLayer.cache();
 
             this._wireMouseHandlers();
+            this._wireScrollCull();
             this._applyFocus();
+
+            // Konva paints to canvas, so glyph text on the tickband ticks (Phosphor
+            // font) only renders if the font is loaded at draw time. On a cold page
+            // load Phosphor often hasn't finished loading by first paint — the dot
+            // backs render but the glyph is missing. document.fonts.ready resolves
+            // once all CSS-declared fonts finish; redraw then so the glyphs land.
+            // No-op if the document is already font-stable.
+            if (document?.fonts?.ready) {
+                document.fonts.ready.then(() => {
+                    if (this.stage) this._redrawAll();
+                });
+            }
+        }
+
+        // Repopulate viewport-windowed event nodes when the user scrolls past the
+        // 400px padding band. We don't re-cull on every scroll tick — that'd defeat
+        // the perf gain. The padding gives ~half-a-viewport of slack before the
+        // next repopulate fires, and we rAF-coalesce.
+        _wireScrollCull() {
+            const c = this._container();
+            if (!c) return;
+            this._lastCullScrollLeft = c.scrollLeft;
+            this._scrollHandler = () => {
+                // Pin lane names + watermark every scroll tick — cheap (transforms
+                // only), no gating needed.
+                this._syncNamesOverlayScroll();
+                this._syncBandWatermarkScroll();
+                if (this._scrollRaf != null) return;
+                this._scrollRaf = requestAnimationFrame(() => {
+                    this._scrollRaf = null;
+                    if (!this._container()) return;
+                    const sl = this._container().scrollLeft;
+                    // Only repopulate when we've drifted close to the padding edge
+                    // (200px = half the 400px slack). Avoids redrawing on tiny
+                    // mouse-wheel scrolls.
+                    if (Math.abs(sl - (this._lastCullScrollLeft ?? 0)) < 200) return;
+                    this._lastCullScrollLeft = sl;
+                    this._redrawLaneAndBandLayers();
+                });
+            };
+            c.addEventListener('scroll', this._scrollHandler, { passive: true });
+        }
+
+        // Re-render the cull-sensitive layers without touching the (heavy) bgLayer.
+        _redrawLaneAndBandLayers() {
+            this.laneLayer.destroyChildren();
+            this._drawMatchLevelBandTicks();
+            this._drawLanes();
+            this._applyFilter();
+            this._applyFocus();
+            this.laneLayer.batchDraw();
         }
 
         _timeToX(seconds) {
@@ -167,19 +238,22 @@
         }
 
         _laneY(idx) {
-            return TOP_PAD + idx * (LANE_HEIGHT + LANE_GAP) + LANE_HEIGHT / 2;
+            return this._laneAreaTop() + idx * (LANE_HEIGHT + LANE_GAP) + LANE_HEIGHT / 2;
         }
 
         _drawBackground() {
             const lanes = this._visibleLanes();
-            // Round bands — alternating tint
+            const bandTop = TOP_PAD - 6;
+            // Round bands span the full vertical area (tickband + lanes) so columns
+            // visually read as "this round's slice" across both regions.
+            const bandHeight = (this._laneAreaTop() - TOP_PAD) + lanes.length * (LANE_HEIGHT + LANE_GAP) + 6;
             this.payload.roundBands.forEach((band, i) => {
                 const x1 = this._timeToX(band.startSeconds);
                 const x2 = this._timeToX(band.endSeconds);
                 const w = Math.max(x2 - x1, 0.5);
                 this.bgLayer.add(new Konva.Rect({
-                    x: x1, y: TOP_PAD - 6, width: w,
-                    height: lanes.length * (LANE_HEIGHT + LANE_GAP),
+                    x: x1, y: bandTop, width: w,
+                    height: bandHeight,
                     fill: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'
                 }));
                 // Round label
@@ -194,22 +268,10 @@
                 }
             });
 
-            // Lane name labels (skipped on single-lane — no need)
-            const showLaneLabels = lanes.length > 1;
+            // Lane separator lines (canvas). Lane NAMES are drawn via a sticky-style
+            // DOM overlay (see _renderLaneNamesOverlay) so they stay pinned to the
+            // left edge as the user scrolls a zoomed timeline.
             lanes.forEach((lane, idx) => {
-                if (showLaneLabels) {
-                    this.bgLayer.add(new Konva.Text({
-                        x: 8, y: this._laneY(idx) - 6,
-                        text: this._stripColors(lane.name),
-                        fontSize: 11,
-                        fontStyle: 'bold',
-                        fill: '#cbd5e1',
-                        width: this._sidePad() - 12,
-                        ellipsis: true,
-                        wrap: 'none'
-                    }));
-                }
-                // Lane separator line
                 const y = this._laneY(idx);
                 this.bgLayer.add(new Konva.Line({
                     points: [this._sidePad(), y, this._stageWidth() - 8, y],
@@ -217,9 +279,193 @@
                     strokeWidth: 1
                 }));
             });
+            this._renderLaneNamesOverlay();
+        }
+
+        // DOM overlay for lane names — Konva text in bgLayer would scroll off-screen
+        // at high zoom (canvas is wider than the scroll viewport). The overlay sits
+        // inside the scroll container and gets translated by scrollLeft on each
+        // scroll tick, giving a pinned-to-the-left effect without sticky CSS quirks.
+        _renderLaneNamesOverlay() {
+            const container = this._container();
+            if (!container) return;
+            const lanes = this._visibleLanes();
+            const showLaneLabels = lanes.length > 1;
+
+            if (!this._namesOverlay) {
+                this._namesOverlay = document.createElement('div');
+                this._namesOverlay.style.cssText =
+                    'position:absolute;top:0;left:0;pointer-events:none;z-index:5;' +
+                    'will-change:transform;';
+                container.style.position = container.style.position || 'relative';
+                container.appendChild(this._namesOverlay);
+            }
+            this._namesOverlay.innerHTML = '';
+            this._namesOverlay.style.display = showLaneLabels ? 'block' : 'none';
+            if (!showLaneLabels) return;
+
+            const sidePad = this._sidePad();
+            // Same offset rationale as _renderBandWatermarkOverlay — overlay top
+            // is in container coords (padded), canvas y is in stage-content coords.
+            const stageOffset = this.stage?.content?.offsetTop ?? 0;
+            lanes.forEach((lane, idx) => {
+                const div = document.createElement('div');
+                div.textContent = this._stripColors(lane.name);
+                div.title = this._stripColors(lane.name);
+                div.style.cssText =
+                    'position:absolute;left:8px;' +
+                    'top:' + (stageOffset + this._laneY(idx) - 8) + 'px;' +
+                    'width:' + (sidePad - 12) + 'px;' +
+                    'font:bold 11px sans-serif;color:#cbd5e1;' +
+                    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
+                    // Subtle background fade so dots/lines passing under the names
+                    // don't visually intrude. Match the scroll viewport bg.
+                    'background:linear-gradient(to right, rgba(15,23,42,0.85) 80%, transparent);' +
+                    'padding:2px 4px;';
+                this._namesOverlay.appendChild(div);
+            });
+            // Pin to current scrollLeft so the names stay at the visible left edge.
+            this._syncNamesOverlayScroll();
+        }
+
+        _syncNamesOverlayScroll() {
+            if (!this._namesOverlay) return;
+            const c = this._container();
+            if (!c) return;
+            this._namesOverlay.style.transform = 'translateX(' + c.scrollLeft + 'px)';
+        }
+
+        // Top-axis tick band — match-level events (canonical EE marker, per-step
+        // progress dots). Renders once at TOP_PAD + TICKBAND_HEIGHT/2; events get the
+        // same hover/click treatment as lane events but are not lane-bound.
+        _drawMatchLevelBand() {
+            this._drawMatchLevelBandBackground();
+            this._drawMatchLevelBandTicks();
+        }
+
+        // Static band components (just the tint) — live in bgLayer. The watermark
+        // caption is a DOM overlay (see _renderBandWatermarkOverlay) so it stays
+        // viewport-centered regardless of scroll/zoom; a stage-wide canvas text
+        // would be off-screen at high zoom + scroll.
+        _drawMatchLevelBandBackground() {
+            if (!this._hasMatchLevelEvents()) {
+                this._renderBandWatermarkOverlay();
+                return;
+            }
+            const bandX = this._sidePad();
+            const bandW = Math.max(this._stageWidth() - this._sidePad() - 8, 1);
+
+            // Subtle row tint so the band is distinguishable from the round-label area
+            this.bgLayer.add(new Konva.Rect({
+                x: bandX, y: TOP_PAD,
+                width: bandW,
+                height: TICKBAND_HEIGHT,
+                fill: 'rgba(251,191,36,0.04)',
+                cornerRadius: 4
+            }));
+
+            this._renderBandWatermarkOverlay();
+        }
+
+        // DOM overlay for the "EASTER EGGS" caption. Positioned at the band's Y
+        // coords, viewport-width, flex-centered → always visible at the middle of
+        // the scroll viewport. Translated by scrollLeft on each scroll tick so it
+        // stays pinned visually as the user pans a zoomed timeline.
+        _renderBandWatermarkOverlay() {
+            const container = this._container();
+            if (!container) return;
+            const visible = this._hasMatchLevelEvents();
+            if (!this._bandWatermark) {
+                this._bandWatermark = document.createElement('div');
+                this._bandWatermark.style.cssText =
+                    'position:absolute;left:0;pointer-events:none;z-index:4;' +
+                    'display:flex;align-items:center;justify-content:center;' +
+                    // line-height:1 so the glyph box matches the flex centering;
+                    // default 1.2 leaves the text visually high in its box.
+                    'font:900 18px sans-serif;line-height:1;' +
+                    'color:rgba(251,191,36,0.35);' +
+                    'letter-spacing:0.25em;text-transform:uppercase;' +
+                    'will-change:transform;';
+                container.style.position = container.style.position || 'relative';
+                container.appendChild(this._bandWatermark);
+            }
+            this._bandWatermark.style.display = visible ? 'flex' : 'none';
+            if (!visible) return;
+            this._bandWatermark.textContent = 'Easter Eggs';
+            // The overlay's top:0 is relative to the (padded) scroll container,
+            // but Konva coords (TOP_PAD) start at the konvajs-content div which
+            // sits below the container's padding. Add stage-content offsetTop so
+            // the band y maps 1:1 between canvas and DOM.
+            const stageOffset = this.stage?.content?.offsetTop ?? 0;
+            this._bandWatermark.style.top = (stageOffset + TOP_PAD) + 'px';
+            this._bandWatermark.style.height = TICKBAND_HEIGHT + 'px';
+            this._bandWatermark.style.width = (container.clientWidth - 16) + 'px';
+            this._syncBandWatermarkScroll();
+        }
+
+        _syncBandWatermarkScroll() {
+            if (!this._bandWatermark) return;
+            const c = this._container();
+            if (!c) return;
+            this._bandWatermark.style.transform = 'translateX(' + c.scrollLeft + 'px)';
+        }
+
+        // Cull-sensitive band components (tick dots + glyphs) — live in laneLayer,
+        // re-rendered on scroll so off-screen ticks don't stay in memory.
+        _drawMatchLevelBandTicks() {
+            if (!this._hasMatchLevelEvents()) return;
+            const y = TOP_PAD + TICKBAND_HEIGHT / 2;
+            const win = this._visibleXWindow();
+            this.payload.matchLevelEvents.forEach(evt => {
+                const cat = evt.category || 'default';
+                const v = CATEGORY_VISUALS[cat] || CATEGORY_VISUALS.default;
+                const x = this._timeToX(evt.seconds);
+                if (x < win.min || x > win.max) return;
+
+                const group = new Konva.Group({ x: x, y: y });
+                group.add(new Konva.Circle({
+                    x: 0, y: 0, radius: TICKBAND_DOT_RADIUS,
+                    fill: v.fill,
+                    stroke: '#0f172a',
+                    strokeWidth: 1.5,
+                    shadowColor: v.fill,
+                    shadowBlur: 3,
+                    shadowOpacity: 0.4
+                }));
+                if (v.glyph) {
+                    group.add(new Konva.Text({
+                        x: -TICKBAND_DOT_RADIUS, y: -TICKBAND_DOT_RADIUS,
+                        width: TICKBAND_DOT_RADIUS * 2, height: TICKBAND_DOT_RADIUS * 2,
+                        text: v.glyph,
+                        fontFamily: 'Phosphor',
+                        fontSize: 10,
+                        fill: '#0f172a',
+                        align: 'center',
+                        verticalAlign: 'middle',
+                        listening: false
+                    }));
+                }
+                group._evt = evt;
+                group._isMatchLevel = true;
+                group._tooltip = evt.time + ' • ' + evt.label;
+                this.laneLayer.add(group);
+            });
+        }
+
+        // Visible-x window in stage coords: events outside this band get culled
+        // from the laneLayer at draw time. At zoom 15× a 12000px stage is ~99% off-
+        // screen at any moment; drawing all events anyway means thousands of nodes
+        // for ~10 visible. ±400px padding so events near the viewport edge stay
+        // populated when the user nudges scroll without forcing a redraw.
+        _visibleXWindow() {
+            const c = this._container();
+            if (!c) return { min: -Infinity, max: Infinity };
+            const pad = 400;
+            return { min: c.scrollLeft - pad, max: c.scrollLeft + c.clientWidth + pad };
         }
 
         _drawLanes() {
+            const win = this._visibleXWindow();
             this._visibleLanes().forEach((lane, idx) => {
                 const y = this._laneY(idx);
 
@@ -228,6 +474,9 @@
                     const x1 = this._timeToX(gap.start);
                     const x2 = this._timeToX(gap.end);
                     if (x2 <= x1) return;
+                    // Cull gaps fully outside the viewport (rare — match-spanning
+                    // gaps stay visible since x2 - x1 covers the window).
+                    if (x2 < win.min || x1 > win.max) return;
                     const isCompact = gap.compact;
                     let gx, gw;
                     if (isCompact) {
@@ -255,6 +504,7 @@
                     const cat = evt.category || 'default';
                     const v = CATEGORY_VISUALS[cat] || CATEGORY_VISUALS.default;
                     const x = this._timeToX(evt.seconds);
+                    if (x < win.min || x > win.max) return;
 
                     let shape;
                     if (v.tick) {
@@ -308,7 +558,7 @@
         _drawScrubber() {
             const x = this._timeToX(this.scrubSeconds);
             const top = TOP_PAD - 8;
-            const bottom = TOP_PAD + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
+            const bottom = this._laneAreaTop() + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
 
             this.scrubLine = new Konva.Line({
                 points: [x, top, x, bottom],
@@ -388,7 +638,21 @@
 
                 const pointer = this.stage.getPointerPosition();
                 const anchorStageX = pointer ? pointer.x : this._stageWidth() / 2;
-                this._setZoomAnchored(newZoom, anchorStageX);
+
+                // Coalesce multiple wheel events within a frame: at high zoom each
+                // _redrawAll re-caches a stage-width-wide bitmap (linear in canvas
+                // area), so a 60-event-per-second trackpad would fire 60 redraws and
+                // turn the wheel into a slideshow. rAF collapses bursts to one
+                // redraw per frame; the latest target zoom always wins.
+                this._pendingZoom = { zoom: newZoom, anchor: anchorStageX };
+                if (this._zoomRaf == null) {
+                    this._zoomRaf = requestAnimationFrame(() => {
+                        this._zoomRaf = null;
+                        const p = this._pendingZoom;
+                        this._pendingZoom = null;
+                        if (p) this._setZoomAnchored(p.zoom, p.anchor);
+                    });
+                }
             });
         }
 
@@ -411,6 +675,14 @@
             const newStageX = anchorStageX * ratio;
             container.scrollLeft = Math.max(0, newStageX - viewportX);
 
+            // _redrawAll synced overlays at the OLD scrollLeft; we just changed
+            // it, so re-sync now (same JS task) — otherwise the overlays paint
+            // for one frame at the old position, then the native scroll event
+            // fires next frame and snaps them back. That's the "flicker".
+            this._syncBandWatermarkScroll();
+            this._syncNamesOverlayScroll();
+            this._lastCullScrollLeft = container.scrollLeft;
+
             // Notify Razor so the toolbar zoom display stays in sync (wheel path
             // doesn't go through Razor; button path is idempotent).
             if (this.dotnetRef) {
@@ -423,26 +695,50 @@
                 if (!this.stage) return;
                 this.stage.width(this._stageWidth());
                 this._redrawAll();
+                // _redrawAll re-runs _drawMatchLevelBandBackground which resizes
+                // the watermark overlay; lane names overlay is repopulated by
+                // _drawBackground. Both pick up the new container.clientWidth.
             };
             window.addEventListener('resize', this._resizeHandler);
         }
 
         _redrawAll() {
             this.bgLayer.destroyChildren();
+            // Without this, an existing cached bitmap from a prior zoom level keeps
+            // rendering at its old width even though we destroyed + redrew children
+            // — Konva treats the layer as cached and skips child draw. Visually,
+            // round bands "lag behind" icons (which live in the un-cached laneLayer).
+            this.bgLayer.clearCache();
             this.laneLayer.destroyChildren();
             this.scrubLayer.destroyChildren();
             // Stage dimensions track current zoom — must update both before redraw.
-            this.stage.width(this._stageWidth());
+            const sw = this._stageWidth();
+            this.stage.width(sw);
             this.stage.height(this._stageHeight());
             this._drawBackground();
+            this._drawMatchLevelBand();
             this._drawLanes();
             this._drawScrubber();
-            this.bgLayer.cache();
+            // bgLayer.cache() snapshots a stage-wide bitmap (~sw × stageHeight px).
+            // At low/medium zoom this speeds subsequent batchDraws (filter/focus
+            // toggles). At high zoom it allocates ~16 MB per re-cache (zoom 20x at
+            // 800px base = 16000px wide), and we re-cache on every wheel tick — so
+            // skip the cache once the bitmap would be expensive. Trade-off: filter
+            // toggles redraw raw children at high zoom, but those are rare during
+            // active zooming.
+            if (sw <= 4000) this.bgLayer.cache();
             this._applyFilter();
             this._applyFocus();
-            this.bgLayer.batchDraw();
-            this.laneLayer.batchDraw();
-            this.scrubLayer.batchDraw();
+            // Sync .draw() instead of batchDraw to eliminate the per-zoom-tick
+            // flash: stage.width() resizes (and clears) the canvas synchronously,
+            // and batchDraw defers the repaint to next rAF — so the browser
+            // composites a frame with the cleared canvas in between. Sync draw
+            // repopulates the pixels before the JS task ends, so no blank frame
+            // is ever composited. We're already inside our own rAF coalescer
+            // (wheel handler), so the rAF coalescing batchDraw provides is moot.
+            this.bgLayer.draw();
+            this.laneLayer.draw();
+            this.scrubLayer.draw();
         }
 
         _showTooltip(text) {
@@ -486,6 +782,9 @@
 
         _applyFocus() {
             this.laneLayer.getChildren().forEach(node => {
+                // Match-level events live above the lanes and aren't bound to a player —
+                // they stay full opacity regardless of focus selection.
+                if (node._isMatchLevel) return;
                 if (!node._lane) return;
                 if (this.focusClientId == null) {
                     node.opacity(1);
@@ -521,7 +820,7 @@
             this.scrubSeconds = seconds;
             const x = this._timeToX(seconds);
             const top = TOP_PAD - 8;
-            const bottom = TOP_PAD + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
+            const bottom = this._laneAreaTop() + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
             if (this.scrubHandle) this.scrubHandle.x(x - 6);
             if (this.scrubLine) this.scrubLine.points([x, top, x, bottom]);
             this.scrubLayer.batchDraw();
@@ -543,6 +842,27 @@
 
         dispose() {
             window.removeEventListener('resize', this._resizeHandler);
+            if (this._zoomRaf != null) {
+                cancelAnimationFrame(this._zoomRaf);
+                this._zoomRaf = null;
+            }
+            if (this._scrollRaf != null) {
+                cancelAnimationFrame(this._scrollRaf);
+                this._scrollRaf = null;
+            }
+            const c = this._container();
+            if (c && this._scrollHandler) {
+                c.removeEventListener('scroll', this._scrollHandler);
+                this._scrollHandler = null;
+            }
+            if (this._namesOverlay) {
+                this._namesOverlay.remove();
+                this._namesOverlay = null;
+            }
+            if (this._bandWatermark) {
+                this._bandWatermark.remove();
+                this._bandWatermark = null;
+            }
             this._hideTooltip();
             if (this._tooltipEl) {
                 this._tooltipEl.remove();

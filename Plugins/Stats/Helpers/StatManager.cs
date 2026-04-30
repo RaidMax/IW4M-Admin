@@ -150,20 +150,70 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             public DateTime CreatedDateTime { get; set; }
         }
 
-        public async Task<List<TopStatsInfo>> GetNewTopStats(int start, int count, long? serverId = null,
-            string performanceBucketCode = null)
+        public async Task<(List<TopStatsInfo> Players, int RankingHistoryRowsConsumed)> GetNewTopStats(
+            int start, int count, long? serverId = null, string performanceBucketCode = null)
         {
             var bucketConfig = await GetBucketConfig(serverId, performanceBucketCode);
 
             await using var context = contextFactory.CreateContext(false);
-            var clientIdsList = await context.Set<EFClientRankingHistory>()
+
+            // The page-fill loop: ranking history `RankedClientsCountAsync` may report N
+            // rows but the per-client stats join below filters on TimePlayed/Kills/Deaths
+            // — so a slice of `count` ranking rows can yield far fewer top-stats rows.
+            // Without chunk-fill, the leaderboard returns short pages and infinite-scroll
+            // stalls. We over-fetch ranking rows in chunks and validate against the stats
+            // filter until we have `count` qualifying clients (or exhaust the source).
+            // The caller advances its offset by the *ranking-history rows consumed*
+            // returned in the tuple, so successive pages don't re-walk rejected rows.
+            var rankingIdsQuery = context.Set<EFClientRankingHistory>()
                 .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId: serverId,
                     bucketConfig.Code))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
-                .Select(ranking => ranking.ClientId)
-                .Skip(start)
-                .Take(count)
-                .ToListAsync();
+                .Select(ranking => ranking.ClientId);
+
+            var clientIdsList = new List<int>(count);
+            var consumed = 0;
+            // Chunk size = 2× requested page; small enough to stay cheap on each round-
+            // trip, large enough to amortize the round-trip cost when filter ratio is low.
+            var chunkSize = Math.Max(count * 2, 50);
+            // Hard cap iterations to avoid an unbounded loop on pathological data
+            // (e.g. a bucket where every single ranked client fails the stats filter).
+            var attempts = 0;
+            const int maxAttempts = 20;
+
+            while (clientIdsList.Count < count && attempts++ < maxAttempts)
+            {
+                var chunk = await rankingIdsQuery
+                    .Skip(start + consumed)
+                    .Take(chunkSize)
+                    .ToListAsync();
+                if (chunk.Count == 0) break;
+                consumed += chunk.Count;
+
+                var validIds = (await context.Set<EFClientStatistics>()
+                        .Where(stat => chunk.Contains(stat.ClientId))
+                        .Where(stat => stat.TimePlayed > 0)
+                        .Where(stat => stat.Kills > 0 || stat.Deaths > 0)
+                        .Where(stat => serverId == null || stat.ServerId == serverId)
+                        .Select(stat => stat.ClientId)
+                        .Distinct()
+                        .ToListAsync())
+                    .ToHashSet();
+
+                // Preserve original ranking order — `chunk` is already
+                // performance-descending — so the appended results stay sorted.
+                foreach (var id in chunk)
+                {
+                    if (!validIds.Contains(id)) continue;
+                    if (clientIdsList.Contains(id)) continue;
+                    clientIdsList.Add(id);
+                    if (clientIdsList.Count >= count) break;
+                }
+
+                // Source exhausted: chunk smaller than requested means no more rows
+                // beyond this slice. Stop even if we didn't fill the page.
+                if (chunk.Count < chunkSize) break;
+            }
 
             var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
 
@@ -286,7 +336,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     bucketConfig.Code, true);
             }
 
-            return finished;
+            return (finished, consumed);
         }
 
         /// <summary>
@@ -357,7 +407,8 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             if (statsConfig.EnableAdvancedMetrics)
             {
-                return await GetNewTopStats(start, count, serverId, performanceBucket);
+                var (players, _) = await GetNewTopStats(start, count, serverId, performanceBucket);
+                return players;
             }
 
             await using var context = contextFactory.CreateContext(enableTracking: false);

@@ -85,6 +85,9 @@ public class ZombieLeaderboardEntry
     /// <summary>Round at which the EE fired (when known). Drives the "EE R{n}" titlebar badge.</summary>
     public int? EasterEggRound { get; set; }
 
+    /// <summary>Per-quest EE progress for this match's map. Empty when unconfigured.</summary>
+    public List<EasterEggQuestProgress> EasterEggQuests { get; set; } = [];
+
     /// <summary>
     /// Iconic buildables completed (distinct, capped at <see cref="BuildablesTotal"/>).
     /// Drives the "All Built" titlebar badge when equal to <see cref="BuildablesTotal"/>.

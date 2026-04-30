@@ -1,4 +1,5 @@
 @inject AppState AppState
+@using SharedLibraryCore.Interfaces
 @*
     Compact achievement-badge strip for match titlebars (leaderboard row + per-client
     history + live snapshot). Surfaces match-level milestones that would otherwise
@@ -6,7 +7,9 @@
     visual style — every titlebar reads the same way.
 
     Badges (in render order, all conditionally rendered):
-      • EE Complete (R{n})   — yellow, ph-trophy. Always shown when EE fired.
+      • EE Complete / Partial (R{n}) — yellow trophy when complete, amber otherwise.
+                                        ONE chip per configured quest on the map; on
+                                        Der Riese both Meteor Song + Fly Trap show.
       • All Built (X/Y)      — green, ph-wrench. Only when X == Y && Y > 0.
       • Marathon (R30/50/100+) — amber/orange/red, ph-fire. Tiered.
       • Flawless             — pink, ph-heart. Match-wide when TotalDowns is provided
@@ -14,8 +17,8 @@
                                PlayerDowns is provided (zero for that player). Same
                                label, scope-aware tooltip. Floored at HighestRound ≥ 5.
 
-    Pass null for any signal you don't have / don't want surfaced. Component never
-    renders an empty container — it returns nothing when no badges qualify.
+    Pass null/empty for any signal you don't have. Component never renders an empty
+    container — returns nothing when no badges qualify.
 *@
 
 @{
@@ -30,25 +33,56 @@
     var showFlawless = HighestRound >= 5
                        && (TotalDowns is 0 || (TotalDowns is null && PlayerDowns is 0));
     var flawlessIsPersonal = TotalDowns is null && PlayerDowns is 0;
-    var hasAny = EasterEggRound is not null || EasterEggOccurredAt is not null
-                 || allBuilt || marathonTier > 0 || showFlawless;
+    // Quest chips: one per configured quest. Each renders independently — a complete
+    // quest is yellow + trophy, a partial quest is amber. A quest with zero progress
+    // (no steps, not complete) is hidden entirely.
+    var visibleQuests = (EasterEggQuests ?? [])
+        .Where(q => q.IsComplete || q.Completed > 0)
+        .ToList();
+    var hasAny = visibleQuests.Count > 0 || allBuilt || marathonTier > 0 || showFlawless;
 }
 
 @if (hasAny)
 {
     <div class="inline-flex items-center gap-1.5 flex-wrap">
 
-        @if (EasterEggOccurredAt is not null || EasterEggRound is not null)
+        @foreach (var quest in visibleQuests)
         {
-            var eeLabel = EasterEggRound is { } r
-                ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL_WITH_ROUND"), r)
-                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL");
-            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_TOOLTIP")" WrapperClass="inline-flex shrink-0">
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
-                    <i class="ph ph-trophy text-[10px]"></i>
-                    <span>@eeLabel</span>
-                </span>
-            </Tooltip>
+            var questTitle = AppState.Loc(quest.LocKey);
+            // Chip text uses the SHORT loc key so two chips on the same map don't both
+            // read "EE R{n}" — Der Riese reads "Music R12" + "Fly Trap R20".
+            var shortLabel = !string.IsNullOrEmpty(quest.ShortLocKey)
+                ? AppState.Loc(quest.ShortLocKey)
+                : questTitle;
+            if (quest.IsComplete)
+            {
+                var roundDisplay = quest.CompletedRound ?? quest.LastRound;
+                var eeLabel = roundDisplay is { } r && r > 0
+                    ? $"{shortLabel} R{r}"
+                    : shortLabel;
+                var fullTooltip = $"{questTitle} — {AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_TOOLTIP")}";
+                <Tooltip Text="@fullTooltip" WrapperClass="inline-flex shrink-0">
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
+                        <i class="ph @quest.Icon text-[10px]"></i>
+                        <span>@eeLabel</span>
+                    </span>
+                </Tooltip>
+            }
+            else
+            {
+                var partialDone = quest.Completed;
+                var partialTotal = quest.Total;
+                var partialLabel = quest.LastRound is { } lr && lr > 0
+                    ? $"{shortLabel} {partialDone}/{partialTotal} R{lr}"
+                    : $"{shortLabel} {partialDone}/{partialTotal}";
+                var partialTooltip = $"{questTitle} — {AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_PARTIAL_TOOLTIP").FormatExt(partialDone, partialTotal)}";
+                <Tooltip Text="@partialTooltip" WrapperClass="inline-flex shrink-0">
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/5 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider cursor-help font-mono">
+                        <i class="ph @quest.Icon text-[10px] opacity-70"></i>
+                        <span>@partialLabel</span>
+                    </span>
+                </Tooltip>
+            }
         }
 
         @if (allBuilt)
@@ -107,11 +141,12 @@
 }
 
 @code {
-    /// <summary>Round at which the EE fired. Null hides the EE badge (unless OccurredAt is set with no round).</summary>
-    [Parameter] public int? EasterEggRound { get; set; }
-
-    /// <summary>UTC timestamp at which the EE fired. Null hides the EE badge (unless Round is set).</summary>
-    [Parameter] public DateTimeOffset? EasterEggOccurredAt { get; set; }
+    /// <summary>
+    /// Per-quest EE progress for this match's map. One titlebar chip is rendered per
+    /// quest (Der Riese has 2: Meteor Song + Fly Trap; everywhere else is at most 1).
+    /// Empty / null hides every EE chip.
+    /// </summary>
+    [Parameter] public List<EasterEggQuestProgress>? EasterEggQuests { get; set; }
 
     /// <summary>Distinct iconic buildables completed this match.</summary>
     [Parameter] public int BuildablesBuilt { get; set; }

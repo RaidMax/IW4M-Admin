@@ -203,6 +203,71 @@ else
             </div>
         }
 
+        @* ── EASTER EGG PROGRESS ── one card per configured quest. Der Riese ships
+             with two (Meteor song-egg + Fly Trap), so they render side-by-side; every
+             other map has at most one. Iterates each quest's static inventory in config
+             order so empty slots stay in fixed positions; filled slots show the round +
+             timestamp captured at fire time. *@
+        @foreach (var quest in Detail.EasterEggQuests)
+        {
+            var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
+            var qPct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
+            var qDone = quest.IsComplete;
+            <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 @(qDone ? "bg-yellow-400/15 text-yellow-400" : "bg-surface-alt text-amber-400")">
+                        <i class="ph @quest.Icon text-2xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <h2 class="text-lg font-bold text-foreground">@AppState.Loc(quest.LocKey)</h2>
+                            <span class="text-sm font-mono font-bold @(qDone ? "text-yellow-400" : "text-muted")">
+                                @quest.Completed / @quest.Total
+                            </span>
+                        </div>
+
+                        <div class="mt-2 h-2 bg-surface-alt rounded-full overflow-hidden border border-line">
+                            <div class="h-full transition-all duration-500 @(qDone ? "bg-yellow-400" : "bg-amber-400")"
+                                 style="width: @(qPct)%;"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
+                            @foreach (var step in quest.Inventory)
+                            {
+                                var fired = stepsByKey.TryGetValue(step.Key, out var record);
+                                var label = AppState.Loc(step.LocKey);
+                                <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg border @(fired ? "bg-yellow-400/5 border-yellow-400/30" : "bg-surface-alt/40 border-line/40")">
+                                    <i class="ph @step.Icon text-lg @(fired ? "text-yellow-400" : "text-subtle/60")"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs font-semibold @(fired ? "text-foreground" : "text-subtle")">@label</div>
+                                        @if (fired && record is not null)
+                                        {
+                                            <div class="text-[10px] font-mono text-muted">
+                                                @if (record.RoundNumber is { } rn && rn > 0)
+                                                {
+                                                    <span>@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_ROUND").FormatExt(rn)</span>
+                                                    <span class="mx-1 text-subtle">•</span>
+                                                }
+                                                <span>@record.OccurredAt.UtcDateTime.ToStandardFormat()</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-[10px] font-mono text-subtle/60">—</div>
+                                        }
+                                    </div>
+                                    @if (fired)
+                                    {
+                                        <i class="ph ph-check-circle text-yellow-400 text-sm"></i>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
         @* ── BUILDABLES DETAIL ── chip list of which items were built. Separate from
              the trophy above (which only fires on all-built); this card surfaces partial
              progress and the per-item breakdown on completed runs. *@

@@ -72,6 +72,94 @@ public class ZombieMatchDetail
     /// non-null implies completed. Drives the scrubber timeline marker.
     /// </summary>
     public DateTimeOffset? EasterEggOccurredAt { get; set; }
+
+    /// <summary>
+    /// Per-quest EE progress for this map. A map may have multiple distinct quests
+    /// (Der Riese ships with both the Meteor song-egg and the Fly Trap teleporter
+    /// quest), each tracked independently. Empty when the map has no configured
+    /// quests. UI renders one chip / progress card per entry.
+    /// </summary>
+    public List<EasterEggQuestProgress> EasterEggQuests { get; set; } = [];
+}
+
+/// <summary>
+/// Per-quest progress: configured inventory + observed step records + completion
+/// state. One <see cref="EasterEggQuestProgress"/> per quest on the map; a quest
+/// is "complete" iff every step in <see cref="Inventory"/> has a matching record
+/// in <see cref="Steps"/>, OR the quest is canonical-notify driven and the
+/// canonical event fired.
+/// </summary>
+public sealed class EasterEggQuestProgress
+{
+    /// <summary>Quest id ("song", "flytrap"). Stable, matches MapEasterEggConfig.</summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>Translation key for the quest's full display title (progress card header).</summary>
+    public string LocKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Translation key for the quest's compact label (titlebar chip / mini-strip).
+    /// Always quest-specific so two chips on the same map don't both read "EE R{n}".
+    /// </summary>
+    public string ShortLocKey { get; set; } = string.Empty;
+
+    /// <summary>Phosphor icon name for the quest's titlebar chip.</summary>
+    public string Icon { get; set; } = string.Empty;
+
+    /// <summary>
+    /// True when the map has a terminal GSC notify for this quest (T6 main quests,
+    /// Der Riese fly trap). False when completion is derived from "all steps logged"
+    /// (T4 song eggs).
+    /// </summary>
+    public bool HasCanonicalNotify { get; set; }
+
+    /// <summary>Configured step inventory in static order (drives checklist render).</summary>
+    public List<EasterEggStepInventoryEntry> Inventory { get; set; } = [];
+
+    /// <summary>Logged step records for this quest, in fire order.</summary>
+    public List<EasterEggStepRecord> Steps { get; set; } = [];
+
+    /// <summary>Total steps configured on the quest. Equal to <see cref="Inventory"/>.Count.</summary>
+    public int Total { get; set; }
+
+    /// <summary>Number of distinct steps logged so far. Equal to <see cref="Steps"/>.Count.</summary>
+    public int Completed { get; set; }
+
+    /// <summary>True when the quest is fully complete (all steps logged OR canonical fired).</summary>
+    public bool IsComplete { get; set; }
+
+    /// <summary>Round of the most recent step (or canonical fire). Drives partial-chip "R{n}" suffix.</summary>
+    public int? LastRound { get; set; }
+
+    /// <summary>Round at which the quest was completed. Null until complete.</summary>
+    public int? CompletedRound { get; set; }
+
+    /// <summary>UTC timestamp when the quest completed. Null until complete.</summary>
+    public DateTimeOffset? CompletedAt { get; set; }
+}
+
+public sealed class EasterEggStepInventoryEntry
+{
+    /// <summary>Step key — matches <see cref="EasterEggStepRecord.Key"/> when fired.</summary>
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>Translation key for the step's display label.</summary>
+    public string LocKey { get; set; } = string.Empty;
+
+    /// <summary>Phosphor icon name (e.g. "ph-radio") for the step's visual marker.</summary>
+    public string Icon { get; set; } = string.Empty;
+}
+
+public sealed class EasterEggStepRecord
+{
+    /// <summary>Step key (e.g. "t4_vr_radio_1"). Matches MapEasterEggConfig entries.</summary>
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>Round number at which the step fired. Null when fired pre-round-1.</summary>
+    public int? RoundNumber { get; set; }
+
+    /// <summary>UTC timestamp the step was logged.</summary>
+    public DateTimeOffset OccurredAt { get; set; }
 }
 
 public class ZombieMatchDetailPlayer
@@ -130,6 +218,9 @@ public class ZombieMatchHistoryMatch
     /// UTC timestamp at which the EE fired. Non-null implies completed.
     /// </summary>
     public DateTimeOffset? EasterEggOccurredAt { get; set; }
+
+    /// <summary>Per-quest EE progress for this match's map. Empty when unconfigured.</summary>
+    public List<EasterEggQuestProgress> EasterEggQuests { get; set; } = [];
 
     /// <summary>Iconic buildables completed (capped at <see cref="BuildablesTotal"/>; falls back to all distinct on unconfigured maps).</summary>
     public int BuildablesBuilt { get; set; }

@@ -15,6 +15,7 @@ using EFClient = SharedLibraryCore.Database.Models.EFClient;
 using PenaltyInfo = SharedLibraryCore.Dtos.PenaltyInfo;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
+using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
@@ -894,16 +895,27 @@ public class WebfrontDataService : IWebfrontDataService
         var server = _manager.GetServers().FirstOrDefault(s => s.Id == request.ServerId) as IGameServer;
         var legacyId = server?.LegacyDatabaseId;
 
-        var stats = _statsConfig.EnableAdvancedMetrics
-            ? await _statManager.GetNewTopStats(request.Offset, request.Count, legacyId, request.PerformanceBucketCode)
-            : await _statManager.GetTopStats(request.Offset, request.Count, legacyId);
+        List<TopStatsInfo> stats;
+        int rowsConsumed;
+        if (_statsConfig.EnableAdvancedMetrics)
+        {
+            (stats, rowsConsumed) = await _statManager.GetNewTopStats(
+                request.Offset, request.Count, legacyId, request.PerformanceBucketCode);
+        }
+        else
+        {
+            // Legacy path doesn't filter past the ranking query, so consumed == returned.
+            stats = await _statManager.GetTopStats(request.Offset, request.Count, legacyId);
+            rowsConsumed = stats.Count;
+        }
 
         var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId, request.PerformanceBucketCode);
 
         return new TopStatsResponse
         {
             Players = stats,
-            TotalRankedClients = totalRanked
+            TotalRankedClients = totalRanked,
+            NextOffset = request.Offset + rowsConsumed
         };
     }
 

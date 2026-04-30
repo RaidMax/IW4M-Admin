@@ -135,13 +135,25 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         };
     }
 
-    // Format: GSE;EE;{mapName} — match-level, fires once per match when map's
-    // main Easter Egg quest completes. GSC guards re-emit with level.zm_stats_ee_fired.
+    // Two formats share the EE prefix:
+    //   GSE;EE;{mapName}        — canonical match-complete (fires once at terminal notify)
+    //   GSE;EE;step;{stepKey}   — per-step progress marker (may fire multiple times across a match)
+    // First field disambiguates; "step" is reserved.
     private static GameEventV2 ParseEasterEggCompleteEvent(GameScriptEvent scriptEvent, string[] data)
     {
+        var first = data.ElementAtOrDefault(0) ?? string.Empty;
+
+        if (string.Equals(first, "step", StringComparison.OrdinalIgnoreCase))
+        {
+            return new EasterEggStepGameEvent
+            {
+                StepKey = data.ElementAtOrDefault(1) ?? string.Empty
+            };
+        }
+
         return new EasterEggCompleteGameEvent
         {
-            MapName = data.ElementAtOrDefault(0) ?? string.Empty
+            MapName = first
         };
     }
 

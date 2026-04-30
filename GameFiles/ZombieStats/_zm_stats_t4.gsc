@@ -35,6 +35,7 @@ Init()
     thread WaitForBoxTeddySuppression();
     thread WaitForTrapActivations();
     thread WaitForEasterEggComplete();
+    thread WaitForEasterEggSteps();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -1392,9 +1393,40 @@ WaitForEasterEggComplete()
 
     logprint( "[ZM-EE] Watcher armed: map=" + level.script + " counter=level.flytrap_counter target=3\n" );
 
+    // Step 1: panel-shot phase-start. Stock script flag_set("hide_and_seek") right
+    // after the panel is shot with an upgraded weapon. flag_wait blocks until set;
+    // safe even if we arrive early (flag_init runs in nazi_zombie_factory::main).
+    thread WatchDerRieseFlytrapPanel();
+
+    // Steps 2-4: poll level.flytrap_counter and emit a step event each time it
+    // ticks up. Engine is single-threaded so a ticked-past value would be missed
+    // if we slept too long between checks; 0.5s easily covers human reaction time.
+    prev = 0;
     while ( !IsDefined( level.flytrap_counter ) || level.flytrap_counter < 3 )
     {
-        wait ( 1 );
+        if ( IsDefined( level.flytrap_counter ) && level.flytrap_counter > prev )
+        {
+            // Fire one step event per integer tick (covers the rare case the
+            // counter jumps by >1, though stock script increments by exactly 1).
+            for ( i = prev + 1; i <= level.flytrap_counter && i <= 3; i++ )
+            {
+                stepKey = "t4_dr_flytrap_target_" + i;
+                logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+                logprint( "GSE;EE;step;" + stepKey + "\n" );
+            }
+            prev = level.flytrap_counter;
+        }
+        wait ( 0.5 );
+    }
+
+    // The 2→3 tick exits the while early so the final step never enters the loop
+    // body. Flush any unobserved steps now (covers prev=2→3, plus pathological
+    // multi-tick cases where counter jumped >1 across the exit boundary).
+    for ( i = prev + 1; i <= 3; i++ )
+    {
+        stepKey = "t4_dr_flytrap_target_" + i;
+        logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+        logprint( "GSE;EE;step;" + stepKey + "\n" );
     }
 
     if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
@@ -1408,4 +1440,164 @@ WaitForEasterEggComplete()
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
     logprint( "GSE;EE;" + level.script + "\n" );
+}
+
+// Panel-shot phase-start. Stock factory.gsc flag_set("hide_and_seek") inside
+// flytrap() once the upgraded-weapon shot lands; block on the flag rather than
+// hooking the entity directly since the panel target ent isn't named consistently.
+WatchDerRieseFlytrapPanel()
+{
+    level endon( "end_game" );
+
+    flag_wait( "hide_and_seek" );
+
+    logprint( "[ZM-EE] Step fired: t4_dr_flytrap_panel\n" );
+    logprint( "GSE;EE;step;t4_dr_flytrap_panel\n" );
+}
+
+/////////////////////////////////////////////////////////
+// Easter Egg STEP detection — song-egg progression.
+//
+// Three stock T4 maps (Nacht / Verrückt / Shi No Numa) share the kzmb-
+// targetname damage-radio pattern hooked via stock _zombiemode_radio.gsc:
+// setcandamage(true) + waittill("damage"). We re-hook the same notify in
+// parallel (broadcast — multiple threads waiting for the same waittill
+// notify all receive it).
+//
+// Der Riese is the odd one out: stock nazi_zombie_factory.gsc uses three
+// USE-triggers (`meteor_one`, `meteor_two`, `meteor_three`) with
+// waittill("trigger", player) — i.e. press E, not shoot. Different
+// targetname per meteor, separate path required.
+//
+// Both paths gate on first-player-connect and poll for the entity to
+// appear, since Pluto T4 dedicated servers pause level-time when no
+// players are connected (3-second waits effectively block forever on
+// an empty lobby) and stock entity init may complete after our level-
+// init thread starts.
+//
+// Custom maps that don't use these entity names silently no-op.
+/////////////////////////////////////////////////////////
+WaitForEasterEggSteps()
+{
+    level endon( "end_game" );
+
+    // Pluto T4 dedi: level-time only ticks with players connected. Block until
+    // the first one shows up so subsequent waits / getent calls behave normally.
+    while ( getplayers().size == 0 )
+    {
+        wait ( 1 );
+    }
+
+    switch ( level.script )
+    {
+        case "nazi_zombie_prototype": HookKzmbRadios( "nd" ); return;
+        case "nazi_zombie_asylum":    HookKzmbRadios( "vr" ); return;
+        case "nazi_zombie_sumpf":     HookKzmbRadios( "sh" ); return;
+        case "nazi_zombie_factory":   HookDerRieseMeteors();  return;
+        default:
+            logprint( "[ZM-EE] No step watcher configured for map=" + level.script + "\n" );
+            return;
+    }
+}
+
+// Damage-radio path (Nacht / Verrückt / Shi No Numa).
+HookKzmbRadios( mapShort )
+{
+    level endon( "end_game" );
+
+    // Poll for the entity batch — stock _zombiemode_radio::init may finish
+    // after we do, and getentarray returns 0 in the gap. 30s ceiling is well
+    // past stock init (typically <2s post-player-connect).
+    radios = undefined;
+    for ( attempt = 0; attempt < 30; attempt++ )
+    {
+        radios = getentarray( "kzmb", "targetname" );
+        if ( IsDefined( radios ) && radios.size > 0 )
+        {
+            break;
+        }
+        wait ( 1 );
+    }
+
+    if ( !IsDefined( radios ) || radios.size == 0 )
+    {
+        logprint( "[ZM-EE] No kzmb radios found on map=" + level.script + " after polling (custom map?)\n" );
+        return;
+    }
+
+    logprint( "[ZM-EE] Step watcher armed: map=" + level.script + " short=" + mapShort + " radios=" + radios.size + "\n" );
+
+    for ( i = 0; i < radios.size; i++ )
+    {
+        radios[i] thread WatchRadioStep( mapShort, i + 1 );
+    }
+}
+
+WatchRadioStep( mapShort, oneBasedIndex )
+{
+    self endon( "death" );
+    level endon( "end_game" );
+
+    stepKey = "t4_" + mapShort + "_radio_" + oneBasedIndex;
+
+    // First-fire-wins per radio; engine may double-fire damage on rapid hits
+    // (e.g. shotgun pellets). Premium handler dedups again at the DB layer.
+    self waittill( "damage" );
+
+    logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+    logprint( "GSE;EE;step;" + stepKey + "\n" );
+}
+
+// Use-trigger path (Der Riese — meteor stones, press E to interact).
+// Stock nazi_zombie_factory::main spawns three meteor_egg() threads on
+// targetnames meteor_one / meteor_two / meteor_three, each emitting
+// "trigger" exactly once when used.
+HookDerRieseMeteors()
+{
+    level endon( "end_game" );
+
+    targetNames = [];
+    targetNames[0] = "meteor_one";
+    targetNames[1] = "meteor_two";
+    targetNames[2] = "meteor_three";
+
+    // Per-target poll because stock factory::main runs the meteor_egg setup
+    // alongside other level scripts; entity availability isn't strictly ordered.
+    for ( i = 0; i < targetNames.size; i++ )
+    {
+        thread HookOneDerRieseMeteor( targetNames[i], i + 1 );
+    }
+}
+
+HookOneDerRieseMeteor( targetName, oneBasedIndex )
+{
+    level endon( "end_game" );
+
+    trig = undefined;
+    for ( attempt = 0; attempt < 30; attempt++ )
+    {
+        trig = getent( targetName, "targetname" );
+        if ( IsDefined( trig ) )
+        {
+            break;
+        }
+        wait ( 1 );
+    }
+
+    if ( !IsDefined( trig ) )
+    {
+        logprint( "[ZM-EE] Der Riese meteor not found: " + targetName + " (custom map?)\n" );
+        return;
+    }
+
+    stepKey = "t4_dr_meteor_" + oneBasedIndex;
+    logprint( "[ZM-EE] Step watcher armed: " + stepKey + " target=" + targetName + "\n" );
+
+    // Stock script ALSO hooks waittill("trigger", player) on this entity to
+    // increment level.meteor_counter. waittill is broadcast — both threads
+    // receive the notify, so we don't interfere with the stock counter logic.
+    trig waittill( "trigger" );
+
+    logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+    logprint( "GSE;EE;step;" + stepKey + "\n" );
 }

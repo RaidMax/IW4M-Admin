@@ -57,4 +57,20 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// <see cref="ZombieMatch.EasterEggOccurredAt"/> on match-end persist.
     /// </summary>
     public DateTimeOffset? EasterEggOccurredAt { get; set; }
+
+    /// <summary>
+    /// Step keys logged for this match's EE-progress tracking. Match-level cache
+    /// for in-process dedup (avoid double-fire from engine notify quirks) and for
+    /// the "all steps fired" derivation of <see cref="EasterEggOccurredAt"/> on
+    /// maps without a canonical terminal notify. Persisted state lives in the
+    /// event log; this is the runtime mirror.
+    /// </summary>
+    public HashSet<string> EasterEggStepsLogged { get; } = [];
+
+    /// <summary>
+    /// Quest ids (per <c>MapEasterEggConfig</c>) that have completed during this
+    /// match, either via the canonical terminal notify or via "all steps logged"
+    /// derivation. Match-level cache to gate canonical re-emits and re-derivations.
+    /// </summary>
+    public HashSet<string> EasterEggQuestsCompleted { get; } = [];
 }

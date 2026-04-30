@@ -69,6 +69,7 @@ public partial class StatsOverview : IAsyncDisposable
             // Clear loaded items on filter change.
             State.TopPlayers.Clear();
             State.HasMore = true;
+            State.NextOffset = 0;
             State.ServerId = ServerId;
             State.PerformanceBucket = PerformanceBucket;
 
@@ -141,18 +142,25 @@ public partial class StatsOverview : IAsyncDisposable
             var response = await DataService.GetTopStatsAsync(new WebfrontCore.Controllers.API.Models.TopStatsRequest
             {
                 Count = count,
-                Offset = State.TopPlayers.Count,
+                // Server-side ranking history may be filtered against the stats join,
+                // so a single page can consume more underlying rows than it returns.
+                // Advance offset by the rows the server actually consumed (NextOffset),
+                // not by accumulated `TopPlayers.Count` — otherwise rejected rows get
+                // re-walked on every page and pagination livelocks.
+                Offset = State.NextOffset,
                 ServerId = ServerId,
                 PerformanceBucketCode = PerformanceBucket
             });
 
             State.TotalRankedClients = response.TotalRankedClients;
             State.TopPlayers.AddRange(response.Players);
+            State.NextOffset = response.NextOffset;
 
-            // No more pages when the server returned fewer than asked, or we've
-            // reached the total count it advertised.
-            State.HasMore = response.Players.Count >= count
-                            && State.TopPlayers.Count < (int)response.TotalRankedClients;
+            // Stop when we've drained the source: either the server reports we've
+            // consumed every ranked row, or it returned an empty page (defense
+            // against a server-side filter rejecting everything in the next slice).
+            State.HasMore = response.Players.Count > 0
+                            && State.NextOffset < (int)response.TotalRankedClients;
         }
         catch (Exception ex)
         {
@@ -250,6 +258,14 @@ public partial class StatsOverview : IAsyncDisposable
         public string? PerformanceBucket { get; set; }
         public SideContextMenuItems? MenuItems { get; set; }
         public bool HasMore { get; set; } = true;
+
+        /// <summary>
+        /// Ranking-history rows consumed so far for the current filter. Server-side
+        /// chunk-fill means this advances faster than <see cref="TopPlayers"/>.Count
+        /// when the stats join filters rejects rows. Pass as the next request's
+        /// <c>offset</c> to skip already-walked rows.
+        /// </summary>
+        public int NextOffset { get; set; }
     }
 
     // Existing helper methods...

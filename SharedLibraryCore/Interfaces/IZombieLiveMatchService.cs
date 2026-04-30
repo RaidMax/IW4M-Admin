@@ -44,6 +44,12 @@ public class ZombieLiveMatchSnapshot
     /// "EE R{n}" badge in the live modal.
     /// </summary>
     public int? EasterEggRound { get; set; }
+
+    /// <summary>
+    /// Per-quest EE progress for this map. Empty when no configured quests. Each entry
+    /// drives one chip + mini progress strip in the live modal.
+    /// </summary>
+    public List<EasterEggQuestProgress> EasterEggQuests { get; set; } = [];
 }
 
 /// <summary>

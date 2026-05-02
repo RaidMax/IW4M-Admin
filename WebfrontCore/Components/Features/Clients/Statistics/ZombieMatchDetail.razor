@@ -71,7 +71,8 @@
             @if (Detail.Players.Any(p => p.Events.Count > 0))
             {
                 <ZombieMatchScrubber Payload="ScrubberPayload"
-                                     FocusedClientId="@(SelectedClientId ?? activePlayer.ClientId)" />
+                                     FocusedClientId="@(SelectedClientId ?? activePlayer.ClientId)"
+                                     ShowAllPlayers="ShowAllPlayers" />
             }
 
             @* ── ROUND TABLE ── *@

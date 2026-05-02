@@ -19,20 +19,14 @@
         </h5>
 
         <div class="flex items-center gap-2">
-            @* Lane mode toggle — only relevant when the match has non-qualified drop-ins.
-               Default = qualified only (matches leaderboard roster); user can opt to surface
-               every connected client. Hidden on single-lane (per-client) view since the only
-               lane is qualified by construction. *@
-            @if (_payload is not null && _payload.Lanes.Count > 1 && _payload.Lanes.Any(l => !l.IsQualified))
-            {
-                <Tooltip Text="@(_laneMode == "qualified" ? AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_LANE_MODE_QUALIFIED_TOOLTIP") : AppState.Loc("WEBFRONT_ZOMBIE_TIMELINE_LANE_MODE_ALL_TOOLTIP"))" WrapperClass="inline-flex">
-                    <button type="button" @onclick="ToggleLaneMode" @onclick:stopPropagation="true"
-                            class="flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded bg-surface border border-line hover:text-foreground text-muted transition-colors">
-                        <i class="ph @(_laneMode == "qualified" ? "ph-funnel" : "ph-users") text-xs"></i>
-                        <span>@AppState.Loc(_laneMode == "qualified" ? "WEBFRONT_ZOMBIE_TIMELINE_LANE_MODE_QUALIFIED" : "WEBFRONT_ZOMBIE_TIMELINE_LANE_MODE_ALL")</span>
-                    </button>
-                </Tooltip>
-            }
+            @* Lane-mode (qualified vs all-players) used to live here as a button on
+               the scrubber itself. Removed: it duplicated the SHOW_ALL toggle the
+               consumer (leaderboard card / match-detail page) already exposes, and
+               two toggles for the same concept invited drift. The scrubber now
+               consumes ShowAllPlayers as a parameter from the consumer; lane
+               visibility follows whatever the consumer's single SHOW_ALL state
+               says. Share-link to an unqualified player still auto-promotes
+               internally via ResolveLaneMode so the focused lane never hides. *@
 
             <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-md border border-line">
                 @foreach (var (key, locKey, color) in _filters)

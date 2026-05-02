@@ -14,16 +14,29 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     /// </summary>
     [Parameter] public int? FocusedClientId { get; set; }
 
+    /// <summary>
+    /// Externally controls whether the scrubber surfaces unqualified drop-in
+    /// lanes alongside the qualifying roster. Driven by the consumer's
+    /// SHOW_ALL toggle (e.g. the leaderboard card's WEBFRONT_ZOMBIE_LEADERBOARD_SHOW_ALL
+    /// button) so a single user-facing control governs both the scoreboard's
+    /// visible rows and the timeline's visible lanes — no two-toggle drift.
+    /// Default false (qualified-only) matches the leaderboard's default and the
+    /// "this is a record of the qualifying run" framing.
+    /// </summary>
+    [Parameter] public bool ShowAllPlayers { get; set; }
+
     private readonly string _elementId = $"zombie-scrubber-{Guid.NewGuid():N}";
     private DotNetObjectReference<ZombieMatchScrubber>? _dotnetRef;
     private bool _initialized;
 
     private ZombieScrubberPayload? _payload;
     private int? _lastFocusedClientId;
+    private bool _lastShowAllPlayers;
     private double _zoomLevel = 1;
     private string _filter = "all";
-    // Mirrors JS-side default: 'qualified' when any lane qualifies, else 'all'. Re-evaluated
-    // on payload change so a per-client view (single qualified lane) opens correctly.
+    // Derived from the ShowAllPlayers parameter + share-link auto-promote (see
+    // EnsureLaneModeShowsFocused). The JS side reads "qualified" / "all" strings;
+    // we keep that wire format internally so existing JS doesn't need to change.
     private string _laneMode = "qualified";
     private double _scrubSeconds;
     private string _scrubTimeLabel = string.Empty;
@@ -46,9 +59,9 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         if (!ReferenceEquals(_payload, Payload))
         {
             _payload = Payload;
-            _laneMode = _payload.Lanes.Any(l => l.IsQualified) ? "qualified" : "all";
-            EnsureLaneModeShowsFocused();
+            ResolveLaneMode();
             _lastFocusedClientId = FocusedClientId;
+            _lastShowAllPlayers = ShowAllPlayers;
             if (_initialized)
             {
                 _ = ReinitializeAsync();
@@ -56,36 +69,46 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
             return;
         }
 
-        // Same payload, focused player changed → soft update (preserves zoom/scroll).
-        if (_initialized && _lastFocusedClientId != FocusedClientId)
+        // Same payload, but focused player or external ShowAllPlayers toggle
+        // changed → soft update (preserves zoom/scroll position).
+        var focusChanged = _lastFocusedClientId != FocusedClientId;
+        var showAllChanged = _lastShowAllPlayers != ShowAllPlayers;
+        if (_initialized && (focusChanged || showAllChanged))
         {
             _lastFocusedClientId = FocusedClientId;
-            // Selecting an unqualified drop-in while filter is "qualified" hides the
-            // lane the user just clicked. Auto-flip to "all" so the focused lane stays
-            // on screen — the user's intent is "look at this player", overriding the
-            // default qualified-only roster.
-            if (EnsureLaneModeShowsFocused())
+            _lastShowAllPlayers = ShowAllPlayers;
+            var previousLaneMode = _laneMode;
+            ResolveLaneMode();
+            if (_laneMode != previousLaneMode)
             {
                 _ = JS.InvokeVoidAsync("zombieScrubber.setLaneMode", _elementId, _laneMode).AsTask();
             }
-            _ = JS.InvokeVoidAsync("zombieScrubber.focusClient", _elementId, FocusedClientId).AsTask();
+            if (focusChanged)
+            {
+                _ = JS.InvokeVoidAsync("zombieScrubber.focusClient", _elementId, FocusedClientId).AsTask();
+            }
         }
     }
 
     /// <summary>
-    /// If the focused client maps to a non-qualified lane while we're in "qualified"
-    /// mode, flip to "all". Returns true when the mode actually changed.
+    /// Resolves <see cref="_laneMode"/> from the external <see cref="ShowAllPlayers"/>
+    /// parameter, with one override: when the focused client maps to an unqualified
+    /// lane, force "all" so the share-link `?player={clientId}` case never lands on
+    /// a hidden lane. Without that override, deep-linking to a drop-in player would
+    /// silently hide the lane the user explicitly asked to see.
     /// </summary>
-    private bool EnsureLaneModeShowsFocused()
+    private void ResolveLaneMode()
     {
-        if (FocusedClientId is null || _payload is null) return false;
-        if (_laneMode != "qualified") return false;
+        _laneMode = ShowAllPlayers ? "all" : "qualified";
 
-        var focused = _payload.Lanes.FirstOrDefault(l => l.ClientId == FocusedClientId);
-        if (focused is null || focused.IsQualified) return false;
-
-        _laneMode = "all";
-        return true;
+        if (_laneMode == "qualified" && FocusedClientId is not null && _payload is not null)
+        {
+            var focused = _payload.Lanes.FirstOrDefault(l => l.ClientId == FocusedClientId);
+            if (focused is not null && !focused.IsQualified)
+            {
+                _laneMode = "all";
+            }
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -113,15 +136,6 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         if (_initialized)
         {
             await JS.InvokeVoidAsync("zombieScrubber.setFilter", _elementId, key);
-        }
-    }
-
-    private async Task ToggleLaneMode()
-    {
-        _laneMode = _laneMode == "qualified" ? "all" : "qualified";
-        if (_initialized)
-        {
-            await JS.InvokeVoidAsync("zombieScrubber.setLaneMode", _elementId, _laneMode);
         }
     }
 

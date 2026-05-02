@@ -336,7 +336,13 @@ else
             </div>
         }
 
-        @* ── DETAIL (existing component, scrubber + share button inside) ── *@
-        <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" />
+        @* ── DETAIL (existing component, scrubber + share button inside) ──
+             ShowAllPlayers=true: this is the dedicated share page for one match.
+             Hiding drop-ins here would silently misrepresent the run (e.g. share-link
+             a 4-player match where 1 didn't qualify and the page shows 3 only).
+             Leaderboard-card consumer defaults this false to honour the qualifying-
+             roster framing of the bucket leaderboard; share page wants the full
+             picture. *@
+        <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" ShowAllPlayers="true" />
     </div>
 }

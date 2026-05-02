@@ -14,6 +14,16 @@ public partial class ZombieMatchDetail
     [Parameter]
     public int? SelectedClientId { get; set; }
 
+    /// <summary>
+    /// Forwarded to <see cref="ZombieMatchScrubber"/> so the consumer's SHOW_ALL
+    /// toggle (e.g. the leaderboard card) governs both scoreboard rows AND timeline
+    /// lane visibility from a single control. Default false (qualified-only).
+    /// Standalone share page (<c>ZombieMatchPage</c>) sets this true so a deep-link
+    /// to a match shows the full roster.
+    /// </summary>
+    [Parameter]
+    public bool ShowAllPlayers { get; set; }
+
     private int _internalSelectedClientId;
 
     // Memoized to keep reference stable across renders — scrubber treats payload

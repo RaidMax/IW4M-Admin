@@ -1426,12 +1426,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             await using var context = contextFactory.CreateContext();
             var oldestStateDate = DateTime.UtcNow - bucketConfig.RankingExpiration;
+            // Match the rest of the bucket-tolerance story: a server with no
+            // PerformanceBucketId FK (the universal post-update state for
+            // communities upgrading to this version — IW4MAdminSettings rarely
+            // sets PerformanceBucketCode on day one) is implicitly part of the
+            // default bucket. Without the OR-NULL fallback this query returned
+            // zero cross-server rows for default-bucket aggregation, so each
+            // kill rolled up only the current server's stats — leaderboard
+            // ratings reflected one server, not the player's combined skill.
+            var isDefaultBucket = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
             var performances = await context.Set<EFClientStatistics>()
                 .AsNoTracking()
                 .Include(stat => stat.Server)
                 .Where(stat => stat.ClientId == clientId)
                 .Where(stat => stat.ServerId != serverId) // ignore the one we're currently tracking
-                .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code)
+                .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code
+                               || (isDefaultBucket && stat.Server.PerformanceBucketId == null))
                 .Where(stats => stats.UpdatedAt >= oldestStateDate)
                 .Where(stats => stats.TimePlayed >= (int)bucketConfig.ClientMinPlayTime.TotalSeconds)
                 .ToListAsync();

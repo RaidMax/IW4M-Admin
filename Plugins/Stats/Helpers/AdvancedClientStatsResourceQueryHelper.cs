@@ -16,6 +16,7 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using Stats.Config;
 using Stats.Dtos;
 
 namespace Stats.Helpers
@@ -63,8 +64,17 @@ namespace Stats.Helpers
             var iqHitStats = context.Set<EFClientHitStatistic>()
                 .Where(stat => stat.ClientId == query.ClientId);
 
+            // Default-bucket queries must include rows whose server FK is still
+            // NULL — communities upgrading to the bucket-aware build start with
+            // every server unbacked-filled (PerformanceBucketCode null in
+            // IW4MAdminSettings means the implicit default pool), and we cannot
+            // require an O(N rows) backfill of EFClientHitStatistics on first
+            // start. Without the OR-NULL clause the per-client hit-stats page
+            // would return zero rows for the default bucket on a fresh upgrade.
+            var hitStatsBucketIsDefault = PerformanceBucketCodes.IsDefault(query.PerformanceBucketCode);
             iqHitStats = !string.IsNullOrEmpty(query.PerformanceBucketCode)
-                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket.Code == query.PerformanceBucketCode)
+                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket.Code == query.PerformanceBucketCode
+                                           || (hitStatsBucketIsDefault && stat.Server.PerformanceBucketId == null))
                 : iqHitStats.Where(stat => stat.ServerId == serverId);
 
             var hitStats = await iqHitStats
@@ -99,11 +109,18 @@ namespace Stats.Helpers
                 })
                 .ToListAsync();
 
+            // Same NULL-FK tolerance as the hit-stats query above: the per-client
+            // ranking-history graph for the default bucket must surface legacy
+            // rows whose PerformanceBucketId was never written (which is every
+            // ranking-history row for any server the operator hasn't manually
+            // tagged with a PerformanceBucketCode).
+            var ratingsBucketIsDefault = PerformanceBucketCodes.IsDefault(query.PerformanceBucketCode);
             var ratings = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientInfo.ClientId)
                 .Where(r => r.ServerId == serverId)
                 .Where(r => r.Ranking != null)
-                .Where(r => r.PerformanceBucket.Code == query.PerformanceBucketCode)
+                .Where(r => r.PerformanceBucket.Code == query.PerformanceBucketCode
+                            || (ratingsBucketIsDefault && r.PerformanceBucketId == null))
                 .OrderByDescending(r => r.CreatedDateTime)
                 .Take(100)
                 .Select(r => new { r.Newest, r.PerformanceMetric, r.ZScore, r.CreatedDateTime, r.Ranking })

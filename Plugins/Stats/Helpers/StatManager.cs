@@ -111,8 +111,10 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var oldestDate = DateTime.UtcNow - oldestStat;
             // Pre-bucket-migration rankings have PerformanceBucketId == null. Treat those
             // as belonging to the "default" bucket so established servers don't lose their
-            // existing top-stats history once a bucket is configured.
-            var isDefaultBucket = IsDefaultBucketCode(performanceBucketCode);
+            // existing top-stats history once a bucket is configured. Communities migrating
+            // from older versions keep working even before they manually backfill bucket
+            // FKs — both NULL-FK legacy rows and properly-tagged new rows surface together.
+            var isDefaultBucket = PerformanceBucketCodes.IsDefault(performanceBucketCode);
             return ranking => ranking.ServerId == serverId
                               && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
                               && ranking.CreatedDateTime >= oldestDate
@@ -123,9 +125,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                                   || (isDefaultBucket && ranking.PerformanceBucketId == null))
                               && ranking.Client.TotalConnectionTime >= (int)minPlayTime.TotalSeconds;
         }
-
-        private static bool IsDefaultBucketCode(string code) =>
-            string.IsNullOrEmpty(code) || string.Equals(code, "default", StringComparison.OrdinalIgnoreCase);
 
         public async Task<int> GetTotalRankedPlayers(long? serverId = null, string performanceBucket = null)
         {
@@ -217,7 +216,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
 
-            var includeNullBucket = IsDefaultBucketCode(bucketConfig.Code);
+            var includeNullBucket = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
             foreach (var clientId in clientIdsList)
             {
                 var eachRank = await context.Set<EFClientRankingHistory>()
@@ -347,60 +346,61 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         public async Task<PerformanceBucketConfiguration> GetBucketConfig(long? serverId = null,
             string performanceBucketCode = null)
         {
-            var defaultConfig = new PerformanceBucketConfiguration
+            // Returned Code is ALWAYS the canonical normalised form (lower-cased,
+            // null/empty collapsed to "default"). Downstream consumers use Code
+            // as a cache key, DB filter value, and FK lookup token — letting an
+            // un-normalised Code escape historically caused cache mismatches
+            // (e.g. PerformanceBucketCode = "Zombies" in IW4MAdminSettings vs
+            // "zombies" in the DB; null vs "" vs "default" all meaning the same
+            // logical pool). Centralising normalisation here means callers can
+            // treat Code as the truth.
+            PerformanceBucketConfiguration BuildConfig(string sourceCode)
             {
-                ClientMinPlayTime = TimeSpan.FromSeconds(statsConfig.TopPlayersMinPlayTime),
-                RankingExpiration = DateTime.UtcNow - Extensions.FifteenDaysAgo()
-            };
+                var configured = !string.IsNullOrEmpty(sourceCode)
+                    ? statsConfig.PerformanceBuckets.FirstOrDefault(bucket =>
+                        string.Equals(bucket.Code, sourceCode, StringComparison.OrdinalIgnoreCase))
+                    : null;
 
-            if (serverId is null && performanceBucketCode is null)
-            {
-                return defaultConfig;
+                var result = configured is not null
+                    ? new PerformanceBucketConfiguration
+                    {
+                        ClientMinPlayTime = configured.ClientMinPlayTime,
+                        RankingExpiration = configured.RankingExpiration
+                    }
+                    : new PerformanceBucketConfiguration
+                    {
+                        ClientMinPlayTime = TimeSpan.FromSeconds(statsConfig.TopPlayersMinPlayTime),
+                        RankingExpiration = TimeSpan.FromDays(15)
+                    };
+
+                result.Code = PerformanceBucketCodes.Normalize(sourceCode);
+                return result;
             }
 
+            // Explicit caller-supplied code wins over server's DB-recorded code.
             if (performanceBucketCode is not null)
             {
-                var configured = statsConfig.PerformanceBuckets.FirstOrDefault(bucket =>
-                    string.Equals(bucket.Code, performanceBucketCode, StringComparison.OrdinalIgnoreCase));
+                return BuildConfig(performanceBucketCode);
+            }
 
-                if (configured is not null)
-                {
-                    return configured;
-                }
-
-                defaultConfig.Code = performanceBucketCode;
-                return defaultConfig;
+            // No serverId hint either → caller wants the default bucket.
+            if (serverId is null)
+            {
+                return BuildConfig(null);
             }
 
             // The server cache doesn't eagerly load the PerformanceBucket navigation,
-            // so we query the database directly for the bucket code
+            // so we query the database directly for the bucket code.
             await using var context = contextFactory.CreateContext(false);
             var cachedServer = await serverCache.FirstAsync(server => server.Id == serverId);
-            if (cachedServer == null)
-            {
-                return defaultConfig;
-            }
+            var dbBucketCode = cachedServer is null
+                ? null
+                : await context.Set<Data.Models.Client.Stats.EFPerformanceBucket>()
+                    .Where(b => b.PerformanceBucketId == cachedServer.PerformanceBucketId)
+                    .Select(b => b.Code)
+                    .FirstOrDefaultAsync();
 
-            var performanceBucket = await context.Set<Data.Models.Client.Stats.EFPerformanceBucket>()
-                .Where(b => b.PerformanceBucketId == cachedServer.PerformanceBucketId)
-                .Select(b => b.Code)
-                .FirstOrDefaultAsync();
-
-            if (string.IsNullOrEmpty(performanceBucket))
-            {
-                return defaultConfig;
-            }
-
-            var matchedConfig = statsConfig.PerformanceBuckets.FirstOrDefault(bucket =>
-                string.Equals(bucket.Code, performanceBucket, StringComparison.OrdinalIgnoreCase));
-
-            if (matchedConfig is not null)
-            {
-                return matchedConfig;
-            }
-
-            defaultConfig.Code = performanceBucket;
-            return defaultConfig;
+            return BuildConfig(dbBucketCode);
         }
 
         public async Task<List<TopStatsInfo>> GetTopStats(int start, int count, long? serverId = null, string performanceBucket = null)
@@ -1453,18 +1453,50 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         private async Task UpdateAggregateForServerOrBucket(int clientId, EFClientStatistics clientStats, DatabaseContext context,
             List<EFClientStatistics> performances, PerformanceBucketConfiguration bucketConfig)
         {
-            var aggregateZScore =
-                performances.WeightValueByPlaytime(nameof(EFClientStatistics.ZScore), (int)bucketConfig.ClientMinPlayTime.TotalSeconds);
+            // Compute the client's bucket-aggregate z-score from raw weighted Performance
+            // against the BUCKET log-normal distribution.
+            //
+            // Why not the previous approach (playtime-weighted average of EFClientStatistics.ZScore)?
+            // The ZScore column on EFClientStatistics is fitted per-server. Z-scores from
+            // different distributions are in different units and don't compose under
+            // averaging — combining them across the bucket's servers conflates unrelated
+            // scales. Concretely, on a low-population server (n=2 players with similar
+            // skill) the fitted sigma collapses toward 0, producing per-row z-scores in
+            // the hundreds. Averaging those into the bucket aggregate then poisoned the
+            // bucket-wide max, which became the rating denominator — every other player's
+            // rating compressed to single-digit percent of the 0-1000 range.
+            //
+            // The corrected model: take the playtime-weighted Performance composite
+            // (already a meaningful per-client scalar), transform once through the
+            // bucket-fitted log-normal. One distribution, one transform, every aggregate
+            // z-score directly comparable to every other within the bucket.
+            var totalPlaytime = performances.Sum(p => p.TimePlayed);
+            if (totalPlaytime <= 0)
+            {
+                return;
+            }
 
+            var weightedPerformance =
+                performances.Sum(p => p.Performance * p.TimePlayed) / (double)totalPlaytime;
+
+            var aggregateZScore = await serverDistributionCalculator.GetZScoreForServerOrBucket(
+                weightedPerformance, performanceBucket: bucketConfig.Code);
+
+            // Rank by raw weighted Performance — this is equivalent to ranking by aggregate
+            // z-score (the log-normal transform is monotonically increasing in Performance),
+            // and lets the comparison run entirely server-side without re-deriving z's per
+            // candidate row. Same default-bucket OR-clause as GetNewRankingFunc so legacy
+            // NULL-FK rows participate alongside properly-tagged new rows.
+            var isDefaultBucket = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
             var aggregateRanking = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId != clientId)
-                .Where(stat => bucketConfig.Code == stat.Server.PerformanceBucket.Code)
-                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc((int)bucketConfig.ClientMinPlayTime.TotalSeconds,
-                    bucketConfig.RankingExpiration))
+                .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code
+                               || (isDefaultBucket && stat.Server.PerformanceBucketId == null))
+                .Where(AdvancedClientStatsResourceQueryHelper.GetRankingFunc(
+                    (int)bucketConfig.ClientMinPlayTime.TotalSeconds, bucketConfig.RankingExpiration))
                 .GroupBy(stat => stat.ClientId)
-                .Where(group =>
-                    group.Sum(stat => stat.ZScore * stat.TimePlayed) / group.Sum(stat => stat.TimePlayed) >
-                    aggregateZScore)
+                .Where(group => group.Sum(stat => (stat.EloRating / 3.0 + stat.Skill * 2.0 / 3.0) * stat.TimePlayed)
+                                / group.Sum(stat => stat.TimePlayed) > weightedPerformance)
                 .Select(c => c.Key)
                 .CountAsync();
 
@@ -1571,7 +1603,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // Pre-bucket rankings have PerformanceBucketId == null — treat them as
             // part of the default bucket so the transition to bucketed ranking doesn't
             // leave two Newest=true rows per client/server.
-            var includeNullBucket = IsDefaultBucketCode(performanceBucketCode);
+            var includeNullBucket = PerformanceBucketCodes.IsDefault(performanceBucketCode);
 
             var totalRankingEntries = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)

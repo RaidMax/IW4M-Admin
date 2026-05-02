@@ -141,4 +141,10 @@ public class ZombieLeaderboardPlayer
     /// to the final round or the metric wasn't computed.
     /// </summary>
     public int? SoloFromRound { get; set; }
+
+    /// <summary>
+    /// Whether this player passed the leaderboard qualifier (last-round-1 + ≥20% rounds).
+    /// False for unqualified drop-ins surfaced behind the "All Players" expander.
+    /// </summary>
+    public bool IsQualified { get; set; }
 }

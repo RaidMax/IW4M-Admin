@@ -24,20 +24,39 @@ public sealed class ZombieScrubberPayload
     /// </summary>
     public List<ScrubberEvent> MatchLevelEvents { get; set; } = [];
 
-    public static ZombieScrubberPayload From(SharedLibraryCore.Interfaces.ZombieMatchDetail detail)
+    public static ZombieScrubberPayload From(SharedLibraryCore.Interfaces.ZombieMatchDetail detail,
+        Func<string, string>? loc = null)
     {
-        // Match-level events (steps + canonical EE) live in their own band rather
-        // than getting cloned onto every lane — keeps the visual layout clean and
-        // gives the team-milestone semantics a dedicated visual home.
+        loc ??= s => s;
+
+        // Match-level events (per-quest completions + step-progress dots) live in
+        // their own band rather than getting cloned onto every lane — keeps the
+        // visual layout clean and gives the team-milestone semantics a dedicated
+        // visual home.
         var matchLevelEvents = new List<ScrubberEvent>();
-        var eeEvent = BuildEasterEggMarker(detail.EasterEggOccurredAt, detail.EasterEggRound, detail.Date);
-        if (eeEvent is not null) matchLevelEvents.Add(eeEvent);
+
+        // One marker per completed quest at its own CompletedAt/Round (not the
+        // match-level OccurredAt — that's the FIRST-quest-completion time, so
+        // a 2-quest map would render both markers stacked at the first time).
+        foreach (var quest in detail.EasterEggQuests.Where(q => q.IsComplete && q.CompletedAt.HasValue))
+        {
+            var elapsed = Math.Max(0, (quest.CompletedAt!.Value - detail.Date).TotalSeconds);
+            var shortLabel = !string.IsNullOrEmpty(quest.ShortLocKey) ? loc(quest.ShortLocKey) : loc(quest.LocKey);
+            matchLevelEvents.Add(new ScrubberEvent
+            {
+                Seconds = elapsed,
+                Time = FormatElapsed(elapsed),
+                Label = quest.CompletedRound is { } cr && cr > 0 ? $"{shortLabel} (R{cr})" : shortLabel,
+                Category = "easter-egg",
+                RoundNumber = quest.CompletedRound
+            });
+        }
 
         // Step records: each becomes a tick on the band, in fire order. Label uses
-        // the inventory's loc-key when available (so step name is human-readable);
-        // falls back to the raw key when the step came from outside the inventory.
-        // Inventory + records pulled from each quest in turn — step keys are globally
-        // unique, so the merged dictionary collapses safely.
+        // the inventory's loc-key (resolved to localized text via the supplied
+        // resolver) so the tooltip reads as human-friendly step names rather than
+        // raw resource keys. Step keys are globally unique, so flattening across
+        // quests doesn't collide.
         var inventoryLabels = detail.EasterEggQuests
             .SelectMany(q => q.Inventory)
             .GroupBy(s => s.Key, StringComparer.OrdinalIgnoreCase)
@@ -45,11 +64,12 @@ public sealed class ZombieScrubberPayload
         foreach (var step in detail.EasterEggQuests.SelectMany(q => q.Steps))
         {
             var elapsed = Math.Max(0, (step.OccurredAt - detail.Date).TotalSeconds);
+            var rawLabel = inventoryLabels.GetValueOrDefault(step.Key, step.Key);
             matchLevelEvents.Add(new ScrubberEvent
             {
                 Seconds = elapsed,
                 Time = FormatElapsed(elapsed),
-                Label = inventoryLabels.GetValueOrDefault(step.Key, step.Key),
+                Label = loc(rawLabel),
                 Category = "easter-egg-step",
                 RoundNumber = step.RoundNumber
             });
@@ -84,20 +104,56 @@ public sealed class ZombieScrubberPayload
         return Build(lanes, detail.HighestRound, detail.Players.SelectMany(p => p.Events), matchLevelEvents);
     }
 
-    public static ZombieScrubberPayload From(ZombieMatchHistoryMatch match, string playerName, int clientId)
+    public static ZombieScrubberPayload From(ZombieMatchHistoryMatch match, string playerName, int clientId,
+        Func<string, string>? loc = null)
     {
-        // Per-client view doesn't carry MatchStartDate — synthesize from Date string
-        // when an EE marker is wanted. Round bands derive from match.Events so they
-        // share the same elapsed-seconds origin; EasterEggOccurredAt is wall-clock,
-        // so we map it onto the same axis using the parsed start date.
-        DateTimeOffset? matchStart = DateTimeOffset.TryParse(match.Date, out var parsed) ? parsed : null;
-        var eeEvent = matchStart is not null
-            ? BuildEasterEggMarker(match.EasterEggOccurredAt, match.EasterEggRound, matchStart.Value)
-            : null;
+        loc ??= s => s;
 
-        var laneEvents = match.Events.Select(ScrubberEvent.From).ToList();
-        if (eeEvent is not null) laneEvents.Add(eeEvent);
-        laneEvents = laneEvents.OrderBy(e => e.Seconds).ToList();
+        // Per-client view doesn't carry MatchStartDate — synthesize from Date string
+        // so quest CompletedAt timestamps can be projected onto the same elapsed-seconds
+        // axis as match.Events. Round bands derive from match.Events directly.
+        DateTimeOffset? matchStart = DateTimeOffset.TryParse(match.Date, out var parsed) ? parsed : null;
+
+        // Match-level events: per-quest completion markers + step-progress dots, mirroring
+        // the multi-player overload. Empty when matchStart can't be parsed.
+        var matchLevelEvents = new List<ScrubberEvent>();
+        if (matchStart is not null)
+        {
+            foreach (var quest in match.EasterEggQuests.Where(q => q.IsComplete && q.CompletedAt.HasValue))
+            {
+                var elapsed = Math.Max(0, (quest.CompletedAt!.Value - matchStart.Value).TotalSeconds);
+                var shortLabel = !string.IsNullOrEmpty(quest.ShortLocKey) ? loc(quest.ShortLocKey) : loc(quest.LocKey);
+                matchLevelEvents.Add(new ScrubberEvent
+                {
+                    Seconds = elapsed,
+                    Time = FormatElapsed(elapsed),
+                    Label = quest.CompletedRound is { } cr && cr > 0 ? $"{shortLabel} (R{cr})" : shortLabel,
+                    Category = "easter-egg",
+                    RoundNumber = quest.CompletedRound
+                });
+            }
+
+            var inventoryLabels = match.EasterEggQuests
+                .SelectMany(q => q.Inventory)
+                .GroupBy(s => s.Key, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().LocKey, StringComparer.OrdinalIgnoreCase);
+            foreach (var step in match.EasterEggQuests.SelectMany(q => q.Steps))
+            {
+                var elapsed = Math.Max(0, (step.OccurredAt - matchStart.Value).TotalSeconds);
+                var rawLabel = inventoryLabels.GetValueOrDefault(step.Key, step.Key);
+                matchLevelEvents.Add(new ScrubberEvent
+                {
+                    Seconds = elapsed,
+                    Time = FormatElapsed(elapsed),
+                    Label = loc(rawLabel),
+                    Category = "easter-egg-step",
+                    RoundNumber = step.RoundNumber
+                });
+            }
+            matchLevelEvents = matchLevelEvents.OrderBy(e => e.Seconds).ToList();
+        }
+
+        var laneEvents = match.Events.Select(ScrubberEvent.From).OrderBy(e => e.Seconds).ToList();
 
         var lane = new ScrubberLane
         {
@@ -118,27 +174,7 @@ public sealed class ZombieScrubberPayload
                 .ToList()
         };
 
-        return Build([lane], match.HighestRound, match.Events, []);
-    }
-
-    /// <summary>
-    /// Synthesizes an EE-completed marker event at the recorded fire time, on the
-    /// same elapsed-seconds axis the rest of the timeline uses. Returns null when
-    /// EasterEggOccurredAt is absent — null fields collapse to "no marker" in the UI.
-    /// </summary>
-    private static ScrubberEvent? BuildEasterEggMarker(
-        DateTimeOffset? occurredAt, int? round, DateTimeOffset matchStart)
-    {
-        if (occurredAt is null) return null;
-        var elapsed = Math.Max(0, (occurredAt.Value - matchStart).TotalSeconds);
-        return new ScrubberEvent
-        {
-            Seconds = elapsed,
-            Time = FormatElapsed(elapsed),
-            Label = round is { } r ? $"Easter Egg Complete (R{r})" : "Easter Egg Complete",
-            Category = "easter-egg",
-            RoundNumber = round
-        };
+        return Build([lane], match.HighestRound, match.Events, matchLevelEvents);
     }
 
     private static string FormatElapsed(double seconds)

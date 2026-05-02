@@ -47,6 +47,7 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         {
             _payload = Payload;
             _laneMode = _payload.Lanes.Any(l => l.IsQualified) ? "qualified" : "all";
+            EnsureLaneModeShowsFocused();
             _lastFocusedClientId = FocusedClientId;
             if (_initialized)
             {
@@ -59,8 +60,32 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         if (_initialized && _lastFocusedClientId != FocusedClientId)
         {
             _lastFocusedClientId = FocusedClientId;
+            // Selecting an unqualified drop-in while filter is "qualified" hides the
+            // lane the user just clicked. Auto-flip to "all" so the focused lane stays
+            // on screen — the user's intent is "look at this player", overriding the
+            // default qualified-only roster.
+            if (EnsureLaneModeShowsFocused())
+            {
+                _ = JS.InvokeVoidAsync("zombieScrubber.setLaneMode", _elementId, _laneMode).AsTask();
+            }
             _ = JS.InvokeVoidAsync("zombieScrubber.focusClient", _elementId, FocusedClientId).AsTask();
         }
+    }
+
+    /// <summary>
+    /// If the focused client maps to a non-qualified lane while we're in "qualified"
+    /// mode, flip to "all". Returns true when the mode actually changed.
+    /// </summary>
+    private bool EnsureLaneModeShowsFocused()
+    {
+        if (FocusedClientId is null || _payload is null) return false;
+        if (_laneMode != "qualified") return false;
+
+        var focused = _payload.Lanes.FirstOrDefault(l => l.ClientId == FocusedClientId);
+        if (focused is null || focused.IsQualified) return false;
+
+        _laneMode = "all";
+        return true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

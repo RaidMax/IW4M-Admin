@@ -83,7 +83,7 @@
 
                     @if (match.Events.Count > 0)
                     {
-                        <ZombieMatchScrubber Payload="ZombieScrubberPayload.From(match, string.Empty, ClientId)" />
+                        <ZombieMatchScrubber Payload="ZombieScrubberPayload.From(match, string.Empty, ClientId, AppState.Loc)" />
                     }
 
                     @if (match.Rounds.Count > 0)

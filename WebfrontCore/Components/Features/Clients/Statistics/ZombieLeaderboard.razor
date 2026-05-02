@@ -321,7 +321,14 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody class="divide-y divide-line/50">
-                                                    @foreach (var p in entry.Players)
+                                                    @{
+                                                        var showingAllPlayers = _showAllPlayers.Contains(entry.MatchId);
+                                                        var visiblePlayers = showingAllPlayers
+                                                            ? entry.Players
+                                                            : entry.Players.Where(x => x.IsQualified).ToList();
+                                                        var hiddenUnqualifiedCount = entry.Players.Count(x => !x.IsQualified);
+                                                    }
+                                                    @foreach (var p in visiblePlayers)
                                                     {
                                                         var kpd = p.Downs == 0 ? p.Kills : (double)p.Kills / p.Downs;
                                                         var hsPercent = p.Kills == 0 ? 0 : (double)p.HeadshotKills / p.Kills * 100;
@@ -329,7 +336,7 @@
                                                         var dmgRatioInfinite = p.DamageReceived == 0;
                                                         var dmgRatio = dmgRatioInfinite ? 0 : (double)p.DamageDealt / p.DamageReceived;
 
-                                                        <tr class="hover:bg-surface-hover transition-colors">
+                                                        <tr class="hover:bg-surface-hover transition-colors @(p.IsQualified ? "" : "opacity-60")">
                                                             <td class="py-2 px-4">
                                                                 <div class="flex items-center gap-2">
                                                                     @if (_showTimeline.Contains(entry.MatchId))
@@ -345,6 +352,14 @@
                                                                        class="font-bold text-foreground hover:text-primary transition-colors no-underline">
                                                                         <ColorCode Value="@p.Name"/>
                                                                     </a>
+                                                                    @if (!p.IsQualified)
+                                                                    {
+                                                                        <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DROPIN_TOOLTIP")" WrapperClass="inline-flex shrink-0">
+                                                                            <span class="px-1.5 py-0.5 rounded bg-surface-alt border border-line text-[9px] font-bold uppercase tracking-wider text-muted cursor-help">
+                                                                                @AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DROPIN_LABEL")
+                                                                            </span>
+                                                                        </Tooltip>
+                                                                    }
                                                                 </div>
                                                             </td>
                                                             <td class="py-2 px-4 text-center font-mono text-muted text-xs">
@@ -391,6 +406,18 @@
                                             @if (_expandedMatches.TryGetValue(entry.MatchId, out var matchDetail) && matchDetail is not null)
                                             {
                                                 <div class="flex items-center gap-2">
+                                                    @if (entry.Players.Any(x => !x.IsQualified))
+                                                    {
+                                                        var dropInCount = entry.Players.Count(x => !x.IsQualified);
+                                                        var allShowing = _showAllPlayers.Contains(entry.MatchId);
+                                                        <button @onclick="() => ToggleShowAllPlayers(entry.MatchId)" @onclick:stopPropagation="true"
+                                                                class="px-3 py-1.5 rounded font-bold transition-colors bg-surface text-muted hover:text-foreground border border-line inline-flex items-center gap-1.5">
+                                                            <i class="ph @(allShowing ? "ph-funnel" : "ph-users")"></i>
+                                                            <span>@(allShowing
+                                                                ? AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HIDE_DROPINS")
+                                                                : AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SHOW_ALL").FormatExt(dropInCount))</span>
+                                                        </button>
+                                                    }
                                                     <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON")">
                                                         <button @onclick="() => CopyShareLink(entry.MatchId)" @onclick:stopPropagation="true"
                                                                 class="px-4 py-1.5 rounded font-bold transition-colors bg-surface text-muted hover:text-foreground border border-line inline-flex items-center gap-1.5">
@@ -485,8 +512,17 @@
 
     private bool _marqueePaused;
     private readonly HashSet<int> _showTimeline = new();
+    private readonly HashSet<int> _showAllPlayers = new();
     private readonly Dictionary<int, int> _timelinePlayerSelection = new();
     private int? _copiedMatchId;
+
+    private void ToggleShowAllPlayers(int matchId)
+    {
+        if (!_showAllPlayers.Remove(matchId))
+        {
+            _showAllPlayers.Add(matchId);
+        }
+    }
 
     private static string FormatK(int num) =>
         num >= 1000 ? ((double)num).ToMetric(decimals: 1) : num.ToString();

@@ -28,7 +28,7 @@ public partial class ZombieMatchDetail
         {
             if (!ReferenceEquals(_memoizedDetailKey, Detail) || _memoizedPayload is null)
             {
-                _memoizedPayload = ZombieScrubberPayload.From(Detail);
+                _memoizedPayload = ZombieScrubberPayload.From(Detail, AppState.Loc);
                 _memoizedDetailKey = Detail;
             }
             return _memoizedPayload;

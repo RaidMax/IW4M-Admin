@@ -187,7 +187,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     .Take(chunkSize)
                     .ToListAsync();
                 if (chunk.Count == 0) break;
-                consumed += chunk.Count;
 
                 var validIds = (await context.Set<EFClientStatistics>()
                         .Where(stat => chunk.Contains(stat.ClientId))
@@ -201,13 +200,37 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
                 // Preserve original ranking order — `chunk` is already
                 // performance-descending — so the appended results stay sorted.
-                foreach (var id in chunk)
+                var lastWalkedToIdx = -1;
+                var filledMidChunk = false;
+                for (var i = 0; i < chunk.Count; i++)
                 {
+                    var id = chunk[i];
                     if (!validIds.Contains(id)) continue;
                     if (clientIdsList.Contains(id)) continue;
                     clientIdsList.Add(id);
-                    if (clientIdsList.Count >= count) break;
+                    lastWalkedToIdx = i;
+                    if (clientIdsList.Count >= count)
+                    {
+                        filledMidChunk = true;
+                        break;
+                    }
                 }
+
+                // Advance `consumed` by what we actually walked, NOT by the whole
+                // chunk. If we filled the page mid-chunk, items past `lastWalkedToIdx`
+                // were never inspected — they belong to the next page. Eating the
+                // whole chunk here drops `chunk.Count - (lastWalkedToIdx + 1)` rows
+                // from the leaderboard (caller advances offset by `consumed`, and
+                // anything counted here is permanently skipped). Symptom was
+                // infinite-scroll terminating ~25 short of TotalRankedClients on
+                // every bucket: page 1 ate positions 0-49 to return 25 visible,
+                // page 2 ate 50-99 to return 25 more, but positions 25-49 and 75-99
+                // never made it onscreen because consumed jumped past them.
+                //
+                // If we walked the whole chunk without filling (low validity ratio
+                // OR end-of-source short chunk), every position WAS inspected, so
+                // advance by chunk.Count.
+                consumed += filledMidChunk ? lastWalkedToIdx + 1 : chunk.Count;
 
                 // Source exhausted: chunk smaller than requested means no more rows
                 // beyond this slice. Stop even if we didn't fill the page.

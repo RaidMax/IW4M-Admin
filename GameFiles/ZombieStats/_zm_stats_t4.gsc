@@ -1394,8 +1394,9 @@ WaitForEasterEggComplete()
     logprint( "[ZM-EE] Watcher armed: map=" + level.script + " counter=level.flytrap_counter target=3\n" );
 
     // Step 1: panel-shot phase-start. Stock script flag_set("hide_and_seek") right
-    // after the panel is shot with an upgraded weapon. flag_wait blocks until set;
-    // safe even if we arrive early (flag_init runs in nazi_zombie_factory::main).
+    // after the panel is shot with an upgraded weapon. The watcher polls IsDefined
+    // before calling flag_wait, since stock flag_init runs inside flytrap() — not
+    // main — so the flag isn't guaranteed to exist at level-init time.
     thread WatchDerRieseFlytrapPanel();
 
     // Steps 2-4: poll level.flytrap_counter and emit a step event each time it
@@ -1449,6 +1450,14 @@ WatchDerRieseFlytrapPanel()
 {
     level endon( "end_game" );
 
+    // Poll until flag_init has run. Stock flytrap() calls flag_init("hide_and_seek")
+    // partway through level setup — calling flag_wait before that point would do
+    // `!level.flag["hide_and_seek"]` on undefined and throw a runtime cast error.
+    while ( !IsDefined( level.flag ) || !IsDefined( level.flag[ "hide_and_seek" ] ) )
+    {
+        wait ( 0.5 );
+    }
+
     flag_wait( "hide_and_seek" );
 
     logprint( "[ZM-EE] Step fired: t4_dr_flytrap_panel\n" );
@@ -1458,22 +1467,30 @@ WatchDerRieseFlytrapPanel()
 /////////////////////////////////////////////////////////
 // Easter Egg STEP detection — song-egg progression.
 //
-// Three stock T4 maps (Nacht / Verrückt / Shi No Numa) share the kzmb-
-// targetname damage-radio pattern hooked via stock _zombiemode_radio.gsc:
-// setcandamage(true) + waittill("damage"). We re-hook the same notify in
-// parallel (broadcast — multiple threads waiting for the same waittill
-// notify all receive it).
+// Each supported stock T4 map has ONE song EE, modelled as a single
+// completion step. Der Riese is the exception: 3 distinct meteor stones
+// to find, modelled as 3 steps.
 //
-// Der Riese is the odd one out: stock nazi_zombie_factory.gsc uses three
-// USE-triggers (`meteor_one`, `meteor_two`, `meteor_three`) with
-// waittill("trigger", player) — i.e. press E, not shoot. Different
-// targetname per meteor, separate path required.
+//   • Verrückt (nazi_zombie_asylum): press E on `toilet` 3x. Stock
+//     toilet_useage() sets level.eggs=1 + setmusicstate("eggs") on the
+//     3rd trigger. Poll for level.eggs == 1.
 //
-// Both paths gate on first-player-connect and poll for the entity to
-// appear, since Pluto T4 dedicated servers pause level-time when no
-// players are connected (3-second waits effectively block forever on
-// an empty lobby) and stock entity init may complete after our level-
-// init thread starts.
+//   • Shi No Numa (nazi_zombie_sumpf): press E on `toilet` (the phone)
+//     4x — off-hook + dial 9-1-1. Stock sets level.eggs=1 + setmusic-
+//     state("eggs") after the dial sequence. Poll for level.eggs == 1.
+//
+//   • Der Riese (nazi_zombie_factory): three meteor USE-triggers,
+//     unchanged from prior implementation.
+//
+//   • Nacht der Untoten (nazi_zombie_prototype): NOT supported. Stock's
+//     kzmb radio damage path is broken on Pluto T4 dedicated servers —
+//     the entity exists but never receives the "damage" notify, so no
+//     reliable hook is available. Verified empirically; map omitted.
+//
+// All paths gate on first-player-connect: Pluto T4 dedicated servers
+// pause level-time when no players are connected, so 3-second waits
+// effectively block forever on an empty lobby and stock entity init
+// may complete after our level-init thread starts.
 //
 // Custom maps that don't use these entity names silently no-op.
 /////////////////////////////////////////////////////////
@@ -1490,59 +1507,31 @@ WaitForEasterEggSteps()
 
     switch ( level.script )
     {
-        case "nazi_zombie_prototype": HookKzmbRadios( "nd" ); return;
-        case "nazi_zombie_asylum":    HookKzmbRadios( "vr" ); return;
-        case "nazi_zombie_sumpf":     HookKzmbRadios( "sh" ); return;
-        case "nazi_zombie_factory":   HookDerRieseMeteors();  return;
+        case "nazi_zombie_asylum":    HookEggsFlagSong( "t4_vr_song" ); return;
+        case "nazi_zombie_sumpf":     HookEggsFlagSong( "t4_sh_song" ); return;
+        case "nazi_zombie_factory":   HookDerRieseMeteors();            return;
         default:
             logprint( "[ZM-EE] No step watcher configured for map=" + level.script + "\n" );
             return;
     }
 }
 
-// Damage-radio path (Nacht / Verrückt / Shi No Numa).
-HookKzmbRadios( mapShort )
+// Verrückt + Shi No Numa — both stock GSCs set level.eggs=1 +
+// setmusicstate("eggs") at the moment the song trigger fires (after the 3rd
+// toilet press on Verrückt, after the dial sequence on Shi No). Polling
+// level.eggs is map-agnostic and survives any GSC trigger-sequence quirks.
+HookEggsFlagSong( stepKey )
 {
     level endon( "end_game" );
 
-    // Poll for the entity batch — stock _zombiemode_radio::init may finish
-    // after we do, and getentarray returns 0 in the gap. 30s ceiling is well
-    // past stock init (typically <2s post-player-connect).
-    radios = undefined;
-    for ( attempt = 0; attempt < 30; attempt++ )
+    logprint( "[ZM-EE] Step watcher armed: " + stepKey + " (polling level.eggs)\n" );
+
+    // 0.5s matches the cadence used by WatchDerRieseFlytrapPanel/flytrap_counter
+    // — well within human reaction time, low CPU cost.
+    while ( !IsDefined( level.eggs ) || level.eggs != 1 )
     {
-        radios = getentarray( "kzmb", "targetname" );
-        if ( IsDefined( radios ) && radios.size > 0 )
-        {
-            break;
-        }
-        wait ( 1 );
+        wait ( 0.5 );
     }
-
-    if ( !IsDefined( radios ) || radios.size == 0 )
-    {
-        logprint( "[ZM-EE] No kzmb radios found on map=" + level.script + " after polling (custom map?)\n" );
-        return;
-    }
-
-    logprint( "[ZM-EE] Step watcher armed: map=" + level.script + " short=" + mapShort + " radios=" + radios.size + "\n" );
-
-    for ( i = 0; i < radios.size; i++ )
-    {
-        radios[i] thread WatchRadioStep( mapShort, i + 1 );
-    }
-}
-
-WatchRadioStep( mapShort, oneBasedIndex )
-{
-    self endon( "death" );
-    level endon( "end_game" );
-
-    stepKey = "t4_" + mapShort + "_radio_" + oneBasedIndex;
-
-    // First-fire-wins per radio; engine may double-fire damage on rapid hits
-    // (e.g. shotgun pellets). Premium handler dedups again at the DB layer.
-    self waittill( "damage" );
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
     logprint( "GSE;EE;step;" + stepKey + "\n" );

@@ -82,6 +82,27 @@
             {
                 <div class="border-t border-line bg-surface-alt/30 p-4 sm:p-6 space-y-8">
 
+                    @* "View Full Match" — this card shows the focused player's slice
+                       only (per-client view by design). The dedicated match page
+                       carries the full multi-player roster, timeline lanes for every
+                       drop-in, and the share-link affordance. Anchored top-right of
+                       the expanded panel so it's reachable without scrolling.
+                       URL intentionally omits the client suffix — passing it would set
+                       SelectedClientId on the destination page, which suppresses the
+                       player tab bar there. Letting the user pick from tabs reads more
+                       naturally than landing pinned to themselves with no visible
+                       option to view a teammate. *@
+                    <div class="flex justify-end">
+                        <a href="/zombie/match/@match.MatchId"
+                           @onclick:stopPropagation="true"
+                           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface border border-line hover:border-primary/50 hover:bg-surface-hover transition-colors group">
+                            <i class="ph ph-arrow-square-out text-sm text-primary"></i>
+                            <span class="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                                @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_VIEW_FULL")
+                            </span>
+                        </a>
+                    </div>
+
                     @if (match.Events.Count > 0)
                     {
                         <ZombieMatchScrubber Payload="ZombieScrubberPayload.From(match, string.Empty, ClientId, AppState.Loc)" />

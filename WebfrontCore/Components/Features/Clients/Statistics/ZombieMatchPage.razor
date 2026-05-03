@@ -92,179 +92,113 @@ else
             </div>
         </div>
 
-        @* ── ACHIEVEMENT TROPHIES ── prominent "trophy case" row for the share page.
-             Each earned achievement renders as a colored card (icon + title + value).
-             Compact compact-strip lives on the leaderboard row titlebar; this is the
-             dedicated-page rich version. *@
-        @{
-            var allBuilt = Detail.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
-            var marathonTier = Detail.HighestRound switch
-            {
-                >= 100 => 3,
-                >= 50  => 2,
-                >= 30  => 1,
-                _      => 0
-            };
-            var matchDowns = Detail.Players.Sum(p => p.Downs);
-            var showFlawless = Detail.HighestRound >= 5 && matchDowns == 0;
-            var hasAnyTrophy = Detail.EasterEggOccurredAt is not null
-                               || allBuilt || marathonTier > 0 || showFlawless;
-        }
+        @* Achievements banner removed: it conflated the per-quest EE sections below
+           ("Easter Egg Completed on R9" was misleading when only the Archangel song
+           had completed, not the main quest), and Marathon/Flawless/Buildables now
+           live on the per-row chip strip + dedicated Buildables card. The per-quest
+           progress sections that follow are the authoritative EE surface. *@
 
-        @if (hasAnyTrophy)
+        @* ── EASTER EGG PROGRESS ── all configured quests share one bordered container,
+             each quest = a row separated by a horizontal divider. Mirrors the live-modal
+             merged layout so the static "match record" view reads the same way as the
+             ongoing-match view. Per-row: quest header (icon + name + X/Y + bar) on top,
+             a step grid below in the same row's content area. Step cards show absolute
+             fire timestamp ("R7 • 13:19:38") — relative "ago" lost the in-match snapshot
+             context the user actually wants when reviewing a record. *@
+        @if (Detail.EasterEggQuests.Count > 0)
         {
-            <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-muted mb-4 flex items-center gap-2">
-                    <i class="ph ph-medal text-base text-primary"></i>
-                    @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_ACHIEVEMENTS_TITLE")
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-
-                    @if (Detail.EasterEggOccurredAt is not null)
-                    {
-                        var eeSubtitle = Detail.EasterEggRound is { } r
-                            ? string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE_WITH_ROUND"), r)
-                            : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_BANNER_TITLE");
-                        <div class="flex items-start gap-3 p-4 rounded-xl border border-yellow-400/30 bg-yellow-400/10 hover:border-yellow-400/50 transition-colors">
-                            <div class="w-10 h-10 rounded-lg bg-yellow-400/15 border border-yellow-400/30 flex items-center justify-center shrink-0">
-                                <i class="ph ph-trophy text-xl text-yellow-400"></i>
+            <div class="bg-surface rounded-2xl border border-line shadow-xl overflow-hidden">
+                @for (var qi = 0; qi < Detail.EasterEggQuests.Count; qi++)
+                {
+                    var quest = Detail.EasterEggQuests[qi];
+                    var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
+                    var qPct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
+                    var qDone = quest.IsComplete;
+                    var isSong = quest.Id.StartsWith("song_", StringComparison.Ordinal);
+                    var dividerClass = qi > 0 ? "border-t border-line/60" : "";
+                    // Songs render purple to visually separate music EEs from the main quest
+                    // (yellow/amber). Same brightness hierarchy preserved per state. Literal
+                    // class strings keep Tailwind's purge happy.
+                    var headIconBg = qDone
+                        ? (isSong ? "bg-purple-400/15 text-purple-300" : "bg-yellow-400/15 text-yellow-400")
+                        : (isSong ? "bg-surface-alt text-purple-400" : "bg-surface-alt text-amber-400");
+                    var countText = qDone
+                        ? (isSong ? "text-purple-300" : "text-yellow-400")
+                        : "text-muted";
+                    var barColor = qDone
+                        ? (isSong ? "bg-purple-300" : "bg-yellow-400")
+                        : (isSong ? "bg-purple-400" : "bg-amber-400");
+                    var stepFiredBg = isSong
+                        ? "bg-purple-400/5 border-purple-400/30"
+                        : "bg-yellow-400/5 border-yellow-400/30";
+                    var stepFiredIcon = isSong ? "text-purple-300" : "text-yellow-400";
+                    var stepCheckIcon = isSong ? "text-purple-300" : "text-yellow-400";
+                    <div class="p-4 sm:p-5 @dividerClass">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 @headIconBg">
+                                <i class="ph @quest.Icon text-xl"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="text-sm font-bold text-yellow-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL")</div>
-                                <div class="text-xs text-muted mt-0.5 truncate">@eeSubtitle</div>
-                            </div>
-                        </div>
-                    }
-
-                    @if (allBuilt)
-                    {
-                        <div class="flex items-start gap-3 p-4 rounded-xl border border-success/30 bg-success/10 hover:border-success/50 transition-colors">
-                            <div class="w-10 h-10 rounded-lg bg-success/15 border border-success/30 flex items-center justify-center shrink-0">
-                                <i class="ph ph-wrench text-xl text-success"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-bold text-success truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_COMPLETE")</div>
-                                <div class="text-xs text-muted mt-0.5 truncate">@(Detail.BuildablesBuilt)/@(Detail.BuildablesTotal!.Value) @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</div>
-                            </div>
-                        </div>
-                    }
-
-                    @if (marathonTier == 3)
-                    {
-                        <div class="flex items-start gap-3 p-4 rounded-xl border border-red-400/30 bg-red-400/10 hover:border-red-400/50 transition-colors">
-                            <div class="w-10 h-10 rounded-lg bg-red-400/15 border border-red-400/30 flex items-center justify-center shrink-0">
-                                <i class="ph ph-fire text-xl text-red-400"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-bold text-red-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TITLE_T3")</div>
-                                <div class="text-xs text-muted mt-0.5 truncate">@string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP"), Detail.HighestRound)</div>
-                            </div>
-                        </div>
-                    }
-                    else if (marathonTier == 2)
-                    {
-                        <div class="flex items-start gap-3 p-4 rounded-xl border border-orange-400/30 bg-orange-400/10 hover:border-orange-400/50 transition-colors">
-                            <div class="w-10 h-10 rounded-lg bg-orange-400/15 border border-orange-400/30 flex items-center justify-center shrink-0">
-                                <i class="ph ph-fire text-xl text-orange-400"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-bold text-orange-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TITLE_T2")</div>
-                                <div class="text-xs text-muted mt-0.5 truncate">@string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP"), Detail.HighestRound)</div>
-                            </div>
-                        </div>
-                    }
-                    else if (marathonTier == 1)
-                    {
-                        <div class="flex items-start gap-3 p-4 rounded-xl border border-amber-400/30 bg-amber-400/10 hover:border-amber-400/50 transition-colors">
-                            <div class="w-10 h-10 rounded-lg bg-amber-400/15 border border-amber-400/30 flex items-center justify-center shrink-0">
-                                <i class="ph ph-fire text-xl text-amber-400"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-bold text-amber-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TITLE_T1")</div>
-                                <div class="text-xs text-muted mt-0.5 truncate">@string.Format(AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP"), Detail.HighestRound)</div>
-                            </div>
-                        </div>
-                    }
-
-                    @if (showFlawless)
-                    {
-                        <div class="flex items-start gap-3 p-4 rounded-xl border border-pink-400/30 bg-pink-400/10 hover:border-pink-400/50 transition-colors">
-                            <div class="w-10 h-10 rounded-lg bg-pink-400/15 border border-pink-400/30 flex items-center justify-center shrink-0">
-                                <i class="ph ph-heart text-xl text-pink-400"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-sm font-bold text-pink-400 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_LABEL")</div>
-                                <div class="text-xs text-muted mt-0.5 truncate">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_FLAWLESS_TOOLTIP")</div>
-                            </div>
-                        </div>
-                    }
-
-                </div>
-            </div>
-        }
-
-        @* ── EASTER EGG PROGRESS ── one card per configured quest. Der Riese ships
-             with two (Meteor song-egg + Fly Trap), so they render side-by-side; every
-             other map has at most one. Iterates each quest's static inventory in config
-             order so empty slots stay in fixed positions; filled slots show the round +
-             timestamp captured at fire time. *@
-        @foreach (var quest in Detail.EasterEggQuests)
-        {
-            var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
-            var qPct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
-            var qDone = quest.IsComplete;
-            <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
-                <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 @(qDone ? "bg-yellow-400/15 text-yellow-400" : "bg-surface-alt text-amber-400")">
-                        <i class="ph @quest.Icon text-2xl"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between gap-3 flex-wrap">
-                            <h2 class="text-lg font-bold text-foreground">@AppState.Loc(quest.LocKey)</h2>
-                            <span class="text-sm font-mono font-bold @(qDone ? "text-yellow-400" : "text-muted")">
-                                @quest.Completed / @quest.Total
-                            </span>
-                        </div>
-
-                        <div class="mt-2 h-2 bg-surface-alt rounded-full overflow-hidden border border-line">
-                            <div class="h-full transition-all duration-500 @(qDone ? "bg-yellow-400" : "bg-amber-400")"
-                                 style="width: @(qPct)%;"></div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
-                            @foreach (var step in quest.Inventory)
-                            {
-                                var fired = stepsByKey.TryGetValue(step.Key, out var record);
-                                var label = AppState.Loc(step.LocKey);
-                                <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg border @(fired ? "bg-yellow-400/5 border-yellow-400/30" : "bg-surface-alt/40 border-line/40")">
-                                    <i class="ph @step.Icon text-lg @(fired ? "text-yellow-400" : "text-subtle/60")"></i>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-xs font-semibold @(fired ? "text-foreground" : "text-subtle")">@label</div>
-                                        @if (fired && record is not null)
+                                <div class="flex items-center justify-between gap-3 flex-wrap">
+                                    <div class="flex items-baseline gap-2 flex-wrap">
+                                        <h2 class="text-base font-bold text-foreground">@AppState.Loc(quest.LocKey)</h2>
+                                        @if (!string.IsNullOrEmpty(quest.ActiveVariantLocKey))
                                         {
-                                            <div class="text-[10px] font-mono text-muted">
-                                                @if (record.RoundNumber is { } rn && rn > 0)
-                                                {
-                                                    <span>@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_ROUND").FormatExt(rn)</span>
-                                                    <span class="mx-1 text-subtle">•</span>
-                                                }
-                                                <span>@record.OccurredAt.UtcDateTime.ToStandardFormat()</span>
-                                            </div>
+                                            <span class="text-[11px] font-semibold text-amber-400/80 uppercase tracking-wide">
+                                                @AppState.Loc("WEBFRONT_ZOMBIE_EE_VIA_PATH").FormatExt(AppState.Loc(quest.ActiveVariantLocKey))
+                                            </span>
                                         }
-                                        else
+                                        else if (!string.IsNullOrEmpty(quest.BranchGroupId))
                                         {
-                                            <div class="text-[10px] font-mono text-subtle/60">—</div>
+                                            <span class="text-[11px] font-semibold text-subtle uppercase tracking-wide">
+                                                @AppState.Loc("WEBFRONT_ZOMBIE_EE_NO_PATH_CHOSEN")
+                                            </span>
                                         }
                                     </div>
-                                    @if (fired)
+                                    <span class="text-sm font-mono font-bold @countText">
+                                        @quest.Completed / @quest.Total
+                                    </span>
+                                </div>
+
+                                <div class="mt-1.5 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/60">
+                                    <div class="h-full transition-all duration-500 @barColor"
+                                         style="width: @(qPct)%;"></div>
+                                </div>
+
+                                @* Step grid: round + absolute clock-time on a right-aligned mono caption
+                                   ("R7 • 13:19:38"). Full UTC date moves to the row title tooltip so the
+                                   visual is compact while the precise instant is one hover away. *@
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
+                                    @foreach (var step in quest.Inventory)
                                     {
-                                        <i class="ph ph-check-circle text-yellow-400 text-sm"></i>
+                                        var fired = stepsByKey.TryGetValue(step.Key, out var record);
+                                        var label = AppState.Loc(step.LocKey);
+                                        var tooltipTitle = fired && record is not null
+                                            ? $"{label} — {record.OccurredAt.UtcDateTime.ToStandardFormat()}"
+                                            : label;
+                                        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(fired ? stepFiredBg : "bg-surface-alt/40 border-line/40")"
+                                             title="@tooltipTitle">
+                                            <i class="ph @step.Icon text-sm shrink-0 @(fired ? stepFiredIcon : "text-subtle/60")"></i>
+                                            <div class="text-xs font-semibold truncate flex-1 min-w-0 @(fired ? "text-foreground" : "text-subtle")">@label</div>
+                                            @if (fired && record is not null)
+                                            {
+                                                <div class="text-[10px] font-mono text-muted shrink-0">
+                                                    @if (record.RoundNumber is { } rn && rn > 0)
+                                                    {
+                                                        <span>R@(rn)</span>
+                                                        <span class="mx-1 text-subtle">•</span>
+                                                    }
+                                                    <span>@record.OccurredAt.UtcDateTime.ToString("HH:mm:ss")</span>
+                                                </div>
+                                                <i class="ph ph-check-circle @stepCheckIcon text-xs shrink-0"></i>
+                                            }
+                                        </div>
                                     }
                                 </div>
-                            }
+                            </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
         }
 
@@ -273,6 +207,7 @@ else
              progress and the per-item breakdown on completed runs. *@
         @if (Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue)
         {
+            var allBuilt = Detail.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
             var pct = Detail.BuildablesTotal is { } t2 && t2 > 0
                 ? Math.Min(100, Detail.BuildablesBuilt * 100 / t2)
                 : 100;

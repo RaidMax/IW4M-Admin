@@ -1,15 +1,20 @@
 @inject AppState AppState
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 @using SharedLibraryCore.Interfaces
 @*
     Compact achievement-badge strip for match titlebars (leaderboard row + per-client
     history + live snapshot). Surfaces match-level milestones that would otherwise
-    require expanding the row to discover. One component, one source of truth, one
-    visual style — every titlebar reads the same way.
+    require expanding the row to discover.
 
     Badges (in render order, all conditionally rendered):
-      • EE Complete / Partial (R{n}) — yellow trophy when complete, amber otherwise.
-                                        ONE chip per configured quest on the map; on
-                                        Der Riese both Meteor Song + Fly Trap show.
+      • EE chips — per-quest by default (one chip per quest with name + round). Songs
+                   render purple, main quest yellow/amber. When the strip would wrap
+                   (titlebar narrowed by viewport / extra chips / long player names),
+                   JS (zombieBadgeStrip in blazor_lib.js) toggles .zm-badge-collapsed
+                   and the strip switches to a single "EE X/Y" aggregate chip — modal
+                   opens on click. Maps with many quests collapse first, plenty of
+                   space stays expanded.
       • All Built (X/Y)      — green, ph-wrench. Only when X == Y && Y > 0.
       • Marathon (R30/50/100+) — amber/orange/red, ph-fire. Tiered.
       • Flawless             — pink, ph-heart. Match-wide when TotalDowns is provided
@@ -33,56 +38,99 @@
     var showFlawless = HighestRound >= 5
                        && (TotalDowns is 0 || (TotalDowns is null && PlayerDowns is 0));
     var flawlessIsPersonal = TotalDowns is null && PlayerDowns is 0;
-    // Quest chips: one per configured quest. Each renders independently — a complete
-    // quest is yellow + trophy, a partial quest is amber. A quest with zero progress
-    // (no steps, not complete) is hidden entirely.
-    var visibleQuests = (EasterEggQuests ?? [])
-        .Where(q => q.IsComplete || q.Completed > 0)
+
+    var allQuests = EasterEggQuests ?? [];
+    var completedQuests = allQuests.Count(q => q.IsComplete);
+    var partialQuests = allQuests.Count(q => !q.IsComplete && q.Completed > 0);
+    var totalQuests = allQuests.Count;
+    // Per-quest chip filter mirrors the old visible-quests rule: completed quests
+    // always show; partials show only on live consumers (MatchEnded=false) since a
+    // historical partial can never advance further and is just stale noise.
+    var visibleQuests = allQuests
+        .Where(q => q.IsComplete || (!MatchEnded && q.Completed > 0))
         .ToList();
-    var hasAny = visibleQuests.Count > 0 || allBuilt || marathonTier > 0 || showFlawless;
+    var hasEeProgress = visibleQuests.Count > 0;
+    var allEeComplete = totalQuests > 0 && completedQuests == totalQuests;
+    var hasAny = hasEeProgress || allBuilt || marathonTier > 0 || showFlawless;
 }
 
 @if (hasAny)
 {
-    <div class="inline-flex items-center gap-1.5 flex-wrap">
+    <div id="@_stripId" class="zm-badge-strip inline-flex items-center gap-1.5 flex-wrap">
 
-        @foreach (var quest in visibleQuests)
+        @if (hasEeProgress)
         {
-            var questTitle = AppState.Loc(quest.LocKey);
-            // Chip text uses the SHORT loc key so two chips on the same map don't both
-            // read "EE R{n}" — Der Riese reads "Music R12" + "Fly Trap R20".
-            var shortLabel = !string.IsNullOrEmpty(quest.ShortLocKey)
-                ? AppState.Loc(quest.ShortLocKey)
-                : questTitle;
-            if (quest.IsComplete)
-            {
-                var roundDisplay = quest.CompletedRound ?? quest.LastRound;
-                var eeLabel = roundDisplay is { } r && r > 0
-                    ? $"{shortLabel} R{r}"
-                    : shortLabel;
-                var fullTooltip = $"{questTitle} — {AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_TOOLTIP")}";
-                <Tooltip Text="@fullTooltip" WrapperClass="inline-flex shrink-0">
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-[10px] font-bold uppercase tracking-wider cursor-help">
-                        <i class="ph @quest.Icon text-[10px]"></i>
-                        <span>@eeLabel</span>
-                    </span>
+            @* Expanded view (default): one chip per visible quest. JS collapses to
+               the aggregate chip below if this group can't fit on one row. *@
+            <div data-ee-expanded class="inline-flex items-center gap-1.5">
+                @foreach (var quest in visibleQuests)
+                {
+                    var questTitle = AppState.Loc(quest.LocKey);
+                    var shortLabel = !string.IsNullOrEmpty(quest.ShortLocKey)
+                        ? AppState.Loc(quest.ShortLocKey)
+                        : questTitle;
+                    var isSong = quest.Id.StartsWith("song_", StringComparison.Ordinal);
+                    // Songs render purple to separate music EEs from main-quest visually.
+                    // Same shape across complete/partial: bright shade complete, dim partial.
+                    var (completeClasses, partialClasses) = isSong
+                        ? ("bg-purple-400/10 border-purple-400/30 text-purple-300",
+                           "bg-purple-500/5  border-purple-500/30 text-purple-400")
+                        : ("bg-yellow-400/10 border-yellow-400/30 text-yellow-400",
+                           "bg-amber-500/5   border-amber-500/30  text-amber-400");
+                    if (quest.IsComplete)
+                    {
+                        var roundDisplay = quest.CompletedRound ?? quest.LastRound;
+                        var eeLabel = roundDisplay is { } r && r > 0
+                            ? $"{shortLabel} R{r}"
+                            : shortLabel;
+                        var fullTooltip = $"{questTitle} — {AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_TOOLTIP")}";
+                        <Tooltip Text="@fullTooltip" WrapperClass="inline-flex shrink-0">
+                            <button type="button" @onclick="OpenEeModal" @onclick:stopPropagation="true"
+                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border @completeClasses text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:brightness-125 transition">
+                                <i class="ph @quest.Icon text-[10px]"></i>
+                                <span>@eeLabel</span>
+                            </button>
+                        </Tooltip>
+                    }
+                    else
+                    {
+                        var partialDone = quest.Completed;
+                        var partialTotal = quest.Total;
+                        var partialLabel = quest.LastRound is { } lr && lr > 0
+                            ? $"{shortLabel} {partialDone}/{partialTotal} R{lr}"
+                            : $"{shortLabel} {partialDone}/{partialTotal}";
+                        var partialTooltip = $"{questTitle} — {AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_PARTIAL_TOOLTIP").FormatExt(partialDone, partialTotal)}";
+                        <Tooltip Text="@partialTooltip" WrapperClass="inline-flex shrink-0">
+                            <button type="button" @onclick="OpenEeModal" @onclick:stopPropagation="true"
+                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border @partialClasses text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:brightness-125 transition font-mono">
+                                <i class="ph @quest.Icon text-[10px] opacity-70"></i>
+                                <span>@partialLabel</span>
+                            </button>
+                        </Tooltip>
+                    }
+                }
+            </div>
+
+            @* Collapsed-fallback aggregate chip — same modal trigger. CSS hides this
+               by default; JS shows it (and hides the expanded group) when overflow
+               is detected. data-ee-aggregate hook is what the CSS rule keys off.
+               Wrapper carries the hook so the Tooltip component (which doesn't
+               splat attributes) doesn't need changes. *@
+            var aggBg = allEeComplete ? "bg-yellow-400/10" : "bg-amber-500/10";
+            var aggBorder = allEeComplete ? "border-yellow-400/30" : "border-amber-500/30";
+            var aggText = allEeComplete ? "text-yellow-400" : "text-amber-400";
+            var aggTooltip = allEeComplete
+                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_AGGREGATE_TOOLTIP_COMPLETE")
+                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_AGGREGATE_TOOLTIP_PARTIAL");
+            <div data-ee-aggregate class="shrink-0">
+                <Tooltip Text="@aggTooltip" WrapperClass="inline-flex">
+                    <button type="button" @onclick="OpenEeModal" @onclick:stopPropagation="true"
+                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded @aggBg border @aggBorder @aggText text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:brightness-125 transition">
+                        <i class="ph ph-trophy text-[10px]"></i>
+                        <span>EE @completedQuests/@totalQuests</span>
+                    </button>
                 </Tooltip>
-            }
-            else
-            {
-                var partialDone = quest.Completed;
-                var partialTotal = quest.Total;
-                var partialLabel = quest.LastRound is { } lr && lr > 0
-                    ? $"{shortLabel} {partialDone}/{partialTotal} R{lr}"
-                    : $"{shortLabel} {partialDone}/{partialTotal}";
-                var partialTooltip = $"{questTitle} — {AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_PARTIAL_TOOLTIP").FormatExt(partialDone, partialTotal)}";
-                <Tooltip Text="@partialTooltip" WrapperClass="inline-flex shrink-0">
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/5 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider cursor-help font-mono">
-                        <i class="ph @quest.Icon text-[10px] opacity-70"></i>
-                        <span>@partialLabel</span>
-                    </span>
-                </Tooltip>
-            }
+            </div>
         }
 
         @if (allBuilt)
@@ -140,11 +188,79 @@
     </div>
 }
 
+@if (_eeModalOpen && hasEeProgress)
+{
+    @* Per-quest detail modal. Opens on aggregate-chip click; lists every quest with
+       its progress, completed round, and step inventory. Same data as the dedicated
+       match page — surfaced inline so users on a leaderboard row don't need to navigate
+       away to see what was completed. *@
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @onclick="CloseEeModal"></div>
+        <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-surface-alt px-5 py-3 flex items-center justify-between border-b border-line shrink-0">
+                <h5 class="text-base font-bold text-foreground inline-flex items-center gap-2">
+                    <i class="ph ph-trophy text-yellow-400"></i>
+                    <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_AGGREGATE_MODAL_TITLE")</span>
+                    <span class="text-xs font-mono font-normal text-muted">@completedQuests / @totalQuests</span>
+                </h5>
+                <button type="button" class="text-muted hover:text-foreground transition" @onclick="CloseEeModal" aria-label="Close">
+                    <i class="ph ph-x text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-2">
+                @foreach (var quest in allQuests)
+                {
+                    var isComplete = quest.IsComplete;
+                    var hasProgress = quest.Completed > 0;
+                    var isSong = quest.Id.StartsWith("song_", StringComparison.Ordinal);
+                    var pct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
+                    var (completeBorder, completeBg, completeText, completeBar,
+                         partialBorder, partialBg, partialText, partialBar) = isSong
+                        ? ("border-purple-400/30", "bg-purple-400/10", "text-purple-300", "bg-purple-300",
+                           "border-purple-500/30", "bg-purple-500/5",  "text-purple-400", "bg-purple-400")
+                        : ("border-yellow-400/30", "bg-yellow-400/5",  "text-yellow-400", "bg-yellow-400",
+                           "border-amber-500/30",  "bg-amber-500/5",   "text-amber-400",  "bg-amber-400");
+                    var rowClass = isComplete
+                        ? $"{completeBorder} {completeBg}"
+                        : hasProgress
+                            ? $"{partialBorder} {partialBg}"
+                            : "border-line bg-surface-alt/30";
+                    var iconColor = isComplete ? completeText : hasProgress ? partialText : "text-subtle";
+                    var barColor = isComplete ? completeBar : partialBar;
+                    <div class="flex items-center gap-3 p-3 rounded-lg border @rowClass">
+                        <div class="w-9 h-9 rounded-md bg-surface-alt/60 border border-line flex items-center justify-center shrink-0">
+                            <i class="ph @quest.Icon @iconColor text-lg"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-sm font-semibold text-foreground truncate">
+                                    @AppState.Loc(quest.LocKey)
+                                </div>
+                                <div class="text-xs font-mono @iconColor shrink-0">
+                                    @quest.Completed / @quest.Total
+                                    @if (isComplete && (quest.CompletedRound ?? quest.LastRound) is { } r && r > 0)
+                                    {
+                                        <span class="ml-1">• R@(r)</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="mt-1 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/40">
+                                <div class="h-full transition-all duration-300 @barColor"
+                                     style="width: @(pct)%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     /// <summary>
-    /// Per-quest EE progress for this match's map. One titlebar chip is rendered per
-    /// quest (Der Riese has 2: Meteor Song + Fly Trap; everywhere else is at most 1).
-    /// Empty / null hides every EE chip.
+    /// Per-quest EE progress for this match's map. Strip renders one chip per visible
+    /// quest by default; collapses to a single aggregate when overflow is detected.
+    /// Empty / null hides the EE block entirely.
     /// </summary>
     [Parameter] public List<EasterEggQuestProgress>? EasterEggQuests { get; set; }
 
@@ -176,4 +292,46 @@
     /// When zero (and TotalDowns null), shows a "Personal No-Down" variant.
     /// </summary>
     [Parameter] public int? PlayerDowns { get; set; }
+
+    /// <summary>
+    /// Set true on historical-match consumers (leaderboard, match history) so partial
+    /// (in-progress) quest chips are excluded — those matches can never advance, so a
+    /// partial is just stale noise. Live snapshot leaves this false.
+    /// </summary>
+    [Parameter] public bool MatchEnded { get; set; }
+
+    private readonly string _stripId = $"zm-badges-{Guid.NewGuid():N}";
+    private bool _eeModalOpen;
+    private bool _observerWired;
+
+    private void OpenEeModal() => _eeModalOpen = true;
+    private void CloseEeModal() => _eeModalOpen = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Fire setup once when the strip is first in the DOM. The JS-side guard in
+        // zombieBadgeStrip.setup is idempotent, but skipping the no-op call avoids
+        // an extra JSInterop roundtrip on every render.
+        if (firstRender && !_observerWired)
+        {
+            _observerWired = true;
+            try
+            {
+                await JS.InvokeVoidAsync("zombieBadgeStrip.setup", _stripId);
+            }
+            catch (JSDisconnectedException) { /* circuit gone */ }
+            catch (Microsoft.JSInterop.JSException) { /* page navigated */ }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_observerWired) return;
+        try
+        {
+            await JS.InvokeVoidAsync("zombieBadgeStrip.teardown", _stripId);
+        }
+        catch (JSDisconnectedException) { /* circuit gone */ }
+        catch (Microsoft.JSInterop.JSException) { /* page navigated */ }
+    }
 }

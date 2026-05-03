@@ -150,7 +150,8 @@
                                             BuildablesTotal="entry.BuildablesTotal"
                                             ExtraBuildablesBuilt="entry.ExtraBuildablesBuilt"
                                             HighestRound="entry.HighestRound"
-                                            TotalDowns="entry.TotalDowns" />
+                                            TotalDowns="entry.TotalDowns"
+                                            MatchEnded="true" />
                                         @* Surfaces matches whose listing-shown player count is smaller than the
                                            actual concurrent participants — bucketed by the qualifier (a 2-player
                                            match where one player joined too late lands in the 1-player bucket).
@@ -428,15 +429,37 @@
                                                                 : AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SHOW_ALL").FormatExt(dropInCount))</span>
                                                         </button>
                                                     }
-                                                    <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON")">
-                                                        <button @onclick="() => CopyShareLink(entry.MatchId)" @onclick:stopPropagation="true"
-                                                                class="px-4 py-1.5 rounded font-bold transition-colors bg-surface text-muted hover:text-foreground border border-line inline-flex items-center gap-1.5">
-                                                            <i class="ph @(_copiedMatchId == entry.MatchId ? "ph-check text-success" : "ph-link")"></i>
-                                                            <span>@(_copiedMatchId == entry.MatchId
-                                                                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_COPIED")
-                                                                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON"))</span>
-                                                        </button>
-                                                    </Tooltip>
+                                                    @* Split-button: Open (primary, ~70%) + Copy (secondary, icon-only, ~30%).
+                                                       Two visually-merged controls in one rounded shell — saves header
+                                                       horizontal real-estate and reads as one affordance with a primary
+                                                       action and a quick-copy variant. The Open half is a real <a> so
+                                                       right-click → new tab works. *@
+                                                    @* Split-button layout notes:
+                                                       - Outer container is flex+items-stretch so each half fills full height.
+                                                       - Tooltip wrappers MUST also be flex+items-stretch — they sit between
+                                                         the outer flex and the inner <a>/<button>, so without items-stretch
+                                                         their natural height collapses to the child's intrinsic height and
+                                                         the divider doesn't reach the bottom edge.
+                                                       - Divider lives on the right Tooltip wrapper (border-l) instead of on
+                                                         the inner button, so it spans the wrapper's full stretched height.
+                                                       - leading-none on inner anchors normalizes the line-box so the Phosphor
+                                                         glyph and its sibling text baseline-align (icon was floating above
+                                                         center because the default leading reserved descender space). *@
+                                                    <div class="inline-flex items-stretch rounded border border-line overflow-hidden bg-surface" @onclick:stopPropagation="true">
+                                                        <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_OPEN_BUTTON")" WrapperClass="flex items-stretch">
+                                                            <a href="@($"/zombie/match/{entry.MatchId}")"
+                                                               class="flex items-center gap-1.5 px-4 py-[5px] font-bold transition-colors text-muted hover:text-foreground hover:bg-surface-alt no-underline">
+                                                                <i class="ph ph-arrow-square-out text-sm leading-none"></i>
+                                                                <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_OPEN_BUTTON")</span>
+                                                            </a>
+                                                        </Tooltip>
+                                                        <Tooltip Text="@(_copiedMatchId == entry.MatchId ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_COPIED") : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON"))" WrapperClass="flex items-stretch border-l border-line">
+                                                            <button @onclick="() => CopyShareLink(entry.MatchId)"
+                                                                    class="flex items-center justify-center px-3 py-[5px] font-bold transition-colors text-muted hover:text-foreground hover:bg-surface-alt">
+                                                                <i class="ph @(_copiedMatchId == entry.MatchId ? "ph-check text-success" : "ph-link") text-sm leading-none"></i>
+                                                            </button>
+                                                        </Tooltip>
+                                                    </div>
                                                     <button @onclick="() => ToggleTimeline(entry.MatchId)" @onclick:stopPropagation="true"
                                                             class="px-4 py-1.5 rounded font-bold transition-colors
                                                                    @(_showTimeline.Contains(entry.MatchId)

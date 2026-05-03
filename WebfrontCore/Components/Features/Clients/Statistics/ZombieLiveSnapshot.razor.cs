@@ -45,6 +45,10 @@ public partial class ZombieLiveSnapshot
             "build" => ("bg-emerald-500", "text-emerald-500", "ph-wrench", false),
             "session-join" => ("bg-slate-400", "text-slate-400", "ph-sign-in", false),
             "session-leave" => ("bg-slate-500", "text-slate-500", "ph-sign-out", false),
+            // Mirrors zombie-scrubber.js easter-egg-step (amber + ph-trophy) so the
+            // live feed matches the post-match scrubber's EE dot visuals.
+            "easter-egg-step" => ("bg-amber-500", "text-amber-500", "ph-trophy", false),
+            "easter-egg" => ("bg-yellow-400", "text-yellow-400", "ph-trophy", false),
             _ => ("bg-muted", "text-muted", "", true)
         };
 }

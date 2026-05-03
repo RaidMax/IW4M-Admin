@@ -242,3 +242,13 @@ a {
 .marquee-enabled:focus-within .marquee-text {
     animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
 }
+
+/* ============================================
+   ZOMBIE EE BADGE STRIP
+   ============================================ */
+/* Default: per-quest expanded chips visible, aggregate hidden. JS adds
+   .zm-badge-collapsed when the strip would wrap (see zombieBadgeStrip in
+   blazor_lib.js); CSS then swaps which group is visible. */
+.zm-badge-strip [data-ee-aggregate] { display: none; }
+.zm-badge-strip.zm-badge-collapsed [data-ee-expanded] { display: none; }
+.zm-badge-strip.zm-badge-collapsed [data-ee-aggregate] { display: inline-flex; }

@@ -60,47 +60,69 @@
             </div>
         </div>
 
-        @* ── EE PROGRESS MINI-STRIPS ── one strip per configured quest. Each pill =
-             one step in config order; filled when fired (timestamp tooltip), muted
-             otherwise. Hidden once the quest's canonical / derived completion fires
-             (the titlebar trophy says "you're done"). *@
-        @foreach (var quest in Snapshot.EasterEggQuests.Where(q => !q.IsComplete && q.Total > 0))
+        @* ── EE PROGRESS MINI-STRIPS ── one row per in-progress quest, all rows live
+             in a single bordered container with horizontal dividers between rows so
+             multi-quest maps (Origins has 4) read as one cohesive panel rather than a
+             stack of separate pills. Per-row layout:
+               [icon + name][step dots in a row][X/Y + bar on right]
+             Step dots are icon-only circles (~22px) so a 10-step quest still fits on
+             one line; hover/tap a dot for the step name + completion round. *@
+        @{
+            var liveQuests = Snapshot.EasterEggQuests
+                .Where(q => !q.IsComplete && q.Total > 0)
+                .ToList();
+        }
+        @if (liveQuests.Count > 0)
         {
-            var firedKeys = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
-            var stepsDone = quest.Completed;
-            var stepsTotal = quest.Total;
-            var pct = stepsTotal > 0 ? Math.Min(100, stepsDone * 100 / stepsTotal) : 0;
-            <div class="relative overflow-hidden rounded-xl bg-surface-alt/30 border border-line p-3">
-                <div class="flex items-center gap-3 flex-wrap">
-                    <div class="flex items-center gap-1.5 text-amber-400 text-[10px] uppercase tracking-widest font-bold shrink-0">
-                        <i class="ph @quest.Icon text-xs"></i>
-                        <span>@AppState.Loc(quest.LocKey)</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 flex-wrap flex-1">
-                        @foreach (var step in quest.Inventory)
-                        {
-                            var fired = firedKeys.TryGetValue(step.Key, out var rec);
-                            var label = AppState.Loc(step.LocKey);
-                            var tooltip = fired && rec is not null
-                                ? (rec.RoundNumber is { } rn && rn > 0
-                                    ? $"{label} • R{rn}"
-                                    : label)
-                                : $"{label} — pending";
-                            <Tooltip Text="@tooltip" WrapperClass="inline-flex">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-colors @(fired ? "bg-amber-500/15 border-amber-500/40 text-amber-300" : "bg-surface/40 border-line/40 text-subtle/60")">
-                                    <i class="ph @step.Icon text-xs"></i>
-                                    <span>@label</span>
-                                </span>
-                            </Tooltip>
-                        }
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <div class="w-24 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/40">
-                            <div class="h-full bg-amber-400 transition-all duration-500" style="width: @(pct)%;"></div>
+            <div class="rounded-xl bg-surface-alt/30 border border-line overflow-hidden">
+                @for (var i = 0; i < liveQuests.Count; i++)
+                {
+                    var quest = liveQuests[i];
+                    var firedKeys = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
+                    var stepsDone = quest.Completed;
+                    var stepsTotal = quest.Total;
+                    var pct = stepsTotal > 0 ? Math.Min(100, stepsDone * 100 / stepsTotal) : 0;
+                    var dividerClass = i > 0 ? "border-t border-line/60" : "";
+                    var isSong = quest.Id.StartsWith("song_", StringComparison.Ordinal);
+                    // Songs render purple in the live strip too; main-quest stays amber.
+                    // Same shape across complete/partial since live is always partial here
+                    // (completed quests filter out at the source).
+                    var titleColor = isSong ? "text-purple-300" : "text-amber-400";
+                    var dotFiredClasses = isSong
+                        ? "bg-purple-400/20 border-purple-400/50 text-purple-200"
+                        : "bg-amber-500/20 border-amber-500/50 text-amber-300";
+                    var barColor = isSong ? "bg-purple-300" : "bg-amber-400";
+                    var countColor = isSong ? "text-purple-300" : "text-amber-400";
+                    <div class="flex items-center gap-3 px-3 py-2.5 @dividerClass">
+                        <div class="flex items-center gap-1.5 @titleColor text-[10px] uppercase tracking-widest font-bold shrink-0 min-w-0 max-w-[140px]">
+                            <i class="ph @quest.Icon text-xs shrink-0"></i>
+                            <span class="truncate">@AppState.Loc(quest.LocKey)</span>
                         </div>
-                        <span class="text-xs font-mono font-bold text-amber-400 tabular-nums">@stepsDone / @stepsTotal</span>
+                        <div class="flex items-center gap-1 flex-wrap flex-1">
+                            @foreach (var step in quest.Inventory)
+                            {
+                                var fired = firedKeys.TryGetValue(step.Key, out var rec);
+                                var label = AppState.Loc(step.LocKey);
+                                var tooltip = fired && rec is not null
+                                    ? (rec.RoundNumber is { } rn && rn > 0
+                                        ? $"{label} • R{rn}"
+                                        : label)
+                                    : $"{label} — pending";
+                                <Tooltip Text="@tooltip" WrapperClass="inline-flex">
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full border transition-colors @(fired ? dotFiredClasses : "bg-surface/40 border-line/40 text-subtle/60")">
+                                        <i class="ph @step.Icon text-[11px]"></i>
+                                    </span>
+                                </Tooltip>
+                            }
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <div class="w-20 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/40">
+                                <div class="h-full @barColor transition-all duration-500" style="width: @(pct)%;"></div>
+                            </div>
+                            <span class="text-xs font-mono font-bold @countColor tabular-nums">@stepsDone / @stepsTotal</span>
+                        </div>
                     </div>
-                </div>
+                }
             </div>
         }
 

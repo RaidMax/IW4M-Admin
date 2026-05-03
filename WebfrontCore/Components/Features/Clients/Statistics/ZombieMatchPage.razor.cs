@@ -82,17 +82,6 @@ public partial class ZombieMatchPage
         }
     }
 
-    /// <summary>
-    /// Pretty-print a buildable internal name. GSC names tend to be lowercase
-    /// snake_case; turn into Title Case (e.g. "jet_gun" → "Jet Gun"). Best-effort
-    /// — community-meaningful names trump our prettifier.
-    /// </summary>
-    private static string FormatBuildableName(string raw) =>
-        string.Join(' ',
-            raw.Split('_', StringSplitOptions.RemoveEmptyEntries)
-                .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
-
-
     public class MatchPageState
     {
         public SharedLibraryCore.Interfaces.ZombieMatchDetail? Detail { get; set; }

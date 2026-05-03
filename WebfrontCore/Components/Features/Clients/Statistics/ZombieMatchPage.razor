@@ -232,14 +232,42 @@ else
                             </div>
                         }
 
-                        @if (Detail.BuildableNames.Count > 0)
+                        @* Inventory-driven checklist — mirrors the EE step grid above.
+                           Every iconic item the map could register renders as a chip;
+                           filled blue when built, muted when not. Same shape/grid as the
+                           EE step cards so the two cards visually rhyme. Falls back to a
+                           flat "built only" list for unconfigured maps (custom maps,
+                           T4/T5) where Inventory is empty but built items exist. *@
+                        @if (Detail.BuildableInventory.Count > 0)
                         {
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                @foreach (var name in Detail.BuildableNames)
+                            var builtKeys = new HashSet<string>(
+                                Detail.BuildableNames.Select(b => b.Key),
+                                StringComparer.OrdinalIgnoreCase);
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
+                                @foreach (var item in Detail.BuildableInventory)
                                 {
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-alt border border-line text-xs text-muted">
-                                        <i class="ph ph-check-circle text-success text-xs"></i>
-                                        @FormatBuildableName(name)
+                                    var built = builtKeys.Contains(item.Key);
+                                    <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(built ? "bg-blue-400/5 border-blue-400/30" : "bg-surface-alt/40 border-line/40")"
+                                         title="@item.DisplayName">
+                                        <i class="ph ph-wrench text-sm shrink-0 @(built ? "text-blue-300" : "text-subtle/60")"></i>
+                                        <div class="text-xs font-semibold truncate flex-1 min-w-0 @(built ? "text-foreground" : "text-subtle")">@item.DisplayName</div>
+                                        @if (built)
+                                        {
+                                            <i class="ph ph-check-circle text-blue-300 text-xs shrink-0"></i>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (Detail.BuildableNames.Count > 0)
+                        {
+                            @* Unconfigured map fallback: no inventory template, just show what was built. *@
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                @foreach (var entry in Detail.BuildableNames)
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-400/5 border border-blue-400/30 text-xs text-blue-300">
+                                        <i class="ph ph-check-circle text-blue-300 text-xs"></i>
+                                        @entry.DisplayName
                                     </span>
                                 }
                             </div>
@@ -256,11 +284,11 @@ else
                                     @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_LABEL").FormatExt(Detail.ExtraBuildablesBuilt)
                                 </div>
                                 <div class="flex flex-wrap gap-2">
-                                    @foreach (var name in Detail.ExtraBuildableNames)
+                                    @foreach (var entry in Detail.ExtraBuildableNames)
                                     {
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300/90">
                                             <i class="ph ph-plus-circle text-amber-400 text-xs"></i>
-                                            @FormatBuildableName(name)
+                                            @entry.DisplayName
                                         </span>
                                     }
                                 </div>

@@ -46,10 +46,22 @@ public class ZombieMatchDetail
     public int? BuildablesTotal { get; set; }
 
     /// <summary>
-    /// Iconic buildables completed (distinct, in build order). Used by the dedicated
-    /// share page's rich card; the leaderboard compact badge ignores it.
+    /// Iconic buildables completed (distinct, in build order) — paired raw key +
+    /// resolved display name so the UI never has to call back into a config the
+    /// premium plugin owns. Empty on configured-but-nothing-built maps.
     /// </summary>
-    public List<string> BuildableNames { get; set; } = [];
+    public List<BuildableEntry> BuildableNames { get; set; } = [];
+
+    /// <summary>
+    /// Full iconic buildable inventory for the map — every iconic item the
+    /// engine could register on this map, in canonical order, regardless of
+    /// whether it was built. Lets the UI render a "checklist" view (muted
+    /// chip when not built, filled when built — mirrors the EE step grid).
+    /// Empty for unconfigured maps (custom maps, T4/T5 — no iconic concept);
+    /// the UI falls back to listing only <see cref="BuildableNames"/> chips
+    /// in that case so unconfigured maps still show what was built.
+    /// </summary>
+    public List<BuildableEntry> BuildableInventory { get; set; } = [];
 
     /// <summary>
     /// Distinct non-iconic buildables completed — side-quest items, PaP-on-Tranzit,
@@ -59,10 +71,11 @@ public class ZombieMatchDetail
     public int ExtraBuildablesBuilt { get; set; }
 
     /// <summary>
-    /// Names of non-iconic buildables completed (distinct, in build order). Empty on
-    /// unconfigured maps. Surfaced in the share page's "Extras" sub-section.
+    /// Non-iconic buildables completed (distinct, in build order) — paired raw
+    /// key + resolved display name, same shape as <see cref="BuildableNames"/>.
+    /// Empty on unconfigured maps.
     /// </summary>
-    public List<string> ExtraBuildableNames { get; set; } = [];
+    public List<BuildableEntry> ExtraBuildableNames { get; set; } = [];
 
     /// <summary>Round at which the EE fired (when known).</summary>
     public int? EasterEggRound { get; set; }
@@ -315,4 +328,18 @@ public class ZombieMatchHistoryEvent
     /// parsing the <see cref="Label"/> string. Null for non-round events.
     /// </summary>
     public int? RoundNumber { get; set; }
+}
+
+/// <summary>
+/// One buildable/craftable, paired with its community-recognisable display name.
+/// <see cref="Key"/> is the GSC-internal name as registered via
+/// <c>add_zombie_buildable</c> / <c>add_zombie_craftable</c> and stored in
+/// <c>BuildComplete.TextualValue</c>; <see cref="DisplayName"/> is what the
+/// webfront renders. Pairing them in the DTO means the UI never has to know
+/// about premium-side display config.
+/// </summary>
+public sealed class BuildableEntry
+{
+    public string Key { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
 }

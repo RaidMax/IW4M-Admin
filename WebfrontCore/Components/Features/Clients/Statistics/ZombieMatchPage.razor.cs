@@ -25,6 +25,14 @@ public partial class ZombieMatchPage
     private bool _copied;
     private int _lastLoadedId;
 
+    // Default true — this is the share page, hiding the drop-ins by default would
+    // silently misrepresent the run (a 4-player match showing as 3). User can flip
+    // to qualified-only via the same toggle the leaderboard uses, just inverted
+    // starting state. State lives here (not in the scrubber) so the player tab bar
+    // and timeline lanes update from one source.
+    private bool _showAllPlayers = true;
+    private void ToggleShowAllPlayers() => _showAllPlayers = !_showAllPlayers;
+
     private string _ogTitle => Detail is null
         ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_LOADING")
         : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_OG_TITLE").FormatExt(Detail.HighestRound, Detail.Map);

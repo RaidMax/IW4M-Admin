@@ -82,13 +82,32 @@ else
                     </div>
                 </div>
 
-                <button @onclick="CopyShareLink"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold text-sm hover:opacity-90 transition shrink-0">
-                    <i class="ph @(_copied ? "ph-check" : "ph-link")"></i>
-                    @(_copied
-                        ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_COPIED")
-                        : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON"))
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                    @* SHOW_ALL toggle — only renders when the match actually has drop-ins.
+                       Mirrors the leaderboard's button (same translation keys, same icon
+                       choice, same hover style) but starts in the inverted state because
+                       the share page defaults to "show everyone". *@
+                    @{
+                        var dropInCount = Detail.Players.Count(p => !p.IsQualified);
+                    }
+                    @if (dropInCount > 0)
+                    {
+                        <button @onclick="ToggleShowAllPlayers"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface text-muted hover:text-foreground border border-line text-xs font-bold transition-colors">
+                            <i class="ph @(_showAllPlayers ? "ph-funnel" : "ph-users")"></i>
+                            <span>@(_showAllPlayers
+                                ? AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HIDE_DROPINS")
+                                : AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_SHOW_ALL").FormatExt(dropInCount))</span>
+                        </button>
+                    }
+                    <button @onclick="CopyShareLink"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold text-sm hover:opacity-90 transition">
+                        <i class="ph @(_copied ? "ph-check" : "ph-link")"></i>
+                        @(_copied
+                            ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_COPIED")
+                            : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_SHARE_BUTTON"))
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -98,14 +117,22 @@ else
            live on the per-row chip strip + dedicated Buildables card. The per-quest
            progress sections that follow are the authoritative EE surface. *@
 
-        @* ── EASTER EGG PROGRESS ── all configured quests share one bordered container,
-             each quest = a row separated by a horizontal divider. Mirrors the live-modal
-             merged layout so the static "match record" view reads the same way as the
-             ongoing-match view. Per-row: quest header (icon + name + X/Y + bar) on top,
-             a step grid below in the same row's content area. Step cards show absolute
-             fire timestamp ("R7 • 13:19:38") — relative "ago" lost the in-match snapshot
-             context the user actually wants when reviewing a record. *@
-        @if (Detail.EasterEggQuests.Count > 0)
+        @* ── PROGRESS PANEL ── EE quests + Buildables share one bordered container,
+             each tracker = a row separated by a horizontal divider. Mirrors the
+             live-modal merged layout so the static "match record" view reads the
+             same way as the ongoing-match view. Per-row: header (icon + name + X/Y
+             + bar) on top, step/inventory grid below in the same row's content
+             area. Step cards show absolute fire timestamp ("R7 • 13:19:38") —
+             relative "ago" lost the in-match snapshot context the user actually
+             wants when reviewing a record.
+             Buildables row only renders when the map has a configured iconic
+             system or any built items; on EE-only maps the panel collapses to
+             just the quest rows; on buildable-only maps it collapses the other
+             way. *@
+        @{
+            var hasBuildablesRow = Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue;
+        }
+        @if (Detail.EasterEggQuests.Count > 0 || hasBuildablesRow)
         {
             <div class="bg-surface rounded-2xl border border-line shadow-xl overflow-hidden">
                 @for (var qi = 0; qi < Detail.EasterEggQuests.Count; qi++)
@@ -199,103 +226,109 @@ else
                         </div>
                     </div>
                 }
-            </div>
-        }
 
-        @* ── BUILDABLES DETAIL ── chip list of which items were built. Separate from
-             the trophy above (which only fires on all-built); this card surfaces partial
-             progress and the per-item breakdown on completed runs. *@
-        @if (Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue)
-        {
-            var allBuilt = Detail.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
-            var pct = Detail.BuildablesTotal is { } t2 && t2 > 0
-                ? Math.Min(100, Detail.BuildablesBuilt * 100 / t2)
-                : 100;
-            <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
-                <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 @(allBuilt ? "bg-success/15 text-success" : "bg-surface-alt text-primary")">
-                        <i class="ph ph-wrench text-2xl"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between gap-3 flex-wrap">
-                            <h2 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</h2>
-                            <span class="text-sm font-mono font-bold @(allBuilt ? "text-success" : "text-muted")">
-                                @Detail.BuildablesBuilt @(Detail.BuildablesTotal.HasValue ? $"/ {Detail.BuildablesTotal.Value}" : "")
-                            </span>
-                        </div>
-
-                        @if (Detail.BuildablesTotal.HasValue)
-                        {
-                            <div class="mt-2 h-2 bg-surface-alt rounded-full overflow-hidden border border-line">
-                                <div class="h-full transition-all duration-500 @(allBuilt ? "bg-success" : "bg-primary")"
-                                     style="width: @(pct)%;"></div>
+                @* ── BUILDABLES ROW ── shares the same shell as the EE rows above
+                     so the two trackers read as one panel. Same layout primitives
+                     (10×10 icon, text-base title, h-1.5 progress bar, 3-col chip
+                     grid) — only the colour swaps to blue (the buildables hue). *@
+                @if (hasBuildablesRow)
+                {
+                    var allBuilt = Detail.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
+                    var pct = Detail.BuildablesTotal is { } t2 && t2 > 0
+                        ? Math.Min(100, Detail.BuildablesBuilt * 100 / t2)
+                        : 100;
+                    var bDividerClass = Detail.EasterEggQuests.Count > 0 ? "border-t border-line/60" : "";
+                    var bHeadIconBg = allBuilt
+                        ? "bg-blue-400/15 text-blue-300"
+                        : "bg-surface-alt text-blue-400";
+                    var bCountText = allBuilt ? "text-blue-300" : "text-muted";
+                    var bBarColor = allBuilt ? "bg-blue-300" : "bg-blue-400";
+                    <div class="p-4 sm:p-5 @bDividerClass">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 @bHeadIconBg">
+                                <i class="ph ph-wrench text-xl"></i>
                             </div>
-                        }
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-3 flex-wrap">
+                                    <h2 class="text-base font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</h2>
+                                    <span class="text-sm font-mono font-bold @bCountText">
+                                        @Detail.BuildablesBuilt @(Detail.BuildablesTotal.HasValue ? $"/ {Detail.BuildablesTotal.Value}" : "")
+                                    </span>
+                                </div>
 
-                        @* Inventory-driven checklist — mirrors the EE step grid above.
-                           Every iconic item the map could register renders as a chip;
-                           filled blue when built, muted when not. Same shape/grid as the
-                           EE step cards so the two cards visually rhyme. Falls back to a
-                           flat "built only" list for unconfigured maps (custom maps,
-                           T4/T5) where Inventory is empty but built items exist. *@
-                        @if (Detail.BuildableInventory.Count > 0)
-                        {
-                            var builtKeys = new HashSet<string>(
-                                Detail.BuildableNames.Select(b => b.Key),
-                                StringComparer.OrdinalIgnoreCase);
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
-                                @foreach (var item in Detail.BuildableInventory)
+                                @if (Detail.BuildablesTotal.HasValue)
                                 {
-                                    var built = builtKeys.Contains(item.Key);
-                                    <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(built ? "bg-blue-400/5 border-blue-400/30" : "bg-surface-alt/40 border-line/40")"
-                                         title="@item.DisplayName">
-                                        <i class="ph ph-wrench text-sm shrink-0 @(built ? "text-blue-300" : "text-subtle/60")"></i>
-                                        <div class="text-xs font-semibold truncate flex-1 min-w-0 @(built ? "text-foreground" : "text-subtle")">@item.DisplayName</div>
-                                        @if (built)
+                                    <div class="mt-1.5 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/60">
+                                        <div class="h-full transition-all duration-500 @bBarColor"
+                                             style="width: @(pct)%;"></div>
+                                    </div>
+                                }
+
+                                @* Inventory-driven checklist — mirrors the EE step grid above.
+                                   Every iconic item the map could register renders as a chip;
+                                   filled blue when built, muted when not. Falls back to a flat
+                                   "built only" list for unconfigured maps (custom maps, T4/T5)
+                                   where Inventory is empty but built items exist. *@
+                                @if (Detail.BuildableInventory.Count > 0)
+                                {
+                                    var builtKeys = new HashSet<string>(
+                                        Detail.BuildableNames.Select(b => b.Key),
+                                        StringComparer.OrdinalIgnoreCase);
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
+                                        @foreach (var item in Detail.BuildableInventory)
                                         {
-                                            <i class="ph ph-check-circle text-blue-300 text-xs shrink-0"></i>
+                                            var built = builtKeys.Contains(item.Key);
+                                            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(built ? "bg-blue-400/5 border-blue-400/30" : "bg-surface-alt/40 border-line/40")"
+                                                 title="@item.DisplayName">
+                                                <i class="ph ph-wrench text-sm shrink-0 @(built ? "text-blue-300" : "text-subtle/60")"></i>
+                                                <div class="text-xs font-semibold truncate flex-1 min-w-0 @(built ? "text-foreground" : "text-subtle")">@item.DisplayName</div>
+                                                @if (built)
+                                                {
+                                                    <i class="ph ph-check-circle text-blue-300 text-xs shrink-0"></i>
+                                                }
+                                            </div>
                                         }
                                     </div>
                                 }
-                            </div>
-                        }
-                        else if (Detail.BuildableNames.Count > 0)
-                        {
-                            @* Unconfigured map fallback: no inventory template, just show what was built. *@
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                @foreach (var entry in Detail.BuildableNames)
+                                else if (Detail.BuildableNames.Count > 0)
                                 {
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-400/5 border border-blue-400/30 text-xs text-blue-300">
-                                        <i class="ph ph-check-circle text-blue-300 text-xs"></i>
-                                        @entry.DisplayName
-                                    </span>
+                                    @* Unconfigured map fallback: no inventory template, just show what was built. *@
+                                    <div class="flex flex-wrap gap-2 mt-3">
+                                        @foreach (var entry in Detail.BuildableNames)
+                                        {
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-400/5 border border-blue-400/30 text-xs text-blue-300">
+                                                <i class="ph ph-check-circle text-blue-300 text-xs"></i>
+                                                @entry.DisplayName
+                                            </span>
+                                        }
+                                    </div>
+                                }
+
+                                @* Extras: side-quest / non-iconic buildables. Surfaced separately
+                                   so they don't dilute the main count; the heading flags them as
+                                   bonus rather than core progression. *@
+                                @if (Detail.ExtraBuildableNames.Count > 0)
+                                {
+                                    <div class="mt-4 pt-3 border-t border-line/40">
+                                        <div class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-2 flex items-center gap-1.5">
+                                            <i class="ph ph-plus-circle text-xs"></i>
+                                            @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_LABEL").FormatExt(Detail.ExtraBuildablesBuilt)
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach (var entry in Detail.ExtraBuildableNames)
+                                            {
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300/90">
+                                                    <i class="ph ph-plus-circle text-amber-400 text-xs"></i>
+                                                    @entry.DisplayName
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
                                 }
                             </div>
-                        }
-
-                        @* Extras: side-quest / non-iconic buildables that the engine reports
-                           as built. Surfaced separately so they don't dilute the main count;
-                           the heading flags them as bonus rather than core progression. *@
-                        @if (Detail.ExtraBuildableNames.Count > 0)
-                        {
-                            <div class="mt-4 pt-3 border-t border-line/40">
-                                <div class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-2 flex items-center gap-1.5">
-                                    <i class="ph ph-plus-circle text-xs"></i>
-                                    @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_LABEL").FormatExt(Detail.ExtraBuildablesBuilt)
-                                </div>
-                                <div class="flex flex-wrap gap-2">
-                                    @foreach (var entry in Detail.ExtraBuildableNames)
-                                    {
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300/90">
-                                            <i class="ph ph-plus-circle text-amber-400 text-xs"></i>
-                                            @entry.DisplayName
-                                        </span>
-                                    }
-                                </div>
-                            </div>
-                        }
+                        </div>
                     </div>
-                </div>
+                }
             </div>
         }
 
@@ -306,6 +339,6 @@ else
              Leaderboard-card consumer defaults this false to honour the qualifying-
              roster framing of the bucket leaderboard; share page wants the full
              picture. *@
-        <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" ShowAllPlayers="true" />
+        <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" ShowAllPlayers="_showAllPlayers" />
     </div>
 }

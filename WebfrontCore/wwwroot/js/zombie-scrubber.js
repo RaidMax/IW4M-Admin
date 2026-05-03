@@ -83,17 +83,27 @@
     const ZOOM_SETTLE_MS = 200;
 
     class ScrubberInstance {
-        constructor(elementId, payload, dotnetRef, focusClientId) {
+        constructor(elementId, payload, dotnetRef, focusClientId, initialLaneMode) {
             this.elementId = elementId;
             this.payload = payload;
             this.dotnetRef = dotnetRef;
             this.focusClientId = focusClientId ?? null;
             this.filter = 'all';
-            // Default lane mode: hide drop-ins so the timeline matches the leaderboard's
-            // qualified roster. If the payload has zero qualified lanes (legacy match where
-            // the qualifier wasn't computed), fall back to 'all' to avoid an empty stage.
-            const anyQualified = (payload.lanes || []).some(l => l.isQualified);
-            this.laneMode = anyQualified ? 'qualified' : 'all';
+            // Lane mode resolution priority:
+            //   1. Razor-supplied `initialLaneMode` ('qualified' | 'all') — authoritative
+            //      when the consumer has already resolved it (dedicated match page sets
+            //      'all'; leaderboard sets 'qualified'). Without this, JS would default
+            //      to 'qualified' and Razor's first-render setting would never reach JS,
+            //      causing the dedicated-page drop-ins-missing bug.
+            //   2. Default to 'qualified' when any lane qualifies (matches leaderboard
+            //      framing) or 'all' when nothing qualified (legacy pre-qualifier match
+            //      — empty stage otherwise).
+            if (initialLaneMode === 'qualified' || initialLaneMode === 'all') {
+                this.laneMode = initialLaneMode;
+            } else {
+                const anyQualified = (payload.lanes || []).some(l => l.isQualified);
+                this.laneMode = anyQualified ? 'qualified' : 'all';
+            }
             this.zoom = 1;
             this.scrubSeconds = payload.minSeconds;
             this._scrubDebounce = null;
@@ -973,7 +983,7 @@
     }
 
     window.zombieScrubber = {
-        init(elementId, payload, dotnetRef, focusClientId) {
+        init(elementId, payload, dotnetRef, focusClientId, initialLaneMode) {
             if (typeof Konva === 'undefined') {
                 console.error('zombieScrubber: Konva not loaded');
                 return;
@@ -984,7 +994,7 @@
                 stages.delete(elementId);
             }
             // Camelcase normalization (System.Text.Json default is camelCase for output)
-            stages.set(elementId, new ScrubberInstance(elementId, payload, dotnetRef, focusClientId));
+            stages.set(elementId, new ScrubberInstance(elementId, payload, dotnetRef, focusClientId, initialLaneMode));
         },
         dispose(elementId) {
             const inst = stages.get(elementId);

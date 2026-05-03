@@ -130,7 +130,11 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         if (firstRender && _payload is not null)
         {
             _dotnetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("zombieScrubber.init", _elementId, _payload, _dotnetRef, FocusedClientId);
+            // Pass _laneMode explicitly — JS would otherwise default to 'qualified'
+            // when any lane qualifies, ignoring our resolved state. That mismatch
+            // bit the dedicated match page (ShowAllPlayers=true → Razor _laneMode
+            // = "all" but JS picked "qualified" → drop-ins missing on first paint).
+            await JS.InvokeVoidAsync("zombieScrubber.init", _elementId, _payload, _dotnetRef, FocusedClientId, _laneMode);
             _initialized = true;
         }
     }
@@ -139,7 +143,7 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     {
         if (_dotnetRef is null) return;
         await JS.InvokeVoidAsync("zombieScrubber.dispose", _elementId);
-        await JS.InvokeVoidAsync("zombieScrubber.init", _elementId, _payload, _dotnetRef, FocusedClientId);
+        await JS.InvokeVoidAsync("zombieScrubber.init", _elementId, _payload, _dotnetRef, FocusedClientId, _laneMode);
         UpdateWindowEvents();
         StateHasChanged();
     }

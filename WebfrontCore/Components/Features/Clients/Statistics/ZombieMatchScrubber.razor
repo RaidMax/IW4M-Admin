@@ -42,13 +42,13 @@
             <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded-md border border-line">
                 <button @onclick="() => MultiplyZoom(1 / 1.5)" @onclick:stopPropagation="true"
                         disabled="@(_zoomLevel <= 1.001)"
-                        class="p-1 text-muted hover:text-foreground transition-colors disabled:opacity-30">
+                        class="px-1 text-muted hover:text-foreground transition-colors disabled:opacity-30">
                     <i class="ph ph-minus text-xs"></i>
                 </button>
                 <span class="text-xs font-mono text-subtle px-1.5 w-12 text-center">@FormatZoom(_zoomLevel)x</span>
                 <button @onclick="() => MultiplyZoom(1.5)" @onclick:stopPropagation="true"
                         disabled="@(_zoomLevel >= 19.999)"
-                        class="p-1 text-muted hover:text-foreground transition-colors disabled:opacity-30">
+                        class="px-1 text-muted hover:text-foreground transition-colors disabled:opacity-30">
                     <i class="ph ph-plus text-xs"></i>
                 </button>
             </div>
@@ -58,8 +58,16 @@
     @* ── CANVAS + EVENT WINDOW (single bordered container, divider between) ── *@
     <div class="bg-surface rounded-xl border border-line overflow-hidden">
 
-        @* Konva stage mount — horizontal scroll on zoom > 1x *@
-        <div id="@_elementId" class="w-full p-2 overflow-x-auto overflow-y-hidden"
+        @* Konva stage mount — horizontal scroll on zoom > 1x.
+           `relative` is load-bearing: the JS module appends DOM overlays (lane names,
+           EE band watermark) that are position:absolute and rely on this container as
+           their offsetParent. JS sets it once on first init — but Blazor re-emits the
+           entire `style` attribute whenever _minHeight changes (e.g. SHOW_ALL toggle),
+           wiping the inline `position:relative` JS added. With it gone, the overlays
+           re-parent to <body> and the `translateX(scrollLeft)` math makes them fly
+           right with zoom. Declaring `relative` in the class list survives Blazor
+           style resets. *@
+        <div id="@_elementId" class="w-full p-2 overflow-x-auto overflow-y-hidden relative"
              style="min-height: @(_minHeight)px;"></div>
 
         @* Divider + events-at-scrub-time panel inside the same container *@

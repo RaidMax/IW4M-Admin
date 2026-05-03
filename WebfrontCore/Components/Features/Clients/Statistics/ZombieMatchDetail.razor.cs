@@ -47,16 +47,30 @@ public partial class ZombieMatchDetail
 
     private int ActiveClientId => SelectedClientId ?? _internalSelectedClientId;
 
+    /// <summary>
+    /// Players to surface in the tab bar. When the consumer hides drop-ins
+    /// (<see cref="ShowAllPlayers"/> = false), unqualified lanes also drop from
+    /// the tabs so the tab bar matches the timeline lanes — same control, same
+    /// visible roster. The active selection auto-falls-back to the first
+    /// visible player if the previously-active one just hid.
+    /// </summary>
+    private IEnumerable<ZombieMatchDetailPlayer> VisiblePlayers =>
+        ShowAllPlayers ? Detail.Players : Detail.Players.Where(p => p.IsQualified);
+
     protected override void OnParametersSet()
     {
-        if (Detail.Players.Count > 0 && Detail.Players.All(p => p.ClientId != ActiveClientId))
+        // Active player must always be in the visible set; if the SHOW_ALL
+        // toggle just hid the previously-active drop-in, snap to the first
+        // visible qualifier so the panel never renders an empty body.
+        var visible = VisiblePlayers.ToList();
+        if (visible.Count > 0 && visible.All(p => p.ClientId != ActiveClientId))
         {
-            _internalSelectedClientId = Detail.Players[0].ClientId;
+            _internalSelectedClientId = visible[0].ClientId;
         }
     }
 
     private ZombieMatchDetailPlayer? SelectedPlayer =>
-        Detail.Players.FirstOrDefault(p => p.ClientId == ActiveClientId);
+        VisiblePlayers.FirstOrDefault(p => p.ClientId == ActiveClientId);
 
     private void SelectPlayer(int clientId) => _internalSelectedClientId = clientId;
 }

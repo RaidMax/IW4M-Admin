@@ -209,7 +209,25 @@ public class ZombieMatchDetailPlayer
     public int Downs { get; set; }
     public int Revives { get; set; }
     public long PointsEarned { get; set; }
+
+    /// <summary>
+    /// Total points spent by this player across the match (Pack-a-Punch, doors,
+    /// box draws, perks, traps, etc). Surfaces in the per-player stat card as
+    /// the subtitle to Net Points so the user can see earned-vs-spent context.
+    /// </summary>
+    public long PointsSpent { get; set; }
+
     public int Headshots { get; set; }
+
+    /// <summary>
+    /// Subset of <see cref="Kills"/> that were headshots. Used to compute the
+    /// "HS%" stat (HeadshotKills / Kills * 100) — same metric the leaderboard
+    /// scoreboard surfaces. <see cref="Headshots"/> is total headshot HITS
+    /// (which can exceed kills when a body absorbs multiple HS hits before
+    /// dying); HeadshotKills is the kill-attribution subset.
+    /// </summary>
+    public int HeadshotKills { get; set; }
+
     public long DamageDealt { get; set; }
     public int DamageReceived { get; set; }
 

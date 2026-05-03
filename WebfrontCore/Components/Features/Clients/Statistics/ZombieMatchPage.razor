@@ -114,7 +114,7 @@ else
                     var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
                     var qPct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
                     var qDone = quest.IsComplete;
-                    var isSong = quest.Id.StartsWith("song_", StringComparison.Ordinal);
+                    var isSong = quest.Id.StartsWith("song", StringComparison.Ordinal);
                     var dividerClass = qi > 0 ? "border-t border-line/60" : "";
                     // Songs render purple to visually separate music EEs from the main quest
                     // (yellow/amber). Same brightness hierarchy preserved per state. Literal

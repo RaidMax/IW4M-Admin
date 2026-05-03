@@ -83,7 +83,7 @@
                     var stepsTotal = quest.Total;
                     var pct = stepsTotal > 0 ? Math.Min(100, stepsDone * 100 / stepsTotal) : 0;
                     var dividerClass = i > 0 ? "border-t border-line/60" : "";
-                    var isSong = quest.Id.StartsWith("song_", StringComparison.Ordinal);
+                    var isSong = quest.Id.StartsWith("song", StringComparison.Ordinal);
                     // Songs render purple in the live strip too; main-quest stays amber.
                     // Same shape across complete/partial since live is always partial here
                     // (completed quests filter out at the source).

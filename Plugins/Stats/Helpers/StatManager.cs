@@ -315,6 +315,17 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .OrderBy(r => r.Ranking)
                 .ToList();
 
+            // Run typed-field transformers BEFORE the metric-row loop below so any
+            // premium override of Kills/Deaths/KDR (e.g. zombies bucket sourcing
+            // from EFZombieClientStatAggregates instead of bridged EFClientStatistics)
+            // flows into the displayed metric values without us having to re-sync.
+            // Single source of truth: the typed DTO fields. CustomStatsMetrics still
+            // runs after the metric loop and can append additional rows.
+            foreach (var transformer in Plugin.ServerManager.CustomTopStatsTransformers)
+            {
+                await transformer(finished.Cast<ITopStatsMutable>().ToList(), serverId, bucketConfig.Code);
+            }
+
             foreach (var topStatsInfo in finished)
             {
                 topStatsInfo.Metrics.AddRange(new EFMeta[]

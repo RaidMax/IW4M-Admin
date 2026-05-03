@@ -1,11 +1,12 @@
 ﻿using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using System;
 using System.Collections.Generic;
 using Data.Models;
 
 namespace IW4MAdmin.Plugins.Stats.Web.Dtos
 {
-    public class TopStatsInfo : SharedInfo
+    public class TopStatsInfo : SharedInfo, ITopStatsMutable
     {
         public int Ranking { get; set; }
         public string Name { get; set; }

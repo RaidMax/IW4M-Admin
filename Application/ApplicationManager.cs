@@ -145,6 +145,9 @@ namespace IW4MAdmin.Application
         public IList<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>> CustomStatsMetrics { get; } =
             new List<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>>();
 
+        public IList<Func<IList<ITopStatsMutable>, long?, string, Task>> CustomTopStatsTransformers { get; } =
+            new List<Func<IList<ITopStatsMutable>, long?, string, Task>>();
+
         public async Task ExecuteEvent(GameEvent newEvent)
         {
             ProcessingEvents.TryAdd(newEvent.IncrementalId, newEvent);

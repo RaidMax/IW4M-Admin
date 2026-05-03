@@ -128,5 +128,14 @@ namespace SharedLibraryCore.Interfaces
         /// <returns>True if server was removed successfully</returns>
         Task<bool> RemoveServerAsync(string serverId, bool persistConfig = false, CancellationToken token = default);
         IList<Func<Dictionary<int, List<EFMeta>>, long?, string, bool, Task>> CustomStatsMetrics { get; }
+
+        // Premium plugins can replace typed top-stats DTO fields (Kills/Deaths/KDR)
+        // for buckets where base EFClientStatistics figures don't represent the
+        // bucket domain. CustomStatsMetrics only mutates the Razor-facing metric
+        // dict — the typed fields back the JSON API, OG share image, and in-game
+        // !topstats command, which would otherwise drift from the displayed
+        // values. Invoked AFTER DTOs are built but BEFORE the metric-row loop
+        // runs so the displayed metrics naturally pick up post-transform values.
+        IList<Func<IList<ITopStatsMutable>, long?, string, Task>> CustomTopStatsTransformers { get; }
     }
 }

@@ -68,4 +68,13 @@ public interface IZombieStatsEnhancer
     /// </summary>
     Task GetAdvancedStatsMetrics(Dictionary<int, List<EFMeta>> meta,
         long? serverId, string performanceBucketCode, bool isTopStats);
+
+    /// <summary>
+    /// Replaces typed Kills/Deaths/KDR fields on top-stats DTOs with zombie-domain
+    /// values from the zombie aggregate store. Invoked via
+    /// <see cref="IManager.CustomTopStatsTransformers"/> on the zombies bucket
+    /// only — base values (bridged MP-style stats) stay in place for other buckets.
+    /// </summary>
+    Task TransformTopStats(IList<ITopStatsMutable> stats, long? serverId,
+        string performanceBucketCode);
 }

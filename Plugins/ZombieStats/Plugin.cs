@@ -244,6 +244,7 @@ public class Plugin : IPluginV2
             await _enhancer.Initialize();
             manager.CustomStatsMetrics.Add(_enhancer.GetTopStatsMetrics);
             manager.CustomStatsMetrics.Add(_enhancer.GetAdvancedStatsMetrics);
+            manager.CustomTopStatsTransformers.Add(_enhancer.TransformTopStats);
             manager.GetPageList().Pages.Add(
                 Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_ZOMBIE_STATS_PAGE_NAME"],
                 "/stats/zombies");

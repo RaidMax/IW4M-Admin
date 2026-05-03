@@ -51,7 +51,21 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
         ("economy",   "WEBFRONT_ZOMBIE_TIMELINE_FILTER_ECONOMY", "text-primary"),
     ];
 
-    private int _minHeight => Payload is null ? 120 : Math.Max(120, 60 + Payload.Lanes.Count * 44);
+    // Container height tracks the lanes JS will actually render — when the consumer
+    // toggles SHOW_ALL off, the unqualified lanes are hidden client-side but the
+    // container would otherwise keep their reserved vertical space. Shrinking with the
+    // visible lane count keeps the timeline tight and avoids awkward dead space.
+    private int _minHeight
+    {
+        get
+        {
+            if (Payload is null) return 120;
+            var visibleLanes = _laneMode == "all"
+                ? Payload.Lanes.Count
+                : Payload.Lanes.Count(l => l.IsQualified);
+            return Math.Max(120, 60 + visibleLanes * 44);
+        }
+    }
 
     protected override void OnParametersSet()
     {

@@ -27,8 +27,84 @@ window.visibilityObserver = {
 // ============================================
 // Fixed Tooltip Positioning
 // ============================================
+// ============================================
+// Zombie EE Badge Strip — overflow-aware collapse
+// ============================================
+// Per-quest EE chips render expanded by default. When the strip can't fit them
+// without wrapping (titlebar narrowed by viewport, by long player names, by
+// extra trophy chips, etc.), we collapse to a single "EE X/Y" aggregate chip
+// that opens the modal on click. CSS-only can't detect "would wrap"; we measure
+// after layout and toggle a class. ResizeObserver watches both the strip and
+// its parent (parent width changes don't always re-fire on the strip itself).
+window.zombieBadgeStrip = {
+    _observers: new Map(),
+
+    setup(elementId) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        // Avoid duplicate setup if Blazor re-invokes after a soft re-render.
+        if (this._observers.has(elementId)) return;
+
+        const measure = () => {
+            // Optimistically un-collapse so we can measure the natural width of
+            // the expanded chips. Without this, a strip that previously collapsed
+            // would stay collapsed forever (the aggregate chip is narrower than
+            // the expanded set, so scrollWidth never exceeds clientWidth).
+            el.classList.remove('zm-badge-collapsed');
+            // rAF so layout settles before we measure.
+            requestAnimationFrame(() => {
+                if (!el.isConnected) return;
+                // Two overflow tests because scrollWidth alone misses cases where
+                // flex-wrap kicked in and laid items out on a second row (no
+                // horizontal overflow but vertical wrap occurred).
+                const horizontalOverflow = el.scrollWidth > el.clientWidth + 1;
+                let wrapped = false;
+                if (!horizontalOverflow) {
+                    // Compare offsetTop across direct children of the expanded
+                    // group. If any sits below the first, flex wrapped them.
+                    const expanded = el.querySelector('[data-ee-expanded]');
+                    if (expanded) {
+                        const kids = Array.from(expanded.children);
+                        if (kids.length > 1) {
+                            const baseTop = kids[0].offsetTop;
+                            wrapped = kids.some(k => k.offsetTop > baseTop + 1);
+                        }
+                    }
+                }
+                if (horizontalOverflow || wrapped) {
+                    el.classList.add('zm-badge-collapsed');
+                }
+            });
+        };
+
+        measure();
+        const obs = new ResizeObserver(measure);
+        obs.observe(el);
+        if (el.parentElement) obs.observe(el.parentElement);
+        this._observers.set(elementId, obs);
+    },
+
+    teardown(elementId) {
+        const obs = this._observers.get(elementId);
+        if (obs) {
+            obs.disconnect();
+            this._observers.delete(elementId);
+        }
+    }
+};
+
 window.tooltipFixed = {
     _el: null,
+    _currentTrigger: null,
+    _watchdog: null,
+    _globalsBound: false,
+    // Coordinates of the trigger's bounding rect at show time. Used by the global
+    // mousemove watchdog to detect when the cursor leaves the trigger area without
+    // a mouseleave event having fired (which happens when Blazor re-renders the
+    // trigger element out from under the cursor — the new DOM node never receives
+    // the in-flight mouseleave so without this safety net the tooltip orbits
+    // forever, snapping to whatever tooltip-wrapper the cursor next enters).
+    _triggerRect: null,
 
     _getEl: function () {
         if (!this._el) {
@@ -43,7 +119,59 @@ window.tooltipFixed = {
         return this._el;
     },
 
+    // Lazily wire the global safety nets — only once per page load. We attach to
+    // window scroll (capture phase, so nested scroll containers also fire) plus a
+    // throttled mousemove. Both call `_evictIfStale` which hides the tooltip when:
+    //   1. the trigger element is no longer in the DOM (Blazor swap), OR
+    //   2. the cursor has left the trigger's last-known bounding box.
+    // Either condition means the tooltip is "orphaned" and should disappear.
+    _bindGlobals: function () {
+        if (this._globalsBound) return;
+        this._globalsBound = true;
+
+        // Capture-phase scroll listener catches any scrolling ancestor — nested
+        // scrollable cards, the document, modal backdrops, anything. The trigger
+        // moves on the page during scroll so its rect is stale; just hide.
+        window.addEventListener('scroll', () => {
+            if (this._currentTrigger) this.hide();
+        }, true);
+
+        // Cheap mousemove guard — only does work if a tooltip is currently shown.
+        // We check the trigger's rect against cursor position, NOT element-from-
+        // point, because the trigger may be obscured by inner content (an icon
+        // child swallowing the hit) and elementFromPoint would lie about it.
+        window.addEventListener('mousemove', (e) => {
+            if (!this._currentTrigger || !this._triggerRect) return;
+            const r = this._triggerRect;
+            // 4px slack handles sub-pixel rendering and tiny mouse tracking gaps
+            // that would otherwise flicker the tooltip on the trigger boundary.
+            if (e.clientX < r.left - 4 || e.clientX > r.right + 4 ||
+                e.clientY < r.top  - 4 || e.clientY > r.bottom + 4) {
+                this.hide();
+            }
+        }, { passive: true });
+    },
+
+    // Periodic isConnected check — catches the case where the trigger element is
+    // removed from the DOM while the cursor is stationary (no mousemove to fire
+    // the bounds check). Fires every ~200ms while a tooltip is visible.
+    _startWatchdog: function () {
+        this._stopWatchdog();
+        this._watchdog = setInterval(() => {
+            if (!this._currentTrigger) { this._stopWatchdog(); return; }
+            if (!this._currentTrigger.isConnected) this.hide();
+        }, 200);
+    },
+
+    _stopWatchdog: function () {
+        if (this._watchdog) {
+            clearInterval(this._watchdog);
+            this._watchdog = null;
+        }
+    },
+
     show: function (triggerElement, text, direction) {
+        this._bindGlobals();
         const el = this._getEl();
         const rect = triggerElement.getBoundingClientRect();
 
@@ -87,11 +215,19 @@ window.tooltipFixed = {
         el.style.left = left + 'px';
         el.style.top = top + 'px';
         el.style.opacity = '1';
+
+        // Track the active trigger + its rect for the global guards.
+        this._currentTrigger = triggerElement;
+        this._triggerRect = rect;
+        this._startWatchdog();
     },
 
     hide: function () {
         const el = this._getEl();
         el.style.opacity = '0';
+        this._currentTrigger = null;
+        this._triggerRect = null;
+        this._stopWatchdog();
     },
 
     _escapeHtml: function (text) {

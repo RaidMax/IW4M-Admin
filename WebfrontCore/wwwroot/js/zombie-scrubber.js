@@ -68,6 +68,20 @@
     const TICK_HEIGHT = 18;
     const SCRUB_DEBOUNCE_MS = 50;
 
+    // Hard ceiling for stage canvas width. Chrome silently degrades canvases past
+    // ~16384px (text glyphs stop rendering, GPU compositing falls back to software).
+    // 16000 leaves ~2% margin for sub-pixel rounding from the zoom math. Per-tick
+    // we clamp the requested zoom so this is never exceeded; the toolbar's nominal
+    // 20× ceiling is therefore "20× or whatever fits the container, whichever is
+    // smaller." Wider containers get less effective zoom — that's intentional, the
+    // viewport already shows a smaller slice when the canvas is wide.
+    const MAX_SAFE_CANVAS_WIDTH = 16000;
+    // After the last wheel-zoom tick fires, wait this long before doing the
+    // expensive "settle" work (bgLayer cache + Blazor SignalR roundtrip). Long
+    // enough to coalesce a fast wheel-spin burst, short enough that the user
+    // perceives the zoom as "complete" once they stop.
+    const ZOOM_SETTLE_MS = 200;
+
     class ScrubberInstance {
         constructor(elementId, payload, dotnetRef, focusClientId) {
             this.elementId = elementId;
@@ -120,6 +134,13 @@
         // Actual stage width — grows with zoom so the container scrolls.
         _stageWidth() {
             return this._innerWidth() * this.zoom;
+        }
+
+        // Maximum zoom that keeps stage width under MAX_SAFE_CANVAS_WIDTH for the
+        // current container size. Recomputed on demand because container width can
+        // change (window resize, sidebar toggle, lane-mode swap shifting layout).
+        _effectiveMaxZoom() {
+            return Math.min(20, MAX_SAFE_CANVAS_WIDTH / this._innerWidth());
         }
 
         _sidePad() {
@@ -216,6 +237,9 @@
 
         // Re-render the cull-sensitive layers without touching the (heavy) bgLayer.
         _redrawLaneAndBandLayers() {
+            // Hide any tooltip first — destroying lane children orphans the Konva
+            // mouseout for whichever shape the cursor is on, leaving the tooltip stuck.
+            this._hideTooltip();
             this.laneLayer.destroyChildren();
             this._drawMatchLevelBandTicks();
             this._drawLanes();
@@ -633,7 +657,12 @@
                 // Multiplicative step keeps wheel-feel consistent across the 1..20 range
                 // (linear step at 0.25 took ~80 ticks to hit 20x; 1.15x scale = ~22 ticks).
                 const factor = e.evt.deltaY < 0 ? 1.15 : 1 / 1.15;
-                const newZoom = Math.min(Math.max(this.zoom * factor, 1), 20);
+                // Cap by both the nominal max (1) and the canvas-safety max — past
+                // MAX_SAFE_CANVAS_WIDTH Chrome silently drops text glyphs and falls
+                // back to software rasterization; capping here is the only way to
+                // prevent that without a full canvas-virtualization refactor.
+                const maxZoom = this._effectiveMaxZoom();
+                const newZoom = Math.min(Math.max(this.zoom * factor, 1), maxZoom);
                 if (Math.abs(newZoom - this.zoom) < 0.01) return;
 
                 const pointer = this.stage.getPointerPosition();
@@ -668,7 +697,12 @@
             const ratio = newZoom / oldZoom;
 
             this.zoom = newZoom;
+            // Mark "in-flight zoom" so _redrawAll skips bgLayer.cache() — caching
+            // rasterizes a stage-wide bitmap (multi-MB at moderate zoom) that the
+            // very next wheel tick would discard. The cache fires once on settle.
+            this._zoomActive = true;
             this._redrawAll();
+            this._zoomActive = false;
 
             // After redraw, anchor's new stage X = oldStageX * ratio. Set scroll
             // so viewportX stays the same.
@@ -683,11 +717,26 @@
             this._syncNamesOverlayScroll();
             this._lastCullScrollLeft = container.scrollLeft;
 
-            // Notify Razor so the toolbar zoom display stays in sync (wheel path
-            // doesn't go through Razor; button path is idempotent).
-            if (this.dotnetRef) {
-                this.dotnetRef.invokeMethodAsync('OnZoomChanged', newZoom);
-            }
+            // Settle pass — fires once after the user stops zooming. Two jobs:
+            //   1. bgLayer.cache() (cheap once, per-tick was thrash).
+            //   2. OnZoomChanged SignalR roundtrip — Blazor Server re-renders +
+            //      DOM-diffs the component. Per-tick this queued one roundtrip
+            //      per wheel event; debouncing collapses a fast spin into one.
+            // The toolbar zoom display lags ~200ms behind the canvas, which is
+            // imperceptible compared to the lag the per-tick roundtrip caused.
+            if (this._zoomSettleTimer) clearTimeout(this._zoomSettleTimer);
+            this._zoomSettleTimer = setTimeout(() => {
+                this._zoomSettleTimer = null;
+                if (!this.stage) return;
+                if (this._stageWidth() <= 4000) {
+                    this.bgLayer.clearCache();
+                    this.bgLayer.cache();
+                    this.bgLayer.batchDraw();
+                }
+                if (this.dotnetRef) {
+                    this.dotnetRef.invokeMethodAsync('OnZoomChanged', this.zoom);
+                }
+            }, ZOOM_SETTLE_MS);
         }
 
         _wireResize() {
@@ -703,6 +752,10 @@
         }
 
         _redrawAll() {
+            // Same orphan-prevention as _redrawLaneAndBandLayers: nuke the tooltip
+            // before destroying the underlying Konva shapes so a hover-in-progress
+            // doesn't leave a stuck tooltip.
+            this._hideTooltip();
             this.bgLayer.destroyChildren();
             // Without this, an existing cached bitmap from a prior zoom level keeps
             // rendering at its old width even though we destroyed + redrew children
@@ -726,7 +779,11 @@
             // skip the cache once the bitmap would be expensive. Trade-off: filter
             // toggles redraw raw children at high zoom, but those are rare during
             // active zooming.
-            if (sw <= 4000) this.bgLayer.cache();
+            // Skip caching during an in-flight wheel-zoom — _setZoomAnchored
+            // schedules a single cache pass on settle (ZOOM_SETTLE_MS), so per-tick
+            // cache work would just be discarded by the next tick. Massive perf win
+            // at moderate zoom levels where the bitmap is multi-MB.
+            if (!this._zoomActive && sw <= 4000) this.bgLayer.cache();
             this._applyFilter();
             this._applyFocus();
             // Sync .draw() instead of batchDraw to eliminate the per-zoom-tick
@@ -752,6 +809,14 @@
             }
             this._tooltipEl.textContent = text;
             this._tooltipEl.style.display = 'block';
+
+            // Cleanup-then-attach. Without this, every consecutive mouseover (entering
+            // a new event dot before mouseout fires for the old one — common when dots
+            // overlap at high zoom) leaks a listener: _mouseMove gets overwritten so
+            // _hideTooltip only removes the latest, leaving older listeners stacked
+            // and all firing on every move. Symptom: tooltip "follows" the cursor
+            // forever even after leaving the timeline.
+            this._removeTooltipMouseMove();
             const move = (ev) => {
                 if (!this._tooltipEl) return;
                 this._tooltipEl.style.left = (ev.clientX + 12) + 'px';
@@ -759,14 +824,30 @@
             };
             this._mouseMove = move;
             window.addEventListener('mousemove', move);
+
+            // DOM-level mouseleave on the scroll container — reliable hide trigger
+            // when Konva mouseout doesn't fire (lane redraw destroys the source
+            // shape mid-hover, cursor leaves canvas via top/bottom edge, etc.).
+            // Scoped to a single bind via _containerLeaveBound.
+            const c = this._container();
+            if (c && !this._containerLeaveBound) {
+                this._containerLeaveBound = true;
+                this._containerLeaveHandler = () => this._hideTooltip();
+                c.addEventListener('mouseleave', this._containerLeaveHandler);
+            }
         }
 
-        _hideTooltip() {
-            if (this._tooltipEl) this._tooltipEl.style.display = 'none';
+        _removeTooltipMouseMove() {
             if (this._mouseMove) {
                 window.removeEventListener('mousemove', this._mouseMove);
                 this._mouseMove = null;
             }
+        }
+
+        _hideTooltip() {
+            if (this._tooltipEl) this._tooltipEl.style.display = 'none';
+            this._removeTooltipMouseMove();
+            document.body.style.cursor = '';
         }
 
         _applyFilter() {
@@ -808,12 +889,14 @@
 
         setZoom(level) {
             // Button-press path: anchor at the visible viewport center so the
-            // user doesn't lose their place when clicking +/-.
+            // user doesn't lose their place when clicking +/-. Apply the same
+            // canvas-safety cap as the wheel path.
+            const clamped = Math.min(Math.max(level, 1), this._effectiveMaxZoom());
             const container = this._container();
             const anchor = container
                 ? container.scrollLeft + container.clientWidth / 2
                 : this._stageWidth() / 2;
-            this._setZoomAnchored(level, anchor);
+            this._setZoomAnchored(clamped, anchor);
         }
 
         setScrubTime(seconds) {
@@ -846,6 +929,10 @@
                 cancelAnimationFrame(this._zoomRaf);
                 this._zoomRaf = null;
             }
+            if (this._zoomSettleTimer) {
+                clearTimeout(this._zoomSettleTimer);
+                this._zoomSettleTimer = null;
+            }
             if (this._scrollRaf != null) {
                 cancelAnimationFrame(this._scrollRaf);
                 this._scrollRaf = null;
@@ -864,6 +951,12 @@
                 this._bandWatermark = null;
             }
             this._hideTooltip();
+            if (this._containerLeaveBound && this._containerLeaveHandler) {
+                const c = this._container();
+                if (c) c.removeEventListener('mouseleave', this._containerLeaveHandler);
+                this._containerLeaveBound = false;
+                this._containerLeaveHandler = null;
+            }
             if (this._tooltipEl) {
                 this._tooltipEl.remove();
                 this._tooltipEl = null;

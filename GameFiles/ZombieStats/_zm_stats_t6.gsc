@@ -1406,6 +1406,19 @@ WaitForCraftables()
     {
         thread WatchCraftableComplete( names[i] );
     }
+
+    // Origins-special: gramophone "fully crafted" requires all 6 vinyls placed
+    // (player + master + 4 elemental records), which most matches never reach
+    // even when the EE side is fully exercised. The community + EE-completion
+    // semantics treat the gramophone as "built" the moment it's physically
+    // placed on the music stand, which fires the gramophone_placed level flag
+    // (zm_tomb_main_quest.gsc:286 — flag_set fires `level notify(flagname)`).
+    // Fire BuildComplete on that signal in addition to the standard handler so
+    // the buildables card actually reflects the player's progress.
+    if ( IsDefined( level.script ) && level.script == "zm_tomb" )
+    {
+        thread WatchGramophonePlacement();
+    }
 }
 
 WatchCraftableComplete( craftableName )
@@ -1421,6 +1434,27 @@ WatchCraftableComplete( craftableName )
 
         logprint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";build;complete;" + craftableName + "\n" );
     }
+}
+
+// Origins-only. The gramophone_placed flag fires whenever the player
+// physically places the gramophone on a music stand (first or subsequent —
+// it toggles on pickup/replace). We only emit on the FIRST set per match;
+// downstream DISTINCT-by-name aggregation in the leaderboard service would
+// dedupe duplicates anyway, but exiting after the first fire saves the
+// per-cycle log noise. Player attribution falls to the first connected
+// player since the flag notify carries no player arg — buildable lists are
+// match-scoped (no per-player credit), so any valid player is fine.
+WatchGramophonePlacement()
+{
+    level waittill( "gramophone_placed" );
+
+    players = getPlayers();
+    if ( !IsDefined( players ) || players.size == 0 )
+    {
+        return;
+    }
+
+    logprint( "GSE;ZE;" + BuildPlayerInfoString( players[0] ) + ";build;complete;gramophone\n" );
 }
 
 //-----------------------//

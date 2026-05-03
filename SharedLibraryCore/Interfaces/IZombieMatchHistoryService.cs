@@ -136,6 +136,31 @@ public sealed class EasterEggQuestProgress
 
     /// <summary>UTC timestamp when the quest completed. Null until complete.</summary>
     public DateTimeOffset? CompletedAt { get; set; }
+
+    /// <summary>
+    /// For branching quests (Maxis-vs-Richtofen on TranZit etc.): the group id
+    /// shared by both variants. Null on single-variant quests. <see cref="Id"/>,
+    /// <see cref="LocKey"/>, etc. on a branching entry refer to the GROUP — the
+    /// active variant's identity lives in <see cref="ActiveVariantId"/> /
+    /// <see cref="ActiveVariantLocKey"/> below. Lifetime EE counts dedupe by this
+    /// group id, so completing Maxis in one match and Richtofen in another counts
+    /// as 2 EE completions of the same achievement, not 2 separate achievements.
+    /// </summary>
+    public string? BranchGroupId { get; set; }
+
+    /// <summary>
+    /// On branching quests: the variant locked in this match (first variant to
+    /// fire any step). Null when the group has had no steps logged yet (no
+    /// variant chosen) and on non-branching quests. Steps/Inventory/Total/etc.
+    /// reflect this variant when set; show 0/null counts when unset.
+    /// </summary>
+    public string? ActiveVariantId { get; set; }
+
+    /// <summary>Translation key for the active variant's full title (e.g. "Maxis path").</summary>
+    public string? ActiveVariantLocKey { get; set; }
+
+    /// <summary>Translation key for the active variant's compact label (chip subtitle).</summary>
+    public string? ActiveVariantShortLocKey { get; set; }
 }
 
 public sealed class EasterEggStepInventoryEntry

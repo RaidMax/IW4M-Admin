@@ -71,6 +71,21 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// Quest ids (per <c>MapEasterEggConfig</c>) that have completed during this
     /// match, either via the canonical terminal notify or via "all steps logged"
     /// derivation. Match-level cache to gate canonical re-emits and re-derivations.
+    /// For branching quests, holds the variant id (e.g. "transit_maxis"), not the
+    /// group id — completion is per-variant and the group's "the EE happened in
+    /// this match" signal is whichever variant lands first.
     /// </summary>
     public HashSet<string> EasterEggQuestsCompleted { get; } = [];
+
+    /// <summary>
+    /// Hard-lock map: branching-quest group id → variant id of the first variant
+    /// to fire any step in the current match. Subsequent steps from sibling
+    /// variants are rejected at the writer (see ZombieEventProcessor.OnEasterEggStep)
+    /// — Maxis-then-Richtofen mid-match is impossible in the GSC (power state
+    /// gates), so any cross-variant step is treated as bad data and dropped.
+    /// Transient match-only state; not persisted (BuildQuests recovers the
+    /// active variant from step records at read time).
+    /// </summary>
+    public Dictionary<string, string> EasterEggLockedVariantByGroup { get; } =
+        new(StringComparer.OrdinalIgnoreCase);
 }

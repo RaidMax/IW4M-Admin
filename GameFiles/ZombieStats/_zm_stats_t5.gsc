@@ -53,6 +53,7 @@ init()
     thread WaitForTrapActivations();
     thread WaitForAutoTurrets();
     thread WaitForEasterEggComplete();
+    thread WaitForEasterEggSteps();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -1380,9 +1381,10 @@ BuildPlayerInfoString( entity )
 // Easter Egg main quest detection.
 //
 // Each T5 map with a "main" sidequest has a level notify fired when the
-// quest reaches its terminal state. Ascension is intentionally omitted —
-// its EE is a series of small step rewards (Death Machine, etc.) with no
-// single terminal flag, so no "completion" can be reliably detected.
+// quest reaches its terminal state. Ascension is the exception — its
+// terminal is a flag (`weapons_combined`), not a notify, so its canonical
+// emission lives inside HookAscensionCasimir below alongside the per-step
+// flag watchers (single source of truth for the same flag).
 //
 // Reference: pulled from t5-scripts-main per-map *_sq.gsc / *_achievement.gsc.
 // Custom maps / Five / Kino / Verruckt / Nacht / Shi No / Dead Ops have no
@@ -1395,9 +1397,10 @@ WaitForEasterEggComplete()
     notifyName = "";
     switch ( level.script )
     {
-        case "zombie_coast":  notifyName = "coast_easter_egg_achieved";       break;  // Call of the Dead
-        case "zombie_temple": notifyName = "temple_sidequest_achieved";       break;  // Shangri-La
+        case "zombie_coast":  notifyName = "coast_easter_egg_achieved";        break;  // Call of the Dead
+        case "zombie_temple": notifyName = "temple_sidequest_achieved";        break;  // Shangri-La
         case "zombie_moon":   notifyName = "moon_sidequest_big_bang_achieved"; break;  // Moon
+        // zombie_cosmodrome: terminal is a flag, handled in HookAscensionCasimir.
         default:
             logprint( "[ZM-EE] No EE watcher configured for map=" + level.script + "\n" );
             return;
@@ -1418,4 +1421,453 @@ WaitForEasterEggComplete()
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
     logprint( "GSE;EE;" + level.script + "\n" );
+}
+
+/////////////////////////////////////////////////////////
+// Easter Egg STEP detection — song-egg progression.
+//
+// T5 stock song-EE pattern is uniform across maps: N entities share a
+// single targetname; each emits "trigger" on USE (press F); a stock
+// per-map *_amb.gsc handler increments a level counter and fires
+// change_zombie_music("egg") at counter==N. We hook the same trigger
+// notify in parallel — broadcast, so we don't interfere with stock
+// counter logic — and emit one step per entity.
+//
+//   • Kino der Toten (zombie_theater)  — `meteor_egg_trigger` × 3
+//   • Five           (zombie_pentagon) — `secret_phone_trig`  × 3
+//
+// All paths gate on first-player-connect: dedicated servers may pause
+// level-time when no players are connected, so subsequent waits behave
+// normally only after someone joins.
+//
+// Within a map, step number reflects iteration order from getentarray
+// (stable per spawn) — not a physical mapping. From a "did they hit
+// all N" perspective this is irrelevant.
+//
+// Custom maps that don't use these entity names silently no-op.
+/////////////////////////////////////////////////////////
+WaitForEasterEggSteps()
+{
+    level endon( "end_game" );
+
+    while ( getplayers().size == 0 )
+    {
+        wait ( 1 );
+    }
+
+    switch ( level.script )
+    {
+        case "zombie_theater":    HookT5SongTriggers( "meteor_egg_trigger", "t5_kn_meteor" ); return;
+        case "zombie_pentagon":   HookT5SongTriggers( "secret_phone_trig",  "t5_fv_phone"  ); return;
+        case "zombie_cosmodrome": HookAscension();                                            return;
+        case "zombie_coast":      HookCallOfDead();                                           return;
+        case "zombie_temple":     HookShangriLa();                                            return;
+        case "zombie_moon":       HookMoon();                                                 return;
+        default:
+            logprint( "[ZM-EE] No step watcher configured for map=" + level.script + "\n" );
+            return;
+    }
+}
+
+// Generic T5 song-EE hook — N USE-triggers sharing one targetname, each
+// fires "trigger" on press. stepKeyPrefix gets _<1-based index> appended.
+HookT5SongTriggers( targetName, stepKeyPrefix )
+{
+    level endon( "end_game" );
+
+    // Poll for the entity batch — stock _amb scripts thread their setup with
+    // a leading wait, so triggers may not exist yet at our level-init time.
+    // 30s ceiling is well past stock init.
+    triggers = undefined;
+    for ( attempt = 0; attempt < 30; attempt++ )
+    {
+        triggers = getentarray( targetName, "targetname" );
+        if ( IsDefined( triggers ) && triggers.size > 0 )
+        {
+            break;
+        }
+        wait ( 1 );
+    }
+
+    if ( !IsDefined( triggers ) || triggers.size == 0 )
+    {
+        logprint( "[ZM-EE] " + level.script + ": no '" + targetName + "' entities found after polling (custom map?)\n" );
+        return;
+    }
+
+    logprint( "[ZM-EE] Step watcher armed: " + stepKeyPrefix + " count=" + triggers.size + "\n" );
+
+    for ( i = 0; i < triggers.size; i++ )
+    {
+        triggers[i] thread WatchT5SongTriggerStep( stepKeyPrefix, i + 1 );
+    }
+}
+
+WatchT5SongTriggerStep( stepKeyPrefix, oneBasedIndex )
+{
+    self endon( "death" );
+    level endon( "end_game" );
+
+    stepKey = stepKeyPrefix + "_" + oneBasedIndex;
+
+    self waittill( "trigger" );
+
+    logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+    logprint( "GSE;EE;step;" + stepKey + "\n" );
+}
+
+/////////////////////////////////////////////////////////
+// Ascension (zombie_cosmodrome) — two parallel quests:
+//
+//   Song EE — three teddy bears (mus_teddybear). Stock spawns a runtime
+//   trigger_radius beneath each bear (player must touch + use), so we
+//   can't waittill("trigger") on the bear entity directly. Instead we
+//   poll level.teddybear_counter — same pattern as T4 Der Riese flytrap.
+//
+//   Casimir Mechanism — six named flags, set as each step completes
+//   (zombie_cosmodrome_eggs.gsc::init flag_inits all six). Step 6's flag
+//   `weapons_combined` is also the canonical terminal for the main EE,
+//   so we emit BOTH the step event and the canonical map-level event
+//   from the same watcher (with the iw4m_ee_fired guard to prevent
+//   re-emit, mirroring WaitForEasterEggComplete's contract).
+//
+// Step 3 (`switches_synced`) is hard-gated to 4 players in stock script
+// (`pressed == 4`), so the quest can't physically complete sub-4P. Premium
+// config sets MinPlayers=4 on the casimir quest to hide it from leaderboard
+// renders for sub-4P matches; step events still flow regardless.
+/////////////////////////////////////////////////////////
+HookAscension()
+{
+    level endon( "end_game" );
+
+    thread HookAscensionTeddyBears();
+    thread HookAscensionCasimir();
+}
+
+HookAscensionTeddyBears()
+{
+    level endon( "end_game" );
+
+    logprint( "[ZM-EE] Step watcher armed: t5_as_bear (polling level.teddybear_counter)\n" );
+
+    // Same loop shape as T4 Der Riese flytrap_counter. Engine is single-
+    // threaded so a ticked-past value would be missed if we slept too long;
+    // 0.5s easily covers human reaction time between bear interactions.
+    prev = 0;
+    while ( !IsDefined( level.teddybear_counter ) || level.teddybear_counter < 3 )
+    {
+        if ( IsDefined( level.teddybear_counter ) && level.teddybear_counter > prev )
+        {
+            for ( i = prev + 1; i <= level.teddybear_counter && i <= 3; i++ )
+            {
+                stepKey = "t5_as_bear_" + i;
+                logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+                logprint( "GSE;EE;step;" + stepKey + "\n" );
+            }
+            prev = level.teddybear_counter;
+        }
+        wait ( 0.5 );
+    }
+
+    // 2→3 tick exits the loop early — flush any unobserved steps.
+    for ( i = prev + 1; i <= 3; i++ )
+    {
+        stepKey = "t5_as_bear_" + i;
+        logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+        logprint( "GSE;EE;step;" + stepKey + "\n" );
+    }
+}
+
+HookAscensionCasimir()
+{
+    level endon( "end_game" );
+
+    logprint( "[ZM-EE] Step watcher armed: t5_as_cm (6 Casimir flags)\n" );
+
+    // Order matches stock zombie_cosmodrome_eggs.gsc::init flag_init order
+    // and the community walkthrough sequence (1=teleport, 2=power, 3=switches,
+    // 4=plate, 5=lander, 6=weapons). Stock physically gates step 3 to 4P; the
+    // others can be solo'd in script terms but the quest can't complete without
+    // step 3. Premium UI hides this quest entirely for sub-4P matches.
+    thread WatchT5Flag( "target_teleported",  "t5_as_cm_1", false );
+    thread WatchT5Flag( "rerouted_power",     "t5_as_cm_2", false );
+    thread WatchT5Flag( "switches_synced",    "t5_as_cm_3", false );
+    thread WatchT5Flag( "pressure_sustained", "t5_as_cm_4", false );
+    thread WatchT5Flag( "passkey_confirmed",  "t5_as_cm_5", false );
+    thread WatchT5Flag( "weapons_combined",   "t5_as_cm_6", true  );  // canonical terminal
+}
+
+WatchT5Flag( flagName, stepKey, isCanonical )
+{
+    level endon( "end_game" );
+
+    // Stock flag_init runs in zombie_cosmodrome_eggs::init, but we may race
+    // it depending on script load order. Poll until level.flag[<name>] exists
+    // before calling flag_wait, which would otherwise deref undefined and
+    // throw a runtime cast error (same gotcha as T4 Der Riese hide_and_seek).
+    while ( !IsDefined( level.flag ) || !IsDefined( level.flag[ flagName ] ) )
+    {
+        wait ( 0.5 );
+    }
+
+    flag_wait( flagName );
+
+    logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+    logprint( "GSE;EE;step;" + stepKey + "\n" );
+
+    if ( !isCanonical )
+    {
+        return;
+    }
+
+    // Canonical terminal — also emit the map-level EE-complete event.
+    if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
+    {
+        logprint( "[ZM-EE] Suppressed re-emit on map=" + level.script + " (already fired)\n" );
+        return;
+    }
+    level.iw4m_ee_fired = true;
+
+    roundStr = "?";
+    if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
+    logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
+    logprint( "GSE;EE;" + level.script + "\n" );
+}
+
+/////////////////////////////////////////////////////////
+// Call of the Dead (zombie_coast) — two parallel quests:
+//
+//   Song EE — three Element 115 fragments. Stock zombie_coast_amb.gsc
+//   spawns runtime trigger_radius beneath each `mus_easteregg` STRUCT
+//   (note: structs, not entities — getstructarray) and increments
+//   level.meteor_counter on each touch+use. Same poll pattern as
+//   Ascension teddy bears; can't waittill on a struct.
+//
+//   Ensemble Cast — 9 named flag steps, terminal `dmf` flag set
+//   immediately before the existing `coast_easter_egg_achieved` notify.
+//   We DO NOT mark dmf as canonical here because WaitForEasterEggComplete
+//   already handles the notify — emitting the canonical from both paths
+//   would double-fire. Premium config sets MinPlayers=2 on the Ensemble
+//   Cast quest because:
+//     • Step 3 (vodka, flag `bd`) PHYSICALLY can't fire solo — virgo
+//       thread isn't spawned for `players.size <= 1` and there's no
+//       side-effect path.
+//     • Steps 4 (morse `aca`), 6 (foghorns `bp`), 7 (dials `ss`) DO
+//       fire automatically in solo via stock script side-effects (door-
+//       knock condition / metal_horse solo branch), so a solo run can
+//       complete the EE — but the resulting "all coop steps done"
+//       progression would advertise actions the player never performed.
+//   Hide entirely on solo runs, render normally on 2P+.
+/////////////////////////////////////////////////////////
+HookCallOfDead()
+{
+    level endon( "end_game" );
+
+    thread WatchT5MeteorCounterSong( "t5_cd_fragment" );
+    thread HookCallOfDeadEnsemble();
+}
+
+HookCallOfDeadEnsemble()
+{
+    level endon( "end_game" );
+
+    logprint( "[ZM-EE] Step watcher armed: t5_cd_ec (9 Ensemble Cast flags)\n" );
+
+    // Order matches community walkthrough. Each maps to a flag set in
+    // zombie_coast_eggs.gsc when that step's terminal action completes.
+    // None are marked canonical — the canonical map-level event is fired
+    // from WaitForEasterEggComplete on the existing `coast_easter_egg_achieved`
+    // notify, which immediately follows `dmf` flag-set in stock script.
+    thread WatchT5Flag( "ffd", "t5_cd_ec_1", false );  // step 2 — Fuse delivered
+    thread WatchT5Flag( "hgd", "t5_cd_ec_2", false );  // step 3 — Generators destroyed (4)
+    thread WatchT5Flag( "bd",  "t5_cd_ec_3", false );  // step 4 — Vodka delivered (coop-only, never solo)
+    thread WatchT5Flag( "aca", "t5_cd_ec_4", false );  // step 5 — Morse code (auto-set in solo)
+    thread WatchT5Flag( "shs", "t5_cd_ec_5", false );  // step 6 — Ship's bridge (wheel + levers)
+    thread WatchT5Flag( "bp",  "t5_cd_ec_6", false );  // step 7 — Foghorns (auto-set in solo)
+    thread WatchT5Flag( "ss",  "t5_cd_ec_7", false );  // step 8 — Tower dials (auto-set in solo)
+    thread WatchT5Flag( "re",  "t5_cd_ec_8", false );  // step 9 — Sacrifice / Vrill device retrieved
+    thread WatchT5Flag( "dmf", "t5_cd_ec_9", false );  // step 10 — Final knife / death-machine fire
+}
+
+/////////////////////////////////////////////////////////
+// Shared helpers used by multiple T5 maps.
+/////////////////////////////////////////////////////////
+
+// Shared `level.meteor_counter` poll-to-3 song-EE watcher. Used by maps that
+// follow the stock Treyarch pattern: 3 `mus_easteregg` STRUCTS, each spawning
+// a runtime trigger_radius (so we can't waittill on the struct), with the
+// counter incremented on each touch+use. Pattern: Coast (zombie_coast),
+// Shangri-La (zombie_temple). Ascension uses level.teddybear_counter instead
+// (different name) so it has its own watcher.
+WatchT5MeteorCounterSong( stepKeyPrefix )
+{
+    level endon( "end_game" );
+
+    logprint( "[ZM-EE] Step watcher armed: " + stepKeyPrefix + " (polling level.meteor_counter)\n" );
+
+    // Same loop shape as HookAscensionTeddyBears / T4 Der Riese flytrap.
+    // 0.5s cadence covers human reaction time between fragment interactions.
+    prev = 0;
+    while ( !IsDefined( level.meteor_counter ) || level.meteor_counter < 3 )
+    {
+        if ( IsDefined( level.meteor_counter ) && level.meteor_counter > prev )
+        {
+            for ( i = prev + 1; i <= level.meteor_counter && i <= 3; i++ )
+            {
+                stepKey = stepKeyPrefix + "_" + i;
+                logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+                logprint( "GSE;EE;step;" + stepKey + "\n" );
+            }
+            prev = level.meteor_counter;
+        }
+        wait ( 0.5 );
+    }
+
+    // 2→3 tick exits early — flush remainder.
+    for ( i = prev + 1; i <= 3; i++ )
+    {
+        stepKey = stepKeyPrefix + "_" + i;
+        logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+        logprint( "GSE;EE;step;" + stepKey + "\n" );
+    }
+}
+
+// Generic level-notify watcher. Used for stock notify-driven step events
+// (e.g. _zombiemode_sidequests::stage_completed_internal which fires
+// `<sq>_<stage>_completed`). isCanonical mirrors WatchT5Flag's contract.
+WatchT5LevelNotify( notifyName, stepKey, isCanonical )
+{
+    level endon( "end_game" );
+
+    level waittill( notifyName );
+
+    logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
+    logprint( "GSE;EE;step;" + stepKey + "\n" );
+
+    if ( !isCanonical )
+    {
+        return;
+    }
+
+    if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
+    {
+        logprint( "[ZM-EE] Suppressed re-emit on map=" + level.script + " (already fired)\n" );
+        return;
+    }
+    level.iw4m_ee_fired = true;
+
+    roundStr = "?";
+    if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
+    logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
+    logprint( "GSE;EE;" + level.script + "\n" );
+}
+
+/////////////////////////////////////////////////////////
+// Shangri-La (zombie_temple) — two parallel quests:
+//
+//   Song EE — three Element 115 fragments, same poll-counter pattern as
+//   Coast (level.meteor_counter). Uses shared WatchT5MeteorCounterSong.
+//
+//   Time Travel Will Tell — uses the stock _zombiemode_sidequests
+//   framework: 8 declared stages each emitting `sq_<name>_completed`
+//   level notify on completion, plus 2 inter-stage flags
+//   (gongs_resonating, meteorite_shrunk) that gate stage transitions.
+//   The terminal stage (BaG) completion triggers the existing
+//   `temple_sidequest_achieved` notify (already wired in
+//   WaitForEasterEggComplete), so none of our watchers mark canonical
+//   here — emitting from both paths would double-fire.
+//
+// Premium config sets MinPlayers=4 because step 2 (OaFC, floor tiles) has
+// its solo auto-pass branch wrapped in /# #/ debug blocks (stripped in
+// Pluto T5 production builds), and step 3 (DgCWf, water slide) requires
+// `level._on_plate >= 3` simultaneously with someone going down — physically
+// impossible with <4 players. Steps still fire regardless; UI hides quest
+// for sub-4P matches.
+/////////////////////////////////////////////////////////
+HookShangriLa()
+{
+    level endon( "end_game" );
+
+    thread WatchT5MeteorCounterSong( "t5_sl_fragment" );
+    thread HookShangriLaSidequest();
+}
+
+HookShangriLaSidequest()
+{
+    level endon( "end_game" );
+
+    logprint( "[ZM-EE] Step watcher armed: t5_sl_sq (10 Time Travel Will Tell steps)\n" );
+
+    // Stages 2-8 use the sidequest framework's <sq>_<stagename>_completed
+    // notify. Stage names are the case-sensitive identifiers from
+    // declare_sidequest_stage() in zombie_temple_sq_*.gsc.
+    thread WatchT5LevelNotify( "sq_OaFC_completed",  "t5_sl_sq_1", false );  // step 2 — Floor Tiles
+    thread WatchT5LevelNotify( "sq_DgCWf_completed", "t5_sl_sq_2", false );  // step 3 — Water Slide
+    thread WatchT5LevelNotify( "sq_LGS_completed",   "t5_sl_sq_3", false );  // step 4 — Water Slide Crystal
+    thread WatchT5LevelNotify( "sq_PtT_completed",   "t5_sl_sq_4", false );  // step 5 — Gas Pipes
+    thread WatchT5LevelNotify( "sq_StD_completed",   "t5_sl_sq_5", false );  // step 6 — Spikemores
+    thread WatchT5LevelNotify( "sq_bttp_completed",  "t5_sl_sq_6", false );  // step 7 — Wall Panels + Snare
+    thread WatchT5LevelNotify( "sq_bttp2_completed", "t5_sl_sq_7", false );  // step 8 — Mud Room Dials
+
+    // Step 9 (gongs + dynamite catch) terminates with the gongs_resonating
+    // flag set, NOT a sidequest stage — gongs are handled by gong_watcher
+    // outside the framework. Step 10 (Fractilizer + crystal bounce) sets
+    // meteorite_shrunk flag.
+    thread WatchT5Flag( "gongs_resonating", "t5_sl_sq_8", false );  // step 9 — Gongs + dynamite catch
+    thread WatchT5Flag( "meteorite_shrunk", "t5_sl_sq_9", false );  // step 10 — Meteorite shrink (Fractilizer)
+
+    // Step 11 — final altar / reward. BaG stage completion is what triggers
+    // the existing temple_sidequest_achieved notify, so canonical fire is
+    // handled by WaitForEasterEggComplete.
+    thread WatchT5LevelNotify( "sq_BaG_completed",   "t5_sl_sq_10", false );  // step 11 — Final reward
+}
+
+/////////////////////////////////////////////////////////
+// Moon (zombie_moon) — two parallel quests:
+//
+//   Song EE — three Element 115 fragments (community-known as bears for
+//   "Coming Home"). Same poll-counter pattern as Coast / Shangri-La.
+//   Reuses shared WatchT5MeteorCounterSong helper.
+//
+//   Richtofen's Grand Scheme — uses the stock _zombiemode_sidequests
+//   framework: 8 stage-completion notifies across 3 sidequests:
+//     - `sq` main quest    (ss1, osc, sc, sc2, ss2)
+//     - `be` sub-sidequest (Bouncing Egg — Vril Sphere & Big Bang)
+//     - `ctvg` sub-quest   (Charge The Vril Generator — supercharged step)
+//   The `tanks` sub-sidequest (Charge The Tanks) is a script-level
+//   prereq for ctvg but isn't surfaced as a discrete community step.
+//
+//   Canonical terminal is the existing `moon_sidequest_big_bang_achieved`
+//   notify in WaitForEasterEggComplete (fired from sq.gsc::do_launch
+//   after be_stage_two_completed). All step watchers here are
+//   isCanonical: false — emitting from both paths would double-fire.
+//
+// Premium config sets MinPlayers=4 because the script hard-walls steps
+// 6+ (per community walkthrough: "Any step after this will require
+// 4 players to complete"). Step events still fire regardless; UI hides
+// quest for sub-4P matches.
+/////////////////////////////////////////////////////////
+HookMoon()
+{
+    level endon( "end_game" );
+
+    thread WatchT5MeteorCounterSong( "t5_mn_fragment" );
+    thread HookMoonRichtofen();
+}
+
+HookMoonRichtofen()
+{
+    level endon( "end_game" );
+
+    logprint( "[ZM-EE] Step watcher armed: t5_mn_rgs (8 Richtofen's Grand Scheme stages)\n" );
+
+    // Stage notifies follow the framework convention `<sidequest>_<stage>_completed`.
+    thread WatchT5LevelNotify( "sq_ss1_completed",         "t5_mn_rgs_1", false );  // step 2 — Samantha Says (1st)
+    thread WatchT5LevelNotify( "sq_osc_completed",         "t5_mn_rgs_2", false );  // step 3 — Lab Hacking (Open Source Code)
+    thread WatchT5LevelNotify( "be_stage_one_completed",   "t5_mn_rgs_3", false );  // step 4 — Vril Sphere (Bouncing Egg 1)
+    thread WatchT5LevelNotify( "sq_sc_completed",          "t5_mn_rgs_4", false );  // step 5 — Cryogenic Slumber Party (Soul Catch)
+    thread WatchT5LevelNotify( "ctvg_charge_completed",    "t5_mn_rgs_5", false );  // step 6 — Supercharged Vril Device
+    thread WatchT5LevelNotify( "sq_sc2_completed",         "t5_mn_rgs_6", false );  // step 7 — Richtofen's Betrayal (Soul Swap)
+    thread WatchT5LevelNotify( "sq_ss2_completed",         "t5_mn_rgs_7", false );  // step 8 — Samantha Says (2nd)
+    thread WatchT5LevelNotify( "be_stage_two_completed",   "t5_mn_rgs_8", false );  // step 9 — Big Bang Theory
 }

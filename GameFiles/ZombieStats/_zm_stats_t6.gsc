@@ -74,6 +74,7 @@ init()
     thread WaitForBuildables();
     thread WaitForCraftables();
     thread WaitForEasterEggComplete();
+    thread WaitForT6EasterEggSteps();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format):
@@ -1478,13 +1479,26 @@ WaitForEasterEggComplete()
     notifyName = "";
     switch ( level.script )
     {
-        case "zm_transit":   notifyName = "transit_sidequest_achieved";   break;
-        case "zm_highrise":  notifyName = "highrise_sidequest_achieved";  break;
-        case "zm_buried":    notifyName = "buried_sidequest_achieved";    break;
+        // zm_transit's "Tower of Babble" is BRANCHING (Maxis vs Richtofen).
+        // The shared transit_sidequest_achieved notify carries no path identity
+        // — both paths fire it. The C# side derives per-variant completion from
+        // the terminal step flags emitted by WaitForT6EasterEggSteps below
+        // (level.sq_progress["maxis"|"rich"]["FINISHED"] == 1). Don't hook the
+        // shared notify here or we'd double-count + lose path identity.
+        case "zm_transit":
+        case "zm_highrise":
+        case "zm_buried":
+            // Branching map — variants drive completion via per-step terminal
+            // flags emitted by WaitForT6EasterEggSteps. The shared notify
+            // (transit_sidequest_achieved / highrise_sidequest_achieved /
+            // buried_sidequest_achieved) carries no path identity, so don't
+            // hook here.
+            logprint( "[ZM-EE] Canonical notify intentionally not hooked on " + level.script + " (branching — handled by per-step watchers)\n" );
+            return;
         case "zm_prison":    notifyName = "pop_goes_the_weasel_achieved"; break;
         case "zm_tomb":      notifyName = "tomb_sidequest_complete";      break;
         default:
-            logprint( "[ZM-EE] No EE watcher configured for map=" + level.script + "\n" );
+            logprint( "[ZM-EE] No canonical EE watcher configured for map=" + level.script + "\n" );
             return;
     }
 
@@ -1503,5 +1517,434 @@ WaitForEasterEggComplete()
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
     logprint( "GSE;EE;" + level.script + "\n" );
+}
+
+/////////////////////////////////////////////////////////
+// Easter Egg per-step detection (T6 — branching + multi-stage quests).
+//
+// Distinct from WaitForEasterEggComplete above:
+//   • That hook handles single-quest maps with one terminal notify
+//     (Highrise / Buried / Prison / Origins).
+//   • This one handles per-step granularity for branching/multi-stage
+//     quests (currently zm_transit's Tower of Babble — Maxis vs Richtofen
+//     paths plus the song bears).
+//
+// Emits the standard pair when a step fires:
+//   [ZM-EE] Step fired: <key>
+//   GSE;EE;step;<key>
+//
+// Step keys match _PRIVATE/ZombieStatsPremium/Configuration/MapEasterEggConfig.cs.
+// Unknown keys are ignored downstream — adding a watcher here without
+// adding the step to the C# config is silent (warning at WRN level).
+/////////////////////////////////////////////////////////
+WaitForT6EasterEggSteps()
+{
+    level endon( "end_game" );
+
+    switch ( level.script )
+    {
+        case "zm_transit":
+            level thread WatchT6MeteorCounterSong( "t6_tr_bear" );
+            level thread WatchT6TransitMaxisPath();
+            level thread WatchT6TransitRichPath();
+            break;
+        case "zm_nuked":
+            // Nuketown has 2 song EEs: a population-trigger one ("Won't Back
+            // Down" at zombie_pop==15) and the 3-bear meteor-counter one
+            // ("Samantha's Lullaby"). We track the bears only — the population
+            // trigger isn't player-driven (it auto-fires by standing still).
+            level thread WatchT6MeteorCounterSong( "t6_nk_bear" );
+            break;
+        case "zm_highrise":
+            // Die Rise: song bears + branching "High Maintenance". Pre-branch
+            // shared stages (atd, slb) deliberately not hooked — see config
+            // doc-comment for rationale.
+            level thread WatchT6MeteorCounterSong( "t6_dr_bear" );
+            level thread WatchT6HighriseMaxisPath();
+            level thread WatchT6HighriseRichPath();
+            level thread WatchT6HighriseTerminal();
+            break;
+        case "zm_buried":
+            // Buried: song bears + branching "Mined Games". Both paths share
+            // the same stage notifies (bt/mta/gl/ftl/ll/ctw/ip/ows) — path
+            // identity is determined at emit-time by inspecting the
+            // sq_is_max_tower_built / sq_is_ric_tower_built flags set during
+            // the bt (Build Tower) stage when the player commits to a buildable.
+            level thread WatchT6MeteorCounterSong( "t6_br_bear" );
+            level thread WatchT6BuriedStages();
+            level thread WatchT6BuriedTerminals();
+            break;
+        case "zm_prison":
+            // Mob of the Dead: 3 quests.
+            //   • Rusty Cage (3 bottles) — meteor_counter pattern.
+            //   • Where Are We Going (115 then 935 nixie) — 2 stage notifies.
+            //   • Pop Goes the Weasel — 6 progress steps + canonical
+            //     (pop_goes_the_weasel_achieved already in WaitForEasterEggComplete).
+            level thread WatchT6CounterSong( "t6_md_bottle", ::GetMeteorCounter, 3 );
+            level thread WatchT6LevelNotify( "nixie_115", "t6_md_nixie_1" );
+            level thread WatchT6LevelNotify( "nixie_935", "t6_md_nixie_2" );
+            level thread WatchT6PrisonPgw();
+            break;
+        case "zm_tomb":
+            // Origins: 3 song EEs (Archangel meteorites / Shepherd of Fire
+            // radios / Aether generator numbers) + 8-step "Little Lost Girl"
+            // main quest. Main quest is single-path — canonical hook
+            // (tomb_sidequest_complete) already in WaitForEasterEggComplete
+            // above; per-step watchers add granular progress markers.
+            level thread WatchT6CounterSong( "t6_or_meteor", ::GetMeteorCounter, 3 );
+            level thread WatchT6CounterSong( "t6_or_radio",  ::GetRadioCounter,  3 );
+            level thread WatchT6CounterSong( "t6_or_115",    ::Get115Counter,    3 );
+            level thread WatchT6OriginsLittleGirlLost();
+            break;
+        default:
+            // No per-step watcher configured for this map. Silent — the
+            // canonical hook above still fires for single-quest maps.
+            return;
+    }
+
+    logprint( "[ZM-EE] Per-step watchers armed for map=" + level.script + "\n" );
+}
+
+EmitEeStep( stepKey )
+{
+    // Idempotency: in-process dedup so a watcher that polls a flag which
+    // gets reset and re-flipped doesn't double-emit. C# event processor
+    // also dedups (HashSet add), so this is belt-and-braces — but cheaper
+    // to suppress here than to log+drop on the C# side.
+    if ( !IsDefined( level.iw4m_ee_steps_fired ) )
+    {
+        level.iw4m_ee_steps_fired = [];
+    }
+    if ( IsDefined( level.iw4m_ee_steps_fired[ stepKey ] ) )
+    {
+        return;
+    }
+    level.iw4m_ee_steps_fired[ stepKey ] = 1;
+
+    roundStr = "?";
+    if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
+    logprint( "[ZM-EE] Step fired: " + stepKey + " round=" + roundStr + "\n" );
+    logprint( "GSE;EE;step;" + stepKey + "\n" );
+}
+
+// Polls level.sq_progress[group][key] until it flips to 1, then emits the
+// step. Won't re-arm — first transition wins (stage flags can reset to 0
+// on rollback paths in stock script; we want "did the player reach this
+// stage at least once" semantics).
+WatchT6SqProgress( group, key, stepKey )
+{
+    level endon( "end_game" );
+
+    // Guard against init order: sq_progress is built inside sidequest_init_tracker
+    // which runs after a "start_zombie_round_logic" flag_wait. Poll until ready.
+    while ( !IsDefined( level.sq_progress )
+         || !IsDefined( level.sq_progress[ group ] )
+         || !IsDefined( level.sq_progress[ group ][ key ] ) )
+    {
+        wait ( 1.0 );
+    }
+
+    while ( level.sq_progress[ group ][ key ] != 1 )
+    {
+        wait ( 0.5 );
+    }
+
+    EmitEeStep( stepKey );
+}
+
+// One-shot notify watcher — waits for a level notify and emits a step. Used
+// for stock _zombiemode_sidequests stage transitions which fire predictable
+// "<questId>_<stageId>_over" notifies on `level` when each stage completes.
+WatchT6LevelNotify( notifyName, stepKey )
+{
+    level endon( "end_game" );
+    level waittill( notifyName );
+    EmitEeStep( stepKey );
+}
+
+WatchT6HighriseMaxisPath()
+{
+    level endon( "end_game" );
+
+    // Stock: sidequest_logic_2() fires sq_2_ssp_2_over and sq_2_pts_2_over.
+    // Terminal handled separately by WatchT6HighriseTerminal so we don't
+    // double-emit when both paths converge on sq_tower_active.
+    level thread WatchT6LevelNotify( "sq_2_ssp_2_over", "t6_dr_maxis_a" );
+    level thread WatchT6LevelNotify( "sq_2_pts_2_over", "t6_dr_maxis_b" );
+}
+
+WatchT6HighriseRichPath()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6LevelNotify( "sq_1_ssp_1_over", "t6_dr_rich_a" );
+    level thread WatchT6LevelNotify( "sq_1_pts_1_over", "t6_dr_rich_b" );
+}
+
+// Die Rise terminal: stock fires sq_tower_active when the mahjong sequence
+// is solved. Path identity is inferred from sq_<ric|max>_tower_complete
+// flags which were set BEFORE the mahjong phase (in sidequest_logic_<n>
+// after pts stage). Either-or — one of the two flags will be set when we
+// reach this point.
+WatchT6HighriseTerminal()
+{
+    level endon( "end_game" );
+
+    // sq_tower_active is initialized in zm_highrise_sq.gsc init (flag_init);
+    // safe to flag_wait without an IsDefined guard.
+    flag_wait( "sq_tower_active" );
+
+    if ( flag( "sq_ric_tower_complete" ) )
+    {
+        EmitEeStep( "t6_dr_rich_complete" );
+    }
+    else if ( flag( "sq_max_tower_complete" ) )
+    {
+        EmitEeStep( "t6_dr_maxis_complete" );
+    }
+    else
+    {
+        // Defensive — sq_tower_active should never fire without one of the
+        // path-claim flags set. Log so we notice if stock script changes.
+        logprint( "[ZM-EE] Die Rise sq_tower_active fired but neither tower-complete flag set\n" );
+    }
+}
+
+WatchT6TransitMaxisPath()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6SqProgress( "maxis", "A_complete",  "t6_tr_maxis_a" );
+    level thread WatchT6SqProgress( "maxis", "B_complete",  "t6_tr_maxis_b" );
+    level thread WatchT6SqProgress( "maxis", "C_complete",  "t6_tr_maxis_c" );
+    level thread WatchT6SqProgress( "maxis", "FINISHED",    "t6_tr_maxis_complete" );
+}
+
+WatchT6TransitRichPath()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6SqProgress( "rich",  "A_complete",  "t6_tr_rich_a" );
+    level thread WatchT6SqProgress( "rich",  "B_complete",  "t6_tr_rich_b" );
+    level thread WatchT6SqProgress( "rich",  "C_complete",  "t6_tr_rich_c" );
+    level thread WatchT6SqProgress( "rich",  "FINISHED",    "t6_tr_rich_complete" );
+}
+
+// Generic flag-wait watcher — analog of WatchT6LevelNotify for code paths
+// driven by flag_set rather than a notify. Defends against the flag not being
+// initialized yet (init order race).
+WatchT6Flag( flagName, stepKey )
+{
+    level endon( "end_game" );
+
+    while ( !IsDefined( level.flag ) || !IsDefined( level.flag[ flagName ] ) )
+    {
+        wait ( 1.0 );
+    }
+
+    flag_wait( flagName );
+    EmitEeStep( stepKey );
+}
+
+// Mob of the Dead — Pop Goes the Weasel main quest. 6 progress steps in stock-
+// script execution order (zm_prison_sq_final.gsc:34-36 chain prerequisites,
+// then nixie codes / audio logs / plane). Canonical terminal
+// (pop_goes_the_weasel_achieved) is hooked separately via WaitForEasterEggComplete.
+WatchT6PrisonPgw()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6Flag( "quest_completed_thrice",   "t6_md_pgw_cycle" );
+    level thread WatchT6Flag( "warden_blundergat_obtained","t6_md_pgw_blundergat" );
+    level thread WatchT6Flag( "spoon_obtained",           "t6_md_pgw_spoon" );
+    level thread WatchT6PrisonCodes();
+    level thread WatchT6PrisonAudioLogs();
+    level thread WatchT6Flag( "plane_boarded",            "t6_md_pgw_plane" );
+}
+
+// 4 mobster prison numbers (101, 481, 386, 872). Stock fires per-code notify
+// "nixie_final_<n>" then waittill_multiple in stage_one. Order is player-
+// arbitrary so we mirror the multi-wait — emit only when all 4 land.
+WatchT6PrisonCodes()
+{
+    level endon( "end_game" );
+    level waittill_multiple( "nixie_final_386", "nixie_final_481", "nixie_final_101", "nixie_final_872" );
+    EmitEeStep( "t6_md_pgw_codes" );
+}
+
+// 6 audio log drops (vox_guar_tour_vo_1 through _10 grouped into 6 plays in
+// stage_two). Stock spawns level.m_headphones at first drop and deletes it at
+// stage_two:258 after the loop completes. Watching the IsDefined transition
+// is cleaner than chaining individual sound-done notifies.
+WatchT6PrisonAudioLogs()
+{
+    level endon( "end_game" );
+
+    while ( !IsDefined( level.m_headphones ) )
+    {
+        wait ( 1.0 );
+    }
+    while ( IsDefined( level.m_headphones ) )
+    {
+        wait ( 1.0 );
+    }
+    EmitEeStep( "t6_md_pgw_logs" );
+}
+
+// Origins "Little Lost Girl" main quest — 8 sequential stages, each fires
+// little_girl_lost_step_<N>_over notify (zm_tomb_ee_main.gsc:83-104). Single
+// path — canonical (tomb_sidequest_complete) hooked separately. Step 8's _over
+// fires at functionally identical time to the canonical, so no double-emit
+// concern (EmitEeStep dedups by step key anyway).
+WatchT6OriginsLittleGirlLost()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6LevelNotify( "little_girl_lost_step_1_over", "t6_or_llg_1" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_2_over", "t6_or_llg_2" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_3_over", "t6_or_llg_3" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_4_over", "t6_or_llg_4" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_5_over", "t6_or_llg_5" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_6_over", "t6_or_llg_6" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_7_over", "t6_or_llg_7" );
+    level thread WatchT6LevelNotify( "little_girl_lost_step_8_over", "t6_or_llg_8" );
+}
+
+// Buried path-aware step emit. Both Mined Games variants share stage notifies
+// in stock; the path identity comes from the per-side flag set during the bt
+// (Build Tower) stage when the player commits to a buildable. Resolves the
+// active variant by inspecting both flags and emits the appropriate variant's
+// step key. Skips emit if neither flag is set (bt hasn't completed yet) — the
+// step will fire when the relevant stage notifies.
+EmitT6BuriedStep( stepSuffix )
+{
+    if ( IsDefined( level.flag ) && IsDefined( level.flag[ "sq_is_max_tower_built" ] ) && level.flag[ "sq_is_max_tower_built" ] )
+    {
+        EmitEeStep( "t6_br_maxis_" + stepSuffix );
+    }
+    else if ( IsDefined( level.flag ) && IsDefined( level.flag[ "sq_is_ric_tower_built" ] ) && level.flag[ "sq_is_ric_tower_built" ] )
+    {
+        EmitEeStep( "t6_br_rich_" + stepSuffix );
+    }
+    else
+    {
+        // bt stage hasn't set a path flag yet — drop the step. Should never
+        // happen in practice (path is determined by the bt completion which
+        // is itself the first hooked stage), but if stock script ever changes
+        // the flag-set order, log so we notice.
+        logprint( "[ZM-EE] Buried stage suffix '" + stepSuffix + "' fired but no path flag set\n" );
+    }
+}
+
+// Hook each shared stage notify and route to the active variant's step key.
+// Stages map to walkthrough steps (a-h). tpo (Time Bomb placement) is a
+// preparation phase — not its own walkthrough step — so we hook ip (the
+// switches/bells phase) instead and treat them as combined "Step 7".
+WatchT6BuriedStages()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6BuriedSimpleStage( "sq_bt_over",  "a" );  // build tower
+    level thread WatchT6BuriedSimpleStage( "sq_mta_over", "b" );  // orbs
+    level thread WatchT6BuriedSimpleStage( "sq_gl_over",  "c" );  // lantern grab
+    level thread WatchT6BuriedSimpleStage( "sq_ftl_over", "d" );  // power lantern
+    level thread WatchT6BuriedSimpleStage( "sq_ll_over",  "e" );  // lantern placed
+    level thread WatchT6BuriedWispStage();                          // f — ts/ctw loop with success guard
+    level thread WatchT6BuriedSimpleStage( "sq_ip_over",  "g" );  // bells / maze switches
+    level thread WatchT6BuriedSimpleStage( "sq_ows_over", "h" );  // make a wish
+}
+
+WatchT6BuriedSimpleStage( notifyName, stepSuffix )
+{
+    level endon( "end_game" );
+    level waittill( notifyName );
+    EmitT6BuriedStep( stepSuffix );
+}
+
+// The decipher/wisp stages (ts then ctw) are inside a while(!flag("sq_wisp_success"))
+// retry loop in stock script — players can fail the wisp follow and have to
+// re-decipher. Only emit step f on a SUCCESSFUL completion. Loops on each
+// ctw_over until sq_wisp_success is set.
+WatchT6BuriedWispStage()
+{
+    level endon( "end_game" );
+
+    while ( true )
+    {
+        level waittill( "sq_ctw_over" );
+        if ( IsDefined( level.flag ) && IsDefined( level.flag[ "sq_wisp_success" ] ) && level.flag[ "sq_wisp_success" ] )
+        {
+            EmitT6BuriedStep( "f" );
+            return;
+        }
+        // Failed iteration — wait for next ctw_over (player retries the loop).
+    }
+}
+
+// Per-side terminals — fired explicitly by stock after the path-determination
+// flag check at zm_buried_sq.gsc:380-393. Cleaner than inferring from the
+// shared buried_sidequest_achieved notify because path identity is unambiguous.
+WatchT6BuriedTerminals()
+{
+    level endon( "end_game" );
+
+    level thread WatchT6LevelNotify( "sq_maxis_complete",     "t6_br_maxis_complete" );
+    level thread WatchT6LevelNotify( "sq_richtofen_complete", "t6_br_rich_complete" );
+}
+
+// Generic counter-based song watcher — used by every T6 map whose song EE
+// follows the "N hardcoded origins, counter increments per hit, song fires at
+// target" pattern (most T6 song EEs). Polls the value returned by the getter
+// function pointer and emits stepKeyPrefix + "_1" / "_2" / "_n" on each
+// transition. First-transition-wins per step (EmitEeStep dedups). Returns
+// once counter hits target.
+//
+// Function-pointer indirection because GSC can't dynamically read level[<str>]
+// — each counter has its own dedicated reader (GetMeteorCounter, GetRadioCounter,
+// Get115Counter) below. Adding a new counter = add a new getter + pass it here.
+WatchT6CounterSong( stepKeyPrefix, counterGetter, target )
+{
+    level endon( "end_game" );
+
+    // Stock map-init runs the counter setup before WaitForT6EasterEggSteps
+    // is armed — but the counter var may not be set yet on race. Defend.
+    while ( !IsDefined( [[ counterGetter ]]() ) )
+    {
+        wait ( 1.0 );
+    }
+
+    lastSeen = 0;
+    while ( true )
+    {
+        cur = [[ counterGetter ]]();
+        if ( cur > lastSeen )
+        {
+            // Walk every value we crossed (in case multiple ticks happen
+            // between polls), capped at target.
+            for ( i = lastSeen + 1; i <= cur && i <= target; i++ )
+            {
+                EmitEeStep( stepKeyPrefix + "_" + i );
+            }
+            lastSeen = cur;
+            if ( cur >= target )
+            {
+                return;
+            }
+        }
+        wait ( 0.5 );
+    }
+}
+
+GetMeteorCounter()      { if ( !IsDefined( level.meteor_counter ) )         return undefined; return level.meteor_counter; }
+GetRadioCounter()       { if ( !IsDefined( level.found_ee_radio_count ) )   return undefined; return level.found_ee_radio_count; }
+Get115Counter()         { if ( !IsDefined( level.snd115count ) )            return undefined; return level.snd115count; }
+
+// Backwards-compatible wrapper for the legacy meteor-counter callers
+// (TranZit / Nuketown / Die Rise / Buried / Mob Rusty). Routes to the
+// generic watcher with the meteor_counter getter and target=3 (every map
+// that uses meteor_counter has a 3-bear EE).
+WatchT6MeteorCounterSong( stepKeyPrefix )
+{
+    level thread WatchT6CounterSong( stepKeyPrefix, ::GetMeteorCounter, 3 );
 }
 

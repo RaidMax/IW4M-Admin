@@ -71,7 +71,7 @@
             @if (SelectedClientId is null)
             {
                 <div class="flex items-center justify-end gap-2 flex-wrap">
-                    <ZombieAssistanceBadge SoloFromRound="activePlayer.SoloFromRound" HighestRound="Detail.HighestRound" />
+                    <ZombieAssistanceBadge SoloFromRound="activePlayer.SoloFromRound" HighestRound="Detail.HighestRound" AssistedRounds="activePlayer.AssistedRounds" />
                     <a href="/client/@activePlayer.ClientId/stats"
                        class="bg-surface rounded-lg border border-line hover:border-primary/50 hover:bg-surface-hover transition-colors px-3.5 py-2 inline-flex items-center gap-2 group no-underline">
                         <i class="ph ph-user text-sm text-primary"></i>

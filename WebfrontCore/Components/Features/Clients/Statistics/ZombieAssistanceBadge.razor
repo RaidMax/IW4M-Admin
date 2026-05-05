@@ -13,7 +13,18 @@
 @if (SoloFromRound is { } sfr && HighestRound > 0 && sfr <= HighestRound)
 {
     var soloRounds = HighestRound - sfr + 1;
-    var tooltip = AppState.Loc("WEBFRONT_ZOMBIE_ASSISTANCE_BADGE_TOOLTIP").FormatExt(soloRounds, sfr);
+    var lastTeamRound = sfr - 1;
+    // Tooltip template orders args as percent / lastTeamRound / soloRounds.
+    // FormatExt rewrites {{name}} placeholders left-to-right into {0}/{1}/{2},
+    // so the FormatExt argument list must follow the template's placeholder
+    // order — not the variable's intuitive order. AssistedRounds may be null
+    // on legacy rows finalised before activity-gating shipped; skip the
+    // percentage when we have no data and degrade to "—%".
+    var assistedPercent = AssistedRounds is { } ar
+        ? ((int)Math.Round((double)ar / HighestRound * 100)).ToString()
+        : "—";
+    var tooltip = AppState.Loc("WEBFRONT_ZOMBIE_ASSISTANCE_BADGE_TOOLTIP")
+        .FormatExt(assistedPercent, lastTeamRound, soloRounds);
 
     <Tooltip Text="@tooltip" WrapperClass="inline-flex shrink-0">
         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/10 border border-warning/30 text-warning text-[10px] font-bold uppercase tracking-wider cursor-help">
@@ -26,4 +37,5 @@
 @code {
     [Parameter] public int? SoloFromRound { get; set; }
     [Parameter, EditorRequired] public int HighestRound { get; set; }
+    [Parameter] public int? AssistedRounds { get; set; }
 }

@@ -72,7 +72,15 @@ else
                             <span>•</span>
                             <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_HISTORY_DURATION"): @Detail.DurationMinutes.ToString("F0")m</span>
                             <span>•</span>
-                            <span>@Detail.Date.UtcDateTime.ToStandardFormat()</span>
+                            @* Match start time: rendered UTC server-side; utcLocalTime.js
+                               (in blazor_lib.js) swaps in the browser-local value at first
+                               paint. The Tooltip exposes the canonical UTC on hover. *@
+                            <Tooltip Text="@Detail.Date.UtcDateTime.ToStandardFormat()" WrapperClass="inline-block">
+                                <span data-utc-time="@Detail.Date.UtcDateTime.ToString("o")"
+                                      data-utc-fmt="datetime">
+                                    @Detail.Date.UtcDateTime.ToStandardFormat()
+                                </span>
+                            </Tooltip>
                             @if (!string.IsNullOrEmpty(Detail.ServerName))
                             {
                                 <span>•</span>
@@ -193,29 +201,36 @@ else
                                 </div>
 
                                 @* Step grid: round + absolute clock-time on a right-aligned mono caption
-                                   ("R7 • 13:19:38"). Full UTC date moves to the row title tooltip so the
-                                   visual is compact while the precise instant is one hover away. *@
+                                   ("R7 • 13:19:38"). Per-element Tooltip surfaces the full step name (in
+                                   case truncated) and the canonical UTC timestamp (because the visible
+                                   text is converted to local time by utcLocalTime.js). *@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
                                     @foreach (var step in quest.Inventory)
                                     {
                                         var fired = stepsByKey.TryGetValue(step.Key, out var record);
                                         var label = AppState.Loc(step.LocKey);
-                                        var tooltipTitle = fired && record is not null
-                                            ? $"{label} — {record.OccurredAt.UtcDateTime.ToStandardFormat()}"
-                                            : label;
-                                        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(fired ? stepFiredBg : "bg-surface-alt/40 border-line/40")"
-                                             title="@tooltipTitle">
+                                        var utcDisplay = fired && record is not null
+                                            ? record.OccurredAt.UtcDateTime.ToStandardFormat()
+                                            : null;
+                                        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(fired ? stepFiredBg : "bg-surface-alt/40 border-line/40")">
                                             <i class="ph @step.Icon text-sm shrink-0 @(fired ? stepFiredIcon : "text-subtle/60")"></i>
-                                            <div class="text-xs font-semibold truncate flex-1 min-w-0 @(fired ? "text-foreground" : "text-subtle")">@label</div>
+                                            <Tooltip Text="@label" WrapperClass="flex-1 min-w-0">
+                                                <div class="text-xs font-semibold truncate @(fired ? "text-foreground" : "text-subtle")">@label</div>
+                                            </Tooltip>
                                             @if (fired && record is not null)
                                             {
-                                                <div class="text-[10px] font-mono text-muted shrink-0">
+                                                <div class="text-[10px] font-mono text-muted shrink-0 flex items-center">
                                                     @if (record.RoundNumber is { } rn && rn > 0)
                                                     {
                                                         <span>R@(rn)</span>
                                                         <span class="mx-1 text-subtle">•</span>
                                                     }
-                                                    <span>@record.OccurredAt.UtcDateTime.ToString("HH:mm:ss")</span>
+                                                    <Tooltip Text="@utcDisplay" WrapperClass="inline-block">
+                                                        <span data-utc-time="@record.OccurredAt.UtcDateTime.ToString("o")"
+                                                              data-utc-fmt="time">
+                                                            @record.OccurredAt.UtcDateTime.ToString("HH:mm:ss")
+                                                        </span>
+                                                    </Tooltip>
                                                 </div>
                                                 <i class="ph ph-check-circle @stepCheckIcon text-xs shrink-0"></i>
                                             }

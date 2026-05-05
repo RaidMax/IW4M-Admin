@@ -1,4 +1,93 @@
 // ============================================
+// UTC -> Local Time Renderer
+// ============================================
+// Server-rendered Blazor cannot know the browser's timezone, so dates served
+// from C# always go out as UTC. This helper post-processes elements bearing
+// `data-utc-time="<ISO 8601 UTC>"` and replaces their text with the user's
+// local-formatted equivalent, moving the original UTC string into the title
+// attribute so a hover always reveals the canonical UTC value.
+//
+// Attributes:
+//   data-utc-time   ISO 8601 UTC timestamp (required)
+//   data-utc-fmt    'time' (HH:mm:ss) | 'datetime' (full) — default 'datetime'
+//
+// Helper only swaps the inner text — UTC-on-hover is the caller's
+// responsibility (use the Tooltip component, don't set title here, since the
+// app's standard hover affordance is the custom Tooltip and we shouldn't have
+// a title shadowing it).
+//
+// A MutationObserver picks up elements added by future Blazor renders, so
+// per-render hand-wiring isn't required.
+window.utcLocalTime = (function () {
+    function format(date, fmt) {
+        if (fmt === 'time') return date.toLocaleTimeString();
+        return date.toLocaleString();
+    }
+
+    function convert(el) {
+        if (!el || !el.getAttribute) return;
+        const iso = el.getAttribute('data-utc-time');
+        if (!iso) return;
+        if (el.getAttribute('data-utc-converted') === '1') return;
+        const date = new Date(iso);
+        if (isNaN(date.getTime())) return;
+        const fmt = el.getAttribute('data-utc-fmt') || 'datetime';
+        el.textContent = format(date, fmt);
+        el.setAttribute('data-utc-converted', '1');
+    }
+
+    function applyAll(root) {
+        const scope = root || document;
+        const els = scope.querySelectorAll('[data-utc-time]:not([data-utc-converted="1"])');
+        for (let i = 0; i < els.length; i++) convert(els[i]);
+    }
+
+    function start() {
+        applyAll();
+        if (typeof MutationObserver === 'undefined') return;
+        const obs = new MutationObserver(function (muts) {
+            for (let i = 0; i < muts.length; i++) {
+                const m = muts[i];
+                if (m.type === 'attributes') {
+                    if (m.target && m.target.getAttribute('data-utc-time')) {
+                        // Re-convert if the timestamp changed under us (Blazor
+                        // re-render with a new value).
+                        m.target.removeAttribute('data-utc-converted');
+                        convert(m.target);
+                    }
+                    continue;
+                }
+                if (m.addedNodes) {
+                    for (let j = 0; j < m.addedNodes.length; j++) {
+                        const n = m.addedNodes[j];
+                        if (n.nodeType !== 1) continue;
+                        if (n.matches && n.matches('[data-utc-time]')) convert(n);
+                        if (n.querySelectorAll) {
+                            const inner = n.querySelectorAll('[data-utc-time]:not([data-utc-converted="1"])');
+                            for (let k = 0; k < inner.length; k++) convert(inner[k]);
+                        }
+                    }
+                }
+            }
+        });
+        obs.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['data-utc-time']
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+
+    return { applyAll: applyAll, convert: convert };
+})();
+
+// ============================================
 // Visibility Observer for Component Virtualization
 // ============================================
 window.visibilityObserver = {

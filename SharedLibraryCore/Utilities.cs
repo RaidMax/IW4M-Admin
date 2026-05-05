@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -217,6 +218,18 @@ namespace SharedLibraryCore
         private static readonly IList<string> ZmGameTypes = new[]
             { "zclassic", "zstandard", "zcleansed", "zgrief", "zom", "cmp" };
 
+        // Sticky-positive cache: once we've ever determined a server is zombies,
+        // remember it. The gametype check below reads g_gametype from the live
+        // IGameServer object, which lags the actual server state during map
+        // change / RCon flake / cold-start windows — bypassing the override
+        // hookup in ZombieStats.Plugin.OnClientAuthorized for any client who
+        // authed in that window. Sticky cache means one successful detection
+        // (or one explicit MarkServerAsZombies promotion from a definitive
+        // signal like sv_iw4m_zm_round) is enough for the rest of the session.
+        // Zombie servers don't legitimately become non-zombie servers without
+        // operator action + restart, so positive-only stickiness is safe.
+        private static readonly ConcurrentDictionary<long, byte> _stickyZombieServers = new();
+
         /// <summary>
         ///     indicates if the given server is running a zombie game mode
         /// </summary>
@@ -226,8 +239,34 @@ namespace SharedLibraryCore
 
         public static bool IsZombieServer(this IGameServer server)
         {
-            return new[] { Reference.Game.T4, Reference.Game.T5, Reference.Game.T6 }.Contains(server.GameCode) &&
-                   ZmGameTypes.Contains(server.Gametype.ToLower());
+            // Hot path: if we've ever confirmed this server as zombies, trust it.
+            // Avoids the gametype-stale race entirely for repeat connects.
+            if (_stickyZombieServers.ContainsKey(server.LegacyDatabaseId))
+            {
+                return true;
+            }
+
+            var isZombiesNow = new[] { Reference.Game.T4, Reference.Game.T5, Reference.Game.T6 }.Contains(server.GameCode) &&
+                               !string.IsNullOrEmpty(server.Gametype) &&
+                               ZmGameTypes.Contains(server.Gametype.ToLower());
+
+            if (isZombiesNow)
+            {
+                _stickyZombieServers.TryAdd(server.LegacyDatabaseId, 0);
+            }
+
+            return isZombiesNow;
+        }
+
+        /// <summary>
+        /// Force-promote a server to zombies in the sticky cache. Intended for
+        /// callers that have observed a definitive zombies-only signal — e.g.
+        /// the <c>sv_iw4m_zm_round</c> dvar populated, or any GSC-emitted zombies
+        /// event received from this server. Idempotent.
+        /// </summary>
+        public static void MarkServerAsZombies(long legacyDatabaseId)
+        {
+            _stickyZombieServers.TryAdd(legacyDatabaseId, 0);
         }
 
         public static bool IsCodGame(this Server server)

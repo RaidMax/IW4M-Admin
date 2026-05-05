@@ -252,3 +252,275 @@ a {
 .zm-badge-strip [data-ee-aggregate] { display: none; }
 .zm-badge-strip.zm-badge-collapsed [data-ee-expanded] { display: none; }
 .zm-badge-strip.zm-badge-collapsed [data-ee-aggregate] { display: inline-flex; }
+
+/* ============================================
+   ZOMBIE MATCH SCRUBBER (DOM)
+   ============================================
+   Replaces the Konva canvas implementation. Zoom is a single CSS variable
+   (--zoom on .zsr-host); track width grows via calc() and the browser
+   compositor handles GPU-layer transforms for the percent-positioned dots.
+   No canvas raster, no per-frame redraw cycle. */
+
+.zsr-host {
+    --zoom: 1;
+    --lane-row: 44px;
+    --lane-row-pad: 4px;
+    --tickband-h: 32px;
+    --top-pad: 24px;
+}
+
+.zsr-shell {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    align-items: stretch;
+}
+.zsr-shell--single { grid-template-columns: 1fr; }
+
+/* ── Lane name column (left, doesn't scroll) ─────────────────────────── */
+.zsr-side {
+    position: relative;
+    /* Match .zsr-track: top-pad, plus tickband height when one is present.
+       :has() handles the conditional purely in CSS. */
+    padding-top: var(--top-pad);
+}
+.zsr-host:has(.zsr-tickband) .zsr-side { padding-top: calc(var(--top-pad) + var(--tickband-h)); }
+.zsr-side-cell {
+    height: var(--lane-row);
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font: bold 11px ui-sans-serif, system-ui, sans-serif;
+    color: rgb(203 213 225); /* slate-300 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Scroll area (horizontally scrolls when zoomed) ──────────────────── */
+.zsr-scroll {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    scrollbar-width: thin;
+}
+
+/* ── Track (the actually-zoomed surface) ─────────────────────────────── */
+.zsr-track {
+    position: relative;
+    width: calc(100% * var(--zoom));
+    height: var(--track-height, 120px);
+    /* contain layout/paint to keep zoom-induced reflow scoped — child
+       repositioning won't invalidate the page's layout above this point. */
+    contain: layout style paint;
+}
+
+/* ── Round-band stripes ──────────────────────────────────────────────── */
+.zsr-bands {
+    position: absolute;
+    inset: var(--top-pad) 0 0 0;
+    pointer-events: none;
+}
+.zsr-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+.zsr-band--even { background: rgba(255, 255, 255, 0.02); }
+.zsr-band--odd  { background: rgba(255, 255, 255, 0.05); }
+.zsr-band-label {
+    position: absolute;
+    top: -20px;
+    left: 4px;
+    font: 10px ui-monospace, monospace;
+    color: rgb(100 116 139); /* slate-500 */
+}
+
+/* ── Tickband (top, match-level events) ──────────────────────────────── */
+.zsr-tickband {
+    position: absolute;
+    top: var(--top-pad);
+    left: 0;
+    right: 0;
+    height: var(--tickband-h);
+    background: rgba(251, 191, 36, 0.04);
+    border-radius: 4px;
+}
+.zsr-tickband-watermark {
+    /* Pins to the left edge of the viewport during horizontal scroll. The prior
+       canvas implementation centred this watermark — replicating that with
+       pure CSS inside an absolutely-positioned ancestor is awkward; left-pin
+       conveys the same "this is the EE band" semantic without scroll-sync JS. */
+    position: sticky;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    font: bold 12px ui-sans-serif, system-ui, sans-serif;
+    color: rgba(251, 191, 36, 0.5);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* ── Lane rows ───────────────────────────────────────────────────────── */
+.zsr-lanes {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--top-pad);
+}
+/* When a tickband is rendered, push lanes down by tickband-h. :has handles
+   the conditional purely in CSS; no JS layout calc needed. */
+.zsr-host:has(.zsr-tickband) .zsr-lanes { top: calc(var(--top-pad) + var(--tickband-h)); }
+.zsr-lane {
+    position: relative;
+    height: var(--lane-row);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+}
+
+/* ── Gaps (red striped areas between rounds where the player was absent) ─ */
+.zsr-gap {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    background: rgba(248, 113, 113, 0.18);
+    border: 1px dashed rgba(248, 113, 113, 0.7);
+    border-radius: 2px;
+    pointer-events: auto;
+}
+.zsr-gap--compact {
+    background: rgba(248, 113, 113, 0.35);
+    border: none;
+}
+
+/* ── Event dots ──────────────────────────────────────────────────────── */
+/* Plain solid fill + dark border. No drop-shadow filter (that promoted every
+   dot to its own compositor layer — fine for 50 dots, expensive for the
+   1500-6000 dots a typical match renders). No hover transform (would also
+   promote a layer). Hover feedback is brightness instead. */
+.zsr-dot {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: var(--dot-z, 10);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--dot-fill, #94a3b8);
+    border: 2px solid #0f172a;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.zsr-dot:hover { filter: brightness(1.25); }
+.zsr-dot:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+.zsr-dot-icon {
+    font-size: 10px;
+    color: #0f172a;
+    line-height: 1;
+}
+.zsr-dot--match { /* match-level: positioned in tickband, smaller */
+    width: 12px;
+    height: 12px;
+    border-width: 1.5px;
+}
+.zsr-dot--match .zsr-dot-icon { font-size: 8px; }
+
+/* ── Tick (round markers, no glyph) ──────────────────────────────────── */
+.zsr-tick {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 18px;
+    background: var(--tick-fill, #94a3b8);
+    opacity: 0.6;
+    border-radius: 1px;
+    z-index: var(--dot-z, 60);
+    pointer-events: auto;
+}
+
+/* Match-level dots sit in the tickband, vertically centred there. */
+.zsr-tickband .zsr-dot--match {
+    top: 50%;
+}
+
+/* ── Filter (CSS-only via root data-filter attribute) ────────────────── */
+/* Default: all visible. */
+.zsr-host[data-filter="critical"] .zsr-dot:not([data-cat="critical"]):not([data-cat="danger"]):not([data-cat="round"]):not([data-cat="easter-egg"]):not([data-cat="easter-egg-step"]),
+.zsr-host[data-filter="critical"] .zsr-tick:not([data-cat="round"]) {
+    opacity: 0.08;
+    pointer-events: none;
+}
+.zsr-host[data-filter="powerups"] .zsr-dot:not([data-cat="powerup"]):not([data-cat="round"]):not([data-cat="easter-egg"]):not([data-cat="easter-egg-step"]),
+.zsr-host[data-filter="powerups"] .zsr-tick:not([data-cat="round"]) {
+    opacity: 0.08;
+    pointer-events: none;
+}
+.zsr-host[data-filter="economy"] .zsr-dot:not([data-cat="weapon"]):not([data-cat="weapon-abandon"]):not([data-cat="box"]):not([data-cat="box-pass"]):not([data-cat="door"]):not([data-cat="trap"]):not([data-cat="build"]):not([data-cat="perk"]):not([data-cat="round"]):not([data-cat="easter-egg"]):not([data-cat="easter-egg-step"]),
+.zsr-host[data-filter="economy"] .zsr-tick:not([data-cat="round"]) {
+    opacity: 0.08;
+    pointer-events: none;
+}
+
+/* JS-applied dim class (kept for parity with FILTER_RULES; the data-filter
+   selectors above handle the common case but a class flip is the fallback). */
+.zsr-dim { opacity: 0.08 !important; pointer-events: none; }
+
+/* ── Focus dim (deep-link to a specific player) ──────────────────────── */
+/* JS mirrors the host's data-focus-client value into a .zsr-focus-self class
+   on the matching lane — CSS has no attr-comparison so we can't do it purely
+   declaratively. Match-level (tickband) events live outside .zsr-lane so the
+   rule below leaves them at full opacity automatically. */
+.zsr-host[data-focus-client] .zsr-lane .zsr-dot { opacity: 0.25; }
+.zsr-host[data-focus-client] .zsr-lane.zsr-focus-self .zsr-dot { opacity: 1; }
+
+/* ── Scrub cursor ────────────────────────────────────────────────────── */
+.zsr-scrub {
+    --scrub-pct: 0%;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--scrub-pct);
+    pointer-events: none;
+    z-index: 90;
+}
+.zsr-scrub-line {
+    position: absolute;
+    top: 8px;
+    bottom: 4px;
+    left: -1px;
+    width: 2px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #22d3ee 0 4px,
+        transparent 4px 7px
+    );
+}
+.zsr-scrub-handle {
+    position: absolute;
+    top: 0;
+    left: -7px;
+    width: 14px;
+    height: 14px;
+    background: #22d3ee;
+    border: none;
+    border-radius: 2px;
+    cursor: ew-resize;
+    pointer-events: auto;
+    padding: 0;
+}
+.zsr-scrub-handle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ── Scrollbar styling (subtle, matches existing app aesthetic) ──────── */
+.zsr-scroll::-webkit-scrollbar { height: 8px; }
+.zsr-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.3); }
+.zsr-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 4px;
+}
+.zsr-scroll::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }

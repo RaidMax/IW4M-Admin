@@ -58,16 +58,12 @@
     @* ── CANVAS + EVENT WINDOW (single bordered container, divider between) ── *@
     <div class="bg-surface rounded-xl border border-line overflow-hidden">
 
-        @* Konva stage mount — horizontal scroll on zoom > 1x.
-           `relative` is load-bearing: the JS module appends DOM overlays (lane names,
-           EE band watermark) that are position:absolute and rely on this container as
-           their offsetParent. JS sets it once on first init — but Blazor re-emits the
-           entire `style` attribute whenever _minHeight changes (e.g. SHOW_ALL toggle),
-           wiping the inline `position:relative` JS added. With it gone, the overlays
-           re-parent to <body> and the `translateX(scrollLeft)` math makes them fly
-           right with zoom. Declaring `relative` in the class list survives Blazor
-           style resets. *@
-        <div id="@_elementId" class="w-full p-2 overflow-x-auto overflow-y-hidden relative"
+        @* DOM scrubber mount — JS owns the inner subtree (lane names column,
+           horizontal scroll area, track, dots, gaps, scrub cursor). The host
+           div carries no internal scroll/overflow rules; the inner .zsr-scroll
+           handles horizontal scroll when --zoom > 1. min-height exists only as
+           a CLS guard so the page doesn't reflow when JS finishes building. *@
+        <div id="@_elementId" class="w-full p-2"
              style="min-height: @(_minHeight)px;"></div>
 
         @* Divider + events-at-scrub-time panel inside the same container *@
@@ -82,9 +78,14 @@
                     <div class="space-y-1.5">
                         @foreach (var w in _windowEvents)
                         {
-                            <div class="flex items-center gap-2 text-foreground">
-                                <span class="text-[10px] font-mono text-muted w-10">@w.Time</span>
-                                <span class="text-xs font-semibold text-subtle truncate max-w-[140px]">
+                            @* items-baseline keeps mixed-size text rows visually aligned.
+                               Time column uses min-w (not w-10 fixed) — at HH:MM:SS the
+                               text is ~56 px wide; w-10 (40 px) clipped the box but
+                               didn't clip overflow, so the name span sat ~16 px inside
+                               the time text. shrink-0 keeps the column width stable. *@
+                            <div class="flex items-baseline gap-2 text-foreground">
+                                <span class="text-xs font-mono text-muted shrink-0">@w.Time</span>
+                                <span class="text-xs font-semibold text-subtle truncate">
                                     <ColorCode Value="@w.PlayerName" />
                                 </span>
                                 <span class="text-xs">@w.Label</span>

@@ -39,6 +39,8 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     // we keep that wire format internally so existing JS doesn't need to change.
     private string _laneMode = "qualified";
     private double _scrubSeconds;
+    // JS-computed zoom-aware hit-window; defaults to ±5s pre-first-callback.
+    private double _scrubHalfWindow = 5;
     private string _scrubTimeLabel = string.Empty;
     private int _scrubRoundLabel;
     private List<WindowEvent> _windowEvents = [];
@@ -183,11 +185,15 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
 
     /// <summary>
     /// Called from JS when scrubber cursor moves. Debounced JS-side (~50ms).
+    /// <paramref name="halfWindowSeconds"/> is JS-computed so the panel's hit
+    /// window scales with the current zoom — dot footprint visual width maps
+    /// to hit-window width at any zoom level.
     /// </summary>
     [JSInvokable]
-    public void OnScrubChanged(double seconds)
+    public void OnScrubChanged(double seconds, double halfWindowSeconds)
     {
         _scrubSeconds = seconds;
+        _scrubHalfWindow = halfWindowSeconds > 0 ? halfWindowSeconds : 5;
         UpdateWindowEvents();
         StateHasChanged();
     }
@@ -208,19 +214,24 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     {
         if (_payload is null) { _windowEvents = []; return; }
 
-        const double windowSeconds = 5;
-        var lo = _scrubSeconds - windowSeconds;
-        var hi = _scrubSeconds + windowSeconds;
+        var lo = _scrubSeconds - _scrubHalfWindow;
+        var hi = _scrubSeconds + _scrubHalfWindow;
 
         _windowEvents = _payload.Lanes
-            .SelectMany(l => l.Events.Select(e => new WindowEvent
-            {
-                ClientId = l.ClientId,
-                PlayerName = l.Name,
-                Time = e.Time,
-                Label = e.Label,
-                Seconds = e.Seconds
-            }))
+            .SelectMany(l => l.Events
+                // Round-completion markers are excluded from the side panel —
+                // the R{n} round-band labels on the track convey the same info,
+                // and "Round 3" rows for every lane within a 5s window of a
+                // band boundary added noise without insight.
+                .Where(e => !string.Equals(e.Category, "round", StringComparison.OrdinalIgnoreCase))
+                .Select(e => new WindowEvent
+                {
+                    ClientId = l.ClientId,
+                    PlayerName = l.Name,
+                    Time = e.Time,
+                    Label = e.Label,
+                    Seconds = e.Seconds
+                }))
             .Where(w => w.Seconds >= lo && w.Seconds <= hi)
             .OrderBy(w => w.Seconds)
             .Take(20)

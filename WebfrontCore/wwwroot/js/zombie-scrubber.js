@@ -1,53 +1,60 @@
 // zombie-scrubber.js
-// Konva-based multi-lane match timeline scrubber. Owned by ZombieMatchScrubber.razor.
-// State (filter, zoom, scrub time) lives in C# via JSInterop; this module handles
-// rendering + interaction only.
+// DOM-based multi-lane match timeline scrubber. Replaces the prior Konva canvas
+// implementation — see git history for the canvas version. Owned by
+// ZombieMatchScrubber.razor; state (filter, zoom, scrub time) lives in C# via
+// JSInterop. This module renders + handles interaction.
 //
-// Public API (window.zombieScrubber):
-//   init(elementId, payload, dotnetRef, focusClientId?)   — build stage, attach handlers
-//   dispose(elementId)                                    — destroy stage, free refs
-//   setFilter(elementId, filter)                          — toggle category visibility
-//   setZoom(elementId, level)                             — scale time axis (1..20x)
-//   setLaneMode(elementId, mode)                          — 'qualified' (default) | 'all'
-//   setScrubTime(elementId, seconds)                      — move cursor (programmatic)
-//   focusClient(elementId, clientId | null)               — dim other lanes; null = reset
+// Why DOM over canvas: zoom in the canvas implementation triggered a full
+// destroy+rebuild of ~6000 Konva nodes per rAF tick plus a stage-wide bitmap
+// re-cache, producing 180-200ms frames (5 fps) on iGPU/Mac/VM hardware. DOM
+// rendering offloads zoom to the browser compositor — `--zoom` CSS variable
+// updates a parent width via calc(); GPU layer transforms reposition the
+// absolutely-positioned children with zero JavaScript on the hot path.
+//
+// Public API (window.zombieScrubber) — preserved verbatim from the canvas
+// implementation so the Razor caller is unchanged:
+//   init(elementId, payload, dotnetRef, focusClientId?, initialLaneMode?)
+//   dispose(elementId)
+//   setFilter(elementId, filter)
+//   setZoom(elementId, level)
+//   setLaneMode(elementId, mode)              'qualified' | 'all'
+//   setScrubTime(elementId, seconds)
+//   focusClient(elementId, clientId | null)
 
 (function () {
     'use strict';
 
-    const stages = new Map(); // elementId -> ScrubberInstance
+    const instances = new Map();
 
-    // Visual config — mirrors old C# GetEventVisuals. Tailwind palette mapped to hex
-    // so Konva can fill shapes directly without a DOM round-trip. `glyph` is the
-    // Phosphor font codepoint (rendered via fontFamily: "Phosphor", which is loaded
-    // via App.razor's stylesheet imports).
-    const PH = (cp) => String.fromCodePoint(cp);
+    // Visual config — preserved verbatim from the prior CATEGORY_VISUALS table.
+    // Maps an event category to a Phosphor glyph class + tailwind colour token.
+    // The fill column drives both the dot background and the dot's drop-shadow
+    // colour (CSS filter, GPU-composited — far cheaper than canvas shadowBlur).
     const CATEGORY_VISUALS = {
-        'powerup':       { fill: '#facc15', glyph: PH(0xe2de), z: 30, tick: false }, // ph-lightning
-        'danger':        { fill: '#f97316', glyph: PH(0xe4e0), z: 40, tick: false }, // ph-warning
-        'critical':      { fill: '#ef4444', glyph: PH(0xe916), z: 50, tick: false }, // ph-skull
-        'success':       { fill: '#22c55e', glyph: PH(0xe2ac), z: 30, tick: false }, // ph-heartbeat
-        'perk':          { fill: '#a855f7', glyph: PH(0xe700), z: 25, tick: false }, // ph-pill
-        'weapon':        { fill: '#3b82f6', glyph: PH(0xe636), z: 20, tick: false }, // ph-knife
-        'weapon-abandon':{ fill: '#fb923c', glyph: PH(0xe636), z: 20, tick: false }, // ph-knife (abandon variant)
-        'box':           { fill: '#60a5fa', glyph: PH(0xe1da), z: 20, tick: false }, // ph-cube
-        'box-pass':      { fill: '#fb923c', glyph: PH(0xe1da), z: 20, tick: false }, // ph-cube (passed/missed)
-        'box-teddy':     { fill: '#f472b6', glyph: PH(0xe9fa), z: 25, tick: false }, // ph-spiral
-        'door':          { fill: '#f59e0b', glyph: PH(0xe7e6), z: 15, tick: false }, // ph-door-open
-        'trap':          { fill: '#f87171', glyph: PH(0xe2de), z: 25, tick: false }, // ph-lightning (trap)
-        'build':         { fill: '#10b981', glyph: PH(0xe5d4), z: 20, tick: false }, // ph-wrench
-        'session-join':  { fill: '#94a3b8', glyph: PH(0xe428), z: 15, tick: false }, // ph-sign-in
-        'session-leave': { fill: '#64748b', glyph: PH(0xe42a), z: 15, tick: false }, // ph-sign-out
-        'round':         { fill: '#94a3b8', glyph: '',        z: 60, tick: true  }, // round markers = tick lines
-        // Match-level events live in their own top-axis tick band (drawn once, not
-        // per-lane). Both the canonical EE-complete trophy and the per-step progress
-        // markers render up there; the per-step variant uses a smaller dimmer disc
-        // so it visually reads as "progress" not "achievement".
-        'easter-egg':      { fill: '#fbbf24', glyph: PH(0xe67e), z: 55, tick: false }, // ph-trophy
-        'easter-egg-step': { fill: '#f59e0b', glyph: PH(0xe67e), z: 50, tick: false }, // ph-trophy (step)
-        'default':         { fill: '#94a3b8', glyph: '',        z: 10, tick: true  }
+        'powerup':         { fill: '#facc15', icon: 'ph-lightning',          z: 30, tick: false },
+        'danger':          { fill: '#f97316', icon: 'ph-warning',            z: 40, tick: false },
+        'critical':        { fill: '#ef4444', icon: 'ph-skull',              z: 50, tick: false },
+        'success':         { fill: '#22c55e', icon: 'ph-heartbeat',          z: 30, tick: false },
+        'perk':            { fill: '#a855f7', icon: 'ph-pill',               z: 25, tick: false },
+        'weapon':          { fill: '#3b82f6', icon: 'ph-knife',              z: 20, tick: false },
+        'weapon-abandon':  { fill: '#fb923c', icon: 'ph-knife',              z: 20, tick: false },
+        'box':             { fill: '#60a5fa', icon: 'ph-cube',               z: 20, tick: false },
+        'box-pass':        { fill: '#fb923c', icon: 'ph-cube',               z: 20, tick: false },
+        'box-teddy':       { fill: '#f472b6', icon: 'ph-spiral',             z: 25, tick: false },
+        'door':            { fill: '#f59e0b', icon: 'ph-door-open',          z: 15, tick: false },
+        'trap':            { fill: '#f87171', icon: 'ph-lightning',          z: 25, tick: false },
+        'build':           { fill: '#10b981', icon: 'ph-wrench',             z: 20, tick: false },
+        'session-join':    { fill: '#94a3b8', icon: 'ph-sign-in',            z: 15, tick: false },
+        'session-leave':   { fill: '#64748b', icon: 'ph-sign-out',           z: 15, tick: false },
+        'round':           { fill: '#94a3b8', icon: '',                       z: 60, tick: true  },
+        'easter-egg':      { fill: '#fbbf24', icon: 'ph-trophy',             z: 55, tick: false },
+        'easter-egg-step': { fill: '#f59e0b', icon: 'ph-trophy',             z: 50, tick: false },
+        'default':         { fill: '#94a3b8', icon: '',                       z: 10, tick: true  }
     };
 
+    // Filter rules — same set + semantics as the prior implementation. Dots that
+    // fail the active rule get a `.zsr-dim` class (pure-CSS opacity drop), so
+    // toggling filters is a single class flip on each dot, not a re-render.
     const FILTER_RULES = {
         'all':      () => true,
         'critical': c => c === 'danger' || c === 'critical' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step',
@@ -55,32 +62,12 @@
         'economy':  c => ['weapon','weapon-abandon','box','box-pass','door','trap','build','perk','round','easter-egg','easter-egg-step'].includes(c)
     };
 
-    const LANE_HEIGHT = 36;
-    const LANE_GAP = 8;
-    const TOP_PAD = 24;            // axis labels (round-number text)
-    const TICKBAND_HEIGHT = 28;    // match-level event row above lanes
-    const TICKBAND_GAP = 4;        // separator between tickband and first lane
-    const SIDE_PAD_MULTI = 96;     // lane name labels (left) when multi-lane
-    const SIDE_PAD_SINGLE = 16;    // single-lane: no labels, narrow margin
-    const BOTTOM_PAD = 12;
-    const DOT_RADIUS = 8;
-    const TICKBAND_DOT_RADIUS = 6; // smaller than lane dots so band reads "secondary"
-    const TICK_HEIGHT = 18;
     const SCRUB_DEBOUNCE_MS = 50;
-
-    // Hard ceiling for stage canvas width. Chrome silently degrades canvases past
-    // ~16384px (text glyphs stop rendering, GPU compositing falls back to software).
-    // 16000 leaves ~2% margin for sub-pixel rounding from the zoom math. Per-tick
-    // we clamp the requested zoom so this is never exceeded; the toolbar's nominal
-    // 20× ceiling is therefore "20× or whatever fits the container, whichever is
-    // smaller." Wider containers get less effective zoom — that's intentional, the
-    // viewport already shows a smaller slice when the canvas is wide.
-    const MAX_SAFE_CANVAS_WIDTH = 16000;
-    // After the last wheel-zoom tick fires, wait this long before doing the
-    // expensive "settle" work (bgLayer cache + Blazor SignalR roundtrip). Long
-    // enough to coalesce a fast wheel-spin burst, short enough that the user
-    // perceives the zoom as "complete" once they stop.
-    const ZOOM_SETTLE_MS = 200;
+    const ZOOM_DEBOUNCE_MS  = 150;
+    // Zoom range matches the toolbar +/- nominal cap. No canvas-cap clamp needed
+    // (no canvas), but keep the same bound so the toolbar UX is identical.
+    const ZOOM_MIN = 1;
+    const ZOOM_MAX = 20;
 
     class ScrubberInstance {
         constructor(elementId, payload, dotnetRef, focusClientId, initialLaneMode) {
@@ -89,15 +76,12 @@
             this.dotnetRef = dotnetRef;
             this.focusClientId = focusClientId ?? null;
             this.filter = 'all';
-            // Lane mode resolution priority:
-            //   1. Razor-supplied `initialLaneMode` ('qualified' | 'all') — authoritative
-            //      when the consumer has already resolved it (dedicated match page sets
-            //      'all'; leaderboard sets 'qualified'). Without this, JS would default
-            //      to 'qualified' and Razor's first-render setting would never reach JS,
-            //      causing the dedicated-page drop-ins-missing bug.
-            //   2. Default to 'qualified' when any lane qualifies (matches leaderboard
-            //      framing) or 'all' when nothing qualified (legacy pre-qualifier match
-            //      — empty stage otherwise).
+            // Lane-mode resolution priority — same rule as the prior implementation:
+            //   1. Razor-supplied `initialLaneMode` (authoritative when consumer
+            //      has resolved it, e.g. dedicated match page = 'all', leaderboard
+            //      card = 'qualified').
+            //   2. Default to 'qualified' when any lane qualifies, else 'all'
+            //      (legacy pre-qualifier match — empty stage otherwise).
             if (initialLaneMode === 'qualified' || initialLaneMode === 'all') {
                 this.laneMode = initialLaneMode;
             } else {
@@ -107,24 +91,27 @@
             this.zoom = 1;
             this.scrubSeconds = payload.minSeconds;
             this._scrubDebounce = null;
-            this._tooltipEl = null;
+            this._zoomDebounce = null;
+            this._scrubDragging = false;
+
+            // Cached span for percent math; never zero so % calcs don't NaN.
+            this.span = Math.max(payload.maxSeconds - payload.minSeconds, 1);
 
             this._build();
-            this._wireResize();
-            // Initial scrub time → first event if available
+
+            // Initial scrub time → first event of any visible lane (parity with
+            // the prior implementation's behaviour). Falls back to minSeconds.
             const firstSec = this._firstEventSeconds();
             if (firstSec != null) this.setScrubTime(firstSec);
         }
 
         _firstEventSeconds() {
             for (const lane of this._visibleLanes()) {
-                if (lane.events.length > 0) return lane.events[0].seconds;
+                if (lane.events && lane.events.length > 0) return lane.events[0].seconds;
             }
             return null;
         }
 
-        // Lanes drawn at the current laneMode. 'qualified' hides drop-ins; 'all' shows
-        // every lane. Drives stage height, lane Y positions, and event placement.
         _visibleLanes() {
             if (this.laneMode === 'all') return this.payload.lanes;
             return this.payload.lanes.filter(l => l.isQualified);
@@ -134,879 +121,537 @@
             return document.getElementById(this.elementId);
         }
 
-        _innerWidth() {
-            const c = this._container();
-            if (!c) return 800;
-            // Account for padding (p-2 = 8px each side). Base width = container at 1x.
-            return Math.max(c.clientWidth - 16, 400);
-        }
-
-        // Actual stage width — grows with zoom so the container scrolls.
-        _stageWidth() {
-            return this._innerWidth() * this.zoom;
-        }
-
-        // Maximum zoom that keeps stage width under MAX_SAFE_CANVAS_WIDTH for the
-        // current container size. Recomputed on demand because container width can
-        // change (window resize, sidebar toggle, lane-mode swap shifting layout).
-        _effectiveMaxZoom() {
-            return Math.min(20, MAX_SAFE_CANVAS_WIDTH / this._innerWidth());
-        }
-
-        _sidePad() {
-            return this._visibleLanes().length > 1 ? SIDE_PAD_MULTI : SIDE_PAD_SINGLE;
-        }
-
-        // Y-coord at which lane content begins. When match-level events exist, lanes
-        // shift down to make room for the top-axis tick band; otherwise lanes sit
-        // immediately under the round-label TOP_PAD.
-        _laneAreaTop() {
-            return TOP_PAD + (this._hasMatchLevelEvents() ? TICKBAND_HEIGHT + TICKBAND_GAP : 0);
-        }
-
         _hasMatchLevelEvents() {
             return (this.payload.matchLevelEvents || []).length > 0;
         }
 
-        _stageHeight() {
-            return this._laneAreaTop() + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP) + BOTTOM_PAD;
-        }
-
-        _build() {
-            const container = this._container();
-            if (!container) return;
-            container.innerHTML = '';
-
-            this.stage = new Konva.Stage({
-                container: container,
-                width: this._stageWidth(),
-                height: this._stageHeight()
-            });
-
-            this.bgLayer = new Konva.Layer({ listening: false });
-            this.laneLayer = new Konva.Layer({ listening: true });
-            this.scrubLayer = new Konva.Layer({ listening: true });
-
-            this.stage.add(this.bgLayer);
-            this.stage.add(this.laneLayer);
-            this.stage.add(this.scrubLayer);
-
-            this._drawBackground();
-            this._drawMatchLevelBand();
-            this._drawLanes();
-            this._drawScrubber();
-
-            // Mirror _redrawAll: skip cache at large widths (see comment there).
-            if (this._stageWidth() <= 4000) this.bgLayer.cache();
-
-            this._wireMouseHandlers();
-            this._wireScrollCull();
-            this._applyFocus();
-
-            // Konva paints to canvas, so glyph text on the tickband ticks (Phosphor
-            // font) only renders if the font is loaded at draw time. On a cold page
-            // load Phosphor often hasn't finished loading by first paint — the dot
-            // backs render but the glyph is missing. document.fonts.ready resolves
-            // once all CSS-declared fonts finish; redraw then so the glyphs land.
-            // No-op if the document is already font-stable.
-            if (document?.fonts?.ready) {
-                document.fonts.ready.then(() => {
-                    if (this.stage) this._redrawAll();
-                });
-            }
-        }
-
-        // Repopulate viewport-windowed event nodes when the user scrolls past the
-        // 400px padding band. We don't re-cull on every scroll tick — that'd defeat
-        // the perf gain. The padding gives ~half-a-viewport of slack before the
-        // next repopulate fires, and we rAF-coalesce.
-        _wireScrollCull() {
-            const c = this._container();
-            if (!c) return;
-            this._lastCullScrollLeft = c.scrollLeft;
-            this._scrollHandler = () => {
-                // Pin lane names + watermark every scroll tick — cheap (transforms
-                // only), no gating needed.
-                this._syncNamesOverlayScroll();
-                this._syncBandWatermarkScroll();
-                if (this._scrollRaf != null) return;
-                this._scrollRaf = requestAnimationFrame(() => {
-                    this._scrollRaf = null;
-                    if (!this._container()) return;
-                    const sl = this._container().scrollLeft;
-                    // Only repopulate when we've drifted close to the padding edge
-                    // (200px = half the 400px slack). Avoids redrawing on tiny
-                    // mouse-wheel scrolls.
-                    if (Math.abs(sl - (this._lastCullScrollLeft ?? 0)) < 200) return;
-                    this._lastCullScrollLeft = sl;
-                    this._redrawLaneAndBandLayers();
-                });
-            };
-            c.addEventListener('scroll', this._scrollHandler, { passive: true });
-        }
-
-        // Re-render the cull-sensitive layers without touching the (heavy) bgLayer.
-        _redrawLaneAndBandLayers() {
-            // Hide any tooltip first — destroying lane children orphans the Konva
-            // mouseout for whichever shape the cursor is on, leaving the tooltip stuck.
-            this._hideTooltip();
-            this.laneLayer.destroyChildren();
-            this._drawMatchLevelBandTicks();
-            this._drawLanes();
-            this._applyFilter();
-            this._applyFocus();
-            this.laneLayer.batchDraw();
-        }
-
-        _timeToX(seconds) {
-            const span = Math.max(this.payload.maxSeconds - this.payload.minSeconds, 1);
-            const usable = this._stageWidth() - this._sidePad() - 16;
-            return this._sidePad() + ((seconds - this.payload.minSeconds) / span) * usable;
-        }
-
-        _xToTime(x) {
-            const span = Math.max(this.payload.maxSeconds - this.payload.minSeconds, 1);
-            const usable = this._stageWidth() - this._sidePad() - 16;
-            const clampedX = Math.min(Math.max(x - this._sidePad(), 0), usable);
-            return this.payload.minSeconds + (clampedX / usable) * span;
-        }
-
-        _laneY(idx) {
-            return this._laneAreaTop() + idx * (LANE_HEIGHT + LANE_GAP) + LANE_HEIGHT / 2;
-        }
-
-        _drawBackground() {
-            const lanes = this._visibleLanes();
-            const bandTop = TOP_PAD - 6;
-            // Round bands span the full vertical area (tickband + lanes) so columns
-            // visually read as "this round's slice" across both regions.
-            const bandHeight = (this._laneAreaTop() - TOP_PAD) + lanes.length * (LANE_HEIGHT + LANE_GAP) + 6;
-            this.payload.roundBands.forEach((band, i) => {
-                const x1 = this._timeToX(band.startSeconds);
-                const x2 = this._timeToX(band.endSeconds);
-                const w = Math.max(x2 - x1, 0.5);
-                this.bgLayer.add(new Konva.Rect({
-                    x: x1, y: bandTop, width: w,
-                    height: bandHeight,
-                    fill: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'
-                }));
-                // Round label
-                if (w > 22) {
-                    this.bgLayer.add(new Konva.Text({
-                        x: x1 + 4, y: 4,
-                        text: 'R' + band.roundNumber,
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        fill: '#64748b'
-                    }));
-                }
-            });
-
-            // Lane separator lines (canvas). Lane NAMES are drawn via a sticky-style
-            // DOM overlay (see _renderLaneNamesOverlay) so they stay pinned to the
-            // left edge as the user scrolls a zoomed timeline.
-            lanes.forEach((lane, idx) => {
-                const y = this._laneY(idx);
-                this.bgLayer.add(new Konva.Line({
-                    points: [this._sidePad(), y, this._stageWidth() - 8, y],
-                    stroke: 'rgba(148,163,184,0.15)',
-                    strokeWidth: 1
-                }));
-            });
-            this._renderLaneNamesOverlay();
-        }
-
-        // DOM overlay for lane names — Konva text in bgLayer would scroll off-screen
-        // at high zoom (canvas is wider than the scroll viewport). The overlay sits
-        // inside the scroll container and gets translated by scrollLeft on each
-        // scroll tick, giving a pinned-to-the-left effect without sticky CSS quirks.
-        _renderLaneNamesOverlay() {
-            const container = this._container();
-            if (!container) return;
-            const lanes = this._visibleLanes();
-            const showLaneLabels = lanes.length > 1;
-
-            if (!this._namesOverlay) {
-                this._namesOverlay = document.createElement('div');
-                this._namesOverlay.style.cssText =
-                    'position:absolute;top:0;left:0;pointer-events:none;z-index:5;' +
-                    'will-change:transform;';
-                container.style.position = container.style.position || 'relative';
-                container.appendChild(this._namesOverlay);
-            }
-            this._namesOverlay.innerHTML = '';
-            this._namesOverlay.style.display = showLaneLabels ? 'block' : 'none';
-            if (!showLaneLabels) return;
-
-            const sidePad = this._sidePad();
-            // Same offset rationale as _renderBandWatermarkOverlay — overlay top
-            // is in container coords (padded), canvas y is in stage-content coords.
-            const stageOffset = this.stage?.content?.offsetTop ?? 0;
-            lanes.forEach((lane, idx) => {
-                const div = document.createElement('div');
-                div.textContent = this._stripColors(lane.name);
-                div.title = this._stripColors(lane.name);
-                div.style.cssText =
-                    'position:absolute;left:8px;' +
-                    'top:' + (stageOffset + this._laneY(idx) - 8) + 'px;' +
-                    'width:' + (sidePad - 12) + 'px;' +
-                    'font:bold 11px sans-serif;color:#cbd5e1;' +
-                    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
-                    // Subtle background fade so dots/lines passing under the names
-                    // don't visually intrude. Match the scroll viewport bg.
-                    'background:linear-gradient(to right, rgba(15,23,42,0.85) 80%, transparent);' +
-                    'padding:2px 4px;';
-                this._namesOverlay.appendChild(div);
-            });
-            // Pin to current scrollLeft so the names stay at the visible left edge.
-            this._syncNamesOverlayScroll();
-        }
-
-        _syncNamesOverlayScroll() {
-            if (!this._namesOverlay) return;
-            const c = this._container();
-            if (!c) return;
-            this._namesOverlay.style.transform = 'translateX(' + c.scrollLeft + 'px)';
-        }
-
-        // Top-axis tick band — match-level events (canonical EE marker, per-step
-        // progress dots). Renders once at TOP_PAD + TICKBAND_HEIGHT/2; events get the
-        // same hover/click treatment as lane events but are not lane-bound.
-        _drawMatchLevelBand() {
-            this._drawMatchLevelBandBackground();
-            this._drawMatchLevelBandTicks();
-        }
-
-        // Static band components (just the tint) — live in bgLayer. The watermark
-        // caption is a DOM overlay (see _renderBandWatermarkOverlay) so it stays
-        // viewport-centered regardless of scroll/zoom; a stage-wide canvas text
-        // would be off-screen at high zoom + scroll.
-        _drawMatchLevelBandBackground() {
-            if (!this._hasMatchLevelEvents()) {
-                this._renderBandWatermarkOverlay();
-                return;
-            }
-            const bandX = this._sidePad();
-            const bandW = Math.max(this._stageWidth() - this._sidePad() - 8, 1);
-
-            // Subtle row tint so the band is distinguishable from the round-label area
-            this.bgLayer.add(new Konva.Rect({
-                x: bandX, y: TOP_PAD,
-                width: bandW,
-                height: TICKBAND_HEIGHT,
-                fill: 'rgba(251,191,36,0.04)',
-                cornerRadius: 4
-            }));
-
-            this._renderBandWatermarkOverlay();
-        }
-
-        // DOM overlay for the "EASTER EGGS" caption. Positioned at the band's Y
-        // coords, viewport-width, flex-centered → always visible at the middle of
-        // the scroll viewport. Translated by scrollLeft on each scroll tick so it
-        // stays pinned visually as the user pans a zoomed timeline.
-        _renderBandWatermarkOverlay() {
-            const container = this._container();
-            if (!container) return;
-            const visible = this._hasMatchLevelEvents();
-            if (!this._bandWatermark) {
-                this._bandWatermark = document.createElement('div');
-                this._bandWatermark.style.cssText =
-                    'position:absolute;left:0;pointer-events:none;z-index:4;' +
-                    'display:flex;align-items:center;justify-content:center;' +
-                    // line-height:1 so the glyph box matches the flex centering;
-                    // default 1.2 leaves the text visually high in its box.
-                    'font:900 18px sans-serif;line-height:1;' +
-                    'color:rgba(251,191,36,0.35);' +
-                    'letter-spacing:0.25em;text-transform:uppercase;' +
-                    'will-change:transform;';
-                container.style.position = container.style.position || 'relative';
-                container.appendChild(this._bandWatermark);
-            }
-            this._bandWatermark.style.display = visible ? 'flex' : 'none';
-            if (!visible) return;
-            this._bandWatermark.textContent = 'Easter Eggs';
-            // The overlay's top:0 is relative to the (padded) scroll container,
-            // but Konva coords (TOP_PAD) start at the konvajs-content div which
-            // sits below the container's padding. Add stage-content offsetTop so
-            // the band y maps 1:1 between canvas and DOM.
-            const stageOffset = this.stage?.content?.offsetTop ?? 0;
-            this._bandWatermark.style.top = (stageOffset + TOP_PAD) + 'px';
-            this._bandWatermark.style.height = TICKBAND_HEIGHT + 'px';
-            this._bandWatermark.style.width = (container.clientWidth - 16) + 'px';
-            this._syncBandWatermarkScroll();
-        }
-
-        _syncBandWatermarkScroll() {
-            if (!this._bandWatermark) return;
-            const c = this._container();
-            if (!c) return;
-            this._bandWatermark.style.transform = 'translateX(' + c.scrollLeft + 'px)';
-        }
-
-        // Cull-sensitive band components (tick dots + glyphs) — live in laneLayer,
-        // re-rendered on scroll so off-screen ticks don't stay in memory.
-        _drawMatchLevelBandTicks() {
-            if (!this._hasMatchLevelEvents()) return;
-            const y = TOP_PAD + TICKBAND_HEIGHT / 2;
-            const win = this._visibleXWindow();
-            this.payload.matchLevelEvents.forEach(evt => {
-                const cat = evt.category || 'default';
-                const v = CATEGORY_VISUALS[cat] || CATEGORY_VISUALS.default;
-                const x = this._timeToX(evt.seconds);
-                if (x < win.min || x > win.max) return;
-
-                const group = new Konva.Group({ x: x, y: y });
-                group.add(new Konva.Circle({
-                    x: 0, y: 0, radius: TICKBAND_DOT_RADIUS,
-                    fill: v.fill,
-                    stroke: '#0f172a',
-                    strokeWidth: 1.5,
-                    shadowColor: v.fill,
-                    shadowBlur: 3,
-                    shadowOpacity: 0.4
-                }));
-                if (v.glyph) {
-                    group.add(new Konva.Text({
-                        x: -TICKBAND_DOT_RADIUS, y: -TICKBAND_DOT_RADIUS,
-                        width: TICKBAND_DOT_RADIUS * 2, height: TICKBAND_DOT_RADIUS * 2,
-                        text: v.glyph,
-                        fontFamily: 'Phosphor',
-                        fontSize: 10,
-                        fill: '#0f172a',
-                        align: 'center',
-                        verticalAlign: 'middle',
-                        listening: false
-                    }));
-                }
-                group._evt = evt;
-                group._isMatchLevel = true;
-                group._tooltip = evt.time + ' • ' + evt.label;
-                this.laneLayer.add(group);
-            });
-        }
-
-        // Visible-x window in stage coords: events outside this band get culled
-        // from the laneLayer at draw time. At zoom 15× a 12000px stage is ~99% off-
-        // screen at any moment; drawing all events anyway means thousands of nodes
-        // for ~10 visible. ±400px padding so events near the viewport edge stay
-        // populated when the user nudges scroll without forcing a redraw.
-        _visibleXWindow() {
-            const c = this._container();
-            if (!c) return { min: -Infinity, max: Infinity };
-            const pad = 400;
-            return { min: c.scrollLeft - pad, max: c.scrollLeft + c.clientWidth + pad };
-        }
-
-        _drawLanes() {
-            const win = this._visibleXWindow();
-            this._visibleLanes().forEach((lane, idx) => {
-                const y = this._laneY(idx);
-
-                // Gaps (behind events)
-                lane.gaps.forEach(gap => {
-                    const x1 = this._timeToX(gap.start);
-                    const x2 = this._timeToX(gap.end);
-                    if (x2 <= x1) return;
-                    // Cull gaps fully outside the viewport (rare — match-spanning
-                    // gaps stay visible since x2 - x1 covers the window).
-                    if (x2 < win.min || x1 > win.max) return;
-                    const isCompact = gap.compact;
-                    let gx, gw;
-                    if (isCompact) {
-                        const mid = (x1 + x2) / 2;
-                        gw = Math.max(Math.min((x2 - x1) * 0.15, 6), 2);
-                        gx = mid - gw / 2;
-                    } else {
-                        gx = x1;
-                        gw = Math.max(x2 - x1, 1);
-                    }
-                    const rect = new Konva.Rect({
-                        x: gx, y: y - LANE_HEIGHT / 2 + 4, width: gw, height: LANE_HEIGHT - 8,
-                        fill: 'rgba(248,113,113,0.18)',
-                        stroke: 'rgba(248,113,113,0.7)',
-                        strokeWidth: 1,
-                        dash: [4, 3]
-                    });
-                    rect._tooltip = gap.tooltip;
-                    rect._isGap = true;
-                    this.laneLayer.add(rect);
-                });
-
-                // Events
-                lane.events.forEach(evt => {
-                    const cat = evt.category || 'default';
-                    const v = CATEGORY_VISUALS[cat] || CATEGORY_VISUALS.default;
-                    const x = this._timeToX(evt.seconds);
-                    if (x < win.min || x > win.max) return;
-
-                    let shape;
-                    if (v.tick) {
-                        // Round markers + unknown categories render as vertical ticks
-                        shape = new Konva.Rect({
-                            x: x - 1, y: y - TICK_HEIGHT / 2,
-                            width: 2, height: TICK_HEIGHT,
-                            fill: v.fill, opacity: 0.6,
-                            cornerRadius: 1
-                        });
-                        shape._evt = evt;
-                        shape._lane = lane;
-                        shape._tooltip = evt.time + ' • ' + evt.label;
-                        this.laneLayer.add(shape);
-                    } else {
-                        // Group: filled disc + Phosphor glyph centered.
-                        const group = new Konva.Group({ x: x, y: y });
-                        group.add(new Konva.Circle({
-                            x: 0, y: 0, radius: DOT_RADIUS,
-                            fill: v.fill,
-                            stroke: '#0f172a',
-                            strokeWidth: 2,
-                            shadowColor: v.fill,
-                            shadowBlur: 4,
-                            shadowOpacity: 0.4
-                        }));
-                        if (v.glyph) {
-                            group.add(new Konva.Text({
-                                x: -DOT_RADIUS, y: -DOT_RADIUS,
-                                width: DOT_RADIUS * 2, height: DOT_RADIUS * 2,
-                                text: v.glyph,
-                                fontFamily: 'Phosphor',
-                                fontSize: 12,
-                                fill: '#0f172a',
-                                align: 'center',
-                                verticalAlign: 'middle',
-                                listening: false
-                            }));
-                        }
-                        // Lift the hover/click target to the group itself so the icon
-                        // doesn't intercept events with its own bounding box.
-                        group._evt = evt;
-                        group._lane = lane;
-                        group._tooltip = evt.time + ' • ' + evt.label;
-                        this.laneLayer.add(group);
-                    }
-                });
-            });
-        }
-
-        _drawScrubber() {
-            const x = this._timeToX(this.scrubSeconds);
-            const top = TOP_PAD - 8;
-            const bottom = this._laneAreaTop() + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
-
-            this.scrubLine = new Konva.Line({
-                points: [x, top, x, bottom],
-                stroke: '#22d3ee', strokeWidth: 2, dash: [4, 3]
-            });
-            this.scrubHandle = new Konva.Rect({
-                x: x - 6, y: top - 6, width: 12, height: 12,
-                fill: '#22d3ee', cornerRadius: 2,
-                draggable: true,
-                dragBoundFunc: (pos) => ({
-                    x: Math.min(Math.max(pos.x, this._sidePad() - 6), this._stageWidth() - 16),
-                    y: top - 6
-                })
-            });
-
-            this.scrubHandle.on('dragmove', () => {
-                const handleX = this.scrubHandle.x() + 6;
-                this.scrubSeconds = this._xToTime(handleX);
-                this.scrubLine.points([handleX, top, handleX, bottom]);
-                this.scrubLayer.batchDraw();
-                this._notifyScrub();
-            });
-
-            this.scrubLayer.add(this.scrubLine);
-            this.scrubLayer.add(this.scrubHandle);
-        }
-
-        _notifyScrub() {
-            if (this._scrubDebounce) clearTimeout(this._scrubDebounce);
-            this._scrubDebounce = setTimeout(() => {
-                if (this.dotnetRef) {
-                    this.dotnetRef.invokeMethodAsync('OnScrubChanged', this.scrubSeconds);
-                }
-            }, SCRUB_DEBOUNCE_MS);
-        }
-
-        _wireMouseHandlers() {
-            // Walk parent chain — events fire on inner shapes (Circle/Text inside
-            // Group); the metadata (_evt/_tooltip) lives on the Group or Rect.
-            const findTarget = (node) => {
-                while (node && node !== this.laneLayer) {
-                    if (node._tooltip || node._evt) return node;
-                    node = node.getParent && node.getParent();
-                }
-                return null;
-            };
-
-            this.laneLayer.on('mouseover', (e) => {
-                const t = findTarget(e.target);
-                if (!t || !t._tooltip) return;
-                this._showTooltip(t._tooltip);
-                document.body.style.cursor = t._evt ? 'pointer' : 'help';
-            });
-            this.laneLayer.on('mouseout', () => {
-                this._hideTooltip();
-                document.body.style.cursor = '';
-            });
-            this.laneLayer.on('click tap', (e) => {
-                const t = findTarget(e.target);
-                if (!t || !t._evt) return;
-                if (this.dotnetRef) {
-                    this.dotnetRef.invokeMethodAsync('OnEventClicked', t._lane.clientId, t._evt.seconds);
-                }
-                this.setScrubTime(t._evt.seconds);
-            });
-
-            // Scroll wheel → cursor-anchored zoom. Anchor = pointer position in
-            // stage coords; we shift container.scrollLeft post-zoom so the time
-            // under the cursor stays under the cursor.
-            this.stage.on('wheel', (e) => {
-                e.evt.preventDefault();
-                // Multiplicative step keeps wheel-feel consistent across the 1..20 range
-                // (linear step at 0.25 took ~80 ticks to hit 20x; 1.15x scale = ~22 ticks).
-                const factor = e.evt.deltaY < 0 ? 1.15 : 1 / 1.15;
-                // Cap by both the nominal max (1) and the canvas-safety max — past
-                // MAX_SAFE_CANVAS_WIDTH Chrome silently drops text glyphs and falls
-                // back to software rasterization; capping here is the only way to
-                // prevent that without a full canvas-virtualization refactor.
-                const maxZoom = this._effectiveMaxZoom();
-                const newZoom = Math.min(Math.max(this.zoom * factor, 1), maxZoom);
-                if (Math.abs(newZoom - this.zoom) < 0.01) return;
-
-                const pointer = this.stage.getPointerPosition();
-                const anchorStageX = pointer ? pointer.x : this._stageWidth() / 2;
-
-                // Coalesce multiple wheel events within a frame: at high zoom each
-                // _redrawAll re-caches a stage-width-wide bitmap (linear in canvas
-                // area), so a 60-event-per-second trackpad would fire 60 redraws and
-                // turn the wheel into a slideshow. rAF collapses bursts to one
-                // redraw per frame; the latest target zoom always wins.
-                this._pendingZoom = { zoom: newZoom, anchor: anchorStageX };
-                if (this._zoomRaf == null) {
-                    this._zoomRaf = requestAnimationFrame(() => {
-                        this._zoomRaf = null;
-                        const p = this._pendingZoom;
-                        this._pendingZoom = null;
-                        if (p) this._setZoomAnchored(p.zoom, p.anchor);
-                    });
-                }
-            });
-        }
-
-        // Zoom while keeping the time at `anchorStageX` (stage coords) under the
-        // same on-screen point. Shifts container.scrollLeft to compensate.
-        _setZoomAnchored(newZoom, anchorStageX) {
-            const container = this._container();
-            if (!container) { this.setZoom(newZoom); return; }
-
-            const oldZoom = this.zoom;
-            const oldScrollLeft = container.scrollLeft;
-            const viewportX = anchorStageX - oldScrollLeft;
-            const ratio = newZoom / oldZoom;
-
-            this.zoom = newZoom;
-            // Mark "in-flight zoom" so _redrawAll skips bgLayer.cache() — caching
-            // rasterizes a stage-wide bitmap (multi-MB at moderate zoom) that the
-            // very next wheel tick would discard. The cache fires once on settle.
-            this._zoomActive = true;
-            this._redrawAll();
-            this._zoomActive = false;
-
-            // After redraw, anchor's new stage X = oldStageX * ratio. Set scroll
-            // so viewportX stays the same.
-            const newStageX = anchorStageX * ratio;
-            container.scrollLeft = Math.max(0, newStageX - viewportX);
-
-            // _redrawAll synced overlays at the OLD scrollLeft; we just changed
-            // it, so re-sync now (same JS task) — otherwise the overlays paint
-            // for one frame at the old position, then the native scroll event
-            // fires next frame and snaps them back. That's the "flicker".
-            this._syncBandWatermarkScroll();
-            this._syncNamesOverlayScroll();
-            this._lastCullScrollLeft = container.scrollLeft;
-
-            // Settle pass — fires once after the user stops zooming. Two jobs:
-            //   1. bgLayer.cache() (cheap once, per-tick was thrash).
-            //   2. OnZoomChanged SignalR roundtrip — Blazor Server re-renders +
-            //      DOM-diffs the component. Per-tick this queued one roundtrip
-            //      per wheel event; debouncing collapses a fast spin into one.
-            // The toolbar zoom display lags ~200ms behind the canvas, which is
-            // imperceptible compared to the lag the per-tick roundtrip caused.
-            if (this._zoomSettleTimer) clearTimeout(this._zoomSettleTimer);
-            this._zoomSettleTimer = setTimeout(() => {
-                this._zoomSettleTimer = null;
-                if (!this.stage) return;
-                if (this._stageWidth() <= 4000) {
-                    this.bgLayer.clearCache();
-                    this.bgLayer.cache();
-                    this.bgLayer.batchDraw();
-                }
-                if (this.dotnetRef) {
-                    this.dotnetRef.invokeMethodAsync('OnZoomChanged', this.zoom);
-                }
-            }, ZOOM_SETTLE_MS);
-        }
-
-        _wireResize() {
-            this._resizeHandler = () => {
-                if (!this.stage) return;
-                this.stage.width(this._stageWidth());
-                this._redrawAll();
-                // _redrawAll re-runs _drawMatchLevelBandBackground which resizes
-                // the watermark overlay; lane names overlay is repopulated by
-                // _drawBackground. Both pick up the new container.clientWidth.
-            };
-            window.addEventListener('resize', this._resizeHandler);
-        }
-
-        _redrawAll() {
-            // Same orphan-prevention as _redrawLaneAndBandLayers: nuke the tooltip
-            // before destroying the underlying Konva shapes so a hover-in-progress
-            // doesn't leave a stuck tooltip.
-            this._hideTooltip();
-            this.bgLayer.destroyChildren();
-            // Without this, an existing cached bitmap from a prior zoom level keeps
-            // rendering at its old width even though we destroyed + redrew children
-            // — Konva treats the layer as cached and skips child draw. Visually,
-            // round bands "lag behind" icons (which live in the un-cached laneLayer).
-            this.bgLayer.clearCache();
-            this.laneLayer.destroyChildren();
-            this.scrubLayer.destroyChildren();
-            // Stage dimensions track current zoom — must update both before redraw.
-            const sw = this._stageWidth();
-            this.stage.width(sw);
-            this.stage.height(this._stageHeight());
-            this._drawBackground();
-            this._drawMatchLevelBand();
-            this._drawLanes();
-            this._drawScrubber();
-            // bgLayer.cache() snapshots a stage-wide bitmap (~sw × stageHeight px).
-            // At low/medium zoom this speeds subsequent batchDraws (filter/focus
-            // toggles). At high zoom it allocates ~16 MB per re-cache (zoom 20x at
-            // 800px base = 16000px wide), and we re-cache on every wheel tick — so
-            // skip the cache once the bitmap would be expensive. Trade-off: filter
-            // toggles redraw raw children at high zoom, but those are rare during
-            // active zooming.
-            // Skip caching during an in-flight wheel-zoom — _setZoomAnchored
-            // schedules a single cache pass on settle (ZOOM_SETTLE_MS), so per-tick
-            // cache work would just be discarded by the next tick. Massive perf win
-            // at moderate zoom levels where the bitmap is multi-MB.
-            if (!this._zoomActive && sw <= 4000) this.bgLayer.cache();
-            this._applyFilter();
-            this._applyFocus();
-            // Sync .draw() instead of batchDraw to eliminate the per-zoom-tick
-            // flash: stage.width() resizes (and clears) the canvas synchronously,
-            // and batchDraw defers the repaint to next rAF — so the browser
-            // composites a frame with the cleared canvas in between. Sync draw
-            // repopulates the pixels before the JS task ends, so no blank frame
-            // is ever composited. We're already inside our own rAF coalescer
-            // (wheel handler), so the rAF coalescing batchDraw provides is moot.
-            this.bgLayer.draw();
-            this.laneLayer.draw();
-            this.scrubLayer.draw();
-        }
-
-        _showTooltip(text) {
-            if (!this._tooltipEl) {
-                this._tooltipEl = document.createElement('div');
-                this._tooltipEl.style.cssText =
-                    'position:fixed;pointer-events:none;background:#0f172a;color:#e2e8f0;' +
-                    'padding:6px 10px;border-radius:6px;font-size:11px;border:1px solid #334155;' +
-                    'z-index:9999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.4)';
-                document.body.appendChild(this._tooltipEl);
-            }
-            this._tooltipEl.textContent = text;
-            this._tooltipEl.style.display = 'block';
-
-            // Cleanup-then-attach. Without this, every consecutive mouseover (entering
-            // a new event dot before mouseout fires for the old one — common when dots
-            // overlap at high zoom) leaks a listener: _mouseMove gets overwritten so
-            // _hideTooltip only removes the latest, leaving older listeners stacked
-            // and all firing on every move. Symptom: tooltip "follows" the cursor
-            // forever even after leaving the timeline.
-            this._removeTooltipMouseMove();
-            const move = (ev) => {
-                if (!this._tooltipEl) return;
-                this._tooltipEl.style.left = (ev.clientX + 12) + 'px';
-                this._tooltipEl.style.top = (ev.clientY + 12) + 'px';
-            };
-            this._mouseMove = move;
-            window.addEventListener('mousemove', move);
-
-            // DOM-level mouseleave on the scroll container — reliable hide trigger
-            // when Konva mouseout doesn't fire (lane redraw destroys the source
-            // shape mid-hover, cursor leaves canvas via top/bottom edge, etc.).
-            // Scoped to a single bind via _containerLeaveBound.
-            const c = this._container();
-            if (c && !this._containerLeaveBound) {
-                this._containerLeaveBound = true;
-                this._containerLeaveHandler = () => this._hideTooltip();
-                c.addEventListener('mouseleave', this._containerLeaveHandler);
-            }
-        }
-
-        _removeTooltipMouseMove() {
-            if (this._mouseMove) {
-                window.removeEventListener('mousemove', this._mouseMove);
-                this._mouseMove = null;
-            }
-        }
-
-        _hideTooltip() {
-            if (this._tooltipEl) this._tooltipEl.style.display = 'none';
-            this._removeTooltipMouseMove();
-            document.body.style.cursor = '';
-        }
-
-        _applyFilter() {
-            const rule = FILTER_RULES[this.filter] || FILTER_RULES.all;
-            // Iterate top-level lane children — events are on Groups (dots) or
-            // Rects (gaps + ticks). Inner shapes inherit visibility from their parent.
-            this.laneLayer.getChildren().forEach(node => {
-                if (node._isGap) return; // gaps always visible
-                if (!node._evt) return;
-                node.visible(rule(node._evt.category || 'default'));
-            });
-        }
-
-        _applyFocus() {
-            this.laneLayer.getChildren().forEach(node => {
-                // Match-level events live above the lanes and aren't bound to a player —
-                // they stay full opacity regardless of focus selection.
-                if (node._isMatchLevel) return;
-                if (!node._lane) return;
-                if (this.focusClientId == null) {
-                    node.opacity(1);
-                } else {
-                    node.opacity(node._lane.clientId === this.focusClientId ? 1 : 0.25);
-                }
-            });
+        _pct(seconds) {
+            // Percentage of the time axis the given second falls at.
+            return ((seconds - this.payload.minSeconds) / this.span) * 100;
         }
 
         _stripColors(s) {
             return (s || '').replace(/\^[0-9]/g, '');
         }
 
-        // ── public methods ──
+        // ── DOM construction ───────────────────────────────────────────────────
+        // We build the full subtree once via DocumentFragment and replace the host
+        // contents in a single mutation. Subsequent zoom / filter / focus / scrub
+        // operations are CSS-variable or class-toggle updates — no rebuilds.
+        _build() {
+            const host = this._container();
+            if (!host) return;
+
+            // Reset host: drop any prior render (e.g. lane-mode rebuild) and seed
+            // baseline state. We own the inline style.
+            host.innerHTML = '';
+            host.classList.add('zsr-host');
+            host.style.setProperty('--zoom', String(this.zoom));
+            host.dataset.filter = this.filter;
+            if (this.focusClientId != null) {
+                host.dataset.focusClient = String(this.focusClientId);
+            } else {
+                delete host.dataset.focusClient;
+            }
+
+            const visibleLanes = this._visibleLanes();
+            const showLaneLabels = visibleLanes.length > 1;
+
+            const root = document.createElement('div');
+            root.className = 'zsr-shell' + (showLaneLabels ? '' : ' zsr-shell--single');
+
+            // ── Lane name column (left, doesn't scroll) ──
+            // Position: outside the scroll-area entirely, in a sibling grid column.
+            // No sticky tricks, no scroll-sync handlers.
+            if (showLaneLabels) {
+                const side = document.createElement('div');
+                side.className = 'zsr-side';
+                visibleLanes.forEach((lane, idx) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'zsr-side-cell';
+                    cell.style.setProperty('--lane-idx', String(idx));
+                    cell.title = this._stripColors(lane.name);
+                    cell.textContent = this._stripColors(lane.name);
+                    side.appendChild(cell);
+                });
+                root.appendChild(side);
+            }
+
+            // ── Scroll area (right column, horizontally scrolls when zoomed) ──
+            const scrollArea = document.createElement('div');
+            scrollArea.className = 'zsr-scroll';
+            this._scrollEl = scrollArea;
+
+            // ── Track (the actually-zoomed surface) ──
+            // Width = 100% × var(--zoom). All children use percent-based positioning
+            // so the browser repositions everything via GPU compositor on zoom.
+            const track = document.createElement('div');
+            track.className = 'zsr-track';
+            const trackHeight = this._trackHeight(visibleLanes.length);
+            track.style.setProperty('--track-height', trackHeight + 'px');
+            track.style.setProperty('--lane-count', String(visibleLanes.length));
+            this._trackEl = track;
+
+            // ── Round-band stripes (full-height, alternating tint) ──
+            // Rendered first so they sit behind everything else in the track.
+            const bands = document.createElement('div');
+            bands.className = 'zsr-bands';
+            (this.payload.roundBands || []).forEach((band, i) => {
+                const left = this._pct(band.startSeconds);
+                const width = Math.max(this._pct(band.endSeconds) - left, 0.05);
+                const el = document.createElement('div');
+                el.className = 'zsr-band ' + (i % 2 === 0 ? 'zsr-band--even' : 'zsr-band--odd');
+                el.style.left = left + '%';
+                el.style.width = width + '%';
+                if (width > 1.5) {
+                    const lbl = document.createElement('span');
+                    lbl.className = 'zsr-band-label';
+                    lbl.textContent = 'R' + band.roundNumber;
+                    el.appendChild(lbl);
+                }
+                bands.appendChild(el);
+            });
+            track.appendChild(bands);
+
+            // ── Match-level event tickband (top, EE quest markers) ──
+            if (this._hasMatchLevelEvents()) {
+                const tickband = document.createElement('div');
+                tickband.className = 'zsr-tickband';
+                const watermark = document.createElement('div');
+                watermark.className = 'zsr-tickband-watermark';
+                watermark.textContent = 'Easter Eggs';
+                tickband.appendChild(watermark);
+                this.payload.matchLevelEvents.forEach(evt => {
+                    tickband.appendChild(this._buildDot(evt, /*isMatchLevel=*/true, null));
+                });
+                track.appendChild(tickband);
+            }
+
+            // ── Lanes (one row per visible player) ──
+            const lanesEl = document.createElement('div');
+            lanesEl.className = 'zsr-lanes';
+            visibleLanes.forEach((lane, idx) => {
+                const laneEl = document.createElement('div');
+                laneEl.className = 'zsr-lane';
+                laneEl.style.setProperty('--lane-idx', String(idx));
+                laneEl.dataset.client = String(lane.clientId);
+
+                // Gaps render behind events — single absolute-positioned rect each.
+                (lane.gaps || []).forEach(gap => {
+                    const gx = this._pct(gap.start);
+                    const gw = Math.max(this._pct(gap.end) - gx, 0.05);
+                    const g = document.createElement('div');
+                    g.className = 'zsr-gap' + (gap.compact ? ' zsr-gap--compact' : '');
+                    if (gap.compact) {
+                        // Compact gaps render as a thin vertical strip at the gap
+                        // midpoint — visual hint, not a span. Width clamped tight.
+                        const midPct = (gx + this._pct(gap.end)) / 2;
+                        const compactW = Math.max(Math.min(gw * 0.15, 0.6), 0.18);
+                        g.style.left = (midPct - compactW / 2) + '%';
+                        g.style.width = compactW + '%';
+                    } else {
+                        g.style.left = gx + '%';
+                        g.style.width = gw + '%';
+                    }
+                    g.dataset.tooltip = gap.tooltip || '';
+                    laneEl.appendChild(g);
+                });
+
+                // Events. Round-completion markers (category 'round') are skipped
+                // here — the R{n} round-band labels at the top of the track
+                // convey the same information visually, so the per-lane round
+                // ticks were redundant clutter. Round events still ship in the
+                // payload because they drive RoundBand derivation server-side
+                // and the first-event-as-initial-scrub-time defaulting.
+                (lane.events || []).forEach(evt => {
+                    if ((evt.category || 'default') === 'round') return;
+                    laneEl.appendChild(this._buildDot(evt, /*isMatchLevel=*/false, lane));
+                });
+
+                lanesEl.appendChild(laneEl);
+            });
+            track.appendChild(lanesEl);
+
+            // ── Scrub cursor (vertical line + draggable handle) ──
+            // Positioned via --scrub-pct CSS var so cursor moves are a single
+            // var write — no layout, no JS per pixel.
+            const scrub = document.createElement('div');
+            scrub.className = 'zsr-scrub';
+            scrub.style.setProperty('--scrub-pct', this._pct(this.scrubSeconds) + '%');
+            const scrubLine = document.createElement('div');
+            scrubLine.className = 'zsr-scrub-line';
+            const scrubHandle = document.createElement('button');
+            scrubHandle.className = 'zsr-scrub-handle';
+            scrubHandle.type = 'button';
+            scrubHandle.setAttribute('aria-label', 'Scrub');
+            scrub.appendChild(scrubLine);
+            scrub.appendChild(scrubHandle);
+            track.appendChild(scrub);
+            this._scrubEl = scrub;
+            this._scrubHandleEl = scrubHandle;
+
+            scrollArea.appendChild(track);
+            root.appendChild(scrollArea);
+            host.appendChild(root);
+
+            this._wireHandlers();
+            this._applyFilter();
+            this._applyFocus();
+        }
+
+        _trackHeight(laneCount) {
+            const TOP_PAD = 24;
+            const TICKBAND_HEIGHT = this._hasMatchLevelEvents() ? 32 : 0;
+            const LANE_ROW = 44; // matches CSS lane-row height
+            const BOTTOM_PAD = 12;
+            return Math.max(120, TOP_PAD + TICKBAND_HEIGHT + laneCount * LANE_ROW + BOTTOM_PAD);
+        }
+
+        _buildDot(evt, isMatchLevel, lane) {
+            const cat = evt.category || 'default';
+            const v = CATEGORY_VISUALS[cat] || CATEGORY_VISUALS.default;
+            const left = this._pct(evt.seconds);
+
+            if (v.tick) {
+                // Round markers + unknown categories render as a thin vertical
+                // tick — no glyph, no shadow. Cheaper to paint at scale.
+                const el = document.createElement('div');
+                el.className = 'zsr-tick';
+                el.style.left = left + '%';
+                el.style.setProperty('--tick-fill', v.fill);
+                el.dataset.cat = cat;
+                el.dataset.tooltip = evt.time + ' • ' + evt.label;
+                if (lane) el.dataset.client = String(lane.clientId);
+                if (isMatchLevel) el.dataset.matchLevel = 'true';
+                return el;
+            }
+
+            // Event dot — button so it's keyboard-focusable + accessible by default.
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'zsr-dot' + (isMatchLevel ? ' zsr-dot--match' : '');
+            btn.style.left = left + '%';
+            btn.style.setProperty('--dot-fill', v.fill);
+            btn.style.setProperty('--dot-z', String(v.z));
+            btn.dataset.cat = cat;
+            btn.dataset.seconds = String(evt.seconds);
+            btn.dataset.tooltip = evt.time + ' • ' + evt.label;
+            if (lane) btn.dataset.client = String(lane.clientId);
+            if (isMatchLevel) btn.dataset.matchLevel = 'true';
+            btn.setAttribute('aria-label', evt.label);
+
+            if (v.icon) {
+                const ico = document.createElement('i');
+                ico.className = 'ph ' + v.icon + ' zsr-dot-icon';
+                btn.appendChild(ico);
+            }
+            return btn;
+        }
+
+        // ── Interaction wiring ────────────────────────────────────────────────
+        _wireHandlers() {
+            const track = this._trackEl;
+            const scroll = this._scrollEl;
+            const handle = this._scrubHandleEl;
+
+            // Wheel-zoom (cursor-anchored). Updates `--zoom` CSS variable on the
+            // host element; browser compositor handles the layer transform. Same
+            // anchor math as the prior canvas implementation.
+            this._wheelHandler = (e) => {
+                e.preventDefault();
+                const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+                const newZoom = Math.min(Math.max(this.zoom * factor, ZOOM_MIN), ZOOM_MAX);
+                if (Math.abs(newZoom - this.zoom) < 0.01) return;
+
+                const trackRect = track.getBoundingClientRect();
+                // Position of cursor in current track-coordinate space.
+                const stageX = e.clientX - trackRect.left + scroll.scrollLeft;
+                const ratio = newZoom / this.zoom;
+
+                this.zoom = newZoom;
+                this._container().style.setProperty('--zoom', String(this.zoom));
+
+                // Reposition scroll so the time at the cursor stays under the cursor.
+                const newStageX = stageX * ratio;
+                const viewportX = e.clientX - trackRect.left;
+                scroll.scrollLeft = Math.max(0, newStageX - viewportX);
+
+                this._notifyZoom();
+            };
+            scroll.addEventListener('wheel', this._wheelHandler, { passive: false });
+
+            // Scrub-cursor drag — pointer events for unified mouse/touch.
+            this._scrubPointerDown = (e) => {
+                e.preventDefault();
+                this._scrubDragging = true;
+                handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
+                this._updateScrubFromClientX(e.clientX);
+            };
+            this._scrubPointerMove = (e) => {
+                if (!this._scrubDragging) return;
+                this._updateScrubFromClientX(e.clientX);
+            };
+            this._scrubPointerUp = (e) => {
+                if (!this._scrubDragging) return;
+                this._scrubDragging = false;
+                handle.releasePointerCapture && handle.releasePointerCapture(e.pointerId);
+            };
+            handle.addEventListener('pointerdown', this._scrubPointerDown);
+            handle.addEventListener('pointermove', this._scrubPointerMove);
+            handle.addEventListener('pointerup', this._scrubPointerUp);
+            handle.addEventListener('pointercancel', this._scrubPointerUp);
+
+            // Click-on-track to jump scrub cursor (excluding clicks on event dots —
+            // those have their own handler that ALSO sets the scrub time, but
+            // emits a clientId so the side panel can pin to that player's event).
+            this._trackClick = (e) => {
+                const dot = e.target.closest('.zsr-dot');
+                if (dot) {
+                    const seconds = Number(dot.dataset.seconds);
+                    const clientId = dot.dataset.client ? Number(dot.dataset.client) : 0;
+                    if (this.dotnetRef) {
+                        this.dotnetRef.invokeMethodAsync('OnEventClicked', clientId, seconds);
+                    }
+                    this.setScrubTime(seconds);
+                    return;
+                }
+                // Click on bare track moves the cursor.
+                if (e.target.closest('.zsr-scrub') || e.target.closest('.zsr-side')) return;
+                this._updateScrubFromClientX(e.clientX);
+            };
+            track.addEventListener('click', this._trackClick);
+
+            // Tooltip — single delegated handler reusing the existing
+            // window.tooltipFixed shared element. Replaces the prior
+            // _showTooltip/_hideTooltip/_removeTooltipMouseMove machinery.
+            // _lastHoverEl gates re-shows: mouseover fires on every parent->
+            // child transition (e.g. dot -> inner icon), and re-calling show()
+            // each time causes a perceptible tooltip flicker. We only fire on
+            // a genuine target change.
+            this._lastHoverEl = null;
+            this._mouseOver = (e) => {
+                const el = e.target.closest('[data-tooltip]');
+                if (!el || !el.dataset.tooltip) return;
+                if (el === this._lastHoverEl) return;
+                this._lastHoverEl = el;
+                if (window.tooltipFixed && window.tooltipFixed.show) {
+                    window.tooltipFixed.show(el, el.dataset.tooltip, 'up');
+                }
+            };
+            this._mouseOut = (e) => {
+                // mouseout bubbles; only act when leaving the element entirely
+                // (relatedTarget outside the same tooltip-bearing ancestor).
+                const fromEl = e.target.closest('[data-tooltip]');
+                const toEl = e.relatedTarget && e.relatedTarget.closest
+                    ? e.relatedTarget.closest('[data-tooltip]')
+                    : null;
+                if (fromEl && fromEl !== toEl) {
+                    this._lastHoverEl = null;
+                    if (window.tooltipFixed && window.tooltipFixed.hide) {
+                        window.tooltipFixed.hide();
+                    }
+                }
+            };
+            track.addEventListener('mouseover', this._mouseOver);
+            track.addEventListener('mouseout', this._mouseOut);
+        }
+
+        _updateScrubFromClientX(clientX) {
+            const trackRect = this._trackEl.getBoundingClientRect();
+            const x = clientX - trackRect.left;
+            const pct = Math.min(Math.max(x / trackRect.width, 0), 1);
+            const seconds = this.payload.minSeconds + pct * this.span;
+            this.setScrubTime(seconds);
+        }
+
+        _notifyScrub() {
+            if (this._scrubDebounce) clearTimeout(this._scrubDebounce);
+            this._scrubDebounce = setTimeout(() => {
+                if (this.dotnetRef) {
+                    this.dotnetRef.invokeMethodAsync('OnScrubChanged', this.scrubSeconds, this._computeHalfWindowSeconds());
+                }
+            }, SCRUB_DEBOUNCE_MS);
+        }
+
+        // Half-width (in seconds) of the side-panel hit window around the scrub
+        // cursor. Sized so the visual dot footprint matches the hit window: at
+        // any zoom level, brushing the cursor across a dot's pixel width should
+        // surface that dot in the panel. Without this, the fixed ±5s window
+        // demanded near-perfect cursor-on-centre alignment at 1× zoom (where
+        // 5 seconds was ~2 px while a dot is 16 px wide) and was overly lenient
+        // at high zoom.
+        _computeHalfWindowSeconds() {
+            if (!this._scrollEl) return 5;
+            const trackPx = this._scrollEl.clientWidth * this.zoom;
+            if (trackPx <= 0) return 5;
+            const pxPerSec = trackPx / this.span;
+            // 8 px = half a regular dot, +4 px slack so edge-of-dot hovers
+            // still register cleanly. Floor at 0.5s so very-high-zoom doesn't
+            // collapse the window to nothing on tickband (smaller) dots.
+            const slopPx = 12;
+            return Math.max(0.5, slopPx / pxPerSec);
+        }
+
+        // Debounce zoom-changed Blazor roundtrips — wheel-zoom fires many times
+        // during a fast spin, but the consumer only cares about the settled
+        // level (toolbar +/- display).
+        _notifyZoom() {
+            if (this._zoomDebounce) clearTimeout(this._zoomDebounce);
+            this._zoomDebounce = setTimeout(() => {
+                if (this.dotnetRef) {
+                    this.dotnetRef.invokeMethodAsync('OnZoomChanged', this.zoom);
+                }
+            }, ZOOM_DEBOUNCE_MS);
+        }
+
+        _applyFilter() {
+            const rule = FILTER_RULES[this.filter] || FILTER_RULES.all;
+            // Walk dots once; toggle .zsr-dim. Cheap (~6000 class flips, runs
+            // only on filter change, not per-frame).
+            const dots = this._trackEl.querySelectorAll('.zsr-dot, .zsr-tick');
+            dots.forEach(d => {
+                if (d.dataset.matchLevel === 'true') {
+                    // Match-level events stay full opacity regardless of filter
+                    // unless the filter explicitly excludes their category.
+                }
+                const cat = d.dataset.cat || 'default';
+                if (rule(cat)) d.classList.remove('zsr-dim');
+                else           d.classList.add('zsr-dim');
+            });
+        }
+
+        _applyFocus() {
+            // CSS handles the dim via [data-focus-client] selector on host, but
+            // can't compare the host's data-focus-client attr value to each
+            // lane's data-client attr value (no attr-comparison in CSS). So we
+            // mirror the focused-lane state into a `.zsr-focus-self` class which
+            // the CSS can target directly. ~6 class flips per focus change —
+            // negligible.
+            const host = this._container();
+            const lanes = this._trackEl ? this._trackEl.querySelectorAll('.zsr-lane') : [];
+            if (this.focusClientId == null) {
+                delete host.dataset.focusClient;
+                lanes.forEach(l => l.classList.remove('zsr-focus-self'));
+            } else {
+                host.dataset.focusClient = String(this.focusClientId);
+                const target = String(this.focusClientId);
+                lanes.forEach(l => {
+                    if (l.dataset.client === target) l.classList.add('zsr-focus-self');
+                    else l.classList.remove('zsr-focus-self');
+                });
+            }
+        }
+
+        // ── public API ─────────────────────────────────────────────────────────
 
         setFilter(filter) {
+            if (this.filter === filter) return;
             this.filter = filter;
+            this._container().dataset.filter = filter;
             this._applyFilter();
-            this.laneLayer.batchDraw();
         }
 
         setZoom(level) {
-            // Button-press path: anchor at the visible viewport center so the
-            // user doesn't lose their place when clicking +/-. Apply the same
-            // canvas-safety cap as the wheel path.
-            const clamped = Math.min(Math.max(level, 1), this._effectiveMaxZoom());
-            const container = this._container();
-            const anchor = container
-                ? container.scrollLeft + container.clientWidth / 2
-                : this._stageWidth() / 2;
-            this._setZoomAnchored(clamped, anchor);
+            const clamped = Math.min(Math.max(level, ZOOM_MIN), ZOOM_MAX);
+            if (Math.abs(clamped - this.zoom) < 0.01) return;
+
+            // Anchor at viewport-centre so toolbar +/- doesn't lose the user's
+            // position. Same math as wheel handler but uses centre as anchor.
+            const trackRect = this._trackEl.getBoundingClientRect();
+            const scroll = this._scrollEl;
+            const containerRect = scroll.getBoundingClientRect();
+            const viewportX = containerRect.width / 2;
+            const stageX = viewportX - trackRect.left + containerRect.left + scroll.scrollLeft;
+
+            const ratio = clamped / this.zoom;
+            this.zoom = clamped;
+            this._container().style.setProperty('--zoom', String(this.zoom));
+            const newStageX = stageX * ratio;
+            scroll.scrollLeft = Math.max(0, newStageX - viewportX);
         }
 
         setScrubTime(seconds) {
-            this.scrubSeconds = seconds;
-            const x = this._timeToX(seconds);
-            const top = TOP_PAD - 8;
-            const bottom = this._laneAreaTop() + this._visibleLanes().length * (LANE_HEIGHT + LANE_GAP);
-            if (this.scrubHandle) this.scrubHandle.x(x - 6);
-            if (this.scrubLine) this.scrubLine.points([x, top, x, bottom]);
-            this.scrubLayer.batchDraw();
+            this.scrubSeconds = Math.min(Math.max(seconds, this.payload.minSeconds), this.payload.maxSeconds);
+            const pct = this._pct(this.scrubSeconds);
+            if (this._scrubEl) this._scrubEl.style.setProperty('--scrub-pct', pct + '%');
             this._notifyScrub();
         }
 
         focusClient(clientId) {
             this.focusClientId = clientId;
             this._applyFocus();
-            this.laneLayer.batchDraw();
         }
 
         setLaneMode(mode) {
             if (mode !== 'qualified' && mode !== 'all') return;
             if (this.laneMode === mode) return;
             this.laneMode = mode;
-            this._redrawAll();
+            // Lane-mode change = different lane set = full subtree rebuild. Still
+            // cheap (single docFragment swap, no canvas raster). Preserves zoom +
+            // filter + focus + scrub time.
+            const prevZoom = this.zoom;
+            const prevFilter = this.filter;
+            const prevScrub = this.scrubSeconds;
+            this._build();
+            this.zoom = prevZoom;
+            this._container().style.setProperty('--zoom', String(this.zoom));
+            this.filter = prevFilter;
+            this._container().dataset.filter = prevFilter;
+            this._applyFilter();
+            this._applyFocus();
+            this.setScrubTime(prevScrub);
         }
 
         dispose() {
-            window.removeEventListener('resize', this._resizeHandler);
-            if (this._zoomRaf != null) {
-                cancelAnimationFrame(this._zoomRaf);
-                this._zoomRaf = null;
+            if (this._scrollEl && this._wheelHandler) {
+                this._scrollEl.removeEventListener('wheel', this._wheelHandler);
             }
-            if (this._zoomSettleTimer) {
-                clearTimeout(this._zoomSettleTimer);
-                this._zoomSettleTimer = null;
+            if (this._scrubHandleEl) {
+                this._scrubHandleEl.removeEventListener('pointerdown', this._scrubPointerDown);
+                this._scrubHandleEl.removeEventListener('pointermove', this._scrubPointerMove);
+                this._scrubHandleEl.removeEventListener('pointerup', this._scrubPointerUp);
+                this._scrubHandleEl.removeEventListener('pointercancel', this._scrubPointerUp);
             }
-            if (this._scrollRaf != null) {
-                cancelAnimationFrame(this._scrollRaf);
-                this._scrollRaf = null;
+            if (this._trackEl) {
+                this._trackEl.removeEventListener('click', this._trackClick);
+                this._trackEl.removeEventListener('mouseover', this._mouseOver);
+                this._trackEl.removeEventListener('mouseout', this._mouseOut);
             }
-            const c = this._container();
-            if (c && this._scrollHandler) {
-                c.removeEventListener('scroll', this._scrollHandler);
-                this._scrollHandler = null;
+            if (this._scrubDebounce) clearTimeout(this._scrubDebounce);
+            if (this._zoomDebounce) clearTimeout(this._zoomDebounce);
+
+            const host = this._container();
+            if (host) {
+                host.innerHTML = '';
+                host.classList.remove('zsr-host');
+                host.removeAttribute('data-filter');
+                host.removeAttribute('data-focus-client');
+                host.style.removeProperty('--zoom');
             }
-            if (this._namesOverlay) {
-                this._namesOverlay.remove();
-                this._namesOverlay = null;
-            }
-            if (this._bandWatermark) {
-                this._bandWatermark.remove();
-                this._bandWatermark = null;
-            }
-            this._hideTooltip();
-            if (this._containerLeaveBound && this._containerLeaveHandler) {
-                const c = this._container();
-                if (c) c.removeEventListener('mouseleave', this._containerLeaveHandler);
-                this._containerLeaveBound = false;
-                this._containerLeaveHandler = null;
-            }
-            if (this._tooltipEl) {
-                this._tooltipEl.remove();
-                this._tooltipEl = null;
-            }
-            if (this.stage) {
-                this.stage.destroy();
-                this.stage = null;
-            }
-            if (this.dotnetRef) {
-                // Caller-owned reference; do NOT dispose here. Razor disposes on its end.
-                this.dotnetRef = null;
-            }
+            // Caller-owned dotnetRef; do not dispose here.
+            this.dotnetRef = null;
         }
     }
 
     window.zombieScrubber = {
         init(elementId, payload, dotnetRef, focusClientId, initialLaneMode) {
-            if (typeof Konva === 'undefined') {
-                console.error('zombieScrubber: Konva not loaded');
-                return;
+            if (instances.has(elementId)) {
+                instances.get(elementId).dispose();
+                instances.delete(elementId);
             }
-            // Defensive: dispose if already exists
-            if (stages.has(elementId)) {
-                stages.get(elementId).dispose();
-                stages.delete(elementId);
-            }
-            // Camelcase normalization (System.Text.Json default is camelCase for output)
-            stages.set(elementId, new ScrubberInstance(elementId, payload, dotnetRef, focusClientId, initialLaneMode));
+            instances.set(elementId, new ScrubberInstance(elementId, payload, dotnetRef, focusClientId, initialLaneMode));
         },
         dispose(elementId) {
-            const inst = stages.get(elementId);
+            const inst = instances.get(elementId);
             if (inst) {
                 inst.dispose();
-                stages.delete(elementId);
+                instances.delete(elementId);
             }
         },
-        setFilter(elementId, filter) { const i = stages.get(elementId); if (i) i.setFilter(filter); },
-        setZoom(elementId, level)    { const i = stages.get(elementId); if (i) i.setZoom(level); },
-        setLaneMode(elementId, mode) { const i = stages.get(elementId); if (i) i.setLaneMode(mode); },
-        setScrubTime(elementId, sec) { const i = stages.get(elementId); if (i) i.setScrubTime(sec); },
-        focusClient(elementId, cid)  { const i = stages.get(elementId); if (i) i.focusClient(cid); }
+        setFilter(elementId, filter) { const i = instances.get(elementId); if (i) i.setFilter(filter); },
+        setZoom(elementId, level)    { const i = instances.get(elementId); if (i) i.setZoom(level); },
+        setLaneMode(elementId, mode) { const i = instances.get(elementId); if (i) i.setLaneMode(mode); },
+        setScrubTime(elementId, sec) { const i = instances.get(elementId); if (i) i.setScrubTime(sec); },
+        focusClient(elementId, cid)  { const i = instances.get(elementId); if (i) i.focusClient(cid); }
     };
 })();

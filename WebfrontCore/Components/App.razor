@@ -35,7 +35,6 @@
     <script src="/lib/jquery/dist/jquery.js"></script>
     <script src="/lib/chart.js/dist/Chart.bundle.min.js"></script>
     <script src="/lib/moment.js/min/moment-with-locales.js"></script>
-    <script src="/lib/konva/konva.min.js"></script>
 
     <script src="/js/blazor_lib.js"></script>
     <script src="/js/stats.js"></script>
@@ -47,10 +46,8 @@
 else
 {
     <script src="/js/app.min.js?Version=@Program.Manager.Version"></script>
-    @* Konva + zombie-scrubber are loaded standalone (NUglify can't minify Konva's
-       ES2018+ regex syntax, so they're excluded from app.min.js). Konva must load
-       before zombie-scrubber.js — the latter calls window.Konva at use time. *@
-    <script src="/lib/konva/konva.min.js?Version=@Program.Manager.Version"></script>
+    @* zombie-scrubber loads standalone (kept out of the main bundle for cache
+       isolation — UI changes ship without invalidating app.min.js). *@
     <script src="/js/zombie-scrubber.js?Version=@Program.Manager.Version"></script>
     <script src="/js/user/user.js?Version=@Program.Manager.Version"></script>
 }

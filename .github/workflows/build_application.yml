@@ -217,11 +217,8 @@ jobs:
           mkdir -p ${{ env.outputFolder }}/wwwroot/js/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/user/user.js ${{ env.outputFolder }}/wwwroot/js/user/user.js
-          # Konva + zombie-scrubber are loaded standalone (Konva uses ES2018+ regex
-          # syntax that NUglify can't minify, so it's excluded from app.min.js;
-          # zombie-scrubber.js is loaded after Konva via App.razor)
-          mkdir -p ${{ env.outputFolder }}/wwwroot/lib/konva
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/lib/konva/konva.min.js ${{ env.outputFolder }}/wwwroot/lib/konva/konva.min.js
+          # zombie-scrubber.js is loaded standalone (kept out of the main bundle
+          # for cache isolation — UI changes ship without invalidating app.min.js).
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/zombie-scrubber.js ${{ env.outputFolder }}/wwwroot/js/zombie-scrubber.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
           mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor

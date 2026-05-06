@@ -1828,6 +1828,26 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats.Skill = Math.Round(skillFunc(client, clientStats), 3);
             }
+            else
+            {
+                // DIAGNOSTIC (zombie skill-leak phase 1): the standard MP Skill formula
+                // just ran for a client whose CurrentServer is a zombie server — i.e.
+                // ZombieStats' SkillFunction override never attached. One-shot per
+                // (client, server) so log volume is bounded by # of leak victims.
+                var leakServer = client.CurrentServer;
+                if (leakServer is not null && leakServer.IsZombieServer())
+                {
+                    var leakFlag = $"ZmLog_Leak_{leakServer.LegacyDatabaseId}";
+                    if (!client.GetAdditionalProperty<bool>(leakFlag))
+                    {
+                        client.SetAdditionalProperty(leakFlag, true);
+                        _log.LogWarning(
+                            "ZombieSkillLeak: client={Name}({ClientId}) server={Server} game={Game} gametype={Gametype} skill={Skill} kills={Kills} deaths={Deaths}",
+                            client.Name, client.ClientId, leakServer.ServerName, leakServer.GameCode,
+                            leakServer.Gametype, clientStats.Skill, clientStats.Kills, clientStats.Deaths);
+                    }
+                }
+            }
 
             // fixme: how does this happen?
             if (double.IsNaN(clientStats.SPM) || double.IsNaN(clientStats.Skill) || double.IsInfinity(clientStats.Skill))

@@ -67,14 +67,45 @@ public class Plugin : IPluginV2
 
     private async Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)
     {
-        if (!clientEvent.Client.CurrentServer.IsZombieServer())
+        var server = clientEvent.Client.CurrentServer;
+        if (server is null || !server.IsZombieServer())
         {
+            // DIAGNOSTIC (zombie skill-leak phase 1): the server is a CoD
+            // zombie-capable game (T4/T5/T6) but IsZombieServer returned false,
+            // so gametype was likely stale at auth time — SkillFunction will
+            // never attach for this session. One-shot per (client, server).
+            if (server is not null
+                && (server.GameCode == Reference.Game.T4
+                    || server.GameCode == Reference.Game.T5
+                    || server.GameCode == Reference.Game.T6))
+            {
+                var raceFlag = $"ZmLog_AuthRace_{server.LegacyDatabaseId}";
+                if (!clientEvent.Client.GetAdditionalProperty<bool>(raceFlag))
+                {
+                    clientEvent.Client.SetAdditionalProperty(raceFlag, true);
+                    _logger.LogWarning(
+                        "ZombieAuthRace: client={Name}({ClientId}) server={Server} game={Game} gametype={Gametype}",
+                        clientEvent.Client.Name, clientEvent.Client.ClientId, server.ServerName,
+                        server.GameCode, server.Gametype);
+                }
+            }
             return;
         }
 
         var skillFunc = _enhancer?.GetSkillCalculation() ?? ((_, stats) => stats.Skill);
         clientEvent.Client.SetAdditionalProperty("SkillFunction", skillFunc);
         clientEvent.Client.SetAdditionalProperty("EloRatingFunction", (EFClient _, EFClientStatistics _) => 1.0);
+
+        // DIAGNOSTIC (zombie skill-leak phase 1): confirm SkillFunction was
+        // attached for this client/server. One-shot per (client, server).
+        var attachFlag = $"ZmLog_Attached_{server.LegacyDatabaseId}";
+        if (!clientEvent.Client.GetAdditionalProperty<bool>(attachFlag))
+        {
+            clientEvent.Client.SetAdditionalProperty(attachFlag, true);
+            _logger.LogWarning(
+                "ZombieSkillFunctionAttached: client={Name}({ClientId}) server={Server}",
+                clientEvent.Client.Name, clientEvent.Client.ClientId, server.ServerName);
+        }
 
         if (_enhancer is not null)
         {

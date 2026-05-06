@@ -16,6 +16,17 @@ public class EFPerformanceBucket
     /// <summary>
     /// Unique string identifier used in configuration and queries (e.g. "zombies", "competitive").
     /// Matched against <see cref="SharedLibraryCore.Configuration.ServerConfiguration.PerformanceBucketCode"/>.
+    /// <para>
+    /// <b>Stored canonical form: lower-case.</b> The writer in
+    /// <c>IW4MServer.UpdatePerformanceBucket</c> lower-cases on insert (and
+    /// <see cref="SharedLibraryCore.Server.PerformanceCode"/> normalises the
+    /// runtime value), so case-sensitive equality comparisons against this
+    /// column must use a lower-case comparand. Code-side, run any user-supplied
+    /// bucket code through <c>Stats.Config.PerformanceBucketCodes.Normalize</c>
+    /// before comparing — settings.json lets users write capitalised codes
+    /// (e.g. <c>"Zombies"</c>) for readability, but the DB only sees the
+    /// normalised form.
+    /// </para>
     /// </summary>
     [MaxLength(256)]
     public string Code { get; set; }

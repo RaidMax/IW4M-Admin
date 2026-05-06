@@ -22,6 +22,7 @@ using SharedLibraryCore.Events.Game.GameScript;
 using SharedLibraryCore.Events.Management;
 using Stats.Client.Abstractions;
 using Stats.Client.Game;
+using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Stats.Client;
 
@@ -481,12 +482,19 @@ public class HitCalculator : IClientStatisticCalculator
             throw new InvalidOperationException($"No hit state found for client {clientId}");
         }
 
+        // Defence-in-depth: PerformanceBucket.Code on persisted hits is always
+        // the lower-cased canonical form (the writer in IW4MServer normalises);
+        // a raw capitalised caller-supplied value would silently never match.
+        var normalizedBucket = performanceBucketCode is null
+            ? null
+            : PerformanceBucketCodes.Normalize(performanceBucketCode);
+
         var hitStat = state.Hits
             .FirstOrDefault(hit => hit.HitLocationId == hitLocationId
                                    && hit.WeaponId == weaponId
                                    && hit.WeaponAttachmentComboId == attachmentComboId
                                    && hit.MeansOfDeathId == meansOfDeathId
-                                   && (performanceBucketCode is not null && performanceBucketCode == hit.PerformanceBucket?.Code || (performanceBucketCode is null && hit.ServerId == serverId)));
+                                   && (normalizedBucket is not null && normalizedBucket == hit.PerformanceBucket?.Code || (normalizedBucket is null && hit.ServerId == serverId)));
 
         if (hitStat != null)
         {

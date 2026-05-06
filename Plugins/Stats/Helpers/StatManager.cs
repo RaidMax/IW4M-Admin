@@ -115,13 +115,18 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // from older versions keep working even before they manually backfill bucket
             // FKs — both NULL-FK legacy rows and properly-tagged new rows surface together.
             var isDefaultBucket = PerformanceBucketCodes.IsDefault(performanceBucketCode);
+            // Defence-in-depth normalisation: callers reaching this expression usually
+            // come through GetBucketConfig (which already lower-cases via Normalize),
+            // but a direct call with a capitalised user-supplied bucket would
+            // otherwise filter to zero rows since the DB stores lower-case canonical.
+            var normalizedBucket = PerformanceBucketCodes.Normalize(performanceBucketCode);
             return ranking => ranking.ServerId == serverId
                               && ranking.Client.Level != Data.Models.Client.EFClient.Permission.Banned
                               && ranking.CreatedDateTime >= oldestDate
                               && ranking.ZScore != null
                               && ranking.PerformanceMetric != null
                               && ranking.Newest
-                              && (ranking.PerformanceBucket.Code == performanceBucketCode
+                              && (ranking.PerformanceBucket.Code == normalizedBucket
                                   || (isDefaultBucket && ranking.PerformanceBucketId == null))
                               && ranking.Client.TotalConnectionTime >= (int)minPlayTime.TotalSeconds;
         }
@@ -1648,18 +1653,22 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             // part of the default bucket so the transition to bucketed ranking doesn't
             // leave two Newest=true rows per client/server.
             var includeNullBucket = PerformanceBucketCodes.IsDefault(performanceBucketCode);
+            // Defence-in-depth: DB stores Code lower-cased; normalise here so a
+            // capitalised caller can't silently produce 0-row prunes (would leave
+            // ranking history growing unbounded).
+            var normalizedBucket = PerformanceBucketCodes.Normalize(performanceBucketCode);
 
             var totalRankingEntries = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
-                .Where(r => r.PerformanceBucket.Code == performanceBucketCode
+                .Where(r => r.PerformanceBucket.Code == normalizedBucket
                             || (includeNullBucket && r.PerformanceBucketId == null))
                 .CountAsync();
 
             var staleNewest = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientId)
                 .Where(r => r.ServerId == serverId)
-                .Where(r => r.PerformanceBucket.Code == performanceBucketCode
+                .Where(r => r.PerformanceBucket.Code == normalizedBucket
                             || (includeNullBucket && r.PerformanceBucketId == null))
                 .Where(r => r.Newest)
                 .ToListAsync();
@@ -1677,7 +1686,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 var lastRating = await context.Set<EFClientRankingHistory>()
                     .Where(r => r.ClientId == clientId)
                     .Where(r => r.ServerId == serverId)
-                    .Where(r => r.PerformanceBucket.Code == performanceBucketCode
+                    .Where(r => r.PerformanceBucket.Code == normalizedBucket
                                 || (includeNullBucket && r.PerformanceBucketId == null))
                     .OrderBy(r => r.CreatedDateTime)
                     .FirstOrDefaultAsync();

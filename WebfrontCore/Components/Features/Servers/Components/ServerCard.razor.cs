@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -11,6 +12,7 @@ public partial class ServerCard : IAsyncDisposable
     [Inject] public required AppState AppState { get; set; }
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IActionService ActionService { get; set; }
+    [Inject] public required IToastService ToastService { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ILogger<ServerCard> Logger { get; set; }
     [Parameter, EditorRequired] public ServerInfo Model { get; set; } = default!;
@@ -93,6 +95,30 @@ public partial class ServerCard : IAsyncDisposable
         {
             // Silently handle refresh errors
         }
+    }
+
+    private async Task HandlePlayClick(MouseEventArgs e)
+    {
+        // Modifier-click copies the connect command to clipboard instead of opening
+        // the protocol handler. The icon swap (play -> clipboard) is driven by a
+        // body-level CSS class set on Ctrl/Meta keydown in blazor_lib.js, so the
+        // affordance is visible before the user actually clicks.
+        if (e.CtrlKey || e.MetaKey)
+        {
+            var connectCmd = $"connect {Model.ExternalIPAddress}:{Model.Port}";
+            var ok = await JS.InvokeAsync<bool>("copyToClipboard", connectCmd);
+            if (ok)
+            {
+                await ToastService.ShowSuccessAsync(connectCmd, AppState.Loc("WEBFRONT_HOME_JOIN_COPIED"));
+            }
+            else
+            {
+                await ToastService.ShowErrorAsync(AppState.Loc("WEBFRONT_HOME_JOIN_COPY_FAILED"));
+            }
+            return;
+        }
+
+        await JS.InvokeVoidAsync("openProtocolUrl", Model.ConnectProtocolUrl);
     }
 
     private void OpenScoreboard()

@@ -524,3 +524,11 @@ a {
     border-radius: 4px;
 }
 .zsr-scroll::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+
+/* ── Server-card connect link: icon swap on Ctrl/Meta hold ──────────── */
+/* Driven by `mod-key-down` body class, set by the global key listener in
+   blazor_lib.js. Hidden copy-icon swaps in for the play-icon while held;
+   click handler in ServerCard intercepts modifier-click for clipboard copy. */
+.server-play-link .play-copy-icon { display: none; }
+body.mod-key-down .server-play-link .play-icon { display: none; }
+body.mod-key-down .server-play-link .play-copy-icon { display: inline-block; }

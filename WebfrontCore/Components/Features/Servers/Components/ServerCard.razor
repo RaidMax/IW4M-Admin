@@ -79,9 +79,12 @@
                 </button>
 
                 <a href="@Model.ConnectProtocolUrl"
-                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:flex"
+                   @onclick="HandlePlayClick"
+                   @onclick:preventDefault="true"
+                   class="server-play-link flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:flex"
                    title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
-                    <i class="ph-fill ph-play text-xs"></i>
+                    <i class="ph-fill ph-play text-xs play-icon"></i>
+                    <i class="ph-fill ph-clipboard-text text-xs play-copy-icon"></i>
                 </a>
             </div>
 

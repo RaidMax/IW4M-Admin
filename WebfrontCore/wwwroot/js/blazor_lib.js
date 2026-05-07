@@ -1145,3 +1145,39 @@ window.setupDynamicActionHandlers = function (dotNetRef) {
     document.addEventListener('click', handler, true);
     console.log('[DynamicAction] Handler attached');
 };
+
+// ============================================
+// Modifier-key state tracking (Ctrl / Cmd)
+// ============================================
+// Toggles `mod-key-down` on <body> while either modifier is held. Used to
+// swap the play-icon for a copy-icon on server-card connect links so the
+// "Ctrl+click to copy connect command" affordance is discoverable.
+// Window blur clears the class so a tab-out doesn't leave it stuck.
+(function () {
+    const setModState = (down) => {
+        document.body.classList.toggle('mod-key-down', down);
+    };
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Control' || e.key === 'Meta') setModState(true);
+    });
+    document.addEventListener('keyup', e => {
+        if (e.key === 'Control' || e.key === 'Meta') setModState(false);
+    });
+    window.addEventListener('blur', () => setModState(false));
+})();
+
+window.copyToClipboard = async function (text) {
+    if (!text) return false;
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (err) {
+        console.error('[copyToClipboard] Clipboard write failed:', err);
+        return false;
+    }
+};
+
+window.openProtocolUrl = function (url) {
+    if (!url) return;
+    window.location.href = url;
+};

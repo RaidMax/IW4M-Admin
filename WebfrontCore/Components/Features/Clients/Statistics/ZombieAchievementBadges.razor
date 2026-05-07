@@ -16,7 +16,6 @@
                    opens on click. Maps with many quests collapse first, plenty of
                    space stays expanded.
       • All Built (X/Y)      — green, ph-wrench. Only when X == Y && Y > 0.
-      • Marathon (R30/50/100+) — amber/orange/red, ph-fire. Tiered.
       • Flawless             — pink, ph-heart. Match-wide when TotalDowns is provided
                                (zero across all qualified players); per-player when
                                PlayerDowns is provided (zero for that player). Same
@@ -28,13 +27,6 @@
 
 @{
     var allBuilt = BuildablesTotal is { } total && total > 0 && BuildablesBuilt >= total;
-    var marathonTier = HighestRound switch
-    {
-        >= 100 => 3,
-        >= 50  => 2,
-        >= 30  => 1,
-        _      => 0
-    };
     var showFlawless = HighestRound >= 5
                        && (TotalDowns is 0 || (TotalDowns is null && PlayerDowns is 0));
     var flawlessIsPersonal = TotalDowns is null && PlayerDowns is 0;
@@ -51,7 +43,7 @@
         .ToList();
     var hasEeProgress = visibleQuests.Count > 0;
     var allEeComplete = totalQuests > 0 && completedQuests == totalQuests;
-    var hasAny = hasEeProgress || allBuilt || marathonTier > 0 || showFlawless;
+    var hasAny = hasEeProgress || allBuilt || showFlawless;
 }
 
 @if (hasAny)
@@ -152,22 +144,6 @@
                 <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider cursor-help font-mono">
                     <i class="ph ph-plus-circle text-[10px]"></i>
                     <span>@ExtraBuildablesBuilt</span>
-                </span>
-            </Tooltip>
-        }
-
-        @if (marathonTier > 0)
-        {
-            var (mBg, mBorder, mText) = marathonTier switch
-            {
-                3 => ("bg-red-500/10",    "border-red-500/30",    "text-red-400"),
-                2 => ("bg-orange-500/10", "border-orange-500/30", "text-orange-400"),
-                _ => ("bg-amber-500/10",  "border-amber-500/30",  "text-amber-400")
-            };
-            <Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_MARATHON_TOOLTIP").FormatExt(HighestRound)" WrapperClass="inline-flex shrink-0">
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded @mBg border @mBorder @mText text-[10px] font-bold uppercase tracking-wider cursor-help">
-                    <i class="ph ph-fire text-[10px]"></i>
-                    <span>R@(HighestRound)</span>
                 </span>
             </Tooltip>
         }
@@ -277,7 +253,7 @@
     /// </summary>
     [Parameter] public int ExtraBuildablesBuilt { get; set; }
 
-    /// <summary>Match's highest round. Drives Marathon tier and the No-Down floor.</summary>
+    /// <summary>Match's highest round. Drives the No-Down floor.</summary>
     [Parameter, EditorRequired] public int HighestRound { get; set; }
 
     /// <summary>

@@ -140,10 +140,24 @@ else
         @{
             var hasBuildablesRow = Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue;
         }
-        @if (Detail.EasterEggQuests.Count > 0 || hasBuildablesRow)
-        {
-            <div class="bg-surface rounded-2xl border border-line shadow-xl overflow-hidden">
-                @for (var qi = 0; qi < Detail.EasterEggQuests.Count; qi++)
+        <div class="bg-surface rounded-2xl border border-line shadow-xl overflow-hidden">
+            @if (Detail.EasterEggQuests.Count == 0)
+            {
+                @* Maps with no configured EE quests (Nacht der Untoten is the only
+                   stock case). Render a muted placeholder rather than collapsing the
+                   panel entirely so the section's vertical position stays stable
+                   across maps. *@
+                <div class="p-4 sm:p-5 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-surface-alt text-subtle">
+                        <i class="ph ph-trophy text-xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h2 class="text-base font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL")</h2>
+                        <p class="text-xs text-subtle mt-0.5">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_NONE_ON_MAP")</p>
+                    </div>
+                </div>
+            }
+            @for (var qi = 0; qi < Detail.EasterEggQuests.Count; qi++)
                 {
                     var quest = Detail.EasterEggQuests[qi];
                     var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
@@ -344,8 +358,8 @@ else
                         </div>
                     </div>
                 }
-            </div>
-        }
+
+        </div>
 
         @* ── DETAIL (existing component, scrubber + share button inside) ──
              ShowAllPlayers=true: this is the dedicated share page for one match.

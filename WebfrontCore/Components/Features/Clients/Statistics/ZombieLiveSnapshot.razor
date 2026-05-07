@@ -47,14 +47,35 @@
 
                 @if (!string.IsNullOrEmpty(Snapshot.Map))
                 {
-                    <div class="ml-auto flex items-center gap-3">
-                        <ZombieAchievementBadges
-                            EasterEggQuests="Snapshot.EasterEggQuests"
-                            HighestRound="Snapshot.CurrentRound" />
-                        <div class="flex items-center gap-1.5 text-muted text-xs">
-                            <i class="ph ph-map-trifold text-subtle text-sm"></i>
-                            <span class="truncate">@Snapshot.Map</span>
+                    <div class="ml-auto flex flex-col items-end gap-1">
+                        <div class="flex items-center gap-3">
+                            <ZombieAchievementBadges
+                                EasterEggQuests="Snapshot.EasterEggQuests"
+                                HighestRound="Snapshot.CurrentRound" />
+                            <div class="flex items-center gap-1.5 text-muted text-xs">
+                                <i class="ph ph-map-trifold text-subtle text-sm"></i>
+                                <span class="truncate">@Snapshot.Map</span>
+                            </div>
                         </div>
+                        @* Power state indicator — current state derived from the most
+                           recent transition. Mirrors the live-game red dot pattern
+                           above for visual consistency. Hidden until at least one
+                           transition has fired (no "OFF" baseline noise on maps where
+                           the switch hasn't been hit yet). *@
+                        @if (Snapshot.PowerStateChanges.Count > 0)
+                        {
+                            var currentlyOn = Snapshot.PowerStateChanges[^1].IsOn;
+                            var dotColor = currentlyOn ? "bg-success" : "bg-error";
+                            var stateText = currentlyOn
+                                ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_POWER_ON")
+                                : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_POWER_OFF");
+                            <div class="flex items-center gap-1.5 text-muted text-xs">
+                                <span class="relative flex h-2 w-2 shrink-0">
+                                    <span class="relative inline-flex rounded-full h-2 w-2 @dotColor"></span>
+                                </span>
+                                <span>@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_POWER_LABEL") · @stateText</span>
+                            </div>
+                        }
                     </div>
                 }
             </div>

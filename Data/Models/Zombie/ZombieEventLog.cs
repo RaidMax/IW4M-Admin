@@ -36,7 +36,21 @@ public enum EventLogType
     /// holds the round number at fire time. Match-level event (no SourceClientId).
     /// Idempotent — premium handler dedups via (MatchId, EventType, TextualValue).
     /// </summary>
-    EasterEggStep = 24
+    EasterEggStep = 24,
+    /// <summary>
+    /// Map power activated. <see cref="ZombieEventLog.SourceClientId"/> populated
+    /// when a player flipped the switch (use trigger), null when world-triggered
+    /// (scripted auto-activation, devgui). <see cref="ZombieEventLog.NumericalValue"/>
+    /// holds the round number at fire time.
+    /// </summary>
+    PowerOn = 25,
+    /// <summary>
+    /// Map power lost — currently only fired by TranZit (bus power loss / pylon).
+    /// <see cref="ZombieEventLog.SourceClientId"/> typically null since TranZit
+    /// power-off is a world event. <see cref="ZombieEventLog.NumericalValue"/>
+    /// holds the round number at fire time.
+    /// </summary>
+    PowerOff = 26
 }
 
 public class ZombieEventLog : DatedRecord

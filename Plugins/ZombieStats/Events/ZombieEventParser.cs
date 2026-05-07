@@ -21,6 +21,7 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {"RC", ParseRoundCompleteEvent},
         {"ZE", ParseZombieEvent},
         {"EE", ParseEasterEggCompleteEvent},
+        {"PWR", ParsePowerStateChangeEvent},
     };
 
     private const string GsePrefix = "GSE";
@@ -143,6 +144,50 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {
             RoundNumber = Convert.ToInt32(data[0])
         };
+    }
+
+    // GSE;PWR;{state};{source};[{guid;cnum;team;name}]
+    //   state  = on | off
+    //   source = world | player
+    //   player block present iff source == player
+    // After eventArgs[2..] split, data is: [state, source, ...optional player fields]
+    private static GameEventV2 ParsePowerStateChangeEvent(GameScriptEvent scriptEvent, string[] data)
+    {
+        var state = data[0] switch
+        {
+            "on" => PowerState.On,
+            "off" => PowerState.Off,
+            _ => throw new ArgumentException($"Unknown PWR state: {data[0]}")
+        };
+
+        var source = data[1] switch
+        {
+            "world" => PowerSource.World,
+            "player" => PowerSource.Player,
+            _ => throw new ArgumentException($"Unknown PWR source: {data[1]}")
+        };
+
+        var evt = new PowerStateChangeGameEvent
+        {
+            State = state,
+            Source = source
+        };
+
+        if (source == PowerSource.Player)
+        {
+            // Player block follows: data[2..5] = guid, cnum, team, name
+            // Reuse same field layout as ParseVictimClient but offset shifted.
+            var guid = data[2].ConvertGuidToLong(scriptEvent.Owner.EventParser.Configuration.GuidNumberStyle);
+            evt.Origin = new EFClient
+            {
+                NetworkId = guid,
+                ClientNumber = Convert.ToInt32(data[3]),
+                TeamName = data[4],
+                CurrentAlias = new EFAlias { Name = data[5] }
+            };
+        }
+
+        return evt;
     }
 
     // Two formats share the EE prefix:

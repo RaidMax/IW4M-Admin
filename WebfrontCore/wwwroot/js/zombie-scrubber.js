@@ -49,6 +49,8 @@
         'round':           { fill: '#94a3b8', icon: '',                       z: 60, tick: true  },
         'easter-egg':      { fill: '#fbbf24', icon: 'ph-trophy',             z: 55, tick: false },
         'easter-egg-step': { fill: '#f59e0b', icon: 'ph-trophy',             z: 50, tick: false },
+        'power-on':        { fill: '#facc15', icon: 'ph-lightning',          z: 56, tick: false },
+        'power-off':       { fill: '#94a3b8', icon: 'ph-lightning-slash',    z: 56, tick: false },
         'default':         { fill: '#94a3b8', icon: '',                       z: 10, tick: true  }
     };
 
@@ -57,9 +59,9 @@
     // toggling filters is a single class flip on each dot, not a re-render.
     const FILTER_RULES = {
         'all':      () => true,
-        'critical': c => c === 'danger' || c === 'critical' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step',
-        'powerups': c => c === 'powerup' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step',
-        'economy':  c => ['weapon','weapon-abandon','box','box-pass','door','trap','build','perk','round','easter-egg','easter-egg-step'].includes(c)
+        'critical': c => c === 'danger' || c === 'critical' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step' || c === 'power-on' || c === 'power-off',
+        'powerups': c => c === 'powerup' || c === 'round' || c === 'easter-egg' || c === 'easter-egg-step' || c === 'power-on' || c === 'power-off',
+        'economy':  c => ['weapon','weapon-abandon','box','box-pass','door','trap','build','perk','round','easter-egg','easter-egg-step','power-on','power-off'].includes(c)
     };
 
     const SCRUB_DEBOUNCE_MS = 50;

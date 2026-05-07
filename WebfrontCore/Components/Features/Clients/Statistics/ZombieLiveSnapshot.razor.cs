@@ -49,6 +49,8 @@ public partial class ZombieLiveSnapshot
             // live feed matches the post-match scrubber's EE dot visuals.
             "easter-egg-step" => ("bg-amber-500", "text-amber-500", "ph-trophy", false),
             "easter-egg" => ("bg-yellow-400", "text-yellow-400", "ph-trophy", false),
+            "power-on" => ("bg-yellow-400", "text-yellow-400", "ph-lightning", false),
+            "power-off" => ("bg-slate-400", "text-slate-400", "ph-lightning-slash", false),
             _ => ("bg-muted", "text-muted", "", true)
         };
 }

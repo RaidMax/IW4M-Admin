@@ -54,6 +54,8 @@ init()
     thread WaitForAutoTurrets();
     thread WaitForEasterEggComplete();
     thread WaitForEasterEggSteps();
+    thread WatchPowerSwitches();
+    thread WatchPowerStateChanges();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -1870,4 +1872,118 @@ HookMoonRichtofen()
     thread WatchT5LevelNotify( "sq_sc2_completed",         "t5_mn_rgs_6", false );  // step 7 — Richtofen's Betrayal (Soul Swap)
     thread WatchT5LevelNotify( "sq_ss2_completed",         "t5_mn_rgs_7", false );  // step 8 — Samantha Says (2nd)
     thread WatchT5LevelNotify( "be_stage_two_completed",   "t5_mn_rgs_8", false );  // step 9 — Big Bang Theory
+}
+
+/////////////////////////////////////////////////////////
+// PWR — Map power state monitoring
+/////////////////////////////////////////////////////////
+//
+// All T5 zombie maps set the unified "power_on" flag from _zombiemode.gsc
+// after their per-map switch handler runs. Watching the flag is sufficient
+// to detect activation across the entire game.
+//
+// Player attribution is best-effort: a parallel thread watches common
+// use-trigger entity names ("use_power_switch", etc.) and records the
+// activator's identity on level._iw4m_power_activator with a timestamp.
+// When the flag fires, we check if a recent (<5s) activation was recorded
+// and emit player-attributed if so, world-attributed otherwise.
+//
+// T5 has no power_off mechanic in stock maps — flag is never cleared.
+// The state-change loop still polls for flag clear in case custom maps
+// implement it (and so the same code drops cleanly into T6 TranZit).
+/////////////////////////////////////////////////////////
+
+WatchPowerSwitches()
+{
+    level endon( "end_game" );
+
+    // Wait briefly for map entities to be available.
+    wait ( 2 );
+
+    candidates = [];
+    candidates[0] = "use_power_switch";
+    candidates[1] = "power_switch_trig";
+    candidates[2] = "power_button";
+
+    triggers = [];
+    for ( c = 0; c < candidates.size; c++ )
+    {
+        ents = getentarray( candidates[c], "targetname" );
+        for ( i = 0; i < ents.size; i++ )
+        {
+            triggers[triggers.size] = ents[i];
+        }
+    }
+
+    for ( t = 0; t < triggers.size; t++ )
+    {
+        triggers[t] thread WatchSinglePowerSwitch();
+    }
+}
+
+WatchSinglePowerSwitch()
+{
+    level endon( "end_game" );
+    self endon( "death" );
+
+    for ( ;; )
+    {
+        self waittill( "trigger", who );
+        if ( IsPlayer( who ) )
+        {
+            level._iw4m_power_activator = who;
+            level._iw4m_power_activator_time = gettime();
+        }
+    }
+}
+
+WatchPowerStateChanges()
+{
+    level endon( "end_game" );
+
+    while ( true )
+    {
+        flag_wait( "power_on" );
+        EmitPowerOn();
+
+        // Spin while flag remains set. T5 stock maps never clear it
+        // (loop exits only on end_game endon). T6 TranZit clears it
+        // on bus power loss / pylon disconnect — same code reused there.
+        while ( flag( "power_on" ) )
+        {
+            wait ( 0.5 );
+        }
+        EmitPowerOff();
+    }
+}
+
+EmitPowerOn()
+{
+    activator = undefined;
+    if ( IsDefined( level._iw4m_power_activator ) && IsDefined( level._iw4m_power_activator_time ) )
+    {
+        // Within last 5 seconds = caller of the switch is responsible
+        // for this flag fire. Beyond that, attribution is suspect (e.g.,
+        // devgui-set, scripted activation) — fall through to world.
+        if ( gettime() - level._iw4m_power_activator_time < 5000 )
+        {
+            activator = level._iw4m_power_activator;
+        }
+    }
+
+    if ( IsDefined( activator ) )
+    {
+        logPrint( "GSE;PWR;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
+    }
+    else
+    {
+        logPrint( "GSE;PWR;on;world\n" );
+    }
+}
+
+EmitPowerOff()
+{
+    // Power-off is rare and not player-attributed in stock maps (TranZit
+    // bus power loss is the only stock case). Always emit as world.
+    logPrint( "GSE;PWR;off;world\n" );
 }

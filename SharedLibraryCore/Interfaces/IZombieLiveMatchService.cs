@@ -50,6 +50,13 @@ public class ZombieLiveMatchSnapshot
     /// drives one chip + mini progress strip in the live modal.
     /// </summary>
     public List<EasterEggQuestProgress> EasterEggQuests { get; set; } = [];
+
+    /// <summary>
+    /// Chronological power-state transitions during the live match (oldest first).
+    /// Same semantics as <see cref="ZombieMatchDetail.PowerStateChanges"/> — empty
+    /// when no power events fired (no-power maps or pre-activation).
+    /// </summary>
+    public List<PowerStateChange> PowerStateChanges { get; set; } = [];
 }
 
 /// <summary>

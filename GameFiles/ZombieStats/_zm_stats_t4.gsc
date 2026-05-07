@@ -36,6 +36,8 @@ Init()
     thread WaitForTrapActivations();
     thread WaitForEasterEggComplete();
     thread WaitForEasterEggSteps();
+    thread WatchPowerSwitches();
+    thread WatchPowerStateChanges();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -1589,4 +1591,101 @@ HookOneDerRieseMeteor( targetName, oneBasedIndex )
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
     logprint( "GSE;EE;step;" + stepKey + "\n" );
+}
+
+/////////////////////////////////////////////////////////
+// PWR — Map power state monitoring (T4)
+/////////////////////////////////////////////////////////
+//
+// T4 has no unified "power_on" flag (the T5/T6 _zm.gsc system doesn't exist
+// here). Detection instead piggybacks on the per-perk activation notifies
+// fired from each perk machine when power comes online — every T4 zombie
+// map with power (Verrückt, Shi No Numa, Der Riese) fires
+// "specialty_quickrevive_power_on" since QR is universal across them. Nacht
+// has no perks at all, so the notify never fires there — correct behaviour.
+//
+// One-shot dedup via a level flag — multiple perk notifies fire in sequence
+// when the master switch is hit; we want a single power_on event per match.
+// T4 has no power-off mechanic; only the on side is implemented.
+//
+// Player attribution mirrors T5/T6: parallel use-trigger watcher records the
+// activator on level for the most recent ~5s, applied to the power-on emit
+// if recent. Falls back to world otherwise.
+/////////////////////////////////////////////////////////
+
+WatchPowerSwitches()
+{
+    level endon( "end_game" );
+
+    wait ( 2 );
+
+    candidates = [];
+    candidates[0] = "use_power_switch";
+    candidates[1] = "power_switch_trig";
+    candidates[2] = "power_button";
+
+    triggers = [];
+    for ( c = 0; c < candidates.size; c++ )
+    {
+        ents = getentarray( candidates[c], "targetname" );
+        for ( i = 0; i < ents.size; i++ )
+        {
+            triggers[triggers.size] = ents[i];
+        }
+    }
+
+    for ( t = 0; t < triggers.size; t++ )
+    {
+        triggers[t] thread WatchSinglePowerSwitch();
+    }
+}
+
+WatchSinglePowerSwitch()
+{
+    level endon( "end_game" );
+    self endon( "death" );
+
+    for ( ;; )
+    {
+        self waittill( "trigger", who );
+        if ( IsPlayer( who ) )
+        {
+            level._iw4m_power_activator = who;
+            level._iw4m_power_activator_time = gettime();
+        }
+    }
+}
+
+WatchPowerStateChanges()
+{
+    level endon( "end_game" );
+
+    // Wait for the canonical T4 power-on signal — fires on every map that
+    // has a power switch + perk machines (Verrückt, Shi No Numa, Der Riese).
+    // Nacht has no perks → notify never fires → no event ever emitted.
+    level waittill( "specialty_quickrevive_power_on" );
+
+    if ( IsDefined( level._iw4m_power_emitted ) && level._iw4m_power_emitted )
+    {
+        return;
+    }
+    level._iw4m_power_emitted = true;
+
+    activator = undefined;
+    if ( IsDefined( level._iw4m_power_activator ) && IsDefined( level._iw4m_power_activator_time ) )
+    {
+        if ( gettime() - level._iw4m_power_activator_time < 5000 )
+        {
+            activator = level._iw4m_power_activator;
+        }
+    }
+
+    if ( IsDefined( activator ) )
+    {
+        logPrint( "GSE;PWR;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
+    }
+    else
+    {
+        logPrint( "GSE;PWR;on;world\n" );
+    }
 }

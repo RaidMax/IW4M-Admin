@@ -1,3 +1,4 @@
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore.Components.Features.Clients.Statistics;
@@ -74,6 +75,9 @@ public sealed class ZombieScrubberPayload
                 RoundNumber = step.RoundNumber
             });
         }
+
+        AddPowerEventsToTimeline(detail.PowerStateChanges, detail.Date, matchLevelEvents, loc);
+
         matchLevelEvents = matchLevelEvents.OrderBy(e => e.Seconds).ToList();
 
         var lanes = detail.Players
@@ -150,6 +154,9 @@ public sealed class ZombieScrubberPayload
                     RoundNumber = step.RoundNumber
                 });
             }
+
+            AddPowerEventsToTimeline(match.PowerStateChanges, matchStart.Value, matchLevelEvents, loc);
+
             matchLevelEvents = matchLevelEvents.OrderBy(e => e.Seconds).ToList();
         }
 
@@ -183,6 +190,41 @@ public sealed class ZombieScrubberPayload
         return ts.TotalHours >= 1
             ? $"{(int)ts.TotalHours}:{ts.Minutes:D2}:{ts.Seconds:D2}"
             : $"{ts.Minutes:D2}:{ts.Seconds:D2}";
+    }
+
+    /// <summary>
+    /// Project power-state transitions onto the match-level events band as discrete
+    /// markers. Player attribution (when present) goes into the label so the JS-side
+    /// tooltip surfaces it. Categories distinguish on/off so the renderer can use
+    /// different icons / colours per state. Player names are stripped of in-game
+    /// colour codes (^1, ^7 etc.) since the tooltip is plain text.
+    /// </summary>
+    private static void AddPowerEventsToTimeline(
+        List<PowerStateChange> changes,
+        DateTimeOffset matchStart,
+        List<ScrubberEvent> matchLevelEvents,
+        Func<string, string> loc)
+    {
+        foreach (var change in changes)
+        {
+            var elapsed = Math.Max(0, (change.OccurredAt - matchStart).TotalSeconds);
+            var stateLabel = change.IsOn
+                ? loc("WEBFRONT_ZOMBIE_MATCH_POWER_ON")
+                : loc("WEBFRONT_ZOMBIE_MATCH_POWER_OFF");
+            var label = loc("WEBFRONT_ZOMBIE_MATCH_POWER_LABEL") + ": " + stateLabel;
+            if (!string.IsNullOrEmpty(change.PlayerName))
+            {
+                label += " · " + change.PlayerName.StripColors();
+            }
+            matchLevelEvents.Add(new ScrubberEvent
+            {
+                Seconds = elapsed,
+                Time = FormatElapsed(elapsed),
+                Label = label,
+                Category = change.IsOn ? "power-on" : "power-off",
+                RoundNumber = change.Round
+            });
+        }
     }
 
     private static ZombieScrubberPayload Build(

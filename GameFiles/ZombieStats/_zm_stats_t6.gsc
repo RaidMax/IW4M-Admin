@@ -75,6 +75,8 @@ init()
     thread WaitForCraftables();
     thread WaitForEasterEggComplete();
     thread WaitForT6EasterEggSteps();
+    thread WatchPowerSwitches();
+    thread WatchPowerStateChanges();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format):
@@ -1980,5 +1982,109 @@ Get115Counter()         { if ( !IsDefined( level.snd115count ) )            retu
 WatchT6MeteorCounterSong( stepKeyPrefix )
 {
     level thread WatchT6CounterSong( stepKeyPrefix, ::GetMeteorCounter, 3 );
+}
+
+/////////////////////////////////////////////////////////
+// PWR — Map power state monitoring
+/////////////////////////////////////////////////////////
+//
+// Mirrors the T5 implementation. T6 _zm.gsc unifies "power_on" flag the
+// same way; per-map switch handlers all flag_set after their use trigger.
+//
+// TranZit additionally clears the flag (zm_transit_power.gsc) — bus power
+// loss / pylon disconnect — so the state-change loop emits power_off when
+// the flag transitions back to false. Other T6 maps never clear the flag.
+//
+// Player attribution: same best-effort approach as T5 — watch use-trigger
+// entities by common targetname, record activator on level, attribute if
+// recent enough when the flag fires.
+/////////////////////////////////////////////////////////
+
+WatchPowerSwitches()
+{
+    level endon( "end_game" );
+
+    wait ( 2 );
+
+    candidates = [];
+    candidates[0] = "use_power_switch";
+    candidates[1] = "power_switch_trig";
+    candidates[2] = "power_button";
+
+    triggers = [];
+    for ( c = 0; c < candidates.size; c++ )
+    {
+        ents = getentarray( candidates[c], "targetname" );
+        for ( i = 0; i < ents.size; i++ )
+        {
+            triggers[triggers.size] = ents[i];
+        }
+    }
+
+    for ( t = 0; t < triggers.size; t++ )
+    {
+        triggers[t] thread WatchSinglePowerSwitch();
+    }
+}
+
+WatchSinglePowerSwitch()
+{
+    level endon( "end_game" );
+    self endon( "death" );
+
+    for ( ;; )
+    {
+        self waittill( "trigger", who );
+        if ( IsPlayer( who ) )
+        {
+            level._iw4m_power_activator = who;
+            level._iw4m_power_activator_time = gettime();
+        }
+    }
+}
+
+WatchPowerStateChanges()
+{
+    level endon( "end_game" );
+
+    while ( true )
+    {
+        flag_wait( "power_on" );
+        EmitPowerOn();
+
+        // Spin while flag remains set. Most T6 maps never clear it; TranZit
+        // does on bus power loss, in which case we fall through and emit off.
+        while ( flag( "power_on" ) )
+        {
+            wait ( 0.5 );
+        }
+        EmitPowerOff();
+    }
+}
+
+EmitPowerOn()
+{
+    activator = undefined;
+    if ( IsDefined( level._iw4m_power_activator ) && IsDefined( level._iw4m_power_activator_time ) )
+    {
+        if ( gettime() - level._iw4m_power_activator_time < 5000 )
+        {
+            activator = level._iw4m_power_activator;
+        }
+    }
+
+    if ( IsDefined( activator ) )
+    {
+        logPrint( "GSE;PWR;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
+    }
+    else
+    {
+        logPrint( "GSE;PWR;on;world\n" );
+    }
+}
+
+EmitPowerOff()
+{
+    logPrint( "GSE;PWR;off;world\n" );
 }
 

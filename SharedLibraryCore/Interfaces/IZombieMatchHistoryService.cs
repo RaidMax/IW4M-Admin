@@ -93,6 +93,33 @@ public class ZombieMatchDetail
     /// quests. UI renders one chip / progress card per entry.
     /// </summary>
     public List<EasterEggQuestProgress> EasterEggQuests { get; set; } = [];
+
+    /// <summary>
+    /// Chronological power-state transitions observed during the match (chronological
+    /// = oldest first). Stock single-switch maps yield a single On entry; TranZit can
+    /// produce multi-step On→Off→On chains via bus power loss / pylon repair.
+    /// Empty for maps without a power switch (Nacht der Untoten) — UI hides the row.
+    /// </summary>
+    public List<PowerStateChange> PowerStateChanges { get; set; } = [];
+}
+
+/// <summary>
+/// One power-state transition observed during the match. <see cref="PlayerName"/>
+/// is null when the change wasn't player-attributed (TranZit world events,
+/// scripted activation). UI shows world-attributed transitions without a name.
+/// </summary>
+public sealed class PowerStateChange
+{
+    /// <summary>true = ON, false = OFF.</summary>
+    public bool IsOn { get; set; }
+    /// <summary>Round at which the change fired. Null when fired before round 1.</summary>
+    public int? Round { get; set; }
+    /// <summary>UTC timestamp of the change (drives chronological ordering + scrubber markers).</summary>
+    public DateTimeOffset OccurredAt { get; set; }
+    /// <summary>Activating player display name; null for world-attributed events.</summary>
+    public string? PlayerName { get; set; }
+    /// <summary>Activating player ClientId; null for world-attributed events. Drives profile-link rendering.</summary>
+    public int? PlayerClientId { get; set; }
 }
 
 /// <summary>
@@ -305,6 +332,13 @@ public class ZombieMatchHistoryMatch
 
     public List<ZombieMatchHistoryRound> Rounds { get; set; } = [];
     public List<ZombieMatchHistoryEvent> Events { get; set; } = [];
+
+    /// <summary>
+    /// Power-state transitions during this match. Same shape and semantics as
+    /// <see cref="ZombieMatchDetail.PowerStateChanges"/>. Empty for maps without power.
+    /// Surfaces on the per-client scrubber as match-level marker(s).
+    /// </summary>
+    public List<PowerStateChange> PowerStateChanges { get; set; } = [];
 }
 
 public class ZombieMatchHistoryRound

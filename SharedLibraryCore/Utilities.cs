@@ -830,9 +830,9 @@ namespace SharedLibraryCore
         }
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue,
-            CancellationToken token)
+            CancellationToken token, Action<DateTime> onPacketSent = null)
         {
-            await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token);
+            await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token, onPacketSent);
         }
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)

@@ -9,7 +9,7 @@ public class ServerLatencyMetrics(double alpha = 0.3)
     private int _rconSampleCount;
     private int _logProbeSampleCount;
     private double _rconRtt;
-    private double _logPipeline;
+    private double _logIngest;
     private const int MinSamplesRequired = 3;
 
     /// <summary>
@@ -28,36 +28,22 @@ public class ServerLatencyMetrics(double alpha = 0.3)
     }
 
     /// <summary>
-    /// EMA-smoothed total log pipeline latency in milliseconds (one-way: dvar set → log line parsed).
-    /// Requires GSC companion. Returns null if not available or insufficient samples.
+    /// EMA-smoothed log ingest latency in milliseconds — the one-way path a natural
+    /// game-side log event traverses: game writes log line → GLS file poll → GLS forward →
+    /// IW4MAdmin parse. Does NOT include RCon out-leg (use <see cref="RconRoundTripMs"/>/2
+    /// to compose a probe round-trip if needed) nor C#-side semaphore/flood-protect/retry.
+    /// Computed by subtracting estimated one-way RCon delivery (rtt/2) from the measured
+    /// probe-to-parse window, so the value reflects what a chat or kill event would experience.
+    /// Requires GSC companion + established RCon RTT. Returns null until both have sufficient samples.
     /// </summary>
-    public double? GameLogPipelineMs
+    public double? GameLogIngestMs
     {
         get
         {
             lock (_lock)
             {
-                return _logProbeSampleCount >= MinSamplesRequired ? _logPipeline : null;
+                return _logProbeSampleCount >= MinSamplesRequired ? _logIngest : null;
             }
-        }
-    }
-
-    /// <summary>
-    /// Estimated log-only overhead in milliseconds (GameLogPipeline minus estimated one-way RCON delivery).
-    /// Returns null if either component is unavailable.
-    /// </summary>
-    public double? EstimatedLogOverheadMs
-    {
-        get
-        {
-            var rtt = RconRoundTripMs;
-            var log = GameLogPipelineMs;
-            if (rtt is null || log is null)
-            {
-                return null;
-            }
-
-            return Math.Max(0, log.Value - rtt.Value / 2.0);
         }
     }
 
@@ -105,11 +91,11 @@ public class ServerLatencyMetrics(double alpha = 0.3)
         {
             if (_logProbeSampleCount == 0)
             {
-                _logPipeline = totalMs;
+                _logIngest = totalMs;
             }
             else
             {
-                _logPipeline = _alpha * totalMs + (1 - _alpha) * _logPipeline;
+                _logIngest = _alpha * totalMs + (1 - _alpha) * _logIngest;
             }
 
             _logProbeSampleCount++;

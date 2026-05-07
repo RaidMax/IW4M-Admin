@@ -191,7 +191,7 @@ public class WebfrontDataService : IWebfrontDataService
                 IsZombieServer = server.IsZombieServer(),
                 ZombieRoundNumber = server.ZombieRoundNumber,
                 RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
-                GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs,
+                GameLogIngestMs = server.LatencyMetrics?.GameLogIngestMs,
                 PerformanceBucket = server.PerformanceCode
             }).ToList();
     }
@@ -262,7 +262,7 @@ public class WebfrontDataService : IWebfrontDataService
             IsZombieServer = server.IsZombieServer(),
             ZombieRoundNumber = server.ZombieRoundNumber,
             RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
-            GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
+            GameLogIngestMs = server.LatencyMetrics?.GameLogIngestMs
         };
     }
 

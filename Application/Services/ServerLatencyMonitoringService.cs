@@ -86,12 +86,31 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         if (!string.IsNullOrEmpty(probe.ProbeId) && _pendingProbes.TryRemove(probe.ProbeId, out var sendTime))
         {
-            var latencyMs = (DateTime.UtcNow - sendTime).TotalMilliseconds;
-            LatencyMetrics.RecordLogProbeLatency(latencyMs);
+            var totalMs = (DateTime.UtcNow - sendTime).TotalMilliseconds;
+
+            // GameLogIngestMs is the path a natural log line takes — game-write →
+            // GLS poll → IW4MAdmin parse — and explicitly does NOT include the RCon
+            // out-leg the probe used to start the clock. Subtract one-way RCon delivery
+            // (rtt/2) from the measured total. If RCon RTT isn't established yet, skip
+            // this sample rather than record an inflated number; EMA recovers on the
+            // next probe once RTT samples accumulate.
+            var rtt = LatencyMetrics.RconRoundTripMs;
+            if (rtt is null)
+            {
+                using (LogContext.PushProperty("Server", server.Id))
+                {
+                    logger.LogDebug("Log probe {ProbeId} dropped: RCon RTT not yet stable", probe.ProbeId);
+                }
+                return Task.CompletedTask;
+            }
+
+            var pipelineMs = Math.Max(0, totalMs - rtt.Value / 2.0);
+            LatencyMetrics.RecordLogProbeLatency(pipelineMs);
 
             using (LogContext.PushProperty("Server", server.Id))
             {
-                logger.LogDebug("Log probe {ProbeId} latency: {LatencyMs:F1}ms", probe.ProbeId, latencyMs);
+                logger.LogDebug("Log probe {ProbeId} pipeline: {PipelineMs:F1}ms (total {TotalMs:F1}ms - rtt/2 {HalfRtt:F1}ms)",
+                    probe.ProbeId, pipelineMs, totalMs, rtt.Value / 2.0);
             }
         }
 
@@ -164,11 +183,15 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     private async Task SendProbeAsync()
     {
         var probeId = Guid.NewGuid().ToString("N")[..8];
-        _pendingProbes[probeId] = DateTime.UtcNow;
 
         try
         {
-            await server.SetDvarAsync(DvarProbe, probeId, server.Manager.CancellationToken);
+            // T1 anchored to the actual UDP send moment via onPacketSent callback —
+            // strips C#-side queue/flood-protect/retry pollution from the measurement.
+            // TryAdd ensures retries (which re-fire the callback) don't overwrite the
+            // first send time; GSC echoes on whichever attempt arrives first.
+            await server.SetDvarAsync(DvarProbe, probeId, server.Manager.CancellationToken,
+                onPacketSent: sentAt => _pendingProbes.TryAdd(probeId, sentAt));
 
             using (LogContext.PushProperty("Server", server.Id))
             {

@@ -218,13 +218,13 @@ namespace IW4MAdmin.Application.RConParsers
             return (T)Convert.ChangeType(value, typeof(T));
         }
 
-        public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default)
+        public async Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default, Action<DateTime> onPacketSent = null)
         {
             var dvarString = (dvarValue is string str)
                 ? $"{dvarName} \"{str}\""
                 : $"{dvarName} {dvarValue}";
 
-            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString, token)).Length > 0;
+            return (await connection.SendQueryAsync(StaticHelpers.QueryType.SET_DVAR, dvarString, token, onPacketSent)).Length > 0;
         }
 
         public void BeginSetDvar(IRConConnection connection, string dvarName, object dvarValue, AsyncCallback callback,

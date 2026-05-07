@@ -58,11 +58,11 @@ namespace Integrations.Cod
         }
 
         public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "",
-            CancellationToken token = default)
+            CancellationToken token = default, Action<DateTime> onPacketSent = null)
         {
             try
             {
-                return await SendQueryAsyncInternal(type, parameters, token);
+                return await SendQueryAsyncInternal(type, parameters, token, onPacketSent);
             }
             catch (RConException ex) when (ex.IsOperationCancelled)
             {
@@ -97,7 +97,7 @@ namespace Integrations.Cod
         }
 
         private async Task<string[]> SendQueryAsyncInternal(StaticHelpers.QueryType type, string parameters = "",
-            CancellationToken token = default)
+            CancellationToken token = default, Action<DateTime> onPacketSent = null)
         {
             if (!ActiveQueries.ContainsKey(Endpoint))
             {
@@ -260,7 +260,7 @@ namespace Integrations.Cod
 
                     waitForResponse = waitForResponse && overrideTimeout.HasValue;
                     var rttStopwatch = Stopwatch.StartNew();
-                    response = await SendPayloadAsync(socket, payload, waitForResponse, chainedTokenSource.Token);
+                    response = await SendPayloadAsync(socket, payload, waitForResponse, chainedTokenSource.Token, onPacketSent);
                     rttStopwatch.Stop();
 
                     if ((response?.Length == 0 || response[0].Length == 0) && waitForResponse)
@@ -365,7 +365,7 @@ namespace Integrations.Cod
         }
 
         private async Task<byte[][]> SendPayloadAsync(Socket rconSocket, byte[] payload, bool waitForResponse,
-            CancellationToken token = default)
+            CancellationToken token = default, Action<DateTime> onPacketSent = null)
         {
             var connectionState = ActiveQueries[Endpoint];
 
@@ -389,6 +389,8 @@ namespace Integrations.Cod
                 rconSocket.Close();
                 throw new NetworkException("Could not send data to remote RCon socket", rconSocket);
             }
+
+            onPacketSent?.Invoke(DateTime.UtcNow);
 
             if (!waitForResponse)
             {

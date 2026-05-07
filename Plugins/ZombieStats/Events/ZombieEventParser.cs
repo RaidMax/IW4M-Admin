@@ -23,6 +23,8 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {"EE", ParseEasterEggCompleteEvent},
     };
 
+    private const string GsePrefix = "GSE";
+
     public GameEventV2? ParseScriptEvent(GameScriptEvent scriptEvent)
     {
         var eventArgs = scriptEvent.ScriptData.Split(DataSeparator);
@@ -31,6 +33,14 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {
             logger.LogDebug("Ignoring {EventType} because there is not enough data {Data}", nameof(GameScriptEvent),
                 scriptEvent.ScriptData);
+            return null;
+        }
+
+        // Other subsystems (latency probe, anti-cheat, live radar) emit script events
+        // that share the ScriptEventTriggered dispatch but use different wire formats.
+        // Silently skip anything not "GSE;<type>;..." — those events have dedicated handlers.
+        if (eventArgs[0] != GsePrefix)
+        {
             return null;
         }
 

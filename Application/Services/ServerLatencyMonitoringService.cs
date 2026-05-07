@@ -22,8 +22,10 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     private const string DvarProbe = "sv_iw4madmin_probe";
     private const string DvarLatencyProbe = "sv_iw4madmin_latencyprobe";
     private static readonly TimeSpan StaleProbeThreshold = TimeSpan.FromSeconds(30);
+    private const double ProbeJitterFraction = 0.2;
 
     private readonly ConcurrentDictionary<string, DateTime> _pendingProbes = new();
+    private readonly Random _jitterRng = new();
 
     private Timer _probeTimer;
     private bool _gscDetected;
@@ -153,13 +155,14 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         if (_gscDetected && _probeTimer is null)
         {
-            _probeTimer = new Timer(OnProbeTimerElapsed, null, appConfig.LatencyProbeIntervalMs,
-                appConfig.LatencyProbeIntervalMs);
+            // One-shot timer; OnProbeTimerElapsed re-arms with a jittered delay each
+            // cycle so probes don't phase-lock to the GameLogReader poll cycle.
+            _probeTimer = new Timer(OnProbeTimerElapsed, null, NextJitteredDelayMs(), Timeout.Infinite);
 
             using (LogContext.PushProperty("Server", server.Id))
             {
-                logger.LogInformation("Latency probe started (interval: {Interval}ms)",
-                    appConfig.LatencyProbeIntervalMs);
+                logger.LogInformation("Latency probe started (interval: {Interval}ms ±{JitterPct:P0})",
+                    appConfig.LatencyProbeIntervalMs, ProbeJitterFraction);
             }
         }
     }
@@ -178,6 +181,19 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
                 logger.LogWarning(ex, "Error in latency probe timer");
             }
         }
+        finally
+        {
+            _probeTimer?.Change(NextJitteredDelayMs(), Timeout.Infinite);
+        }
+    }
+
+    private int NextJitteredDelayMs()
+    {
+        var basePeriod = appConfig.LatencyProbeIntervalMs;
+        var jitterRange = (int)(basePeriod * ProbeJitterFraction);
+        // uniform offset in [-jitterRange, +jitterRange]
+        var offset = _jitterRng.Next(-jitterRange, jitterRange + 1);
+        return Math.Max(1, basePeriod + offset);
     }
 
     private async Task SendProbeAsync()

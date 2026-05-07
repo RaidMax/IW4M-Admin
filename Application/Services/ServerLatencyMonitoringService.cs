@@ -33,33 +33,33 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     public void Start(CancellationToken cancellationToken)
     {
         IGameServerEventSubscriptions.ServerStatusReceived += OnServerStatusReceived;
-        IGameEventSubscriptions.ScriptEventTriggered += OnScriptEventTriggered;
 
-        if (appConfig.LatencyProbeIntervalMs > 0 && server.IsLegacyGameIntegrationEnabled)
+        if (appConfig.LatencyProbeIntervalMs > 0)
         {
+            // GSC presence is determined by DetectGscCompanionAsync probing
+            // sv_iw4madmin_latencyprobe directly — no pre-gate required, and
+            // any pre-gate based on legacy flags (e.g. sv_customcallbacks)
+            // produces false negatives on games that don't use them.
+            IGameEventSubscriptions.ScriptEventTriggered += OnScriptEventTriggered;
             IGameEventSubscriptions.MatchStarted += OnMatchStarted;
 
             // Initial detection attempt after a short delay to allow GSC to initialize
             _ = new Timer(OnInitialDetection, null, appConfig.LatencyProbeIntervalMs, Timeout.Infinite);
+        }
 
-            cancellationToken.Register(() =>
+        cancellationToken.Register(() =>
+        {
+            _probeTimer?.Dispose();
+            IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
+
+            if (appConfig.LatencyProbeIntervalMs > 0)
             {
-                _probeTimer?.Dispose();
-                IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
                 IGameEventSubscriptions.ScriptEventTriggered -= OnScriptEventTriggered;
                 IGameEventSubscriptions.MatchStarted -= OnMatchStarted;
-                _pendingProbes.Clear();
-            });
-        }
-        else
-        {
-            cancellationToken.Register(() =>
-            {
-                IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
-                IGameEventSubscriptions.ScriptEventTriggered -= OnScriptEventTriggered;
-                _pendingProbes.Clear();
-            });
-        }
+            }
+
+            _pendingProbes.Clear();
+        });
     }
 
     private Task OnServerStatusReceived(ServerStatusReceiveEvent statusEvent, CancellationToken token)

@@ -1829,7 +1829,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             }
 
             clientStats.SPM = Math.Round(clientStats.SPM, 3);
-            clientStats.Skill = Math.Round((clientStats.SPM * KDRWeight), 3);
+            var stdSkill = Math.Round((clientStats.SPM * KDRWeight), 3);
 
             var skillFunc =
                 client.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("SkillFunction");
@@ -1837,25 +1837,32 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             {
                 clientStats.Skill = Math.Round(skillFunc(client, clientStats), 3);
             }
+            else if (stdSkill > 20000)
+            {
+                // Phase 1.5 zombie skill-leak: result-shape gate (mode-independent).
+                // MP's natural Skill ceiling on HGM was 12106 (per-bucket query
+                // 2026-05-07); std formula × zombie-shaped KDR produces 50k-900k.
+                // The earlier IsZombieServer() gate hid the leak from itself when
+                // gametype was stale at calc-time, so gate on the output instead.
+                // Write-gate stops the bleed; log captures full context to identify
+                // which precondition fails (CurrentServer null / Gametype stale /
+                // SkillFunction lost / different EFClient instance).
+                var leakServer = client.CurrentServer;
+                var leakFlag = $"ZmLog_Leak_{leakServer?.LegacyDatabaseId ?? 0}";
+                if (!client.GetAdditionalProperty<bool>(leakFlag))
+                {
+                    client.SetAdditionalProperty(leakFlag, true);
+                    _log.LogWarning(
+                        "ZombieSkillLeak: client={Name}({ClientId}) server={Server} game={Game} gametype={Gametype} map={Map} isZombie={IsZombie} stdSkill={StdSkill} kills={Kills} deaths={Deaths} spm={SPM} kdrWeight={KDRWeight}",
+                        client.Name, client.ClientId, leakServer?.ServerName, leakServer?.GameCode,
+                        leakServer?.Gametype, leakServer?.CurrentMap?.Name, leakServer?.IsZombieServer(),
+                        stdSkill, clientStats.Kills, clientStats.Deaths, clientStats.SPM, KDRWeight);
+                }
+                // leave clientStats.Skill unchanged — don't pollute further
+            }
             else
             {
-                // DIAGNOSTIC (zombie skill-leak phase 1): the standard MP Skill formula
-                // just ran for a client whose CurrentServer is a zombie server — i.e.
-                // ZombieStats' SkillFunction override never attached. One-shot per
-                // (client, server) so log volume is bounded by # of leak victims.
-                var leakServer = client.CurrentServer;
-                if (leakServer is not null && leakServer.IsZombieServer())
-                {
-                    var leakFlag = $"ZmLog_Leak_{leakServer.LegacyDatabaseId}";
-                    if (!client.GetAdditionalProperty<bool>(leakFlag))
-                    {
-                        client.SetAdditionalProperty(leakFlag, true);
-                        _log.LogWarning(
-                            "ZombieSkillLeak: client={Name}({ClientId}) server={Server} game={Game} gametype={Gametype} skill={Skill} kills={Kills} deaths={Deaths}",
-                            client.Name, client.ClientId, leakServer.ServerName, leakServer.GameCode,
-                            leakServer.Gametype, clientStats.Skill, clientStats.Kills, clientStats.Deaths);
-                    }
-                }
+                clientStats.Skill = stdSkill;
             }
 
             // fixme: how does this happen?

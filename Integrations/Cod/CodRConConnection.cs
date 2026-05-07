@@ -241,9 +241,17 @@ namespace Integrations.Cod
 
                     if (connectionState.ConnectionAttempts > 1)
                     {
+                        var retryLogLevel = connectionState.ConnectionAttempts switch
+                        {
+                            <= 4 => LogLevel.Debug,
+                            <= 7 => LogLevel.Information,
+                            <= 9 => LogLevel.Warning,
+                            _ => LogLevel.Error
+                        };
+
                         using (LogContext.PushProperty("Server", Endpoint.ToString()))
                         {
-                            _log.LogInformation(
+                            _log.Log(retryLogLevel,
                                 "Retrying RCon message ({ConnectionAttempts}/{AllowedConnectionFailures} attempts, {Timeout}ms timeout) with parameters {Payload}",
                                 connectionState.ConnectionAttempts, _retryAttempts,
                                 maxTimeout.TotalMilliseconds, parameters);

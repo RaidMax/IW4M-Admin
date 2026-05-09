@@ -147,4 +147,21 @@ public class ZombieLeaderboardPlayer
     /// False for unqualified drop-ins surfaced behind the "All Players" expander.
     /// </summary>
     public bool IsQualified { get; set; }
+
+    /// <summary>
+    /// Aggregate round-pace ratio across this player's rounds in the match,
+    /// expressed as <c>(sumPlayerSeconds - sumEmaSeconds) / sumEmaSeconds</c>.
+    /// Positive = slower than typical, negative = faster. Same band thresholds
+    /// as per-round pace (±5% / ±15%). Null when no round had a matched EMA cell
+    /// (cold map / pre-EMA legacy rows). Computed on read so it stays in lock-step
+    /// with the dynamic population EMA — no persistence.
+    /// </summary>
+    public double? RoundDurationPaceRatio { get; set; }
+
+    /// <summary>
+    /// Pace band derived from <see cref="RoundDurationPaceRatio"/>. Null when the
+    /// ratio is null. Lets the UI pick the same 5-colour scale as per-round
+    /// tinting without re-classifying client-side.
+    /// </summary>
+    public PaceBand? PaceBand { get; set; }
 }

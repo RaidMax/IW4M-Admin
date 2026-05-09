@@ -27,7 +27,16 @@
                         <span class="text-4xl md:text-5xl font-mono font-bold text-warning leading-none">@Snapshot.CurrentRound</span>
                         @if (_roundElapsedSeconds is { } rs)
                         {
-                            <span class="text-base font-mono text-muted tabular-nums" title="@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_CURRENT_ROUND_TOOLTIP")">+@FormatElapsed(rs)</span>
+                            var liveBand = PaceVisuals.ClassifyLive(rs, Snapshot.CurrentRoundEmaSeconds);
+                            var liveTint = PaceVisuals.ColorClass(liveBand?.Band);
+                            var liveTooltip = LiveBannerTooltip(rs, liveBand);
+                            <Tooltip Text="@liveTooltip" WrapperClass="inline-flex items-baseline gap-2">
+                                <span class="text-base font-mono tabular-nums @liveTint">+@FormatElapsed(rs)</span>
+                                @if (Snapshot.CurrentRoundEmaSeconds is { } emaSeconds && emaSeconds > 0)
+                                {
+                                    <span class="text-xs font-mono text-subtle/70 tabular-nums">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @FormatElapsed(emaSeconds)</span>
+                                }
+                            </Tooltip>
                         }
                     </div>
                 </div>
@@ -236,10 +245,21 @@
                                 }
                             </div>
 
-                            <div class="flex-1">
+                            <div class="flex-1 flex items-baseline gap-2 flex-wrap">
                                 <span class="text-sm font-medium @(isRound ? "text-foreground font-bold" : visuals.Text)">
                                     @evt.Label
                                 </span>
+                                @if (isRound && evt.PaceBand is not null && evt.PaceRatio is { } ratio
+                                     && evt.PaceTypicalSeconds is { } typicalSec)
+                                {
+                                    var paceTint = PaceVisuals.ColorClass(evt.PaceBand);
+                                    var pacePrefix = ratio > 0.05 ? "+" : (ratio < -0.05 ? "−" : "");
+                                    var paceTooltip = LiveTimelinePaceTooltip(evt);
+                                    <Tooltip Text="@paceTooltip" WrapperClass="inline-flex items-baseline gap-1">
+                                        <span class="text-xs font-mono @paceTint">@pacePrefix@(Math.Abs(ratio * 100).ToString("F0"))%</span>
+                                        <span class="text-[11px] font-mono text-subtle/60">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @PaceVisuals.FormatRoundTime(typicalSec)</span>
+                                    </Tooltip>
+                                }
                             </div>
                         </div>
                     }

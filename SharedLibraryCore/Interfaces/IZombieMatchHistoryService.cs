@@ -350,6 +350,57 @@ public class ZombieMatchHistoryRound
     public long Revives { get; set; }
     public int Points { get; set; }
     public double DurationSeconds { get; set; }
+
+    /// <summary>
+    /// Player count snapshot at the moment this round began — frozen so the
+    /// EMA cell key matches the round's fixed zombie spawn count regardless of
+    /// mid-round joins/leaves. Null on legacy rounds pre-dating the column
+    /// (readers can fall back to match-level <c>PlayerCount</c> as a best-guess).
+    /// </summary>
+    public int? PlayerCountAtRoundStart { get; set; }
+
+    /// <summary>
+    /// Pace classification of this round's duration vs the population EMA for
+    /// (map, round, player count). Null when no EMA sample exists yet for the
+    /// bucket — UI renders neutral. Computed server-side; the UI just maps
+    /// the band to a colour.
+    /// </summary>
+    public PaceBand? PaceBand { get; set; }
+
+    /// <summary>
+    /// Signed delta vs typical, expressed as a fraction (0.12 = 12% slower than
+    /// typical, -0.08 = 8% faster). Null when <see cref="PaceBand"/> is null.
+    /// Surfaces in the tooltip alongside the band colour.
+    /// </summary>
+    public double? PaceRatio { get; set; }
+
+    /// <summary>
+    /// EMA value (in seconds) the round was compared against — the "typical"
+    /// duration shown in the tooltip. Null when <see cref="PaceBand"/> is null.
+    /// </summary>
+    public double? PaceTypicalSeconds { get; set; }
+}
+
+/// <summary>
+/// Round-pace classification bands. Ordered fastest → slowest. Maps to a
+/// 5-colour scale on the webfront (deep green → grey → deep red).
+/// </summary>
+public enum PaceBand
+{
+    /// <summary>&gt; 15% faster than the population EMA.</summary>
+    MuchFaster,
+
+    /// <summary>5–15% faster than the population EMA.</summary>
+    Faster,
+
+    /// <summary>Within ±5% of the population EMA — typical pace.</summary>
+    Neutral,
+
+    /// <summary>5–15% slower than the population EMA.</summary>
+    Slower,
+
+    /// <summary>&gt; 15% slower than the population EMA.</summary>
+    MuchSlower,
 }
 
 /// <summary>
@@ -380,6 +431,20 @@ public class ZombieMatchHistoryEvent
     /// parsing the <see cref="Label"/> string. Null for non-round events.
     /// </summary>
     public int? RoundNumber { get; set; }
+
+    /// <summary>
+    /// Pace band for the round this event represents (round-category events only).
+    /// Lets the timeline tint the round marker AND surface a "vs avg" annotation
+    /// so live viewers see whether each completed round was on/off pace at a glance.
+    /// Null on non-round events or when no EMA sample exists yet.
+    /// </summary>
+    public PaceBand? PaceBand { get; set; }
+
+    /// <summary>Signed delta vs typical (0.12 = 12% slower). Null when <see cref="PaceBand"/> is null.</summary>
+    public double? PaceRatio { get; set; }
+
+    /// <summary>EMA value (in seconds) the round was compared against. Null when <see cref="PaceBand"/> is null.</summary>
+    public double? PaceTypicalSeconds { get; set; }
 }
 
 /// <summary>

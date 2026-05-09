@@ -257,4 +257,23 @@ public partial class ZombieLeaderboard
             _loadingMatches.Remove(matchId);
         }
     }
+
+    /// <summary>
+    /// Tooltip text for the leaderboard's per-player Pace column. Same vocabulary
+    /// as per-round tooltips so the meaning is consistent across surfaces.
+    /// </summary>
+    private string LeaderboardPaceTooltip(double ratio, PaceBand? band)
+    {
+        var absPercent = Math.Abs(ratio) * 100;
+        return band switch
+        {
+            PaceBand.Faster or PaceBand.MuchFaster =>
+                AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PACE_TOOLTIP_FASTER")
+                    .FormatExt(absPercent.ToString("F0")),
+            PaceBand.Slower or PaceBand.MuchSlower =>
+                AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PACE_TOOLTIP_SLOWER")
+                    .FormatExt(absPercent.ToString("F0")),
+            _ => AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PACE_TOOLTIP_NEUTRAL"),
+        };
+    }
 }

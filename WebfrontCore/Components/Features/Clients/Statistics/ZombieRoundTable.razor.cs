@@ -15,11 +15,7 @@ public partial class ZombieRoundTable
     /// </summary>
     [Parameter] public int? MatchHighestRound { get; set; }
 
-    private static string FormatRoundTime(double seconds)
-    {
-        var ts = TimeSpan.FromSeconds(seconds);
-        return ts.TotalHours >= 1
-            ? ts.ToString(@"h\:mm\:ss")
-            : ts.ToString(@"m\:ss");
-    }
+    private static string FormatRoundTime(double seconds) => PaceVisuals.FormatRoundTime(seconds);
+    private static string PaceColorClass(PaceBand? band) => PaceVisuals.ColorClass(band);
+    private string? PaceTooltip(ZombieMatchHistoryRound round) => PaceVisuals.RoundTooltip(round, AppState);
 }

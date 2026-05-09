@@ -1622,6 +1622,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<long?>("EndTime")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("PlayerCountAtRoundStart")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Points")
                         .HasColumnType("INTEGER");
 

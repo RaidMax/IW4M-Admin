@@ -1697,6 +1697,9 @@ namespace Data.Migrations.MySql
                     b.Property<DateTimeOffset?>("EndTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("PlayerCountAtRoundStart")
+                        .HasColumnType("int");
+
                     b.Property<int>("Points")
                         .HasColumnType("int");
 

@@ -30,6 +30,20 @@ public class ZombieLiveMatchSnapshot
     /// </summary>
     public DateTimeOffset? CurrentRoundStartedAt { get; set; }
 
+    /// <summary>
+    /// Population EMA (in seconds) for the current round at the current player
+    /// count. Null when no sample exists yet for the bucket — UI hides the
+    /// "avg" annotation. Lets the live banner render <c>+2m43s · avg 4m12s</c>
+    /// and tint the elapsed text as it crosses pace bands.
+    /// </summary>
+    public double? CurrentRoundEmaSeconds { get; set; }
+
+    /// <summary>
+    /// Player count snapshot at the moment the current round began — frozen so
+    /// the EMA bucket lookup is stable even if a player joins/leaves mid-round.
+    /// </summary>
+    public int? CurrentRoundPlayerCount { get; set; }
+
     public List<ZombieLivePlayerSnapshot> Players { get; set; } = [];
 
     /// <summary>

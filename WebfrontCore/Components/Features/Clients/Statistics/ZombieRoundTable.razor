@@ -73,7 +73,15 @@
                             <span class="@(round.Deaths > 0 ? "text-error font-bold" : "")">@round.Deaths</span>
                         </td>
                         <td class="py-2.5 pr-4 font-mono text-success">@round.Points.ToString("N0")</td>
-                        <td class="py-2.5 pr-4 text-right font-mono text-subtle text-xs">@FormatRoundTime(round.DurationSeconds)</td>
+                        <td class="py-2.5 pr-4 text-right font-mono text-xs">
+                            @{
+                                var paceTooltip = PaceTooltip(round);
+                                var paceClass = PaceColorClass(round.PaceBand);
+                            }
+                            <Tooltip Text="@paceTooltip" WrapperClass="inline-flex">
+                                <span class="@paceClass">@FormatRoundTime(round.DurationSeconds)</span>
+                            </Tooltip>
+                        </td>
                     </tr>
 
                     @if (i < orderedRounds.Count - 1)

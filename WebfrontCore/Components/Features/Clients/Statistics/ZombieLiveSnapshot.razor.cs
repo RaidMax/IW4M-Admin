@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Services;
 
@@ -23,6 +24,62 @@ public partial class ZombieLiveSnapshot
         _ => (appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DISCONNECTED"), "text-subtle", "bg-subtle/10", "bg-subtle", false,
             appState.Loc("WEBFRONT_ZOMBIE_LIVE_STATUS_DISCONNECTED_TOOLTIP")),
     };
+
+    /// <summary>
+    /// Tooltip text for a round-completed event in the live timeline. Reuses the
+    /// same tooltip vocabulary as the round-table breakdown so users see a
+    /// consistent description across both surfaces.
+    /// </summary>
+    private string? LiveTimelinePaceTooltip(ZombieMatchHistoryEvent ev)
+    {
+        if (ev.PaceBand is not { } band || ev.PaceRatio is not { } ratio
+            || ev.PaceTypicalSeconds is not { } typical || ev.RoundNumber is not { } round)
+        {
+            return null;
+        }
+
+        var playerLabel = PaceVisuals.PlayerLabel(Snapshot.CurrentRoundPlayerCount, AppState);
+        var typicalFormatted = PaceVisuals.FormatRoundTime(typical);
+        var absPercent = Math.Abs(ratio) * 100;
+
+        return band switch
+        {
+            PaceBand.Neutral => AppState.Loc("WEBFRONT_ZOMBIE_ROUND_PACE_TOOLTIP_NEUTRAL")
+                .FormatExt(round, playerLabel, typicalFormatted),
+            PaceBand.Faster or PaceBand.MuchFaster => AppState.Loc("WEBFRONT_ZOMBIE_ROUND_PACE_TOOLTIP_FASTER")
+                .FormatExt(absPercent.ToString("F0"), round, playerLabel, typicalFormatted),
+            _ => AppState.Loc("WEBFRONT_ZOMBIE_ROUND_PACE_TOOLTIP_SLOWER")
+                .FormatExt(absPercent.ToString("F0"), round, playerLabel, typicalFormatted),
+        };
+    }
+
+    /// <summary>
+    /// Tooltip text for the live banner's elapsed timer. When the EMA target is
+    /// unknown (cold cell) we fall back to the original "round in progress" string;
+    /// when known we surface the current pace delta vs typical so the viewer
+    /// understands what the colour means.
+    /// </summary>
+    private string LiveBannerTooltip(double elapsedSeconds, (PaceBand Band, double Ratio)? band)
+    {
+        if (Snapshot.CurrentRoundEmaSeconds is not { } typical || typical <= 0 || band is not { } b)
+        {
+            return AppState.Loc("WEBFRONT_ZOMBIE_LIVE_CURRENT_ROUND_TOOLTIP");
+        }
+
+        var playerLabel = PaceVisuals.PlayerLabel(Snapshot.CurrentRoundPlayerCount, AppState);
+        var typicalFormatted = PaceVisuals.FormatRoundTime(typical);
+        var absPercent = Math.Abs(b.Ratio) * 100;
+
+        return b.Band switch
+        {
+            PaceBand.Neutral => AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_TOOLTIP_NEUTRAL")
+                .FormatExt(Snapshot.CurrentRound, playerLabel, typicalFormatted),
+            PaceBand.Faster or PaceBand.MuchFaster => AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_TOOLTIP_FASTER")
+                .FormatExt(absPercent.ToString("F0"), Snapshot.CurrentRound, playerLabel, typicalFormatted),
+            _ => AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_TOOLTIP_SLOWER")
+                .FormatExt(absPercent.ToString("F0"), Snapshot.CurrentRound, playerLabel, typicalFormatted),
+        };
+    }
 
     // Mirrors ZombieTimeline.GetEventVisuals — same icons/colors so the live activity
     // feed matches the post-match timeline. Kept inline (rather than reusing the

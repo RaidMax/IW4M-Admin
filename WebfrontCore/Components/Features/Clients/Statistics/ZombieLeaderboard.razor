@@ -328,7 +328,8 @@
                                                         <th class="py-2.5 px-3 text-right text-foreground"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_REVIVES")" WrapperClass="w-fit inline-block">R</Tooltip></th>
                                                         <th class="py-2.5 px-4 text-right"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KPD_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KPD")</Tooltip></th>
                                                         <th class="py-2.5 px-4 text-right"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HS_PCT_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_HS_PCT")</Tooltip></th>
-                                                        <th class="py-2.5 px-4 text-right pr-6"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO")</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO")</Tooltip></th>
+                                                        <th class="py-2.5 px-4 text-right pr-6"><Tooltip Text="@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PACE_TOOLTIP")" WrapperClass="w-fit inline-block">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PACE")</Tooltip></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="divide-y divide-line/50">
@@ -391,8 +392,23 @@
                                                             <td class="py-2 px-4 text-right font-mono text-foreground">
                                                                 @hsPercent.ToString("F0")%
                                                             </td>
-                                                            <td class="py-2 px-4 text-right pr-6 font-mono text-muted">
+                                                            <td class="py-2 px-4 text-right font-mono text-muted">
                                                                 @(dmgRatioInfinite ? "∞" : dmgRatio.ToString("N1"))
+                                                            </td>
+                                                            <td class="py-2 px-4 text-right pr-6 font-mono">
+                                                                @if (p.RoundDurationPaceRatio is { } paceRatio)
+                                                                {
+                                                                    var paceTint = PaceVisuals.ColorClass(p.PaceBand);
+                                                                    var paceSign = paceRatio > 0.05 ? "+" : (paceRatio < -0.05 ? "−" : "±");
+                                                                    var paceTooltip = LeaderboardPaceTooltip(paceRatio, p.PaceBand);
+                                                                    <Tooltip Text="@paceTooltip" WrapperClass="inline-block">
+                                                                        <span class="@paceTint">@paceSign@(Math.Abs(paceRatio * 100).ToString("F0"))%</span>
+                                                                    </Tooltip>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="text-subtle/40">—</span>
+                                                                }
                                                             </td>
                                                         </tr>
                                                     }

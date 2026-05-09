@@ -19,6 +19,8 @@ public class ZombieAggregateClientStat : ZombieClientStat
     public double AverageMelees { get; set; }
     public double AverageRoundReached { get; set; }
     public double AveragePoints { get; set; }
+    public double AverageRelativeSpeed { get; set; } = 1.0;
+    public double AverageSoloFactor { get; set; } = 1.0;
 
     #endregion
 

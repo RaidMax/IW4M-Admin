@@ -14,4 +14,11 @@ public record RoundState
     /// Reset by a fresh round entry (next round, new RoundState).
     /// </summary>
     public bool IsDowned { get; set; }
+
+    /// <summary>
+    /// Number of qualifying (kill-recording) players in the match at the moment this
+    /// round began. Frozen at round-start so the EMA cell key matches the round's
+    /// fixed zombie spawn count, regardless of mid-round joins/leaves.
+    /// </summary>
+    public int PlayerCountAtRoundStart { get; set; }
 }

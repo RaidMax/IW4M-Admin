@@ -668,7 +668,7 @@ namespace Data.Migrations.Sqlite
 
                     b.HasKey("PerformanceBucketId");
 
-                    b.ToTable("PerformanceBuckets");
+                    b.ToTable("EFPerformanceBuckets", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -1477,6 +1477,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("ClientsCompleted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("Completed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long>("CreatedDateTime")
                         .HasColumnType("INTEGER");
 
@@ -1520,6 +1523,28 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("EFZombieMatches", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundDurationEma", b =>
+                {
+                    b.Property<int>("MapId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("EmaSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<long>("SampleCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("MapId", "RoundNumber", "PlayerCount");
+
+                    b.ToTable("EFZombieRoundDurationEmas", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
@@ -1539,10 +1564,16 @@ namespace Data.Migrations.Sqlite
                     b.Property<double>("AveragePoints")
                         .HasColumnType("REAL");
 
+                    b.Property<double>("AverageRelativeSpeed")
+                        .HasColumnType("REAL");
+
                     b.Property<double>("AverageRevives")
                         .HasColumnType("REAL");
 
                     b.Property<double>("AverageRoundReached")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageSoloFactor")
                         .HasColumnType("REAL");
 
                     b.Property<double>("HeadshotPercentage")
@@ -2164,6 +2195,17 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Map");
 
                     b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundDurationEma", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
+                        .WithMany()
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Map");
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>

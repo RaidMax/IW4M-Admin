@@ -824,8 +824,17 @@ OnPlayerDowned( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sH
 
 PrintPlayerRoundData( isGameOver )
 {
+    // Skip emission entirely if level.round_number is undefined — fires during
+    // post-game-over shutdown / exit_level cleanup with no round context. Without
+    // this guard, currentRound defaults to 1 and emits a spurious GSE;RC;1 between
+    // the legit final RC and ExitLevel (see match 1614).
+    if ( !IsDefined( level.round_number ) )
+    {
+        return;
+    }
+
     players = get_players();
-    currentRound = 1;
+    currentRound = level.round_number;
 
     for( i = 0; i < players.size; i++ )
     {
@@ -838,11 +847,6 @@ PrintPlayerRoundData( isGameOver )
 
         totalScore = 0;
         currentScore = 0;
-
-        if ( IsDefined( level.round_number ) )
-        {
-            currentRound = level.round_number;
-        }
 
         if ( IsDefined ( players[i].score_total ) )
         {

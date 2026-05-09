@@ -64,6 +64,7 @@ namespace Data.Context
         public DbSet<ZombieAggregateClientStat> ZombieClientStatAggregates { get; set; }
         public DbSet<ZombieClientStatRecord> ZombieClientStatRecords { get; set; }
         public DbSet<ZombieEventLog> ZombieEvents { get; set; }
+        public DbSet<ZombieRoundDurationEma> ZombieRoundDurationEmas { get; set; }
         
         #endregion
 
@@ -255,6 +256,17 @@ namespace Data.Context
             modelBuilder.Entity<ZombieClientStatRecord>(ent =>
             {
                 ent.ToTable($"EF{nameof(ZombieClientStatRecords)}");
+            });
+
+            modelBuilder.Entity<ZombieRoundDurationEma>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieRoundDurationEmas)}");
+                ent.HasKey(e => new { e.MapId, e.RoundNumber, e.PlayerCount });
+            });
+
+            modelBuilder.Entity<EFPerformanceBucket>(ent =>
+            {
+                ent.ToTable($"EF{nameof(PerformanceBuckets)}");
             });
 
             modelBuilder.Entity<EFClientStatTag>(ent =>

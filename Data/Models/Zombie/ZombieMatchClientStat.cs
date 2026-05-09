@@ -8,6 +8,17 @@ public class ZombieMatchClientStat : ZombieClientStat
     [NotMapped] public int? LastRoundReached { get; set; }
 
     /// <summary>
+    /// True when the row was created by carryover (auto-enrollment of an already-Connected
+    /// client at match-create) but the client hasn't yet emitted any per-client event.
+    /// Tentative rows are NOT persisted to DB and do NOT bump lifetime TotalMatchesPlayed.
+    /// First per-client event in <c>RunCalculation</c> calls <c>PromoteTentativeIfNeeded</c>
+    /// to clear the flag, persist the row, and bump lifetime stats. Clients who untrack
+    /// while still tentative are dropped entirely (no DB row, no lifetime pollution).
+    /// Defends against the carryover-of-leavers phantom pattern (see match 524).
+    /// </summary>
+    [NotMapped] public bool IsTentative { get; set; }
+
+    /// <summary>
     /// Number of rounds in this match where this player had at least one other tracked
     /// player alongside them. Computed in <c>FinalizePlayerCountAsync</c> after match end.
     /// Null on legacy rows that pre-date the badge feature.

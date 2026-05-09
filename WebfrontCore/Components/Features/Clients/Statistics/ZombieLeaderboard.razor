@@ -597,10 +597,13 @@
             return clientId;
         }
 
-        // Default to first player
+        // Prefer first qualified player so the timeline renders by default —
+        // a high-scoring drop-in who didn't qualify would otherwise leave the
+        // scrubber blank (no rounds/timeline rows for unqualified players).
         if (_expandedMatches.TryGetValue(matchId, out var detail) && detail?.Players.Count > 0)
         {
-            var first = detail.Players[0].ClientId;
+            var first = detail.Players.FirstOrDefault(p => p.IsQualified)?.ClientId
+                        ?? detail.Players[0].ClientId;
             _timelinePlayerSelection[matchId] = first;
             return first;
         }

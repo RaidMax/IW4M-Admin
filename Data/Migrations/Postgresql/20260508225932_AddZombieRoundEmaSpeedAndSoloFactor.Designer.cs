@@ -3,6 +3,7 @@ using System;
 using Data.MigrationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Data.Migrations.Postgresql
 {
     [DbContext(typeof(PostgresqlDatabaseContext))]
-    partial class PostgresqlDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260508225932_AddZombieRoundEmaSpeedAndSoloFactor")]
+    partial class AddZombieRoundEmaSpeedAndSoloFactor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -699,7 +702,7 @@ namespace Data.Migrations.Postgresql
 
                     b.HasKey("PerformanceBucketId");
 
-                    b.ToTable("EFPerformanceBuckets", (string)null);
+                    b.ToTable("PerformanceBuckets");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -1551,9 +1554,6 @@ namespace Data.Migrations.Postgresql
 
                     b.Property<int>("ClientsCompleted")
                         .HasColumnType("integer");
-
-                    b.Property<bool>("Completed")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("timestamp with time zone");

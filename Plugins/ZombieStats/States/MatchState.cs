@@ -88,4 +88,13 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// </summary>
     public Dictionary<string, string> EasterEggLockedVariantByGroup { get; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Player count captured at each round's start. Keyed by RoundNumber; value is the
+    /// count of qualifying clients when the round began (zombie spawn count is fixed
+    /// for the round at this number, regardless of mid-round joins/leaves). Used by
+    /// the round-duration EMA to key its (Map, Round, PlayerCount) cell so solo and
+    /// co-op rounds normalize against their own cohorts.
+    /// </summary>
+    public Dictionary<int, int> RoundPlayerCounts { get; } = new();
 }

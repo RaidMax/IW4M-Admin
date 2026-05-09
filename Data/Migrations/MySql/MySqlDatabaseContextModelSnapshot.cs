@@ -699,7 +699,7 @@ namespace Data.Migrations.MySql
 
                     b.HasKey("PerformanceBucketId");
 
-                    b.ToTable("PerformanceBuckets");
+                    b.ToTable("EFPerformanceBuckets", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -1552,6 +1552,9 @@ namespace Data.Migrations.MySql
                     b.Property<int>("ClientsCompleted")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Completed")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTimeOffset>("CreatedDateTime")
                         .HasColumnType("datetime(6)");
 
@@ -1595,6 +1598,28 @@ namespace Data.Migrations.MySql
                     b.ToTable("EFZombieMatches", (string)null);
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundDurationEma", b =>
+                {
+                    b.Property<int>("MapId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlayerCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("EmaSeconds")
+                        .HasColumnType("double");
+
+                    b.Property<long>("SampleCount")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("MapId", "RoundNumber", "PlayerCount");
+
+                    b.ToTable("EFZombieRoundDurationEmas", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
@@ -1614,10 +1639,16 @@ namespace Data.Migrations.MySql
                     b.Property<double>("AveragePoints")
                         .HasColumnType("double");
 
+                    b.Property<double>("AverageRelativeSpeed")
+                        .HasColumnType("double");
+
                     b.Property<double>("AverageRevives")
                         .HasColumnType("double");
 
                     b.Property<double>("AverageRoundReached")
+                        .HasColumnType("double");
+
+                    b.Property<double>("AverageSoloFactor")
                         .HasColumnType("double");
 
                     b.Property<double>("HeadshotPercentage")
@@ -2239,6 +2270,17 @@ namespace Data.Migrations.MySql
                     b.Navigation("Map");
 
                     b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundDurationEma", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
+                        .WithMany()
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Map");
                 });
 
             modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>

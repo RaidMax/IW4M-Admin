@@ -25,6 +25,15 @@ public class ZombieMatch : DatedRecord
     public int ClientsCompleted { get; set; }
 
     /// <summary>
+    /// True when EndMatch was driven by a clean ExitLevel/ShutdownGame signal
+    /// from the parser. False for crash-killed matches (orphan-close path) and
+    /// pre-fix matches. Drives the API `completed` field — independent of
+    /// <see cref="ClientsCompleted"/>, which only counts intermission-reached
+    /// players (zero on host-quit even after a 49-round game).
+    /// </summary>
+    public bool Completed { get; set; }
+
+    /// <summary>
     /// Number of qualifying players (>50% round participation) in this match.
     /// Calculated at match end.
     /// </summary>

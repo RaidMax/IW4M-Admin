@@ -331,40 +331,45 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await transformer(finished.Cast<ITopStatsMutable>().ToList(), serverId, bucketConfig.Code);
             }
 
+            // Zombies bucket: suppress KDR row. Kills scale ~round^2 and deaths floor at 1
+            // in zombies, so K/D is mathematically broken as a skill signal — the premium
+            // plugin appends RPD (rounds-per-down) below as the canonical survival ratio.
+            var suppressKdr = string.Equals(bucketConfig.Code, "zombies", StringComparison.OrdinalIgnoreCase);
+
             foreach (var topStatsInfo in finished)
             {
-                topStatsInfo.Metrics.AddRange(new EFMeta[]
+                topStatsInfo.Metrics.Add(new EFMeta
                 {
-                    new()
-                    {
-                        Extra = "Kills",
-                        Value = topStatsInfo.Kills.ToNumericalString(),
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]
-                    },
-                    new()
-                    {
-                        Extra = "Deaths",
-                        Value = topStatsInfo.Deaths.ToNumericalString(),
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"]
-                    },
-                    new()
+                    Extra = "Kills",
+                    Value = topStatsInfo.Kills.ToNumericalString(),
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]
+                });
+                topStatsInfo.Metrics.Add(new EFMeta
+                {
+                    Extra = "Deaths",
+                    Value = topStatsInfo.Deaths.ToNumericalString(),
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"]
+                });
+                if (!suppressKdr)
+                {
+                    topStatsInfo.Metrics.Add(new EFMeta
                     {
                         Extra = "KDR",
                         Value = topStatsInfo.KDR.ToNumericalString(),
                         Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KDR"]
-                    },
-                    new()
-                    {
-                        Extra = "TimePlayed",
-                        Value = topStatsInfo.TimePlayedValue.HumanizeForCurrentCulture(),
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]
-                    },
-                    new()
-                    {
-                        Extra = "LastSeen",
-                        Value = topStatsInfo.LastSeenValue.HumanizeForCurrentCulture(),
-                        Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"]
-                    }
+                    });
+                }
+                topStatsInfo.Metrics.Add(new EFMeta
+                {
+                    Extra = "TimePlayed",
+                    Value = topStatsInfo.TimePlayedValue.HumanizeForCurrentCulture(),
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]
+                });
+                topStatsInfo.Metrics.Add(new EFMeta
+                {
+                    Extra = "LastSeen",
+                    Value = topStatsInfo.LastSeenValue.HumanizeForCurrentCulture(),
+                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"]
                 });
             }
 

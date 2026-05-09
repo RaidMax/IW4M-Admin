@@ -16,7 +16,7 @@
     <div class="p-4 md:p-5 overflow-y-auto space-y-5 flex-1" style="scrollbar-width: thin;">
 
         @* ── BANNER: round + round timer + match elapsed + map ── *@
-        <div class="relative overflow-hidden rounded-xl bg-surface-alt/40 border border-line p-5">
+        <div class="relative overflow-hidden rounded-md bg-surface-alt/40 border border-line p-5">
             <div class="absolute top-0 left-0 w-1 h-full bg-warning"></div>
             <div class="absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent pointer-events-none"></div>
 
@@ -95,7 +95,7 @@
         }
         @if (liveQuests.Count > 0)
         {
-            <div class="rounded-xl bg-surface-alt/30 border border-line overflow-hidden">
+            <div class="rounded-md bg-surface-alt/30 border border-line overflow-hidden">
                 @for (var i = 0; i < liveQuests.Count; i++)
                 {
                     var quest = liveQuests[i];
@@ -170,7 +170,7 @@
                 }
                 else
                 {
-                    <div class="bg-surface-alt/40 border border-line rounded-xl overflow-hidden">
+                    <div class="bg-surface-alt/40 border border-line rounded-md overflow-hidden">
                         @{ var rank = 0; }
                         @foreach (var p in Snapshot.Players)
                         {
@@ -189,7 +189,7 @@
                 <h5 class="text-[11px] font-bold uppercase tracking-widest text-subtle mb-3 flex items-center gap-2">
                     <i class="ph ph-activity text-sm"></i> @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_RECENT_ACTIVITY")
                 </h5>
-                <div class="bg-surface-alt/20 border border-line rounded-xl p-4 max-h-80 overflow-y-auto" style="scrollbar-width: thin;">
+                <div class="bg-surface-alt/20 border border-line rounded-md p-4 max-h-80 overflow-y-auto" style="scrollbar-width: thin;">
                     @{ var orderedEvents = Snapshot.RecentEvents.AsEnumerable().Reverse().ToList(); }
                     @* Timeline thread alignment:
                        - Row uses `items-center` so all three columns (time, icon, text)
@@ -272,7 +272,7 @@
         var kpd = p.MatchDowns == 0 ? p.MatchKills : (double)p.MatchKills / p.MatchDowns;
         var net = p.MatchPointsEarned - p.MatchPointsSpent;
 
-        <div class="bg-surface-alt/40 border border-line rounded-xl overflow-hidden @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
+        <div class="bg-surface-alt/40 border border-line rounded-md overflow-hidden @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
             <div class="flex items-center justify-between gap-3 px-5 py-3 bg-surface-alt/60 border-b border-line">
                 <div class="flex items-center gap-2 min-w-0">
                     <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
@@ -307,7 +307,7 @@
         var dmgRatio = dmgInf ? 0 : (double)p.MatchDamageDealt / p.MatchDamageReceived;
         var net = p.MatchPointsEarned - p.MatchPointsSpent;
 
-        <div class="bg-surface-alt/40 border border-line rounded-xl p-4 @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
+        <div class="bg-surface-alt/40 border border-line rounded-md p-4 @(p.IsConnected ? "" : "opacity-60 grayscale-[0.5]")">
             <div class="flex items-center justify-between gap-2 mb-4">
                 <div class="flex items-center gap-2 min-w-0">
                     <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"

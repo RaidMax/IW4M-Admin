@@ -13,12 +13,145 @@
        row, history row, share-page hero) via ZombieAchievementBadges; surfacing
        them again inside the expanded view duplicates the same signal. *@
 
-    @* ── PLAYER TABS (hidden when selection is controlled externally) ──
-       Drop-in players hide when ShowAllPlayers is false so the tab bar matches
-       the timeline (one toggle drives both surfaces). ShowAllPlayers=true keeps
-       the legacy "everyone visible" behavior the dedicated page defaults to. *@
+    @* ── PLAYER ROSTER + TABS (hidden when selection is controlled externally) ──
+       Match Page only (SelectedClientId is null). Leaderboard expansion already
+       shows its own player roster + scoreboard, then drives Detail with a fixed
+       SelectedClientId for the timeline drill-down.
+
+       Roster on top mirrors the leaderboard's adaptive 1P / 2P / 3-8 layout so
+       Match Page and Leaderboard read the same way. Drop-in players follow the
+       existing ShowAllPlayers toggle (same source of truth as the tabs below). *@
     @if (SelectedClientId is null)
     {
+        @* Roster: leaderboard-style adaptive cards (qualified by default;
+           ShowAllPlayers includes drop-ins). Match the leaderboard's
+           rounded-md / border-line/50 / bg-surface-alt/30 weight exactly. *@
+        var rosterPlayers = ShowAllPlayers
+            ? Detail.Players
+            : Detail.Players.Where(p => p.IsQualified).ToList();
+        var qualifiedRoster = Detail.Players.Where(p => p.IsQualified).ToList();
+        @if (rosterPlayers.Count > 0)
+        {
+            <div class="p-4 sm:p-6 pb-0">
+                @if (qualifiedRoster.Count == 1 && !ShowAllPlayers)
+                {
+                    var p = qualifiedRoster[0];
+                    var soloInf = p.DamageReceived == 0;
+                    var soloRatio = soloInf ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                    <div class="flex flex-col sm:flex-row items-stretch bg-surface-alt/30 rounded-md border border-line/50 overflow-hidden sm:divide-x divide-line/50">
+                        <div class="flex-1 p-4 flex flex-col justify-center bg-surface/20 min-w-0">
+                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PLAYER")</span>
+                            <div class="flex items-center gap-2 min-w-0">
+                                <a href="/client/@p.ClientId/stats"
+                                   class="text-lg font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                                    <ColorCode Value="@p.Name"/>
+                                </a>
+                                <ZombieAssistanceBadge SoloFromRound="p.SoloFromRound" HighestRound="Detail.HighestRound" AssistedRounds="p.AssistedRounds" />
+                            </div>
+                        </div>
+                        <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
+                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KILLS")</span>
+                            <span class="text-2xl font-mono font-medium text-foreground leading-none">@p.Kills.ToString("N0")</span>
+                        </div>
+                        <div class="flex-1 p-4 flex flex-col justify-center sm:items-center">
+                            <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG_RATIO")</span>
+                            <span class="text-2xl font-mono font-medium text-muted leading-none flex items-center">
+                                @if (soloInf)
+                                {
+                                    <i class="ph ph-infinity"></i>
+                                }
+                                else
+                                {
+                                    @soloRatio.ToString("N1")<span class="text-base text-subtle ml-0.5">x</span>
+                                }
+                            </span>
+                        </div>
+                    </div>
+                }
+                else if (qualifiedRoster.Count == 2 && !ShowAllPlayers)
+                {
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach (var p in qualifiedRoster)
+                        {
+                            var inf = p.DamageReceived == 0;
+                            var ratio = inf ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                            <div class="flex items-center justify-between gap-2 p-3 sm:p-4 bg-surface-alt/30 rounded-md border border-line/50 min-w-0">
+                                <div class="flex flex-col justify-center pr-2 min-w-0">
+                                    <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_PLAYER")</span>
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <a href="/client/@p.ClientId/stats"
+                                           class="text-base font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                                            <ColorCode Value="@p.Name"/>
+                                        </a>
+                                        <ZombieAssistanceBadge SoloFromRound="p.SoloFromRound" HighestRound="Detail.HighestRound" AssistedRounds="p.AssistedRounds" />
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-5 shrink-0">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_KILLS")</span>
+                                        <span class="text-xl font-mono font-medium text-foreground leading-none">@p.Kills.ToString("N0")</span>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-[10px] font-bold text-subtle tracking-widest uppercase mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LEADERBOARD_DMG")</span>
+                                        <span class="text-xl font-mono font-medium text-muted leading-none flex items-center">
+                                            @if (inf)
+                                            {
+                                                <i class="ph ph-infinity"></i>
+                                            }
+                                            else
+                                            {
+                                                @ratio.ToString("N1")<span class="text-sm text-subtle ml-0.5">x</span>
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @* 3-8 players (or ShowAllPlayers=true): compact dotted-leader list,
+                       two-column on md+. Drop-ins render with reduced opacity to match
+                       the leaderboard scoreboard's drop-in styling. *@
+                    <div class="grid gap-x-12 gap-y-1.5 grid-cols-1 md:grid-cols-2">
+                        @{ var rosterIdx = 0; }
+                        @foreach (var p in rosterPlayers)
+                        {
+                            rosterIdx++;
+                            var inf = p.DamageReceived == 0;
+                            var ratio = inf ? 0 : (double)p.DamageDealt / p.DamageReceived;
+                            <div class="flex items-center text-[13px] min-w-0 @(p.IsQualified ? "" : "opacity-60")">
+                                <span class="text-subtle w-5 text-right shrink-0">@(rosterIdx).</span>
+                                <a href="/client/@p.ClientId/stats"
+                                   class="font-semibold text-muted truncate ml-2 hover:text-primary transition-colors no-underline">
+                                    <ColorCode Value="@p.Name"/>
+                                </a>
+                                <span class="ml-1.5">
+                                    <ZombieAssistanceBadge SoloFromRound="p.SoloFromRound" HighestRound="Detail.HighestRound" AssistedRounds="p.AssistedRounds" />
+                                </span>
+                                <div class="flex-1 border-b border-dashed border-line/60 mx-3 min-w-[12px]"></div>
+                                <span class="font-mono tracking-tight tabular-nums shrink-0 flex items-center">
+                                    <span class="text-foreground text-right">@p.Kills.ToString("N0")<span class="text-[10px] text-subtle font-sans ml-0.5">K</span></span>
+                                    <span class="text-line mx-2.5">|</span>
+                                    <span class="text-muted text-right flex items-center justify-end">
+                                        @if (inf)
+                                        {
+                                            <i class="ph ph-infinity"></i>
+                                        }
+                                        else
+                                        {
+                                            @ratio.ToString("N1")<span class="text-[10px] text-subtle font-sans ml-0.5">x</span>
+                                        }
+                                    </span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
         <div class="flex items-center gap-1 p-2 border-b border-line bg-surface-alt/50 overflow-x-auto" style="scrollbar-width: thin;">
             @foreach (var player in VisiblePlayers)
             {

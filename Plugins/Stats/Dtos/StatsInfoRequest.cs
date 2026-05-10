@@ -14,7 +14,7 @@
         /// <c>EFPerformanceBucket.Code</c> stores the canonical lower-cased
         /// form. Empty/whitespace stays null so "no filter" remains
         /// distinguishable from the explicit default bucket. Mirrors
-        /// <c>Stats.Config.PerformanceBucketCodes.Normalize</c>.
+        /// <c>SharedLibraryCore.Helpers.PerformanceBucketCodes.Normalize</c>.
         /// </summary>
         public string PerformanceBucketCode
         {

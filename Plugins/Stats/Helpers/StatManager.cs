@@ -273,11 +273,34 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
             }
 
-            var statsInfo = await context.Set<EFClientStatistics>()
+            // Bucket classification by live server population — replaces the legacy
+            // hardcoded literal "zombies" check so admins can name buckets freely.
+            // Drives both the metric-row gate below AND filters the EFClientStatistics
+            // sum to zombie servers only when a bucket qualifies as zombies (so
+            // mixed-bucket MP play doesn't pollute the displayed Played/Kills/Deaths).
+            var bucketClassification = await PerformanceBucketClassifier.ClassifyAsync(
+                Plugin.ServerManager, contextFactory, bucketConfig.Code);
+            var suppressMpMetrics = bucketClassification.IsZombieBucket;
+            var zombieServerIds = bucketClassification.ZombieServerIds;
+
+            var statsQuery = context.Set<EFClientStatistics>()
                 .Where(stat => clientIdsList.Contains(stat.ClientId))
                 .Where(stat => stat.TimePlayed > 0)
                 .Where(stat => stat.Kills > 0 || stat.Deaths > 0)
-                .Where(stat => serverId == null || stat.ServerId == serverId)
+                .Where(stat => serverId == null || stat.ServerId == serverId);
+
+            if (suppressMpMetrics && zombieServerIds.Count > 0)
+            {
+                // Restrict the sum to the bucket's actual zombie servers. Without
+                // this, a non-zombie server that happens to share the bucket would
+                // contribute its MP kills/deaths/playtime into the displayed
+                // zombie-bucket totals — fundamentally a different game mode and
+                // not comparable.
+                var zombieIdList = zombieServerIds.ToList();
+                statsQuery = statsQuery.Where(stat => zombieIdList.Contains(stat.ServerId));
+            }
+
+            var statsInfo = await statsQuery
                 .GroupBy(stat => stat.ClientId)
                 .Select(s => new
                 {
@@ -331,27 +354,27 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 await transformer(finished.Cast<ITopStatsMutable>().ToList(), serverId, bucketConfig.Code);
             }
 
-            // Zombies bucket: suppress KDR row. Kills scale ~round^2 and deaths floor at 1
-            // in zombies, so K/D is mathematically broken as a skill signal — the premium
-            // plugin appends RPD (rounds-per-down) below as the canonical survival ratio.
-            var suppressKdr = string.Equals(bucketConfig.Code, "zombies", StringComparison.OrdinalIgnoreCase);
-
+            // Zombies bucket (classified above by live server ratio): suppress
+            // Kills/Deaths/KDR rows. Kills scale ~round^2 and deaths floor at 1 in
+            // zombies, so K/D is mathematically broken as a skill signal — the
+            // premium plugin appends RPD/Highest Round/Solo Index/etc as the
+            // canonical zombie metrics and reorders TimePlayed to end.
             foreach (var topStatsInfo in finished)
             {
-                topStatsInfo.Metrics.Add(new EFMeta
+                if (!suppressMpMetrics)
                 {
-                    Extra = "Kills",
-                    Value = topStatsInfo.Kills.ToNumericalString(),
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]
-                });
-                topStatsInfo.Metrics.Add(new EFMeta
-                {
-                    Extra = "Deaths",
-                    Value = topStatsInfo.Deaths.ToNumericalString(),
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"]
-                });
-                if (!suppressKdr)
-                {
+                    topStatsInfo.Metrics.Add(new EFMeta
+                    {
+                        Extra = "Kills",
+                        Value = topStatsInfo.Kills.ToNumericalString(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_KILLS"]
+                    });
+                    topStatsInfo.Metrics.Add(new EFMeta
+                    {
+                        Extra = "Deaths",
+                        Value = topStatsInfo.Deaths.ToNumericalString(),
+                        Key = Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_STATS_TEXT_DEATHS"]
+                    });
                     topStatsInfo.Metrics.Add(new EFMeta
                     {
                         Extra = "KDR",
@@ -364,12 +387,6 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     Extra = "TimePlayed",
                     Value = topStatsInfo.TimePlayedValue.HumanizeForCurrentCulture(),
                     Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_PLAYER"]
-                });
-                topStatsInfo.Metrics.Add(new EFMeta
-                {
-                    Extra = "LastSeen",
-                    Value = topStatsInfo.LastSeenValue.HumanizeForCurrentCulture(),
-                    Key = Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_PROFILE_LSEEN"]
                 });
             }
 

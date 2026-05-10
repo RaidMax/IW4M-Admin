@@ -14,8 +14,7 @@ public class TopStatsRequest : PaginationRequest
     /// from <c>IW4MAdminSettings.json</c>) would otherwise return zero rows
     /// when compared with case-sensitive equality. Empty/whitespace stays null
     /// so callers can distinguish "no filter" from the default bucket.
-    /// Mirrors <c>Stats.Config.PerformanceBucketCodes.Normalize</c> — kept
-    /// inline because WebfrontCore does not reference the Stats plugin.
+    /// Mirrors <c>SharedLibraryCore.Helpers.PerformanceBucketCodes.Normalize</c>.
     /// </summary>
     public string? PerformanceBucketCode
     {

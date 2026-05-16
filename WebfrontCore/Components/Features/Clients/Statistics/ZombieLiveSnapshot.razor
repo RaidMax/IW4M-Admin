@@ -191,6 +191,36 @@
                         <div class="flex items-center gap-1 flex-wrap flex-1">
                             @foreach (var step in quest.Inventory)
                             {
+                                @if (!step.IsLeaf())
+                                {
+                                    @* Parent dot: shows aggregate fired/total over its
+                                       leaves. Tooltip lists each child with fired/pending
+                                       state so the live strip stays compact (no inline
+                                       expansion — that's the match-page UX). *@
+                                    var leaves = step.Leaves().ToList();
+                                    var subFired = leaves.Count(l => firedKeys.ContainsKey(l.Key));
+                                    var subTotal = leaves.Count;
+                                    var parentDone = subFired == subTotal;
+                                    var partial = subFired > 0 && !parentDone;
+                                    var parentLabel = AppState.Loc(step.LocKey);
+                                    var childLines = string.Join("\n", leaves.Select(l =>
+                                    {
+                                        var lLabel = AppState.Loc(l.LocKey);
+                                        if (!firedKeys.TryGetValue(l.Key, out var lRec))
+                                            return $"• {lLabel} — pending";
+                                        return lRec.RoundNumber is { } lrn && lrn > 0
+                                            ? $"✓ {lLabel} • R{lrn}"
+                                            : $"✓ {lLabel}";
+                                    }));
+                                    var parentTooltip = $"{parentLabel} ({subFired}/{subTotal})\n{childLines}";
+                                    <Tooltip Text="@parentTooltip" WrapperClass="inline-flex">
+                                        <span class="inline-flex items-center justify-center min-w-[2.25rem] h-6 px-1.5 rounded-full border transition-colors gap-1 @(parentDone ? dotFiredClasses : partial ? dotFiredClasses + " opacity-70" : "bg-surface/40 border-line/40 text-subtle/60")">
+                                            <i class="ph @step.Icon text-[11px]"></i>
+                                            <span class="text-[10px] font-mono tabular-nums">@subFired/@subTotal</span>
+                                        </span>
+                                    </Tooltip>
+                                    continue;
+                                }
                                 var fired = firedKeys.TryGetValue(step.Key, out var rec);
                                 var label = AppState.Loc(step.LocKey);
                                 var tooltip = fired && rec is not null

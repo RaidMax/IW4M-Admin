@@ -221,6 +221,11 @@ else
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
                                     @foreach (var step in quest.Inventory)
                                     {
+                                        @if (!step.IsLeaf())
+                                        {
+                                            @RenderEeParent(quest, step, stepsByKey, stepFiredBg, stepFiredIcon, stepCheckIcon)
+                                            continue;
+                                        }
                                         var fired = stepsByKey.TryGetValue(step.Key, out var record);
                                         var label = AppState.Loc(step.LocKey);
                                         var utcDisplay = fired && record is not null
@@ -370,4 +375,95 @@ else
              picture. *@
         <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" ShowAllPlayers="_showAllPlayers" />
     </div>
+}
+
+@* Nested parent step row: spans the full step grid (col-span-full) so the
+   expanded child grid below it reads as one unit. Header always visible
+   (chevron + parent label + sub-progress chip); child grid renders inline
+   when expanded — auto-expanded for mid-progress parents so the user can
+   see pending sub-steps without clicking. *@
+@code {
+    private RenderFragment RenderEeParent(
+        EasterEggQuestProgress quest,
+        EasterEggStepInventoryEntry parent,
+        Dictionary<string, EasterEggStepRecord> stepsByKey,
+        string firedBg,
+        string firedIcon,
+        string checkIcon) => __builder =>
+    {
+        var leaves = parent.Leaves().ToList();
+        var subFired = leaves.Count(l => stepsByKey.ContainsKey(l.Key));
+        var subTotal = leaves.Count;
+        var parentDone = subFired == subTotal && subTotal > 0;
+        var expanded = IsEeStepExpanded(quest.Id, parent, stepsByKey);
+        var label = AppState.Loc(parent.LocKey);
+
+        <div class="col-span-full">
+            <button type="button"
+                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-left transition-colors @(parentDone ? firedBg : "bg-surface-alt/40 border-line/40 hover:bg-surface-alt/60")"
+                    @onclick="() => ToggleEeStep(quest.Id, parent.Key)">
+                <i class="ph @(expanded ? "ph-caret-down" : "ph-caret-right") text-xs shrink-0 text-subtle"></i>
+                <i class="ph @parent.Icon text-sm shrink-0 @(parentDone ? firedIcon : "text-subtle/60")"></i>
+                <div class="text-xs font-semibold truncate flex-1 min-w-0 @(parentDone ? "text-foreground" : "text-subtle")">@label</div>
+                <span class="text-[10px] font-mono text-muted shrink-0 tabular-nums">@subFired / @subTotal</span>
+                @if (parentDone)
+                {
+                    <i class="ph ph-check-circle @checkIcon text-xs shrink-0"></i>
+                }
+            </button>
+            @if (expanded)
+            {
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-1.5 pl-5">
+                    @foreach (var child in parent.Children!)
+                    {
+                        @if (!child.IsLeaf())
+                        {
+                            @* Nested deeper than 2 levels: render the deeper parent
+                               inline as a flat label + count chip. Convention is to
+                               cap at 2 levels so this should not fire under normal
+                               config — render defensively rather than throw. *@
+                            var deeperLeaves = child.Leaves().ToList();
+                            var deeperFired = deeperLeaves.Count(l => stepsByKey.ContainsKey(l.Key));
+                            var deeperDone = deeperFired == deeperLeaves.Count && deeperLeaves.Count > 0;
+                            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(deeperDone ? firedBg : "bg-surface-alt/40 border-line/40")">
+                                <i class="ph @child.Icon text-sm shrink-0 @(deeperDone ? firedIcon : "text-subtle/60")"></i>
+                                <div class="text-xs font-semibold truncate flex-1 min-w-0 @(deeperDone ? "text-foreground" : "text-subtle")">@AppState.Loc(child.LocKey)</div>
+                                <span class="text-[10px] font-mono text-muted shrink-0 tabular-nums">@deeperFired / @deeperLeaves.Count</span>
+                            </div>
+                            continue;
+                        }
+
+                        var leafFired = stepsByKey.TryGetValue(child.Key, out var leafRec);
+                        var leafLabel = AppState.Loc(child.LocKey);
+                        var leafUtc = leafFired && leafRec is not null
+                            ? leafRec.OccurredAt.UtcDateTime.ToStandardFormat()
+                            : null;
+                        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(leafFired ? firedBg : "bg-surface-alt/40 border-line/40")">
+                            <i class="ph @child.Icon text-sm shrink-0 @(leafFired ? firedIcon : "text-subtle/60")"></i>
+                            <Tooltip Text="@leafLabel" WrapperClass="flex-1 min-w-0">
+                                <div class="text-xs font-semibold truncate @(leafFired ? "text-foreground" : "text-subtle")">@leafLabel</div>
+                            </Tooltip>
+                            @if (leafFired && leafRec is not null)
+                            {
+                                <div class="text-[10px] font-mono text-muted shrink-0 flex items-center">
+                                    @if (leafRec.RoundNumber is { } rn && rn > 0)
+                                    {
+                                        <span>R@(rn)</span>
+                                        <span class="mx-1 text-subtle">•</span>
+                                    }
+                                    <Tooltip Text="@leafUtc" WrapperClass="inline-block">
+                                        <span data-utc-time="@leafRec.OccurredAt.UtcDateTime.ToString("o")"
+                                              data-utc-fmt="time">
+                                            @leafRec.OccurredAt.UtcDateTime.ToString("HH:mm:ss")
+                                        </span>
+                                    </Tooltip>
+                                </div>
+                                <i class="ph ph-check-circle @checkIcon text-xs shrink-0"></i>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    };
 }

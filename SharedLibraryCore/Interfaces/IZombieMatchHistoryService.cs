@@ -215,6 +215,65 @@ public sealed class EasterEggStepInventoryEntry
 
     /// <summary>Phosphor icon name (e.g. "ph-radio") for the step's visual marker.</summary>
     public string Icon { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Sub-steps when this entry is a parent group (e.g. a single bow upgrade with
+    /// its ritual stages). Null/empty for leaf steps. Storage-side <see cref="EasterEggStepRecord"/>
+    /// rows are emitted for LEAVES only; parents derive their completion state from
+    /// "all children logged". Tree depth is capped at 2 levels by convention
+    /// (quest → parent → leaf) so renderers don't need recursion guards.
+    /// </summary>
+    public List<EasterEggStepInventoryEntry>? Children { get; set; }
+}
+
+/// <summary>
+/// Convenience walks over nested <see cref="EasterEggStepInventoryEntry"/> trees.
+/// Kept here (and not on the record itself) so consumers can call without pulling
+/// in a separate utility namespace.
+/// </summary>
+public static class EasterEggStepInventoryEntryExtensions
+{
+    /// <summary>
+    /// True when this entry has no children — its own key is the storage-level key
+    /// that a <see cref="EasterEggStepRecord"/> can match.
+    /// </summary>
+    public static bool IsLeaf(this EasterEggStepInventoryEntry entry) =>
+        entry.Children is null || entry.Children.Count == 0;
+
+    /// <summary>
+    /// Depth-first enumeration of leaf entries (entries that emit storage records).
+    /// Returns the entry itself when it is already a leaf.
+    /// </summary>
+    public static IEnumerable<EasterEggStepInventoryEntry> Leaves(this EasterEggStepInventoryEntry entry)
+    {
+        if (entry.IsLeaf())
+        {
+            yield return entry;
+            yield break;
+        }
+
+        foreach (var child in entry.Children!)
+        foreach (var leaf in child.Leaves())
+        {
+            yield return leaf;
+        }
+    }
+
+    /// <summary>
+    /// Depth-first enumeration of every node in the tree (parents + leaves), in
+    /// configured order. Use for inventory-label lookups that may need to resolve
+    /// parent keys (label fallback) alongside leaf keys (record matching).
+    /// </summary>
+    public static IEnumerable<EasterEggStepInventoryEntry> Walk(this EasterEggStepInventoryEntry entry)
+    {
+        yield return entry;
+        if (entry.Children is null) yield break;
+        foreach (var child in entry.Children)
+        foreach (var node in child.Walk())
+        {
+            yield return node;
+        }
+    }
 }
 
 public sealed class EasterEggStepRecord

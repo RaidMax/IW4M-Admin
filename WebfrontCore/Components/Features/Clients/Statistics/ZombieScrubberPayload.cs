@@ -60,6 +60,7 @@ public sealed class ZombieScrubberPayload
         // quests doesn't collide.
         var inventoryLabels = detail.EasterEggQuests
             .SelectMany(q => q.Inventory)
+            .SelectMany(s => s.Walk())
             .GroupBy(s => s.Key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().LocKey, StringComparer.OrdinalIgnoreCase);
         foreach (var step in detail.EasterEggQuests.SelectMany(q => q.Steps))
@@ -139,6 +140,7 @@ public sealed class ZombieScrubberPayload
 
             var inventoryLabels = match.EasterEggQuests
                 .SelectMany(q => q.Inventory)
+                .SelectMany(s => s.Walk())
                 .GroupBy(s => s.Key, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.First().LocKey, StringComparer.OrdinalIgnoreCase);
             foreach (var step in match.EasterEggQuests.SelectMany(q => q.Steps))

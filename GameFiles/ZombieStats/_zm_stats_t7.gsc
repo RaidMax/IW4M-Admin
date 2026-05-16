@@ -1245,8 +1245,9 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "ee_keeper_magician_resurrected",  "t7_soe_keeper_magician" );
             level thread WatchT7FlagStep( "ee_boss_defeated", "t7_soe_boss_1" );
             level thread WatchT7FlagStep( "ee_complete", "t7_soe_complete" );
-            level thread WatchT7MusicStateStep( "snakeskinboots",       "t7_soe_snakeskin" );
-            level thread WatchT7MusicStateStep( "snakeskinboots_instr", "t7_soe_snakeskin" );
+            // Snakeskin Boots: 3 hs_radio entities → b_activated. Cold Hard
+            // Cash kept as 1-step (multi-part mic; deferred).
+            level thread WatchT7SongEntityActivated( "hs_radio", "t7_soe_snakeskin", 3 );
             level thread WatchT7MusicStateStep( "coldhardcash", "t7_soe_cash" );
             // Equipment-upgrade side quests — wonder-weapon-equivalent for SoE:
             //   Upgraded Riot Shield — weapon name "zod_riotshield_upgraded"
@@ -1272,33 +1273,89 @@ function WaitForT7EasterEggSteps()
             level thread WatchFactorySecretPerk();
             break;
         case "zm_castle":
-            // Der Eisendrache — SIX quests:
-            //   My Brother's Keeper (main, MinPlayers=1 — solo canonical):
-            //     8 step flags from zm_castle_ee.gsc covering pyramid →
-            //     fuse → safe → key → simon → MPD canister → moon rockets → outro.
-            //   Song "Dead Again" — 3 teddy bears → music state "dead_again".
-            //   Song "Requiem Aeternam" (Gramophone) — 3 gramophones → "requiem".
-            //   Music Box — single activation in Samantha's bedroom.
-            //   Disco Inferno — moon globe shot at planetary alignment.
-            //   Elemental Bow Upgrades — 4 bows (Storm/Wolf/Fire/Void).
-            //     Engine flag names are hashed in the dump; detect via per-player
-            //     weapon inventory poll for each elemental_bow_* substring.
+            // Der Eisendrache — NINE quests (Wrath base + 4 upgraded bows +
+            // MBK + Music Box + Disco + Dead Again + Requiem):
+            //
+            //   My Brother's Keeper (main, MinPlayers=1):
+            //     8 top-level stages, with the Keeper-channeling sub-stage
+            //     nested as 4 stones (next_channeling_stone fires once per
+            //     stone — flag::clear'd between iterations at
+            //     zm_castle_ee.gsc:1042, set at :1180).
+            //
+            //   Wrath of the Ancients (NEW base-bow quest):
+            //     3 dragons fed counter (level.n_soul_catchers_charged ticks
+            //     0 → 3) per zm_castle_weap_quest.gsc soul-catcher logic.
+            //
+            //   4 upgraded bow quests (NEW, replacing former aggregate "bows"):
+            //     Each bow tracks its ritual stages from
+            //     zm_castle_weap_quest_upgrade.gsc named flags. Confirmed
+            //     firing order verified empirically against probe logs for
+            //     Storm + Void; Wolf + Fire follow the same convention in
+            //     the same source file. (_spawned flag fires ~10s POST-
+            //     upgrade and is intentionally NOT tracked — it's a world-
+            //     entity-spawn signal, not a ritual stage.)
+            //
+            //   Songs (Dead Again / Requiem) + Music Box + Disco unchanged.
+
+            // MBK main quest:
             level thread WatchT7FlagStep( "ee_start_done",              "t7_de_pyramid" );
             level thread WatchT7FlagStep( "ee_fuse_placed",             "t7_de_fuse" );
             level thread WatchT7FlagStep( "ee_safe_open",               "t7_de_safe" );
             level thread WatchT7FlagStep( "ee_golden_key",              "t7_de_key" );
             level thread WatchT7FlagStep( "end_simon",                  "t7_de_simon" );
             level thread WatchT7FlagStep( "mpd_canister_replacement",   "t7_de_canister" );
+            // Keeper-channeling sub-quest (4 stones, multi-fire notify):
+            level thread WatchT7NotifyCounterStep( "next_channeling_stone", "t7_de_keeper_stone", 4 );
+            level thread WatchT7FlagStep( "see_keeper",                 "t7_de_keeper_resurrected" );
             level thread WatchT7FlagStep( "sent_rockets_to_the_moon",   "t7_de_rockets" );
             level thread WatchT7FlagStep( "ee_outro",                   "t7_de_complete" );
-            level thread WatchT7MusicStateStep( "dead_again", "t7_de_song_deadagain" );
-            level thread WatchT7MusicStateStep( "requiem",    "t7_de_song_requiem" );
+
+            // Wrath of the Ancients (base bow): 3 dragons fed → bow obtained.
+            level thread WatchT7CounterStep( "n_soul_catchers_charged", "t7_de_wrath_dragon", 3 );
+
+            // Storm Bow upgrade:
+            level thread WatchT7FlagStep( "elemental_storm_wallrun",         "t7_de_bow_storm_wallrun" );
+            level thread WatchT7FlagStep( "elemental_storm_beacons_charged", "t7_de_bow_storm_beacons" );
+            level thread WatchT7FlagStep( "elemental_storm_repaired",        "t7_de_bow_storm_repaired" );
+            level thread WatchT7FlagStep( "elemental_storm_placed",          "t7_de_bow_storm_placed" );
+            level thread WatchT7FlagStep( "elemental_storm_upgraded",        "t7_de_bow_storm_upgraded" );
+
+            // Wolf Bow upgrade (high-confidence pending live verification):
+            level thread WatchT7FlagStep( "wolf_howl_paintings",  "t7_de_bow_wolf_paintings" );
+            level thread WatchT7FlagStep( "wolf_howl_escort",     "t7_de_bow_wolf_escort" );
+            level thread WatchT7FlagStep( "wolf_howl_repaired",   "t7_de_bow_wolf_repaired" );
+            level thread WatchT7FlagStep( "wolf_howl_placed",     "t7_de_bow_wolf_placed" );
+            level thread WatchT7FlagStep( "wolf_howl_upgraded",   "t7_de_bow_wolf_upgraded" );
+
+            // Fire Bow (Rune Prison) upgrade (pending verification):
+            level thread WatchT7FlagStep( "rune_prison_obelisk",   "t7_de_bow_fire_obelisk" );
+            level thread WatchT7FlagStep( "rune_prison_magma_ball","t7_de_bow_fire_magma" );
+            level thread WatchT7FlagStep( "rune_prison_golf",      "t7_de_bow_fire_apothicon" );
+            level thread WatchT7FlagStep( "rune_prison_repaired",  "t7_de_bow_fire_repaired" );
+            level thread WatchT7FlagStep( "rune_prison_placed",    "t7_de_bow_fire_placed" );
+            level thread WatchT7FlagStep( "rune_prison_upgraded",  "t7_de_bow_fire_upgraded" );
+
+            // Void Bow (Demon Gate) upgrade (verified — see v3 probe log):
+            level thread WatchT7FlagStep( "demon_gate_seal",       "t7_de_bow_void_seal" );
+            level thread WatchT7FlagStep( "demon_gate_crawlers",   "t7_de_bow_void_crawlers" );
+            level thread WatchT7FlagStep( "demonic_rune_dropped",  "t7_de_bow_void_rune_dropped" );
+            level thread WatchT7FlagStep( "demon_gate_runes",      "t7_de_bow_void_runes" );
+            level thread WatchT7FlagStep( "demon_gate_repaired",   "t7_de_bow_void_repaired" );
+            level thread WatchT7FlagStep( "demon_gate_placed",     "t7_de_bow_void_placed" );
+            level thread WatchT7FlagStep( "demon_gate_upgraded",   "t7_de_bow_void_upgraded" );
+
+            // Songs — per-trigger entity-state poll on the bear / gramophone
+            // self.b_activated property. b_activated is a plain-string field
+            // so our linker hashes it identically to zm_castle_ee_side.gsc;
+            // sidesteps the gotcha-8 hash mismatch that bit both hashed-notify
+            // and hashed-field (var_<hex>) paths. Verified 2026-05-16 with
+            // all three bears emitting per-press in real time.
+            level thread WatchT7SongScriptOriginAtStruct( "hs_bear",       "t7_de_song_deadagain", 3 );
+            level thread WatchT7SongEntityActivated(      "hs_gramophone", "t7_de_song_requiem",   3 );
+
+            // Cosmetic EEs (unchanged):
             level thread WatchT7FlagStep( "ee_music_box_turning", "t7_de_musicbox" );
             level thread WatchT7FlagStep( "ee_disco_inferno",     "t7_de_disco" );
-            level thread WatchWeaponSubstringUpgrade( "elemental_bow_storm",       "t7_de_bow_storm" );
-            level thread WatchWeaponSubstringUpgrade( "elemental_bow_wolf_howl",   "t7_de_bow_wolf" );
-            level thread WatchWeaponSubstringUpgrade( "elemental_bow_rune_prison", "t7_de_bow_fire" );
-            level thread WatchWeaponSubstringUpgrade( "elemental_bow_demongate",   "t7_de_bow_void" );
             break;
         case "zm_island":
             // Zetsubou No Shima — FIVE quests:
@@ -1324,7 +1381,8 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "charged_spider_cage_powerup",            "t7_zn_spider_charge" );
             level thread WatchT7FlagStep( "spider_from_mars_trapped_in_raised_cage", "t7_zn_spider_trap" );
             level thread WatchT7FlagStep( "spider_ee_quest_complete",               "t7_zn_spider_complete" );
-            level thread WatchT7MusicStateStep( "dead_flowers", "t7_zn_song" );
+            // Dead Flowers: side_ee_song_bear (same pattern as Genesis The Gift).
+            level thread WatchT7SongScriptOriginAtStruct( "side_ee_song_bear", "t7_zn_song", 3 );
             break;
         case "zm_stalingrad":
             // Gorod Krovi — FOUR quests, all solo-canonical:
@@ -1355,9 +1413,13 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "gauntlet_step_3_complete", "t7_gk_gauntlet_step_3" );
             level thread WatchT7FlagStep( "gauntlet_step_4_complete", "t7_gk_gauntlet_step_4" );
             level thread WatchT7FlagStep( "gauntlet_quest_complete",  "t7_gk_gauntlet_complete" );
-            level thread WatchT7MusicStateStep( "dead_ended",    "t7_gk_song_deadended" );
-            level thread WatchT7MusicStateStep( "ace_of_spades", "t7_gk_song_ace" );
-            level thread WatchT7MusicStateStep( "sam",           "t7_gk_song_sam" );
+            // Dead Ended: side_ee_song_vodka → script_origin → b_activated.
+            // Ace of Spades: side_ee_song_card → struct.b_activated (no spawn).
+            // Sam (Samantha's Lullaby): ballerina sequence — single-attempt
+            // ritual, kept as 1-step music-state poll.
+            level thread WatchT7SongScriptOriginAtStruct( "side_ee_song_vodka", "t7_gk_song_deadended", 3 );
+            level thread WatchT7SongStructActivated(      "side_ee_song_card",  "t7_gk_song_ace",       3 );
+            level thread WatchT7MusicStateStep( "sam", "t7_gk_song_sam" );
             break;
         case "zm_genesis":
             // Revelations — TWO quests, solo-canonical:
@@ -1384,7 +1446,8 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "toys_collected",        "t7_rv_toys" );
             level thread WatchT7FlagStep( "boss_fight",            "t7_rv_boss" );
             level thread WatchT7FlagStep( "ending_room",           "t7_rv_complete" );
-            level thread WatchT7MusicStateStep( "the_gift", "t7_rv_song" );
+            // The Gift: side_ee_song_bear (same shared bear pattern).
+            level thread WatchT7SongScriptOriginAtStruct( "side_ee_song_bear", "t7_rv_song", 3 );
             level thread WatchT7FlagStep( "lil_arnie_prereq_done", "t7_rv_arnie_prereq" );
             level thread WatchT7FlagStep( "lil_arnie_done",        "t7_rv_arnie_done" );
             break;
@@ -1445,8 +1508,10 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "letter_acquired",     "t7_as_letter" );
             level thread WatchT7FlagStep( "passkey_confirmed",   "t7_as_passkey" );
             level thread WatchT7FlagStep( "weapons_combined",    "t7_as_complete" );
-            level thread WatchT7MusicStateStep( "abracadavre",      "t7_as_song_abracadavre" );
-            level thread WatchT7MusicStateStep( "not_ready_to_die", "t7_as_song_nrtd" );
+            // Abracadavre: songstructs via shared zm_audio_zhd mechanism.
+            // NRTD: egg_phone structs use self.broken (not b_activated).
+            level thread WatchT7SongScriptOriginAtStruct( "songstructs", "t7_as_song_abracadavre", 3 );
+            level thread WatchT7SongStructBroken(         "egg_phone",   "t7_as_song_nrtd",        3 );
             level thread WatchT7FlagStep( "snd_zhdegg_activate", "t7_as_hns" );
             break;
         case "zm_theater":
@@ -1458,7 +1523,8 @@ function WaitForT7EasterEggSteps()
             //     pattern echoed → first doll → 5 hidden dolls shot →
             //     return to original. snd_zhdegg_activate flag set by
             //     zm_theater_amb.gsc:483 on terminal step.
-            level thread WatchT7MusicStateStep( "115", "t7_kn_song" );
+            // "115": songstructs via shared zm_audio_zhd mechanism.
+            level thread WatchT7SongScriptOriginAtStruct( "songstructs", "t7_kn_song", 3 );
             level thread WatchT7FlagStep( "snd_zhdegg_activate", "t7_kn_hns" );
             break;
         case "zm_moon":
@@ -1484,8 +1550,10 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "sam_switch_thrown",   "t7_mn_samswitch" );
             level thread WatchT7FlagStep( "be2",                 "t7_mn_bbt_mid" );
             level thread WatchT7FlagStep( "complete_be_1",       "t7_mn_complete" );
-            level thread WatchT7MusicStateStep( "cominghome", "t7_mn_song_cominghome" );
-            level thread WatchT7MusicStateStep( "nightmare",  "t7_mn_song_nightmare" );
+            // Coming Home: songstructs via shared zm_audio_zhd mechanism.
+            // Nightmare: excavator suicide — 1-step (single mechanic).
+            level thread WatchT7SongScriptOriginAtStruct( "songstructs", "t7_mn_song_cominghome", 3 );
+            level thread WatchT7MusicStateStep( "nightmare", "t7_mn_song_nightmare" );
             level thread WatchT7FlagStep( "snd_zhdegg_activate", "t7_mn_hns" );
             break;
         case "zm_temple":
@@ -1506,7 +1574,8 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "gongs_resonating",  "t7_sl_gongs" );
             level thread WatchT7FlagStep( "given_dynamite",    "t7_sl_dynamite" );
             level thread WatchT7FlagStep( "meteorite_shrunk",  "t7_sl_complete" );
-            level thread WatchT7MusicStateStep( "pareidolia", "t7_sl_song" );
+            // Pareidolia: songstructs via shared zm_audio_zhd mechanism.
+            level thread WatchT7SongScriptOriginAtStruct( "songstructs", "t7_sl_song", 3 );
             level thread WatchT7FlagStep( "snd_zhdegg_activate", "t7_sl_hns" );
             break;
         case "zm_tomb":
@@ -1544,9 +1613,20 @@ function WaitForT7EasterEggSteps()
             level thread WatchWeaponSubstringUpgrade( "staff_water_upgraded",     "t7_or_staff_ice" );
             level thread WatchWeaponSubstringUpgrade( "staff_air_upgraded",       "t7_or_staff_wind" );
             level thread WatchWeaponSubstringUpgrade( "staff_lightning_upgraded", "t7_or_staff_lightning" );
-            level thread WatchT7MusicStateStep( "archangel",        "t7_or_song_archangel" );
-            level thread WatchT7MusicStateStep( "aether",           "t7_or_song_aether" );
-            level thread WatchT7MusicStateStep( "shepherd_of_fire", "t7_or_song_shepherd" );
+            // Songs — per-trigger detection. Three different mechanisms in
+            // one map; all use plain-string entity/struct/notify/field names
+            // (no hashed-symbol mismatch risk):
+            //   Archangel: songstructs (shared zm_audio_zhd → script_origin →
+            //     b_activated). Terminal flag "snd_song_completed" only fires
+            //     for the FIRST run of the shared mechanism, which IS Archangel
+            //     on Origins (sndmusicegg is the first thread spawned).
+            //   Aether: mus115 structs → fake_use → "115_trig_activated" notify
+            //     on each struct (function_89a607c3, zm_tomb_amb.gsc:529).
+            //   Shepherd: ee_radio_pos structs → named counter
+            //     level.found_ee_radio_count++ (zm_tomb_ee_side.gsc:828).
+            level thread WatchT7SongScriptOriginAtStruct( "songstructs",  "t7_or_song_archangel", 3 );
+            level thread WatchT7SongStructNotify(         "mus115", "115_trig_activated", "t7_or_song_aether", 3 );
+            level thread WatchT7CounterStep( "found_ee_radio_count", "t7_or_song_shepherd", 3 );
             level thread WatchT7FlagStep( "snd_zhdegg_activate", "t7_or_hns" );
             break;
         default:               return;
@@ -1639,6 +1719,374 @@ function PlayerHasWeaponSubstr( player, weaponSubstr )
         }
     }
     return false;
+}
+
+// Poll a `level.<counter>` field; emit per-tick step keys as the counter
+// advances 1 → 2 → 3 → ... Used for quest stages where the same engine
+// counter ticks per ritual interaction (dragons fed, song meteors collected,
+// etc.). stepKeyPrefix is suffixed with the new value (e.g. "_1", "_2").
+// counterMax bounds emissions; further ticks are ignored.
+//
+// Field access uses a switch dispatch (GSC has no string-keyed field read).
+// Add a case to GetLevelCounterT7 if you add a new counter field.
+function WatchT7CounterStep( counterField, stepKeyPrefix, counterMax )
+{
+    level endon( "end_game" );
+    last = 0;
+    for ( ;; )
+    {
+        cur = GetLevelCounterT7( counterField );
+        if ( IsDefined( cur ) && cur > last )
+        {
+            for ( i = last + 1; i <= cur && i <= counterMax; i++ )
+            {
+                EmitEeStep( stepKeyPrefix + "_" + i );
+            }
+            last = cur;
+            if ( last >= counterMax ) { return; }
+        }
+        wait ( 0.5 );
+    }
+}
+
+// Hand-dispatched field accessor. T7 GSC can't read level fields by string
+// name at runtime — each counter needs an explicit case here.
+//
+// HASHED FIELDS: shiversoftdev's decompile names unresolved fields
+// `var_<hex>`. Our linker compiles `level.var_<hex>` to the SAME hash int
+// that the source script writes — direct read works, no need to know the
+// original source name. Used as the fallback when hashed-notify waits fail
+// (per t7-gsc-compile-chain gotcha 8 — see Castle songs).
+function GetLevelCounterT7( fname )
+{
+    switch ( fname )
+    {
+        case "n_soul_catchers_charged": return level.n_soul_catchers_charged;
+        // zm_tomb_ee_side.gsc:764 — Origins Shepherd of Fire radios
+        case "found_ee_radio_count":    return level.found_ee_radio_count;
+    }
+    return undefined;
+}
+
+// ─── T7 song per-trigger entity watchers (generic) ────────────────
+//
+// T7 maps each have their own song-EE counter mechanism (only zm_factory
+// uses zm_audio::sndmusicsystem_eesetup). Most expose a struct array of
+// trigger positions OR a direct entity array; each trigger either flips
+// a self.b_activated property when activated (Castle bears/gramophones,
+// Chronicles zm_audio_zhd songs) or fires a named notify on the struct
+// (Origins Aether mus115 "115_trig_activated").
+//
+// Three helpers cover all known T7 song-trigger patterns:
+//   1) WatchT7SongScriptOriginAtStruct  — struct-position → spawn'd
+//        script_origin → b_activated poll (Castle bears, Chronicles
+//        songstructs via zm_audio_zhd)
+//   2) WatchT7SongEntityActivated       — direct entity by targetname →
+//        b_activated poll (Castle gramophones, Chronicles direct entities)
+//   3) WatchT7SongStructNotify          — struct → named notify on struct
+//        (Origins Aether mus115 → "115_trig_activated")
+//
+// Step indices follow struct/entity array order (not press order) —
+// fine for "X of N" UI; won't reflect which physical trigger was first.
+
+function WatchT7SongScriptOriginAtStruct( structTargetname, stepKeyPrefix, expectedCount )
+{
+    level endon( "end_game" );
+
+    // Poll for struct array to populate. Different maps spawn their song
+    // structs at different times — some at level load, some after round 1
+    // starts, some after a delay. Polling sidesteps the timing question.
+    // 60s max so a missing/wrong targetname doesn't leak threads forever.
+    structs = WaitForStructArrayPopulated( structTargetname, expectedCount, 60 );
+    if ( !IsDefined( structs ) )
+    {
+        logprint( "[ZM-EE] WatchT7SongScriptOriginAtStruct: NO structs found targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7SongScriptOriginAtStruct: found " + structs.size + " structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+
+    // Give the per-struct script_origin spawns a moment to settle after
+    // structs are populated.
+    wait ( 1 );
+
+    spawned_count = 0;
+    for ( i = 0; i < structs.size && i < expectedCount; i++ )
+    {
+        e_origin = FindNearestScriptOrigin( structs[i].origin, 16 );
+        if ( IsDefined( e_origin ) )
+        {
+            spawned_count++;
+            e_origin thread WaitForBActivatedThenEmit( stepKeyPrefix + "_" + ( i + 1 ) );
+        }
+    }
+    logprint( "[ZM-EE] WatchT7SongScriptOriginAtStruct: " + spawned_count + "/" + structs.size + " script_origins hooked prefix=" + stepKeyPrefix + "\n" );
+}
+
+// Poll struct::get_array until at least minCount structs exist, or until
+// timeoutSec elapses. Returns the populated array or undefined on timeout.
+function WaitForStructArrayPopulated( structTargetname, minCount, timeoutSec )
+{
+    elapsed = 0;
+    for ( ;; )
+    {
+        structs = struct::get_array( structTargetname, "targetname" );
+        if ( IsDefined( structs ) && structs.size >= minCount )
+        {
+            return structs;
+        }
+        wait ( 1 );
+        elapsed++;
+        if ( elapsed >= timeoutSec )
+        {
+            return undefined;
+        }
+    }
+}
+
+function WatchT7SongEntityActivated( entityTargetname, stepKeyPrefix, expectedCount )
+{
+    level endon( "end_game" );
+
+    entities = WaitForEntArrayPopulated( entityTargetname, expectedCount, 60 );
+    if ( !IsDefined( entities ) )
+    {
+        logprint( "[ZM-EE] WatchT7SongEntityActivated: NO entities targetname=" + entityTargetname + " prefix=" + stepKeyPrefix + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7SongEntityActivated: found " + entities.size + " entities targetname=" + entityTargetname + " prefix=" + stepKeyPrefix + "\n" );
+
+    for ( i = 0; i < entities.size && i < expectedCount; i++ )
+    {
+        entities[i] thread WaitForBActivatedThenEmit( stepKeyPrefix + "_" + ( i + 1 ) );
+    }
+}
+
+function WaitForEntArrayPopulated( targetname, minCount, timeoutSec )
+{
+    elapsed = 0;
+    for ( ;; )
+    {
+        ents = GetEntArray( targetname, "targetname" );
+        if ( IsDefined( ents ) && ents.size >= minCount )
+        {
+            return ents;
+        }
+        wait ( 1 );
+        elapsed++;
+        if ( elapsed >= timeoutSec )
+        {
+            return undefined;
+        }
+    }
+}
+
+function WatchT7SongStructActivated( structTargetname, stepKeyPrefix, expectedCount )
+{
+    level endon( "end_game" );
+
+    structs = WaitForStructArrayPopulated( structTargetname, expectedCount, 60 );
+    if ( !IsDefined( structs ) )
+    {
+        logprint( "[ZM-EE] WatchT7SongStructActivated: NO structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7SongStructActivated: found " + structs.size + " structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+
+    for ( i = 0; i < structs.size && i < expectedCount; i++ )
+    {
+        structs[i] thread WaitForBActivatedThenEmit( stepKeyPrefix + "_" + ( i + 1 ) );
+    }
+}
+
+// Ascension Not Ready to Die: egg_phone structs use `self.broken = 1`
+// (zm_cosmodrome_amb.gsc:290) instead of the b_activated convention used
+// elsewhere. Same pattern otherwise — struct held by struct::get_array,
+// field is plain-string-named.
+function WatchT7SongStructBroken( structTargetname, stepKeyPrefix, expectedCount )
+{
+    level endon( "end_game" );
+
+    structs = WaitForStructArrayPopulated( structTargetname, expectedCount, 60 );
+    if ( !IsDefined( structs ) )
+    {
+        logprint( "[ZM-EE] WatchT7SongStructBroken: NO structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7SongStructBroken: found " + structs.size + " structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+
+    for ( i = 0; i < structs.size && i < expectedCount; i++ )
+    {
+        structs[i] thread WaitForBrokenThenEmit( stepKeyPrefix + "_" + ( i + 1 ) );
+    }
+}
+
+function WaitForBrokenThenEmit( stepKey )
+{
+    level endon( "end_game" );
+    while ( !( IsDefined( self.broken ) && self.broken == 1 ) )
+    {
+        wait ( 0.25 );
+    }
+    EmitEeStep( stepKey );
+}
+
+function WatchT7SongStructNotify( structTargetname, notifyName, stepKeyPrefix, expectedCount )
+{
+    level endon( "end_game" );
+
+    structs = WaitForStructArrayPopulated( structTargetname, expectedCount, 60 );
+    if ( !IsDefined( structs ) )
+    {
+        logprint( "[ZM-EE] WatchT7SongStructNotify: NO structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7SongStructNotify: found " + structs.size + " structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
+
+    for ( i = 0; i < structs.size && i < expectedCount; i++ )
+    {
+        structs[i] thread WaitForStructNotifyThenEmit( notifyName, stepKeyPrefix + "_" + ( i + 1 ) );
+    }
+}
+
+// Find the closest script_origin classname entity to a point, within
+// radius. Used by struct-spawned script_origin pattern — recovers the
+// right entity to watch without stock script exposing it.
+function FindNearestScriptOrigin( pos, radius )
+{
+    origins = GetEntArray( "script_origin", "classname" );
+    if ( !IsDefined( origins ) ) { return undefined; }
+
+    best = undefined;
+    best_dist_sq = radius * radius;
+    foreach ( o in origins )
+    {
+        if ( !IsDefined( o ) || !IsDefined( o.origin ) ) { continue; }
+        dx = o.origin[0] - pos[0];
+        dy = o.origin[1] - pos[1];
+        dz = o.origin[2] - pos[2];
+        d_sq = dx * dx + dy * dy + dz * dz;
+        if ( d_sq < best_dist_sq )
+        {
+            best_dist_sq = d_sq;
+            best = o;
+        }
+    }
+    return best;
+}
+
+// Per-trigger emit on the entity's unitrigger fire. Used universally for
+// both bear/gramophone/songstruct patterns:
+//   - Castle bears/gramophones — entity persists, b_activated stays true
+//   - zhd-shared songstructs    — entity DELETED post-activation
+// Event-driven waittill catches the trigger fire BEFORE deletion, so this
+// works for both. Music-override check mirrors source logic so we skip
+// "blocked" presses that don't advance the song.
+function WaitForBActivatedThenEmit( stepKey )
+{
+    level endon( "end_game" );
+    self endon( "death" );
+
+    while ( true )
+    {
+        self waittill( "trigger_activated" );
+
+        // Source-side guard: skips activations while the music system is
+        // in a non-progressive state (currentplaytype >= 4). Without this
+        // we'd over-emit during music-override windows that don't count.
+        if ( IsDefined( level.musicsystem )
+          && IsDefined( level.musicsystem.currentplaytype )
+          && level.musicsystem.currentplaytype >= 4 )
+        {
+            continue;
+        }
+
+        EmitEeStep( stepKey );
+        return;
+    }
+}
+
+function WaitForStructNotifyThenEmit( notifyName, stepKey )
+{
+    level endon( "end_game" );
+    self waittill( notifyName );
+    EmitEeStep( stepKey );
+}
+
+// Wait on a script-emitted hashed notify and emit stepKeyPrefix_<N> per
+// fire, capped at maxFires. Used for per-trigger song-progression detection
+// on maps whose songs don't go through zm_audio::sndmusicsystem_eesetup
+// — most T7 maps have custom per-song counters with hashed notifies (e.g.
+// zm_castle_ee_side.gsc fires #"hash_c3f82290" per Dead Again bear).
+//
+// Per t7-gsc-compile-chain gotcha 8: script-script hash literals match by
+// construction (linker compiles same literal on both notify + waittill
+// sides). This is distinct from the engine-emitted-hash failure case.
+//
+// GSC requires compile-time hash literals — each known hash needs its own
+// `case` branch below. Add new hashes as new song mechanisms are mapped.
+function WatchT7HashedNotifyCounter( hashLabel, stepKeyPrefix, maxFires )
+{
+    level endon( "end_game" );
+    for ( i = 1; i <= maxFires; i++ )
+    {
+        switch ( hashLabel )
+        {
+            case "hash_c3f82290": level waittill( #"hash_c3f82290" ); break;  // zm_castle Dead Again — per-bear
+            case "hash_9c9fb305": level waittill( #"hash_9c9fb305" ); break;  // zm_castle Requiem  — per-gramophone
+            default:
+                logprint( "[ZM-ERROR] WatchT7HashedNotifyCounter unknown hash " + hashLabel + "\n" );
+                return;
+        }
+        EmitEeStep( stepKeyPrefix + "_" + i );
+    }
+}
+
+// Split a music-state-driven song EE into per-trigger sub-steps. At the
+// terminal music state (level.musicsystem.currentstate == songState), emits
+// stepKeyPrefix_1 .. _<triggerCount> in one go.
+//
+// Detection uses the same state-poll pattern as WatchT7MusicStateStep —
+// most T7 songs route through zm_audio::sndmusicsystem_eesetup which
+// increments level.sndeecount per trigger and transitions the music state
+// when count reaches max. We hook the post-terminal state to know which
+// song just played; the live counter approach is unreliable for multi-song
+// maps because level.sndeecount is global (next song's eesetup resets it).
+//
+// Per-trigger TIMESTAMPS are collapsed to terminal time (all N steps log
+// when the song plays). Per-trigger COUNT is preserved so the UI renders
+// the song as a multi-step quest matching the player's actual interactions.
+function WatchT7SongCounterStep( songState, stepKeyPrefix, triggerCount )
+{
+    level endon( "end_game" );
+    for ( ;; )
+    {
+        if ( IsDefined( level.musicsystem )
+          && IsDefined( level.musicsystem.currentstate )
+          && level.musicsystem.currentstate == songState )
+        {
+            for ( i = 1; i <= triggerCount; i++ )
+            {
+                EmitEeStep( stepKeyPrefix + "_" + i );
+            }
+            return;
+        }
+        wait ( 0.5 );
+    }
+}
+
+// Multi-fire notify counter. Some flags fire repeatedly because the stock
+// script flag::clear()s them between phases (e.g. zm_castle_ee.gsc
+// next_channeling_stone is set per stone, cleared between iterations).
+// Wait on level notify in a loop and emit stepKeyPrefix_<N> per fire,
+// capped at maxFires.
+function WatchT7NotifyCounterStep( notifyName, stepKeyPrefix, maxFires )
+{
+    level endon( "end_game" );
+    for ( i = 1; i <= maxFires; i++ )
+    {
+        level waittill( notifyName );
+        EmitEeStep( stepKeyPrefix + "_" + i );
+    }
 }
 
 // Gorod Krovi "Love and War" terminal. zm_stalingrad_ee_main.gsc has no named

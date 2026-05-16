@@ -33,6 +33,36 @@ public partial class ZombieMatchPage
     private bool _showAllPlayers = true;
     private void ToggleShowAllPlayers() => _showAllPlayers = !_showAllPlayers;
 
+    // Expansion state for nested EE step parents (e.g. Castle bows: a single bow
+    // upgrade with its ritual sub-steps). Keyed by "{quest.Id}|{step.Key}" so the
+    // same parent step in different quests can't collide. Default collapsed; the
+    // render auto-expands parents that are mid-progress so partial state stays
+    // visible without a click.
+    private readonly HashSet<string> _expandedEeSteps = new(StringComparer.Ordinal);
+
+    private static string EeStepExpansionKey(string questId, string stepKey) =>
+        string.Concat(questId, "|", stepKey);
+
+    private void ToggleEeStep(string questId, string stepKey)
+    {
+        var key = EeStepExpansionKey(questId, stepKey);
+        if (!_expandedEeSteps.Add(key))
+        {
+            _expandedEeSteps.Remove(key);
+        }
+    }
+
+    private bool IsEeStepExpanded(string questId, EasterEggStepInventoryEntry step,
+        Dictionary<string, EasterEggStepRecord> stepsByKey)
+    {
+        if (_expandedEeSteps.Contains(EeStepExpansionKey(questId, step.Key))) return true;
+        // Auto-expand mid-progress parents so the user sees what's pending without
+        // having to click. Fully-done and not-yet-started stay collapsed.
+        var leaves = step.Leaves().ToList();
+        var fired = leaves.Count(l => stepsByKey.ContainsKey(l.Key));
+        return fired > 0 && fired < leaves.Count;
+    }
+
     private string _ogTitle => Detail is null
         ? AppState.Loc("WEBFRONT_ZOMBIE_MATCH_LOADING")
         : AppState.Loc("WEBFRONT_ZOMBIE_MATCH_OG_TITLE").FormatExt(Detail.HighestRound, Detail.Map);

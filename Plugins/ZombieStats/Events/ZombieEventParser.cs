@@ -1,4 +1,5 @@
 using Data.Models;
+using Data.Models.Zombie;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
@@ -19,9 +20,8 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {"AK", ParseZombieKilledEvent},
         {"RD", ParsePlayerRoundDataEvent},
         {"RC", ParseRoundCompleteEvent},
-        {"ZE", ParseZombieEvent},
-        {"EE", ParseEasterEggCompleteEvent},
-        {"PWR", ParsePowerStateChangeEvent},
+        {"ZP", ParseZombieEvent},   // player-scoped: ZP;<player>;<category>;...
+        {"ZW", ParseWorldEvent},    // world-scoped:  ZW;<kind>;<args...>
     };
 
     private const string GsePrefix = "GSE";
@@ -146,12 +146,91 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         };
     }
 
-    // GSE;PWR;{state};{source};[{guid;cnum;team;name}]
+    // GSE;ZW;<kind>;<args...> — unified prefix for "world-scoped" zombie events that
+    // don't have a single owning player. Mirrors the ZP pattern (which is the same
+    // idea for player-scoped events). The kind discriminator lets us add new world
+    // events without consuming another top-level prefix per event type. Round
+    // number is included on each kind that needs correlation against the live
+    // round (defends against the log-tail race where ZW arrives just before/after
+    // the matching RC and could otherwise mis-attribute).
+    //
+    // Current kinds:
+    //   ZW;round_special;<round>;<type>                   — special-round designation
+    //   ZW;zombies;<round>;<remaining>;<alive>            — periodic spawn-state snapshot
+    //   ZW;power;<state>;<source>;[player block]          — power-state change
+    //   ZW;easter_egg;step;<key>                          — EE step waypoint
+    //   ZW;easter_egg;complete;<map>                      — EE canonical completion
+    private static GameEventV2 ParseWorldEvent(GameScriptEvent scriptEvent, string[] data)
+    {
+        var kind = data.Length > 0 ? data[0] : string.Empty;
+        var args = data.Length > 1 ? data[1..] : Array.Empty<string>();
+        return kind switch
+        {
+            "round_special" => ParseRoundSpecial(args),
+            "zombies"       => ParseZombiesRemaining(args),
+            "power"         => ParsePowerStateChange(scriptEvent, args),
+            "easter_egg"    => ParseEasterEgg(args),
+            _               => throw new ArgumentException($"Unknown ZW kind: {kind}"),
+        };
+    }
+
+    // ZW;easter_egg;<step|complete>;<value>
+    //   step    — args[1] is the canonical step key (e.g. t4_vr_radio_1)
+    //   complete — args[1] is the map name (matches level.script)
+    // Folded into ZW from the legacy EE prefix; the discriminator-prefix ("step" /
+    // "complete") removes the previous "first-arg-could-be-anything" ambiguity.
+    private static GameEventV2 ParseEasterEgg(string[] args)
+    {
+        var subKind = args.Length > 0 ? args[0] : string.Empty;
+        if (string.Equals(subKind, "step", StringComparison.OrdinalIgnoreCase))
+        {
+            return new EasterEggStepGameEvent
+            {
+                StepKey = args.Length > 1 ? args[1] : string.Empty
+            };
+        }
+        // "complete" or anything else falls back to the canonical complete event
+        // (defensive — pre-rename emissions just had the map name as first arg).
+        return new EasterEggCompleteGameEvent
+        {
+            MapName = args.Length > 1 ? args[1] : string.Empty
+        };
+    }
+
+    // ZW;zombies;<round>;<remaining>;<alive> — periodic engine snapshot for live SPH.
+    // Emitted ~every 5s by the GSC WatchZombiesRemaining watcher when either count
+    // changes. args: [round, remaining, alive].
+    private static GameEventV2 ParseZombiesRemaining(string[] args)
+    {
+        return new ZombiesRemainingGameEvent
+        {
+            RoundNumber = Convert.ToInt32(args[0]),
+            Remaining = Convert.ToInt32(args[1]),
+            Alive = Convert.ToInt32(args[2]),
+        };
+    }
+
+    // ZW;round_special;<round>;<type> — emitted at round-start for special rounds
+    // (dog/monkey/leaper). Lets the premium plugin tag the round and skip
+    // Seconds-Per-Horde where the static budget formula doesn't apply. args:
+    // [round, type]. Unknown tokens map to null (handler treats as no-op rather
+    // than crashing the pipeline).
+    private static GameEventV2 ParseRoundSpecial(string[] args)
+    {
+        var token = args.Length > 1 ? args[1] : string.Empty;
+        return new RoundSpecialGameEvent
+        {
+            RoundNumber = Convert.ToInt32(args[0]),
+            SpecialType = ZombieSpecialRoundTypeExtensions.FromGsc(token)
+        };
+    }
+
+    // ZW;power;<state>;<source>;[guid;cnum;team;name]
     //   state  = on | off
     //   source = world | player
     //   player block present iff source == player
-    // After eventArgs[2..] split, data is: [state, source, ...optional player fields]
-    private static GameEventV2 ParsePowerStateChangeEvent(GameScriptEvent scriptEvent, string[] data)
+    // No round number — power state spans the whole match, no correlation needed.
+    private static GameEventV2 ParsePowerStateChange(GameScriptEvent scriptEvent, string[] data)
     {
         var state = data[0] switch
         {
@@ -190,34 +269,13 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         return evt;
     }
 
-    // Two formats share the EE prefix:
-    //   GSE;EE;{mapName}        — canonical match-complete (fires once at terminal notify)
-    //   GSE;EE;step;{stepKey}   — per-step progress marker (may fire multiple times across a match)
-    // First field disambiguates; "step" is reserved.
-    private static GameEventV2 ParseEasterEggCompleteEvent(GameScriptEvent scriptEvent, string[] data)
-    {
-        var first = data.ElementAtOrDefault(0) ?? string.Empty;
-
-        if (string.Equals(first, "step", StringComparison.OrdinalIgnoreCase))
-        {
-            return new EasterEggStepGameEvent
-            {
-                StepKey = data.ElementAtOrDefault(1) ?? string.Empty
-            };
-        }
-
-        return new EasterEggCompleteGameEvent
-        {
-            MapName = first
-        };
-    }
-
     #endregion
 
-    #region Unified ZE parser
+    #region Unified ZP (player) parser
 
-    // Format: GSE;ZE;{guid;clientNum;team;name};{category};{action?};{...details}
+    // Format: GSE;ZP;{guid;clientNum;team;name};{category};{action?};{...details}
     // After split and eventArgs[2..], data is: [guid, clientNum, team, name, category, ...]
+    // (Renamed from ZE for symmetry with ZW — both are "Z<scope>" prefixes.)
     private static GameEventV2 ParseZombieEvent(GameScriptEvent scriptEvent, string[] data)
     {
         var category = data[4];
@@ -233,7 +291,60 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
             "door" => ParseZeDoor(scriptEvent, data),
             "trap" => ParseZeTrap(scriptEvent, data),
             "build" => ParseZeBuild(scriptEvent, data),
+            "gum" => ParseZeGobbleGum(scriptEvent, data),
+            "bank" => ParseZeBank(scriptEvent, data),
+            "locker" => ParseZeLocker(scriptEvent, data),
             _ => throw new ArgumentException($"Unknown ZE category: {category}")
+        };
+    }
+
+    // ZE;{player};bank;deposit;{amount}    — T6 Tranzit/Die Rise/Buried
+    // ZE;{player};bank;withdraw;{amount}
+    private static GameEventV2 ParseZeBank(GameScriptEvent scriptEvent, string[] data)
+    {
+        var action = data.Length > 5 ? data[5] : string.Empty;
+        var amount = data.Length > 6 && int.TryParse(data[6], out var parsed) ? parsed : 0;
+
+        return action switch
+        {
+            "deposit" => new BankTransactionGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                IsDeposit = true,
+                Amount = amount
+            },
+            "withdraw" => new BankTransactionGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                IsDeposit = false,
+                Amount = amount
+            },
+            _ => throw new ArgumentException($"Unknown bank action: {action}")
+        };
+    }
+
+    // ZE;{player};locker;store;{weapon}      — T6 Tranzit/Die Rise/Buried
+    // ZE;{player};locker;retrieve;{weapon}
+    private static GameEventV2 ParseZeLocker(GameScriptEvent scriptEvent, string[] data)
+    {
+        var action = data.Length > 5 ? data[5] : string.Empty;
+        var weaponName = data.Length > 6 ? data[6] : string.Empty;
+
+        return action switch
+        {
+            "store" => new WeaponLockerGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                IsStore = true,
+                WeaponName = weaponName
+            },
+            "retrieve" => new WeaponLockerGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                IsStore = false,
+                WeaponName = weaponName
+            },
+            _ => throw new ArgumentException($"Unknown locker action: {action}")
         };
     }
 
@@ -246,10 +357,24 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         };
     }
 
-    // ZE;{revived};revive;{reviver guid;cnum;team;name}
+    // ZE;{revived};revive;{reviver guid;cnum;team;name}   — co-op revive
+    // ZE;{revived};revive;self                             — self-revive
+    //   T5: solo Quick Revive auto
+    //   T6: solo QR auto, Who's Who
+    //   T7: solo QR auto, Self Revive gobblegum
     private static GameEventV2 ParseZeRevive(GameScriptEvent scriptEvent, string[] data)
     {
         var revived = ParseVictimClient(scriptEvent, data);
+
+        if (data.Length > 5 && string.Equals(data[5], "self", StringComparison.Ordinal))
+        {
+            return new PlayerRevivedGameEvent
+            {
+                Origin = revived,
+                Target = revived,
+                IsSelfRevive = true
+            };
+        }
 
         var reviverGuid = data[5].ConvertGuidToLong(scriptEvent.Owner.EventParser.Configuration.GuidNumberStyle);
         var reviver = new EFClient
@@ -285,6 +410,40 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
         {
             Origin = ParseVictimClient(scriptEvent, data),
             PowerupName = data[6]
+        };
+    }
+
+    // ZE;{player};gum;{action};{bgbName};[cost] — T7 only.
+    //   activate: player consumed an "activated" limit_type gum (Perkaholic etc.)
+    //   take:     player grabbed a gum from a BGB machine
+    //   leave:    player paid but didn't grab — cost forfeited (ghost-ball excluded)
+    // Auto-trigger gum types (time/rounds/event-limited) don't fire bgb_activation
+    // and aren't surfaced.
+    private static GameEventV2 ParseZeGobbleGum(GameScriptEvent scriptEvent, string[] data)
+    {
+        var action = data.Length > 5 ? data[5] : string.Empty;
+        var gumName = data.Length > 6 ? data[6] : string.Empty;
+
+        return action switch
+        {
+            "activate" => new GobbleGumActivatedGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                GumName = gumName
+            },
+            "take" => new GobbleGumTakenGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                GumName = gumName,
+                Cost = data.Length > 7 ? Convert.ToInt32(data[7]) : 0
+            },
+            "leave" => new GobbleGumAbandonedGameEvent
+            {
+                Origin = ParseVictimClient(scriptEvent, data),
+                GumName = gumName,
+                Cost = data.Length > 7 ? Convert.ToInt32(data[7]) : 0
+            },
+            _ => throw new ArgumentException($"Unknown ZE gum action: {action}")
         };
     }
 

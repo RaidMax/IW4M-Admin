@@ -22,6 +22,20 @@ public class ZombieRoundClientStat : ZombieClientStat
     public int? PlayerCountAtRoundStart { get; set; }
 
     /// <summary>
+    /// Special-round type for this round, if applicable. Null on normal rounds.
+    /// Sourced from GSC <c>GSE;ZW;round_special;&lt;round&gt;;&lt;type&gt;</c> emissions and snapshotted from
+    /// <c>MatchState.RoundSpecialTypes[RoundNumber]</c> at round-end persistence.
+    /// Drives the Round Breakdown UI badge and gates the static Seconds-Per-Horde
+    /// calculation in !ztimings (special rounds replace the regular spawn budget
+    /// so SPH would render visibly wrong otherwise). Mid-round mini-bosses
+    /// (panzer/brutus/mechz/ghost/sloth) are NOT recorded — those add a small
+    /// fixed enemy count alongside regular zombies; SPH stays approximately correct.
+    /// Stored as int (EF Core enum default) — see <see cref="ZombieSpecialRoundType"/>
+    /// for the stable wire values.
+    /// </summary>
+    public ZombieSpecialRoundType? SpecialType { get; set; }
+
+    /// <summary>
     /// Mirrors <c>ZombieMatchClientStat.IsTentative</c>: round entries created by
     /// <c>StartNextRound</c> for a tentative match-stat are also tentative until the
     /// first event promotes the whole tree. Skipped from DB persistence while tentative.

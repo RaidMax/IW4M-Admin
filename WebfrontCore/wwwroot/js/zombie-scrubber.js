@@ -51,6 +51,13 @@
         'easter-egg-step': { fill: '#f59e0b', icon: 'ph-trophy',             z: 50, tick: false },
         'power-on':        { fill: '#facc15', icon: 'ph-lightning',          z: 56, tick: false },
         'power-off':       { fill: '#94a3b8', icon: 'ph-lightning-slash',    z: 56, tick: false },
+        'bank-deposit':    { fill: '#22c55e', icon: 'ph-piggy-bank',         z: 20, tick: false },
+        'bank-withdraw':   { fill: '#fbbf24', icon: 'ph-hand-coins',         z: 20, tick: false },
+        'locker-store':    { fill: '#60a5fa', icon: 'ph-lockers',            z: 20, tick: false },
+        'locker-retrieve': { fill: '#34d399', icon: 'ph-lockers',            z: 20, tick: false },
+        'gum-activate':    { fill: '#ec4899', icon: 'ph-sparkle',            z: 30, tick: false },
+        'gum-take':        { fill: '#a855f7', icon: 'ph-gift',               z: 20, tick: false },
+        'gum-leave':       { fill: '#94a3b8', icon: 'ph-heart-break',        z: 20, tick: false },
         'default':         { fill: '#94a3b8', icon: '',                       z: 10, tick: true  }
     };
 

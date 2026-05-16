@@ -97,4 +97,31 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// co-op rounds normalize against their own cohorts.
     /// </summary>
     public Dictionary<int, int> RoundPlayerCounts { get; } = new();
+
+    /// <summary>
+    /// Special-round type per round number — populated from GSC
+    /// <c>GSE;ZW;round_special;&lt;round&gt;;&lt;type&gt;</c> emissions. Absence = normal round. Drives the
+    /// Round Breakdown UI badge and the !ztimings SPH gate (special rounds replace
+    /// the regular spawn budget so the static SPH formula doesn't apply). Mid-round
+    /// mini-bosses (panzer/brutus/mechz/ghost/sloth) are deliberately NOT recorded
+    /// here — those add a small fixed enemy count alongside regular zombies; SPH
+    /// stays approximately correct.
+    /// </summary>
+    public Dictionary<int, ZombieSpecialRoundType> RoundSpecialTypes { get; } = new();
+
+    /// <summary>
+    /// Latest engine snapshot for the current round: zombies still to be SPAWNED
+    /// (level.zombie_total). Updated by the GSC <c>WatchZombiesRemaining</c> watcher
+    /// every ~2s. Null between match start and the first ZR emission, or when the
+    /// emitted RoundNumber doesn't match the live round (stale arrival ignored).
+    /// Drives the live-modal SPH calculation: cleared = budget − remaining − alive.
+    /// </summary>
+    public int? CurrentRoundZombiesRemaining { get; set; }
+
+    /// <summary>
+    /// Latest engine snapshot for the current round: zombies currently alive on the
+    /// map (get_enemy_count / get_current_zombie_count). Paired with
+    /// <see cref="CurrentRoundZombiesRemaining"/>. Null until the first ZR emission.
+    /// </summary>
+    public int? CurrentRoundZombiesAlive { get; set; }
 }

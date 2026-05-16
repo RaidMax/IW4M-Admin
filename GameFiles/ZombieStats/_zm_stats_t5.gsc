@@ -56,6 +56,7 @@ init()
     thread WaitForEasterEggSteps();
     thread WatchPowerSwitches();
     thread WatchPowerStateChanges();
+    thread WatchZombiesRemaining();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format): AK, AD, K, D, RD, RC
@@ -199,7 +200,16 @@ WaitForPlayerRevive()
         // T5 passes the reviver as a parameter to the notify
         self waittill( "player_revived", reviver );
 
-        logPrint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";revive;" + BuildPlayerInfoString( reviver ) + "\n" );
+        // Self-revive (solo Quick Revive auto): reviver==self. Emit distinct
+        // subtype so downstream classification doesn't need to compare guids.
+        if ( IsDefined( reviver ) && IsPlayer( reviver ) && reviver == self )
+        {
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";revive;self\n" );
+        }
+        else
+        {
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";revive;" + BuildPlayerInfoString( reviver ) + "\n" );
+        }
     }
 }
 
@@ -217,7 +227,7 @@ WaitForPerkBought()
     {
         self waittill( "perk_bought", perk );
 
-        logPrint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";perk;buy;" + perk + ";0\n" );
+        logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";perk;buy;" + perk + ";0\n" );
     }
 }
 
@@ -295,7 +305,7 @@ WaitForPowerupGrab()
 
                 self.isWaiting = false;
 
-                logPrint( "GSE;ZE;" + BuildPlayerInfoString( players[i] ) + ";powerup;grab;" + powerup + "\n" );
+                logPrint( "GSE;ZP;" + BuildPlayerInfoString( players[i] ) + ";powerup;grab;" + powerup + "\n" );
 
                 return;
             }
@@ -358,6 +368,41 @@ WaitForRoundChange()
         {
             break;
         }
+
+        // Detect special-round type for the round about to begin and emit a
+        // GSE;ZW;round_special;<round>;<type> line so IW4MAdmin can flag the round in the
+        // breakdown UI and skip Seconds-Per-Horde for round types where the
+        // static budget formula doesn't apply (full special rounds replace the
+        // regular zombie spawn budget; SPH would render visibly wrong otherwise).
+        // T5 maps where these flags exist: dog_round (universal), monkey_round
+        // (Ascension Space Monkeys), thief_round (Five Pentagon Thief).
+        // flag_exists guards keep us safe on maps that never initialised the flag.
+        EmitSpecialRoundIfAny();
+    }
+}
+
+EmitSpecialRoundIfAny()
+{
+    // Use IsDefined-based flag checks for cross-game consistency with T4 (which
+    // doesn't expose flag_exists()) and to avoid asserting on maps that never
+    // initialised the flag (Verruckt has no dogs, Five has no monkeys, etc).
+    specialType = "";
+    if ( IsDefined( level.flag ) && IsDefined( level.flag[ "dog_round" ] ) && level.flag[ "dog_round" ] )
+    {
+        specialType = "dog";
+    }
+    else if ( IsDefined( level.flag ) && IsDefined( level.flag[ "monkey_round" ] ) && level.flag[ "monkey_round" ] )
+    {
+        specialType = "monkey";
+    }
+    else if ( IsDefined( level.flag ) && IsDefined( level.flag[ "thief_round" ] ) && level.flag[ "thief_round" ] )
+    {
+        specialType = "thief";
+    }
+
+    if ( specialType != "" )
+    {
+        logPrint( "GSE;ZW;round_special;" + level.round_number + ";" + specialType + "\n" );
     }
 }
 
@@ -453,7 +498,7 @@ OnPlayerDowned( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sH
         return;
     }
 
-    logPrint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";down\n" );
+    logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";down\n" );
 
     [[ level.callbackPlayerLastStandOriginal ]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }
@@ -550,11 +595,13 @@ WaitForPackAPunch()
         triggers[i].iw4m_pap_buyer_weapon = undefined;
         triggers[i].iw4m_pap_taken_flag = false;
         triggers[i].iw4m_pap_timeout_flag = false;
+        triggers[i].iw4m_pap_disconnect_flag = false;
 
         triggers[i] thread WatchPapOutcome();
         triggers[i] thread WatchPapTriggerForBuyer();
         triggers[i] thread WatchPapTakenFlag();
         triggers[i] thread WatchPapTimeoutFlag();
+        triggers[i] thread WatchPapDisconnectFlag();
     }
 }
 
@@ -568,7 +615,7 @@ WatchPapTakenFlag()
     for ( ;; )
     {
         self waittill( "pap_taken" );
-        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag )
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
         {
             continue;
         }
@@ -581,12 +628,45 @@ WatchPapTimeoutFlag()
     for ( ;; )
     {
         self waittill( "pap_timeout" );
-        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag )
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
         {
             continue;
         }
         self.iw4m_pap_timeout_flag = true;
     }
+}
+
+// T5 engine does NOT emit pap_player_disconnected (T6/T7's _zm_perks.gsc does;
+// T5's _zombiemode_perks.gsc has no equivalent). We synthesise it via the
+// WatchPapBuyerDisconnect helper threaded at lock time — watches the buyer's
+// engine "disconnect" notify and re-emits as "pap_player_disconnected" on the
+// trigger. Lets the rest of the pattern stay aligned with T6/T7 verbatim.
+WatchPapDisconnectFlag()
+{
+    for ( ;; )
+    {
+        self waittill( "pap_player_disconnected" );
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
+        {
+            continue;
+        }
+        self.iw4m_pap_disconnect_flag = true;
+    }
+}
+
+WatchPapBuyerDisconnect()
+{
+    self endon( "pap_taken" );
+    self endon( "pap_timeout" );
+
+    buyer = self.iw4m_pap_buyer;
+    if ( !IsDefined( buyer ) || !IsPlayer( buyer ) )
+    {
+        return;
+    }
+
+    buyer waittill( "disconnect" );
+    self notify( "pap_player_disconnected" );
 }
 
 WatchPapTriggerForBuyer()
@@ -621,6 +701,7 @@ WatchPapTriggerForBuyer()
             }
             self.iw4m_pap_buyer = who;
             self.iw4m_pap_buyer_weapon = self.current_weapon;
+            self thread WatchPapBuyerDisconnect();
             continue;
         }
 
@@ -650,6 +731,7 @@ WatchPapTriggerForBuyer()
 
         self.iw4m_pap_buyer = who;
         self.iw4m_pap_buyer_weapon = weapon;
+        self thread WatchPapBuyerDisconnect();
 
         // Verify engine actually accepted; unlock otherwise. Handles engine-side
         // gates we don't replicate (laststand, throwing grenade, switching).
@@ -692,6 +774,7 @@ WatchPapOutcome()
         // Reset per-iter state
         self.iw4m_pap_taken_flag = false;
         self.iw4m_pap_timeout_flag = false;
+        self.iw4m_pap_disconnect_flag = false;
         self.iw4m_pap_buyer = undefined;
         self.iw4m_pap_buyer_weapon = undefined;
 
@@ -711,6 +794,12 @@ WatchPapOutcome()
         while ( IsDefined( self.current_weapon ) && self.current_weapon == oldWeapon )
         {
             wait ( 0.05 );
+        }
+
+        // Disconnect short-circuits emission (no player to credit).
+        if ( self.iw4m_pap_disconnect_flag )
+        {
+            continue;
         }
 
         // Resolve outcome from notify flags.
@@ -741,11 +830,11 @@ WatchPapOutcome()
             {
                 newWeapon = level.zombie_weapons[oldWeapon].upgrade_name;
             }
-            logPrint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";" + cost + "\n" );
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";" + cost + "\n" );
         }
         else if ( isTimeout )
         {
-            logPrint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";" + cost + "\n" );
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";" + cost + "\n" );
         }
     }
 }
@@ -806,7 +895,7 @@ WatchWeaponPurchase()
             }
         }
 
-        logPrint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
+        logPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
     }
 }
 
@@ -850,7 +939,7 @@ WatchDoorPurchase()
         return;
     }
 
-    logPrint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
+    logPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1127,15 +1216,15 @@ WatchBoxOutcome()
         {
             if ( isTeddy )
             {
-                logPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
+                logPrint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
             }
             else if ( timedOutValue )
             {
-                logPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
+                logPrint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
             }
             else
             {
-                logPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
+                logPrint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
             }
         }
 
@@ -1245,7 +1334,7 @@ WatchTrapActivation()
 
         if ( IsDefined( closest ) )
         {
-            logPrint( "GSE;ZE;" + BuildPlayerInfoString( closest ) + ";trap;activate;" + trapType + ";" + cost + "\n" );
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( closest ) + ";trap;activate;" + trapType + ";" + cost + "\n" );
         }
 
         // Wait for trap to finish and cool down (_trap_in_use goes back to 0)
@@ -1330,7 +1419,7 @@ WatchAutoTurret()
 
         if ( IsDefined( closest ) )
         {
-            logPrint( "GSE;ZE;" + BuildPlayerInfoString( closest ) + ";trap;activate;turret;" + cost + "\n" );
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( closest ) + ";trap;activate;turret;" + cost + "\n" );
         }
 
         // Wait for turret to deactivate before re-polling
@@ -1426,7 +1515,7 @@ WaitForEasterEggComplete()
     roundStr = "?";
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
-    logprint( "GSE;EE;" + level.script + "\n" );
+    logprint( "GSE;ZW;easter_egg;complete;" + level.script + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1519,7 +1608,7 @@ WatchT5SongTriggerStep( stepKeyPrefix, oneBasedIndex )
     self waittill( "trigger" );
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-    logprint( "GSE;EE;step;" + stepKey + "\n" );
+    logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1568,7 +1657,7 @@ HookAscensionTeddyBears()
             {
                 stepKey = "t5_as_bear_" + i;
                 logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-                logprint( "GSE;EE;step;" + stepKey + "\n" );
+                logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
             }
             prev = level.teddybear_counter;
         }
@@ -1580,7 +1669,7 @@ HookAscensionTeddyBears()
     {
         stepKey = "t5_as_bear_" + i;
         logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-        logprint( "GSE;EE;step;" + stepKey + "\n" );
+        logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
     }
 }
 
@@ -1619,7 +1708,7 @@ WatchT5Flag( flagName, stepKey, isCanonical )
     flag_wait( flagName );
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-    logprint( "GSE;EE;step;" + stepKey + "\n" );
+    logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
 
     if ( !isCanonical )
     {
@@ -1637,7 +1726,7 @@ WatchT5Flag( flagName, stepKey, isCanonical )
     roundStr = "?";
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
-    logprint( "GSE;EE;" + level.script + "\n" );
+    logprint( "GSE;ZW;easter_egg;complete;" + level.script + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1722,7 +1811,7 @@ WatchT5MeteorCounterSong( stepKeyPrefix )
             {
                 stepKey = stepKeyPrefix + "_" + i;
                 logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-                logprint( "GSE;EE;step;" + stepKey + "\n" );
+                logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
             }
             prev = level.meteor_counter;
         }
@@ -1734,7 +1823,7 @@ WatchT5MeteorCounterSong( stepKeyPrefix )
     {
         stepKey = stepKeyPrefix + "_" + i;
         logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-        logprint( "GSE;EE;step;" + stepKey + "\n" );
+        logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
     }
 }
 
@@ -1748,7 +1837,7 @@ WatchT5LevelNotify( notifyName, stepKey, isCanonical )
     level waittill( notifyName );
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-    logprint( "GSE;EE;step;" + stepKey + "\n" );
+    logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
 
     if ( !isCanonical )
     {
@@ -1765,7 +1854,7 @@ WatchT5LevelNotify( notifyName, stepKey, isCanonical )
     roundStr = "?";
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
-    logprint( "GSE;EE;" + level.script + "\n" );
+    logprint( "GSE;ZW;easter_egg;complete;" + level.script + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1977,11 +2066,11 @@ EmitPowerOn()
 
     if ( IsDefined( activator ) )
     {
-        logPrint( "GSE;PWR;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
+        logPrint( "GSE;ZW;power;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
     }
     else
     {
-        logPrint( "GSE;PWR;on;world\n" );
+        logPrint( "GSE;ZW;power;on;world\n" );
     }
 }
 
@@ -1989,5 +2078,40 @@ EmitPowerOff()
 {
     // Power-off is rare and not player-attributed in stock maps (TranZit
     // bus power loss is the only stock case). Always emit as world.
-    logPrint( "GSE;PWR;off;world\n" );
+    logPrint( "GSE;ZW;power;off;world\n" );
+}
+
+// Periodic emission of (round, zombies-remaining-to-spawn, currently-alive). Lets
+// the live modal compute true "zombies cleared" = budget - remaining - alive,
+// which captures trap kills / environmental kills / friendly grenade splash —
+// all things that don't credit to a player's kill count but still reduce the
+// round's spawn pool. Without this, live SPH would systematically over-estimate
+// pace on trap-heavy strategies.
+//
+// Throttle: every 5s, only emits when remaining or alive changed since last
+// emission. Matches the live-modal poll cadence — no point emitting faster
+// than the UI refreshes. ~12 lines/min on an active round, none during
+// intermission.
+WatchZombiesRemaining()
+{
+    level endon( "end_game" );
+    last_remaining = -1;
+    last_alive = -1;
+    while ( true )
+    {
+        wait( 5 );
+        if ( !IsDefined( level.zombie_total ) || !IsDefined( level.round_number ) )
+        {
+            continue;
+        }
+        remaining = level.zombie_total;
+        alive = get_enemy_count();
+        if ( remaining == last_remaining && alive == last_alive )
+        {
+            continue;
+        }
+        logPrint( "GSE;ZW;zombies;" + level.round_number + ";" + remaining + ";" + alive + "\n" );
+        last_remaining = remaining;
+        last_alive = alive;
+    }
 }

@@ -71,13 +71,14 @@ public class Plugin : IPluginV2
         if (server is null || !server.IsZombieServer())
         {
             // DIAGNOSTIC (zombie skill-leak phase 1): the server is a CoD
-            // zombie-capable game (T4/T5/T6) but IsZombieServer returned false,
+            // zombie-capable game (T4/T5/T6/T7) but IsZombieServer returned false,
             // so gametype was likely stale at auth time — SkillFunction will
             // never attach for this session. One-shot per (client, server).
             if (server is not null
                 && (server.GameCode == Reference.Game.T4
                     || server.GameCode == Reference.Game.T5
-                    || server.GameCode == Reference.Game.T6))
+                    || server.GameCode == Reference.Game.T6
+                    || server.GameCode == Reference.Game.T7))
             {
                 var raceFlag = $"ZmLog_AuthRace_{server.LegacyDatabaseId}";
                 if (!clientEvent.Client.GetAdditionalProperty<bool>(raceFlag))
@@ -234,13 +235,25 @@ public class Plugin : IPluginV2
 
     private async Task OnMatchStarted(MatchStartEvent matchEvent, CancellationToken token)
     {
-        if (!matchEvent.Server.ConnectedClients.Any() || !matchEvent.Server.IsZombieServer())
+        if (!matchEvent.Server.IsZombieServer())
+        {
+            return;
+        }
+
+        // Reset round display BEFORE the ConnectedClients guard. On T7x the
+        // game log doesn't emit ExitLevel/ShutdownGame between matches, so
+        // OnMatchEnded never fires; this is the only opportunity to clear
+        // the stale ZombieRoundNumber from the previous match. The J event
+        // also fires same-second as InitGame so ConnectedClients is racey
+        // here — clearing before the guard makes the reset deterministic.
+        matchEvent.Owner.ZombieRoundNumber = null;
+
+        if (!matchEvent.Server.ConnectedClients.Any())
         {
             return;
         }
 
         _knownZombieServerIds.Add(matchEvent.Server.LegacyDatabaseId);
-        matchEvent.Owner.ZombieRoundNumber = null;
 
         if (_enhancer is not null)
         {

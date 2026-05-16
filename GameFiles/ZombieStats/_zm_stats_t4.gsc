@@ -38,10 +38,32 @@ Init()
     thread WaitForEasterEggSteps();
     thread WatchPowerSwitches();
     thread WatchPowerStateChanges();
+    thread WatchZombiesRemaining();
 
     // --- Zombie Event Log Format --- //
-    // Combat events (legacy format): AK, AD, K, D, RD, RC
-    // Unified ZE format: down, revive, perk, powerup, weapon, box, door, trap
+    // Combat events (legacy format):
+    //   AK, AD, K, D = kills/damage (unchanged)
+    //   RD, RC = round data/complete (unchanged)
+    //
+    // Unified ZP/ZW format:
+    //   ZP;{player};down                                    = player downed
+    //   ZP;{player};revive;{reviver}                        = player co-op revived
+    //   ZP;{player};revive;self                             = self-revive (T5+; T4 never emits — no self-revive mechanic in W@W)
+    //   ZP;{player};perk;buy;{perkName};{cost}              = perk purchased (weapon-switch poll — T4 has no perk_bought notify)
+    //   ZP;{player};powerup;grab;{powerupName}              = powerup grabbed
+    //   ZP;{player};weapon;buy;{weaponName};{cost}          = wall weapon purchase
+    //   ZP;{player};weapon;upgrade;{old};{new};{cost}       = pack-a-punch
+    //   ZP;{player};weapon;abandon;{weapon};{cost}          = pap timeout
+    //   ZP;{player};box;take;{weaponName};{cost}            = box weapon taken
+    //   ZP;{player};box;pass;{weaponName};{cost}            = box weapon passed
+    //   ZP;{player};box;teddy;{cost}                        = teddy bear (box moves)
+    //   ZP;{player};door;buy;{cost}                         = door/debris opened
+    //   ZP;{player};trap;activate;{trapType};{cost}         = trap activated
+    //   ZW;round_special;{round};{type}                     = dog round (T4 only has dog_round flag)
+    //   ZW;zombies;{round};{remaining};{alive}              = engine zombies-left poll
+    //   ZW;power;on;world|player;[info]                     = power activated (T4 never powers off)
+    //   ZW;easter_egg;step;{key}                            = EE progress
+    //   ZW;easter_egg;complete;{map}                        = EE finalised
 
     SetupCallbacks();
     thread WatchdogCallbacks();
@@ -200,13 +222,23 @@ WaitForPlayerRevive()
             }
         }
         
-        LogPrint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";revive;" + BuildPlayerInfoString( reviver ) + "\n" );
+        LogPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";revive;" + BuildPlayerInfoString( reviver ) + "\n" );
     }
 }
 
 /////////////////////////////////////////////////////////
 // Waits until player changes weapons and checks to see
-// if weapon is a perk weapon. Prints to gamelog if true
+// if weapon is a perk weapon. Prints to gamelog if true.
+//
+// Engine limitation: T4 has NO perk_bought notify and NO
+// level.perk_bought_func hookpoint. vending_trigger_think
+// in _zombiemode_perks.gsc grants the perk via SetPerk()
+// + increments player.stats["perks"], but never emits any
+// player notify we could subscribe to. Weapon-switch poll
+// is therefore the only detection path on T4. Edge case:
+// if a player buys a perk and is downed/killed before the
+// next 0.1s tick, the perk-bought emission is dropped.
+// T5/T6/T7 all moved to notify-driven detection.
 /////////////////////////////////////////////////////////
 WaitForPlayerWeaponSwitch()
 {
@@ -242,7 +274,7 @@ WaitForPlayerWeaponSwitch()
 
             if ( IsSubStr( currentWeapon, "zombie_perk" ) )
             {
-                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";perk;buy;" + currentWeapon + ";0\n" );
+                LogPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";perk;buy;" + currentWeapon + ";0\n" );
             }
         }
     }
@@ -322,7 +354,7 @@ WaitForPowerupGrab()
 
                 self.isWaiting = false;
 
-                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( players[i] ) + ";powerup;grab;" + powerup + "\n" );
+                LogPrint( "GSE;ZP;" + BuildPlayerInfoString( players[i] ) + ";powerup;grab;" + powerup + "\n" );
 
                 return;
             }
@@ -385,6 +417,33 @@ WaitForRoundChange()
         {
             break;
         }
+
+        // Detect special-round type for the round about to begin and emit a
+        // GSE;ZW;round_special;<round>;<type> line so IW4MAdmin can flag the round in the
+        // breakdown UI and skip Seconds-Per-Horde for round types where the
+        // static budget formula doesn't apply (dogs replace the regular
+        // zombie spawn budget; SPH would render visibly wrong otherwise).
+        // T4 only has dog rounds (Shi No Numa / Der Riese hellhounds);
+        // flag_exists guards keep us safe on maps that never initialised
+        // the flag (e.g. Nacht der Untoten, Verruckt).
+        EmitSpecialRoundIfAny();
+    }
+}
+
+EmitSpecialRoundIfAny()
+{
+    // T4 doesn't expose flag_exists() — guard with IsDefined on the underlying
+    // level.flag dict entry (portable across T4/T5/T6 and avoids T4's flag()
+    // assertEx on uninitialised flag names).
+    specialType = "";
+    if ( IsDefined( level.flag ) && IsDefined( level.flag[ "dog_round" ] ) && level.flag[ "dog_round" ] )
+    {
+        specialType = "dog";
+    }
+
+    if ( specialType != "" )
+    {
+        logPrint( "GSE;ZW;round_special;" + level.round_number + ";" + specialType + "\n" );
     }
 }
 
@@ -476,7 +535,7 @@ OnPlayerDowned( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sH
         return;
     }
 
-    LogPrint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";down\n" );
+    LogPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";down\n" );
 
     [[level.callbackPlayerLastStandOriginal]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }
@@ -595,7 +654,7 @@ WatchWeaponPurchase()
             continue;
         }
 
-        LogPrint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
+        LogPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
     }
 }
 
@@ -657,11 +716,13 @@ WaitForPackAPunch()
         triggers[i].iw4m_pap_buyer_weapon = undefined;
         triggers[i].iw4m_pap_taken_flag = false;
         triggers[i].iw4m_pap_timeout_flag = false;
+        triggers[i].iw4m_pap_disconnect_flag = false;
 
         triggers[i] thread WatchPapOutcome();
         triggers[i] thread WatchPapTriggerForBuyer();
         triggers[i] thread WatchPapTakenFlag();
         triggers[i] thread WatchPapTimeoutFlag();
+        triggers[i] thread WatchPapDisconnectFlag();
     }
 }
 
@@ -675,7 +736,7 @@ WatchPapTakenFlag()
     for ( ;; )
     {
         self waittill( "pap_taken" );
-        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag )
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
         {
             continue;
         }
@@ -688,12 +749,45 @@ WatchPapTimeoutFlag()
     for ( ;; )
     {
         self waittill( "pap_timeout" );
-        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag )
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
         {
             continue;
         }
         self.iw4m_pap_timeout_flag = true;
     }
+}
+
+// T4 engine does NOT emit pap_player_disconnected (T6/T7's _zm_perks.gsc does;
+// T4's _zombiemode_perks.gsc has no equivalent). We synthesise it via the
+// WatchPapBuyerDisconnect helper threaded at lock time — watches the buyer's
+// engine "disconnect" notify and re-emits as "pap_player_disconnected" on the
+// trigger. Lets the rest of the pattern stay aligned with T6/T7 verbatim.
+WatchPapDisconnectFlag()
+{
+    for ( ;; )
+    {
+        self waittill( "pap_player_disconnected" );
+        if ( self.iw4m_pap_taken_flag || self.iw4m_pap_timeout_flag || self.iw4m_pap_disconnect_flag )
+        {
+            continue;
+        }
+        self.iw4m_pap_disconnect_flag = true;
+    }
+}
+
+WatchPapBuyerDisconnect()
+{
+    self endon( "pap_taken" );
+    self endon( "pap_timeout" );
+
+    buyer = self.iw4m_pap_buyer;
+    if ( !IsDefined( buyer ) || !IsPlayer( buyer ) )
+    {
+        return;
+    }
+
+    buyer waittill( "disconnect" );
+    self notify( "pap_player_disconnected" );
 }
 
 WatchPapTriggerForBuyer()
@@ -728,6 +822,7 @@ WatchPapTriggerForBuyer()
             }
             self.iw4m_pap_buyer = who;
             self.iw4m_pap_buyer_weapon = self.current_weapon;
+            self thread WatchPapBuyerDisconnect();
             continue;
         }
 
@@ -756,6 +851,7 @@ WatchPapTriggerForBuyer()
 
         self.iw4m_pap_buyer = who;
         self.iw4m_pap_buyer_weapon = weapon;
+        self thread WatchPapBuyerDisconnect();
 
         // Verify engine actually accepted within ~5 frames; unlock otherwise.
         // Handles engine-side gates we don't replicate (laststand, throwing
@@ -798,6 +894,7 @@ WatchPapOutcome()
         // Reset per-iter state
         self.iw4m_pap_taken_flag = false;
         self.iw4m_pap_timeout_flag = false;
+        self.iw4m_pap_disconnect_flag = false;
         self.iw4m_pap_buyer = undefined;
         self.iw4m_pap_buyer_weapon = undefined;
 
@@ -819,6 +916,12 @@ WatchPapOutcome()
             wait ( 0.05 );
         }
 
+        // Disconnect short-circuits emission (no player to credit).
+        if ( self.iw4m_pap_disconnect_flag )
+        {
+            continue;
+        }
+
         // Resolve outcome from notify flags.
         isTaken = self.iw4m_pap_taken_flag;
         isTimeout = self.iw4m_pap_timeout_flag;
@@ -837,11 +940,11 @@ WatchPapOutcome()
         if ( isTaken )
         {
             newWeapon = oldWeapon + "_upgraded";
-            LogPrint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";5000\n" );
+            LogPrint( "GSE;ZP;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";5000\n" );
         }
         else if ( isTimeout )
         {
-            LogPrint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";5000\n" );
+            LogPrint( "GSE;ZP;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";5000\n" );
         }
     }
 }
@@ -887,7 +990,7 @@ WatchDoorPurchase()
         return;
     }
 
-    LogPrint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
+    LogPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1264,15 +1367,15 @@ WatchBoxOutcome()
         {
             if ( isTeddy )
             {
-                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
+                LogPrint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
             }
             else if ( isTake )
             {
-                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
+                LogPrint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
             }
             else if ( isPass )
             {
-                LogPrint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
+                LogPrint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
             }
         }
 
@@ -1338,7 +1441,7 @@ WatchTrapActivation()
             continue;
         }
 
-        LogPrint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";trap;activate;electric;" + cost + "\n" );
+        LogPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";trap;activate;electric;" + cost + "\n" );
     }
 }
 
@@ -1419,7 +1522,7 @@ WaitForEasterEggComplete()
             {
                 stepKey = "t4_dr_flytrap_target_" + i;
                 logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-                logprint( "GSE;EE;step;" + stepKey + "\n" );
+                logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
             }
             prev = level.flytrap_counter;
         }
@@ -1433,7 +1536,7 @@ WaitForEasterEggComplete()
     {
         stepKey = "t4_dr_flytrap_target_" + i;
         logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-        logprint( "GSE;EE;step;" + stepKey + "\n" );
+        logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
     }
 
     if ( IsDefined( level.iw4m_ee_fired ) && level.iw4m_ee_fired )
@@ -1446,7 +1549,7 @@ WaitForEasterEggComplete()
     roundStr = "?";
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
-    logprint( "GSE;EE;" + level.script + "\n" );
+    logprint( "GSE;ZW;easter_egg;complete;" + level.script + "\n" );
 }
 
 // Panel-shot phase-start. Stock factory.gsc flag_set("hide_and_seek") inside
@@ -1467,7 +1570,7 @@ WatchDerRieseFlytrapPanel()
     flag_wait( "hide_and_seek" );
 
     logprint( "[ZM-EE] Step fired: t4_dr_flytrap_panel\n" );
-    logprint( "GSE;EE;step;t4_dr_flytrap_panel\n" );
+    logprint( "GSE;ZW;easter_egg;step;t4_dr_flytrap_panel\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1540,7 +1643,7 @@ HookEggsFlagSong( stepKey )
     }
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-    logprint( "GSE;EE;step;" + stepKey + "\n" );
+    logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
 }
 
 // Use-trigger path (Der Riese — meteor stones, press E to interact).
@@ -1594,7 +1697,7 @@ HookOneDerRieseMeteor( targetName, oneBasedIndex )
     trig waittill( "trigger" );
 
     logprint( "[ZM-EE] Step fired: " + stepKey + "\n" );
-    logprint( "GSE;EE;step;" + stepKey + "\n" );
+    logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1686,10 +1789,45 @@ WatchPowerStateChanges()
 
     if ( IsDefined( activator ) )
     {
-        logPrint( "GSE;PWR;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
+        logPrint( "GSE;ZW;power;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
     }
     else
     {
-        logPrint( "GSE;PWR;on;world\n" );
+        logPrint( "GSE;ZW;power;on;world\n" );
+    }
+}
+
+// Periodic emission of (round, zombies-remaining-to-spawn, currently-alive). Lets
+// the live modal compute true "zombies cleared" = budget - remaining - alive,
+// which captures trap kills / environmental kills / friendly grenade splash —
+// all things that don't credit to a player's kill count but still reduce the
+// round's spawn pool. Without this, live SPH would systematically over-estimate
+// pace on trap-heavy strategies (Verruckt electric trap, Der Riese teleporters).
+//
+// Throttle: every 5s, only emits when remaining or alive changed since last
+// emission. Matches the live-modal poll cadence — no point emitting faster
+// than the UI refreshes. ~12 lines/min on an active round, none during
+// intermission.
+WatchZombiesRemaining()
+{
+    level endon( "end_game" );
+    last_remaining = -1;
+    last_alive = -1;
+    while ( true )
+    {
+        wait( 5 );
+        if ( !IsDefined( level.zombie_total ) || !IsDefined( level.round_number ) )
+        {
+            continue;
+        }
+        remaining = level.zombie_total;
+        alive = get_enemy_count();
+        if ( remaining == last_remaining && alive == last_alive )
+        {
+            continue;
+        }
+        logPrint( "GSE;ZW;zombies;" + level.round_number + ";" + remaining + ";" + alive + "\n" );
+        last_remaining = remaining;
+        last_alive = alive;
     }
 }

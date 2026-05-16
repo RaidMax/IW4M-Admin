@@ -108,6 +108,14 @@ public partial class ZombieLiveSnapshot
             "easter-egg" => ("bg-yellow-400", "text-yellow-400", "ph-trophy", false),
             "power-on" => ("bg-yellow-400", "text-yellow-400", "ph-lightning", false),
             "power-off" => ("bg-slate-400", "text-slate-400", "ph-lightning-slash", false),
+            "weapon-abandon" => ("bg-orange-400", "text-orange-400", "ph-knife", false),
+            "bank-deposit" => ("bg-green-500", "text-green-500", "ph-piggy-bank", false),
+            "bank-withdraw" => ("bg-amber-400", "text-amber-400", "ph-hand-coins", false),
+            "locker-store" => ("bg-blue-400", "text-blue-400", "ph-lockers", false),
+            "locker-retrieve" => ("bg-emerald-400", "text-emerald-400", "ph-lockers", false),
+            "gum-activate" => ("bg-pink-500", "text-pink-500", "ph-sparkle", false),
+            "gum-take" => ("bg-purple-500", "text-purple-500", "ph-gift", false),
+            "gum-leave" => ("bg-slate-400", "text-slate-400", "ph-heart-break", false),
             _ => ("bg-muted", "text-muted", "", true)
         };
 }

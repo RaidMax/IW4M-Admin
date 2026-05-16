@@ -1,4 +1,5 @@
 @using SharedLibraryCore.Interfaces
+@using Data.Models.Zombie
 
 @*
     Live snapshot of an in-progress zombie match. Distinct from the post-match
@@ -21,23 +22,82 @@
             <div class="absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent pointer-events-none"></div>
 
             <div class="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+                @{ var liveSpecial = PaceVisuals.SpecialBadge(Snapshot.CurrentRoundSpecialType, AppState); }
                 <div class="flex flex-col">
-                    <span class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-1">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_CURRENT_ROUND")</span>
-                    <div class="flex items-baseline gap-3">
-                        <span class="text-4xl md:text-5xl font-mono font-bold text-warning leading-none">@Snapshot.CurrentRound</span>
-                        @if (_roundElapsedSeconds is { } rs)
+                    @* Special-round badge sits inline beside the section title — keeps
+                       the number/timer column free of the chip (which previously
+                       sandwiched between the elapsed and zombies-left lines and read
+                       as out-of-place). *@
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] uppercase tracking-widest text-subtle font-bold">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_CURRENT_ROUND")</span>
+                        @if (liveSpecial is { } titleSb)
                         {
-                            var liveBand = PaceVisuals.ClassifyLive(rs, Snapshot.CurrentRoundEmaSeconds);
-                            var liveTint = PaceVisuals.ColorClass(liveBand?.Band);
-                            var liveTooltip = LiveBannerTooltip(rs, liveBand);
-                            <Tooltip Text="@liveTooltip" WrapperClass="inline-flex items-baseline gap-2">
-                                <span class="text-base font-mono tabular-nums @liveTint">+@FormatElapsed(rs)</span>
-                                @if (Snapshot.CurrentRoundEmaSeconds is { } emaSeconds && emaSeconds > 0)
-                                {
-                                    <span class="text-xs font-mono text-subtle/70 tabular-nums">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @FormatElapsed(emaSeconds)</span>
-                                }
+                            <Tooltip Text="@titleSb.Tooltip" WrapperClass="inline-flex">
+                                <span class="@($"inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {titleSb.ColorClass}")"
+                                      aria-label="@titleSb.Label">
+                                    <i class="@($"ph {titleSb.Icon}")" style="font-size: 11px;"></i>@titleSb.Label
+                                </span>
                             </Tooltip>
                         }
+                    </div>
+                    @* items-center vertically centres the elapsed/avg/sph/left column
+                       against the big round number — items-baseline aligned first column
+                       line to the round-number baseline, leaving a tall stack hanging
+                       below the number that read as awkward padding. *@
+                    <div class="flex items-center gap-3">
+                        <span class="text-4xl md:text-5xl font-mono font-bold text-warning leading-none">@Snapshot.CurrentRound</span>
+                        <div class="flex flex-col items-start leading-tight">
+                            @if (_roundElapsedSeconds is { } rs)
+                            {
+                                // Pace tint suppressed on special rounds — EMA isn't comparable across
+                                // round types, and the title-row badge already signals the round type.
+                                var liveBand = liveSpecial is null
+                                    ? PaceVisuals.ClassifyLive(rs, Snapshot.CurrentRoundEmaSeconds)
+                                    : null;
+                                var liveTint = PaceVisuals.ColorClass(liveBand?.Band);
+                                var liveTooltip = LiveBannerTooltip(rs, liveBand);
+                                <Tooltip Text="@liveTooltip" WrapperClass="inline-flex">
+                                    <span class="text-base font-mono tabular-nums @liveTint">+@FormatElapsed(rs)</span>
+                                </Tooltip>
+                                if (liveSpecial is null)
+                                {
+                                    if (Snapshot.CurrentRoundEmaSeconds is { } emaSeconds && emaSeconds > 0)
+                                    {
+                                        <span class="text-[11px] font-mono text-subtle/70 tabular-nums">(@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @FormatElapsed(emaSeconds))</span>
+                                    }
+                                    // Live SPH = elapsed / (cleared / 24) where cleared comes
+                                    // from engine truth (budget − remaining − alive), captured
+                                    // by the GSC ZR watcher. Gate on starting budget > 24 (one
+                                    // horde minimum) so tiny early rounds don't show jitter;
+                                    // brief div-by-zero protection until first kill lands.
+                                    if (Snapshot.CurrentRoundBudget is { } budget && budget > 24
+                                        && Snapshot.CurrentRoundZombiesRemaining is { } remaining
+                                        && Snapshot.CurrentRoundZombiesAlive is { } alive)
+                                    {
+                                        var cleared = budget - remaining - alive;
+                                        if (cleared > 0)
+                                        {
+                                            var liveSph = rs / (cleared / 24.0);
+                                            <span class="text-[11px] font-mono text-subtle/70 tabular-nums">@liveSph.ToString("F1") sph</span>
+                                        }
+                                    }
+                                }
+                            }
+                            @* Engine-truth zombies-left counter — sourced from the GSC ZR
+                               watcher, independent of the budget formula so it works on
+                               special rounds too. Clamped at 0 because dynamically-spawned
+                               enemies (Origins panzer, mid-round dogs on T6) can briefly
+                               push remaining+alive above the static initial total; we
+                               surface "still to clear" rather than progress vs budget. *@
+                            @if (Snapshot.CurrentRoundZombiesRemaining is { } zr
+                                 && Snapshot.CurrentRoundZombiesAlive is { } za)
+                            {
+                                var zombiesLeft = Math.Max(0, zr + za);
+                                <span class="text-[11px] font-mono text-subtle/60 tabular-nums">
+                                    @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_ZOMBIES_REMAINING").FormatExt(zombiesLeft)
+                                </span>
+                            }
+                        </div>
                     </div>
                 </div>
 
@@ -255,9 +315,15 @@
                                     var paceTint = PaceVisuals.ColorClass(evt.PaceBand);
                                     var pacePrefix = ratio > 0.05 ? "+" : (ratio < -0.05 ? "−" : "");
                                     var paceTooltip = LiveTimelinePaceTooltip(evt);
-                                    <Tooltip Text="@paceTooltip" WrapperClass="inline-flex items-baseline gap-1">
+                                    // Reconstruct the round's actual elapsed from typical and ratio
+                                    // (ratio = (actual - typical) / typical → actual = typical * (1 + ratio)).
+                                    // Avoids surfacing a bare "+2%" with no anchor — viewer needs to see
+                                    // the live time to make sense of the percent vs the avg.
+                                    var actualSec = typicalSec * (1 + ratio);
+                                    <Tooltip Text="@paceTooltip" WrapperClass="inline-flex items-baseline gap-1.5">
+                                        <span class="text-xs font-mono text-foreground tabular-nums">@PaceVisuals.FormatRoundTime(actualSec)</span>
                                         <span class="text-xs font-mono @paceTint">@pacePrefix@(Math.Abs(ratio * 100).ToString("F0"))%</span>
-                                        <span class="text-[11px] font-mono text-subtle/60">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @PaceVisuals.FormatRoundTime(typicalSec)</span>
+                                        <span class="text-[11px] font-mono text-subtle/60">(@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @PaceVisuals.FormatRoundTime(typicalSec))</span>
                                     </Tooltip>
                                 }
                             </div>

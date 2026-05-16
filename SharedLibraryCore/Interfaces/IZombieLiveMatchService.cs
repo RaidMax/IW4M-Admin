@@ -1,5 +1,7 @@
 #nullable enable
 
+using Data.Models.Zombie;
+
 namespace SharedLibraryCore.Interfaces;
 
 /// <summary>
@@ -43,6 +45,37 @@ public class ZombieLiveMatchSnapshot
     /// the EMA bucket lookup is stable even if a player joins/leaves mid-round.
     /// </summary>
     public int? CurrentRoundPlayerCount { get; set; }
+
+    /// <summary>
+    /// Special-round classification for the current round (Dog/Monkey/Leaper/Thief)
+    /// when the round replaced the regular zombie spawn pool. Null on normal rounds.
+    /// Sourced live from <c>MatchState.RoundSpecialTypes</c>. Lets the live banner
+    /// surface a "Dog Round" badge so viewers immediately understand why the timer
+    /// is moving fast and why no pace tint is applied.
+    /// </summary>
+    public ZombieSpecialRoundType? CurrentRoundSpecialType { get; set; }
+
+    /// <summary>
+    /// Engine-deterministic spawn budget for the current round (game/round/players).
+    /// Null on special rounds (formula doesn't apply) or unknown game. Live SPH
+    /// uses budget − remaining − alive to derive zombies cleared regardless of who
+    /// got the credit (handles trap kills, environmental kills, friendly splash).
+    /// </summary>
+    public int? CurrentRoundBudget { get; set; }
+
+    /// <summary>
+    /// Engine's <c>level.zombie_total</c> (zombies still to be spawned this round).
+    /// Sourced from the GSC <c>WatchZombiesRemaining</c> ~2s watcher. Null until
+    /// the first post-round-start ZR emission arrives, or when MatchState was reset
+    /// across a round boundary.
+    /// </summary>
+    public int? CurrentRoundZombiesRemaining { get; set; }
+
+    /// <summary>
+    /// Engine's currently-alive zombie count for the current round. Sourced from
+    /// the GSC <c>WatchZombiesRemaining</c> ~2s watcher. Null until first ZR.
+    /// </summary>
+    public int? CurrentRoundZombiesAlive { get; set; }
 
     public List<ZombieLivePlayerSnapshot> Players { get; set; } = [];
 

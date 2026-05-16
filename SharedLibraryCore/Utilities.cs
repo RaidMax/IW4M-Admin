@@ -217,7 +217,7 @@ namespace SharedLibraryCore
 
         public static bool IsZombieServer(this IGameServer server)
         {
-            return new[] { Reference.Game.T4, Reference.Game.T5, Reference.Game.T6 }.Contains(server.GameCode) &&
+            return new[] { Reference.Game.T4, Reference.Game.T5, Reference.Game.T6, Reference.Game.T7 }.Contains(server.GameCode) &&
                    !string.IsNullOrEmpty(server.Gametype) &&
                    ZmGameTypes.Contains(server.Gametype.ToLower());
         }

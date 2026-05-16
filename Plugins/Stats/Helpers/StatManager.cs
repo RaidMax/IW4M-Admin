@@ -698,8 +698,35 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     await ctx.SaveChangesAsync();
                 }
 
-                // for stats before rating
-                if (clientStats.EloRating == 0.0)
+                // EloRating reconciliation. If an EloRatingFunction is attached
+                // for this client (e.g. zombie servers, where ZombieStats binds a
+                // function returning a fixed baseline because zombie kills are
+                // not PvP), the stored EloRating must equal the function's
+                // output — that's the invariant ApplyKill's per-kill override
+                // (line 1768 area) maintains during play. Sync on AddPlayer so
+                // the invariant also holds at session start, before the first
+                // kill. Without this, a stale stored EloRating from an earlier
+                // session (e.g. seeded from a high Skill via the legacy fallback
+                // below) propagates into clientStats.Performance and into the
+                // per-server snapshot writer's PerformanceMetric. No threshold
+                // check — the function is the source of truth whenever attached.
+                var eloRatingFunc =
+                    pl.GetAdditionalProperty<Func<EFClient, EFClientStatistics, double>>("EloRatingFunction");
+                if (eloRatingFunc is not null)
+                {
+                    var synced = eloRatingFunc(pl, clientStats);
+                    if (Math.Abs(clientStats.EloRating - synced) > 0.001)
+                    {
+                        _log.LogInformation(
+                            "EloRatingSync: client={Name}({ClientId}) server={Server} prev={Prev} synced={Synced}",
+                            pl.Name, pl.ClientId, pl.CurrentServer?.ToString(),
+                            clientStats.EloRating, synced);
+                        clientStats.EloRating = synced;
+                    }
+                }
+                // for stats before rating (legacy seed for clients with no
+                // EloRatingFunction override — preserves MP behaviour unchanged)
+                else if (clientStats.EloRating == 0.0)
                 {
                     clientStats.EloRating = clientStats.Skill;
                 }

@@ -134,6 +134,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ZombieStats", "ZombieStats"
 		GameFiles\ZombieStats\_zm_stats_t4.gsc = GameFiles\ZombieStats\_zm_stats_t4.gsc
 		GameFiles\ZombieStats\_zm_stats_t5.gsc = GameFiles\ZombieStats\_zm_stats_t5.gsc
 		GameFiles\ZombieStats\_zm_stats_t6.gsc = GameFiles\ZombieStats\_zm_stats_t6.gsc
+		GameFiles\ZombieStats\_zm_stats_t7.gsc = GameFiles\ZombieStats\_zm_stats_t7.gsc
+		GameFiles\ZombieStats\FEATURE_MATRIX.md = GameFiles\ZombieStats\FEATURE_MATRIX.md
+		GameFiles\ZombieStats\README.md = GameFiles\ZombieStats\README.md
 	EndProjectSection
 EndProject
 Global

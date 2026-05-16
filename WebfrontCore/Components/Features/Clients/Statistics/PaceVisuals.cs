@@ -1,3 +1,4 @@
+using Data.Models.Zombie;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Services;
@@ -97,4 +98,40 @@ public static class PaceVisuals
                 .FormatExt(absPercent.ToString("F0"), round.RoundNumber, playerLabel, typicalFormatted),
         };
     }
+
+    /// <summary>
+    /// Visuals + localized labels for the special-round chip rendered next to the
+    /// round number on both the post-match Round Breakdown and the live banner.
+    /// Returns null on normal rounds. Tooltip explains why pace tinting / SPH are
+    /// suppressed for the round.
+    /// </summary>
+    public static SpecialRoundBadge? SpecialBadge(ZombieSpecialRoundType? specialType, AppState appState)
+    {
+        if (specialType is not { } st) return null;
+
+        var (label, icon, colorClass) = st switch
+        {
+            ZombieSpecialRoundType.Dog    => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_DOG"),    "ph-dog",            "bg-amber-500/15 text-amber-300 border border-amber-500/40"),
+            ZombieSpecialRoundType.Monkey => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_MONKEY"), "ph-paw-print",      "bg-rose-500/15 text-rose-300 border border-rose-500/40"),
+            ZombieSpecialRoundType.Leaper => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_LEAPER"), "ph-arrow-up",       "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40"),
+            ZombieSpecialRoundType.Thief  => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_THIEF"),  "ph-mask-sad",       "bg-cyan-500/15 text-cyan-300 border border-cyan-500/40"),
+            ZombieSpecialRoundType.Wasp   => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_WASP"),   "ph-bug",            "bg-purple-500/15 text-purple-300 border border-purple-500/40"),
+            ZombieSpecialRoundType.Spider => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_SPIDER"), "ph-spiral",         "bg-lime-500/15 text-lime-300 border border-lime-500/40"),
+            ZombieSpecialRoundType.Robot  => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_ROBOT"),  "ph-robot",          "bg-zinc-500/15 text-zinc-300 border border-zinc-500/40"),
+            ZombieSpecialRoundType.Quad   => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_QUAD"),   "ph-squares-four",   "bg-orange-500/15 text-orange-300 border border-orange-500/40"),
+            ZombieSpecialRoundType.Boss   => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_BOSS"),   "ph-skull",          "bg-red-500/15 text-red-300 border border-red-500/40"),
+            ZombieSpecialRoundType.Ee     => (appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_EE"),     "ph-star-four",      "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/40"),
+            _                              => (st.ToString(),                                       "ph-question",       "bg-surface-alt text-subtle border border-line"),
+        };
+
+        var tooltip = label + " — " + appState.Loc("WEBFRONT_ZOMBIE_ROUND_SPECIAL_TOOLTIP");
+        return new SpecialRoundBadge(label, icon, colorClass, tooltip);
+    }
 }
+
+/// <summary>
+/// Render-side payload for a special-round chip — label, icon class, color class,
+/// pre-built tooltip. <see cref="PaceVisuals.SpecialBadge"/> returns null on
+/// normal rounds; callers gate rendering on the optional being set.
+/// </summary>
+public sealed record SpecialRoundBadge(string Label, string Icon, string ColorClass, string Tooltip);

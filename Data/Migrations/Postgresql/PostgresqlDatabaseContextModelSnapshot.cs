@@ -1706,6 +1706,9 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("RoundNumber")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("SpecialType")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset>("StartTime")
                         .HasColumnType("timestamp with time zone");
 

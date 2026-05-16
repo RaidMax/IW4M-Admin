@@ -1,4 +1,5 @@
 @using SharedLibraryCore.Interfaces
+@using Data.Models.Zombie
 @inject AppState AppState
 @*
     Shared per-round breakdown table. Stateless — pass in the rounds list, get a sortable
@@ -22,6 +23,11 @@
     var lastRound = orderedRounds[^1].RoundNumber;
     var showJoinedLateGap = firstRound > 1;
     var showLeftEarlyGap = MatchHighestRound is { } highest && lastRound < highest;
+    // Surface a Type column only when this match actually has a special round —
+    // an all-regular match shouldn't pay for an empty column. colSpan on gap
+    // rows updates accordingly so the dashed banner spans the full width.
+    var hasAnySpecial = orderedRounds.Any(r => r.SpecialType is not null);
+    var totalCols = hasAnySpecial ? 6 : 5;
 }
 
 <div>
@@ -35,6 +41,10 @@
             <thead class="sticky top-0 bg-surface-alt z-10 shadow-sm">
                 <tr class="text-[10px] uppercase tracking-wider text-muted border-b border-line">
                     <th class="py-3 pl-4 font-medium">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_ROUND")</th>
+                    @if (hasAnySpecial)
+                    {
+                        <th class="py-3 font-medium pr-4">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_TYPE")</th>
+                    }
                     <th class="py-3 font-medium pr-4 w-1/3">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_KILLS")</th>
                     <th class="py-3 font-medium pr-4">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_DOWNS_DEATHS")</th>
                     <th class="py-3 font-medium pr-4">@AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_POINTS")</th>
@@ -45,18 +55,33 @@
 
                 @if (showJoinedLateGap)
                 {
-                    @RenderGapRow(1, firstRound - 1, AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_JOINED_LATE"))
+                    @RenderGapRow(1, firstRound - 1, AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_JOINED_LATE"), totalCols)
                 }
 
                 @for (var i = 0; i < orderedRounds.Count; i++)
                 {
                     var round = orderedRounds[i];
+                    var specialBadge = PaceVisuals.SpecialBadge(round.SpecialType, AppState);
                     <tr class="group hover:bg-surface-hover/20 transition-colors">
-                        <td class="py-2.5 pl-4 font-mono text-subtle w-24">
-                            <span class="inline-flex w-6 h-6 items-center justify-center rounded bg-surface-alt text-xs text-muted mr-2">
+                        <td class="py-2.5 pl-4 font-mono text-subtle w-16">
+                            <span class="inline-flex w-6 h-6 items-center justify-center rounded bg-surface-alt text-xs text-muted">
                                 @round.RoundNumber
                             </span>
                         </td>
+                        @if (hasAnySpecial)
+                        {
+                            <td class="py-2.5 pr-4">
+                                @if (specialBadge is { } sb)
+                                {
+                                    <Tooltip Text="@sb.Tooltip" WrapperClass="inline-flex">
+                                        <span class="@($"inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {sb.ColorClass}")"
+                                              aria-label="@sb.Label">
+                                            <i class="@($"ph {sb.Icon}")" style="font-size: 11px;"></i>@sb.Label
+                                        </span>
+                                    </Tooltip>
+                                }
+                            </td>
+                        }
                         <td class="py-2.5 pr-4 relative">
                             <div class="flex items-center gap-3">
                                 <span class="font-mono text-foreground w-8">@round.Kills</span>
@@ -90,14 +115,14 @@
                         if (next.RoundNumber > round.RoundNumber + 1)
                         {
                             @RenderGapRow(round.RoundNumber + 1, next.RoundNumber - 1,
-                                AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_NOT_TRACKED"))
+                                AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_NOT_TRACKED"), totalCols)
                         }
                     }
                 }
 
                 @if (showLeftEarlyGap)
                 {
-                    @RenderGapRow(lastRound + 1, MatchHighestRound!.Value, AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_LEFT_EARLY"))
+                    @RenderGapRow(lastRound + 1, MatchHighestRound!.Value, AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_LEFT_EARLY"), totalCols)
                 }
 
             </tbody>
@@ -107,7 +132,7 @@
 
 @code {
 
-    private RenderFragment RenderGapRow(int from, int to, string tooltip) => __builder =>
+    private RenderFragment RenderGapRow(int from, int to, string tooltip, int colSpan) => __builder =>
     {
         var label = from == to
             ? AppState.Loc("WEBFRONT_ZOMBIE_ROUND_TABLE_GAP_SINGLE").FormatExt(from)
@@ -116,7 +141,7 @@
            rather than the <tr>/<td> — those are unreliable hover targets and JS
            bounding-rect can be quirky on table rows. *@
         <tr class="bg-error/5">
-            <td colspan="5" class="py-2 px-4">
+            <td colspan="@colSpan" class="py-2 px-4">
                 <Tooltip Text="@tooltip" WrapperClass="flex items-center gap-3 text-error/80 text-xs font-mono cursor-help">
                     <div class="flex-1 h-px"
                          style="background-image: repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px);">

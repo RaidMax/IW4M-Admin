@@ -50,7 +50,49 @@ public enum EventLogType
     /// power-off is a world event. <see cref="ZombieEventLog.NumericalValue"/>
     /// holds the round number at fire time.
     /// </summary>
-    PowerOff = 26
+    PowerOff = 26,
+    /// <summary>
+    /// Bank deposit — T6 Tranzit / Die Rise / Buried only.
+    /// <see cref="ZombieEventLog.NumericalValue"/> holds the amount (always 1000;
+    /// engine charges $1000 per increment, $100 fee on withdrawal not deposit).
+    /// </summary>
+    BankDeposit = 27,
+    /// <summary>
+    /// Bank withdrawal — T6 Tranzit / Die Rise / Buried only.
+    /// <see cref="ZombieEventLog.NumericalValue"/> holds the gross principal
+    /// (1000); the $100 fee deducted on top is not surfaced.
+    /// </summary>
+    BankWithdraw = 28,
+    /// <summary>
+    /// Weapon Locker store — T6 Tranzit / Die Rise / Buried only.
+    /// <see cref="ZombieEventLog.TextualValue"/> holds the engine weapon name.
+    /// </summary>
+    WeaponLockerStore = 29,
+    /// <summary>
+    /// Weapon Locker retrieve — T6 Tranzit / Die Rise / Buried only.
+    /// <see cref="ZombieEventLog.TextualValue"/> holds the engine weapon name.
+    /// </summary>
+    WeaponLockerRetrieve = 30,
+    /// <summary>
+    /// Gobble Gum activated — player consumed an "activated"-type gum (BO3/T7 only).
+    /// <see cref="ZombieEventLog.TextualValue"/> holds the BGB engine name
+    /// (e.g. <c>zm_bgb_perkaholic</c>).
+    /// </summary>
+    GobbleGumActivated = 31,
+    /// <summary>
+    /// Gobble Gum taken from machine — player paid the machine cost and grabbed
+    /// the gum (BO3/T7 only). <see cref="ZombieEventLog.TextualValue"/> holds
+    /// the BGB engine name; <see cref="ZombieEventLog.NumericalValue"/> holds
+    /// the machine cost (often 0 for free, 1500 for paid).
+    /// </summary>
+    GobbleGumTaken = 32,
+    /// <summary>
+    /// Gobble Gum abandoned — player paid the machine but didn't grab; cost
+    /// forfeited (ghost-ball cases excluded; BO3/T7 only).
+    /// <see cref="ZombieEventLog.TextualValue"/> holds the BGB engine name;
+    /// <see cref="ZombieEventLog.NumericalValue"/> holds the cost lost.
+    /// </summary>
+    GobbleGumAbandoned = 33
 }
 
 public class ZombieEventLog : DatedRecord

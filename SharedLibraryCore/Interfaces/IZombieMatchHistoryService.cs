@@ -1,5 +1,7 @@
 #nullable enable
 
+using Data.Models.Zombie;
+
 namespace SharedLibraryCore.Interfaces;
 
 /// <summary>
@@ -379,6 +381,14 @@ public class ZombieMatchHistoryRound
     /// duration shown in the tooltip. Null when <see cref="PaceBand"/> is null.
     /// </summary>
     public double? PaceTypicalSeconds { get; set; }
+
+    /// <summary>
+    /// Special-round classification when the round replaced the regular zombie
+    /// spawn pool (Dog / Monkey / Leaper). Null on normal rounds. Sourced from
+    /// GSC <c>GSE;RS</c> emissions captured at round start. Drives the Round
+    /// Breakdown UI badge.
+    /// </summary>
+    public ZombieSpecialRoundType? SpecialType { get; set; }
 }
 
 /// <summary>

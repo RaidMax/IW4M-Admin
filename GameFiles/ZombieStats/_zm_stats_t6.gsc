@@ -77,6 +77,7 @@ init()
     thread WaitForT6EasterEggSteps();
     thread WatchPowerSwitches();
     thread WatchPowerStateChanges();
+    thread WatchZombiesRemaining();
 
     // --- Zombie Event Log Format --- //
     // Combat events (legacy format):
@@ -84,18 +85,18 @@ init()
     //   RD, RC = round data/complete (unchanged)
     //
     // Unified ZE format:
-    //   ZE;{player};down                                    = player downed
-    //   ZE;{player};revive;{reviver}                        = player revived
-    //   ZE;{player};perk;buy;{perkName};{cost}              = perk purchased
-    //   ZE;{player};powerup;grab;{powerupName}              = powerup grabbed
-    //   ZE;{player};weapon;buy;{weaponName};{cost}          = wall weapon purchase
-    //   ZE;{player};weapon;upgrade;{old};{new};{cost}       = pack-a-punch
-    //   ZE;{player};box;take;{weaponName};{cost}            = box weapon taken
-    //   ZE;{player};box;pass;{weaponName};{cost}            = box weapon passed
-    //   ZE;{player};box;teddy;{cost}                        = teddy bear (box moves)
-    //   ZE;{player};door;buy;{cost}                         = door/debris opened
-    //   ZE;{player};trap;activate;{trapType};{cost}         = trap activated
-    //   ZE;{player};build;complete;{buildableName}          = buildable completed
+    //   ZP;{player};down                                    = player downed
+    //   ZP;{player};revive;{reviver}                        = player revived
+    //   ZP;{player};perk;buy;{perkName};{cost}              = perk purchased
+    //   ZP;{player};powerup;grab;{powerupName}              = powerup grabbed
+    //   ZP;{player};weapon;buy;{weaponName};{cost}          = wall weapon purchase
+    //   ZP;{player};weapon;upgrade;{old};{new};{cost}       = pack-a-punch
+    //   ZP;{player};box;take;{weaponName};{cost}            = box weapon taken
+    //   ZP;{player};box;pass;{weaponName};{cost}            = box weapon passed
+    //   ZP;{player};box;teddy;{cost}                        = teddy bear (box moves)
+    //   ZP;{player};door;buy;{cost}                         = door/debris opened
+    //   ZP;{player};trap;activate;{trapType};{cost}         = trap activated
+    //   ZP;{player};build;complete;{buildableName}          = buildable completed
 
     SetupCallbacks();
 }
@@ -153,6 +154,15 @@ WaitForPlayerConnect()
         // scripts (e.g. Die Rise's achievement system)
         player thread WaitForPerkBought();
 
+        // Tranzit / Die Rise / Buried — bank deposit/withdraw and weapon
+        // locker store/retrieve. Polling-based: T6's _zm_banking.gsc only
+        // emits "bank_withdrawal" on level (deposits silent) and the locker
+        // only emits "weapon_locker_grab" (store silent), so we sample the
+        // player's account_value + stored_weapon_data each tick instead of
+        // chasing two half-instrumented signals.
+        player thread WatchBankAccountValue();
+        player thread WatchWeaponLockerSlot();
+
         // PaP moved to trigger-based polling in init() — see WatchPackAPunch
 
         ///#
@@ -204,7 +214,16 @@ WaitForPlayerRevive()
         // T6 always passes the reviver as a parameter to the notify
         self waittill( "player_revived", reviver );
 
-        logprint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";revive;" + BuildPlayerInfoString( reviver ) + "\n" );
+        // Self-revive (solo Quick Revive auto / Who's Who): reviver==self. Emit
+        // distinct subtype so downstream classification doesn't need guid compare.
+        if ( IsDefined( reviver ) && IsPlayer( reviver ) && reviver == self )
+        {
+            logprint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";revive;self\n" );
+        }
+        else
+        {
+            logprint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";revive;" + BuildPlayerInfoString( reviver ) + "\n" );
+        }
     }
 }
 
@@ -225,7 +244,7 @@ WaitForPerkBought()
         // The game's cost lookup is hardcoded in _zm_perks per-perk switch
         // statements — not exposed to external scripts.
         // Free perks (from free_perk powerup) don't fire perk_bought at all.
-        logprint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";perk;buy;" + perk + ";0\n" );
+        logprint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";perk;buy;" + perk + ";0\n" );
     }
 }
 
@@ -523,11 +542,11 @@ WatchPapOutcome()
             {
                 newWeapon = level.zombie_weapons[oldWeapon].upgrade_name;
             }
-            logprint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";" + cost + "\n" );
+            logprint( "GSE;ZP;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;upgrade;" + oldWeapon + ";" + newWeapon + ";" + cost + "\n" );
         }
         else if ( self.iw4m_pap_timeout_flag )
         {
-            logprint( "GSE;ZE;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";" + cost + "\n" );
+            logprint( "GSE;ZP;" + BuildPlayerInfoString( self.iw4m_pap_buyer ) + ";weapon;abandon;" + oldWeapon + ";" + cost + "\n" );
         }
     }
 }
@@ -651,7 +670,7 @@ WaitForPowerupGrab()
 
                 self.isWaiting = false;
 
-                logprint( "GSE;ZE;" + BuildPlayerInfoString( players[i] ) + ";powerup;grab;" + powerup + "\n" );
+                logprint( "GSE;ZP;" + BuildPlayerInfoString( players[i] ) + ";powerup;grab;" + powerup + "\n" );
 
                 return;
             }
@@ -714,6 +733,37 @@ WaitForRoundChange()
         {
             break;
         }
+
+        // Detect special-round type for the round about to begin and emit a
+        // GSE;ZW;round_special;<round>;<type> line so IW4MAdmin can flag the round in the
+        // breakdown UI and skip Seconds-Per-Horde for round types where the
+        // static budget formula doesn't apply (dogs/leapers replace the regular
+        // zombie spawn budget; SPH would render visibly wrong otherwise).
+        // T6 maps where these flags exist: dog_round (universal), leaper_round
+        // (Die Rise only). flag_exists guards keep us safe on maps that never
+        // initialised the flag.
+        EmitSpecialRoundIfAny();
+    }
+}
+
+EmitSpecialRoundIfAny()
+{
+    // Use IsDefined-based flag checks for cross-game consistency with T4 (which
+    // doesn't expose flag_exists()) and to avoid asserting on maps that never
+    // initialised the flag (e.g. leaper_round only exists on Die Rise).
+    specialType = "";
+    if ( IsDefined( level.flag ) && IsDefined( level.flag[ "dog_round" ] ) && level.flag[ "dog_round" ] )
+    {
+        specialType = "dog";
+    }
+    else if ( IsDefined( level.flag ) && IsDefined( level.flag[ "leaper_round" ] ) && level.flag[ "leaper_round" ] )
+    {
+        specialType = "leaper";
+    }
+
+    if ( specialType != "" )
+    {
+        logprint( "GSE;ZW;round_special;" + level.round_number + ";" + specialType + "\n" );
     }
 }
 
@@ -813,7 +863,7 @@ OnPlayerDowned( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sH
         return;
     }
 
-    logprint( "GSE;ZE;" + BuildPlayerInfoString( self ) + ";down\n" );
+    logprint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";down\n" );
 
     [[ level.callbackPlayerLastStandOriginal ]]( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration );
 }
@@ -898,7 +948,7 @@ WaitForWeaponPurchases()
             cost = level.zombie_weapons[weaponName].cost;
         }
 
-        logprint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
+        logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
     }
 }
 
@@ -947,7 +997,7 @@ WatchDoorPurchase()
         return;
     }
 
-    logprint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
+    logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1199,15 +1249,15 @@ WatchBoxOutcome()
         {
             if ( isTeddy )
             {
-                logprint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
+                logprint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;teddy;" + cost + "\n" );
             }
             else if ( timedOutValue )
             {
-                logprint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
+                logprint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;pass;" + weaponName + ";" + cost + "\n" );
             }
             else
             {
-                logprint( "GSE;ZE;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
+                logprint( "GSE;ZP;" + BuildPlayerInfoString( user ) + ";box;take;" + weaponName + ";" + cost + "\n" );
             }
         }
 
@@ -1325,7 +1375,7 @@ WatchTrapActivation()
 
         if ( IsDefined( closest ) )
         {
-            logprint( "GSE;ZE;" + BuildPlayerInfoString( closest ) + ";trap;activate;" + trapType + ";" + cost + "\n" );
+            logprint( "GSE;ZP;" + BuildPlayerInfoString( closest ) + ";trap;activate;" + trapType + ";" + cost + "\n" );
         }
 
         // Wait for trap to finish and cool down before re-polling
@@ -1376,7 +1426,7 @@ WatchBuildableComplete( buildableName )
             continue;
         }
 
-        logprint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";build;complete;" + buildableName + "\n" );
+        logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";build;complete;" + buildableName + "\n" );
     }
 }
 
@@ -1392,7 +1442,7 @@ WatchBuildableComplete( buildableName )
 // gramophone. MotD items: riot shield, packasplat (Acid Gat Kit), plane,
 // refuelable_plane, quest_key1.
 //
-// We emit identical `GSE;ZE;...;build;complete;<name>` events so the
+// We emit identical `GSE;ZP;...;build;complete;<name>` events so the
 // downstream pipeline (BuildComplete event log, MapBuildableConfig) treats
 // them uniformly. DISTINCT-by-name aggregation in the leaderboard service
 // collapses any duplicate notifies (e.g. MotD's repeated refuelable_plane).
@@ -1438,7 +1488,7 @@ WatchCraftableComplete( craftableName )
             continue;
         }
 
-        logprint( "GSE;ZE;" + BuildPlayerInfoString( player ) + ";build;complete;" + craftableName + "\n" );
+        logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";build;complete;" + craftableName + "\n" );
     }
 }
 
@@ -1460,7 +1510,7 @@ WatchGramophonePlacement()
         return;
     }
 
-    logprint( "GSE;ZE;" + BuildPlayerInfoString( players[0] ) + ";build;complete;gramophone\n" );
+    logprint( "GSE;ZP;" + BuildPlayerInfoString( players[0] ) + ";build;complete;gramophone\n" );
 }
 
 //-----------------------//
@@ -1505,7 +1555,7 @@ BuildPlayerInfoString( entity )
 // Each T6 stock map has a single notify fired on `level` when the EE main
 // quest reaches its terminal state (cinematic kickoff / final showdown / etc).
 // We arm a per-map watcher based on level.script and emit a one-shot
-// "GSE;EE;<map>" log line. Re-emit is guarded by level.iw4m_ee_fired so even
+// "GSE;ZW;easter_egg;complete;<map>" log line. Re-emit is guarded by level.iw4m_ee_fired so even
 // if the engine fires the notify twice (rare but possible) we only count once.
 //
 // Reference: pulled from t6-scripts-main per-map *_sq.gsc / *_achievement.gsc.
@@ -1556,7 +1606,7 @@ WaitForEasterEggComplete()
     roundStr = "?";
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] EE complete fired for map=" + level.script + " round=" + roundStr + "\n" );
-    logprint( "GSE;EE;" + level.script + "\n" );
+    logprint( "GSE;ZW;easter_egg;complete;" + level.script + "\n" );
 }
 
 /////////////////////////////////////////////////////////
@@ -1571,7 +1621,7 @@ WaitForEasterEggComplete()
 //
 // Emits the standard pair when a step fires:
 //   [ZM-EE] Step fired: <key>
-//   GSE;EE;step;<key>
+//   GSE;ZW;easter_egg;step;<key>
 //
 // Step keys match _PRIVATE/ZombieStatsPremium/Configuration/MapEasterEggConfig.cs.
 // Unknown keys are ignored downstream — adding a watcher here without
@@ -1664,7 +1714,7 @@ EmitEeStep( stepKey )
     roundStr = "?";
     if ( IsDefined( level.round_number ) ) { roundStr = "" + level.round_number; }
     logprint( "[ZM-EE] Step fired: " + stepKey + " round=" + roundStr + "\n" );
-    logprint( "GSE;EE;step;" + stepKey + "\n" );
+    logprint( "GSE;ZW;easter_egg;step;" + stepKey + "\n" );
 }
 
 // Polls level.sq_progress[group][key] until it flips to 1, then emits the
@@ -2079,16 +2129,186 @@ EmitPowerOn()
 
     if ( IsDefined( activator ) )
     {
-        logPrint( "GSE;PWR;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
+        logPrint( "GSE;ZW;power;on;player;" + BuildPlayerInfoString( activator ) + "\n" );
     }
     else
     {
-        logPrint( "GSE;PWR;on;world\n" );
+        logPrint( "GSE;ZW;power;on;world\n" );
     }
 }
 
 EmitPowerOff()
 {
-    logPrint( "GSE;PWR;off;world\n" );
+    logPrint( "GSE;ZW;power;off;world\n" );
+}
+
+// Periodic emission of (round, zombies-remaining-to-spawn, currently-alive). Lets
+// the live modal compute true "zombies cleared" = budget - remaining - alive,
+// which captures trap kills / environmental kills / friendly grenade splash —
+// all things that don't credit to a player's kill count but still reduce the
+// round's spawn pool. Without this, live SPH would systematically over-estimate
+// pace on trap-heavy strategies (Verruckt electric trap, Origins generators).
+//
+// Throttle: every 5s, only emits when remaining or alive changed since last
+// emission. Matches the live-modal poll cadence — no point emitting faster
+// than the UI refreshes. ~12 lines/min on an active round, none during
+// intermission.
+WatchZombiesRemaining()
+{
+    level endon( "end_game" );
+    last_remaining = -1;
+    last_alive = -1;
+    while ( true )
+    {
+        wait( 5 );
+        if ( !IsDefined( level.zombie_total ) || !IsDefined( level.round_number ) )
+        {
+            continue;
+        }
+        remaining = level.zombie_total;
+        alive = get_current_zombie_count();
+        if ( remaining == last_remaining && alive == last_alive )
+        {
+            continue;
+        }
+        logPrint( "GSE;ZW;zombies;" + level.round_number + ";" + remaining + ";" + alive + "\n" );
+        last_remaining = remaining;
+        last_alive = alive;
+    }
+}
+
+/////////////////////////////////////////////////////////
+// Bank — Tranzit / Die Rise / Buried only. _zm_banking.gsc
+// stores per-player balance in self.account_value (units of
+// $1000). Engine emits level "bank_withdrawal" but no
+// equivalent on deposit, so we poll the value and emit on
+// every transition.
+//
+// Amount per transition is always $1000 (one increment).
+// Fee structure: $1000 paid to deposit → +1 increment;
+// withdrawal pays $1000 net back to player but charges a
+// $100 fee on top (level.ta_vaultfee). We emit the +/-1000
+// principal — fee accounting belongs server-side if needed.
+//
+// GSE format:
+//   ZP;{player};bank;deposit;1000
+//   ZP;{player};bank;withdraw;1000
+/////////////////////////////////////////////////////////
+WatchBankAccountValue()
+{
+    self endon( "disconnect" );
+
+    // _zm_banking.gsc only initialises account_value on maps that load it.
+    // Wait briefly for first-spawn setup; bail if undefined after 5s (map
+    // doesn't have a bank — Origins, Nuketown, Mob, all stock T5 maps).
+    waited = 0;
+    while ( !IsDefined( self.account_value ) && waited < 5 )
+    {
+        wait ( 0.5 );
+        waited = waited + 0.5;
+    }
+
+    if ( !IsDefined( self.account_value ) )
+    {
+        return;
+    }
+
+    last = self.account_value;
+    for ( ;; )
+    {
+        wait ( 0.5 );
+        if ( !IsDefined( self.account_value ) )
+        {
+            continue;
+        }
+
+        current = self.account_value;
+        if ( current == last )
+        {
+            continue;
+        }
+
+        delta = current - last;
+        last = current;
+
+        // One transaction = one increment. Multiple increments in a single
+        // 0.5s tick would collapse — but the engine gates each trigger with
+        // an animation lockout (~2s), so this is effectively impossible.
+        if ( delta > 0 )
+        {
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";bank;deposit;1000\n" );
+        }
+        else
+        {
+            logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";bank;withdraw;1000\n" );
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////
+// Weapon Locker — Tranzit / Die Rise / Buried only.
+// _zm_weapon_locker.gsc stores weapondata via the wrapper
+// set_stored_weapondata(); we poll has_stored_weapondata()
+// per tick and emit on transition.
+//
+// Weapon name resolution:
+//   Store:    take the player's previousweapon (one tick ago)
+//             since the engine has already taken the current
+//             one when we detect the transition.
+//   Retrieve: the player's current weapon post-grab is the
+//             weapon they just pulled from the locker.
+//
+// GSE format:
+//   ZP;{player};locker;store;{weapon}
+//   ZP;{player};locker;retrieve;{weapon}
+/////////////////////////////////////////////////////////
+WatchWeaponLockerSlot()
+{
+    self endon( "disconnect" );
+
+    // _zm_weapon_locker.gsc lives in Tranzit, Die Rise, Buried only.
+    // We deliberately do NOT call wl_has_stored_weapondata() — namespacing
+    // maps\mp\zombies\_zm_weapon_locker:: would fail to resolve on maps
+    // that don't load that script (Origins/Nuketown/Mob). Polling the
+    // offline-path field self.stored_weapon_data directly works on every
+    // map: it stays undefined on no-locker maps (loop never fires) and
+    // tracks 1:1 with the locker state on Tranzit/Die Rise/Buried.
+    last = IsDefined( self.stored_weapon_data );
+
+    previousWeapon = self getCurrentWeapon();
+    for ( ;; )
+    {
+        wait ( 0.2 );
+
+        currentWeapon = self getCurrentWeapon();
+        currentHas = IsDefined( self.stored_weapon_data );
+
+        if ( currentHas != last )
+        {
+            if ( currentHas )
+            {
+                // Store transition: weapon was taken from the player one tick ago.
+                weaponName = previousWeapon;
+                if ( !IsDefined( weaponName ) || weaponName == "" || weaponName == "none" )
+                {
+                    weaponName = "unknown";
+                }
+                logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";locker;store;" + weaponName + "\n" );
+            }
+            else
+            {
+                // Retrieve transition: player's current weapon is the retrieved one.
+                weaponName = currentWeapon;
+                if ( !IsDefined( weaponName ) || weaponName == "" || weaponName == "none" )
+                {
+                    weaponName = "unknown";
+                }
+                logPrint( "GSE;ZP;" + BuildPlayerInfoString( self ) + ";locker;retrieve;" + weaponName + "\n" );
+            }
+            last = currentHas;
+        }
+
+        previousWeapon = currentWeapon;
+    }
 }
 

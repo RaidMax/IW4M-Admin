@@ -1706,6 +1706,9 @@ namespace Data.Migrations.MySql
                     b.Property<int>("RoundNumber")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SpecialType")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("StartTime")
                         .HasColumnType("datetime(6)");
 

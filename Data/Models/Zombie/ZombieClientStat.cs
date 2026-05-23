@@ -40,4 +40,19 @@ public abstract class ZombieClientStat : DatedRecord
     public int DoorsOpened { get; set; }
     public int TrapsActivated { get; set; }
     public int BuildablesCompleted { get; set; }
+
+    /// <summary>PaP timeouts / disconnect-mid-press aborts. Counterpart to <see cref="WeaponsUpgraded"/>.</summary>
+    public int WeaponsAbandoned { get; set; }
+
+    /// <summary>T7 Gobble Gum activations (effect consumed from inventory).</summary>
+    public int GumsActivated { get; set; }
+
+    /// <summary>T7 Gobble Gum machine grabs (free + paid).</summary>
+    public int GumsTaken { get; set; }
+
+    /// <summary>T6 bank deposits + withdrawals combined. Tranzit/Die Rise/Buried only.</summary>
+    public int BankOperations { get; set; }
+
+    /// <summary>T6 weapon locker stores + retrievals combined. Tranzit/Die Rise/Buried only.</summary>
+    public int LockerOperations { get; set; }
 }

@@ -1685,6 +1685,7 @@ WaitForT6EasterEggSteps()
             level thread WatchT6CounterSong( "t6_or_radio",  ::GetRadioCounter,  3 );
             level thread WatchT6CounterSong( "t6_or_115",    ::Get115Counter,    3 );
             level thread WatchT6OriginsLittleGirlLost();
+            level thread WatchT6OriginsStaffs();
             break;
         default:
             // No per-step watcher configured for this map. Silent — the
@@ -1898,6 +1899,81 @@ WatchT6OriginsLittleGirlLost()
     level thread WatchT6LevelNotify( "little_girl_lost_step_6_over", "t6_or_llg_6" );
     level thread WatchT6LevelNotify( "little_girl_lost_step_7_over", "t6_or_llg_7" );
     level thread WatchT6LevelNotify( "little_girl_lost_step_8_over", "t6_or_llg_8" );
+}
+
+// Origins — 4 per-staff sub-quests. Mirror of T7 zm_tomb staff coverage so the
+// elemental staff progression renders identically on BO2 + BO3. Each staff has:
+//   • puzzle_1 — plain-string flag set at end of stage 1 (sacrifice / tiles /
+//     piano-keys / smoke-shapes depending on element)
+//   • puzzle_2 — plain-string flag set at end of stage 2 (torches / sequence /
+//     charge-cycle / smoke-targets)
+//   • <element>  — weapon-inventory substring poll on `staff_<element>_upgraded`
+//     (matches `staff_<element>_upgraded_zm` + sub-upgrade variants per
+//     _zm_weap_staff_<element>.gsc). "Did the player actually claim the
+//     upgraded staff" semantic — stronger than the unlock flag alone.
+// Source flags identical to T7 except `staff_<element>_upgrade_unlocked` →
+// `staff_<element>_zm_upgrade_unlocked` on T6, but we drive the terminal via
+// weapon-poll instead of the unlock flag, so the infix difference is irrelevant.
+WatchT6OriginsStaffs()
+{
+    level endon( "end_game" );
+
+    // Fire — Kagutsuchi's Blood
+    level thread WatchT6Flag( "fire_puzzle_1_complete",      "t6_or_staff_fire_puzzle_1" );
+    level thread WatchT6Flag( "fire_puzzle_2_complete",      "t6_or_staff_fire_puzzle_2" );
+    level thread WatchT6WeaponSubstringUpgrade( "staff_fire_upgraded",      "t6_or_staff_fire" );
+
+    // Ice / Water — Ull's Arrow
+    level thread WatchT6Flag( "ice_puzzle_1_complete",       "t6_or_staff_ice_puzzle_1" );
+    level thread WatchT6Flag( "ice_puzzle_2_complete",       "t6_or_staff_ice_puzzle_2" );
+    level thread WatchT6WeaponSubstringUpgrade( "staff_water_upgraded",     "t6_or_staff_ice" );
+
+    // Wind / Air — Boreas' Fury
+    level thread WatchT6Flag( "air_puzzle_1_complete",       "t6_or_staff_wind_puzzle_1" );
+    level thread WatchT6Flag( "air_puzzle_2_complete",       "t6_or_staff_wind_puzzle_2" );
+    level thread WatchT6WeaponSubstringUpgrade( "staff_air_upgraded",       "t6_or_staff_wind" );
+
+    // Lightning — Kimat's Bite
+    level thread WatchT6Flag( "electric_puzzle_1_complete",  "t6_or_staff_lightning_puzzle_1" );
+    level thread WatchT6Flag( "electric_puzzle_2_complete",  "t6_or_staff_lightning_puzzle_2" );
+    level thread WatchT6WeaponSubstringUpgrade( "staff_lightning_upgraded", "t6_or_staff_lightning" );
+}
+
+// Generic weapon-inventory substring poll. Port of T7's WatchWeaponSubstringUpgrade
+// for use with T6 wonder-weapon-upgrade quests where the terminal "upgraded"
+// signal is best captured by the player actually carrying the upgraded weapon.
+// T6 weapons in getweaponslist() are strings (BO2 convention), not structs like T7.
+WatchT6WeaponSubstringUpgrade( weaponSubstr, stepKey )
+{
+    level endon( "end_game" );
+    for ( ;; )
+    {
+        players = get_players();
+        for ( i = 0; i < players.size; i++ )
+        {
+            if ( !IsAlive( players[i] ) ) { continue; }
+            if ( PlayerHasT6WeaponSubstr( players[i], weaponSubstr ) )
+            {
+                EmitEeStep( stepKey );
+                return;
+            }
+        }
+        wait ( 2 );
+    }
+}
+
+PlayerHasT6WeaponSubstr( player, weaponSubstr )
+{
+    weapons = player getweaponslist();
+    if ( !IsDefined( weapons ) ) { return false; }
+    for ( w = 0; w < weapons.size; w++ )
+    {
+        if ( IsDefined( weapons[w] ) && IsString( weapons[w] ) && IsSubStr( weapons[w], weaponSubstr ) )
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Buried path-aware step emit. Both Mined Games variants share stage notifies

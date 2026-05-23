@@ -1314,7 +1314,16 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7CounterStep( "n_soul_catchers_charged", "t7_de_wrath_dragon", 3 );
 
             // Storm Bow upgrade:
+            //   _lit       — shoot 3 aq_es_beacon_trig with bow (b_lit=1 / beacon_activated
+            //                per beacon). No level flag in source for "all 3 lit"; the
+            //                custom counted helper waits for 3 beacon_activated notifies.
+            //   _wallrun   — elemental_storm_wallrun flag (parkour fragment collect).
+            //   _batteries — elemental_storm_batteries flag (5 zombie kills × 3 pools).
+            //   _beacons   — elemental_storm_beacons_charged flag (electrify lit beacons
+            //                with charged storm arrow + battery).
+            level thread WatchT7BeaconsLitAll( "aq_es_beacon_trig", "t7_de_bow_storm_lit", 3 );
             level thread WatchT7FlagStep( "elemental_storm_wallrun",         "t7_de_bow_storm_wallrun" );
+            level thread WatchT7FlagStep( "elemental_storm_batteries",       "t7_de_bow_storm_batteries" );
             level thread WatchT7FlagStep( "elemental_storm_beacons_charged", "t7_de_bow_storm_beacons" );
             level thread WatchT7FlagStep( "elemental_storm_repaired",        "t7_de_bow_storm_repaired" );
             level thread WatchT7FlagStep( "elemental_storm_placed",          "t7_de_bow_storm_placed" );
@@ -1613,6 +1622,21 @@ function WaitForT7EasterEggSteps()
             level thread WatchWeaponSubstringUpgrade( "staff_water_upgraded",     "t7_or_staff_ice" );
             level thread WatchWeaponSubstringUpgrade( "staff_air_upgraded",       "t7_or_staff_wind" );
             level thread WatchWeaponSubstringUpgrade( "staff_lightning_upgraded", "t7_or_staff_lightning" );
+            // Per-staff puzzle sub-steps. All plain-string flags from
+            // zm_tomb_quest_<element>.gsc — each staff has 2 puzzle stages
+            // before the upgrade-unlock terminal. Source: shiversoftdev T7 dump.
+            //   fire:     hot-air balloons + chamber torches
+            //   ice:      stone tiles + sequence completion
+            //   electric: piano keys + charge cycle
+            //   air:      smoke shapes + smoke targets
+            level thread WatchT7FlagStep( "fire_puzzle_1_complete",     "t7_or_staff_fire_puzzle_1" );
+            level thread WatchT7FlagStep( "fire_puzzle_2_complete",     "t7_or_staff_fire_puzzle_2" );
+            level thread WatchT7FlagStep( "ice_puzzle_1_complete",      "t7_or_staff_ice_puzzle_1" );
+            level thread WatchT7FlagStep( "ice_puzzle_2_complete",      "t7_or_staff_ice_puzzle_2" );
+            level thread WatchT7FlagStep( "electric_puzzle_1_complete", "t7_or_staff_lightning_puzzle_1" );
+            level thread WatchT7FlagStep( "electric_puzzle_2_complete", "t7_or_staff_lightning_puzzle_2" );
+            level thread WatchT7FlagStep( "air_puzzle_1_complete",      "t7_or_staff_wind_puzzle_1" );
+            level thread WatchT7FlagStep( "air_puzzle_2_complete",      "t7_or_staff_wind_puzzle_2" );
             // Songs — per-trigger detection. Three different mechanisms in
             // one map; all use plain-string entity/struct/notify/field names
             // (no hashed-symbol mismatch risk):
@@ -1805,21 +1829,78 @@ function WatchT7SongScriptOriginAtStruct( structTargetname, stepKeyPrefix, expec
     }
     logprint( "[ZM-EE] WatchT7SongScriptOriginAtStruct: found " + structs.size + " structs targetname=" + structTargetname + " prefix=" + stepKeyPrefix + "\n" );
 
-    // Give the per-struct script_origin spawns a moment to settle after
-    // structs are populated.
-    wait ( 1 );
-
-    spawned_count = 0;
+    // Per-struct hookup: spawn a poll thread per struct so each waits
+    // independently for its own script_origin to appear. The original
+    // one-shot `wait(1) + FindNearestScriptOrigin` race-loses on Castle
+    // — `function_4b02c768` in `zm_castle_ee_side.gsc` spawns each bear's
+    // script_origin during EE side-init AFTER our 1s wait. Cold-start
+    // can also defer the spawn past 60s (observed: 24+ min on first match
+    // of a fresh server). Poll runs for the lifetime of the game and
+    // emits diagnostic logs at 60s + 300s so a missing/wrong targetname
+    // is still surfaced in the log without dropping the hook.
     for ( i = 0; i < structs.size && i < expectedCount; i++ )
     {
-        e_origin = FindNearestScriptOrigin( structs[i].origin, 16 );
+        level thread HookScriptOriginAtStruct( structs[i].origin, stepKeyPrefix + "_" + ( i + 1 ), 16 );
+    }
+}
+
+// Poll for a script_origin within `radius` units of `pos`, then attach the
+// per-trigger emit thread. Polls indefinitely (until end_game) — Castle
+// cold-start can defer script_origin spawn past 60s and a hard timeout
+// silently dropped the hook for the first match. Diagnostic logs at 60s
+// and 300s give visibility without aborting.
+function HookScriptOriginAtStruct( pos, stepKey, radius )
+{
+    level endon( "end_game" );
+    elapsed = 0;
+    warned_60 = false;
+    warned_300 = false;
+    for ( ;; )
+    {
+        e_origin = FindNearestScriptOrigin( pos, radius );
         if ( IsDefined( e_origin ) )
         {
-            spawned_count++;
-            e_origin thread WaitForBActivatedThenEmit( stepKeyPrefix + "_" + ( i + 1 ) );
+            logprint( "[ZM-EE] HookScriptOriginAtStruct: hooked key=" + stepKey + " after=" + elapsed + "s\n" );
+            e_origin thread WaitForBActivatedThenEmit( stepKey );
+            return;
+        }
+        wait ( 1 );
+        elapsed++;
+        if ( !warned_60 && elapsed >= 60 )
+        {
+            warned_60 = true;
+            nearest_dist = FindNearestScriptOriginDistance( pos );
+            logprint( "[ZM-EE] HookScriptOriginAtStruct: STILL_POLLING key=" + stepKey + " elapsed=60s radius=" + radius + " nearest_origin_dist=" + nearest_dist + "\n" );
+        }
+        else if ( !warned_300 && elapsed >= 300 )
+        {
+            warned_300 = true;
+            nearest_dist = FindNearestScriptOriginDistance( pos );
+            logprint( "[ZM-EE] HookScriptOriginAtStruct: STILL_POLLING key=" + stepKey + " elapsed=300s radius=" + radius + " nearest_origin_dist=" + nearest_dist + "\n" );
         }
     }
-    logprint( "[ZM-EE] WatchT7SongScriptOriginAtStruct: " + spawned_count + "/" + structs.size + " script_origins hooked prefix=" + stepKeyPrefix + "\n" );
+}
+
+// Diagnostic-only — returns the distance to the single nearest script_origin
+// regardless of radius. Used in the HookScriptOriginAtStruct timeout log so
+// we know whether the radius was the problem (close-but-just-outside) vs no
+// script_origin exists at all (FindNearestScriptOriginDistance returns -1).
+function FindNearestScriptOriginDistance( pos )
+{
+    origins = GetEntArray( "script_origin", "classname" );
+    if ( !IsDefined( origins ) ) { return -1; }
+    best_dist_sq = -1;
+    foreach ( o in origins )
+    {
+        if ( !IsDefined( o ) || !IsDefined( o.origin ) ) { continue; }
+        dx = o.origin[0] - pos[0];
+        dy = o.origin[1] - pos[1];
+        dz = o.origin[2] - pos[2];
+        d_sq = dx * dx + dy * dy + dz * dz;
+        if ( best_dist_sq < 0 || d_sq < best_dist_sq ) { best_dist_sq = d_sq; }
+    }
+    if ( best_dist_sq < 0 ) { return -1; }
+    return int( Sqrt( best_dist_sq ) );
 }
 
 // Poll struct::get_array until at least minCount structs exist, or until
@@ -1857,7 +1938,98 @@ function WatchT7SongEntityActivated( entityTargetname, stepKeyPrefix, expectedCo
 
     for ( i = 0; i < entities.size && i < expectedCount; i++ )
     {
-        entities[i] thread WaitForBActivatedThenEmit( stepKeyPrefix + "_" + ( i + 1 ) );
+        // Per-slot origin log — if a slot fails to fire later (cf. Requiem
+        // gramophone _2 on 2026-05-18) the missing slot's origin pinpoints
+        // which physical entity we hooked, so the failure is debuggable
+        // without re-instrumenting code.
+        stepKey = stepKeyPrefix + "_" + ( i + 1 );
+        e = entities[i];
+        if ( IsDefined( e ) && IsDefined( e.origin ) )
+        {
+            logprint( "[ZM-EE] WatchT7SongEntityActivated: hook key=" + stepKey + " origin=(" + e.origin[0] + "," + e.origin[1] + "," + e.origin[2] + ")\n" );
+        }
+        e thread WaitForBActivatedThenEmit( stepKey );
+    }
+}
+
+// Storm Bow "Light Beacons" sub-step. The source orchestrator
+// (`function_e1a7c3f0`) spawns per-beacon `function_6e3cfa55` threads that
+// set `b_lit=1` + notify `beacon_activated` on first arrow hit, then runs
+// `array::wait_till(beacons, "beacon_activated")` to await all 3. Right
+// after, it clears `b_lit` (line 5322) before the battery phase starts —
+// so b_lit polling races against that clear. We avoid the race by
+// listening for the per-beacon notify directly (notify fires regardless
+// of whether b_lit is still set) and counting via a level-wide field
+// scoped to this stepKey. Step emits once when count == expectedCount.
+//
+// Lookup uses `script_noteworthy` (source's own queries on these ents
+// use the same key) rather than targetname so we hit only the beacon-
+// trigger ents and not any aux entities sharing the name.
+function WatchT7BeaconsLitAll( noteworthy, stepKey, expectedCount )
+{
+    level endon( "end_game" );
+
+    beacons = WaitForEntArrayByNoteworthy( noteworthy, expectedCount, 60 );
+    if ( !IsDefined( beacons ) )
+    {
+        logprint( "[ZM-EE] WatchT7BeaconsLitAll: NO entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7BeaconsLitAll: found " + beacons.size + " entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
+
+    // Per-stepKey shared counter on a level-scoped map so multiple
+    // WatchT7BeaconsLitAll calls don't collide (future-proof — we only
+    // call it once today). Bracket-string indexing is the GSC idiom for
+    // dynamic field names; `level.foo[stepKey]` access is valid syntax.
+    if ( !IsDefined( level.zm_ee_lit_count ) )
+    {
+        level.zm_ee_lit_count = [];
+    }
+    level.zm_ee_lit_count[ stepKey ] = 0;
+    for ( i = 0; i < beacons.size && i < expectedCount; i++ )
+    {
+        beacons[i] thread WaitForBeaconActivatedNotify( stepKey );
+    }
+
+    // Poll the counter; cheap and survives any individual entity death
+    // (a per-entity thread death just leaves its slot uncounted —
+    // logged on timeout so failure is debuggable).
+    waited = 0;
+    while ( level.zm_ee_lit_count[ stepKey ] < expectedCount )
+    {
+        wait ( 0.5 );
+        waited += 0.5;
+        if ( waited == 300 )
+        {
+            logprint( "[ZM-EE] WatchT7BeaconsLitAll: STILL_WAITING stepKey=" + stepKey + " count=" + level.zm_ee_lit_count[ stepKey ] + "/" + expectedCount + "\n" );
+        }
+    }
+    EmitEeStep( stepKey );
+}
+
+function WaitForBeaconActivatedNotify( stepKey )
+{
+    level endon( "end_game" );
+    self waittill( "beacon_activated" );
+    level.zm_ee_lit_count[ stepKey ]++;
+}
+
+function WaitForEntArrayByNoteworthy( noteworthy, minCount, timeoutSec )
+{
+    elapsed = 0;
+    for ( ;; )
+    {
+        ents = GetEntArray( noteworthy, "script_noteworthy" );
+        if ( IsDefined( ents ) && ents.size >= minCount )
+        {
+            return ents;
+        }
+        wait ( 1 );
+        elapsed++;
+        if ( elapsed >= timeoutSec )
+        {
+            return undefined;
+        }
     }
 }
 
@@ -1974,34 +2146,48 @@ function FindNearestScriptOrigin( pos, radius )
     return best;
 }
 
-// Per-trigger emit on the entity's unitrigger fire. Used universally for
-// both bear/gramophone/songstruct patterns:
-//   - Castle bears/gramophones — entity persists, b_activated stays true
-//   - zhd-shared songstructs    — entity DELETED post-activation
-// Event-driven waittill catches the trigger fire BEFORE deletion, so this
-// works for both. Music-override check mirrors source logic so we skip
-// "blocked" presses that don't advance the song.
+// Per-trigger emit — polls self.b_activated rather than waittill the
+// trigger_activated notify. b_activated is the field the GAME's own
+// trigger thread sets after a successful (non-music-override-blocked)
+// press; reading it inherits the same guard without us reimplementing
+// the currentplaytype check.
+//
+// Why polling over waittill: 2026-05-18 Castle gramophone Requiem run
+// hooked all 3 entities at 0:00 but slot _2 never fired despite the
+// song completing later (engine MUSIC line proved all 3 had been
+// pressed). Hypothesis: `self endon("death")` killed our waittill
+// thread on slot _2 between init and the eventual press 30 min later
+// — anything that briefly notifies "death" on the model would lose
+// the hook. Polling without `self endon` survives transient entity
+// states; the only failure mode is entity destruction, in which case
+// we'd never have caught the press via waittill either.
+//
+// Used universally for bear/gramophone/songstruct patterns:
+//   - Castle bears/gramophones — entity persists, b_activated stays 1
+//   - zhd-shared songstructs    — entity DELETED post-activation;
+//                                 b_activated is set briefly before
+//                                 deletion. 0.5s poll is fast enough
+//                                 to catch state before GC.
 function WaitForBActivatedThenEmit( stepKey )
 {
     level endon( "end_game" );
-    self endon( "death" );
 
-    while ( true )
+    for ( ;; )
     {
-        self waittill( "trigger_activated" );
-
-        // Source-side guard: skips activations while the music system is
-        // in a non-progressive state (currentplaytype >= 4). Without this
-        // we'd over-emit during music-override windows that don't count.
-        if ( IsDefined( level.musicsystem )
-          && IsDefined( level.musicsystem.currentplaytype )
-          && level.musicsystem.currentplaytype >= 4 )
+        if ( !IsDefined( self ) )
         {
-            continue;
+            // Entity destroyed before activation; waittill would have lost
+            // it too. Log so the next failure is debuggable without code
+            // changes — pattern matches the script_origin TIMEOUT line.
+            logprint( "[ZM-EE] WaitForBActivatedThenEmit: ENTITY_GONE key=" + stepKey + "\n" );
+            return;
         }
-
-        EmitEeStep( stepKey );
-        return;
+        if ( IsDefined( self.b_activated ) && self.b_activated )
+        {
+            EmitEeStep( stepKey );
+            return;
+        }
+        wait ( 0.5 );
     }
 }
 

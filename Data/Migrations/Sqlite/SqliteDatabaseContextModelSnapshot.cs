@@ -1308,6 +1308,9 @@ namespace Data.Migrations.Sqlite
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("BankOperations")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("BoxUses")
                         .HasColumnType("INTEGER");
 
@@ -1335,6 +1338,12 @@ namespace Data.Migrations.Sqlite
                     b.Property<int>("Downs")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("GumsActivated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("GumsTaken")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("HeadshotKills")
                         .HasColumnType("INTEGER");
 
@@ -1342,6 +1351,9 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Kills")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LockerOperations")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("MatchId")
@@ -1369,6 +1381,9 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WeaponsAbandoned")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("WeaponsPurchased")
@@ -1461,9 +1476,9 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("AssociatedClientId");
 
-                    b.HasIndex("MatchId");
+                    b.HasIndex("MatchId", "EventType");
 
-                    b.HasIndex("SourceClientId");
+                    b.HasIndex("SourceClientId", "EventType");
 
                     b.ToTable("EFZombieEvents", (string)null);
                 });
@@ -1472,9 +1487,6 @@ namespace Data.Migrations.Sqlite
                 {
                     b.Property<int>("ZombieMatchId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ClientsCompleted")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("Completed")

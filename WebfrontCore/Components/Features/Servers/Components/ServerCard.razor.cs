@@ -138,7 +138,22 @@ public partial class ServerCard : IAsyncDisposable
         var serverName = Model.Name.StripColors();
         var mapName = string.IsNullOrEmpty(Model.Map) ? null : Model.Map;
         var title = mapName is null ? serverName : $"{serverName} — {mapName}";
-        ActionService.OpenCustom(ZombieLiveContent(Model.Id), title, "max-w-4xl");
+        // Zombie live modal uses a 3-col layout (Objectives / Roster / Telemetry);
+        // max-w-7xl gives each column room without forcing scroll overlap.
+        // Body class flips off the default p-6 + overflow-y-auto: the inner
+        // 3-col grid manages its own per-column scroll and goes edge-to-edge
+        // (drops the floating-content padding that looked sparse on a wide
+        // modal). flex-1 + min-h-0 lets the body fill remaining vertical
+        // space within the modal's flex column (header above, body below).
+        //
+        // !max-h-[80vh] overrides the ActionModal shell's hardcoded
+        // max-h-[90vh] (Tailwind `!` = !important). Telemetry can grow
+        // unbounded; 90vh on a tall display stretched the card into a
+        // ~900px wall. 80vh keeps it comfortable on common laptop heights
+        // without leaving the per-column scrollbars idle.
+        ActionService.OpenCustom(ZombieLiveContent(Model.Id), title,
+            modalClass: "max-w-7xl !max-h-[80vh]",
+            bodyClass: "flex-1 min-h-0 overflow-hidden flex flex-col");
     }
 
     private RenderFragment ZombieLiveContent(string serverId) => builder =>

@@ -14,10 +14,22 @@ namespace WebfrontCore.Core.Services;
 public interface IActionService
 {
     event Action<string, int?, string, string?> OnOpenAction;
-    event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction;
+    event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?, string?> OnOpenCustomAction;
 
     void OpenAction(string actionName, int? targetId, string meta, string? serverId = null);
-    void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null);
+
+    /// <summary>
+    /// Open a modal with a caller-supplied RenderFragment as the body.
+    /// </summary>
+    /// <param name="bodyClass">
+    /// Optional override for the modal body's classes. Default
+    /// ("p-6 overflow-y-auto") suits forms + simple lists. Custom content that
+    /// manages its own layout (e.g. the zombie live modal's 3-col grid) should
+    /// pass a class like "flex-1 min-h-0 overflow-hidden flex flex-col" so the
+    /// body fills remaining vertical space without adding its own scrollbar.
+    /// </param>
+    void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null,
+        string? bodyClass = null);
 
     Task<ActionInfo> GetActionInfoAsync(string actionName, int? targetId, string meta, string? serverId = null);
 
@@ -37,7 +49,7 @@ public class ActionService : IActionService
 
     public event Action<string, int?, string, string?> OnOpenAction = delegate { };
 
-    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction = delegate
+    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?, string?> OnOpenCustomAction = delegate
     {
     };
 
@@ -47,9 +59,9 @@ public class ActionService : IActionService
     }
 
     public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title,
-        string? modalClass = null)
+        string? modalClass = null, string? bodyClass = null)
     {
-        OnOpenCustomAction?.Invoke(content, title, modalClass);
+        OnOpenCustomAction?.Invoke(content, title, modalClass, bodyClass);
     }
 
     // Command Names

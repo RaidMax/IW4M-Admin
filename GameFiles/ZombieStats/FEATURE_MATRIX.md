@@ -14,7 +14,7 @@ Legend: ✅ supported · ➖ not applicable to engine · ❌ deliberately not tr
 | | T4 (W@W / Pluto T4) | T5 (BO1 / Pluto T5) | T6 (BO2 / Pluto T6) | T7 (BO3 / T7x AlterWare) |
 |---|---|---|---|---|
 | Source file | `_zm_stats_t4.gsc` | `_zm_stats_t5.gsc` | `_zm_stats_t6.gsc` | `_zm_stats_t7.gsc` |
-| Lines | 1,758 | 2,064 | 2,161 | 1,699 |
+| Lines | 1,833 | 2,117 | 2,390 | 2,405 |
 | Compile step | ➖ (interpreted) | ➖ | ➖ | ✅ `_zm_stats_t7.compiled.gsc` via Cerberus |
 | Helper script ships | ➖ | ➖ | ➖ | ➖ (dev-only helper lives outside repo) |
 | Engine entry | `level thread Init()` | same | same | `REGISTER_SYSTEM("zombie_stats", &__init__, undefined)` |
@@ -224,7 +224,7 @@ in `WaitForEasterEggComplete` — terminal notify hooks live in
 |---|---|---|---|
 | `zm_zod` (SoE) | ✅ 8 main-quest flags | ✅ 3 song states | Arnie upgrade (hashed `#"hash_21edb6b6"`), Shield, Bouncing Bettys; ❌ Apothicon Sword per-character (deferred) |
 | `zm_factory` (The Giant) | ✅ | ✅ | Flytrap (3-target) + secret-perk pad |
-| `zm_castle` (Der Eisendrache) | ✅ 8 steps | ✅ 2 songs + music box + disco | 4 elemental bow upgrades (weapon-substring poll) |
+| `zm_castle` (Der Eisendrache) | ✅ 8 steps | ✅ 2 songs + music box + disco + Dead Again (3 bears) + Requiem (3 gramophones) | 4 elemental bow upgrades (weapon-substring poll); Storm ritual sub-steps `lit/wallrun/batteries/electrify` tracked; Wolf/Fire/Void ritual flags hashed → only upgrade tracked; Keeper / Wrath bow (nested EeStep tree) |
 | `zm_island` (Zetsubou) | ✅ | ✅ | KT-4 base+upgrade + 4 skull rituals + 3 spider EE |
 | `zm_stalingrad` (Gorod Krovi) | ✅ 6 steps | ✅ 3-song state polls | 5-step Dragon Gauntlet quest (`gauntlet_step_2/3/4/complete`) |
 | `zm_genesis` (Revelations) | ✅ 13 steps | ✅ | Li'l Arnie prereq+done |
@@ -240,7 +240,14 @@ in `WaitForEasterEggComplete` — terminal notify hooks live in
 Shared T7 helpers: `WatchT7FlagStep`, `WatchT7MusicStateStep`,
 `WatchWeaponSubstringUpgrade` (generic weapon-inventory substring poller —
 covers DE bows, Origins staffs, SoE shield/Bettys), `WaitForT7FlagInit`,
-`PlayerHasWeaponSubstr`.
+`PlayerHasWeaponSubstr`, `WatchT7SongEntityActivated` / `WaitForBActivatedThenEmit`
+(per-trigger song detection — polls `self.b_activated` at 0.5s, no `self endon("death")`
+so transient entity-death notifies can't kill the watcher),
+`HookScriptOriginAtStruct` (polls until `end_game` for lazy-spawned `script_origin`
+entities — Castle bears can spawn >20min after match start),
+`WatchT7BeaconsLitAll` + `WaitForBeaconActivatedNotify` + `WaitForEntArrayByNoteworthy`
+(counted-notify aggregator with per-call-site state via `level.zm_ee_lit_count[stepKey]`
+map — used for Storm Bow's "light all beacons" ritual phase).
 
 ---
 
@@ -289,6 +296,7 @@ covers DE bows, Origins staffs, SoE shield/Bettys), `WaitForT7FlagInit`,
 | Nacht der Untoten EE | T4 | Pluto T4 entity hook broken |
 | T4 perk-buy poll | T4 | No `perk_bought` notify exists; weapon-switch poll is only path. Edge case: perk bought + downed within 0.1s tick drops the emission |
 | Apothicon Sword per-character | T7 (SoE) | Hashed flags, deferred (4 separate quests) |
+| Castle Wolf/Fire/Void ritual sub-steps | T7 (zm_castle) | Per-element ritual flags are hashed — only Storm has string-named `elemental_storm_*` flags. Per-entity scanner would be required for parity (~73 hashed flags); deferred |
 | Live-test 12/14 maps | T7 | Only zm_factory + zm_sumpf live-verified |
 | Live-test bank/locker | T6 | New emission paths added; need Tranzit/Die Rise/Buried verification |
 | Gobblegum C# downstream | T7 | Events emitted, no premium handlers yet |
@@ -300,7 +308,7 @@ covers DE bows, Origins staffs, SoE shield/Bettys), `WaitForT7FlagInit`,
 Only T7 needs compilation:
 
 - Source: `_zm_stats_t7.gsc`
-- Compiled: `_zm_stats_t7.compiled.gsc` (~37 KB; double-extension passes T7x's `filename.endsWith(".gsc")` suffix gate and disambiguates from the source filename)
+- Compiled: `_zm_stats_t7.compiled.gsc` (~49 KB; double-extension passes T7x's `filename.endsWith(".gsc")` suffix gate and disambiguates from the source filename)
 - Magic bytes: `80 47 53 43 0d 0a` (`ÇGSC\r\n`)
 - Toolchain: `linker_modtools.exe` + `Cerberus.CLI.exe` (PowerShell only — DLL search)
 - Known benign noise: T7x logs `[DB] Error: Could not find scriptparsetree "custom_scripts/..."` on every custom_scripts/ load — script still executes correctly (verified by event flow in `games_zm.log`). Believed to be a secondary DB asset registry lookup running after the primary runtime load succeeded. No known suppression.

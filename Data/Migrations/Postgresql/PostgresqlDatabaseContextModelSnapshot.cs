@@ -1377,6 +1377,9 @@ namespace Data.Migrations.Postgresql
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ZombieClientStatId"));
 
+                    b.Property<int>("BankOperations")
+                        .HasColumnType("integer");
+
                     b.Property<int>("BoxUses")
                         .HasColumnType("integer");
 
@@ -1404,6 +1407,12 @@ namespace Data.Migrations.Postgresql
                     b.Property<int>("Downs")
                         .HasColumnType("integer");
 
+                    b.Property<int>("GumsActivated")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GumsTaken")
+                        .HasColumnType("integer");
+
                     b.Property<int>("HeadshotKills")
                         .HasColumnType("integer");
 
@@ -1411,6 +1420,9 @@ namespace Data.Migrations.Postgresql
                         .HasColumnType("integer");
 
                     b.Property<int>("Kills")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LockerOperations")
                         .HasColumnType("integer");
 
                     b.Property<int?>("MatchId")
@@ -1439,6 +1451,9 @@ namespace Data.Migrations.Postgresql
 
                     b.Property<DateTimeOffset?>("UpdatedDateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WeaponsAbandoned")
+                        .HasColumnType("integer");
 
                     b.Property<int>("WeaponsPurchased")
                         .HasColumnType("integer");
@@ -1534,9 +1549,9 @@ namespace Data.Migrations.Postgresql
 
                     b.HasIndex("AssociatedClientId");
 
-                    b.HasIndex("MatchId");
+                    b.HasIndex("MatchId", "EventType");
 
-                    b.HasIndex("SourceClientId");
+                    b.HasIndex("SourceClientId", "EventType");
 
                     b.ToTable("EFZombieEvents", (string)null);
                 });
@@ -1548,9 +1563,6 @@ namespace Data.Migrations.Postgresql
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ZombieMatchId"));
-
-                    b.Property<int>("ClientsCompleted")
-                        .HasColumnType("integer");
 
                     b.Property<bool>("Completed")
                         .HasColumnType("boolean");

@@ -26,6 +26,11 @@ public partial class ActionModal
     private RenderFragment? _childContent;
     private string? _customTitle;
     private string _modalClass = "max-w-lg";
+    // Default body styling — padded + auto scroll, suits form actions and the
+    // simple custom modals. Custom callers can override via OpenCustom's
+    // bodyClass param when they need edge-to-edge / fixed-height layouts.
+    private const string DefaultBodyClass = "p-6 overflow-y-auto";
+    private string _bodyClass = DefaultBodyClass;
 
     
     protected override void OnInitialized()
@@ -41,11 +46,12 @@ public partial class ActionModal
         ActionService.OnOpenCustomAction -= OnOpenCustomAction;
     }
 
-    private async void OnOpenCustomAction(RenderFragment content, string title, string? modalClass)
+    private async void OnOpenCustomAction(RenderFragment content, string title, string? modalClass, string? bodyClass)
     {
         _childContent = content;
         _customTitle = title;
         _modalClass = modalClass ?? "max-w-lg";
+        _bodyClass = bodyClass ?? DefaultBodyClass;
 
         _actionInfo = null; // Clear standard action info
         _error = null;
@@ -58,6 +64,7 @@ public partial class ActionModal
     {
         _childContent = null;
         _modalClass = "max-w-lg";
+        _bodyClass = DefaultBodyClass;
         await Open(actionName, targetId, meta, serverId);
         await InvokeAsync(StateHasChanged);
     }

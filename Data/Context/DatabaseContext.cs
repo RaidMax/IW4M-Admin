@@ -251,6 +251,13 @@ namespace Data.Context
             modelBuilder.Entity<ZombieEventLog>(ent =>
             {
                 ent.ToTable($"EF{nameof(ZombieEvents)}");
+                // Composite indexes for hot event-log filter paths:
+                //   • (MatchId, EventType): per-match event-type filters
+                //     (timeline rendering, "all gum events for match X" etc.).
+                //   • (SourceClientId, EventType): per-client lifetime
+                //     event-type counts (career bank ops, gum activations).
+                ent.HasIndex(e => new { e.MatchId, e.EventType });
+                ent.HasIndex(e => new { e.SourceClientId, e.EventType });
             });
 
             modelBuilder.Entity<ZombieClientStatRecord>(ent =>

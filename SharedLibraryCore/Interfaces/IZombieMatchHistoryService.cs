@@ -149,6 +149,14 @@ public sealed class EasterEggQuestProgress
     public string Icon { get; set; } = string.Empty;
 
     /// <summary>
+    /// Optional palette accent for the dedicated Match Page's per-quest card
+    /// (purple|red|indigo|amber|cyan|emerald|rose). Null = renderer falls back
+    /// to "song=purple, main=amber" by quest id. Only the Match Page consumes
+    /// this today; leaderboard/history cards ignore it.
+    /// </summary>
+    public string? Color { get; set; }
+
+    /// <summary>
     /// True when the map has a terminal GSC notify for this quest (T6 main quests,
     /// Der Riese fly trap). False when completion is derived from "all steps logged"
     /// (T4 song eggs).

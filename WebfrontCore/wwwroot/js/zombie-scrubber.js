@@ -309,11 +309,13 @@
         }
 
         _trackHeight(laneCount) {
+            // Constants mirrored in ZombieMatchScrubber.razor.cs _minHeight — keep in sync.
+            // No bottom pad: lane rows already include vertical breathing room, and
+            // trailing padding bleeds into an empty-looking strip below the last lane.
             const TOP_PAD = 24;
             const TICKBAND_HEIGHT = this._hasMatchLevelEvents() ? 32 : 0;
             const LANE_ROW = 44; // matches CSS lane-row height
-            const BOTTOM_PAD = 12;
-            return Math.max(120, TOP_PAD + TICKBAND_HEIGHT + laneCount * LANE_ROW + BOTTOM_PAD);
+            return Math.max(120, TOP_PAD + TICKBAND_HEIGHT + laneCount * LANE_ROW);
         }
 
         _buildDot(evt, isMatchLevel, lane) {

@@ -22,14 +22,11 @@ public class ZombieMatch : DatedRecord
     [ForeignKey(nameof(ServerId))]
     public virtual EFServer? Server { get; set; }
     
-    public int ClientsCompleted { get; set; }
-
     /// <summary>
     /// True when EndMatch was driven by a clean ExitLevel/ShutdownGame signal
     /// from the parser. False for crash-killed matches (orphan-close path) and
-    /// pre-fix matches. Drives the API `completed` field — independent of
-    /// <see cref="ClientsCompleted"/>, which only counts intermission-reached
-    /// players (zero on host-quit even after a 49-round game).
+    /// pre-fix matches. Drives the API `completed` field and the lifetime
+    /// <c>TotalMatchesCompleted</c> aggregate increment at deletion-rebuild time.
     /// </summary>
     public bool Completed { get; set; }
 

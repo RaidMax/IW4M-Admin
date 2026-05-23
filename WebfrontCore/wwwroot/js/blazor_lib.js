@@ -260,14 +260,35 @@ window.tooltipFixed = {
     },
 
     show: function (triggerElement, text, direction) {
+        // Plain-text tooltip. Escape HTML so user-supplied strings can't
+        // inject markup, then convert literal \n to <br> so multi-line
+        // tooltip strings render as proper breaks (without this, newlines
+        // collapse to whitespace and the body reads as one runon line).
+        const safe = this._escapeHtml(text).replace(/\r?\n/g, '<br>');
+        this._render(triggerElement, safe, direction, 'text-center');
+    },
+
+    showRich: function (triggerElement, direction) {
+        // Rich-content tooltip — source HTML lives in a hidden div inside
+        // the trigger wrapper (rendered server-side by the Tooltip
+        // component's BodyContent fragment). Reading its innerHTML lets
+        // callers use full Blazor-rendered markup (lists, icons, structured
+        // rows) without us hand-encoding it through DotNet→JS strings.
+        const bodyEl = triggerElement.querySelector(':scope > [data-tooltip-body]');
+        if (!bodyEl) return;
+        // left-align by default — structured bodies (lists of items) read
+        // better flush-left than the plain-text center alignment.
+        this._render(triggerElement, bodyEl.innerHTML, direction, 'text-left');
+    },
+
+    _render: function (triggerElement, innerHtml, direction, alignClass) {
         this._bindGlobals();
         const el = this._getEl();
         const rect = triggerElement.getBoundingClientRect();
 
-        // Render content
         el.innerHTML =
-            '<div class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] text-center whitespace-normal break-words">' +
-            this._escapeHtml(text) +
+            '<div class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] ' + (alignClass || 'text-center') + ' whitespace-normal break-words">' +
+            innerHtml +
             '</div>' +
             '<div class="' + this._arrowClass(direction) + '"></div>';
 

@@ -1,7 +1,12 @@
 @inject IJSRuntime JS
 
-@* Tooltip component - uses fixed positioning via JS to escape overflow containers *@
-@if (!string.IsNullOrEmpty(Text))
+@* Tooltip component — uses fixed positioning via JS to escape overflow
+   containers. Two content modes:
+     • Text: plain string, escaped + \n converted to <br> by JS.
+     • BodyContent: RenderFragment, rendered to a hidden source div inside
+       the wrapper; JS reads its innerHTML on show so consumers get full
+       markup control (lists, icons, multiple lines, structured rows). *@
+@if (!string.IsNullOrEmpty(Text) || BodyContent is not null)
 {
     <div class="tooltip-wrapper @WrapperClass"
          style="@WrapperStyle"
@@ -13,6 +18,13 @@
          @onclick="ToggleTooltip"
          @onclick:stopPropagation>
         @ChildContent
+        @if (BodyContent is not null)
+        {
+            @* Source for the rich body; hidden in layout but present in the DOM
+               so the tooltip JS can read its innerHTML when showing. Aria-hidden
+               so screen readers don't double-announce alongside the trigger. *@
+            <div class="hidden" data-tooltip-body aria-hidden="true">@BodyContent</div>
+        }
     </div>
 }
 else
@@ -32,6 +44,7 @@ else
 
     [Parameter] public string? Text { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? BodyContent { get; set; }
     [Parameter] public TooltipDirection Direction { get; set; } = TooltipDirection.Up;
     [Parameter] public string? WrapperClass { get; set; }
     [Parameter] public string? WrapperStyle { get; set; }
@@ -49,10 +62,19 @@ else
 
     private async Task ShowTooltip()
     {
-        if (string.IsNullOrEmpty(Text)) return;
+        if (string.IsNullOrEmpty(Text) && BodyContent is null) return;
         try
         {
-            await JS.InvokeVoidAsync("tooltipFixed.show", _triggerRef, Text, DirectionString);
+            // BodyContent wins when both are set — rich body is the more
+            // specific intent; Text becomes a no-op in that case.
+            if (BodyContent is not null)
+            {
+                await JS.InvokeVoidAsync("tooltipFixed.showRich", _triggerRef, DirectionString);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("tooltipFixed.show", _triggerRef, Text, DirectionString);
+            }
         }
         catch
         {

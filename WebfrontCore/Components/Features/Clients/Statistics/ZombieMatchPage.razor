@@ -54,7 +54,7 @@ else if (Detail is null)
 }
 else
 {
-    <div class="max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+    <div class="max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 space-y-4 lg:space-y-6">
 
         @* ── HEADER ── *@
         <div class="bg-surface rounded-2xl border border-line shadow-xl p-6">
@@ -119,270 +119,345 @@ else
             </div>
         </div>
 
-        @* Achievements banner removed: it conflated the per-quest EE sections below
-           ("Easter Egg Completed on R9" was misleading when only the Archangel song
-           had completed, not the main quest), and Marathon/Flawless/Buildables now
-           live on the per-row chip strip + dedicated Buildables card. The per-quest
-           progress sections that follow are the authoritative EE surface. *@
-
-        @* ── PROGRESS PANEL ── EE quests + Buildables share one bordered container,
-             each tracker = a row separated by a horizontal divider. Mirrors the
-             live-modal merged layout so the static "match record" view reads the
-             same way as the ongoing-match view. Per-row: header (icon + name + X/Y
-             + bar) on top, step/inventory grid below in the same row's content
-             area. Step cards show absolute fire timestamp ("R7 • 13:19:38") —
-             relative "ago" lost the in-match snapshot context the user actually
-             wants when reviewing a record.
-             Buildables row only renders when the map has a configured iconic
-             system or any built items; on EE-only maps the panel collapses to
-             just the quest rows; on buildable-only maps it collapses the other
-             way. *@
+        @* ── FULL-WIDTH STACK ──
+             1. Player section (tabs / stats / timeline / rounds)
+             2. Buildables card (full width; inner inventory grid widens to fill)
+             3. Per-quest cards in a 2-col grid (full width below)
+             Quests moved out of the right rail per redesign — letting them
+             breathe in a 2-col grid surfaces step inventories without cramping. *@
         @{
             var hasBuildablesRow = Detail.BuildablesBuilt > 0 || Detail.BuildablesTotal.HasValue;
         }
+
         <div class="bg-surface rounded-md border border-line overflow-hidden">
-            @if (Detail.EasterEggQuests.Count == 0)
-            {
-                @* Maps with no configured EE quests (Nacht der Untoten is the only
-                   stock case). Render a muted placeholder rather than collapsing the
-                   panel entirely so the section's vertical position stays stable
-                   across maps. *@
-                <div class="p-4 sm:p-5 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-surface-alt text-subtle">
-                        <i class="ph ph-trophy text-xl"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h2 class="text-base font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL")</h2>
-                        <p class="text-xs text-subtle mt-0.5">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_NONE_ON_MAP")</p>
-                    </div>
-                </div>
-            }
-            @for (var qi = 0; qi < Detail.EasterEggQuests.Count; qi++)
-                {
-                    var quest = Detail.EasterEggQuests[qi];
-                    var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
-                    var qPct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
-                    var qDone = quest.IsComplete;
-                    var isSong = quest.Id.StartsWith("song", StringComparison.Ordinal);
-                    var dividerClass = qi > 0 ? "border-t border-line/60" : "";
-                    // Songs render purple to visually separate music EEs from the main quest
-                    // (yellow/amber). Same brightness hierarchy preserved per state. Literal
-                    // class strings keep Tailwind's purge happy.
-                    var headIconBg = qDone
-                        ? (isSong ? "bg-purple-400/15 text-purple-300" : "bg-yellow-400/15 text-yellow-400")
-                        : (isSong ? "bg-surface-alt text-purple-400" : "bg-surface-alt text-amber-400");
-                    var countText = qDone
-                        ? (isSong ? "text-purple-300" : "text-yellow-400")
-                        : "text-muted";
-                    var barColor = qDone
-                        ? (isSong ? "bg-purple-300" : "bg-yellow-400")
-                        : (isSong ? "bg-purple-400" : "bg-amber-400");
-                    var stepFiredBg = isSong
-                        ? "bg-purple-400/5 border-purple-400/30"
-                        : "bg-yellow-400/5 border-yellow-400/30";
-                    var stepFiredIcon = isSong ? "text-purple-300" : "text-yellow-400";
-                    var stepCheckIcon = isSong ? "text-purple-300" : "text-yellow-400";
-                    <div class="p-4 sm:p-5 @dividerClass">
-                        <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 @headIconBg">
-                                <i class="ph @quest.Icon text-xl"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between gap-3 flex-wrap">
-                                    <div class="flex items-baseline gap-2 flex-wrap">
-                                        <h2 class="text-base font-bold text-foreground">@AppState.Loc(quest.LocKey)</h2>
-                                        @if (!string.IsNullOrEmpty(quest.ActiveVariantLocKey))
-                                        {
-                                            <span class="text-[11px] font-semibold text-amber-400/80 uppercase tracking-wide">
-                                                @AppState.Loc("WEBFRONT_ZOMBIE_EE_VIA_PATH").FormatExt(AppState.Loc(quest.ActiveVariantLocKey))
-                                            </span>
-                                        }
-                                        else if (!string.IsNullOrEmpty(quest.BranchGroupId))
-                                        {
-                                            <span class="text-[11px] font-semibold text-subtle uppercase tracking-wide">
-                                                @AppState.Loc("WEBFRONT_ZOMBIE_EE_NO_PATH_CHOSEN")
-                                            </span>
-                                        }
-                                    </div>
-                                    <span class="text-sm font-mono font-bold @countText">
-                                        @quest.Completed / @quest.Total
-                                    </span>
-                                </div>
-
-                                <div class="mt-1.5 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/60">
-                                    <div class="h-full transition-all duration-500 @barColor"
-                                         style="width: @(qPct)%;"></div>
-                                </div>
-
-                                @* Step grid: round + absolute clock-time on a right-aligned mono caption
-                                   ("R7 • 13:19:38"). Per-element Tooltip surfaces the full step name (in
-                                   case truncated) and the canonical UTC timestamp (because the visible
-                                   text is converted to local time by utcLocalTime.js). *@
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
-                                    @foreach (var step in quest.Inventory)
-                                    {
-                                        @if (!step.IsLeaf())
-                                        {
-                                            @RenderEeParent(quest, step, stepsByKey, stepFiredBg, stepFiredIcon, stepCheckIcon)
-                                            continue;
-                                        }
-                                        var fired = stepsByKey.TryGetValue(step.Key, out var record);
-                                        var label = AppState.Loc(step.LocKey);
-                                        var utcDisplay = fired && record is not null
-                                            ? record.OccurredAt.UtcDateTime.ToStandardFormat()
-                                            : null;
-                                        <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(fired ? stepFiredBg : "bg-surface-alt/40 border-line/40")">
-                                            <i class="ph @step.Icon text-sm shrink-0 @(fired ? stepFiredIcon : "text-subtle/60")"></i>
-                                            <Tooltip Text="@label" WrapperClass="flex-1 min-w-0">
-                                                <div class="text-xs font-semibold truncate @(fired ? "text-foreground" : "text-subtle")">@label</div>
-                                            </Tooltip>
-                                            @if (fired && record is not null)
-                                            {
-                                                <div class="text-[10px] font-mono text-muted shrink-0 flex items-center">
-                                                    @if (record.RoundNumber is { } rn && rn > 0)
-                                                    {
-                                                        <span>R@(rn)</span>
-                                                        <span class="mx-1 text-subtle">•</span>
-                                                    }
-                                                    <Tooltip Text="@utcDisplay" WrapperClass="inline-block">
-                                                        <span data-utc-time="@record.OccurredAt.UtcDateTime.ToString("o")"
-                                                              data-utc-fmt="time">
-                                                            @record.OccurredAt.UtcDateTime.ToString("HH:mm:ss")
-                                                        </span>
-                                                    </Tooltip>
-                                                </div>
-                                                <i class="ph ph-check-circle @stepCheckIcon text-xs shrink-0"></i>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-
-                @* ── BUILDABLES ROW ── shares the same shell as the EE rows above
-                     so the two trackers read as one panel. Same layout primitives
-                     (10×10 icon, text-base title, h-1.5 progress bar, 3-col chip
-                     grid) — only the colour swaps to blue (the buildables hue). *@
-                @if (hasBuildablesRow)
-                {
-                    var allBuilt = Detail.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
-                    var pct = Detail.BuildablesTotal is { } t2 && t2 > 0
-                        ? Math.Min(100, Detail.BuildablesBuilt * 100 / t2)
-                        : 100;
-                    var bDividerClass = Detail.EasterEggQuests.Count > 0 ? "border-t border-line/60" : "";
-                    var bHeadIconBg = allBuilt
-                        ? "bg-blue-400/15 text-blue-300"
-                        : "bg-surface-alt text-blue-400";
-                    var bCountText = allBuilt ? "text-blue-300" : "text-muted";
-                    var bBarColor = allBuilt ? "bg-blue-300" : "bg-blue-400";
-                    <div class="p-4 sm:p-5 @bDividerClass">
-                        <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 @bHeadIconBg">
-                                <i class="ph ph-wrench text-xl"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between gap-3 flex-wrap">
-                                    <h2 class="text-base font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</h2>
-                                    <span class="text-sm font-mono font-bold @bCountText">
-                                        @Detail.BuildablesBuilt @(Detail.BuildablesTotal.HasValue ? $"/ {Detail.BuildablesTotal.Value}" : "")
-                                    </span>
-                                </div>
-
-                                @if (Detail.BuildablesTotal.HasValue)
-                                {
-                                    <div class="mt-1.5 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/60">
-                                        <div class="h-full transition-all duration-500 @bBarColor"
-                                             style="width: @(pct)%;"></div>
-                                    </div>
-                                }
-
-                                @* Inventory-driven checklist — mirrors the EE step grid above.
-                                   Every iconic item the map could register renders as a chip;
-                                   filled blue when built, muted when not. Falls back to a flat
-                                   "built only" list for unconfigured maps (custom maps, T4/T5)
-                                   where Inventory is empty but built items exist. *@
-                                @if (Detail.BuildableInventory.Count > 0)
-                                {
-                                    var builtKeys = new HashSet<string>(
-                                        Detail.BuildableNames.Select(b => b.Key),
-                                        StringComparer.OrdinalIgnoreCase);
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
-                                        @foreach (var item in Detail.BuildableInventory)
-                                        {
-                                            var built = builtKeys.Contains(item.Key);
-                                            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(built ? "bg-blue-400/5 border-blue-400/30" : "bg-surface-alt/40 border-line/40")"
-                                                 title="@item.DisplayName">
-                                                <i class="ph ph-wrench text-sm shrink-0 @(built ? "text-blue-300" : "text-subtle/60")"></i>
-                                                <div class="text-xs font-semibold truncate flex-1 min-w-0 @(built ? "text-foreground" : "text-subtle")">@item.DisplayName</div>
-                                                @if (built)
-                                                {
-                                                    <i class="ph ph-check-circle text-blue-300 text-xs shrink-0"></i>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                else if (Detail.BuildableNames.Count > 0)
-                                {
-                                    @* Unconfigured map fallback: no inventory template, just show what was built. *@
-                                    <div class="flex flex-wrap gap-2 mt-3">
-                                        @foreach (var entry in Detail.BuildableNames)
-                                        {
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-400/5 border border-blue-400/30 text-xs text-blue-300">
-                                                <i class="ph ph-check-circle text-blue-300 text-xs"></i>
-                                                @entry.DisplayName
-                                            </span>
-                                        }
-                                    </div>
-                                }
-
-                                @* Extras: side-quest / non-iconic buildables. Surfaced separately
-                                   so they don't dilute the main count; the heading flags them as
-                                   bonus rather than core progression. *@
-                                @if (Detail.ExtraBuildableNames.Count > 0)
-                                {
-                                    <div class="mt-4 pt-3 border-t border-line/40">
-                                        <div class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-2 flex items-center gap-1.5">
-                                            <i class="ph ph-plus-circle text-xs"></i>
-                                            @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_LABEL").FormatExt(Detail.ExtraBuildablesBuilt)
-                                        </div>
-                                        <div class="flex flex-wrap gap-2">
-                                            @foreach (var entry in Detail.ExtraBuildableNames)
-                                            {
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300/90">
-                                                    <i class="ph ph-plus-circle text-amber-400 text-xs"></i>
-                                                    @entry.DisplayName
-                                                </span>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }
-
+            <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" ShowAllPlayers="_showAllPlayers" />
         </div>
 
-        @* ── DETAIL (existing component, scrubber + share button inside) ──
-             ShowAllPlayers=true: this is the dedicated share page for one match.
-             Hiding drop-ins here would silently misrepresent the run (e.g. share-link
-             a 4-player match where 1 didn't qualify and the page shows 3 only).
-             Leaderboard-card consumer defaults this false to honour the qualifying-
-             roster framing of the bucket leaderboard; share page wants the full
-             picture. *@
-        <ZombieMatchDetail Detail="Detail" SelectedClientId="@ClientId" ShowAllPlayers="_showAllPlayers" />
+        @if (hasBuildablesRow)
+        {
+            @RenderBuildablesCard()
+        }
+
+        @if (Detail.EasterEggQuests.Count == 0)
+        {
+            @* Maps with no configured EE quests (Nacht der Untoten is the only
+               stock case). Render a muted placeholder so the section position
+               stays stable across maps. *@
+            <div class="bg-surface rounded-md border border-line p-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-surface-alt text-subtle">
+                    <i class="ph ph-trophy text-xl"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h2 class="text-sm font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_LABEL")</h2>
+                    <p class="text-xs text-subtle mt-0.5">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_EE_NONE_ON_MAP")</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @* 2-col grid; quests stack 1-col on narrow viewports, fill 2-col
+               from md+. Auto-rows-fr keeps adjacent cards equal-height so a
+               6-step quest and a 3-step quest side-by-side don't read as one
+               taller card next to a stub. *@
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+                @foreach (var quest in Detail.EasterEggQuests)
+                {
+                    @RenderQuestCard(quest)
+                }
+            </div>
+        }
     </div>
 }
 
-@* Nested parent step row: spans the full step grid (col-span-full) so the
-   expanded child grid below it reads as one unit. Header always visible
-   (chevron + parent label + sub-progress chip); child grid renders inline
-   when expanded — auto-expanded for mid-progress parents so the user can
-   see pending sub-steps without clicking. *@
 @code {
+    /// <summary>
+    /// Per-quest palette resolver. Returns the literal Tailwind class strings
+    /// for each surface (head icon bg, count text, progress bar, step chip).
+    /// Explicit Color wins over the fallback. Fallback preserves the prior
+    /// 2-colour scheme (song=purple, main=amber) so unconfigured quests render
+    /// exactly as before.
+    /// </summary>
+    private sealed record QuestPalette(
+        string HeadIconBg,
+        string CountText,
+        string BarColor,
+        string StepFiredBg,
+        string StepFiredIcon,
+        string StepCheckIcon);
+
+    private static QuestPalette ResolvePalette(string? color, bool isSong, bool isDone)
+    {
+        if (!string.IsNullOrEmpty(color))
+        {
+            return color switch
+            {
+                "purple"  => BuildPalette("purple",  "300", "400", isDone),
+                "red"     => BuildPalette("red",     "300", "400", isDone),
+                "indigo"  => BuildPalette("indigo",  "300", "400", isDone),
+                "amber"   => BuildPalette("amber",   "300", "400", isDone),
+                "cyan"    => BuildPalette("cyan",    "300", "400", isDone),
+                "emerald" => BuildPalette("emerald", "300", "400", isDone),
+                "rose"    => BuildPalette("rose",    "300", "400", isDone),
+                _ => ResolvePalette(null, isSong, isDone),
+            };
+        }
+
+        // Fallback — same colour weights as the prior merged panel so unconfigured
+        // quests render identically to the previous design.
+        return isSong
+            ? new QuestPalette(
+                isDone ? "bg-purple-400/15 text-purple-300" : "bg-surface-alt text-purple-400",
+                isDone ? "text-purple-300" : "text-muted",
+                isDone ? "bg-purple-300" : "bg-purple-400",
+                "bg-purple-400/5 border-purple-400/30",
+                "text-purple-300",
+                "text-purple-300")
+            : new QuestPalette(
+                isDone ? "bg-yellow-400/15 text-yellow-400" : "bg-surface-alt text-amber-400",
+                isDone ? "text-yellow-400" : "text-muted",
+                isDone ? "bg-yellow-400" : "bg-amber-400",
+                "bg-yellow-400/5 border-yellow-400/30",
+                "text-yellow-400",
+                "text-yellow-400");
+    }
+
+    // Manual palette builder keeps the literal class strings visible to
+    // Tailwind's purge pass while avoiding 7 hand-rolled QuestPalette copies.
+    // Each colour expands into the exact same 6-class shape; interpolation
+    // alone would be invisible to purge, so we still spell every variant once
+    // in the switch above per supported colour.
+    private static QuestPalette BuildPalette(string color, string doneShade, string progressShade, bool isDone) => color switch
+    {
+        "purple"  => isDone
+            ? new("bg-purple-400/15 text-purple-300",   "text-purple-300",  "bg-purple-300",  "bg-purple-400/5 border-purple-400/30",  "text-purple-300",  "text-purple-300")
+            : new("bg-surface-alt text-purple-400",     "text-muted",       "bg-purple-400",  "bg-purple-400/5 border-purple-400/30",  "text-purple-300",  "text-purple-300"),
+        "red"     => isDone
+            ? new("bg-red-400/15 text-red-300",         "text-red-300",     "bg-red-300",     "bg-red-400/5 border-red-400/30",        "text-red-300",     "text-red-300")
+            : new("bg-surface-alt text-red-400",        "text-muted",       "bg-red-400",     "bg-red-400/5 border-red-400/30",        "text-red-300",     "text-red-300"),
+        "indigo"  => isDone
+            ? new("bg-indigo-400/15 text-indigo-300",   "text-indigo-300",  "bg-indigo-300",  "bg-indigo-400/5 border-indigo-400/30",  "text-indigo-300",  "text-indigo-300")
+            : new("bg-surface-alt text-indigo-400",     "text-muted",       "bg-indigo-400",  "bg-indigo-400/5 border-indigo-400/30",  "text-indigo-300",  "text-indigo-300"),
+        "amber"   => isDone
+            ? new("bg-amber-400/15 text-amber-300",     "text-amber-300",   "bg-amber-300",   "bg-amber-400/5 border-amber-400/30",    "text-amber-300",   "text-amber-300")
+            : new("bg-surface-alt text-amber-400",      "text-muted",       "bg-amber-400",   "bg-amber-400/5 border-amber-400/30",    "text-amber-300",   "text-amber-300"),
+        "cyan"    => isDone
+            ? new("bg-cyan-400/15 text-cyan-300",       "text-cyan-300",    "bg-cyan-300",    "bg-cyan-400/5 border-cyan-400/30",      "text-cyan-300",    "text-cyan-300")
+            : new("bg-surface-alt text-cyan-400",       "text-muted",       "bg-cyan-400",    "bg-cyan-400/5 border-cyan-400/30",      "text-cyan-300",    "text-cyan-300"),
+        "emerald" => isDone
+            ? new("bg-emerald-400/15 text-emerald-300", "text-emerald-300", "bg-emerald-300", "bg-emerald-400/5 border-emerald-400/30","text-emerald-300", "text-emerald-300")
+            : new("bg-surface-alt text-emerald-400",    "text-muted",       "bg-emerald-400", "bg-emerald-400/5 border-emerald-400/30","text-emerald-300", "text-emerald-300"),
+        "rose"    => isDone
+            ? new("bg-rose-400/15 text-rose-300",       "text-rose-300",    "bg-rose-300",    "bg-rose-400/5 border-rose-400/30",      "text-rose-300",    "text-rose-300")
+            : new("bg-surface-alt text-rose-400",       "text-muted",       "bg-rose-400",    "bg-rose-400/5 border-rose-400/30",      "text-rose-300",    "text-rose-300"),
+        _ => new("bg-surface-alt text-muted", "text-muted", "bg-muted", "bg-surface-alt/40 border-line/40", "text-muted", "text-muted"),
+    };
+
+    /// <summary>
+    /// Per-quest card — bordered shell with header (icon + title + variant chip
+    /// + X/Y), progress bar, and the step inventory grid. Sits in the right
+    /// rail of the 7/5 grid; each quest is its own card so the user can scan
+    /// quest-by-quest rather than as a single merged tracker.
+    /// </summary>
+    private RenderFragment RenderQuestCard(EasterEggQuestProgress quest) => __builder =>
+    {
+        var stepsByKey = quest.Steps.ToDictionary(s => s.Key, StringComparer.OrdinalIgnoreCase);
+        var qPct = quest.Total > 0 ? Math.Min(100, quest.Completed * 100 / quest.Total) : 0;
+        var qDone = quest.IsComplete;
+        var isSong = quest.Id.StartsWith("song", StringComparison.Ordinal);
+        var palette = ResolvePalette(quest.Color, isSong, qDone);
+
+        <div class="bg-surface rounded-md border border-line p-3 sm:p-4">
+            <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 @palette.HeadIconBg">
+                    <i class="ph @quest.Icon text-lg"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-baseline gap-2 flex-wrap min-w-0">
+                            <h3 class="text-sm font-bold text-foreground truncate">@AppState.Loc(quest.LocKey)</h3>
+                            @if (!string.IsNullOrEmpty(quest.ActiveVariantLocKey))
+                            {
+                                <span class="text-[10px] font-semibold text-amber-400/80 uppercase tracking-wide">
+                                    @AppState.Loc("WEBFRONT_ZOMBIE_EE_VIA_PATH").FormatExt(AppState.Loc(quest.ActiveVariantLocKey))
+                                </span>
+                            }
+                            else if (!string.IsNullOrEmpty(quest.BranchGroupId))
+                            {
+                                <span class="text-[10px] font-semibold text-subtle uppercase tracking-wide">
+                                    @AppState.Loc("WEBFRONT_ZOMBIE_EE_NO_PATH_CHOSEN")
+                                </span>
+                            }
+                        </div>
+                        <span class="text-xs font-mono font-bold tabular-nums @palette.CountText">
+                            @quest.Completed / @quest.Total
+                        </span>
+                    </div>
+
+                    <div class="mt-1.5 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/60">
+                        <div class="h-full transition-all duration-500 @palette.BarColor"
+                             style="width: @(qPct)%;"></div>
+                    </div>
+
+                    @* Step grid: 1-col on narrow rails, 2-col when the right rail
+                       has room. Per-element Tooltip surfaces the full step name (in
+                       case truncated) and the canonical UTC timestamp (because the
+                       visible text is converted to local time by utcLocalTime.js). *@
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-3">
+                        @foreach (var step in quest.Inventory)
+                        {
+                            @if (!step.IsLeaf())
+                            {
+                                @RenderEeParent(quest, step, stepsByKey, palette.StepFiredBg, palette.StepFiredIcon, palette.StepCheckIcon)
+                                continue;
+                            }
+                            var fired = stepsByKey.TryGetValue(step.Key, out var record);
+                            var label = AppState.Loc(step.LocKey);
+                            var utcDisplay = fired && record is not null
+                                ? record.OccurredAt.UtcDateTime.ToStandardFormat()
+                                : null;
+                            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(fired ? palette.StepFiredBg : "bg-surface-alt/40 border-line/40")">
+                                <i class="ph @step.Icon text-sm shrink-0 @(fired ? palette.StepFiredIcon : "text-subtle/60")"></i>
+                                <Tooltip Text="@label" WrapperClass="flex-1 min-w-0">
+                                    <div class="text-xs font-semibold truncate @(fired ? "text-foreground" : "text-subtle")">@label</div>
+                                </Tooltip>
+                                @if (fired && record is not null)
+                                {
+                                    <div class="text-[10px] font-mono text-muted shrink-0 flex items-center">
+                                        @if (record.RoundNumber is { } rn && rn > 0)
+                                        {
+                                            <span>R@(rn)</span>
+                                            <span class="mx-1 text-subtle">•</span>
+                                        }
+                                        <Tooltip Text="@utcDisplay" WrapperClass="inline-block">
+                                            <span data-utc-time="@record.OccurredAt.UtcDateTime.ToString("o")"
+                                                  data-utc-fmt="time">
+                                                @record.OccurredAt.UtcDateTime.ToString("HH:mm:ss")
+                                            </span>
+                                        </Tooltip>
+                                    </div>
+                                    <i class="ph ph-check-circle @palette.StepCheckIcon text-xs shrink-0"></i>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    };
+
+    /// <summary>
+    /// Buildables card — same shell weight as the quest cards. Renders the
+    /// configured inventory as a 2-col chip grid (mockup density), with the
+    /// "extras" strip below the divider for non-iconic side-quest buildables.
+    /// </summary>
+    private RenderFragment RenderBuildablesCard() => __builder =>
+    {
+        var allBuilt = Detail!.BuildablesTotal is { } total && total > 0 && Detail.BuildablesBuilt >= total;
+        var pct = Detail.BuildablesTotal is { } t2 && t2 > 0
+            ? Math.Min(100, Detail.BuildablesBuilt * 100 / t2)
+            : 100;
+        var headIconBg = allBuilt
+            ? "bg-blue-400/15 text-blue-300"
+            : "bg-surface-alt text-blue-400";
+        var countText = allBuilt ? "text-blue-300" : "text-muted";
+        var barColor = allBuilt ? "bg-blue-300" : "bg-blue-400";
+
+        <div class="bg-surface rounded-md border border-line p-3 sm:p-4">
+            <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 @headIconBg">
+                    <i class="ph ph-wrench text-lg"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <h3 class="text-sm font-bold text-foreground">@AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_LABEL")</h3>
+                        <span class="text-xs font-mono font-bold tabular-nums @countText">
+                            @Detail.BuildablesBuilt @(Detail.BuildablesTotal.HasValue ? $"/ {Detail.BuildablesTotal.Value}" : "")
+                        </span>
+                    </div>
+
+                    @if (Detail.BuildablesTotal.HasValue)
+                    {
+                        <div class="mt-1.5 h-1.5 bg-surface-alt rounded-full overflow-hidden border border-line/60">
+                            <div class="h-full transition-all duration-500 @barColor"
+                                 style="width: @(pct)%;"></div>
+                        </div>
+                    }
+
+                    @* Inventory-driven checklist — every iconic item the map could
+                       register renders as a chip; filled blue when built, muted when
+                       not. Falls back to a flat "built only" list for unconfigured
+                       maps (custom maps, T4/T5) where Inventory is empty but built
+                       items exist. *@
+                    @if (Detail.BuildableInventory.Count > 0)
+                    {
+                        var builtKeys = new HashSet<string>(
+                            Detail.BuildableNames.Select(b => b.Key),
+                            StringComparer.OrdinalIgnoreCase);
+                        @* Buildables card is full-width now; let the chip grid
+                           widen to 3/4 cols so big inventories (Origins staffs)
+                           don't waste horizontal space. *@
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1.5 mt-3">
+                            @foreach (var item in Detail.BuildableInventory)
+                            {
+                                var built = builtKeys.Contains(item.Key);
+                                <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border @(built ? "bg-blue-400/5 border-blue-400/30" : "bg-surface-alt/40 border-line/40")"
+                                     title="@item.DisplayName">
+                                    <i class="ph ph-wrench text-sm shrink-0 @(built ? "text-blue-300" : "text-subtle/60")"></i>
+                                    <div class="text-xs font-semibold truncate flex-1 min-w-0 @(built ? "text-foreground" : "text-subtle")">@item.DisplayName</div>
+                                    @if (built)
+                                    {
+                                        <i class="ph ph-check-circle text-blue-300 text-xs shrink-0"></i>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (Detail.BuildableNames.Count > 0)
+                    {
+                        @* Unconfigured map fallback: no inventory template, just
+                           show what was built. *@
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            @foreach (var entry in Detail.BuildableNames)
+                            {
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-400/5 border border-blue-400/30 text-xs text-blue-300">
+                                    <i class="ph ph-check-circle text-blue-300 text-xs"></i>
+                                    @entry.DisplayName
+                                </span>
+                            }
+                        </div>
+                    }
+
+                    @* Extras: side-quest / non-iconic buildables. Surfaced separately
+                       so they don't dilute the main count; the heading flags them as
+                       bonus rather than core progression. *@
+                    @if (Detail.ExtraBuildableNames.Count > 0)
+                    {
+                        <div class="mt-4 pt-3 border-t border-line/40">
+                            <div class="text-[10px] uppercase tracking-widest text-subtle font-bold mb-2 flex items-center gap-1.5">
+                                <i class="ph ph-plus-circle text-xs"></i>
+                                @AppState.Loc("WEBFRONT_ZOMBIE_MATCH_BUILDABLES_EXTRAS_LABEL").FormatExt(Detail.ExtraBuildablesBuilt)
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach (var entry in Detail.ExtraBuildableNames)
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300/90">
+                                        <i class="ph ph-plus-circle text-amber-400 text-xs"></i>
+                                        @entry.DisplayName
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    };
+
+    @* Nested parent step row: spans the full step grid (col-span-full) so the
+       expanded child grid below it reads as one unit. Header always visible
+       (chevron + parent label + sub-progress chip); child grid renders inline
+       when expanded — auto-expanded for mid-progress parents so the user can
+       see pending sub-steps without clicking. *@
     private RenderFragment RenderEeParent(
         EasterEggQuestProgress quest,
         EasterEggStepInventoryEntry parent,
@@ -413,7 +488,7 @@ else
             </button>
             @if (expanded)
             {
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-1.5 pl-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1.5 pl-5">
                     @foreach (var child in parent.Children!)
                     {
                         @if (!child.IsLeaf())

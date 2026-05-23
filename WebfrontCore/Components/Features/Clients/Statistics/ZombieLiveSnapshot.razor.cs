@@ -12,6 +12,76 @@ public partial class ZombieLiveSnapshot
 
     [Inject] public required AppState AppState { get; set; }
 
+    /// <summary>
+    /// Per-quest palette for the live modal's Objectives column. Returns the
+    /// title/bar/count text class + chip classes for done/partial/default
+    /// states. Explicit <paramref name="color"/> wins; null falls back to
+    /// song=purple, main=amber (the pre-Color behaviour).
+    /// </summary>
+    private sealed record LivePalette(
+        string TitleText,
+        string BarBg,
+        string CountText,
+        string ChipDone,
+        string ChipPartial,
+        string ChipDefault);
+
+    private static LivePalette ResolveLivePalette(string? color, bool isSong)
+    {
+        if (!string.IsNullOrEmpty(color))
+        {
+            // Literal class strings per supported colour so Tailwind's purge
+            // picks them up. Done = -400/15 fill + -400/40 border + -200 text;
+            // partial = -400/5 fill + -400/30 border + -300 text.
+            return color switch
+            {
+                "purple"  => new("text-purple-300",  "bg-purple-400",  "text-purple-300",
+                                 "bg-purple-400/15 border-purple-400/40 text-purple-200",
+                                 "bg-purple-400/5 border-purple-400/30 text-purple-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                "red"     => new("text-red-400",     "bg-red-400",     "text-red-400",
+                                 "bg-red-400/15 border-red-400/40 text-red-200",
+                                 "bg-red-400/5 border-red-400/30 text-red-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                "indigo"  => new("text-indigo-400",  "bg-indigo-400",  "text-indigo-400",
+                                 "bg-indigo-400/15 border-indigo-400/40 text-indigo-200",
+                                 "bg-indigo-400/5 border-indigo-400/30 text-indigo-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                "amber"   => new("text-amber-400",   "bg-amber-400",   "text-amber-400",
+                                 "bg-amber-400/15 border-amber-400/40 text-amber-200",
+                                 "bg-amber-400/5 border-amber-400/30 text-amber-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                "cyan"    => new("text-cyan-400",    "bg-cyan-400",    "text-cyan-400",
+                                 "bg-cyan-400/15 border-cyan-400/40 text-cyan-200",
+                                 "bg-cyan-400/5 border-cyan-400/30 text-cyan-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                "emerald" => new("text-emerald-400", "bg-emerald-400", "text-emerald-400",
+                                 "bg-emerald-400/15 border-emerald-400/40 text-emerald-200",
+                                 "bg-emerald-400/5 border-emerald-400/30 text-emerald-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                "rose"    => new("text-rose-400",    "bg-rose-400",    "text-rose-400",
+                                 "bg-rose-400/15 border-rose-400/40 text-rose-200",
+                                 "bg-rose-400/5 border-rose-400/30 text-rose-300",
+                                 "bg-surface/60 border-line/40 text-subtle"),
+                _ => ResolveLivePalette(null, isSong),
+            };
+        }
+
+        // Fallback — pre-Color behaviour preserved exactly so quests without
+        // an explicit Color render identically to before.
+        return isSong
+            ? new LivePalette(
+                "text-purple-300", "bg-purple-300", "text-purple-300",
+                "bg-purple-400/15 border-purple-400/40 text-purple-200",
+                "bg-purple-400/5 border-purple-400/30 text-purple-300",
+                "bg-surface/60 border-line/40 text-subtle")
+            : new LivePalette(
+                "text-amber-400", "bg-amber-400", "text-amber-400",
+                "bg-amber-500/15 border-amber-500/40 text-amber-300",
+                "bg-amber-500/5 border-amber-500/30 text-amber-400",
+                "bg-surface/60 border-line/40 text-subtle");
+    }
+
     private static (string Label, string Color, string Bg, string Dot, bool Animate, string Tooltip)
         StatusVisuals(ZombieLivePlayerStatus status, AppState appState) => status switch
     {

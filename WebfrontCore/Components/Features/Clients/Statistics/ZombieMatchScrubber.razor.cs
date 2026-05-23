@@ -57,6 +57,7 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     // toggles SHOW_ALL off, the unqualified lanes are hidden client-side but the
     // container would otherwise keep their reserved vertical space. Shrinking with the
     // visible lane count keeps the timeline tight and avoids awkward dead space.
+    // Constants mirror zombie-scrubber.js _trackHeight — keep in sync.
     private int _minHeight
     {
         get
@@ -65,7 +66,10 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
             var visibleLanes = _laneMode == "all"
                 ? Payload.Lanes.Count
                 : Payload.Lanes.Count(l => l.IsQualified);
-            return Math.Max(120, 60 + visibleLanes * 44);
+            const int topPad = 24;
+            const int laneRow = 44;
+            var tickband = Payload.MatchLevelEvents.Count > 0 ? 32 : 0;
+            return Math.Max(120, topPad + tickband + visibleLanes * laneRow);
         }
     }
 

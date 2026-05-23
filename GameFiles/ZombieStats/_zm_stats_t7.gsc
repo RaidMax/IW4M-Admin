@@ -1321,7 +1321,7 @@ function WaitForT7EasterEggSteps()
             //   _batteries — elemental_storm_batteries flag (5 zombie kills × 3 pools).
             //   _beacons   — elemental_storm_beacons_charged flag (electrify lit beacons
             //                with charged storm arrow + battery).
-            level thread WatchT7BeaconsLitAll( "aq_es_beacon_trig", "t7_de_bow_storm_lit", 3 );
+            level thread WatchT7EntArrayNotifyAll( "aq_es_beacon_trig", "beacon_activated", "t7_de_bow_storm_lit", 3 );
             level thread WatchT7FlagStep( "elemental_storm_wallrun",         "t7_de_bow_storm_wallrun" );
             level thread WatchT7FlagStep( "elemental_storm_batteries",       "t7_de_bow_storm_batteries" );
             level thread WatchT7FlagStep( "elemental_storm_beacons_charged", "t7_de_bow_storm_beacons" );
@@ -1329,23 +1329,44 @@ function WaitForT7EasterEggSteps()
             level thread WatchT7FlagStep( "elemental_storm_placed",          "t7_de_bow_storm_placed" );
             level thread WatchT7FlagStep( "elemental_storm_upgraded",        "t7_de_bow_storm_upgraded" );
 
-            // Wolf Bow upgrade (high-confidence pending live verification):
-            level thread WatchT7FlagStep( "wolf_howl_paintings",  "t7_de_bow_wolf_paintings" );
-            level thread WatchT7FlagStep( "wolf_howl_escort",     "t7_de_bow_wolf_escort" );
-            level thread WatchT7FlagStep( "wolf_howl_repaired",   "t7_de_bow_wolf_repaired" );
-            level thread WatchT7FlagStep( "wolf_howl_placed",     "t7_de_bow_wolf_placed" );
-            level thread WatchT7FlagStep( "wolf_howl_upgraded",   "t7_de_bow_wolf_upgraded" );
+            // Wolf Bow upgrade (high-confidence pending live verification).
+            // Phase order in source wolf_howl() at zm_castle_weap_quest_upgrade.gsc:3500:
+            //   paintings -> SHRINE (shoot aq_wh_skull_shrine_trig, no flag)
+            //   -> SKULL (interact aq_wh_skadi_skull, no flag — proxy via Skadi
+            //   ally spawn) -> escort (aggregate of 3 dig sites) -> SYMBOL (wall-
+            //   run + shoot aq_wh_burial_chamber_damage_trig, no flag) -> repaired
+            //   -> placed -> upgraded.
+            level thread WatchT7FlagStep( "wolf_howl_paintings", "t7_de_bow_wolf_paintings" );
+            level thread WatchT7EntDamageStep( "aq_wh_skull_shrine_trig", "t7_de_bow_wolf_shrine" );
+            level thread WatchT7WolfSkullPlaced( "t7_de_bow_wolf_skull" );
+            level thread WatchT7FlagStep( "wolf_howl_escort", "t7_de_bow_wolf_escort" );
+            level thread WatchT7EntDamageStep( "aq_wh_burial_chamber_damage_trig", "t7_de_bow_wolf_symbol" );
+            level thread WatchT7FlagStep( "wolf_howl_repaired", "t7_de_bow_wolf_repaired" );
+            level thread WatchT7FlagStep( "wolf_howl_placed", "t7_de_bow_wolf_placed" );
+            level thread WatchT7FlagStep( "wolf_howl_upgraded", "t7_de_bow_wolf_upgraded" );
 
-            // Fire Bow (Rune Prison) upgrade (pending verification):
-            level thread WatchT7FlagStep( "rune_prison_obelisk",   "t7_de_bow_fire_obelisk" );
-            level thread WatchT7FlagStep( "rune_prison_magma_ball","t7_de_bow_fire_magma" );
-            level thread WatchT7FlagStep( "rune_prison_golf",      "t7_de_bow_fire_apothicon" );
-            level thread WatchT7FlagStep( "rune_prison_repaired",  "t7_de_bow_fire_repaired" );
-            level thread WatchT7FlagStep( "rune_prison_placed",    "t7_de_bow_fire_placed" );
-            level thread WatchT7FlagStep( "rune_prison_upgraded",  "t7_de_bow_fire_upgraded" );
+            // Fire Bow (Rune Prison) upgrade (pending verification).
+            // Phase order in source rune_prison() at zm_castle_weap_quest_upgrade.gsc:191:
+            //   obelisk -> magma_ball (orb spawned) -> RINGS (per-ent only, no level
+            //   flag) -> golf (magma-into-4-runic-targets) -> repair -> place -> upgrade.
+            // _golf was previously mis-labelled _apothicon (no apothicon in Fire bow).
+            // Rings = 4x aq_rp_runic_circle_volume ents, each sets self flag
+            // `runic_circle_charged` when activated + zombies killed inside.
+            level thread WatchT7FlagStep( "rune_prison_obelisk",    "t7_de_bow_fire_obelisk" );
+            level thread WatchT7FlagStep( "rune_prison_magma_ball", "t7_de_bow_fire_magma" );
+            level thread WatchT7EntArrayFlagAll( "aq_rp_runic_circle_volume", "runic_circle_charged", "t7_de_bow_fire_rings", 4 );
+            level thread WatchT7FlagStep( "rune_prison_golf",       "t7_de_bow_fire_golf" );
+            level thread WatchT7FlagStep( "rune_prison_repaired",   "t7_de_bow_fire_repaired" );
+            level thread WatchT7FlagStep( "rune_prison_placed",     "t7_de_bow_fire_placed" );
+            level thread WatchT7FlagStep( "rune_prison_upgraded",   "t7_de_bow_fire_upgraded" );
 
-            // Void Bow (Demon Gate) upgrade (verified — see v3 probe log):
+            // Void Bow (Demon Gate) upgrade (verified — see v3 probe log).
+            // Phase order: seal -> FOSSILS (per-ent only, 4x aq_dg_fossil notify
+            // "returned" on pickup) -> crawlers -> rune_dropped -> runes -> repair
+            // -> place -> upgrade. Fossils slot in between seal and crawlers per
+            // source demon_gate() at zm_castle_weap_quest_upgrade.gsc:1910.
             level thread WatchT7FlagStep( "demon_gate_seal",       "t7_de_bow_void_seal" );
+            level thread WatchT7EntArrayNotifyAll( "aq_dg_fossil", "returned", "t7_de_bow_void_fossils", 4 );
             level thread WatchT7FlagStep( "demon_gate_crawlers",   "t7_de_bow_void_crawlers" );
             level thread WatchT7FlagStep( "demonic_rune_dropped",  "t7_de_bow_void_rune_dropped" );
             level thread WatchT7FlagStep( "demon_gate_runes",      "t7_de_bow_void_runes" );
@@ -1361,10 +1382,6 @@ function WaitForT7EasterEggSteps()
             // all three bears emitting per-press in real time.
             level thread WatchT7SongScriptOriginAtStruct( "hs_bear",       "t7_de_song_deadagain", 3 );
             level thread WatchT7SongEntityActivated(      "hs_gramophone", "t7_de_song_requiem",   3 );
-
-            // Cosmetic EEs (unchanged):
-            level thread WatchT7FlagStep( "ee_music_box_turning", "t7_de_musicbox" );
-            level thread WatchT7FlagStep( "ee_disco_inferno",     "t7_de_disco" );
             break;
         case "zm_island":
             // Zetsubou No Shima — FIVE quests:
@@ -1952,48 +1969,48 @@ function WatchT7SongEntityActivated( entityTargetname, stepKeyPrefix, expectedCo
     }
 }
 
-// Storm Bow "Light Beacons" sub-step. The source orchestrator
-// (`function_e1a7c3f0`) spawns per-beacon `function_6e3cfa55` threads that
-// set `b_lit=1` + notify `beacon_activated` on first arrow hit, then runs
-// `array::wait_till(beacons, "beacon_activated")` to await all 3. Right
-// after, it clears `b_lit` (line 5322) before the battery phase starts —
-// so b_lit polling races against that clear. We avoid the race by
-// listening for the per-beacon notify directly (notify fires regardless
-// of whether b_lit is still set) and counting via a level-wide field
-// scoped to this stepKey. Step emits once when count == expectedCount.
+// Per-entity-count "all N have fired the signal" aggregator. Two
+// variants because GSC notify and flag waits are distinct primitives:
+//   - WatchT7EntArrayNotifyAll: source emits `self notify(#"X")`
+//   - WatchT7EntArrayFlagAll:   source sets `self flag::set("X")`
 //
-// Lookup uses `script_noteworthy` (source's own queries on these ents
-// use the same key) rather than targetname so we hit only the beacon-
-// trigger ents and not any aux entities sharing the name.
-function WatchT7BeaconsLitAll( noteworthy, stepKey, expectedCount )
+// Use cases (zm_castle DE bows):
+//   Storm beacons   — `beacon_activated` notify on `aq_es_beacon_trig`
+//   Fire rings      — `runic_circle_charged` flag on
+//                     `aq_rp_runic_circle_volume`
+//   Void fossils    — `returned` notify on `aq_dg_fossil`
+//
+// Counter is keyed by stepKey on a level-scoped map so multiple calls
+// across quests don't collide. Lookup uses `script_noteworthy` (source's
+// own queries use the same key) so we hit only the target ents and not
+// any aux entities sharing the name.
+//
+// Pattern was first used for Storm Bow beacons — see gotcha-9 in
+// project_t7_nested_ee_per_trigger_2026-05-16 for the notify-vs-flag
+// race rationale (Storm cleared `b_lit` between phases so flag polling
+// raced the clear; notify is set-once, fires regardless).
+function WatchT7EntArrayNotifyAll( noteworthy, notifyName, stepKey, expectedCount )
 {
     level endon( "end_game" );
 
-    beacons = WaitForEntArrayByNoteworthy( noteworthy, expectedCount, 60 );
-    if ( !IsDefined( beacons ) )
+    ents = WaitForEntArrayByNoteworthy( noteworthy, expectedCount, 60 );
+    if ( !IsDefined( ents ) )
     {
-        logprint( "[ZM-EE] WatchT7BeaconsLitAll: NO entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
+        logprint( "[ZM-EE] WatchT7EntArrayNotifyAll: NO entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
         return;
     }
-    logprint( "[ZM-EE] WatchT7BeaconsLitAll: found " + beacons.size + " entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
+    logprint( "[ZM-EE] WatchT7EntArrayNotifyAll: found " + ents.size + " entities script_noteworthy=" + noteworthy + " notify=" + notifyName + " stepKey=" + stepKey + "\n" );
 
-    // Per-stepKey shared counter on a level-scoped map so multiple
-    // WatchT7BeaconsLitAll calls don't collide (future-proof — we only
-    // call it once today). Bracket-string indexing is the GSC idiom for
-    // dynamic field names; `level.foo[stepKey]` access is valid syntax.
     if ( !IsDefined( level.zm_ee_lit_count ) )
     {
         level.zm_ee_lit_count = [];
     }
     level.zm_ee_lit_count[ stepKey ] = 0;
-    for ( i = 0; i < beacons.size && i < expectedCount; i++ )
+    for ( i = 0; i < ents.size && i < expectedCount; i++ )
     {
-        beacons[i] thread WaitForBeaconActivatedNotify( stepKey );
+        ents[i] thread WaitForEntNotifyThenCount( notifyName, stepKey );
     }
 
-    // Poll the counter; cheap and survives any individual entity death
-    // (a per-entity thread death just leaves its slot uncounted —
-    // logged on timeout so failure is debuggable).
     waited = 0;
     while ( level.zm_ee_lit_count[ stepKey ] < expectedCount )
     {
@@ -2001,17 +2018,118 @@ function WatchT7BeaconsLitAll( noteworthy, stepKey, expectedCount )
         waited += 0.5;
         if ( waited == 300 )
         {
-            logprint( "[ZM-EE] WatchT7BeaconsLitAll: STILL_WAITING stepKey=" + stepKey + " count=" + level.zm_ee_lit_count[ stepKey ] + "/" + expectedCount + "\n" );
+            logprint( "[ZM-EE] WatchT7EntArrayNotifyAll: STILL_WAITING stepKey=" + stepKey + " count=" + level.zm_ee_lit_count[ stepKey ] + "/" + expectedCount + "\n" );
         }
     }
     EmitEeStep( stepKey );
 }
 
-function WaitForBeaconActivatedNotify( stepKey )
+function WaitForEntNotifyThenCount( notifyName, stepKey )
 {
     level endon( "end_game" );
-    self waittill( "beacon_activated" );
+    self waittill( notifyName );
     level.zm_ee_lit_count[ stepKey ]++;
+}
+
+function WatchT7EntArrayFlagAll( noteworthy, flagName, stepKey, expectedCount )
+{
+    level endon( "end_game" );
+
+    ents = WaitForEntArrayByNoteworthy( noteworthy, expectedCount, 60 );
+    if ( !IsDefined( ents ) )
+    {
+        logprint( "[ZM-EE] WatchT7EntArrayFlagAll: NO entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
+        return;
+    }
+    logprint( "[ZM-EE] WatchT7EntArrayFlagAll: found " + ents.size + " entities script_noteworthy=" + noteworthy + " flag=" + flagName + " stepKey=" + stepKey + "\n" );
+
+    if ( !IsDefined( level.zm_ee_lit_count ) )
+    {
+        level.zm_ee_lit_count = [];
+    }
+    level.zm_ee_lit_count[ stepKey ] = 0;
+    for ( i = 0; i < ents.size && i < expectedCount; i++ )
+    {
+        ents[i] thread WaitForEntFlagThenCount( flagName, stepKey );
+    }
+
+    waited = 0;
+    while ( level.zm_ee_lit_count[ stepKey ] < expectedCount )
+    {
+        wait ( 0.5 );
+        waited += 0.5;
+        if ( waited == 300 )
+        {
+            logprint( "[ZM-EE] WatchT7EntArrayFlagAll: STILL_WAITING stepKey=" + stepKey + " count=" + level.zm_ee_lit_count[ stepKey ] + "/" + expectedCount + "\n" );
+        }
+    }
+    EmitEeStep( stepKey );
+}
+
+function WaitForEntFlagThenCount( flagName, stepKey )
+{
+    level endon( "end_game" );
+    self flag::wait_till( flagName );
+    level.zm_ee_lit_count[ stepKey ]++;
+}
+
+// Single-entity damage hook. Emits step on first damage event the entity
+// receives. Source quest functions guard with weapon checks (bow only) —
+// we don't replicate that since aux triggers are usually shot exclusively
+// by the quest weapon anyway. If false positives surface in live play,
+// tighten by adding a weapon-name substring check on the waittill payload.
+function WatchT7EntDamageStep( targetname, stepKey )
+{
+    level endon( "end_game" );
+    e = WaitForEntPopulated( targetname, 60 );
+    if ( !IsDefined( e ) )
+    {
+        logprint( "[ZM-EE] WatchT7EntDamageStep: NO entity targetname=" + targetname + " stepKey=" + stepKey + "\n" );
+        return;
+    }
+    e waittill( "damage", amount, attacker, direction, point, mod, tagname, modelname, partname, weapon );
+    EmitEeStep( stepKey );
+}
+
+// Wolf Bow "place Skadi's skull" step proxy. Source `function_b9485994`
+// uses zm_unitrigger which we can't hook externally (sub-entity is on a
+// hashed field name we can't access). Skadi spawns as the only allies-
+// team AI on zm_castle immediately after pickup via function_4e530cb →
+// function_286f3904 (sp_skadi spawnfromspawner). Gate on the paintings
+// flag — without it, any phantom early ally would mis-fire.
+function WatchT7WolfSkullPlaced( stepKey )
+{
+    level endon( "end_game" );
+    level flag::wait_till( "wolf_howl_paintings" );
+    for ( ;; )
+    {
+        ai = getaiarray( "allies" );
+        if ( IsDefined( ai ) && ai.size > 0 )
+        {
+            EmitEeStep( stepKey );
+            return;
+        }
+        wait ( 2 );
+    }
+}
+
+function WaitForEntPopulated( targetname, timeoutSec )
+{
+    elapsed = 0;
+    for ( ;; )
+    {
+        e = GetEnt( targetname, "targetname" );
+        if ( IsDefined( e ) )
+        {
+            return e;
+        }
+        wait ( 1 );
+        elapsed++;
+        if ( elapsed >= timeoutSec )
+        {
+            return undefined;
+        }
+    }
 }
 
 function WaitForEntArrayByNoteworthy( noteworthy, minCount, timeoutSec )

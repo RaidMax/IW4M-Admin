@@ -143,24 +143,13 @@ window.zombieBadgeStrip = {
             // rAF so layout settles before we measure.
             requestAnimationFrame(() => {
                 if (!el.isConnected) return;
-                // Two overflow tests because scrollWidth alone misses cases where
-                // flex-wrap kicked in and laid items out on a second row (no
-                // horizontal overflow but vertical wrap occurred).
+                // The expanded group now wraps internally (flex-wrap), so
+                // multi-row layout is intentional — don't collapse on wrap.
+                // Only fall back to the aggregate chip on true horizontal
+                // overflow (a single chip wider than the container — narrow
+                // viewports).
                 const horizontalOverflow = el.scrollWidth > el.clientWidth + 1;
-                let wrapped = false;
-                if (!horizontalOverflow) {
-                    // Compare offsetTop across direct children of the expanded
-                    // group. If any sits below the first, flex wrapped them.
-                    const expanded = el.querySelector('[data-ee-expanded]');
-                    if (expanded) {
-                        const kids = Array.from(expanded.children);
-                        if (kids.length > 1) {
-                            const baseTop = kids[0].offsetTop;
-                            wrapped = kids.some(k => k.offsetTop > baseTop + 1);
-                        }
-                    }
-                }
-                if (horizontalOverflow || wrapped) {
+                if (horizontalOverflow) {
                     el.classList.add('zm-badge-collapsed');
                 }
             });

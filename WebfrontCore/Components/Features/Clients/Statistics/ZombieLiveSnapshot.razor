@@ -133,14 +133,21 @@
         </div>
 
         @* Map + achievement badges. Power-state lives under Match Elapsed
-           (above) — kept this block focused on map identity only. *@
+           (above) — kept this block focused on map identity only.
+           flex-1 + min-w-0 + justify-end claims remaining header width and
+           allows the inner badge strip to shrink → its internal flex-wrap
+           kicks in when too many quests are active (Castle hits 10+).
+           Badges + map stay on the SAME row vertically; badges wrap onto
+           additional rows above the map chip when crowded. Map chip is
+           shrink-0 so its label never truncates. *@
         @if (!string.IsNullOrEmpty(Snapshot.Map))
         {
-            <div class="relative z-10 flex items-center gap-3 shrink-0">
+            <div class="relative z-10 flex flex-1 items-center justify-end gap-3 min-w-0">
                 <ZombieAchievementBadges
                     EasterEggQuests="Snapshot.EasterEggQuests"
-                    HighestRound="Snapshot.CurrentRound" />
-                <div class="flex items-center gap-1.5 bg-surface border border-line px-2.5 py-1 rounded-sm">
+                    HighestRound="Snapshot.CurrentRound"
+                    AlignEnd="true" />
+                <div class="flex items-center gap-1.5 bg-surface border border-line px-2.5 py-1 rounded-sm shrink-0">
                     <i class="ph ph-map-trifold text-subtle text-sm"></i>
                     <span class="text-xs font-bold text-foreground uppercase tracking-wider truncate">@Snapshot.Map</span>
                 </div>

@@ -48,13 +48,24 @@
 
 @if (hasAny)
 {
-    <div id="@_stripId" class="zm-badge-strip inline-flex items-center gap-1.5 flex-wrap">
+    @* Two layout modes:
+         • AlignEnd=true (Live Modal): wrap chips onto multiple rows, right-
+           aligned toward the map chip. JS suppresses the collapse fallback
+           because wrap is intentional.
+         • AlignEnd=false (leaderboard, history, anywhere else): non-wrap
+           inline-flex so the chip row stays on one line; on overflow JS
+           detects + collapses to the "EE X/Y" aggregate chip below. *@
+    <div id="@_stripId" class="zm-badge-strip @(AlignEnd ? "flex flex-wrap items-center gap-1.5 min-w-0 justify-end" : "inline-flex items-center gap-1.5")">
 
         @if (hasEeProgress)
         {
-            @* Expanded view (default): one chip per visible quest. JS collapses to
-               the aggregate chip below if this group can't fit on one row. *@
-            <div data-ee-expanded class="inline-flex items-center gap-1.5">
+            @* Expanded view (default): one chip per visible quest. Wraps to
+               additional rows when many quests are active — denser than the
+               prior single-line layout that pushed sibling badges out of
+               alignment on Castle (10+ chips). JS still collapses to the
+               aggregate chip below on true horizontal overflow (narrow
+               viewports where a single chip exceeds container width). *@
+            <div data-ee-expanded class="@(AlignEnd ? "flex flex-wrap items-center gap-1.5 justify-end" : "inline-flex items-center gap-1.5")">
                 @foreach (var quest in visibleQuests)
                 {
                     var questTitle = AppState.Loc(quest.LocKey);
@@ -259,6 +270,14 @@
     /// partial is just stale noise. Live snapshot leaves this false.
     /// </summary>
     [Parameter] public bool MatchEnded { get; set; }
+
+    /// <summary>
+    /// Right-align wrapped chips so the strip reads back-to-front (used in the
+    /// Live Modal header where badges hug the map chip on the right). Default
+    /// false keeps leaderboard / history rows left-flowing alongside their
+    /// adjacent labels.
+    /// </summary>
+    [Parameter] public bool AlignEnd { get; set; }
 
     @* ── Tooltip body fragments ──
        All badge tooltips use BodyContent (structured markup) rather than the

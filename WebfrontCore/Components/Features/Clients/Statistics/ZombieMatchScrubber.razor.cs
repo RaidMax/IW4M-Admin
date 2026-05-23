@@ -62,14 +62,14 @@ public partial class ZombieMatchScrubber : IAsyncDisposable
     {
         get
         {
-            if (Payload is null) return 120;
+            if (Payload is null) return 100;
             var visibleLanes = _laneMode == "all"
                 ? Payload.Lanes.Count
                 : Payload.Lanes.Count(l => l.IsQualified);
             const int topPad = 24;
             const int laneRow = 44;
             var tickband = Payload.MatchLevelEvents.Count > 0 ? 32 : 0;
-            return Math.Max(120, topPad + tickband + visibleLanes * laneRow);
+            return topPad + tickband + Math.Max(1, visibleLanes) * laneRow;
         }
     }
 

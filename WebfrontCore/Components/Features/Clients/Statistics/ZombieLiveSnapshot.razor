@@ -64,13 +64,13 @@
                             var liveTint = PaceVisuals.ColorClass(liveBand?.Band);
                             var liveTooltip = LiveBannerTooltip(rs, liveBand);
                             <Tooltip Text="@liveTooltip" WrapperClass="inline-flex">
-                                <span class="text-base font-mono tabular-nums @liveTint">+@FormatElapsed(rs)</span>
+                                <span class="text-xs font-mono font-bold tabular-nums @liveTint">+@FormatElapsed(rs)</span>
                             </Tooltip>
                             if (liveSpecial is null)
                             {
                                 if (Snapshot.CurrentRoundEmaSeconds is { } emaSeconds && emaSeconds > 0)
                                 {
-                                    <span class="text-[11px] font-mono text-subtle/70 tabular-nums">(@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @FormatElapsed(emaSeconds))</span>
+                                    <span class="text-[10px] font-mono text-subtle/70 tabular-nums">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_PACE_AVG_PREFIX") @FormatElapsed(emaSeconds)</span>
                                 }
                                 if (Snapshot.CurrentRoundBudget is { } budget && budget > 24
                                     && Snapshot.CurrentRoundZombiesRemaining is { } remaining
@@ -80,7 +80,7 @@
                                     if (cleared > 0)
                                     {
                                         var liveSph = rs / (cleared / 24.0);
-                                        <span class="text-[11px] font-mono text-subtle/70 tabular-nums">@liveSph.ToString("F1") sph</span>
+                                        <span class="text-[10px] font-mono text-subtle/70 tabular-nums">@liveSph.ToString("F1") sph</span>
                                     }
                                 }
                             }
@@ -92,7 +92,7 @@
                              && Snapshot.CurrentRoundZombiesAlive is { } za)
                         {
                             var zombiesLeft = Math.Max(0, zr + za);
-                            <span class="text-[11px] font-mono text-subtle/60 tabular-nums">
+                            <span class="text-[10px] font-mono text-subtle/60 tabular-nums">
                                 @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_ZOMBIES_REMAINING").FormatExt(zombiesLeft)
                             </span>
                         }
@@ -158,7 +158,7 @@
     @* ── 3-COLUMN BODY ── stacks to a single column on <lg so mobile reads
          top-down: Objectives → Roster → Telemetry. Each column owns its own
          scroll region so a noisy column doesn't push the others off-screen. *@
-    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-line min-h-0">
+    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 lg:divide-x divide-line min-h-0">
 
         @* ── COL 1: OBJECTIVES (3/12) — EE quests + Songs subsection. *@
         <div class="lg:col-span-3 flex flex-col h-full min-h-0 overflow-hidden bg-surface-alt/20">
@@ -177,12 +177,27 @@
                     // with its own visual weight.
                     var mainQuests = liveQuests.Where(q => !q.Id.StartsWith("song", StringComparison.Ordinal)).ToList();
                     var songQuests = liveQuests.Where(q => q.Id.StartsWith("song", StringComparison.Ordinal)).ToList();
+                    // Empty-state message discrimination — three cases (collapsed
+                    // from five permutations; pending sections render their own
+                    // content, so the empty block only ever shows when both
+                    // lists are zero):
+                    //   • No quests configured for this map at all          → NONE_CONFIGURED
+                    //   • Main quest(s) existed and all are complete (songs → ALL_COMPLETE
+                    //     done too, or no songs configured at all)
+                    //   • Only songs configured and all are complete        → SONGS_COMPLETE
+                    var hasMainConfigured = Snapshot.EasterEggQuests
+                        .Any(q => !q.Id.StartsWith("song", StringComparison.Ordinal));
+                    var emptyKey = Snapshot.EasterEggQuests.Count == 0
+                        ? "WEBFRONT_ZOMBIE_LIVE_OBJECTIVES_NONE_CONFIGURED"
+                        : hasMainConfigured
+                            ? "WEBFRONT_ZOMBIE_LIVE_OBJECTIVES_ALL_COMPLETE"
+                            : "WEBFRONT_ZOMBIE_LIVE_OBJECTIVES_SONGS_COMPLETE";
                 }
 
                 @if (mainQuests.Count == 0 && songQuests.Count == 0)
                 {
                     <div class="p-3 text-center text-subtle text-xs">
-                        @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_OBJECTIVES_NONE")
+                        @AppState.Loc(emptyKey)
                     </div>
                 }
 
@@ -221,6 +236,16 @@
                 var showMatchPace = playerCount is 1 or 2;
                 var compact = playerCount >= 3;
                 var showSoloBadge = playerCount == 1;
+                // Roster always renders sorted by match kills desc. Stable on
+                // Name so two players tied on kills keep a deterministic order
+                // across the 5s snapshot refresh — prevents row jitter when
+                // kills tick up simultaneously. No sort UI: defaulting to
+                // kills aligns with the "who's carrying" question the live
+                // modal answers.
+                var orderedPlayers = Snapshot.Players
+                    .OrderByDescending(pl => pl.MatchKills)
+                    .ThenBy(pl => pl.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
                 @* Accent glow only when a single-card "presence" makes sense
                    (1p / 2p); on 3p+ the dense card stack reads as a roster,
                    not a hero focus. *@
@@ -260,16 +285,30 @@
                 }
 
                 <div class="flex-1 overflow-y-auto @(compact ? "p-3" : "p-4") flex flex-col gap-3 relative z-10" style="scrollbar-width: thin;">
-                    @foreach (var p in Snapshot.Players)
+                    @foreach (var p in orderedPlayers)
                     {
-                        @RenderSoloPlayerCard(p, compact, showSoloBadge)
+                        @* 3+ players use the mock-aligned compact card
+                           (12-col horizontal split: hero pair LEFT, micro
+                           stats RIGHT). 1p/2p keep the relaxed solo card
+                           because the column has the real-estate for a
+                           hero treatment and Match Pace fills the dead
+                           space below. *@
+                        if (compact)
+                        {
+                            @RenderCompactPlayerCard(p)
+                        }
+                        else
+                        {
+                            @RenderSoloPlayerCard(p, compact: false, showSoloBadge)
+                        }
                     }
 
                     @if (showMatchPace)
                     {
                         @* Match Pace fills remaining column height (no dead
-                           space). Uses Players[0] — round durations are
-                           match-wide so the per-player pick is cosmetic. *@
+                           space). Uses Players[0] of the original (unsorted)
+                           list — round durations are match-wide so the
+                           per-player pick is cosmetic. *@
                         <div class="flex-1 min-h-[6rem] flex flex-col">
                             @RenderMatchPaceSparkline(Snapshot.Players[0])
                         </div>
@@ -544,13 +583,13 @@
         </div>
     };
 
-    @* ─────────── ROSTER COL: unified Solo-styled player card ───────────
+    @* ─────────── ROSTER COL: Solo-styled player card (1p/2p only) ───────────
        Header (name + optional Solo badge + status) → hero cards row (Net
        Pts + Total Kills) → telemetry strip (HS%/KPD/DMG/Downs/Deaths).
-       Used at every player count with two density modes:
-         compact=false → relaxed sizing (1p/2p)
-         compact=true  → tighter paddings + smaller numerics + no
-                         phosphor watermark; scales to 8p in the column. *@
+       Used for relaxed (1p/2p) presentation only — 3+ uses
+       RenderCompactPlayerCard with a horizontal 12-col split. The
+       `compact` parameter is retained for future tweaks but the caller
+       always passes false from the 1p/2p branch. *@
     private RenderFragment RenderSoloPlayerCard(ZombieLivePlayerSnapshot p, bool compact, bool showSoloBadge) => __builder =>
     {
         var dmgInf = p.MatchDamageReceived == 0;
@@ -651,6 +690,101 @@
                     @RenderSoloStripCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DEATHS"), p.MatchDeaths.ToString("N0"), "text-error", null, false, false, stripPad, stripNum)
                 </div>
             </div>
+        </div>
+    };
+
+    @* ─────────── ROSTER COL: compact card (3+ players) ───────────
+       Mock-aligned 12-col horizontal split — hero pair (Net Pts + Kills)
+       on the LEFT 6 cols, micro stats (HS · KPD · DMG · Downs · Deaths)
+       on the RIGHT 6 cols. Stacks vertically on small viewports so the
+       card stays readable when the modal narrows. Header strip carries
+       name + joined-late badge + status pill; downed players get an
+       orange border tint matching the solo card's panic accent so the
+       state reads across the stack at a glance. *@
+    private RenderFragment RenderCompactPlayerCard(ZombieLivePlayerSnapshot p) => __builder =>
+    {
+        var dmgInf = p.MatchDamageReceived == 0;
+        var dmgRatio = dmgInf ? 0 : (double)p.MatchDamageDealt / p.MatchDamageReceived;
+        var hsPct = p.MatchKills == 0 ? 0 : (double)p.MatchHeadshotKills / p.MatchKills * 100;
+        var kpd = p.MatchDowns == 0 ? p.MatchKills : (double)p.MatchKills / p.MatchDowns;
+        var net = p.MatchPointsEarned - p.MatchPointsSpent;
+        var netColor = net >= 0 ? "text-success" : "text-error";
+
+        var downed = p.Status == ZombieLivePlayerStatus.Down;
+        var shellBorder = downed ? "border-orange-400/40" : "border-line";
+        var disconnectedClass = p.IsConnected ? "" : "opacity-60 grayscale-[0.5]";
+
+        <div class="bg-surface-alt/30 border @shellBorder rounded-md overflow-hidden shrink-0 @disconnectedClass">
+            @* Header strip — name + joined-late badge LEFT, status pill RIGHT. *@
+            <div class="bg-surface/60 p-2 flex items-center justify-between gap-2 border-b border-line/40">
+                <div class="flex items-center gap-2 min-w-0">
+                    <a href="/client/@p.ClientId/stats" @onclick:stopPropagation="true"
+                       class="text-xs font-bold text-foreground truncate hover:text-primary transition-colors no-underline">
+                        <ColorCode Value="@p.Name" />
+                    </a>
+                    @RenderJoinedBadge(p)
+                </div>
+                @RenderStatusPill(p)
+            </div>
+
+            @* Body — 12-col split. Hero pair LEFT, micro stats RIGHT. Stacks
+               on <sm so the card stays legible when the modal narrows. *@
+            <div class="p-2.5 grid grid-cols-12 gap-3 items-center">
+                @* LEFT 6: Net Pts + Kills sub-widgets *@
+                <div class="col-span-12 sm:col-span-6 flex gap-2">
+                    <div class="flex-1 bg-surface-alt/30 border border-line/50 p-1.5 rounded flex flex-col justify-center min-w-0">
+                        <span class="text-[8px] uppercase tracking-wider text-subtle font-semibold inline-flex items-center gap-0.5">
+                            <i class="ph ph-lightning @netColor" style="font-size: 10px;"></i>
+                            @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_NET_PTS")
+                        </span>
+                        <span class="text-base font-mono font-bold @netColor mt-0.5 leading-none truncate">@FormatSigned(net)</span>
+                    </div>
+                    <div class="flex-1 bg-surface-alt/30 border border-line/50 p-1.5 rounded flex flex-col justify-center min-w-0">
+                        <span class="text-[8px] uppercase tracking-wider text-subtle font-semibold inline-flex items-center gap-0.5">
+                            <i class="ph ph-sword text-foreground" style="font-size: 10px;"></i>
+                            @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_KILLS")
+                        </span>
+                        <div class="flex items-baseline justify-between gap-1 mt-0.5">
+                            <span class="text-base font-mono font-bold text-foreground leading-none">@p.MatchKills.ToString("N0")</span>
+                            <span class="text-[8px] font-mono text-warning bg-warning/10 px-1 rounded border border-warning/20 tabular-nums shrink-0">
+                                @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_THIS_ROUND_SUFFIX").FormatExt(p.CurrentRoundKills)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                @* RIGHT 6: 5-col micro stat strip (HS · KPD · DMG · Downs · Deaths) *@
+                <div class="col-span-12 sm:col-span-6 grid grid-cols-5 gap-1 text-center bg-surface-alt/20 border border-line/40 rounded p-1.5">
+                    @RenderCompactMicroCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_HS_PCT"), $"{hsPct:F0}%", "text-foreground", "text-muted")
+                    @RenderCompactMicroCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_KPD"), kpd >= 1000 ? FormatCompactNumber((long)kpd) : kpd.ToString("F1"), "text-foreground", "text-muted")
+                    @RenderCompactMicroDmgCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DMG"), dmgInf, dmgRatio)
+                    @RenderCompactMicroCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DOWNS"), p.MatchDowns.ToString("N0"), "text-orange-400", "text-orange-400")
+                    @RenderCompactMicroCell(AppState.Loc("WEBFRONT_ZOMBIE_LIVE_DEATHS"), p.MatchDeaths.ToString("N0"), "text-error", "text-error")
+                </div>
+            </div>
+        </div>
+    };
+
+    private RenderFragment RenderCompactMicroCell(string label, string value, string valueColor, string labelColor) => __builder =>
+    {
+        <div class="flex flex-col min-w-0">
+            <span class="text-[8px] uppercase @labelColor tracking-tight truncate">@label</span>
+            <span class="text-xs font-mono font-semibold @valueColor mt-0.5 leading-none truncate">@value</span>
+        </div>
+    };
+
+    private RenderFragment RenderCompactMicroDmgCell(string label, bool inf, double ratio) => __builder =>
+    {
+        <div class="flex flex-col min-w-0">
+            <span class="text-[8px] uppercase text-muted tracking-tight truncate">@label</span>
+            @if (inf)
+            {
+                <span class="text-xs font-mono font-semibold text-foreground mt-0.5 leading-none"><i class="ph ph-infinity"></i></span>
+            }
+            else
+            {
+                <span class="text-xs font-mono font-semibold text-foreground mt-0.5 leading-none truncate">@ratio.ToString("N1")<span class="text-[8px] text-subtle ml-0.5">x</span></span>
+            }
         </div>
     };
 

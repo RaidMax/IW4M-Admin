@@ -198,6 +198,10 @@ else
                 "cyan"    => BuildPalette("cyan",    "300", "400", isDone),
                 "emerald" => BuildPalette("emerald", "300", "400", isDone),
                 "rose"    => BuildPalette("rose",    "300", "400", isDone),
+                "teal"    => BuildPalette("teal",    "300", "400", isDone),
+                "orange"  => BuildPalette("orange",  "300", "400", isDone),
+                "fuchsia" => BuildPalette("fuchsia", "300", "400", isDone),
+                "sky"     => BuildPalette("sky",     "300", "400", isDone),
                 _ => ResolvePalette(null, isSong, isDone),
             };
         }
@@ -249,6 +253,18 @@ else
         "rose"    => isDone
             ? new("bg-rose-400/15 text-rose-300",       "text-rose-300",    "bg-rose-300",    "bg-rose-400/5 border-rose-400/30",      "text-rose-300",    "text-rose-300")
             : new("bg-surface-alt text-rose-400",       "text-muted",       "bg-rose-400",    "bg-rose-400/5 border-rose-400/30",      "text-rose-300",    "text-rose-300"),
+        "teal"    => isDone
+            ? new("bg-teal-400/15 text-teal-300",       "text-teal-300",    "bg-teal-300",    "bg-teal-400/5 border-teal-400/30",      "text-teal-300",    "text-teal-300")
+            : new("bg-surface-alt text-teal-400",       "text-muted",       "bg-teal-400",    "bg-teal-400/5 border-teal-400/30",      "text-teal-300",    "text-teal-300"),
+        "orange"  => isDone
+            ? new("bg-orange-400/15 text-orange-300",   "text-orange-300",  "bg-orange-300",  "bg-orange-400/5 border-orange-400/30",  "text-orange-300",  "text-orange-300")
+            : new("bg-surface-alt text-orange-400",     "text-muted",       "bg-orange-400",  "bg-orange-400/5 border-orange-400/30",  "text-orange-300",  "text-orange-300"),
+        "fuchsia" => isDone
+            ? new("bg-fuchsia-400/15 text-fuchsia-300", "text-fuchsia-300", "bg-fuchsia-300", "bg-fuchsia-400/5 border-fuchsia-400/30","text-fuchsia-300", "text-fuchsia-300")
+            : new("bg-surface-alt text-fuchsia-400",    "text-muted",       "bg-fuchsia-400", "bg-fuchsia-400/5 border-fuchsia-400/30","text-fuchsia-300", "text-fuchsia-300"),
+        "sky"     => isDone
+            ? new("bg-sky-400/15 text-sky-300",         "text-sky-300",     "bg-sky-300",     "bg-sky-400/5 border-sky-400/30",        "text-sky-300",     "text-sky-300")
+            : new("bg-surface-alt text-sky-400",        "text-muted",       "bg-sky-400",     "bg-sky-400/5 border-sky-400/30",        "text-sky-300",     "text-sky-300"),
         _ => new("bg-surface-alt text-muted", "text-muted", "bg-muted", "bg-surface-alt/40 border-line/40", "text-muted", "text-muted"),
     };
 

@@ -160,16 +160,24 @@
          scroll region so a noisy column doesn't push the others off-screen. *@
     <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 lg:divide-x divide-line min-h-0">
 
-        @* ── COL 1: OBJECTIVES (3/12) — EE quests + Songs subsection. *@
+        @* ── COL 1: OBJECTIVES (3/12) — EE quests + Songs subsection;
+             Match Pace pinned at the bottom (shows at every player count
+             since round durations are match-wide, not per-player). *@
         <div class="lg:col-span-3 flex flex-col h-full min-h-0 overflow-hidden bg-surface-alt/20">
             <div class="shrink-0 p-2 border-b border-line bg-surface-alt/30 flex items-center gap-2">
                 <i class="ph ph-target text-subtle text-sm"></i>
                 <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted">@AppState.Loc("WEBFRONT_ZOMBIE_LIVE_OBJECTIVES_LOG")</h3>
             </div>
-            <div class="flex-1 overflow-y-auto p-2 space-y-2" style="scrollbar-width: thin;">
+            <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0" style="scrollbar-width: thin;">
                 @{
+                    // Filter keeps incomplete quests AND branching placeholders
+                    // (BranchGroupId set, Total==0 until a path is committed).
+                    // Without the BranchGroupId clause, Tower of Babble / High
+                    // Maintenance / Mined Games would silently disappear from
+                    // the live log on every match — they only have Total>0
+                    // after Maxis or Richtofen path commits.
                     var liveQuests = Snapshot.EasterEggQuests
-                        .Where(q => !q.IsComplete && q.Total > 0)
+                        .Where(q => !q.IsComplete && (q.Total > 0 || q.BranchGroupId is not null))
                         .ToList();
                     // Songs split into their own subsection below the main quest
                     // list. Quest id convention: "song" / "song_*" prefixes mark
@@ -220,20 +228,31 @@
                     </div>
                 }
             </div>
+
+            @* Match Pace — pinned to the bottom of the objectives column at a
+               fixed height so it survives at every player count (was previously
+               in the roster column and only shown for 1p/2p). Uses Players[0]
+               as the data source — round durations are match-wide, the per-
+               player pick is cosmetic. Skipped on empty roster. The sparkline
+               renders its own section header so this wrapper stays structural
+               only — no padding, no card-in-card duplication. *@
+            @if (Snapshot.Players.Count > 0)
+            {
+                <div class="shrink-0 border-t border-line h-48 flex flex-col">
+                    @RenderMatchPaceSparkline(Snapshot.Players[0])
+                </div>
+            }
         </div>
 
-        @* ── COL 2: ROSTER (6/12) — unified card style for every player
-             count; density + match-pace inclusion adapt per count:
-               1p → 1 card (relaxed) + Match Pace, "Solo" badge
-               2p → 2 cards (relaxed) + Match Pace, no Solo badge
-               3p+ → N cards (compact, no phosphor watermark), no Match
-                     Pace — pace is a per-player signal and ambiguous when
-                     many players share rounds; column real-estate goes to
-                     the cards. *@
+        @* ── COL 2: ROSTER (6/12) — unified card style:
+               1p → 1 card (relaxed) + "Solo" badge
+               2p → 2 cards (relaxed)
+               3p+ → N cards (compact, mock-aligned 12-col split)
+             Match Pace moved to the Objectives column so it's visible at
+             every player count without competing for roster real-estate. *@
         <div class="lg:col-span-6 flex flex-col h-full min-h-0 overflow-hidden bg-surface/40 relative">
             @{
                 var playerCount = Snapshot.Players.Count;
-                var showMatchPace = playerCount is 1 or 2;
                 var compact = playerCount >= 3;
                 var showSoloBadge = playerCount == 1;
                 // Roster always renders sorted by match kills desc. Stable on
@@ -289,10 +308,7 @@
                     {
                         @* 3+ players use the mock-aligned compact card
                            (12-col horizontal split: hero pair LEFT, micro
-                           stats RIGHT). 1p/2p keep the relaxed solo card
-                           because the column has the real-estate for a
-                           hero treatment and Match Pace fills the dead
-                           space below. *@
+                           stats RIGHT). 1p/2p keep the relaxed solo card. *@
                         if (compact)
                         {
                             @RenderCompactPlayerCard(p)
@@ -301,17 +317,6 @@
                         {
                             @RenderSoloPlayerCard(p, compact: false, showSoloBadge)
                         }
-                    }
-
-                    @if (showMatchPace)
-                    {
-                        @* Match Pace fills remaining column height (no dead
-                           space). Uses Players[0] of the original (unsorted)
-                           list — round durations are match-wide so the
-                           per-player pick is cosmetic. *@
-                        <div class="flex-1 min-h-[6rem] flex flex-col">
-                            @RenderMatchPaceSparkline(Snapshot.Players[0])
-                        </div>
                     }
                 </div>
             }
@@ -432,6 +437,12 @@
         // Origins staffs, Wrath, etc.); fallback = song=purple / main=amber so
         // quests without an explicit colour render identically to before.
         var palette = ResolveLivePalette(quest.Color, isSong);
+        // Branching placeholder = group has no path committed yet (Total==0 but
+        // BranchGroupId set, e.g. TranZit Tower of Babble pre-commit). Suppress
+        // the progress bar + step grid + count chip in that state; show a
+        // pending-path caption instead so the card reads as "we know this exists,
+        // nobody has committed Maxis or Richtofen yet".
+        var isBranchingPlaceholder = quest.Total == 0 && quest.BranchGroupId is not null;
 
         <div class="bg-surface-alt/40 border border-line rounded-sm p-2 flex flex-col gap-2">
             <div class="flex items-center justify-between gap-2">
@@ -439,13 +450,25 @@
                     <i class="ph @quest.Icon text-sm shrink-0"></i>
                     <span class="text-[11px] font-bold uppercase tracking-wide truncate">@AppState.Loc(quest.LocKey)</span>
                 </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <div class="w-16 h-1 bg-surface-alt rounded-sm overflow-hidden border border-line/40">
-                        <div class="h-full @palette.BarBg transition-all duration-500" style="width: @(pct)%;"></div>
+                @if (!isBranchingPlaceholder)
+                {
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <div class="w-16 h-1 bg-surface-alt rounded-sm overflow-hidden border border-line/40">
+                            <div class="h-full @palette.BarBg transition-all duration-500" style="width: @(pct)%;"></div>
+                        </div>
+                        <span class="text-[10px] font-mono font-bold tabular-nums @palette.CountText">@quest.Completed / @quest.Total</span>
                     </div>
-                    <span class="text-[10px] font-mono font-bold tabular-nums @palette.CountText">@quest.Completed / @quest.Total</span>
-                </div>
+                }
             </div>
+
+            @if (isBranchingPlaceholder)
+            {
+                <div class="text-[10px] text-subtle italic px-0.5">
+                    @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_BRANCH_NO_PATH")
+                </div>
+            }
+            else
+            {
 
             <div class="flex items-center gap-1 flex-wrap">
                 @foreach (var step in quest.Inventory)
@@ -491,6 +514,7 @@
                     </Tooltip>
                 }
             </div>
+            }
         </div>
     };
 
@@ -859,8 +883,12 @@
            (set on caller). Inner header is shrink-0, bars region takes the
            remaining vertical space — fills the roster column's dead area
            below the solo card. *@
-        <div class="bg-surface-alt/40 border border-line rounded-sm overflow-hidden flex-1 flex flex-col">
-            <div class="shrink-0 px-3 py-2 bg-surface-alt/60 border-b border-line flex items-center justify-between">
+        @* Section renders flush inside the parent column — no outer card
+           border/bg/rounded. The header (below) matches the column's own
+           header convention (p-2, bg-surface-alt/30) so the strip reads as
+           a sibling section to "Objectives Log" rather than nested card. *@
+        <div class="flex-1 flex flex-col min-h-0">
+            <div class="shrink-0 p-2 bg-surface-alt/30 border-b border-line flex items-center justify-between gap-2">
                 <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted">
                     <i class="ph ph-chart-line text-xs"></i>
                     @AppState.Loc("WEBFRONT_ZOMBIE_LIVE_MATCH_PACE_LABEL")

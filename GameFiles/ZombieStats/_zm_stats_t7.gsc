@@ -374,6 +374,23 @@ function EmitSpecialRoundIfAny()
 // Adds vDamageOrigin, modelIndex, surfaceType, vSurfaceNormal vs T6's 11.
 // T7 weapon param is a struct (WeaponObject) — use .name for string. Engine's own
 // logprint at _globallogic_actor.gsc:212 does the same.
+// See _zm_stats_t6.gsc for the full rationale. A zombie with N health can only take
+// N damage; the engine can hand grossly inflated iDamage, so bound by the victim's HP.
+// Falls back to level.zombie_health when maxhealth is undefined (special enemies) —
+// the case that was leaking past the old maxhealth-only guard.
+function GetReportedDamageCap()
+{
+    if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 )
+    {
+        return self.maxhealth;
+    }
+    if ( IsDefined( level.zombie_health ) && level.zombie_health > 0 )
+    {
+        return level.zombie_health;
+    }
+    return undefined;
+}
+
 function OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, vDamageOrigin, psOffsetTime, boneIndex, modelIndex, surfaceType, vSurfaceNormal )
 {
     if ( IsPlayer( eInflictor ) || IsPlayer( eAttacker ) || IsPlayer( self ) )
@@ -387,9 +404,10 @@ function OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, 
         if ( IsDefined( self.health ) && self.health > 0 )
         {
             reportedDamage = iDamage;
-            if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && reportedDamage > self.maxhealth )
+            cap = self GetReportedDamageCap();
+            if ( IsDefined( cap ) && reportedDamage > cap )
             {
-                reportedDamage = self.maxhealth;
+                reportedDamage = cap;
             }
             logprint( "GSE;AD;" + victimInfo + ";" + attackerInfo + ";" + weaponName + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
         }
@@ -409,9 +427,10 @@ function OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, 
         weaponName = WeaponName( sWeapon );
 
         damage = iDamage;
-        if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && damage > self.maxhealth )
+        cap = self GetReportedDamageCap();
+        if ( IsDefined( cap ) && damage > cap )
         {
-            damage = self.maxhealth;
+            damage = cap;
         }
         logprint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + weaponName + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
     }
@@ -430,7 +449,14 @@ function OnPlayerDamaged( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
         if ( IsPlayer( eInflictor ) ) { attackerInfo = BuildPlayerInfoString( eInflictor ); }
         weaponName = WeaponName( sWeapon );
 
-        logprint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + weaponName + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+        // Player victim — bound received damage by the player's max HP. self is the player.
+        reportedDamage = iDamage;
+        cap = self GetReportedDamageCap();
+        if ( IsDefined( cap ) && reportedDamage > cap )
+        {
+            reportedDamage = cap;
+        }
+        logprint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + weaponName + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
     }
 
     self [[ level.callbackPlayerDamageOriginal ]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, vDamageOrigin, psOffsetTime, boneIndex, vSurfaceNormal );

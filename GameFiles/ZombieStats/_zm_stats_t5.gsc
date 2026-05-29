@@ -411,6 +411,24 @@ EmitSpecialRoundIfAny()
 //-------------------//
 
 // T5 actor damage signature matches T4: (eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset)
+// See _zm_stats_t6.gsc for the full rationale. A zombie with N health can only take
+// N damage; the engine can hand grossly inflated iDamage (splash / environmental, and
+// on some special enemies an overflowed ~2^31), so bound by the victim's HP. Falls back
+// to level.zombie_health when maxhealth is undefined (special enemies) — that was the
+// case leaking past the old maxhealth-only guard.
+GetReportedDamageCap()
+{
+    if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 )
+    {
+        return self.maxhealth;
+    }
+    if ( IsDefined( level.zombie_health ) && level.zombie_health > 0 )
+    {
+        return level.zombie_health;
+    }
+    return undefined;
+}
+
 OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset )
 {
     if ( IsPlayer( eInflictor ) || IsPlayer( eAttacker ) || IsPlayer( self ) )
@@ -426,13 +444,11 @@ OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, 
         // we only want to log damage if they aren't going to die
         if ( IsDefined( self.health ) && iDamage < self.health )
         {
-            // Cap reported damage at the victim's max HP — the engine can pass
-            // iDamage values far in excess of what the zombie could actually absorb
-            // (splash / environmental damage at high rounds).
             reportedDamage = iDamage;
-            if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && reportedDamage > self.maxhealth )
+            cap = self GetReportedDamageCap();
+            if ( IsDefined( cap ) && reportedDamage > cap )
             {
-                reportedDamage = self.maxhealth;
+                reportedDamage = cap;
             }
 
             logPrint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
@@ -456,11 +472,12 @@ OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHi
         }
 
         // Cap kill damage at the victim's max HP so the final blow doesn't
-        // include overkill / engine-inflated iDamage.
+        // include overkill / engine-inflated iDamage. Same fallback as OnActorDamage.
         damage = iDamage;
-        if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && damage > self.maxhealth )
+        cap = self GetReportedDamageCap();
+        if ( IsDefined( cap ) && damage > cap )
         {
-            damage = self.maxhealth;
+            damage = cap;
         }
 
         logPrint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
@@ -482,7 +499,15 @@ OnPlayerDamaged( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon
             attackerInfo = BuildPlayerInfoString( eInflictor );
         }
 
-        logPrint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+        // Player victim — bound received damage by the player's max HP. self is the player.
+        reportedDamage = iDamage;
+        cap = self GetReportedDamageCap();
+        if ( IsDefined( cap ) && reportedDamage > cap )
+        {
+            reportedDamage = cap;
+        }
+
+        logPrint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
     }
 
     [[ level.callbackPlayerDamageOriginal ]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, timeOffset );

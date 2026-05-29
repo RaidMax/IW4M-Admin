@@ -773,6 +773,34 @@ EmitSpecialRoundIfAny()
 
 // T6 actor damage signature: (inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex)
 // T4 used (eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, iModelIndex, iTimeOffset)
+// Resolves the physical upper bound for a single hit's reported damage. The engine
+// can hand iDamage values far in excess of what the actor could absorb (seen in
+// Die Rise at round 30: MOD_PROJECTILE_SPLASH reporting ~5.5M/hit; worse on some
+// special enemies it has overflowed to ~2^31, writing billions to the stats DB).
+//
+// A zombie with N health can only ever take N damage — overkill is not real damage —
+// so we bound the reported value by the victim's health. Order matters:
+//   1. self.maxhealth — the actor's true max (scales per round). Correct for regular
+//      zombies. NOT self.health: on the post-hit callback that would under-count a
+//      legitimate large hit on an already-damaged zombie.
+//   2. level.zombie_health — round-standard zombie HP. Fallback for special enemies
+//      (leapers, avogadro, brutus, panzer) that don't expose maxhealth, which is the
+//      case that was leaking past the old maxhealth-only guard.
+// Returns undefined only if neither is available (extremely rare) — caller leaves the
+// value uncapped rather than inventing a number.
+GetReportedDamageCap()
+{
+    if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 )
+    {
+        return self.maxhealth;
+    }
+    if ( IsDefined( level.zombie_health ) && level.zombie_health > 0 )
+    {
+        return level.zombie_health;
+    }
+    return undefined;
+}
+
 OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime, boneIndex )
 {
     if ( IsPlayer( eInflictor ) || IsPlayer( eAttacker ) || IsPlayer( self ) )
@@ -790,13 +818,11 @@ OnActorDamage( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, 
         // so we check if the zombie is still alive after the hit
         if ( IsDefined( self.health ) && self.health > 0 )
         {
-            // Cap reported damage at the victim's max HP — the engine can pass
-            // iDamage values far in excess of what the zombie could actually absorb
-            // (seen in Die Rise at round 30: MOD_PROJECTILE_SPLASH reporting ~5.5M/hit).
             reportedDamage = iDamage;
-            if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && reportedDamage > self.maxhealth )
+            cap = self GetReportedDamageCap();
+            if ( IsDefined( cap ) && reportedDamage > cap )
             {
-                reportedDamage = self.maxhealth;
+                reportedDamage = cap;
             }
 
             logprint( "GSE;AD;" + victimInfo +  ";" + attackerInfo + ";" + sWeapon + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
@@ -820,11 +846,13 @@ OnActorKilled( eInflictor, eAttacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHi
         }
 
         // Cap kill damage at the victim's max HP so the final blow doesn't
-        // include overkill / engine-inflated iDamage.
+        // include overkill / engine-inflated iDamage. Same fallback as OnActorDamage
+        // for special enemies that don't expose maxhealth.
         damage = iDamage;
-        if ( IsDefined( self.maxhealth ) && self.maxhealth > 0 && damage > self.maxhealth )
+        cap = self GetReportedDamageCap();
+        if ( IsDefined( cap ) && damage > cap )
         {
-            damage = self.maxhealth;
+            damage = cap;
         }
 
         logprint( "GSE;AK;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + damage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
@@ -847,7 +875,16 @@ OnPlayerDamaged( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon
             attackerInfo = BuildPlayerInfoString( eInflictor );
         }
 
-        logprint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
+        // Player victim — bound received damage by the player's max HP for the same
+        // reason as actor damage (engine-inflated iDamage). self is the player here.
+        reportedDamage = iDamage;
+        cap = self GetReportedDamageCap();
+        if ( IsDefined( cap ) && reportedDamage > cap )
+        {
+            reportedDamage = cap;
+        }
+
+        logprint( "GSE;D;" + victimInfo + ";" + attackerInfo + ";" + sWeapon + ";" + reportedDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n" );
     }
 
     [[ level.callbackPlayerDamageOriginal ]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime, boneIndex );

@@ -38,6 +38,17 @@ public interface IZombieStatsEnhancer
     Task OnClientDisposed(EFClient client, IGameServer server);
 
     /// <summary>
+    /// Reconciles the live match roster against the server's currently-connected clients,
+    /// late-tracking any connected player the edge-triggered <see cref="OnClientAuthorized"/>
+    /// path missed (e.g. gametype dvar stale at auth, null server at auth, or a player
+    /// already connected when the server rotated into a zombie gametype). Makes match
+    /// membership self-correct against the same authoritative source the server card uses,
+    /// so the live modal can't drift and stat capture isn't silently lost. Idempotent and
+    /// cheap for already-tracked clients — safe to call on every client-data poll.
+    /// </summary>
+    Task ReconcileConnectedClients(IGameServer server);
+
+    /// <summary>
     /// Called when a new match starts on a zombie server.
     /// </summary>
     void OnMatchStarted(IGameServer server);

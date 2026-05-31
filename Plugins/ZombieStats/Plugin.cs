@@ -12,6 +12,7 @@ using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Game.GameScript;
 using SharedLibraryCore.Events.Game.GameScript.Zombie;
 using SharedLibraryCore.Events.Management;
+using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Interfaces.Events;
 
@@ -41,6 +42,10 @@ public class Plugin : IPluginV2
         IManagementEventSubscriptions.Unload += OnUnload;
         IManagementEventSubscriptions.ClientStateAuthorized += OnClientAuthorized;
         IManagementEventSubscriptions.ClientStateDisposed += OnClientDisposed;
+        // Periodic per-server client-data poll — used as the reconciliation heartbeat so a
+        // player the edge-triggered ClientStateAuthorized path missed still gets tracked
+        // (and appears in the live modal) within a poll cycle. See ReconcileConnectedClients.
+        IGameServerEventSubscriptions.ClientDataUpdated += OnClientDataUpdated;
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
         IGameEventSubscriptions.MatchEnded += OnMatchEnded;
         IGameEventSubscriptions.MatchStarted += OnMatchStarted;
@@ -63,6 +68,16 @@ public class Plugin : IPluginV2
             await _enhancer.OnClientDisposed(clientEvent.Client, clientEvent.Client.CurrentServer);
             await _enhancer.UpdateState(token);
         }
+    }
+
+    private async Task OnClientDataUpdated(ClientDataUpdateEvent updateEvent, CancellationToken token)
+    {
+        if (_enhancer is null || !updateEvent.Server.IsZombieServer())
+        {
+            return;
+        }
+
+        await _enhancer.ReconcileConnectedClients(updateEvent.Server);
     }
 
     private async Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)

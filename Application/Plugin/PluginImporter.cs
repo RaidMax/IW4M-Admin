@@ -129,6 +129,10 @@ namespace IW4MAdmin.Application.Plugin
 
             var eligibleAssemblyTypes = assemblies.Concat(AppDomain.CurrentDomain.GetAssemblies()
                     .Where(asm => !new[] { "IW4MAdmin", "SharedLibraryCore", "Stats" }.Contains(asm.GetName().Name)))
+                // a plugin loaded from the Plugins dir is also present in the AppDomain, so the
+                // concat above lists it twice; dedupe by identity so each plugin type is only
+                // discovered (and later registered/instantiated) once
+                .DistinctBy(asm => asm.FullName)
                 .SelectMany(asm => PluginApiCompatibility.GetLoadableTypes(asm, _logger))
                 .Where(type =>
                     FilterTypes.Any(filterType => type.GetInterface(filterType.Name, false) != null) ||

@@ -431,7 +431,29 @@ namespace IW4MAdmin.Application
 
                 defaultLogger.LogDebug("Registering plugin type {Name}", pluginType.FullName);
 
-                serviceCollection.AddSingleton(!isV2 ? typeof(IPlugin) : typeof(IPluginV2), pluginType);
+                // Instantiate through a guarded factory: a plugin compiled against newer
+                // API can load fine here yet throw at construction (e.g. a ctor body call
+                // or a member typed with a missing type, neither of which fails at type
+                // load). Because IEnumerable<IPluginV2> is resolved in bulk, one such throw
+                // would otherwise take down the whole host. Soft-fail to an inert
+                // placeholder and tell the user once instead.
+                var localPluginType = pluginType;
+                serviceCollection.AddSingleton(!isV2 ? typeof(IPlugin) : typeof(IPluginV2), sp =>
+                {
+                    try
+                    {
+                        return ActivatorUtilities.CreateInstance(sp, localPluginType);
+                    }
+                    catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
+                    {
+                        // identify by assembly (the recognizable plugin/DLL name) rather than the
+                        // bare class name, which is usually just "Plugin"
+                        var pluginName = localPluginType.Assembly.GetName().Name;
+                        PluginApiCompatibility.NotifyNewerApiRequired(localPluginType.Assembly, defaultLogger,
+                            pluginName);
+                        return new UnavailablePlugin(pluginName);
+                    }
+                });
 
                 try
                 {

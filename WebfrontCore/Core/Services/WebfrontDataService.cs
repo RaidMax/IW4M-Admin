@@ -99,8 +99,10 @@ public class WebfrontDataService : IWebfrontDataService
         _remoteCommandService = remoteCommandService;
         _translationLookup = translationLookup;
         _appConfig = appConfig;
-        _pluginTypeNames = v1Plugins.Select(plugin => (plugin.GetType(), plugin.Name))
-            .Concat(v2Plugins.Select(plugin => (plugin.GetType(), plugin.Name)))
+        _pluginTypeNames = v1Plugins.Where(plugin => plugin is not UnavailablePlugin)
+            .Select(plugin => (plugin.GetType(), plugin.Name))
+            .Concat(v2Plugins.Where(plugin => plugin is not UnavailablePlugin)
+                .Select(plugin => (plugin.GetType(), plugin.Name)))
             .ToLookup(selector => selector.Item1, selector => selector.Name);
         _announcementService = announcementService;
         _twoFactorService = twoFactorService;

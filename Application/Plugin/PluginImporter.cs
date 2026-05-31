@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -128,17 +129,8 @@ namespace IW4MAdmin.Application.Plugin
 
             var eligibleAssemblyTypes = assemblies.Concat(AppDomain.CurrentDomain.GetAssemblies()
                     .Where(asm => !new[] { "IW4MAdmin", "SharedLibraryCore", "Stats" }.Contains(asm.GetName().Name)))
-                .SelectMany(asm =>
-                {
-                    try
-                    {
-                        return asm.GetTypes();
-                    }
-                    catch
-                    {
-                        return [];
-                    }
-                }).Where(type =>
+                .SelectMany(asm => PluginApiCompatibility.GetLoadableTypes(asm, _logger))
+                .Where(type =>
                     FilterTypes.Any(filterType => type.GetInterface(filterType.Name, false) != null) ||
                     (type.IsClass && FilterTypes.Contains(type.BaseType)));
 

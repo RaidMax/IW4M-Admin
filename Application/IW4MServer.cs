@@ -298,6 +298,16 @@ namespace IW4MAdmin
                     await Task.WhenAll(pluginTasks);
                 }
 
+                catch (Exception e) when (PluginApiCompatibility.IsMissingApiException(e))
+                {
+                    PluginApiCompatibility.NotifyNewerApiRequired(
+                        PluginApiCompatibility.TryGetOffendingAssembly(e), ServerLogger);
+                    if (E.Origin != null && E.Type == GameEvent.EventType.Command)
+                    {
+                        E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    }
+                }
+
                 catch (Exception e)
                 {
                     ServerLogger.LogError(e, "Unexpected exception occurred processing event");

@@ -436,7 +436,11 @@ namespace IW4MAdmin.Application
                 try
                 {
                     var registrationMethod = pluginType.GetMethod(nameof(IPluginV2.RegisterDependencies));
-                    registrationMethod?.Invoke(null, new object[] { serviceCollection });
+                    registrationMethod?.Invoke(null, [serviceCollection]);
+                }
+                catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
+                {
+                    PluginApiCompatibility.NotifyNewerApiRequired(pluginType.Assembly, defaultLogger);
                 }
                 catch (Exception ex)
                 {
@@ -474,7 +478,8 @@ namespace IW4MAdmin.Application
             // register any eventable types
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
                          .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
-                         .Union(plugins.SelectMany(asm => asm.Assembly.GetTypes())
+                         .Union(plugins.Select(pluginType => pluginType.Assembly).Distinct()
+                             .SelectMany(asm => PluginApiCompatibility.GetLoadableTypes(asm, defaultLogger))
                              .Distinct()
                              .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
             {

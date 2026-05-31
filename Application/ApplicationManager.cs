@@ -376,6 +376,11 @@ namespace IW4MAdmin.Application
                     }
                 }
 
+                catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
+                {
+                    PluginApiCompatibility.NotifyNewerApiRequired(plugin.GetType().Assembly, _logger, plugin.Name);
+                }
+
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"{_translationLookup["SERVER_ERROR_PLUGIN"]} {plugin.Name}");

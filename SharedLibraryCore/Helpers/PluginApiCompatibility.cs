@@ -53,7 +53,7 @@ public static class PluginApiCompatibility
     /// Types whose signatures resolve are returned and still load; types that need unavailable API
     /// are dropped and a single friendly notice is surfaced per assembly.
     /// </summary>
-    public static IEnumerable<Type> GetLoadableTypes(Assembly assembly, ILogger logger)
+    public static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
     {
         try
         {
@@ -64,7 +64,7 @@ public static class PluginApiCompatibility
             if (ex.LoaderExceptions.Any(loaderException =>
                     loaderException is not null && IsMissingApiCore(loaderException)))
             {
-                NotifyNewerApiRequired(assembly, logger);
+                NotifyNewerApiRequired(assembly);
             }
 
             // surface the types that did resolve so plugins that don't actually use the missing
@@ -73,7 +73,7 @@ public static class PluginApiCompatibility
         }
         catch (Exception ex) when (IsMissingApiException(ex))
         {
-            NotifyNewerApiRequired(assembly, logger);
+            NotifyNewerApiRequired(assembly);
             return [];
         }
     }
@@ -101,8 +101,12 @@ public static class PluginApiCompatibility
     /// <summary>
     /// emits a user-facing notice (console + log) that a plugin could not be loaded/run because it
     /// targets a newer IW4MAdmin API. Reports at most once per plugin for the life of the process.
+    /// Logging goes through <see cref="Utilities.DefaultLogger"/> — the ambient logger IW4MAdmin
+    /// provides for code not created by dependency injection. That is deliberate: the call sites are
+    /// the static event dispatch (<c>EventExtensions</c>) and registration-time plugin discovery,
+    /// neither of which has a DI scope to inject an <c>ILogger</c> from.
     /// </summary>
-    public static void NotifyNewerApiRequired(Assembly assembly, ILogger logger, string displayName = null)
+    public static void NotifyNewerApiRequired(Assembly assembly, string displayName = null)
     {
         var key = assembly?.FullName ?? displayName;
         if (key is not null)
@@ -119,7 +123,7 @@ public static class PluginApiCompatibility
         var pluginName = displayName ?? assembly?.GetName().Name ?? "A plugin";
         Console.WriteLine(
             $"[Plugin] {pluginName} uses newer/unavailable IW4MAdmin API. Please update IW4MAdmin to load it.");
-        logger?.LogWarning(
+        Utilities.DefaultLogger?.LogWarning(
             "{Plugin} could not be fully loaded because it targets a newer IW4MAdmin API than this instance provides",
             pluginName);
     }

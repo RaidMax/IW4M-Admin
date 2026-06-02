@@ -378,7 +378,7 @@ namespace IW4MAdmin.Application
 
                 catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
                 {
-                    PluginApiCompatibility.NotifyNewerApiRequired(plugin.GetType().Assembly, _logger, plugin.Name);
+                    PluginApiCompatibility.NotifyNewerApiRequired(plugin.GetType().Assembly, plugin.Name);
                 }
 
                 catch (Exception ex)

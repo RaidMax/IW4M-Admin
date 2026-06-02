@@ -41,7 +41,7 @@ public static class EventExtensions
         {
             // a plugin handler called API that doesn't exist in this (older) IW4MAdmin; soft-fail
             // and tell the user once instead of silently doing nothing
-            PluginApiCompatibility.NotifyNewerApiRequired(handler.Method.DeclaringType?.Assembly, logger: null);
+            PluginApiCompatibility.NotifyNewerApiRequired(handler.Method.DeclaringType?.Assembly);
         }
         catch (Exception)
         {

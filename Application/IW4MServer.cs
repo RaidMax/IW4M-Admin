@@ -301,7 +301,7 @@ namespace IW4MAdmin
                 catch (Exception e) when (PluginApiCompatibility.IsMissingApiException(e))
                 {
                     PluginApiCompatibility.NotifyNewerApiRequired(
-                        PluginApiCompatibility.TryGetOffendingAssembly(e), ServerLogger);
+                        PluginApiCompatibility.TryGetOffendingAssembly(e));
                     if (E.Origin != null && E.Type == GameEvent.EventType.Command)
                     {
                         E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);

@@ -133,7 +133,7 @@ namespace IW4MAdmin.Application.Plugin
                 // concat above lists it twice; dedupe by identity so each plugin type is only
                 // discovered (and later registered/instantiated) once
                 .DistinctBy(asm => asm.FullName)
-                .SelectMany(asm => PluginApiCompatibility.GetLoadableTypes(asm, _logger))
+                .SelectMany(PluginApiCompatibility.GetLoadableTypes)
                 .Where(type =>
                     FilterTypes.Any(filterType => type.GetInterface(filterType.Name, false) != null) ||
                     (type.IsClass && FilterTypes.Contains(type.BaseType)));

@@ -106,6 +106,8 @@ namespace IW4MAdmin.Application
 
             Console.CancelKeyPress += OnCancelKey;
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
             Console.WriteLine("=====================================================");
             Console.WriteLine(" IW4MAdmin");
@@ -175,6 +177,40 @@ namespace IW4MAdmin.Application
         {
             Utilities.DefaultLogger.LogDebug("ProcessExit event received, performing synchronous shutdown");
             PerformShutdownAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Last-resort handler for an exception that escaped to a background/thread-pool thread —
+        /// typically a plugin <c>async void</c> handler or an unguarded fire-and-forget. The runtime
+        /// terminates the process after this returns (<see cref="UnhandledExceptionEventArgs.IsTerminating"/>
+        /// is set and there is no API to mark it handled), so we cannot recover. We can, however,
+        /// persist it to the IW4MAdmin log instead of losing it to stdout/stderr — which is gone the
+        /// moment a container is recreated. The Serilog file sink writes synchronously, so the entry
+        /// reaches disk before teardown.
+        /// </summary>
+        private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            var exception = e.ExceptionObject as Exception;
+            Utilities.DefaultLogger?.LogCritical(exception,
+                "Unhandled exception escaped to the runtime (terminating: {IsTerminating}). This is almost " +
+                "always a plugin throwing on a background thread, which IW4MAdmin cannot catch or recover from",
+                e.IsTerminating);
+
+            // belt-and-braces: the process is dying; make sure it also lands on stderr in case the
+            // logger was not yet initialised (very early startup)
+            Console.Error.WriteLine($"[FATAL] Unhandled exception: {exception}");
+        }
+
+        /// <summary>
+        /// Handler for a faulted <see cref="Task"/> that was never awaited/observed. Since .NET Core
+        /// these no longer terminate the process, so without this they vanish silently — usually a
+        /// plugin fire-and-forget bug. We log it and mark it observed so the behaviour stays explicit.
+        /// </summary>
+        private static void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Utilities.DefaultLogger?.LogError(e.Exception,
+                "Unobserved task exception (likely a plugin fire-and-forget that faulted); marking observed");
+            e.SetObserved();
         }
 
         /// <summary>
@@ -449,8 +485,7 @@ namespace IW4MAdmin.Application
                         // identify by assembly (the recognizable plugin/DLL name) rather than the
                         // bare class name, which is usually just "Plugin"
                         var pluginName = localPluginType.Assembly.GetName().Name;
-                        PluginApiCompatibility.NotifyNewerApiRequired(localPluginType.Assembly, defaultLogger,
-                            pluginName);
+                        PluginApiCompatibility.NotifyNewerApiRequired(localPluginType.Assembly, pluginName);
                         return new UnavailablePlugin(pluginName);
                     }
                 });
@@ -462,7 +497,7 @@ namespace IW4MAdmin.Application
                 }
                 catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
                 {
-                    PluginApiCompatibility.NotifyNewerApiRequired(pluginType.Assembly, defaultLogger);
+                    PluginApiCompatibility.NotifyNewerApiRequired(pluginType.Assembly);
                 }
                 catch (Exception ex)
                 {
@@ -501,8 +536,7 @@ namespace IW4MAdmin.Application
             foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
                          .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
                          .Union(plugins.Select(pluginType => pluginType.Assembly).Distinct()
-                             .SelectMany(asm => PluginApiCompatibility.GetLoadableTypes(asm, defaultLogger))
-                             .Distinct()
+                             .SelectMany(PluginApiCompatibility.GetLoadableTypes)
                              .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
             {
                 var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;

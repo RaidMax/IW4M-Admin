@@ -1376,11 +1376,13 @@ function WaitForT7EasterEggSteps()
             //   obelisk -> magma_ball (orb spawned) -> RINGS (per-ent only, no level
             //   flag) -> golf (magma-into-4-runic-targets) -> repair -> place -> upgrade.
             // _golf was previously mis-labelled _apothicon (no apothicon in Fire bow).
-            // Rings = 4x aq_rp_runic_circle_volume ents, each sets self flag
-            // `runic_circle_charged` when activated + zombies killed inside.
+            // Rings = aq_rp_runic_circle_volume ents, each sets self flag
+            // `runic_circle_charged` when activated + zombies killed inside. Those
+            // per-ent flags are only init'd after rune_prison_magma_ball sets, so we
+            // gate the watcher on that flag (last arg) rather than binding at t=0.
             level thread WatchT7FlagStep( "rune_prison_obelisk",    "t7_de_bow_fire_obelisk" );
             level thread WatchT7FlagStep( "rune_prison_magma_ball", "t7_de_bow_fire_magma" );
-            level thread WatchT7EntArrayFlagAll( "aq_rp_runic_circle_volume", "runic_circle_charged", "t7_de_bow_fire_rings", 4 );
+            level thread WatchT7EntArrayFlagAll( "aq_rp_runic_circle_volume", "runic_circle_charged", "t7_de_bow_fire_rings", "rune_prison_magma_ball" );
             level thread WatchT7FlagStep( "rune_prison_golf",       "t7_de_bow_fire_golf" );
             level thread WatchT7FlagStep( "rune_prison_repaired",   "t7_de_bow_fire_repaired" );
             level thread WatchT7FlagStep( "rune_prison_placed",     "t7_de_bow_fire_placed" );
@@ -2057,12 +2059,26 @@ function WaitForEntNotifyThenCount( notifyName, stepKey )
     level.zm_ee_lit_count[ stepKey ]++;
 }
 
-function WatchT7EntArrayFlagAll( noteworthy, flagName, stepKey, expectedCount )
+// gateFlag: a level flag the quest sets BEFORE it flag::init's the per-ent
+// `flagName` on the noteworthy ents (e.g. rune_prison_magma_ball is set, then
+// each runic-circle volume gets flag::init("runic_circle_charged")). Binding a
+// flag::wait_till before that init orphans the waiter, so the step never emits.
+// We gate on it (then a short settle for the source's init loop) before binding.
+// Pass undefined to bind immediately. expectedCount is derived from the ents
+// actually found — the source waits for ALL of them, and a hardcoded guess
+// (was 4) silently never completes if the real count differs.
+function WatchT7EntArrayFlagAll( noteworthy, flagName, stepKey, gateFlag )
 {
     level endon( "end_game" );
 
-    ents = WaitForEntArrayByNoteworthy( noteworthy, expectedCount, 60 );
-    if ( !IsDefined( ents ) )
+    if ( IsDefined( gateFlag ) )
+    {
+        level flag::wait_till( gateFlag );
+        wait ( 1 );
+    }
+
+    ents = WaitForEntArrayByNoteworthy( noteworthy, 1, 60 );
+    if ( !IsDefined( ents ) || ents.size <= 0 )
     {
         logprint( "[ZM-EE] WatchT7EntArrayFlagAll: NO entities script_noteworthy=" + noteworthy + " stepKey=" + stepKey + "\n" );
         return;
@@ -2074,7 +2090,8 @@ function WatchT7EntArrayFlagAll( noteworthy, flagName, stepKey, expectedCount )
         level.zm_ee_lit_count = [];
     }
     level.zm_ee_lit_count[ stepKey ] = 0;
-    for ( i = 0; i < ents.size && i < expectedCount; i++ )
+    expectedCount = ents.size;
+    for ( i = 0; i < ents.size; i++ )
     {
         ents[i] thread WaitForEntFlagThenCount( flagName, stepKey );
     }
@@ -2129,7 +2146,10 @@ function WatchT7WolfSkullPlaced( stepKey )
     level flag::wait_till( "wolf_howl_paintings" );
     for ( ;; )
     {
-        ai = getaiarray( "allies" );
+        // getaiteamarray (NOT getaiarray) is the team filter — getaiarray treats
+        // its first arg as a targetname/key lookup, so getaiarray("allies") matches
+        // nothing. Zombies are team "axis"; Skadi spawns via setteam("allies").
+        ai = getaiteamarray( "allies" );
         if ( IsDefined( ai ) && ai.size > 0 )
         {
             EmitEeStep( stepKey );

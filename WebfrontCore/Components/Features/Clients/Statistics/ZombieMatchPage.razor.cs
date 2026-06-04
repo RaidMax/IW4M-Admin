@@ -33,11 +33,14 @@ public partial class ZombieMatchPage
     private bool _showAllPlayers = true;
     private void ToggleShowAllPlayers() => _showAllPlayers = !_showAllPlayers;
 
-    // Expansion state for nested EE step parents (e.g. Castle bows: a single bow
-    // upgrade with its ritual sub-steps). Keyed by "{quest.Id}|{step.Key}" so the
-    // same parent step in different quests can't collide. Default collapsed; the
-    // render auto-expands parents that are mid-progress so partial state stays
-    // visible without a click.
+    // Expansion-override state for nested EE step parents (e.g. Castle bows: a
+    // single bow upgrade with its ritual sub-steps). Keyed by "{quest.Id}|{step.Key}"
+    // so the same parent step in different quests can't collide. A key in this set
+    // means the user has INVERTED the default state for that parent — the default
+    // is auto-expand-when-mid-progress (see IsEeStepExpanded). Storing an override
+    // (rather than an absolute "is expanded") lets the user collapse a partial
+    // parent, which a plain "contains == expanded" set can't (the toggle would
+    // re-add the key and keep it open).
     private readonly HashSet<string> _expandedEeSteps = new(StringComparer.Ordinal);
 
     private static string EeStepExpansionKey(string questId, string stepKey) =>
@@ -55,12 +58,15 @@ public partial class ZombieMatchPage
     private bool IsEeStepExpanded(string questId, EasterEggStepInventoryEntry step,
         Dictionary<string, EasterEggStepRecord> stepsByKey)
     {
-        if (_expandedEeSteps.Contains(EeStepExpansionKey(questId, step.Key))) return true;
-        // Auto-expand mid-progress parents so the user sees what's pending without
-        // having to click. Fully-done and not-yet-started stay collapsed.
+        // Default: auto-expand mid-progress parents so the user sees what's pending
+        // without a click; fully-done and not-yet-started default collapsed. A toggle
+        // is stored as an inversion of this default, so clicking always flips what the
+        // user currently sees (including collapsing a partial parent).
         var leaves = step.Leaves().ToList();
         var fired = leaves.Count(l => stepsByKey.ContainsKey(l.Key));
-        return fired > 0 && fired < leaves.Count;
+        var autoExpanded = fired > 0 && fired < leaves.Count;
+        var overridden = _expandedEeSteps.Contains(EeStepExpansionKey(questId, step.Key));
+        return overridden ? !autoExpanded : autoExpanded;
     }
 
     private string _ogTitle => Detail is null

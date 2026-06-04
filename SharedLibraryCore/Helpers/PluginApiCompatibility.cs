@@ -121,8 +121,10 @@ public static class PluginApiCompatibility
         }
 
         var pluginName = displayName ?? assembly?.GetName().Name ?? "A plugin";
+
+        // user-facing console notice is localized; the log line below stays hardcoded English
         Console.WriteLine(
-            $"[Plugin] {pluginName} uses newer/unavailable IW4MAdmin API. Please update IW4MAdmin to load it.");
+            $"[Plugin] {Utilities.CurrentLocalization.LocalizationIndex["PLUGIN_IMPORTER_NEWER_API"].FormatExt(pluginName)}");
         Utilities.DefaultLogger?.LogWarning(
             "{Plugin} could not be fully loaded because it targets a newer IW4MAdmin API than this instance provides",
             pluginName);

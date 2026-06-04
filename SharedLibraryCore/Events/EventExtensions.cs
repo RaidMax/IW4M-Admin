@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SharedLibraryCore.Helpers;
 
 namespace SharedLibraryCore.Events;
 
@@ -35,6 +36,12 @@ public static class EventExtensions
         try
         {
             await handler(eventArgType, tokenSource.Token);
+        }
+        catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
+        {
+            // a plugin handler called API that doesn't exist in this (older) IW4MAdmin; soft-fail
+            // and tell the user once instead of silently doing nothing
+            PluginApiCompatibility.NotifyNewerApiRequired(handler.Method.DeclaringType?.Assembly);
         }
         catch (Exception)
         {

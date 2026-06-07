@@ -31,10 +31,6 @@ public partial class AdvancedStats
     private bool _chartsInitialized;
     private bool _showAllHitLocations;
     private bool _showAllWeapons;
-    private List<ZombieMatchHistoryMatch>? _matchHistory;
-    private bool _hasMoreMatches = true;
-    private bool _loadingMoreMatches;
-    private const int MatchHistoryPageSize = 5;
     private const int DefaultTableRowCount = 10;
     private int _lastLoadedId;
     private string? _lastLoadedServerId;
@@ -67,15 +63,6 @@ public partial class AdvancedStats
             _lastLoadedId = ClientId;
             _lastLoadedServerId = serverId;
             _lastLoadedBucket = performanceBucket;
-
-            // Load match history from premium service if available
-            var matchHistoryService = ServiceProvider.GetService<IZombieMatchHistoryService>();
-            if (matchHistoryService is not null)
-            {
-                _matchHistory = await matchHistoryService.GetPlayerMatchHistoryAsync(ClientId, serverId,
-                    0, MatchHistoryPageSize);
-                _hasMoreMatches = _matchHistory.Count >= MatchHistoryPageSize;
-            }
 
             GenerateMenu();
         }
@@ -112,24 +99,6 @@ public partial class AdvancedStats
                 Logger.LogWarning(ex, "Error calling initAdvancedStats for client {ClientId}", ClientId);
             }
         }
-    }
-
-    private async Task LoadMoreMatches()
-    {
-        if (_loadingMoreMatches || !_hasMoreMatches || _matchHistory is null) return;
-
-        _loadingMoreMatches = true;
-
-        var matchHistoryService = ServiceProvider.GetService<IZombieMatchHistoryService>();
-        if (matchHistoryService is not null)
-        {
-            var moreMatches = await matchHistoryService.GetPlayerMatchHistoryAsync(ClientId, serverId,
-                _matchHistory.Count, MatchHistoryPageSize);
-            _matchHistory.AddRange(moreMatches);
-            _hasMoreMatches = moreMatches.Count >= MatchHistoryPageSize;
-        }
-
-        _loadingMoreMatches = false;
     }
 
     private void GenerateMenu()

@@ -186,34 +186,16 @@
                     </div>
                 }
 
-                @if (_matchHistory is { Count: > 0 })
-                {
-                    <ZombieMatchHistory Matches="_matchHistory" ClientId="ClientId"/>
-
-                    @if (_hasMoreMatches)
+                @* Zombie match history is provided by the ZombieStatsPremium plugin via a render slot,
+                   so the host carries no zombie reference. Renders nothing without the plugin. *@
+                @{
+                    var zombieStatsSlot = new Dictionary<string, object> { ["ClientId"] = ClientId };
+                    if (serverId is not null)
                     {
-                        <div class="flex justify-center mt-4">
-                            <button @onclick="LoadMoreMatches" disabled="@_loadingMoreMatches"
-                                    class="px-6 py-2 text-sm font-semibold text-subtle bg-surface border border-line rounded-lg
-                                           hover:bg-surface-hover hover:text-foreground transition-colors disabled:opacity-50">
-                                @if (_loadingMoreMatches)
-                                {
-                                    <span class="flex items-center gap-2">
-                                        <i class="ph ph-spinner animate-spin text-sm"></i>
-                                        Loading...
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="flex items-center gap-2">
-                                        <i class="ph ph-caret-down text-sm"></i>
-                                        Load More Matches
-                                    </span>
-                                }
-                            </button>
-                        </div>
+                        zombieStatsSlot["ServerId"] = serverId;
                     }
                 }
+                <PluginRenderSlot SlotName="client-advanced-stats" Parameters="zombieStatsSlot"/>
 
                 <!-- Bottom Section: Models & Tables -->
                 <div class="flex items-center gap-3">

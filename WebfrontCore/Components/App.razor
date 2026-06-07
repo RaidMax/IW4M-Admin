@@ -40,14 +40,10 @@
     <script src="/js/stats.js"></script>
     <script src="/js/advanced_stats.js"></script>
     <script src="/js/infinite-scroll.js"></script>
-    <script src="/js/zombie-scrubber.js"></script>
 }
 else
 {
     <script src="/js/app.min.js?Version=@Program.Manager.Version"></script>
-    @* zombie-scrubber loads standalone (kept out of the main bundle for cache
-       isolation — UI changes ship without invalidating app.min.js). *@
-    <script src="/js/zombie-scrubber.js?Version=@Program.Manager.Version"></script>
     <script src="/js/user/user.js?Version=@Program.Manager.Version"></script>
 }
 

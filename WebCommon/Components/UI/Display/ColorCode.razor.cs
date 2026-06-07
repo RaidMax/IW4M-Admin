@@ -1,9 +1,12 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 
-namespace WebfrontCore.Components.UI.Display;
+namespace WebCommon.Components.UI.Display;
 
+// Renders Call of Duty colour-coded strings (^1, ^2, …) to styled spans. Output uses the
+// host's text-color-code-{n} CSS classes (available on every page), so it styles correctly
+// for plugin pages rendered inside the host shell.
 public partial class ColorCode
 {
     [Parameter, EditorRequired] public string Value { get; set; } = default!;
@@ -58,4 +61,3 @@ public partial class ColorCode
         return IconPlaceholderRegex.Replace(input, "");
     }
 }
-

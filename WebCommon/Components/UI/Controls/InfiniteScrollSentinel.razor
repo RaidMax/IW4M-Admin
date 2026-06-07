@@ -5,8 +5,8 @@
 @*
     Encapsulates the sentinel + IntersectionObserver wiring so callers don't
     repeat the IJSRuntime / DotNetObjectReference / OnAfterRenderAsync /
-    DisposeAsync boilerplate (see PenaltyList, AdvancedFind, etc. for the
-    pre-existing pattern this consolidates).
+    DisposeAsync boilerplate. The window.infiniteScroll.* JS lives in the host
+    (loaded on every page), so this works for plugin pages inside the host shell.
 
     Usage: caller owns the loaded list and HasMore/IsLoading state, places
     this component at the bottom of the scrollable list. OnLoadMore fires

@@ -1,7 +1,9 @@
+@using Microsoft.JSInterop
 @inject IJSRuntime JS
 
 @* Tooltip component — uses fixed positioning via JS to escape overflow
-   containers. Two content modes:
+   containers. The tooltipFixed.* JS lives in the host (loaded on every page),
+   so this works for plugin pages rendered inside the host shell. Two content modes:
      • Text: plain string, escaped + \n converted to <br> by JS.
      • BodyContent: RenderFragment, rendered to a hidden source div inside
        the wrapper; JS reads its innerHTML on show so consumers get full

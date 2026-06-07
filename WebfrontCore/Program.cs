@@ -177,7 +177,13 @@ public class Program
         // Add WebfrontCore assembly for controller discovery (CreateSlimBuilder doesn't auto-discover)
         mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
 
-        foreach (var asm in GetPluginAssemblies())
+        // register plugin MVC parts from the DI'd plugin importer. it's registered (already holding the
+        // distilled plugin-assembly list) into this same collection during the Application dependency
+        // registration, which runs before this. the web host isn't built yet, so read the registered instance
+        // off the collection rather than from a service provider.
+        var pluginImporter = (IPluginImporter?)services
+            .LastOrDefault(descriptor => descriptor.ServiceType == typeof(IPluginImporter))?.ImplementationInstance;
+        foreach (var asm in pluginImporter?.DiscoverPluginAssemblies() ?? [])
         {
             mvcBuilder.AddApplicationPart(asm);
         }
@@ -301,7 +307,7 @@ public class Program
         // bound once here, but the store is mutated as plugins load (incl. remote plugins after startup),
         // so lookups are dynamic. runs before MapStaticAssets and short-circuits on a hit; misses fall
         // through. web assets are inherently public, so no authorization is applied.
-        var pluginAssetStore = app.Services.GetRequiredService<SharedLibraryCore.Interfaces.IPluginAssetStore>();
+        var pluginAssetStore = app.Services.GetRequiredService<IPluginAssetStorage>();
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = pluginAssetStore.FileProvider,
@@ -332,48 +338,11 @@ public class Program
 
         app.MapStaticAssets();
 
+        // routable Blazor components from plugins, sourced from the same DI'd importer. the host is built here,
+        // so resolve it from the service provider.
+        var pluginAssemblies = app.Services.GetRequiredService<IPluginImporter>().DiscoverPluginAssemblies();
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode()
-            .AddAdditionalAssemblies(GetPluginAssemblies().ToArray());
-    }
-
-    private static IEnumerable<Assembly> GetPluginAssemblies()
-    {
-        var pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
-
-        if (!Directory.Exists(pluginDir))
-            return [];
-
-        var looseAssemblies = Directory.GetFiles(pluginDir, "*.dll").Select(Assembly.LoadFrom);
-
-        // bundle plugins. local *.zip / pre-unpacked folders are loaded here through the shared cache so the
-        // later PluginImporter pass resolves the identical Assembly (Assembly.Load(byte[]) = new identity each
-        // call). force enumeration to populate the cache.
-        var loader = SharedLibraryCore.Plugins.PluginBundleLoader.Shared;
-        foreach (var source in SharedLibraryCore.Plugins.BundleDiscovery.Enumerate(pluginDir))
-        {
-            try
-            {
-                if (source.IsZip)
-                {
-                    loader.LoadFromZipBytes(File.ReadAllBytes(source.Path), source.Path);
-                }
-                else
-                {
-                    loader.LoadFromDirectory(source.Path);
-                }
-            }
-            catch
-            {
-                // a malformed bundle shouldn't take down webfront startup; the Application pass logs it
-            }
-        }
-
-        // read assemblies from the cache rather than just the disk enumeration above: remote (premium)
-        // bundles are streamed from the master and loaded by the Application plugin-registration pass, which
-        // runs before this method, so the cache already holds them. this is what surfaces their Razor pages.
-        var bundleAssemblies = loader.LoadedBundles.Select(bundle => bundle.Assembly);
-
-        return looseAssemblies.Concat(bundleAssemblies);
+            .AddAdditionalAssemblies(pluginAssemblies.ToArray());
     }
 }

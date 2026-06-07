@@ -9,7 +9,7 @@ namespace SharedLibraryCore.Plugins;
 
 /// <summary>
 /// <see cref="IPluginBundleLoader"/> that opens bundles in memory and caches by manifest id.
-/// Web assets are pushed into <see cref="InMemoryPluginAssetStore.Shared"/>. The plugin assembly is loaded
+/// Web assets are pushed into <see cref="InMemoryPluginAssetStorage.Shared"/>. The plugin assembly is loaded
 /// into the <b>default</b> <see cref="AssemblyLoadContext"/> from memory (never written to disk) — the same
 /// context loose plugin dlls use — so Blazor routing, the host layout and interactive rendering treat plugin
 /// pages exactly like first-party pages (a custom/isolated load context renders pages without the host's
@@ -17,13 +17,15 @@ namespace SharedLibraryCore.Plugins;
 /// default context's <see cref="AssemblyLoadContext.Resolving"/> hook. Only GSC files are surfaced for on-disk
 /// extraction by the caller.
 /// </summary>
-public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBundleLoader
+public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPluginBundleLoader
 {
     /// <summary>
     /// Process-wide instance. Static so the WebfrontCore startup paths (which run before the DI container
     /// is built) and DI-resolved consumers share one cache and one set of assembly identities.
     /// </summary>
-    public static PluginBundleLoader Shared { get; } = new(InMemoryPluginAssetStore.Shared);
+    public static PluginBundleLoader Shared { get; } = new(InMemoryPluginAssetStorage.Shared);
+
+    private const string ManifestFileName = "manifest.json";
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -80,7 +82,7 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
             using var memoryStream = new MemoryStream(zipBytes, writable: false);
             using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Read);
 
-            var manifest = ReadManifest(ReadEntryBytes(archive, "manifest.json"), sourceLabel);
+            var manifest = ReadManifest(ReadEntryBytes(archive, ManifestFileName), sourceLabel);
 
             lock (_loadLock)
             {
@@ -89,6 +91,8 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
                     return cached;
                 }
 
+                // read sequentially: ZipArchive is not thread-safe, so the entry reads can't share the
+                // archive across threads (the gain would be marginal for a handful of small entries anyway).
                 var libAssemblies = ReadFolder(archive, LibFolder(manifest));
                 var webAssets = ReadFolder(archive, manifest.WebRoot);
                 var gscFiles = ReadFolder(archive, manifest.GscRoot);
@@ -107,10 +111,10 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
     {
         try
         {
-            var manifestPath = Path.Combine(directory, "manifest.json");
+            var manifestPath = Path.Combine(directory, ManifestFileName);
             if (!File.Exists(manifestPath))
             {
-                throw new InvalidDataException("directory is missing manifest.json");
+                throw new InvalidDataException($"Directory is missing {ManifestFileName}");
             }
 
             var manifest = ReadManifest(File.ReadAllBytes(manifestPath), directory);
@@ -122,6 +126,8 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
                     return cached;
                 }
 
+                // read sequentially — these are a handful of small files read once at startup, so the
+                // overhead of parallelizing the disk reads would outweigh any benefit.
                 var libAssemblies = ReadDirectory(directory, LibFolder(manifest));
                 var webAssets = ReadDirectory(directory, manifest.WebRoot);
                 var gscFiles = ReadDirectory(directory, manifest.GscRoot);
@@ -140,7 +146,7 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
     // loads the entry assembly (and exposes its private deps) entirely in memory, for the encrypted/zip path
     private static Assembly LoadEntryInMemory(BundleManifest manifest, IReadOnlyDictionary<string, byte[]> libAssemblies)
     {
-        var entryName = Path.GetFileNameWithoutExtension(manifest.EntryAssembly.Replace('\\', '/').TrimStart('/'));
+        var entryName = Path.GetFileNameWithoutExtension(manifest.EntryAssembly.ToNormalizedBundlePath());
 
         var byName = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         foreach (var (relativePath, bytes) in libAssemblies)
@@ -183,7 +189,6 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
 
         var bundle = new LoadedBundle
         {
-            Id = manifest.Id,
             Assembly = assembly,
             Manifest = manifest,
             WebAssets = webAssets,
@@ -196,7 +201,7 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
 
     private static string LibFolder(BundleManifest manifest)
     {
-        var entry = manifest.EntryAssembly.Replace('\\', '/').TrimStart('/');
+        var entry = manifest.EntryAssembly.ToNormalizedBundlePath();
         var slash = entry.IndexOf('/');
         return slash > 0 ? entry[..slash] : "lib";
     }
@@ -208,8 +213,20 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
             throw new InvalidDataException("bundle is missing manifest.json");
         }
 
-        var manifest = JsonSerializer.Deserialize<BundleManifest>(manifestBytes, JsonOptions)
-                       ?? throw new InvalidDataException("manifest.json could not be parsed");
+        BundleManifest? manifest;
+        try
+        {
+            manifest = JsonSerializer.Deserialize<BundleManifest>(manifestBytes, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException($"bundle '{sourceLabel}' has an invalid {ManifestFileName}: {ex.Message}", ex);
+        }
+
+        if (manifest is null)
+        {
+            throw new InvalidDataException($"bundle '{sourceLabel}' {ManifestFileName} could not be parsed");
+        }
 
         if (string.IsNullOrWhiteSpace(manifest.Id))
         {
@@ -226,7 +243,7 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
 
     private static byte[]? ReadEntryBytes(ZipArchive archive, string path)
     {
-        var entry = archive.GetEntry(path.Replace('\\', '/').TrimStart('/'));
+        var entry = archive.GetEntry(path.ToNormalizedBundlePath());
         if (entry is null)
         {
             return null;
@@ -246,7 +263,7 @@ public sealed class PluginBundleLoader(IPluginAssetStore assetStore) : IPluginBu
             return result;
         }
 
-        var prefix = folder.Replace('\\', '/').Trim('/') + "/";
+        var prefix = folder.ToNormalizedBundlePath().TrimEnd('/') + "/";
         foreach (var entry in archive.Entries)
         {
             var name = entry.FullName.Replace('\\', '/');

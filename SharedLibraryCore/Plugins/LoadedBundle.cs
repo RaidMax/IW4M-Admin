@@ -9,7 +9,9 @@ namespace SharedLibraryCore.Plugins;
 /// </summary>
 public sealed class LoadedBundle
 {
-    public required string Id { get; init; }
+    /// <summary>The bundle's stable identifier — a convenience projection of <see cref="Manifest"/>.Id.</summary>
+    public string Id => Manifest.Id;
+
     public required Assembly Assembly { get; init; }
     public required BundleManifest Manifest { get; init; }
     public required IReadOnlyDictionary<string, byte[]> WebAssets { get; init; }

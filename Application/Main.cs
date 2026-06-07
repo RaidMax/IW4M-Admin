@@ -12,6 +12,7 @@ using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Plugins;
 using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Repositories;
 using SharedLibraryCore.Services;
@@ -441,12 +442,16 @@ namespace IW4MAdmin.Application
                 .AddSingleton(appConfig)
                 .AddSingleton(masterApi)
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
-                .AddSingleton<SharedLibraryCore.Interfaces.IPluginBundleLoader>(_ =>
-                    SharedLibraryCore.Plugins.PluginBundleLoader.Shared)
+                .AddSingleton<IPluginBundleLoader>(_ => PluginBundleLoader.Shared)
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .BuildServiceProvider();
 
             var pluginImporter = pluginServiceProvider.GetRequiredService<IPluginImporter>();
+
+            // register the SAME importer instance the discovery pass runs on, so the web host — and the
+            // WebfrontCore startup that resolves it — get the importer that already holds the distilled
+            // plugin-assembly list (for registering plugin MVC parts + Blazor components) without a second pass.
+            serviceCollection.AddSingleton<IPluginImporter>(pluginImporter);
 
             // we need to register the rest client with regular collection
             serviceCollection.AddSingleton(masterApi);
@@ -606,7 +611,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
                         .Configuration() ?? new CommandConfiguration())
-                .AddSingleton<IPluginImporter, PluginImporter>()
+                // IPluginImporter is registered as the discovery instance in HandlePluginRegistration (so the
+                // webfront resolves the importer that already ran discovery); no type registration here.
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
                 .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
                 .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
@@ -643,10 +649,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
-                .AddSingleton<SharedLibraryCore.Interfaces.IPluginAssetStore>(_ =>
-                    SharedLibraryCore.Plugins.InMemoryPluginAssetStore.Shared)
-                .AddSingleton<SharedLibraryCore.Interfaces.IPluginBundleLoader>(_ =>
-                    SharedLibraryCore.Plugins.PluginBundleLoader.Shared)
+                .AddSingleton<IPluginAssetStorage>(_ => InMemoryPluginAssetStorage.Shared)
+                .AddSingleton<IPluginBundleLoader>(_ => PluginBundleLoader.Shared)
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
                 .AddSingleton<IManager, ApplicationManager>()
 #pragma warning disable CS0612

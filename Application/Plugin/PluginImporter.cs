@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Threading;
 using IW4MAdmin.Application.API.Master;
 #if DEBUG
 using Microsoft.Extensions.DependencyModel;
@@ -31,8 +32,17 @@ namespace IW4MAdmin.Application.Plugin
         IPluginBundleLoader bundleLoader)
         : IPluginImporter
     {
-        private IEnumerable<PluginSubscriptionContent> _pluginSubscription;
+        // Memoized once and shared by the three remote-content fetches (scripts, binaries, bundles). Those
+        // run sequentially today (LINQ Union enumeration on a single thread), but DiscoverScriptPlugins and
+        // DiscoverAssemblyPluginImplementations are separate public entry points that could be called from
+        // different threads, so the fetch is guarded. PublicationOnly is deliberate: it does not cache a
+        // failed fetch, so a transient master outage during one pass can still be retried by the next.
+        private readonly Lazy<IEnumerable<PluginSubscriptionContent>> _pluginSubscription = new(
+            () => masterApi.GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result,
+            LazyThreadSafetyMode.PublicationOnly);
+
         private const string PluginDir = "Plugins";
+        private const string RemoteBundleSource = "remote bundle";
         private const string PluginV2Match = "^ *((?:var|const|let) +init)|function init";
         private readonly ILogger _logger = logger;
 
@@ -91,25 +101,26 @@ namespace IW4MAdmin.Application.Plugin
         /// discovers all the C# assembly plugins and commands
         /// </summary>
         /// <returns></returns>
-        public (IEnumerable<Type>, IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
+        private IReadOnlyList<Assembly>? _pluginAssemblies;
+
+        /// <summary>
+        /// The distilled set of plugin assemblies — loose DLLs, local and remote bundles, and remote binaries,
+        /// deduped to the highest version of each. Computed once and cached. The Application discovery pass and
+        /// the WebfrontCore startup (which resolves this same importer from DI to register plugin MVC parts and
+        /// routable Blazor components) therefore share one result rather than each enumerating the plugins dir.
+        /// </summary>
+        public IEnumerable<Assembly> DiscoverPluginAssemblies() => _pluginAssemblies ??= DistillPluginAssemblies();
+
+        private IReadOnlyList<Assembly> DistillPluginAssemblies()
         {
             var pluginDir = $"{Utilities.OperatingDirectory}{PluginDir}{Path.DirectorySeparatorChar}";
-            var pluginTypes = new List<Type>();
-            var commandTypes = new List<Type>();
-            var configurationTypes = new List<Type>();
-
             if (!Directory.Exists(pluginDir))
             {
-                return (pluginTypes, commandTypes, configurationTypes);
+                return [];
             }
 
             var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
             _logger.LogDebug("Discovered {Count} potential plugin assemblies", dllFileNames.Length);
-
-            if (dllFileNames.Length is 0)
-            {
-                return (pluginTypes, commandTypes, configurationTypes);
-            }
 
 #if DEBUG
             var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().Select(asm => asm.GetName().Name);
@@ -122,15 +133,29 @@ namespace IW4MAdmin.Application.Plugin
 #endif
 
             // we only want to load the most recent assembly in case of duplicates
-            var assemblies = dllFileNames.Select(fileName => fileName).Select(Assembly.LoadFrom)
+            return dllFileNames.Select(Assembly.LoadFrom)
                 .Union(GetBundleAssemblies(pluginDir))
-                .Union(GetRemoteBundles())
+                .Union(GetRemoteBundleAssemblies())
                 .Union(GetRemoteAssemblies())
 #if DEBUG
                 .Union(reloadableAssemblies)
 #endif
                 .GroupBy(assembly => assembly.FullName).Select(assembly =>
-                    assembly.OrderByDescending(asm => asm.GetName().Version).First());
+                    assembly.OrderByDescending(asm => asm.GetName().Version).First())
+                .ToList();
+        }
+
+        public (IEnumerable<Type>, IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
+        {
+            var pluginTypes = new List<Type>();
+            var commandTypes = new List<Type>();
+            var configurationTypes = new List<Type>();
+
+            var assemblies = DiscoverPluginAssemblies();
+            if (!assemblies.Any())
+            {
+                return (pluginTypes, commandTypes, configurationTypes);
+            }
 
             var eligibleAssemblyTypes = assemblies.Concat(AppDomain.CurrentDomain.GetAssemblies()
                     .Where(asm => !new[] { "IW4MAdmin", "SharedLibraryCore", "Stats" }.Contains(asm.GetName().Name)))
@@ -186,10 +211,7 @@ namespace IW4MAdmin.Application.Plugin
         {
             try
             {
-                _pluginSubscription ??= masterApi
-                    .GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result;
-
-                return remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription
+                return remoteAssemblyHandler.DecryptAssemblies(_pluginSubscription.Value
                     .Where(sub => sub.Type == PluginType.Binary).Select(sub => sub.Content).ToArray());
             }
 
@@ -204,10 +226,7 @@ namespace IW4MAdmin.Application.Plugin
         {
             try
             {
-                _pluginSubscription ??= masterApi
-                    .GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result;
-
-                return remoteAssemblyHandler.DecryptScripts(_pluginSubscription
+                return remoteAssemblyHandler.DecryptScripts(_pluginSubscription.Value
                     .Where(sub => sub.Type == PluginType.Script).Select(sub => sub.Content).ToArray());
             }
 
@@ -225,14 +244,11 @@ namespace IW4MAdmin.Application.Plugin
         /// the cache), and their game scripts are extracted to disk. The decrypted zip plaintext is zeroed
         /// once the loader has consumed it so a runnable copy of the premium DLL doesn't linger on the heap.
         /// </summary>
-        private IEnumerable<Assembly> GetRemoteBundles()
+        private IEnumerable<Assembly> GetRemoteBundleAssemblies()
         {
             try
             {
-                _pluginSubscription ??= masterApi
-                    .GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result;
-
-                var encryptedBundles = _pluginSubscription
+                var encryptedBundles = _pluginSubscription.Value
                     .Where(sub => sub.Type == PluginType.Bundle).Select(sub => sub.Content).ToArray();
 
                 if (encryptedBundles.Length is 0)
@@ -246,14 +262,11 @@ namespace IW4MAdmin.Application.Plugin
                 {
                     try
                     {
-                        var bundle = bundleLoader.LoadFromZipBytes(zipBytes, "remote bundle");
-                        if (bundle is null)
+                        var assembly = LoadBundleAssembly(bundleLoader.LoadFromZipBytes(zipBytes, RemoteBundleSource));
+                        if (assembly is not null)
                         {
-                            continue;
+                            assemblies.Add(assembly);
                         }
-
-                        ExtractBundleGameScripts(bundle);
-                        assemblies.Add(bundle.Assembly);
                     }
                     catch (Exception ex)
                     {
@@ -285,21 +298,18 @@ namespace IW4MAdmin.Application.Plugin
         {
             var assemblies = new List<Assembly>();
 
-            foreach (var source in BundleDiscovery.Enumerate(pluginDir))
+            foreach (var source in EnumerateBundleSources(pluginDir))
             {
                 try
                 {
-                    var bundle = source.IsZip
+                    var assembly = LoadBundleAssembly(source.IsZip
                         ? bundleLoader.LoadFromZipBytes(File.ReadAllBytes(source.Path), source.Path)
-                        : bundleLoader.LoadFromDirectory(source.Path);
+                        : bundleLoader.LoadFromDirectory(source.Path));
 
-                    if (bundle is null)
+                    if (assembly is not null)
                     {
-                        continue;
+                        assemblies.Add(assembly);
                     }
-
-                    ExtractBundleGameScripts(bundle);
-                    assemblies.Add(bundle.Assembly);
                 }
                 catch (Exception ex)
                 {
@@ -308,6 +318,50 @@ namespace IW4MAdmin.Application.Plugin
             }
 
             return assemblies;
+        }
+
+        private readonly record struct BundleSource(string Path, bool IsZip);
+
+        /// <summary>
+        /// Read-only discovery of plugin bundles directly under <paramref name="pluginDir"/>: every *.zip
+        /// file, and every immediate subdirectory containing a manifest.json at its root (pre-unpacked dev
+        /// folder). Performs no extraction.
+        /// </summary>
+        private static IEnumerable<BundleSource> EnumerateBundleSources(string pluginDir)
+        {
+            if (!Directory.Exists(pluginDir))
+            {
+                yield break;
+            }
+
+            foreach (var zip in Directory.EnumerateFiles(pluginDir, "*.zip", SearchOption.TopDirectoryOnly))
+            {
+                yield return new BundleSource(zip, IsZip: true);
+            }
+
+            foreach (var dir in Directory.EnumerateDirectories(pluginDir))
+            {
+                if (File.Exists(Path.Combine(dir, "manifest.json")))
+                {
+                    yield return new BundleSource(dir, IsZip: false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts a loaded bundle's game scripts to disk and returns its entry assembly, so callers consume
+        /// the assembly as a return value rather than reading it back off the passed-in bundle. Returns null
+        /// when the bundle failed to load.
+        /// </summary>
+        private Assembly? LoadBundleAssembly(LoadedBundle? bundle)
+        {
+            if (bundle is null)
+            {
+                return null;
+            }
+
+            ExtractBundleGameScripts(bundle);
+            return bundle.Assembly;
         }
 
         /// <summary>

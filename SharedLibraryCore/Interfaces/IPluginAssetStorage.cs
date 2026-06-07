@@ -3,12 +3,12 @@ using Microsoft.Extensions.FileProviders;
 namespace SharedLibraryCore.Interfaces;
 
 /// <summary>
-/// In-memory store for plugin-supplied web assets (css/js/images) served under /_content/{pluginId}/.
+/// In-memory storage for plugin-supplied web assets (css/js/images) served under /_content/{pluginId}/.
 /// Assets are never written to disk; the backing store is mutated as plugins load (including remote
 /// plugins that register after the web host has started), so <see cref="FileProvider"/> must be a
 /// stable reference that performs live lookups.
 /// </summary>
-public interface IPluginAssetStore
+public interface IPluginAssetStorage
 {
     /// <summary>
     /// Stable provider bound once by the static-file middleware; reads the live backing store.

@@ -30,11 +30,3 @@ public class BundleManifest
     /// <summary>Advisory in phase 1: plugins still self-register their navbar pages.</summary>
     public List<BundlePage> Pages { get; set; } = new();
 }
-
-public class BundlePage
-{
-    public string Name { get; set; } = string.Empty;
-    public string Route { get; set; } = string.Empty;
-    public string? Icon { get; set; }
-    public string? Permission { get; set; }
-}

@@ -36,7 +36,14 @@ namespace SharedLibraryCore
             $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
 #endif
         public static string PluginsDirectory => Path.Combine(OperatingDirectory, "Plugins");
-        
+
+        /// <summary>
+        /// Normalizes a bundle-relative path to forward slashes with no leading slash
+        /// (e.g. <c>lib\Credify.dll</c> → <c>lib/Credify.dll</c>). Shared by the plugin-bundle loader and
+        /// the in-memory asset store so this path handling is defined in one place.
+        /// </summary>
+        public static string ToNormalizedBundlePath(this string path) => path.Replace('\\', '/').TrimStart('/');
+
         public static Encoding EncodingType;
         public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
 

@@ -262,11 +262,14 @@ namespace IW4MAdmin.Application.Plugin
                 {
                     try
                     {
-                        var assembly = LoadBundleAssembly(bundleLoader.LoadFromZipBytes(zipBytes, RemoteBundleSource));
-                        if (assembly is not null)
+                        var bundle = bundleLoader.LoadFromZipBytes(zipBytes, RemoteBundleSource);
+                        if (bundle is null)
                         {
-                            assemblies.Add(assembly);
+                            continue;
                         }
+
+                        ExtractBundleGameScripts(bundle);
+                        assemblies.Add(bundle.Assembly);
                     }
                     catch (Exception ex)
                     {
@@ -302,14 +305,17 @@ namespace IW4MAdmin.Application.Plugin
             {
                 try
                 {
-                    var assembly = LoadBundleAssembly(source.IsZip
+                    var bundle = source.IsZip
                         ? bundleLoader.LoadFromZipBytes(File.ReadAllBytes(source.Path), source.Path)
-                        : bundleLoader.LoadFromDirectory(source.Path));
+                        : bundleLoader.LoadFromDirectory(source.Path);
 
-                    if (assembly is not null)
+                    if (bundle is null)
                     {
-                        assemblies.Add(assembly);
+                        continue;
                     }
+
+                    ExtractBundleGameScripts(bundle);
+                    assemblies.Add(bundle.Assembly);
                 }
                 catch (Exception ex)
                 {
@@ -346,22 +352,6 @@ namespace IW4MAdmin.Application.Plugin
                     yield return new BundleSource(dir, IsZip: false);
                 }
             }
-        }
-
-        /// <summary>
-        /// Extracts a loaded bundle's game scripts to disk and returns its entry assembly, so callers consume
-        /// the assembly as a return value rather than reading it back off the passed-in bundle. Returns null
-        /// when the bundle failed to load.
-        /// </summary>
-        private Assembly? LoadBundleAssembly(LoadedBundle? bundle)
-        {
-            if (bundle is null)
-            {
-                return null;
-            }
-
-            ExtractBundleGameScripts(bundle);
-            return bundle.Assembly;
         }
 
         /// <summary>

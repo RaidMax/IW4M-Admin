@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using IW4MAdmin.Application.API.Master;
 #if DEBUG
@@ -13,6 +14,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Plugins;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace IW4MAdmin.Application.Plugin
@@ -25,7 +27,8 @@ namespace IW4MAdmin.Application.Plugin
         ILogger<PluginImporter> logger,
         ApplicationConfiguration appConfig,
         IMasterApi masterApi,
-        IRemoteAssemblyHandler remoteAssemblyHandler)
+        IRemoteAssemblyHandler remoteAssemblyHandler,
+        IPluginBundleLoader bundleLoader)
         : IPluginImporter
     {
         private IEnumerable<PluginSubscriptionContent> _pluginSubscription;
@@ -120,6 +123,8 @@ namespace IW4MAdmin.Application.Plugin
 
             // we only want to load the most recent assembly in case of duplicates
             var assemblies = dllFileNames.Select(fileName => fileName).Select(Assembly.LoadFrom)
+                .Union(GetBundleAssemblies(pluginDir))
+                .Union(GetRemoteBundles())
                 .Union(GetRemoteAssemblies())
 #if DEBUG
                 .Union(reloadableAssemblies)
@@ -212,12 +217,136 @@ namespace IW4MAdmin.Application.Plugin
                 return Enumerable.Empty<string>();
             }
         }
+
+        /// <summary>
+        /// Loads plugin bundles streamed from the master (premium subscription channel). The encrypted
+        /// payloads are decrypted to raw zip bytes, loaded in-memory through the same shared loader the
+        /// local-disk path uses (so the assembly identity matches the one Razor discovery resolves from
+        /// the cache), and their game scripts are extracted to disk. The decrypted zip plaintext is zeroed
+        /// once the loader has consumed it so a runnable copy of the premium DLL doesn't linger on the heap.
+        /// </summary>
+        private IEnumerable<Assembly> GetRemoteBundles()
+        {
+            try
+            {
+                _pluginSubscription ??= masterApi
+                    .GetPluginSubscription(appConfig.Id, appConfig.SubscriptionId).Result;
+
+                var encryptedBundles = _pluginSubscription
+                    .Where(sub => sub.Type == PluginType.Bundle).Select(sub => sub.Content).ToArray();
+
+                if (encryptedBundles.Length is 0)
+                {
+                    return Enumerable.Empty<Assembly>();
+                }
+
+                var assemblies = new List<Assembly>();
+
+                foreach (var zipBytes in remoteAssemblyHandler.DecryptBundles(encryptedBundles))
+                {
+                    try
+                    {
+                        var bundle = bundleLoader.LoadFromZipBytes(zipBytes, "remote bundle");
+                        if (bundle is null)
+                        {
+                            continue;
+                        }
+
+                        ExtractBundleGameScripts(bundle);
+                        assemblies.Add(bundle.Assembly);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not load a remote plugin bundle");
+                    }
+                    finally
+                    {
+                        // the loader has copied the entry assembly + web assets into its own buffers,
+                        // so drop the decrypted archive plaintext from the heap (premium anti-extraction)
+                        CryptographicOperations.ZeroMemory(zipBytes);
+                    }
+                }
+
+                return assemblies;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not load remote plugin bundles");
+                return Enumerable.Empty<Assembly>();
+            }
+        }
+
+        /// <summary>
+        /// Loads plugin bundles (*.zip or pre-unpacked folders) from the plugins dir via the shared loader
+        /// (which caches by id, so the assembly identity matches the one already loaded for Razor discovery)
+        /// and extracts any bundled game scripts to disk.
+        /// </summary>
+        private IEnumerable<Assembly> GetBundleAssemblies(string pluginDir)
+        {
+            var assemblies = new List<Assembly>();
+
+            foreach (var source in BundleDiscovery.Enumerate(pluginDir))
+            {
+                try
+                {
+                    var bundle = source.IsZip
+                        ? bundleLoader.LoadFromZipBytes(File.ReadAllBytes(source.Path), source.Path)
+                        : bundleLoader.LoadFromDirectory(source.Path);
+
+                    if (bundle is null)
+                    {
+                        continue;
+                    }
+
+                    ExtractBundleGameScripts(bundle);
+                    assemblies.Add(bundle.Assembly);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not load plugin bundle {Source}", source.Path);
+                }
+            }
+
+            return assemblies;
+        }
+
+        /// <summary>
+        /// Writes a bundle's GSC files to the configured game-files folder. GSC is the only bundle content
+        /// written to disk; when no path is configured, extraction is skipped.
+        /// </summary>
+        private void ExtractBundleGameScripts(LoadedBundle bundle)
+        {
+            if (bundle.GscFiles.Count == 0)
+            {
+                return;
+            }
+
+            var targetPath = appConfig.PluginGscExtractPath;
+            if (string.IsNullOrWhiteSpace(targetPath))
+            {
+                _logger.LogDebug(
+                    "Bundle {Id} ships {Count} GSC file(s) but PluginGscExtractPath is not configured; skipping extraction",
+                    bundle.Id, bundle.GscFiles.Count);
+                return;
+            }
+
+            foreach (var (relativePath, content) in bundle.GscFiles)
+            {
+                var destination = Path.Combine(targetPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.WriteAllBytes(destination, content);
+            }
+
+            _logger.LogInformation("Extracted {Count} GSC file(s) from bundle {Id} to {Path}",
+                bundle.GscFiles.Count, bundle.Id, targetPath);
+        }
     }
 
     public enum PluginType
     {
         Binary,
         Script,
-        CSharpScript
+        CSharpScript,
+        Bundle
     }
 }

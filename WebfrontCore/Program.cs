@@ -7,18 +7,15 @@ using System.Threading.RateLimiting;
 using Data.Abstractions;
 using Data.Helpers;
 using Data.Models.Client;
-using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
@@ -300,6 +297,18 @@ public class Program
         // serve user provided files
         app.UseStaticFiles();
 
+        // serve plugin-supplied web assets (css/js/images) from the in-memory store under /_content.
+        // bound once here, but the store is mutated as plugins load (incl. remote plugins after startup),
+        // so lookups are dynamic. runs before MapStaticAssets and short-circuits on a hit; misses fall
+        // through. web assets are inherently public, so no authorization is applied.
+        var pluginAssetStore = app.Services.GetRequiredService<SharedLibraryCore.Interfaces.IPluginAssetStore>();
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = pluginAssetStore.FileProvider,
+            RequestPath = "/_content",
+            ServeUnknownFileTypes = false
+        });
+
         app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
@@ -334,9 +343,37 @@ public class Program
 
         if (!Directory.Exists(pluginDir))
             return [];
-        var dllFileNames =
-            Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
-                "*.dll");
-        return dllFileNames.Select(Assembly.LoadFrom);
+
+        var looseAssemblies = Directory.GetFiles(pluginDir, "*.dll").Select(Assembly.LoadFrom);
+
+        // bundle plugins. local *.zip / pre-unpacked folders are loaded here through the shared cache so the
+        // later PluginImporter pass resolves the identical Assembly (Assembly.Load(byte[]) = new identity each
+        // call). force enumeration to populate the cache.
+        var loader = SharedLibraryCore.Plugins.PluginBundleLoader.Shared;
+        foreach (var source in SharedLibraryCore.Plugins.BundleDiscovery.Enumerate(pluginDir))
+        {
+            try
+            {
+                if (source.IsZip)
+                {
+                    loader.LoadFromZipBytes(File.ReadAllBytes(source.Path), source.Path);
+                }
+                else
+                {
+                    loader.LoadFromDirectory(source.Path);
+                }
+            }
+            catch
+            {
+                // a malformed bundle shouldn't take down webfront startup; the Application pass logs it
+            }
+        }
+
+        // read assemblies from the cache rather than just the disk enumeration above: remote (premium)
+        // bundles are streamed from the master and loaded by the Application plugin-registration pass, which
+        // runs before this method, so the cache already holds them. this is what surfaces their Razor pages.
+        var bundleAssemblies = loader.LoadedBundles.Select(bundle => bundle.Assembly);
+
+        return looseAssemblies.Concat(bundleAssemblies);
     }
 }

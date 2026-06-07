@@ -441,6 +441,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton(appConfig)
                 .AddSingleton(masterApi)
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
+                .AddSingleton<SharedLibraryCore.Interfaces.IPluginBundleLoader>(_ =>
+                    SharedLibraryCore.Plugins.PluginBundleLoader.Shared)
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .BuildServiceProvider();
 
@@ -641,6 +643,10 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
+                .AddSingleton<SharedLibraryCore.Interfaces.IPluginAssetStore>(_ =>
+                    SharedLibraryCore.Plugins.InMemoryPluginAssetStore.Shared)
+                .AddSingleton<SharedLibraryCore.Interfaces.IPluginBundleLoader>(_ =>
+                    SharedLibraryCore.Plugins.PluginBundleLoader.Shared)
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
                 .AddSingleton<IManager, ApplicationManager>()
 #pragma warning disable CS0612

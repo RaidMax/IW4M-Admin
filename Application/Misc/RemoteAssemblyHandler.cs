@@ -52,6 +52,14 @@ namespace IW4MAdmin.Application.Misc
             return DecryptContent(encryptedScripts).Select(decryptedScript => Encoding.UTF8.GetString(decryptedScript));
         }
 
+        public IEnumerable<byte[]> DecryptBundles(string[] encryptedBundles)
+        {
+            // Return the decrypted zip plaintext to the caller. We can't zero it here (as
+            // DecryptAssemblies does) because the bundle loader needs to read the archive after this
+            // returns; the caller zeroes each buffer once the loader has copied out what it needs.
+            return DecryptContent(encryptedBundles);
+        }
+
         private IEnumerable<byte[]> DecryptContent(string[] content)
         {
             if (string.IsNullOrEmpty(appconfig.Id) || string.IsNullOrWhiteSpace(appconfig.SubscriptionId))

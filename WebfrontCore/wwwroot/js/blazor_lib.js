@@ -116,61 +116,6 @@ window.visibilityObserver = {
 // ============================================
 // Fixed Tooltip Positioning
 // ============================================
-// ============================================
-// Zombie EE Badge Strip — overflow-aware collapse
-// ============================================
-// Per-quest EE chips render expanded by default. When the strip can't fit them
-// without wrapping (titlebar narrowed by viewport, by long player names, by
-// extra trophy chips, etc.), we collapse to a single "EE X/Y" aggregate chip
-// that opens the modal on click. CSS-only can't detect "would wrap"; we measure
-// after layout and toggle a class. ResizeObserver watches both the strip and
-// its parent (parent width changes don't always re-fire on the strip itself).
-window.zombieBadgeStrip = {
-    _observers: new Map(),
-
-    setup(elementId) {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        // Avoid duplicate setup if Blazor re-invokes after a soft re-render.
-        if (this._observers.has(elementId)) return;
-
-        const measure = () => {
-            // Optimistically un-collapse so we can measure the natural width of
-            // the expanded chips. Without this, a strip that previously collapsed
-            // would stay collapsed forever (the aggregate chip is narrower than
-            // the expanded set, so scrollWidth never exceeds clientWidth).
-            el.classList.remove('zm-badge-collapsed');
-            // rAF so layout settles before we measure.
-            requestAnimationFrame(() => {
-                if (!el.isConnected) return;
-                // The expanded group now wraps internally (flex-wrap), so
-                // multi-row layout is intentional — don't collapse on wrap.
-                // Only fall back to the aggregate chip on true horizontal
-                // overflow (a single chip wider than the container — narrow
-                // viewports).
-                const horizontalOverflow = el.scrollWidth > el.clientWidth + 1;
-                if (horizontalOverflow) {
-                    el.classList.add('zm-badge-collapsed');
-                }
-            });
-        };
-
-        measure();
-        const obs = new ResizeObserver(measure);
-        obs.observe(el);
-        if (el.parentElement) obs.observe(el.parentElement);
-        this._observers.set(elementId, obs);
-    },
-
-    teardown(elementId) {
-        const obs = this._observers.get(elementId);
-        if (obs) {
-            obs.disconnect();
-            this._observers.delete(elementId);
-        }
-    }
-};
-
 window.tooltipFixed = {
     _el: null,
     _currentTrigger: null,

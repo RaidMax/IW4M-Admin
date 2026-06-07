@@ -139,6 +139,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ZombieStats", "ZombieStats"
 		GameFiles\ZombieStats\README.md = GameFiles\ZombieStats\README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebCommon", "WebCommon\WebCommon.csproj", "{33A9739C-3413-46E8-ABE3-661459F21A32}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -515,6 +517,30 @@ Global
 		{484E0792-1684-4B05-8BC4-24E2307B9EE7}.Release|x64.Build.0 = Release|Any CPU
 		{484E0792-1684-4B05-8BC4-24E2307B9EE7}.Release|x86.ActiveCfg = Release|Any CPU
 		{484E0792-1684-4B05-8BC4-24E2307B9EE7}.Release|x86.Build.0 = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|x64.Build.0 = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Debug|x86.Build.0 = Debug|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|Mixed Platforms.ActiveCfg = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|Mixed Platforms.Build.0 = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|x64.ActiveCfg = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|x64.Build.0 = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|x86.ActiveCfg = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Prerelease|x86.Build.0 = Prerelease|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|x64.ActiveCfg = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|x64.Build.0 = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|x86.ActiveCfg = Release|Any CPU
+		{33A9739C-3413-46E8-ABE3-661459F21A32}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

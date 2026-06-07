@@ -1,0 +1,46 @@
+@namespace WebCommon.Components.UI.Layout
+
+@* Standard IW4MAdmin page shell: scrollable main content on the left, a sticky right-aligned
+   SideContextMenu on the right (collapsing to a CSS drawer below xl). Plugins wrap their page body
+   in this to get the host's native layout + navigation for free, instead of rolling their own.
+
+   Uses the host's own utility classes (bg-surface, xl:flex-row, sticky …) which are compiled into the
+   host stylesheet and loaded on every page — so a plugin page renders identically to a first-party one
+   without depending on the plugin's own Tailwind build for layout. *@
+
+<div class="@FeltClass flex flex-col xl:flex-row h-full">
+    <div class="flex-1 min-w-0 p-4 md:p-6 lg:p-8 overflow-y-auto">
+        <div class="@ContentClass">
+            @ChildContent
+        </div>
+    </div>
+
+    @if (Menu?.Items?.Any() == true)
+    {
+        <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
+            <div class="sticky top-6">
+                <SideContextMenu Model="Menu" Localizer="Localizer" OnActionSelect="OnActionSelect"/>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The page body rendered in the main (left) column.</summary>
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+
+    /// <summary>Navigation model for the right-hand pane. When null/empty the pane is omitted.</summary>
+    [Parameter] public SideContextMenuItems? Menu { get; set; }
+
+    /// <summary>Optional localizer forwarded to the nav (collapse-group headers).</summary>
+    [Parameter] public Func<string, string>? Localizer { get; set; }
+
+    /// <summary>Optional callback for non-link nav actions.</summary>
+    [Parameter] public EventCallback<SideContextMenuItem> OnActionSelect { get; set; }
+
+    /// <summary>Extra classes on the outer wrapper (e.g. a themed background/felt).</summary>
+    [Parameter] public string? FeltClass { get; set; }
+
+    /// <summary>Classes on the inner content wrapper. Defaults to the host's centered, spaced container.</summary>
+    [Parameter] public string ContentClass { get; set; } = "max-w-[1400px] mx-auto space-y-6";
+}

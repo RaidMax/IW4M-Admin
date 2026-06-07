@@ -66,6 +66,7 @@
         <ProjectReference Include="..\Plugins\Stats\Stats.csproj"/>
         <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj"/>
         <ProjectReference Include="..\Data\Data.csproj"/>
+        <ProjectReference Include="..\WebCommon\WebCommon.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

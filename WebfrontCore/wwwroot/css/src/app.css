@@ -1,7 +1,15 @@
-﻿@import "tailwindcss";
+﻿/* Reserve a lowest-priority cascade layer for plugin-supplied styles. Declared before Tailwind so it sorts
+   below theme/base/components/utilities — plugin CSS (emitted into layer(plugins)) can never override the
+   host's own utilities/chrome (e.g. the `hidden md:flex` sidebar/topbar), while still styling plugin pages. */
+@layer plugins;
+
+@import "tailwindcss";
 @import "./palette.css";
 
 @source "../../../";
+/* sibling project: shared plugin-facing components (SideContextMenu, PluginPageShell) live in WebCommon.
+   scan it too so their utility classes are emitted into the host stylesheet (which loads on every page). */
+@source "../../../../WebCommon";
 
 @theme {
     /* Permission Level Colors */

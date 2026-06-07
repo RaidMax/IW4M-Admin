@@ -9,10 +9,11 @@ namespace SharedLibraryCore.Interfaces
         IEnumerable<string> DecryptScripts(string[] encryptedScripts);
 
         /// <summary>
-        /// Decrypts remote plugin bundles to their raw zip bytes. Unlike <see cref="DecryptAssemblies"/>,
-        /// the plaintext is returned to the caller (to hand to the bundle loader) rather than loaded here,
-        /// so the caller is responsible for zeroing each buffer once the loader has consumed it.
+        /// Decrypts remote content to its raw plaintext bytes (e.g. plugin bundle zips). Unlike
+        /// <see cref="DecryptAssemblies"/>, the plaintext is returned to the caller (to hand to the bundle
+        /// loader) rather than loaded here, so the caller is responsible for zeroing each buffer once the
+        /// loader has consumed it.
         /// </summary>
-        IEnumerable<byte[]> DecryptBundles(string[] encryptedBundles);
+        IEnumerable<byte[]> DecryptContent(string[] content);
     }
 }

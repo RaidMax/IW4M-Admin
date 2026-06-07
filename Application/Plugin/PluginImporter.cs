@@ -242,7 +242,7 @@ namespace IW4MAdmin.Application.Plugin
 
                 var assemblies = new List<Assembly>();
 
-                foreach (var zipBytes in remoteAssemblyHandler.DecryptBundles(encryptedBundles))
+                foreach (var zipBytes in remoteAssemblyHandler.DecryptContent(encryptedBundles))
                 {
                     try
                     {

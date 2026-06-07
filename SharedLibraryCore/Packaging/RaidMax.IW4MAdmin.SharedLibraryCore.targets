@@ -61,6 +61,11 @@
             <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'SharedLibraryCore'" />
             <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'Data'" />
             <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'WebCommon'" />
+            <!-- author-specified host-provided assemblies (e.g. a sibling plugin this one references at
+                 build time but the host loads at runtime). Semicolon-separated filenames, no extension.
+                 Bundling such an assembly would give it a second identity and break type matching. -->
+            <_IW4MLib Remove="@(_IW4MLib)"
+                      Condition="'$(IW4MAdminBundleExcludeAssemblies)' != '' AND $([System.String]::new(';$(IW4MAdminBundleExcludeAssemblies);').Contains(';%(FileName);'))" />
         </ItemGroup>
 
         <PropertyGroup>

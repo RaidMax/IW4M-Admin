@@ -64,7 +64,7 @@
         </ItemGroup>
 
         <PropertyGroup>
-            <_IW4MManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc","pages":[]}</_IW4MManifest>
+            <_IW4MManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc"}</_IW4MManifest>
         </PropertyGroup>
 
         <RemoveDir Directories="$(_IW4MAdminBundleStage)" />

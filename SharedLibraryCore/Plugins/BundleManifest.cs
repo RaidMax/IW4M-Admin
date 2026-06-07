@@ -26,7 +26,4 @@ public class BundleManifest
 
     /// <summary>Folder within the bundle holding game-side scripts extracted to disk. Defaults to "gsc".</summary>
     public string GscRoot { get; set; } = "gsc";
-
-    /// <summary>Advisory in phase 1: plugins still self-register their navbar pages.</summary>
-    public List<BundlePage> Pages { get; set; } = new();
 }

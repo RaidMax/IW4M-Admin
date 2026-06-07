@@ -8,7 +8,7 @@
    host stylesheet and loaded on every page — so a plugin page renders identically to a first-party one
    without depending on the plugin's own Tailwind build for layout. *@
 
-<div class="@FeltClass flex flex-col xl:flex-row h-full">
+<div class="@BackgroundClass flex flex-col xl:flex-row h-full">
     <div class="flex-1 min-w-0 p-4 md:p-6 lg:p-8 overflow-y-auto">
         <div class="@ContentClass">
             @ChildContent
@@ -38,8 +38,8 @@
     /// <summary>Optional callback for non-link nav actions.</summary>
     [Parameter] public EventCallback<SideContextMenuItem> OnActionSelect { get; set; }
 
-    /// <summary>Extra classes on the outer wrapper (e.g. a themed background/felt).</summary>
-    [Parameter] public string? FeltClass { get; set; }
+    /// <summary>Extra classes for the outer wrapper, e.g. a themed page background.</summary>
+    [Parameter] public string? BackgroundClass { get; set; }
 
     /// <summary>Classes on the inner content wrapper. Defaults to the host's centered, spaced container.</summary>
     [Parameter] public string ContentClass { get; set; } = "max-w-[1400px] mx-auto space-y-6";

@@ -4,7 +4,6 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <LangVersion>Preview</LangVersion>
 
         <!-- shared, plugin-facing Blazor component kit (right-pane nav, page shell).
              published so out-of-tree plugins can reference it the same way they reference SharedLibraryCore. -->

@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using SharedLibraryCore.Dtos;
@@ -18,6 +16,13 @@ public partial class SideContextMenu
     [Parameter] public Func<string, string>? Localizer { get; set; }
 
     private string Localize(string key) => Localizer?.Invoke(key) ?? key;
+
+    /// <summary>
+    /// Header for a collapse group. The host localizes a short <c>Meta</c> code via <c>GAME_{code}</c>
+    /// (and passes a <see cref="Localizer"/>); plugins that supply no localizer use their <c>Meta</c>
+    /// value directly as a human-readable category label (e.g. "Table Games").
+    /// </summary>
+    private string GroupLabel(string key) => Localizer is null ? key : Localize($"GAME_{key}");
 
     private async Task OnActionClick(SideContextMenuItem item, MouseEventArgs e)
     {

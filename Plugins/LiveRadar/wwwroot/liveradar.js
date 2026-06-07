@@ -207,7 +207,7 @@ function weaponImageForWeapon(weapon) {
         name = "none";
     }
 
-    return `/images/radar/hud_weapons/hud_${weapons[name]}.png`;
+    return `/_content/liveradar/images/hud_weapons/hud_${weapons[name]}.png`;
 }
 
 function updatePlayerData() {
@@ -219,53 +219,55 @@ function updatePlayerData() {
             return;
         }
 
-        let column = player.team === 'allies' ? $('.player-data-left') : $('.player-data-right');
-
-        let greenProgressClass = 'rounded-top';
-        let redProgressClass = 'rounded-right';
-
-        if (player.health < 100) {
-            greenProgressClass = 'rounded-left';
-        }
-        if (player.health <= 0) {
-            redProgressClass = 'rounded-top';
-        }
+        const column = player.team === 'allies' ? $('.player-data-left') : $('.player-data-right');
+        const accent = player.team === 'allies' ? 'rgb(0,122,204)' : 'rgb(255,69,69)';
+        const dead = player.health <= 0;
+        const health = Math.max(0, Math.min(100, player.health));
+        const kd = player.deaths === 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2);
+        const spm = player.playTime === 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60));
 
         column.append(`
-<div class="bg-surface rounded-lg border border-line shadow-sm mb-4 overflow-hidden group hover:border-primary/50 transition-colors">
-    <div class="relative h-6 w-full bg-surface-alt">
-        <div class="absolute inset-0 flex">
-             <div class="h-full bg-emerald-500/80 transition-all duration-300" style="width: ${player.health}%"></div>
-             <div class="h-full bg-red-500/80 transition-all duration-300" style="width: ${100 - player.health}%"></div>
+<div class="rounded-lg border border-line/60 bg-surface-alt/30 overflow-hidden transition-colors hover:border-line ${dead ? 'opacity-60' : ''}">
+    <div class="relative h-7 w-full bg-black/30">
+        <div class="absolute inset-y-0 left-0 transition-all duration-300" style="width:${health}%; background:${accent}"></div>
+        <div class="absolute inset-0 flex items-center justify-between gap-2 px-2.5 z-10">
+            <span class="text-xs font-bold text-white drop-shadow truncate">${player.name}</span>
+            <span class="text-[10px] font-mono shrink-0 ${dead ? 'text-rose-300' : 'text-white/80'}">${dead ? 'DEAD' : health}</span>
         </div>
-        <div class="absolute inset-0 flex items-center px-2 text-xs font-bold text-shadow-sm text-white z-10 drop-shadow-md truncate">${player.name}</div>
     </div>
-    
-    <div class="p-2 flex items-center justify-between text-xs text-foreground/90 bg-surface">
-         <div class="w-12 h-6 bg-contain bg-no-repeat bg-left opacity-80" style="background-image:url(${weaponImageForWeapon(player.weapon)})" title="${player.weapon}"></div>
-         <div class="flex items-center gap-3">
-            <div class="flex items-center gap-1" title="Kills"><i class="ph ph-skull text-muted"></i> <span class="font-mono">${player.kills}</span></div>
-            <div class="flex items-center gap-1" title="Deaths"><i class="ph ph-skull text-muted opacity-50"></i> <span class="font-mono">${player.deaths}</span></div>
-            <div class="flex items-center gap-1" title="K/D Ratio"><i class="ph ph-crosshair text-muted"></i> <span class="font-mono">${player.deaths == 0 ? player.kills.toFixed(2) : (player.kills / player.deaths).toFixed(2)}</span></div>
-            <div class="flex items-center gap-1" title="Score/Min"><i class="ph ph-chart-line-up text-muted"></i> <span class="font-mono">${player.playTime == 0 ? '&mdash;' : Math.round(player.score / (player.playTime / 60))}</span></div>
-         </div>
+    <div class="px-2.5 py-1.5 flex items-center justify-between gap-2 text-xs text-foreground/90">
+        <div class="w-11 h-5 bg-contain bg-no-repeat bg-left shrink-0 ${dead ? 'opacity-40' : 'opacity-90'}" style="background-image:url(${weaponImageForWeapon(player.weapon)})" title="${player.weapon}"></div>
+        <div class="flex items-center gap-2.5 font-mono">
+            <span class="flex items-center gap-1" title="Kills"><i class="ph ph-skull text-muted"></i>${player.kills}</span>
+            <span class="flex items-center gap-1" title="Deaths"><i class="ph ph-skull text-muted opacity-50"></i>${player.deaths}</span>
+            <span class="flex items-center gap-1" title="K/D Ratio"><i class="ph ph-divide text-muted"></i>${kd}</span>
+            <span class="flex items-center gap-1" title="Score/Min"><i class="ph ph-chart-line-up text-muted"></i>${spm}</span>
+        </div>
     </div>
 </div>`);
     });
-
-    $('.player-data-left').delay(1000).animate({ opacity: 1 }, 500);
-    $('.player-data-right').delay(1000).animate({ opacity: 1 }, 500);
 }
 
-function updateRadarData() {
-    $.getJSON(window.radarDataUrl, function (_radarItem) {
-        newRadarData = _radarItem;
-    });
+// Map metadata, pushed from the server over the Blazor circuit (was a JSON fetch).
+window.setMapData = function (_map) {
+    if (!stateInfo || _map == null) {
+        return;
+    }
 
+    stateInfo.mapInfo = _map;
+    $('#map_name').html(_map.alias);
+    $('#map_list').css('background-image', `url(/_content/liveradar/images/minimaps/compass_map_${_map.name}@2x.jpg)`);
+    checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), _map);
+};
 
-    $.getJSON(window.mapDataUrl, function (_map) {
-        stateInfo.mapInfo = _map
-    });
+// Player snapshot, pushed from the server over the Blazor circuit on the radar update cadence (was a polled
+// JSON fetch). Runs the same previous-vs-current snapshot diff the poll used to.
+window.setRadarData = function (_radarItem) {
+    if (!stateInfo || !stateInfo.mapInfo) {
+        return;
+    }
+
+    newRadarData = _radarItem;
 
     $.each(newRadarData, function (index, value) {
         if (previousRadarData !== undefined && index < previousRadarData.length) {
@@ -310,13 +312,17 @@ function updateRadarData() {
     // we switch out the items to
     previousRadarData = newRadarData;
 
-    $('#map_name').html(stateInfo.mapInfo.alias);
-    $('#map_list').css('background-image', `url(/images/radar/minimaps/compass_map_${stateInfo.mapInfo.name}@2x.jpg)`);
     checkCanvasSize(stateInfo.canvas, stateInfo.ctx, $('#map_list'), stateInfo.mapInfo);
     updatePlayerData();
-}
+};
 
 function updateMap() {
+    // the render loop starts immediately; idle until the first map snapshot has been pushed from the server
+    if (!stateInfo || !stateInfo.mapInfo) {
+        window.requestAnimationFrame(updateMap);
+        return;
+    }
+
     let ctx = stateInfo.ctx;
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -413,16 +419,10 @@ function updateMap() {
     window.requestAnimationFrame(updateMap);
 }
 
-window.initLiveRadar = function (radarDataUrl, mapDataUrl) {
+window.initLiveRadar = function () {
     if ($('#map_canvas').length === 0) {
         console.error("[LiveRadar] Canvas #map_canvas not found!");
         return;
-    }
-
-    // Reset state if re-initializing
-    if (stateInfo && stateInfo.intervalId) {
-        console.log("[LiveRadar] Cleaning up previous interval", stateInfo.intervalId);
-        clearInterval(stateInfo.intervalId);
     }
 
     stateInfo = {
@@ -438,21 +438,11 @@ window.initLiveRadar = function (radarDataUrl, mapDataUrl) {
         deathIconTime: 4000
     };
 
-    // Globals update
-    window.radarDataUrl = radarDataUrl;
-    window.mapDataUrl = mapDataUrl;
+    // Reset snapshot history so a server/page switch doesn't interpolate across maps.
+    previousRadarData = undefined;
+    newRadarData = undefined;
 
-    // Correct logic: First fetch MAP metadata, then start polling for radar entities.
-    $.getJSON(window.mapDataUrl, function (_map) {
-        stateInfo.mapInfo = _map;
-
-        // Initial Radar Data fetch
-        updateRadarData();
-
-        // Start polling
-        stateInfo.intervalId = setInterval(updateRadarData, stateInfo.updateFrequency);
-        window.requestAnimationFrame(updateMap);
-    }).fail(function (jqxhr, textStatus, error) {
-        console.error("[LiveRadar] Map Metadata fetch failed:", textStatus, error);
-    });
+    // Map metadata and player snapshots are pushed from the server (setMapData / setRadarData) over the
+    // Blazor circuit — no HTTP polling. Just run the render loop; it idles until the first map arrives.
+    window.requestAnimationFrame(updateMap);
 }

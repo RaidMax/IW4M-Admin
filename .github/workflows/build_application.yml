@@ -163,6 +163,13 @@ jobs:
         run: |
           cd Plugins
           find . -name "*.csproj" -print0 | xargs -0 -I {} dotnet publish {} -c ${{ env.buildConfiguration }} -o ../BUILD/Plugins /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64" /p:DeployOnBuild=false /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:Version=${{ env.buildNumber }} --no-restore
+          # bundle plugins ship as a self-contained .zip (already emitted into BUILD/Plugins); drop their loose
+          # DLL so it isn't also loaded as a plain plugin (a dual-load without the bundle's served web assets)
+          for csproj in */*.csproj; do
+            if grep -qE '<IW4MAdminBundle>[[:space:]]*true[[:space:]]*</IW4MAdminBundle>' "$csproj"; then
+              rm -f "../BUILD/Plugins/$(basename "$csproj" .csproj).dll"
+            fi
+          done
 
       - name: Build application
         run: dotnet publish Application/Application.csproj -c ${{ env.buildConfiguration }} -o ${{ env.outputFolder }} /p:Version=${{ env.buildNumber }} /p:Configuration=${{ env.buildConfiguration }} /p:Platform="x64" --no-restore
@@ -209,6 +216,8 @@ jobs:
           cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.js ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
           cp ${{ github.workspace }}/Plugins/ScriptPlugins/*.cs ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
           cp ${{ github.workspace }}/BUILD/Plugins/*.dll ${{ env.outputFolder }}/Plugins/
+          # bundle plugins (DLL + wwwroot packaged together) are delivered as a .zip the host loads in-memory
+          cp ${{ github.workspace }}/BUILD/Plugins/*.zip ${{ env.outputFolder }}/Plugins/ 2>/dev/null || true
           mkdir -p ${{ env.outputFolder }}/wwwroot/css
           mkdir -p ${{ env.outputFolder }}/wwwroot/css/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/css/app.min.css ${{ env.outputFolder }}/wwwroot/css/app.min.css

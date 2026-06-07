@@ -1,0 +1,15 @@
+/*
+ * Tailwind input for the Live Radar plugin's web page.
+ *
+ * Emitted into the host's lowest-priority `plugins` cascade layer (declared in the host app.css) so the
+ * plugin's utilities never override the host's own chrome (sidebar/topbar). Preflight is omitted — the host
+ * already ships one; we pull only the theme tokens and utilities.
+ *
+ * Compiled to plugin.css (purged to the classes actually used) and served at /_content/liveradar/plugin.css.
+ */
+@import "tailwindcss/theme.css" layer(plugins);
+@import "tailwindcss/utilities.css" layer(plugins);
+
+/* scan the component markup and the radar canvas script (it injects Tailwind-classed player cards) */
+@source "../Components/**/*.razor";
+@source "../wwwroot/liveradar.js";

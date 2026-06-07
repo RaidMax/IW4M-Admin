@@ -35,6 +35,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- ship the plugin-bundle MSBuild targets so consumers get build-is-bundle by referencing this package.
+             source lives in Packaging\ (the repo .gitignore excludes build\); packed into the nupkg's build\ -->
+        <None Include="Packaging\**" Pack="true" PackagePath="build\" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="FluentValidation" Version="12.1.1"/>
         <PackageReference Include="Humanizer.Core" Version="3.0.1"/>
         <PackageReference Include="Humanizer.Core.ru" Version="3.0.1"/>

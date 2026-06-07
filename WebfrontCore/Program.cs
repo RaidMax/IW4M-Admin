@@ -7,18 +7,15 @@ using System.Threading.RateLimiting;
 using Data.Abstractions;
 using Data.Helpers;
 using Data.Models.Client;
-using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
-using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
@@ -180,7 +177,13 @@ public class Program
         // Add WebfrontCore assembly for controller discovery (CreateSlimBuilder doesn't auto-discover)
         mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
 
-        foreach (var asm in GetPluginAssemblies())
+        // register plugin MVC parts from the DI'd plugin importer. it's registered (already holding the
+        // distilled plugin-assembly list) into this same collection during the Application dependency
+        // registration, which runs before this. the web host isn't built yet, so read the registered instance
+        // off the collection rather than from a service provider.
+        var pluginImporter = (IPluginImporter?)services
+            .LastOrDefault(descriptor => descriptor.ServiceType == typeof(IPluginImporter))?.ImplementationInstance;
+        foreach (var asm in pluginImporter?.DiscoverPluginAssemblies() ?? [])
         {
             mvcBuilder.AddApplicationPart(asm);
         }
@@ -300,6 +303,18 @@ public class Program
         // serve user provided files
         app.UseStaticFiles();
 
+        // serve plugin-supplied web assets (css/js/images) from the in-memory store under /_content.
+        // bound once here, but the store is mutated as plugins load (incl. remote plugins after startup),
+        // so lookups are dynamic. runs before MapStaticAssets and short-circuits on a hit; misses fall
+        // through. web assets are inherently public, so no authorization is applied.
+        var pluginAssetStore = app.Services.GetRequiredService<IPluginAssetStorage>();
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = pluginAssetStore.FileProvider,
+            RequestPath = "/_content",
+            ServeUnknownFileTypes = false
+        });
+
         app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")
@@ -323,20 +338,11 @@ public class Program
 
         app.MapStaticAssets();
 
+        // routable Blazor components from plugins, sourced from the same DI'd importer. the host is built here,
+        // so resolve it from the service provider.
+        var pluginAssemblies = app.Services.GetRequiredService<IPluginImporter>().DiscoverPluginAssemblies();
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode()
-            .AddAdditionalAssemblies(GetPluginAssemblies().ToArray());
-    }
-
-    private static IEnumerable<Assembly> GetPluginAssemblies()
-    {
-        var pluginDir = $"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}";
-
-        if (!Directory.Exists(pluginDir))
-            return [];
-        var dllFileNames =
-            Directory.GetFiles($"{Utilities.OperatingDirectory}Plugins{Path.DirectorySeparatorChar}",
-                "*.dll");
-        return dllFileNames.Select(Assembly.LoadFrom);
+            .AddAdditionalAssemblies(pluginAssemblies.ToArray());
     }
 }

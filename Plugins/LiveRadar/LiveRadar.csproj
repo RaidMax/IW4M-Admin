@@ -1,22 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
-        <RazorCompileOnBuild Condition="'$(CONFIG)'!='Debug'">true</RazorCompileOnBuild>
-        <RazorCompiledOnPublish Condition="'$(CONFIG)'!='Debug'">true</RazorCompiledOnPublish>
-        <PreserveCompilationContext>false</PreserveCompilationContext>
-        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-
         <Version>0.1.0.0</Version>
+        <Authors>RaidMax</Authors>
         <Configurations>Debug;Release;Prerelease</Configurations>
-        <LangVersion>Latest</LangVersion>
-        <ApplicationIcon/>
-        <OutputType>Library</OutputType>
-        <StartupObject/>
+        <RootNamespace>IW4MAdmin.Plugins.LiveRadar</RootNamespace>
+
+        <!-- ship as a self-contained web bundle: DLL + wwwroot (served by the host at /_content/liveradar) -->
+        <IW4MAdminBundle>true</IW4MAdminBundle>
+        <!-- compile this plugin's own Tailwind utilities into the bundle (the host only scans its own source) -->
+        <IW4MAdminTailwind>true</IW4MAdminTailwind>
+        <!-- emit the .zip into the shared plugin build output so the existing plugin-mapping flow picks it up
+             (NormalizeDirectory keeps the path correct on both Windows and the Linux CI). -->
+        <IW4MAdminBundleOutput>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', '..', 'BUILD', 'Plugins'))</IW4MAdminBundleOutput>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+        <!-- host-provided at runtime: not copied to output (Private=false) and excluded from the .zip by the
+             bundle targets (by filename). same pattern the other in-repo plugins use. -->
+        <ProjectReference Include="..\..\Data\Data.csproj" PrivateAssets="All">
+            <Private>false</Private>
+        </ProjectReference>
+        <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" PrivateAssets="All">
+            <Private>false</Private>
+        </ProjectReference>
+        <ProjectReference Include="..\..\WebCommon\WebCommon.csproj" PrivateAssets="All">
+            <Private>false</Private>
+        </ProjectReference>
     </ItemGroup>
+
+    <!-- TEMPORARY: until the SharedLibraryCore package ships the bundle targets, import them from the local
+         checkout. Once published, a package reference is enough — delete this line. -->
+    <Import Project="..\..\SharedLibraryCore\Packaging\RaidMax.IW4MAdmin.SharedLibraryCore.targets"
+            Condition="Exists('..\..\SharedLibraryCore\Packaging\RaidMax.IW4MAdmin.SharedLibraryCore.targets')"/>
 
 </Project>

@@ -6,12 +6,14 @@ on:
     paths:
       - SharedLibraryCore/**
       - Data/**
+      - WebCommon/**
       - .github/workflows/shared_library_nuget.yml
   pull_request:
     branches: [ develop ]
     paths:
       - SharedLibraryCore/**
       - Data/**
+      - WebCommon/**
 
 env:
   outputDirectory: ${{ github.workspace}}/nuget
@@ -117,6 +119,12 @@ jobs:
         
       - name: Pack SLC
         run: dotnet pack **/SharedLibraryCore.csproj -c ${{env.buildConfiguration}} -p:PackageVersion=${{ env.buildNumber }}${{ env.packageTag }} -o ${{ env.outputDirectory }} --no-restore
+
+      - name: Build WebCommon
+        run: dotnet build **/WebCommon.csproj -c ${{env.buildConfiguration}} /p:Version=${{ env.buildNumber }} --no-restore
+
+      - name: Pack WebCommon
+        run: dotnet pack **/WebCommon.csproj -c ${{env.buildConfiguration}} -p:PackageVersion=${{ env.buildNumber }}${{ env.packageTag }} -o ${{ env.outputDirectory }} --no-restore
 
       - name: Publish nuget package artifact
         uses: actions/upload-artifact@v4

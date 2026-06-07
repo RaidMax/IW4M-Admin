@@ -52,7 +52,7 @@ namespace IW4MAdmin.Application.Misc
             return DecryptContent(encryptedScripts).Select(decryptedScript => Encoding.UTF8.GetString(decryptedScript));
         }
 
-        private IEnumerable<byte[]> DecryptContent(string[] content)
+        public IEnumerable<byte[]> DecryptContent(string[] content)
         {
             if (string.IsNullOrEmpty(appconfig.Id) || string.IsNullOrWhiteSpace(appconfig.SubscriptionId))
             {

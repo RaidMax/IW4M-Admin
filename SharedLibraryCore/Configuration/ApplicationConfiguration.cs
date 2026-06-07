@@ -188,6 +188,12 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationIgnore] public string Id { get; set; }
         [ConfigurationIgnore] public string SubscriptionId { get; set; }
 
+        /// <summary>
+        /// Optional filesystem path to which plugin bundles' game-side scripts (GSC) are extracted on load.
+        /// When null/empty, GSC extraction is skipped. GSC is the only bundle content written to disk.
+        /// </summary>
+        [ConfigurationIgnore] public string PluginGscExtractPath { get; set; }
+
         [ConfigurationIgnore]
         [JsonIgnore]
         public string WebfrontUrl => string.IsNullOrEmpty(Webfront.ManualUrl)

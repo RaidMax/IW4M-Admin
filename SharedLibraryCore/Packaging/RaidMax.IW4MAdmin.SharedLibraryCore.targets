@@ -1,0 +1,168 @@
+<Project>
+
+    <!--
+      IW4MAdmin plugin bundle packaging.
+
+      Opt in with <IW4MAdminBundle>true</IW4MAdminBundle> in your plugin .csproj. On build this produces
+      bin/<Configuration>/<id>.zip containing:
+        manifest.json   (generated from your project metadata — single source of truth, no hand-editing)
+        lib/            (your plugin dll + private dependencies; host-provided assemblies excluded)
+        wwwroot/        (served by the host at /_content/<id>/)
+        gsc/            (optional game-side scripts, extracted to disk by the host)
+
+      CSS COMPILATION IS YOURS. The core packaging is tool-agnostic: it bundles whatever is in wwwroot/ plus
+      any files you contribute via the @(IW4MAdminWebAsset) item. Compile your CSS (Tailwind, Sass, PostCSS,
+      plain, none) however you like, before Build completes.
+
+      Tailwind is offered as an optional, removable helper — set <IW4MAdminTailwind>true</IW4MAdminTailwind>
+      and point IW4MAdminTailwindInput at your input file. It compiles to obj (keeping your source tree clean)
+      and is added to the bundle automatically. If you don't opt in, nothing Tailwind-related runs.
+    -->
+
+    <!-- ============================ core packaging (tool-agnostic) ============================ -->
+
+    <PropertyGroup Condition="'$(IW4MAdminBundle)' == 'true'">
+        <IW4MAdminBundleId Condition="'$(IW4MAdminBundleId)' == ''">$(AssemblyName)</IW4MAdminBundleId>
+        <IW4MAdminBundleName Condition="'$(IW4MAdminBundleName)' == ''">$(AssemblyName)</IW4MAdminBundleName>
+        <IW4MAdminBundleVersion Condition="'$(IW4MAdminBundleVersion)' == ''">$(Version)</IW4MAdminBundleVersion>
+        <IW4MAdminBundleAuthor Condition="'$(IW4MAdminBundleAuthor)' == ''">$(Authors)</IW4MAdminBundleAuthor>
+
+        <!-- alongside the .nupkg location: bin/<Configuration>/ . absolute so it is independent of cwd -->
+        <IW4MAdminBundleOutput Condition="'$(IW4MAdminBundleOutput)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', 'bin', '$(Configuration)'))</IW4MAdminBundleOutput>
+
+        <IW4MAdminWebRoot Condition="'$(IW4MAdminWebRoot)' == ''">$(MSBuildProjectDirectory)\wwwroot</IW4MAdminWebRoot>
+        <IW4MAdminGscRoot Condition="'$(IW4MAdminGscRoot)' == ''">$(MSBuildProjectDirectory)\gsc</IW4MAdminGscRoot>
+    </PropertyGroup>
+
+    <!-- the host provides SharedLibraryCore and its dependency closure at runtime, so don't bundle them.
+         set automatically so plugin authors don't have to remember PrivateAssets on the package reference. -->
+    <ItemGroup Condition="'$(IW4MAdminBundle)' == 'true'">
+        <PackageReference Update="RaidMax.IW4MAdmin.SharedLibraryCore" PrivateAssets="all" />
+        <!-- WebCommon (shared UI kit) is also provided by the host at runtime, so don't bundle it either. -->
+        <PackageReference Update="RaidMax.IW4MAdmin.WebCommon" PrivateAssets="all" />
+    </ItemGroup>
+
+    <Target Name="IW4MAdminPackBundle"
+            AfterTargets="Build"
+            DependsOnTargets="IW4MAdminCompileTailwind"
+            Condition="'$(IW4MAdminBundle)' == 'true'">
+
+        <!-- computed here (target execution) so $(IntermediateOutputPath) is set regardless of import position -->
+        <PropertyGroup>
+            <_IW4MAdminBundleStage>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'iw4m-bundle'))</_IW4MAdminBundleStage>
+        </PropertyGroup>
+
+        <!-- lib/: plugin dll + private deps, excluding host-provided and framework assemblies -->
+        <ItemGroup>
+            <_IW4MLib Include="$(TargetPath)" />
+            <_IW4MLib Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll'" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="$([System.String]::new('%(FileName)').StartsWith('Microsoft.'))" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="$([System.String]::new('%(FileName)').StartsWith('System.'))" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'SharedLibraryCore'" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'Data'" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'WebCommon'" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_IW4MManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc"}</_IW4MManifest>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(_IW4MAdminBundleStage)" />
+        <MakeDir Directories="$(_IW4MAdminBundleStage)lib" />
+
+        <Copy SourceFiles="@(_IW4MLib)" DestinationFolder="$(_IW4MAdminBundleStage)lib" SkipUnchangedFiles="false" />
+        <WriteLinesToFile File="$(_IW4MAdminBundleStage)manifest.json" Lines="$(_IW4MManifest)" Overwrite="true" />
+
+        <!-- web assets: everything under wwwroot/, plus anything contributed via @(IW4MAdminWebAsset)
+             (e.g. the Tailwind helper's compiled output, kept out of the source tree) -->
+        <ItemGroup>
+            <_IW4MWeb Include="$(IW4MAdminWebRoot)\**\*" />
+            <_IW4MGsc Include="$(IW4MAdminGscRoot)\**\*" />
+        </ItemGroup>
+        <Copy Condition="'@(_IW4MWeb)' != ''"
+              SourceFiles="@(_IW4MWeb)"
+              DestinationFiles="@(_IW4MWeb->'$(_IW4MAdminBundleStage)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy Condition="'@(IW4MAdminWebAsset)' != ''"
+              SourceFiles="@(IW4MAdminWebAsset)"
+              DestinationFiles="@(IW4MAdminWebAsset->'$(_IW4MAdminBundleStage)wwwroot\%(BundlePath)')" />
+        <Copy Condition="'@(_IW4MGsc)' != ''"
+              SourceFiles="@(_IW4MGsc)"
+              DestinationFiles="@(_IW4MGsc->'$(_IW4MAdminBundleStage)gsc\%(RecursiveDir)%(Filename)%(Extension)')" />
+
+        <MakeDir Directories="$(IW4MAdminBundleOutput)" />
+        <ZipDirectory SourceDirectory="$(_IW4MAdminBundleStage)"
+                      DestinationFile="$(IW4MAdminBundleOutput)$(IW4MAdminBundleId).zip"
+                      Overwrite="true" />
+        <Message Importance="high" Text="IW4MAdmin: bundle written to $(IW4MAdminBundleOutput)$(IW4MAdminBundleId).zip" />
+    </Target>
+
+    <!-- ===================== optional Tailwind helper (opt-in, removable) ===================== -->
+
+    <PropertyGroup Condition="'$(IW4MAdminTailwind)' == 'true'">
+        <IW4MAdminTailwindInput Condition="'$(IW4MAdminTailwindInput)' == ''">$(MSBuildProjectDirectory)\Styles\tailwind.css</IW4MAdminTailwindInput>
+        <IW4MAdminTailwindBundlePath Condition="'$(IW4MAdminTailwindBundlePath)' == ''">plugin.css</IW4MAdminTailwindBundlePath>
+
+        <!-- shared cache outside the project so the ~100MB CLI isn't re-downloaded per clean/project -->
+        <IW4MAdminTailwindCacheDir Condition="'$(IW4MAdminTailwindCacheDir)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">$([MSBuild]::NormalizeDirectory('$(LOCALAPPDATA)', 'IW4MAdmin', 'tailwind'))</IW4MAdminTailwindCacheDir>
+        <IW4MAdminTailwindCacheDir Condition="'$(IW4MAdminTailwindCacheDir)' == ''">$([MSBuild]::NormalizeDirectory('$(HOME)', '.cache', 'IW4MAdmin', 'tailwind'))</IW4MAdminTailwindCacheDir>
+        <IW4MAdminTailwindExe Condition="'$(IW4MAdminTailwindExe)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">$(IW4MAdminTailwindCacheDir)tailwindcss.exe</IW4MAdminTailwindExe>
+        <IW4MAdminTailwindExe Condition="'$(IW4MAdminTailwindExe)' == ''">$(IW4MAdminTailwindCacheDir)tailwindcss</IW4MAdminTailwindExe>
+    </PropertyGroup>
+
+    <!-- create a correct starter input (emitting into layer(plugins)) if the author hasn't written one,
+         so the host-UI-override footgun is impossible to hit by default -->
+    <Target Name="IW4MAdminScaffoldTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND !Exists('$(IW4MAdminTailwindInput)')">
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindInput)'))" />
+        <!-- content as a property (NOT item Include) so the '*' in comments/@source isn't glob-expanded.
+             %0A = newline, %3B = semicolon (kept literal, not treated as a list separator). -->
+        <PropertyGroup>
+            <_IW4MTwScaffold>/* Tailwind input for this plugin (created by the IW4MAdmin bundle helper). */%0A/* Emit into the host 'plugins' cascade layer so your utilities can NEVER override the host UI (sidebar/topbar). */%0A@import "tailwindcss/theme.css" layer(plugins)%3B%0A@import "tailwindcss/utilities.css" layer(plugins)%3B%0A%0A/* scan your components so only the classes you use are emitted */%0A@source "../Components/**/*.razor"%3B</_IW4MTwScaffold>
+        </PropertyGroup>
+        <WriteLinesToFile File="$(IW4MAdminTailwindInput)" Lines="$(_IW4MTwScaffold)" Overwrite="true" />
+        <Message Importance="high" Text="IW4MAdmin: created a starter Tailwind input at $(IW4MAdminTailwindInput) (emits into the host 'plugins' layer)." />
+    </Target>
+
+    <!-- warn if a hand-written input forgets layer(plugins) — the one mistake that collapses host chrome -->
+    <Target Name="IW4MAdminCheckTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)')">
+        <PropertyGroup>
+            <_IW4MTwInput>$([System.IO.File]::ReadAllText('$(IW4MAdminTailwindInput)'))</_IW4MTwInput>
+        </PropertyGroup>
+        <Warning Condition="!$(_IW4MTwInput.Contains('layer(plugins)'))"
+                 Code="IW4M1001"
+                 Text="Tailwind input '$(IW4MAdminTailwindInput)' does not emit into the host 'plugins' cascade layer, so your utilities may override the host UI (sidebar/topbar collapse). Use: @import &quot;tailwindcss/utilities.css&quot; layer(plugins); — see docs/plugin-web-bundles.md." />
+    </Target>
+
+    <Target Name="IW4MAdminDownloadTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)') AND !Exists('$(IW4MAdminTailwindExe)')">
+        <PropertyGroup>
+            <_TwUrl Condition="$([MSBuild]::IsOSPlatform('Windows'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-windows-x64.exe</_TwUrl>
+            <_TwUrl Condition="$([MSBuild]::IsOSPlatform('Linux'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64</_TwUrl>
+            <_TwUrl Condition="$([MSBuild]::IsOSPlatform('OSX'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-x64</_TwUrl>
+        </PropertyGroup>
+        <MakeDir Directories="$(IW4MAdminTailwindCacheDir)" />
+        <Message Importance="high" Text="IW4MAdmin: downloading Tailwind CLI to $(IW4MAdminTailwindCacheDir)" />
+        <Exec Command="curl -sL $(_TwUrl) -o &quot;$(IW4MAdminTailwindExe)&quot;" />
+        <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="chmod +x &quot;$(IW4MAdminTailwindExe)&quot;" />
+    </Target>
+
+    <Target Name="IW4MAdminCompileTailwind"
+            DependsOnTargets="IW4MAdminScaffoldTailwind;IW4MAdminCheckTailwind;IW4MAdminDownloadTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)')">
+        <!-- computed here (target execution) so $(IntermediateOutputPath) is set regardless of import position;
+             compiled into obj so the source tree stays clean, then contributed to the bundle as a web asset -->
+        <PropertyGroup>
+            <IW4MAdminTailwindOutput Condition="'$(IW4MAdminTailwindOutput)' == ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'iw4m-tailwind', 'plugin.css'))</IW4MAdminTailwindOutput>
+        </PropertyGroup>
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindOutput)'))" />
+        <Message Importance="high" Text="IW4MAdmin: compiling Tailwind ($(IW4MAdminTailwindInput) -> $(IW4MAdminTailwindOutput))" />
+        <Exec Command="&quot;$(IW4MAdminTailwindExe)&quot; -i &quot;$(IW4MAdminTailwindInput)&quot; -o &quot;$(IW4MAdminTailwindOutput)&quot; --minify" />
+        <ItemGroup>
+            <IW4MAdminWebAsset Include="$(IW4MAdminTailwindOutput)">
+                <BundlePath>$(IW4MAdminTailwindBundlePath)</BundlePath>
+            </IW4MAdminWebAsset>
+        </ItemGroup>
+    </Target>
+
+</Project>

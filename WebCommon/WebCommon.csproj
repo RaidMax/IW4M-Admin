@@ -1,23 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <!-- shared, plugin-facing Blazor component kit (right-pane nav, page shell).
+             published so out-of-tree plugins can reference it the same way they reference SharedLibraryCore. -->
+        <PackageId>RaidMax.IW4MAdmin.WebCommon</PackageId>
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Version>2025.12.24.1</Version>
+        <PackageVersion>2025.12.24.1</PackageVersion>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <Description>Shared web UI components for IW4MAdmin and its plugins.</Description>
+        <PackageTags>IW4MAdmin</PackageTags>
+        <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin/</RepositoryUrl>
+        <PackageProjectUrl>https://www.raidmax.org/IW4MAdmin/</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <IsPackable>true</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Components\UI\" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="Components\UI\Display\ColorCode.razor" />
-      <AdditionalFiles Include="Components\UI\Display\Render.razor" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Data\Data.csproj" />
-      <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
+        <!-- only the DTO contracts (SideContextMenuItems) and base utilities. SLC is a published package,
+             so this ProjectReference becomes a NuGet dependency in the packed WebCommon nupkg. -->
+        <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj"/>
     </ItemGroup>
 
 </Project>

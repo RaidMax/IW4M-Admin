@@ -233,6 +233,9 @@ public class Program
         services.AddCascadingAuthenticationState();
 
         services.AddScoped<IActionService, ActionService>();
+        // expose the same instance under the plugin-facing modal abstraction so plugins can open
+        // modals (e.g. zombie live snapshot) without referencing the host's IActionService.
+        services.AddScoped<WebCommon.Services.IModalService>(sp => sp.GetRequiredService<IActionService>());
         services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
 
         services.AddOpenApi(options =>

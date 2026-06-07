@@ -1,0 +1,33 @@
+@using WebCommon.Services
+
+@* A named extension point the host places in its own pages. Plugins fill it by registering
+   IRenderSlotProvider instances in DI. The host stays free of any plugin reference: providers
+   are resolved from DI and rendered via DynamicComponent. Renders nothing when unfilled. *@
+
+@foreach (var provider in _matched)
+{
+    <DynamicComponent Type="provider.ComponentType" Parameters="Parameters"/>
+}
+
+@code {
+    [Inject] private IEnumerable<IRenderSlotProvider> Providers { get; set; } = [];
+
+    /// <summary>Slot identity. Providers with a matching <see cref="IRenderSlotProvider.SlotName"/> render here.</summary>
+    [Parameter, EditorRequired] public string SlotName { get; set; } = default!;
+
+    /// <summary>
+    /// Parameters forwarded to each rendered component. Keys must match the component's
+    /// declared <c>[Parameter]</c> names (a soft contract documented per slot).
+    /// </summary>
+    [Parameter] public IDictionary<string, object>? Parameters { get; set; }
+
+    private IReadOnlyList<IRenderSlotProvider> _matched = [];
+
+    protected override void OnParametersSet()
+    {
+        _matched = Providers
+            .Where(p => string.Equals(p.SlotName, SlotName, StringComparison.Ordinal))
+            .OrderBy(p => p.Order)
+            .ToList();
+    }
+}

@@ -6,30 +6,20 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
+using WebCommon.Services;
 using WebfrontCore.Components.Features.Clients.Models;
 using WebfrontCore.Components.UI.Controls;
 
 namespace WebfrontCore.Core.Services;
 
-public interface IActionService
+public interface IActionService : IModalService
 {
     event Action<string, int?, string, string?> OnOpenAction;
-    event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?, string?> OnOpenCustomAction;
 
     void OpenAction(string actionName, int? targetId, string meta, string? serverId = null);
 
-    /// <summary>
-    /// Open a modal with a caller-supplied RenderFragment as the body.
-    /// </summary>
-    /// <param name="bodyClass">
-    /// Optional override for the modal body's classes. Default
-    /// ("p-6 overflow-y-auto") suits forms + simple lists. Custom content that
-    /// manages its own layout (e.g. the zombie live modal's 3-col grid) should
-    /// pass a class like "flex-1 min-h-0 overflow-hidden flex flex-col" so the
-    /// body fills remaining vertical space without adding its own scrollbar.
-    /// </param>
-    void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null,
-        string? bodyClass = null);
+    // OpenCustom + OnOpenCustomAction are inherited from IModalService (WebCommon) so plugins can
+    // open modals without referencing the host. The host keeps consuming them via IActionService.
 
     Task<ActionInfo> GetActionInfoAsync(string actionName, int? targetId, string meta, string? serverId = null);
 

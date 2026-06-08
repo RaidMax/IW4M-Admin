@@ -226,9 +226,6 @@ jobs:
           mkdir -p ${{ env.outputFolder }}/wwwroot/js/user
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/app.min.js ${{ env.outputFolder }}/wwwroot/js/app.min.js
           cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/user/user.js ${{ env.outputFolder }}/wwwroot/js/user/user.js
-          # zombie-scrubber.js is loaded standalone (kept out of the main bundle
-          # for cache isolation — UI changes ship without invalidating app.min.js).
-          cp ${{ github.workspace }}/WebfrontCore/wwwroot/js/zombie-scrubber.js ${{ env.outputFolder }}/wwwroot/js/zombie-scrubber.js
           mkdir -p ${{ env.outputFolder }}/wwwroot/font
           mkdir -p ${{ env.outputFolder }}/wwwroot/font/phosphor
           rsync -ar ${{ github.workspace }}/WebfrontCore/wwwroot/font/phosphor/ ${{ env.outputFolder }}/wwwroot/font/phosphor/

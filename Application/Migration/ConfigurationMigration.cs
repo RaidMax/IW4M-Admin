@@ -1,6 +1,9 @@
 ﻿using SharedLibraryCore;
+using SharedLibraryCore.Plugins;
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Text.Json;
 
 namespace IW4MAdmin.Application.Migration
 {
@@ -88,6 +91,87 @@ namespace IW4MAdmin.Application.Migration
                 {
                     File.Move(jsFile, jsFile + ".disabled", overwrite: true);
                     Console.WriteLine($"Migrated plugin: {Path.GetFileNameWithoutExtension(jsFile)}.js → .cs");
+                }
+                catch (IOException)
+                {
+                    // best effort — file may be locked
+                }
+            }
+        }
+
+        /// <summary>
+        /// disables loose plugin .dll files that have been superseded by a .zip bundle shipping the same
+        /// entry assembly. Mirrors <see cref="MigrateJsToCsPlugins"/>: when a plugin moves to its bundle
+        /// form (e.g. LiveRadar), an older loose dll left in Plugins/ from a prior install would double-load
+        /// against the in-memory bundle assembly (duplicate identity / conflicting types). Renaming it to
+        /// .dll.disabled lets the bundle win. The match is driven by the bundle manifest's entryAssembly,
+        /// not the file names, so it stays correct even if the .zip and .dll stems differ. Best-effort:
+        /// bundles whose manifest can't be read, and locked dlls, are skipped.
+        /// </summary>
+        public static void MigrateDllToBundlePlugins()
+        {
+            var pluginsDir = Path.Join(Utilities.OperatingDirectory, "Plugins");
+
+            if (!Directory.Exists(pluginsDir))
+            {
+                return;
+            }
+
+            foreach (var zipFile in Directory.GetFiles(pluginsDir, "*.zip"))
+            {
+                string? entryAssemblyFile;
+
+                try
+                {
+                    using var archive = ZipFile.OpenRead(zipFile);
+                    var manifestEntry = archive.GetEntry("manifest.json");
+
+                    if (manifestEntry is null)
+                    {
+                        continue;
+                    }
+
+                    byte[] manifestBytes;
+                    using (var entryStream = manifestEntry.Open())
+                    using (var buffer = new MemoryStream())
+                    {
+                        entryStream.CopyTo(buffer);
+                        manifestBytes = buffer.ToArray();
+                    }
+
+                    var manifest = JsonSerializer.Deserialize<BundleManifest>(manifestBytes,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (string.IsNullOrWhiteSpace(manifest?.EntryAssembly))
+                    {
+                        continue;
+                    }
+
+                    // entryAssembly is a bundle-relative path like "lib/LiveRadar.dll" — take just the file name.
+                    entryAssemblyFile = Path.GetFileName(manifest.EntryAssembly.Replace('\\', '/'));
+                }
+                catch (Exception)
+                {
+                    // unreadable / corrupt bundle — leave any loose dll untouched
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(entryAssemblyFile))
+                {
+                    continue;
+                }
+
+                var looseDll = Path.Join(pluginsDir, entryAssemblyFile);
+
+                if (!File.Exists(looseDll))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    File.Move(looseDll, looseDll + ".disabled", overwrite: true);
+                    Console.WriteLine($"Migrated plugin: {entryAssemblyFile} → bundle ({Path.GetFileName(zipFile)})");
                 }
                 catch (IOException)
                 {

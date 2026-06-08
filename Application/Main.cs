@@ -236,6 +236,7 @@ namespace IW4MAdmin.Application
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
                 ConfigurationMigration.MigrateJsToCsPlugins();
+                ConfigurationMigration.MigrateDllToBundlePlugins();
 
                 logger.LogDebug("Configuring services...");
 

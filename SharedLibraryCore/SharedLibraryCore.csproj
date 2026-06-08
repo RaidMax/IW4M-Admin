@@ -42,21 +42,21 @@
 
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="12.1.1"/>
-        <PackageReference Include="Humanizer.Core" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.ru" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.de" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.es" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.pt" Version="3.0.1"/>
+        <PackageReference Include="Humanizer.Core" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.ru" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.de" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.es" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.pt" Version="3.0.10" />
 
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
 
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
         <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0"/>
     </ItemGroup>

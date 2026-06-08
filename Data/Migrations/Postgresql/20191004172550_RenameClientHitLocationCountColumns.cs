@@ -77,7 +77,7 @@ PRAGMA foreign_keys = 1;
 ", true);
             }
 
-            else if (migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
+            else if (migrationBuilder.ActiveProvider == "Microting.EntityFrameworkCore.MySql")
             {
                 migrationBuilder.Sql("ALTER TABLE `EFHitLocationCounts` CHANGE `EFClientStatistics_ClientId` `EFClientStatisticsClientId` INT(11) NOT NULL;");
                 migrationBuilder.Sql("ALTER TABLE `EFHitLocationCounts` CHANGE `EFClientStatistics_ServerId` `EFClientStatisticsServerId` INT(11) NOT NULL;");

@@ -47,10 +47,10 @@ Tests are in `Tests/ApplicationTests/` but are **not** included in the solution 
 
 ## Database & Migrations
 
-EF Core 9.0 with three supported providers (each has its own migration context in `Data/MigrationContext/`):
+EF Core 10.0 with three supported providers (each has its own migration context in `Data/MigrationContext/`):
 - **SQLite** — default, `SqliteDatabaseContext`
 - **PostgreSQL** — `PostgresqlDatabaseContext` (via Npgsql)
-- **MySQL** — `MySqlDatabaseContext` (via Pomelo)
+- **MySQL** — `MySqlDatabaseContext` (via Microting)
 
 Migrations live in `Data/Migrations/{Sqlite,Postgresql,MySql}/`. When adding a migration, you must add it for each provider using the corresponding context class.
 

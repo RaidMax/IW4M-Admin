@@ -6,7 +6,7 @@ namespace Data.Migrations.Sqlite
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            if (migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
+            if (migrationBuilder.ActiveProvider == "Microting.EntityFrameworkCore.MySql")
             {
                 migrationBuilder.Sql("CREATE FULLTEXT INDEX IX_EFMeta_Key ON EFMeta ( `Key` );");
             }

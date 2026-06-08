@@ -207,18 +207,58 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
     private LoadedBundle RegisterBundle(BundleManifest manifest, Assembly assembly,
         IReadOnlyDictionary<string, byte[]> webAssets, IReadOnlyDictionary<string, byte[]> gscFiles)
     {
-        assetStore.RegisterPlugin(manifest.Id, webAssets);
+        // Scope every CSS asset to this plugin's marker before it is served, so the plugin's styles
+        // apply only inside its own rendered subtree and can't disturb the host chrome. See
+        // PluginCssScoper. Done once at load; the served + cached assets are the scoped copies.
+        var servedAssets = ScopeCssAssets(webAssets, manifest.Id);
+        assetStore.RegisterPlugin(manifest.Id, servedAssets);
 
         var bundle = new LoadedBundle
         {
             Assembly = assembly,
             Manifest = manifest,
-            WebAssets = webAssets,
+            WebAssets = servedAssets,
             GscFiles = gscFiles
         };
 
         _cache[manifest.Id] = bundle;
         return bundle;
+    }
+
+    private static IReadOnlyDictionary<string, byte[]> ScopeCssAssets(
+        IReadOnlyDictionary<string, byte[]> assets, string pluginId)
+    {
+        var result = new Dictionary<string, byte[]>(assets.Count, StringComparer.OrdinalIgnoreCase);
+        foreach (var (path, bytes) in assets)
+        {
+            result[path] = path.EndsWith(".css", StringComparison.OrdinalIgnoreCase)
+                ? PluginCssScoper.ScopeCss(bytes, pluginId)
+                : bytes;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// The bundle id whose assembly is <paramref name="assembly"/>, or null if it isn't a loaded
+    /// bundle. Lets the host stamp the right <c>data-iw4m-plugin</c> marker around content rendered
+    /// from a bundle (routed pages, render-slot widgets) so the scoped CSS (see
+    /// <see cref="PluginCssScoper"/>) targets it.
+    /// </summary>
+    public string? PluginIdForAssembly(Assembly assembly)
+    {
+        lock (_loadLock)
+        {
+            foreach (var bundle in _cache.Values)
+            {
+                if (ReferenceEquals(bundle.Assembly, assembly))
+                {
+                    return bundle.Manifest.Id;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static string LibFolder(BundleManifest manifest)

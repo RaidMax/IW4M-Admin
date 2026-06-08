@@ -114,29 +114,36 @@
         <IW4MAdminTailwindExe Condition="'$(IW4MAdminTailwindExe)' == ''">$(IW4MAdminTailwindCacheDir)tailwindcss</IW4MAdminTailwindExe>
     </PropertyGroup>
 
-    <!-- create a correct starter input (emitting into layer(plugins)) if the author hasn't written one,
-         so the host-UI-override footgun is impossible to hit by default -->
+    <!-- create a starter input if the author hasn't written one. The host serves a plugin's CSS scoped
+         to that plugin's own rendered DOM (CSS @scope, see SharedLibraryCore PluginCssScoper), so the
+         starter emits utilities UNLAYERED — full power on the plugin's own pages, zero reach into the
+         host chrome. -->
     <Target Name="IW4MAdminScaffoldTailwind"
             Condition="'$(IW4MAdminTailwind)' == 'true' AND !Exists('$(IW4MAdminTailwindInput)')">
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindInput)'))" />
         <!-- content as a property (NOT item Include) so the '*' in comments/@source isn't glob-expanded.
              %0A = newline, %3B = semicolon (kept literal, not treated as a list separator). -->
         <PropertyGroup>
-            <_IW4MTwScaffold>/* Tailwind input for this plugin (created by the IW4MAdmin bundle helper). */%0A/* Emit into the host 'plugins' cascade layer so your utilities can NEVER override the host UI (sidebar/topbar). */%0A@import "tailwindcss/theme.css" layer(plugins)%3B%0A@import "tailwindcss/utilities.css" layer(plugins)%3B%0A%0A/* scan your components so only the classes you use are emitted */%0A@source "../Components/**/*.razor"%3B</_IW4MTwScaffold>
+            <_IW4MTwScaffold>/* Tailwind input for this plugin (created by the IW4MAdmin bundle helper). */%0A/* The host serves this CSS scoped to your plugin's own DOM, so emit utilities UNLAYERED: they get%0A   full power on your pages and cannot leak into the host chrome. Do NOT wrap in layer(plugins) — a%0A   lower layer would stop your utilities overriding the host's base utilities on your own pages. */%0A@import "tailwindcss/theme.css"%3B%0A@import "tailwindcss/utilities.css"%3B%0A%0A/* scan your components so only the classes you use are emitted */%0A@source "../Components/**/*.razor"%3B</_IW4MTwScaffold>
         </PropertyGroup>
         <WriteLinesToFile File="$(IW4MAdminTailwindInput)" Lines="$(_IW4MTwScaffold)" Overwrite="true" />
-        <Message Importance="high" Text="IW4MAdmin: created a starter Tailwind input at $(IW4MAdminTailwindInput) (emits into the host 'plugins' layer)." />
+        <Message Importance="high" Text="IW4MAdmin: created a starter Tailwind input at $(IW4MAdminTailwindInput) (utilities emitted unlayered; the host scopes them)." />
     </Target>
 
-    <!-- warn if a hand-written input forgets layer(plugins) — the one mistake that collapses host chrome -->
+    <!-- warn if a hand-written input wraps utilities in layer(plugins). The host scopes plugin CSS to
+         the plugin's own DOM, so the layer is unnecessary for chrome safety and a lower layer stops the
+         plugin's utilities overriding the host's base utilities on its own pages — silently breaking
+         responsive/state layout. Emit unlayered instead. -->
     <Target Name="IW4MAdminCheckTailwind"
             Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)')">
         <PropertyGroup>
             <_IW4MTwInput>$([System.IO.File]::ReadAllText('$(IW4MAdminTailwindInput)'))</_IW4MTwInput>
         </PropertyGroup>
-        <Warning Condition="!$(_IW4MTwInput.Contains('layer(plugins)'))"
+        <!-- match the actual import usage (...css" layer(plugins)), not the word in an explanatory
+             comment. &quot; decodes to a literal double-quote inside the Contains argument. -->
+        <Warning Condition="$(_IW4MTwInput.Contains('css&quot; layer(plugins)'))"
                  Code="IW4M1001"
-                 Text="Tailwind input '$(IW4MAdminTailwindInput)' does not emit into the host 'plugins' cascade layer, so your utilities may override the host UI (sidebar/topbar collapse). Use: @import &quot;tailwindcss/utilities.css&quot; layer(plugins); — see docs/plugin-web-bundles.md." />
+                 Text="Tailwind input '$(IW4MAdminTailwindInput)' wraps utilities in layer(plugins). The host now scopes plugin CSS to the plugin's own DOM, so the layer is unnecessary and a lower layer prevents your utilities overriding the host's base utilities on your own pages (responsive/state classes silently fail). Emit unlayered: @import &quot;tailwindcss/utilities.css&quot;; — see docs/plugin-web-bundles.md." />
     </Target>
 
     <Target Name="IW4MAdminDownloadTailwind"

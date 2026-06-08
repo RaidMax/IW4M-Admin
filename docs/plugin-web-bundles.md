@@ -110,29 +110,31 @@ Put `.css` files directly in `wwwroot/` (e.g. `wwwroot/custom.css`). They're bun
 ### Tailwind helper (optional)
 
 Opt in with `<IW4MAdminTailwind>true</IW4MAdminTailwind>` in your `.csproj`. On first build the helper
-**scaffolds a correct `Styles/tailwind.css`** for you (already emitting into `layer(plugins)`) — edit its
-`@source` to taste. For reference it looks like:
+**scaffolds a correct `Styles/tailwind.css`** for you — edit its `@source` to taste. For reference it looks
+like:
 
 ```css
 /* Preflight (global reset) is omitted on purpose — the host already ships one. Pull only theme + utilities,
-   and emit everything into the host's `plugins` cascade layer (see the critical note below). */
-@import "tailwindcss/theme.css" layer(plugins);
-@import "tailwindcss/utilities.css" layer(plugins);
+   emitted UNLAYERED — the host scopes this stylesheet to your plugin's own DOM (see note below). */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
 
 /* scan your components so only the classes you actually use are emitted */
 @source "../Components/**/*.razor";
 ```
 
-> **⚠️ #1 rule — emit into `layer(plugins)`.** The host reserves a lowest-priority cascade layer named
-> `plugins`. Your Tailwind generates generic utilities (`.hidden`, `.flex`, …) that share names with the
-> host's. If you emit them into Tailwind's default `utilities` layer, your stylesheet loads *after* the host's
-> and your `.hidden` will out-order the host's responsive `.md:flex`, **collapsing the host sidebar/top bar**
-> on your page. Emitting into `layer(plugins)` keeps your styles fully working on your own markup while
-> guaranteeing they can never override host chrome. Always use `layer(plugins)`.
+> **The host scopes your CSS for you — emit unlayered.** When the host serves a plugin's stylesheet it
+> rewrites it with the native CSS `@scope` at-rule so every rule applies **only inside your plugin's own
+> rendered DOM** (the host stamps a `data-iw4m-plugin="<id>"` marker around your pages, render-slot widgets
+> and — see below — modals). Your generic utilities (`.hidden`, `.flex`, `.sm:flex-row`, …) therefore can't
+> touch the host chrome no matter what, *and* — because they're unlayered — they keep full power on your own
+> markup, overriding the host's base utilities where you need to (e.g. `flex flex-col sm:flex-row`).
 >
-> **The helper guards this for you:** it scaffolds the file with `layer(plugins)` already set, and emits build
-> warning **`IW4M1001`** if a hand-edited input drops it — so the footgun is hard to hit. The rule above is
-> *why* it matters.
+> **Do not wrap them in `layer(plugins)`.** The scope already keeps your CSS off the chrome; a lower cascade
+> layer adds nothing there and *does* stop your utilities overriding the host's base utilities on your own
+> pages, so your responsive/state layout silently fails (cards collapse to one column, `md:`-only content
+> stays hidden, `hover:` is dead). The helper scaffolds the unlayered form and emits build warning
+> **`IW4M1001`** if a hand-edited input uses `layer(plugins)`.
 
 On build, the helper downloads the standalone Tailwind CLI (cached outside the project, once) and compiles
 this — **purged to just the classes you use** — into `obj/` (keeping your source tree clean), then adds it to
@@ -239,17 +241,19 @@ Common pitfalls, phrased by symptom. Most map to a one-line fix.
 ### Layout & CSS
 
 **Q: My plugin page renders without the host top bar / sidebar — just my content on a bare page.**
-A: A CSS cascade-layer conflict. Your Tailwind emitted generic utilities (`.hidden`, `.flex`, …) into the
-default `utilities` layer; loading after the host, your `.hidden` out-orders the host's responsive `.md:flex`
-and collapses every `hidden md:flex` chrome element (sidebar, top bar). **Fix:** emit your Tailwind into the
-host's `plugins` layer — `@import "tailwindcss/utilities.css" layer(plugins);`. The Tailwind helper scaffolds
-this for you and warns (`IW4M1001`) if it's missing.
+A: Your CSS is escaping its scope and clobbering the host chrome. The host scopes plugin CSS to a
+`data-iw4m-plugin="<id>"` marker it stamps around your content — but content the host renders *imperatively*
+(a modal opened via `IModalService`, or anything you build with a `RenderFragment`/`RenderTreeBuilder`) is
+opaque to the host, so it can't mark it for you. **Fix:** wrap that content in the marker yourself:
+`<div data-iw4m-plugin="<your-bundle-id>" style="display:contents">…</div>`. Routed pages and render-slot
+widgets are marked automatically — you only do this for imperatively-rendered content.
 
-**Q: It looks fine with `ASPNETCORE_ENVIRONMENT=Development` but breaks without it.**
-A: In development the host serves `wwwroot/css/app.css`; in production it serves the minified
-`wwwroot/css/app.min.css` — a *separate* artifact. Both must declare `@layer plugins;`. This is a host-side
-file: if you maintain IW4MAdmin, regenerate `app.min.css` from `src/app.css` after CSS changes. As a plugin
-author you don't touch it, but it's the usual reason "works in dev, breaks in prod."
+**Q: My responsive/state classes don't work — cards stay single-column, `md:`-only content stays hidden,
+`hover:` is dead.**
+A: You wrapped your Tailwind in `layer(plugins)`. Under the host's CSS scoping that lower layer stops your
+utilities overriding the host's base utilities on your *own* pages (e.g. your `sm:flex-row` can't beat the
+host's `flex-col`). **Fix:** emit unlayered — `@import "tailwindcss/utilities.css";` (no `layer(...)`). The
+helper scaffolds this and warns (`IW4M1001`) if `layer(plugins)` is present.
 
 **Q: Some of my `<link>` stylesheets don't load / styles randomly missing.**
 A: `<HeadContent>` is **last-render-wins, not additive**. If your page renders a shared head component
@@ -257,17 +261,17 @@ A: `<HeadContent>` is **last-render-wins, not additive**. If your page renders a
 earlier links vanish. **Fix:** put **all** of a page's `<link>`s in a single `<HeadContent>`.
 
 **Q: I get build warning `IW4M1001`.**
-A: Your `Styles/tailwind.css` doesn't emit into `layer(plugins)`. See the first question — add `layer(plugins)`
-to your `@import`s.
+A: Your `Styles/tailwind.css` wraps utilities in `layer(plugins)`. The host scopes your CSS, so the layer is
+unnecessary and breaks your responsive layout — drop `layer(...)` from your `@import`s.
 
 **Q: A Tailwind class I use isn't in the output.**
 A: Tailwind purges anything not found *literally* in your `.razor`. Dynamic strings like `$"text-{c}-500"`
 are dropped. Add them to a safelist / `@source inline(...)`.
 
 **Q: Can I use plain CSS / Sass instead of Tailwind?**
-A: Yes. The bundle is tool-agnostic — drop any `.css` into `wwwroot/` (served at `/_content/<id>/…`). Bespoke
-class names (e.g. `.myplugin-card`) don't collide with the host, so they don't need a layer. Only *Tailwind's
-generic utilities* need `layer(plugins)`.
+A: Yes. The bundle is tool-agnostic — drop any `.css` into `wwwroot/` (served at `/_content/<id>/…`). The host
+scopes every served `.css` to your plugin's DOM, so even bespoke class names can't bleed into the host (and
+host styles can't reach into yours). Author it however you like.
 
 ### Navigation
 
@@ -326,8 +330,19 @@ Dispose the module reference in `DisposeAsync` (catch `JSDisconnectedException`)
 
 ### Host-maintainer notes
 
-- The `plugins` cascade layer must be declared in **both** `WebfrontCore/wwwroot/css/src/app.css` *and* the
-  committed `wwwroot/css/app.min.css` (prod). A plugin cannot self-order its layer below the host's — the host
-  must declare `plugins` first — which is why this lives host-side.
-- `app.min.css` is a hand-committed bundle (`bundleconfig.json`; CI copies it). Regenerate it when host CSS
-  changes, or the dev/prod divergence above reappears.
+- **CSS isolation is done by scoping, host-side.** When a bundle's web assets are registered
+  (`SharedLibraryCore` → `PluginBundleLoader.RegisterBundle` → `PluginCssScoper`), every `.css` is rewritten
+  to `@scope ([data-iw4m-plugin="<id>"]) { … }`, with `@property`/`@keyframes`/`@font-face`/`@import` and
+  `:root`/`:host` token blocks hoisted back out to stay global. A plugin can therefore ship any classes (even
+  ones the host uses) with no cascade-layer cooperation from the host — the scope confines them.
+- **The host stamps the `data-iw4m-plugin="<id>"` marker** around each place it renders bundle content:
+  routed pages (`Routes.razor` cascades the page assembly's bundle id → `MainLayout` wraps `@Body`) and
+  render-slot widgets (`PluginRenderSlot` wraps each `DynamicComponent`). Wrappers use `display:contents` so
+  they're layout-transparent. The id↔assembly lookup is `PluginBundleLoader.PluginIdForAssembly`.
+- **Imperatively-rendered plugin content** (a modal opened via `IModalService`, anything built from a
+  `RenderFragment`/`RenderTreeBuilder`) is opaque to the host, so the *plugin* stamps the marker itself —
+  `<div data-iw4m-plugin="<id>" style="display:contents">…</div>`. See `ZombieServerLiveWidget.LiveContent`.
+- **Browser support:** scoping relies on the native CSS `@scope` at-rule (Chrome/Edge 118+, Safari 17.4+,
+  Firefox 128+ — all 2023–2024). On a browser without it the `@scope` block is ignored, so a plugin's
+  scoped rules simply don't apply (pages render unstyled but the host chrome stays intact); the hoisted
+  globals still load. Fine for the admin webfront's modern-browser audience.

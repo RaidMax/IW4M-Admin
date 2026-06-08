@@ -188,14 +188,8 @@
 
                 @* Zombie match history is provided by the ZombieStatsPremium plugin via a render slot,
                    so the host carries no zombie reference. Renders nothing without the plugin. *@
-                @{
-                    var zombieStatsSlot = new Dictionary<string, object> { ["ClientId"] = ClientId };
-                    if (serverId is not null)
-                    {
-                        zombieStatsSlot["ServerId"] = serverId;
-                    }
-                }
-                <PluginRenderSlot SlotName="client-advanced-stats" Parameters="zombieStatsSlot"/>
+                <PluginRenderSlot Slot="RenderSlots.ClientAdvancedStats"
+                                  Params="@(new ClientAdvancedStatsParams { ClientId = ClientId, ServerId = serverId })"/>
 
                 <!-- Bottom Section: Models & Tables -->
                 <div class="flex items-center gap-3">

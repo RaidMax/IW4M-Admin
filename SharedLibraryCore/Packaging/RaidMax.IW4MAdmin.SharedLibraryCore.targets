@@ -124,7 +124,7 @@
         <!-- content as a property (NOT item Include) so the '*' in comments/@source isn't glob-expanded.
              %0A = newline, %3B = semicolon (kept literal, not treated as a list separator). -->
         <PropertyGroup>
-            <_IW4MTwScaffold>/* Tailwind input for this plugin (created by the IW4MAdmin bundle helper). */%0A/* The host serves this CSS scoped to your plugin's own DOM, so emit utilities UNLAYERED: they get%0A   full power on your pages and cannot leak into the host chrome. Do NOT wrap in layer(plugins) — a%0A   lower layer would stop your utilities overriding the host's base utilities on your own pages. */%0A@import "tailwindcss/theme.css"%3B%0A@import "tailwindcss/utilities.css"%3B%0A%0A/* scan your components so only the classes you use are emitted */%0A@source "../Components/**/*.razor"%3B</_IW4MTwScaffold>
+            <_IW4MTwScaffold>/* Tailwind input for this plugin (created by the IW4MAdmin bundle helper). */%0A/* The host serves this CSS scoped to your plugin's own DOM, so emit utilities UNLAYERED: they get%0A   full power on your pages and cannot leak into the host chrome. Do NOT wrap in layer(plugins) — a%0A   lower layer would stop your utilities overriding the host's base utilities on your own pages. */%0A/* The host design tokens (bg-surface, border-line, text-subtle, text-primary, status colours, …) are%0A   injected automatically by the helper, so you can use them directly and match the host theme. */%0A@import "tailwindcss/theme.css"%3B%0A@import "tailwindcss/utilities.css"%3B%0A%0A/* scan your components so only the classes you use are emitted */%0A@source "../Components/**/*.razor"%3B</_IW4MTwScaffold>
         </PropertyGroup>
         <WriteLinesToFile File="$(IW4MAdminTailwindInput)" Lines="$(_IW4MTwScaffold)" Overwrite="true" />
         <Message Importance="high" Text="IW4MAdmin: created a starter Tailwind input at $(IW4MAdminTailwindInput) (utilities emitted unlayered; the host scopes them)." />
@@ -166,10 +166,21 @@
              compiled into obj so the source tree stays clean, then contributed to the bundle as a web asset -->
         <PropertyGroup>
             <IW4MAdminTailwindOutput Condition="'$(IW4MAdminTailwindOutput)' == ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'iw4m-tailwind', 'plugin.css'))</IW4MAdminTailwindOutput>
+            <_IW4MTwOutDir>$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindOutput)'))</_IW4MTwOutDir>
+            <!-- entry that injects the host design tokens (shipped next to these targets) ahead of the
+                 author's input, so every plugin generates host-token utilities and is self-contained.
+                 forward slashes: '\' is a CSS escape character. Tailwind resolves the author input's
+                 @source paths relative to the author file, so importing it here is transparent. -->
+            <_IW4MTwEntry>$(_IW4MTwOutDir)\entry.css</_IW4MTwEntry>
+            <_IW4MThemeImport>$([System.String]::Copy('$(MSBuildThisFileDirectory)iw4madmin-theme.css').Replace('\', '/'))</_IW4MThemeImport>
+            <_IW4MAuthorImport>$([System.String]::Copy('$(IW4MAdminTailwindInput)').Replace('\', '/'))</_IW4MAuthorImport>
         </PropertyGroup>
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindOutput)'))" />
-        <Message Importance="high" Text="IW4MAdmin: compiling Tailwind ($(IW4MAdminTailwindInput) -> $(IW4MAdminTailwindOutput))" />
-        <Exec Command="&quot;$(IW4MAdminTailwindExe)&quot; -i &quot;$(IW4MAdminTailwindInput)&quot; -o &quot;$(IW4MAdminTailwindOutput)&quot; --minify" />
+        <MakeDir Directories="$(_IW4MTwOutDir)" />
+        <!-- %3B = a literal ';' in the emitted CSS; the bare ';' separates the two MSBuild list items (lines). -->
+        <WriteLinesToFile File="$(_IW4MTwEntry)" Overwrite="true"
+                          Lines="@import &quot;$(_IW4MThemeImport)&quot;%3B;@import &quot;$(_IW4MAuthorImport)&quot;%3B" />
+        <Message Importance="high" Text="IW4MAdmin: compiling Tailwind ($(IW4MAdminTailwindInput) + host tokens -> $(IW4MAdminTailwindOutput))" />
+        <Exec Command="&quot;$(IW4MAdminTailwindExe)&quot; -i &quot;$(_IW4MTwEntry)&quot; -o &quot;$(IW4MAdminTailwindOutput)&quot; --minify" />
         <ItemGroup>
             <IW4MAdminWebAsset Include="$(IW4MAdminTailwindOutput)">
                 <BundlePath>$(IW4MAdminTailwindBundlePath)</BundlePath>

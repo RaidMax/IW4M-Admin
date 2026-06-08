@@ -48,7 +48,22 @@ public static class PluginCssScoper
         var scoped = new StringBuilder();
         foreach (var segment in TopLevelSegments(css))
         {
-            (IsHoistedGlobal(segment) ? globals : scoped).Append(segment);
+            switch (Classify(segment))
+            {
+                case SegmentKind.GlobalAtRule:
+                    globals.Append(segment);
+                    break;
+                case SegmentKind.RootTokens:
+                    // Hoist :root/:host token definitions global so a plugin's design tokens resolve,
+                    // but strip self-references (--x: var(--x)) — those come from the host-token theme
+                    // and, left in a global :root loaded after the host's, would override the host's
+                    // real token values with a circular reference and break them everywhere.
+                    globals.Append(StripSelfReferences(segment));
+                    break;
+                default:
+                    scoped.Append(segment);
+                    break;
+            }
         }
 
         if (scoped.Length == 0)
@@ -67,25 +82,105 @@ public static class PluginCssScoper
         return result.ToString();
     }
 
-    // A top-level segment that must stay outside @scope (see class summary).
-    private static bool IsHoistedGlobal(string segment)
+    private enum SegmentKind
+    {
+        Scoped,
+        GlobalAtRule,
+        RootTokens
+    }
+
+    // Classify a top-level segment for placement (see class summary).
+    private static SegmentKind Classify(string segment)
     {
         var s = SkipLeadingTrivia(segment);
         if (s.Length == 0)
         {
-            return false;
+            return SegmentKind.Scoped;
         }
 
         if (s[0] == '@')
         {
-            return StartsWith(s, "@import") || StartsWith(s, "@charset") || StartsWith(s, "@namespace")
+            var global = StartsWith(s, "@import") || StartsWith(s, "@charset") || StartsWith(s, "@namespace")
                 || StartsWith(s, "@property") || StartsWith(s, "@font-face")
                 || StartsWith(s, "@keyframes") || StartsWith(s, "@-webkit-keyframes")
                 || StartsWith(s, "@-moz-keyframes") || StartsWith(s, "@-o-keyframes");
+            return global ? SegmentKind.GlobalAtRule : SegmentKind.Scoped;
         }
 
-        // keep :root / :host custom-property (design token) definitions global
-        return StartsWith(s, ":root") || StartsWith(s, ":host");
+        return StartsWith(s, ":root") || StartsWith(s, ":host")
+            ? SegmentKind.RootTokens
+            : SegmentKind.Scoped;
+    }
+
+    // Drop `--x: var(--x)` self-referential declarations from a :root/:host rule, keeping the rest
+    // (real default-token values). The block has no nested braces, so first '{' / last '}' bound it.
+    private static string StripSelfReferences(string segment)
+    {
+        var open = segment.IndexOf('{');
+        var close = segment.LastIndexOf('}');
+        if (open < 0 || close <= open)
+        {
+            return segment;
+        }
+
+        var kept = new StringBuilder();
+        foreach (var decl in SplitTopLevel(segment[(open + 1)..close], ';'))
+        {
+            if (decl.Trim().Length != 0 && !IsSelfReference(decl))
+            {
+                kept.Append(decl).Append(';');
+            }
+        }
+
+        return segment[..(open + 1)] + kept + segment[close..];
+    }
+
+    private static bool IsSelfReference(string decl)
+    {
+        var colon = decl.IndexOf(':');
+        if (colon < 0)
+        {
+            return false;
+        }
+
+        var prop = decl[..colon].Trim();
+        if (!prop.StartsWith("--", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // whitespace-insensitive compare: `--x : var( --x )` is still a self-reference
+        var value = new string(decl[(colon + 1)..].Where(ch => !char.IsWhiteSpace(ch)).ToArray());
+        return value == $"var({prop})";
+    }
+
+    // Split on a separator at paren-depth 0 (so ';' inside var()/color-mix() values doesn't split).
+    private static IEnumerable<string> SplitTopLevel(string text, char separator)
+    {
+        var depth = 0;
+        var start = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c == '(')
+            {
+                depth++;
+            }
+            else if (c == ')')
+            {
+                depth--;
+            }
+            else if (c == separator && depth == 0)
+            {
+                yield return text[start..i];
+                start = i + 1;
+            }
+        }
+
+        if (start < text.Length)
+        {
+            yield return text[start..];
+        }
     }
 
     private static bool StartsWith(string s, string prefix) =>

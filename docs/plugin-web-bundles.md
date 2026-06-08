@@ -123,6 +123,14 @@ like:
 @source "../Components/**/*.razor";
 ```
 
+> **Host design tokens are injected for you.** The helper prepends the host's published token vocabulary
+> (`SharedLibraryCore/Packaging/iw4madmin-theme.css`) ahead of your input at build, so utilities like
+> `bg-surface`, `border-line`, `text-subtle`, `text-primary`, `bg-success/10` resolve to the host's runtime
+> theme — your pages track the user's theme automatically, with no setup. This is what makes your stylesheet
+> **self-contained**: it generates *every* class your components use, rather than leaning on the host's
+> (purged) stylesheet to happen to provide one. (Opacity modifiers on these tokens collapse to the base
+> colour — same as in the host's own build, because the values are runtime variables.)
+
 > **The host scopes your CSS for you — emit unlayered.** When the host serves a plugin's stylesheet it
 > rewrites it with the native CSS `@scope` at-rule so every rule applies **only inside your plugin's own
 > rendered DOM** (the host stamps a `data-iw4m-plugin="<id>"` marker around your pages, render-slot widgets
@@ -330,11 +338,21 @@ Dispose the module reference in `DisposeAsync` (catch `JSDisconnectedException`)
 
 ### Host-maintainer notes
 
-- **CSS isolation is done by scoping, host-side.** When a bundle's web assets are registered
-  (`SharedLibraryCore` → `PluginBundleLoader.RegisterBundle` → `PluginCssScoper`), every `.css` is rewritten
-  to `@scope ([data-iw4m-plugin="<id>"]) { … }`, with `@property`/`@keyframes`/`@font-face`/`@import` and
-  `:root`/`:host` token blocks hoisted back out to stay global. A plugin can therefore ship any classes (even
-  ones the host uses) with no cascade-layer cooperation from the host — the scope confines them.
+- **Two independent guarantees make this work: self-containment + isolation.**
+- **Self-containment (build-side):** the host *publishes* its design tokens at
+  `SharedLibraryCore/Packaging/iw4madmin-theme.css`, and the `IW4MAdminTailwind` helper injects them ahead of
+  each plugin's input (combined entry in `obj/`, two absolute `@import`s; the author's `@source` still
+  resolves relative to the author file). So a plugin generates *every* utility its components use — including
+  host-token ones (`bg-surface`, `border-line`) — and never depends on the host's purged stylesheet. Keep the
+  token file in sync with `WebfrontCore/wwwroot/css/src/theme.css` `@theme`.
+- **Isolation (serve-side, scoping):** when a bundle's web assets are registered (`SharedLibraryCore` →
+  `PluginBundleLoader.RegisterBundle` → `PluginCssScoper`), every `.css` is rewritten to
+  `@scope ([data-iw4m-plugin="<id>"]) { … }`. `@property`/`@keyframes`/`@font-face`/`@import` are hoisted out
+  (illegal inside `@scope`; leaving `@property` in silently breaks gradients/transforms). `:root`/`:host`
+  blocks are hoisted too, but **self-referential declarations (`--x: var(--x)`, emitted by the injected token
+  theme) are stripped** — left in a global `:root` they'd override the host's real token values with a
+  circular reference and break them everywhere. A plugin can thus ship any classes (even ones the host uses)
+  with no cascade-layer cooperation — the scope confines them.
 - **The host stamps the `data-iw4m-plugin="<id>"` marker** around each place it renders bundle content:
   routed pages (`Routes.razor` cascades the page assembly's bundle id → `MainLayout` wraps `@Body`) and
   render-slot widgets (`PluginRenderSlot` wraps each `DynamicComponent`). Wrappers use `display:contents` so

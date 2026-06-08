@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Interfaces;
 
 namespace SharedLibraryCore.Plugins;
@@ -24,6 +25,13 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
     /// is built) and DI-resolved consumers share one cache and one set of assembly identities.
     /// </summary>
     public static PluginBundleLoader Shared { get; } = new(InMemoryPluginAssetStorage.Shared);
+
+    /// <summary>
+    /// Optional debug logger, wired up by the host (PluginImporter) once DI is available. Lets bundle loads
+    /// be traced to their source — and, crucially, surfaces cache hits: the first loader of a given bundle id
+    /// wins the assembly identity, so any later source with the same id is silently ignored. Null = no-op.
+    /// </summary>
+    public Microsoft.Extensions.Logging.ILogger? Logger { get; set; }
 
     private const string ManifestFileName = "manifest.json";
 
@@ -88,6 +96,9 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
             {
                 if (_cache.TryGetValue(manifest.Id, out var cached))
                 {
+                    Logger?.LogDebug(
+                        "Plugin bundle '{Id}' via {Source}: cache hit — reusing already-loaded assembly v{Version}; this source is NOT loaded",
+                        manifest.Id, sourceLabel, cached.Assembly.GetName().Version);
                     return cached;
                 }
 
@@ -98,7 +109,11 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
                 var gscFiles = ReadFolder(archive, manifest.GscRoot);
 
                 var assembly = LoadEntryInMemory(manifest, libAssemblies);
-                return RegisterBundle(manifest, assembly, webAssets, gscFiles);
+                var loaded = RegisterBundle(manifest, assembly, webAssets, gscFiles);
+                Logger?.LogDebug(
+                    "Plugin bundle '{Id}' via {Source}: loaded fresh — assembly v{AssemblyVersion}, manifest version '{ManifestVersion}', {AssetCount} web asset(s)",
+                    manifest.Id, sourceLabel, assembly.GetName().Version, manifest.Version, webAssets.Count);
+                return loaded;
             }
         }
         catch (Exception ex)
@@ -123,6 +138,9 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
             {
                 if (_cache.TryGetValue(manifest.Id, out var cached))
                 {
+                    Logger?.LogDebug(
+                        "Plugin bundle '{Id}' via {Source}: cache hit — reusing already-loaded assembly v{Version}; this source is NOT loaded",
+                        manifest.Id, directory, cached.Assembly.GetName().Version);
                     return cached;
                 }
 
@@ -134,7 +152,11 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
 
                 // load in-memory (same path as the zip/premium channel) so local and remote behave identically
                 var assembly = LoadEntryInMemory(manifest, libAssemblies);
-                return RegisterBundle(manifest, assembly, webAssets, gscFiles);
+                var loaded = RegisterBundle(manifest, assembly, webAssets, gscFiles);
+                Logger?.LogDebug(
+                    "Plugin bundle '{Id}' via {Source}: loaded fresh — assembly v{AssemblyVersion}, manifest version '{ManifestVersion}', {AssetCount} web asset(s)",
+                    manifest.Id, directory, assembly.GetName().Version, manifest.Version, webAssets.Count);
+                return loaded;
             }
         }
         catch (Exception ex)

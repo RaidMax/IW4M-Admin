@@ -111,12 +111,22 @@ namespace IW4MAdmin.Application.Plugin
         /// </summary>
         public IEnumerable<Assembly> DiscoverPluginAssemblies() => _pluginAssemblies ??= DistillPluginAssemblies();
 
+        /// <summary>One discovered plugin assembly together with where it was ingested from, for diagnostics.</summary>
+        private readonly record struct PluginAssemblyCandidate(Assembly Assembly, string Ingest, string Source);
+
         private IReadOnlyList<Assembly> DistillPluginAssemblies()
         {
             var pluginDir = $"{Utilities.OperatingDirectory}{PluginDir}{Path.DirectorySeparatorChar}";
             if (!Directory.Exists(pluginDir))
             {
                 return [];
+            }
+
+            // route the shared bundle loader's debug logging through our logger so bundle loads (and, crucially,
+            // cache hits — first loader of an id wins) are traceable alongside this provenance log.
+            if (bundleLoader is PluginBundleLoader concreteLoader)
+            {
+                concreteLoader.Logger = _logger;
             }
 
             var dllFileNames = Directory.GetFiles(pluginDir, "*.dll");
@@ -132,17 +142,71 @@ namespace IW4MAdmin.Application.Plugin
             var reloadableAssemblies = validAssemblies.Select(Assembly.Load);
 #endif
 
-            // we only want to load the most recent assembly in case of duplicates
-            return dllFileNames.Select(Assembly.LoadFrom)
-                .Union(GetBundleAssemblies(pluginDir))
-                .Union(GetRemoteBundleAssemblies())
-                .Union(GetRemoteAssemblies())
+            // Collect every candidate WITH where it came from, so a confusing "which copy actually loaded?" can
+            // be answered from the log: each ingest is recorded, then the dedup below logs the winner per identity.
+            var candidates = new List<PluginAssemblyCandidate>();
+
+            foreach (var dll in dllFileNames)
+            {
+                AddCandidate(candidates, Assembly.LoadFrom(dll), "loose-dll(disk)", dll);
+            }
+
+            candidates.AddRange(GetBundleCandidates(pluginDir));
+            candidates.AddRange(GetRemoteBundleCandidates());
+
+            foreach (var assembly in GetRemoteAssemblies())
+            {
+                AddCandidate(candidates, assembly, "remote-store-binary", "remote store (content type: dll)");
+            }
+
 #if DEBUG
-                .Union(reloadableAssemblies)
+            foreach (var assembly in reloadableAssemblies)
+            {
+                AddCandidate(candidates, assembly, "debug-reloadable", "DependencyContext (DEBUG)");
+            }
 #endif
-                .GroupBy(assembly => assembly.FullName).Select(assembly =>
-                    assembly.OrderByDescending(asm => asm.GetName().Version).First())
+
+            // we only want to load the most recent assembly in case of duplicates
+            return candidates
+                .GroupBy(candidate => candidate.Assembly.FullName)
+                .Select(SelectHighestVersion)
+                .Select(candidate => candidate.Assembly)
                 .ToList();
+        }
+
+        /// <summary>Records a discovered candidate and logs where it came from (debug).</summary>
+        private void AddCandidate(List<PluginAssemblyCandidate> candidates, Assembly assembly, string ingest, string source)
+        {
+            var name = assembly.GetName();
+            candidates.Add(new PluginAssemblyCandidate(assembly, ingest, source));
+            _logger.LogDebug("Plugin assembly candidate {Name} v{Version} — ingest: {Ingest}, source: {Source}",
+                name.Name, name.Version, ingest, source);
+        }
+
+        /// <summary>
+        /// Picks the highest-versioned candidate for one assembly identity (unchanged selection behaviour) and
+        /// logs the decision — listing every competing source when more than one copy of the same plugin was found.
+        /// </summary>
+        private PluginAssemblyCandidate SelectHighestVersion(IGrouping<string?, PluginAssemblyCandidate> group)
+        {
+            var ordered = group.OrderByDescending(candidate => candidate.Assembly.GetName().Version).ToList();
+            var winner = ordered[0];
+            var name = winner.Assembly.GetName();
+
+            if (ordered.Count > 1)
+            {
+                _logger.LogDebug(
+                    "Multiple copies of {Name} found; selected v{Version} via {Ingest} from {Source}. Candidates: {Candidates}",
+                    name.Name, name.Version, winner.Ingest, winner.Source,
+                    string.Join(" || ", ordered.Select(c => $"v{c.Assembly.GetName().Version} [{c.Ingest}] {c.Source}")));
+            }
+            else
+            {
+                _logger.LogDebug("Loaded plugin assembly {Name} v{Version} via {Ingest} from {Source}",
+                    name.Name, name.Version, winner.Ingest, winner.Source);
+            }
+
+            return winner;
         }
 
         public (IEnumerable<Type>, IEnumerable<Type>, IEnumerable<Type>) DiscoverAssemblyPluginImplementations()
@@ -244,8 +308,10 @@ namespace IW4MAdmin.Application.Plugin
         /// the cache), and their game scripts are extracted to disk. The decrypted zip plaintext is zeroed
         /// once the loader has consumed it so a runnable copy of the premium DLL doesn't linger on the heap.
         /// </summary>
-        private IEnumerable<Assembly> GetRemoteBundleAssemblies()
+        private List<PluginAssemblyCandidate> GetRemoteBundleCandidates()
         {
+            var candidates = new List<PluginAssemblyCandidate>();
+
             try
             {
                 var encryptedBundles = _pluginSubscription.Value
@@ -253,15 +319,14 @@ namespace IW4MAdmin.Application.Plugin
 
                 if (encryptedBundles.Length is 0)
                 {
-                    return Enumerable.Empty<Assembly>();
+                    return candidates;
                 }
-
-                var assemblies = new List<Assembly>();
 
                 foreach (var zipBytes in remoteAssemblyHandler.DecryptContent(encryptedBundles))
                 {
                     try
                     {
+                        var byteCount = zipBytes.Length;
                         var bundle = bundleLoader.LoadFromZipBytes(zipBytes, RemoteBundleSource);
                         if (bundle is null)
                         {
@@ -269,7 +334,8 @@ namespace IW4MAdmin.Application.Plugin
                         }
 
                         ExtractBundleGameScripts(bundle);
-                        assemblies.Add(bundle.Assembly);
+                        AddCandidate(candidates, bundle.Assembly, "remote-store-bundle",
+                            $"remote store (content type: zip, {byteCount:N0} bytes, bundle id '{bundle.Id}', manifest version '{bundle.Manifest.Version}')");
                     }
                     catch (Exception ex)
                     {
@@ -283,12 +349,12 @@ namespace IW4MAdmin.Application.Plugin
                     }
                 }
 
-                return assemblies;
+                return candidates;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Could not load remote plugin bundles");
-                return Enumerable.Empty<Assembly>();
+                return candidates;
             }
         }
 
@@ -297,9 +363,9 @@ namespace IW4MAdmin.Application.Plugin
         /// (which caches by id, so the assembly identity matches the one already loaded for Razor discovery)
         /// and extracts any bundled game scripts to disk.
         /// </summary>
-        private IEnumerable<Assembly> GetBundleAssemblies(string pluginDir)
+        private List<PluginAssemblyCandidate> GetBundleCandidates(string pluginDir)
         {
-            var assemblies = new List<Assembly>();
+            var candidates = new List<PluginAssemblyCandidate>();
 
             foreach (var source in EnumerateBundleSources(pluginDir))
             {
@@ -315,7 +381,9 @@ namespace IW4MAdmin.Application.Plugin
                     }
 
                     ExtractBundleGameScripts(bundle);
-                    assemblies.Add(bundle.Assembly);
+                    AddCandidate(candidates, bundle.Assembly,
+                        source.IsZip ? "disk-bundle-zip" : "disk-bundle-dir",
+                        $"{source.Path} (bundle id '{bundle.Id}', manifest version '{bundle.Manifest.Version}')");
                 }
                 catch (Exception ex)
                 {
@@ -323,7 +391,7 @@ namespace IW4MAdmin.Application.Plugin
                 }
             }
 
-            return assemblies;
+            return candidates;
         }
 
         private readonly record struct BundleSource(string Path, bool IsZip);

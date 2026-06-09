@@ -1136,3 +1136,22 @@ window.openProtocolUrl = function (url) {
     if (!url) return;
     window.location.href = url;
 };
+
+
+// ── plugin scoped-overlay helper ────────────────────────────────────────────────────────────────
+// Plugin bundle CSS is served wrapped in @scope ([data-iw4m-plugin="<id>"]) (PluginCssScoper), and
+// inside @scope, :scope is implicitly prepended to every rule — bare selectors match only
+// DESCENDANTS of the scope root, never the root itself. So plugin JS that appends DOM outside the
+// host-stamped markers (e.g. a document.body overlay) must nest it under a marker wrapper for the
+// plugin's classes to style it. This returns such a wrapper, already attached:
+//   const scope = window.iw4m.scopedOverlay('MyPlugin');   // id is case-sensitive (bundle id)
+//   scope.appendChild(myOverlay);
+//   /* later */ scope.remove();
+window.iw4m = window.iw4m || {};
+window.iw4m.scopedOverlay = function (pluginId, parent) {
+    const host = document.createElement('div');
+    host.setAttribute('data-iw4m-plugin', pluginId);
+    host.style.display = 'contents'; // layout-inert: children lay out as if appended to the parent
+    (parent || document.body).appendChild(host);
+    return host;
+};

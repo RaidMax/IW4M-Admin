@@ -161,6 +161,12 @@ Because each sheet is served scoped to its plugin's own DOM (the `@scope` rewrit
 everywhere else — so global loading is safe, and your styles work wherever the host renders your content:
 your routed pages, render-slot widgets embedded in *host* pages, and modals you open via `IModalService`.
 
+Because every sheet in your bundle loads on every page, **class names must be unique across your own
+bundle's stylesheets** — two sheets defining the same class are no longer separated by per-page loading
+and silently override each other (all of your CSS shares one scope). Prefix per feature/page
+(`bj-*`, `pl-*`, …). The bundle build scans your hand-written `wwwroot/` CSS and emits warning
+**`IW4M1002`** when a class is defined in more than one file.
+
 Do **not** inject `<link>` tags via `<HeadContent>`:
 - it's redundant (the host already loaded the sheet), and
 - `HeadContent` is **last-render-wins, not additive** — a head-injecting component on a page that has its
@@ -385,6 +391,13 @@ classes the host stylesheet contains. Use the host's safelisted modal sizing voc
 - **Imperatively-rendered plugin content** (a modal opened via `IModalService`, anything built from a
   `RenderFragment`/`RenderTreeBuilder`) is opaque to the host, so the *plugin* stamps the marker itself —
   `<div data-iw4m-plugin="<id>" style="display:contents">…</div>`. See `ZombieServerLiveWidget.LiveContent`.
+  The same applies to **JS-created DOM appended outside the marker** (e.g. a `document.body` overlay):
+  call the host helper `window.iw4m.scopedOverlay('<id>')` — it returns an attached, layout-inert
+  marker wrapper to append your overlay into (remove the wrapper when done) — or build the same
+  wrapper by hand (`display:contents`; the id is case-sensitive). Alternatively use inline styles /
+  the Web Animations API, which need no CSS classes at all. Stamping the attribute on the styled
+  element **itself does not work**: inside `@scope`, `:scope` is implicitly prepended to every rule,
+  so bare selectors match only *descendants* of the scope root — never the root element.
 - **Host chrome rendered *inside* plugin content** is the inverse problem: within the marker, a plugin's
   unlayered scoped utilities beat the host's layered ones, so shared-utility host components collapse (a
   plugin's `.hidden` kills `SideContextMenu`'s `hidden xl:block`; a plugin's `.flex-col` kills

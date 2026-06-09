@@ -21,6 +21,89 @@
 
     <!-- ============================ core packaging (tool-agnostic) ============================ -->
 
+    <!-- IW4M1002: warn when two of the bundle's own stylesheets define the same class. The host loads
+         ALL of a bundle's CSS on every page (in one shared @scope), so per-page loading no longer
+         separates same-named classes — the later sheet silently overrides the earlier one (this bit
+         Credify: plinko.css and poker.css both used a pk- prefix). Only hand-written wwwroot files are
+         scanned (the Tailwind helper output is generated from purged markup and excluded). Only
+         selector preludes count — class mentions in comments or declaration values are ignored. -->
+    <UsingTask TaskName="IW4MAdminCssClassCollisionCheck" TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <CssFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true"/>
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.Collections.Generic"/>
+            <Using Namespace="System.IO"/>
+            <Using Namespace="System.Text.RegularExpressions"/>
+            <Code Type="Fragment" Language="cs">
+<![CDATA[
+// class name -> files defining it. A "definition" is a class token inside a selector prelude:
+// a text run ending at '{' that starts after the previous '{', '}' or ';'. Comments are stripped
+// first, so commented mentions and dots in declaration values (url(x.png), 0.5rem) never count.
+var byClass = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+var classRe = new Regex(@"\.(-?[A-Za-z_][A-Za-z0-9_-]*)");
+foreach (var item in CssFiles)
+{
+    var path = item.GetMetadata("FullPath");
+    if (!path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) || !File.Exists(path))
+    {
+        continue;
+    }
+
+    var css = Regex.Replace(File.ReadAllText(path), @"/\*.*?\*/", "", RegexOptions.Singleline);
+    var fileName = Path.GetFileName(path);
+    var start = 0;
+    for (var i = 0; i < css.Length; i++)
+    {
+        var c = css[i];
+        if (c == '{')
+        {
+            foreach (Match m in classRe.Matches(css.Substring(start, i - start)))
+            {
+                HashSet<string> files;
+                if (!byClass.TryGetValue(m.Groups[1].Value, out files))
+                {
+                    byClass[m.Groups[1].Value] = files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+                files.Add(fileName);
+            }
+            start = i + 1;
+        }
+        else if (c == '}' || c == ';')
+        {
+            start = i + 1;
+        }
+    }
+}
+
+var reported = 0;
+foreach (var kv in byClass)
+{
+    if (kv.Value.Count < 2)
+    {
+        continue;
+    }
+
+    if (++reported > 20)
+    {
+        Log.LogWarning(null, "IW4M1002", null, null, 0, 0, 0, 0,
+            "Further duplicate-class collisions exist; only the first 20 are shown.");
+        break;
+    }
+
+    var fileList = new List<string>(kv.Value);
+    fileList.Sort(StringComparer.OrdinalIgnoreCase);
+    Log.LogWarning(null, "IW4M1002", null, null, 0, 0, 0, 0,
+        string.Format(".{0} is defined in multiple of this bundle's stylesheets ({1}). The host loads all of a bundle's CSS on every page in one shared scope, so the later sheet silently overrides the earlier one. Rename with a per-feature prefix.",
+            kv.Key, string.Join(", ", fileList)));
+}
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <PropertyGroup Condition="'$(IW4MAdminBundle)' == 'true'">
         <IW4MAdminBundleId Condition="'$(IW4MAdminBundleId)' == ''">$(AssemblyName)</IW4MAdminBundleId>
         <IW4MAdminBundleName Condition="'$(IW4MAdminBundleName)' == ''">$(AssemblyName)</IW4MAdminBundleName>
@@ -84,6 +167,9 @@
             <_IW4MWeb Include="$(IW4MAdminWebRoot)\**\*" />
             <_IW4MGsc Include="$(IW4MAdminGscRoot)\**\*" />
         </ItemGroup>
+
+        <!-- IW4M1002: duplicate class names across the bundle's hand-written stylesheets (see UsingTask) -->
+        <IW4MAdminCssClassCollisionCheck CssFiles="@(_IW4MWeb)" Condition="'@(_IW4MWeb)' != ''" />
         <Copy Condition="'@(_IW4MWeb)' != ''"
               SourceFiles="@(_IW4MWeb)"
               DestinationFiles="@(_IW4MWeb->'$(_IW4MAdminBundleStage)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />

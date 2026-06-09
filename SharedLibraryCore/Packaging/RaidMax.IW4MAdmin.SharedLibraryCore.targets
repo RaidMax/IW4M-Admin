@@ -121,7 +121,9 @@ foreach (var kv in byClass)
          set automatically so plugin authors don't have to remember PrivateAssets on the package reference. -->
     <ItemGroup Condition="'$(IW4MAdminBundle)' == 'true'">
         <PackageReference Update="RaidMax.IW4MAdmin.SharedLibraryCore" PrivateAssets="all" />
-        <!-- WebCommon (shared UI kit) is also provided by the host at runtime, so don't bundle it either. -->
+        <!-- legacy: WebCommon (shared UI kit) now ships INSIDE the SharedLibraryCore package, so new
+             plugins don't reference this package at all. Kept so older csprojs that still do don't
+             accidentally bundle it — the host provides WebCommon at runtime either way. -->
         <PackageReference Update="RaidMax.IW4MAdmin.WebCommon" PrivateAssets="all" />
     </ItemGroup>
 

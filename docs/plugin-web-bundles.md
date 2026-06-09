@@ -41,6 +41,11 @@ No packaging script, no hand-written manifest — **build is bundle**.
 That's the whole project file. **The only bundle-specific line is `<IW4MAdminBundle>true</IW4MAdminBundle>`.**
 Referencing the package brings in the MSBuild targets, which on build produce `dist/<id>.zip`.
 
+The SharedLibraryCore package also carries **WebCommon** (the shared web UI kit — `PluginPageShell`,
+`SideContextMenu`, render slots, `IModalService`), so those components are available with no extra
+reference. The old standalone `RaidMax.IW4MAdmin.WebCommon` package is deprecated — drop it from
+existing csprojs when you update.
+
 You don't need `OutputType`, `RazorCompileOnBuild`, `PreserveCompilationContext`, etc. — those are Razor-SDK
 defaults. You don't need `PrivateAssets="all"` on the SharedLibraryCore reference — the targets set that for
 you so the host-provided assemblies aren't bundled.

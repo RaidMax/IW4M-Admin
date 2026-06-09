@@ -116,15 +116,22 @@ jobs:
         
       - name: Build SLC
         run: dotnet build **/SharedLibraryCore.csproj -c ${{env.buildConfiguration}} /p:Version=${{ env.buildNumber }} --no-restore
-        
-      - name: Pack SLC
-        run: dotnet pack **/SharedLibraryCore.csproj -c ${{env.buildConfiguration}} -p:PackageVersion=${{ env.buildNumber }}${{ env.packageTag }} -o ${{ env.outputDirectory }} --no-restore
 
+      # WebCommon is no longer a separate package — its assembly ships inside the SLC nupkg
+      # (see SharedLibraryCore.csproj), so it must be built BEFORE SLC is packed.
       - name: Build WebCommon
         run: dotnet build **/WebCommon.csproj -c ${{env.buildConfiguration}} /p:Version=${{ env.buildNumber }} --no-restore
 
-      - name: Pack WebCommon
-        run: dotnet pack **/WebCommon.csproj -c ${{env.buildConfiguration}} -p:PackageVersion=${{ env.buildNumber }}${{ env.packageTag }} -o ${{ env.outputDirectory }} --no-restore
+      - name: Pack SLC
+        run: dotnet pack **/SharedLibraryCore.csproj -c ${{env.buildConfiguration}} -p:PackageVersion=${{ env.buildNumber }}${{ env.packageTag }} -o ${{ env.outputDirectory }} --no-restore
+
+      # the WebCommon inclusion in the csproj is Exists-conditioned (keeps clean local builds green),
+      # so assert it actually landed — a step-ordering regression would otherwise ship silently without it
+      - name: Verify WebCommon is inside the SLC package
+        run: |
+          for file in ${{ env.outputDirectory }}/*.nupkg; do
+            unzip -l "$file" | grep -q "lib/net10.0/WebCommon.dll" || { echo "::error::WebCommon.dll missing from $file"; exit 1; }
+          done
 
       - name: Publish nuget package artifact
         uses: actions/upload-artifact@v4

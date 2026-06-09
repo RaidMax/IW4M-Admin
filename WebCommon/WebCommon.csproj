@@ -6,21 +6,14 @@
         <Nullable>enable</Nullable>
 
         <!-- shared, plugin-facing Blazor component kit (right-pane nav, page shell).
-             published so out-of-tree plugins can reference it the same way they reference SharedLibraryCore. -->
-        <PackageId>RaidMax.IW4MAdmin.WebCommon</PackageId>
+             NOT packaged on its own: the assembly ships inside the RaidMax.IW4MAdmin.SharedLibraryCore
+             nupkg (see SharedLibraryCore.csproj), so out-of-tree plugins get it from the one package
+             they already reference. The old RaidMax.IW4MAdmin.WebCommon package is deprecated. -->
         <Authors>RaidMax</Authors>
         <Company>Forever None</Company>
         <Version>2025.12.24.1</Version>
-        <PackageVersion>2025.12.24.1</PackageVersion>
         <Configurations>Debug;Release;Prerelease</Configurations>
-        <Description>Shared web UI components for IW4MAdmin and its plugins.</Description>
-        <PackageTags>IW4MAdmin</PackageTags>
-        <RepositoryUrl>https://github.com/RaidMax/IW4M-Admin/</RepositoryUrl>
-        <PackageProjectUrl>https://www.raidmax.org/IW4MAdmin/</PackageProjectUrl>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <IsPackable>true</IsPackable>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IsPackable>false</IsPackable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>

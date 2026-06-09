@@ -7,10 +7,16 @@
    Localization is injected via the optional Localizer delegate (host passes AppState.Loc;
    plugins can omit it and group headers fall back to their raw key). *@
 
+@* data-iw4m-host on both roots: this menu is host chrome that often renders INSIDE a plugin's
+   scoped-CSS subtree (PluginPageShell, or embedded directly by a plugin page). The attribute is the
+   scoping limit of every plugin stylesheet (PluginCssScoper: @scope (marker) to ([data-iw4m-host])),
+   so plugin utilities can't reach in and collapse it (a plugin's unlayered .hidden would otherwise
+   beat the host's .xl:block here). Menu content is data-driven (no plugin markup inside), so the
+   hole loses nothing. *@
 @if (Model?.Items?.Any() == true)
 {
     @* ---- Mobile (below xl): CSS-only drawer ------------------------------------------------ *@
-    <div class="xl:hidden">
+    <div class="xl:hidden" data-iw4m-host>
         <input type="checkbox" id="scm-mobile-toggle" class="peer hidden" />
 
         @* open FAB (hidden once the drawer is open) *@
@@ -60,7 +66,7 @@
     </div>
 
     @* ---- Desktop (xl and up): sticky right pane ------------------------------------------- *@
-    <div class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto">
+    <div class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto" data-iw4m-host>
         @RenderMenuContent()
     </div>
 }

@@ -141,7 +141,7 @@ public partial class ServerCard : IAsyncDisposable
 
     private void OpenScoreboard()
     {
-        ActionService.OpenCustom(ScoreboardContent(Model.Id), Model.Name.StripColors(), "max-w-5xl");
+        ActionService.OpenCustom(ScoreboardContent(Model.Id), Model.Name.StripColors(), "max-w-5xl max-h-[90vh]");
     }
 
     private RenderFragment ScoreboardContent(string serverId) => builder =>

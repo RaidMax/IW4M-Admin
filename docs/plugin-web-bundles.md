@@ -15,7 +15,7 @@ This guide uses the **Credify** plugin as the worked example.
 2. Write `.razor` pages (`@page`, `@rendermode RenderMode.InteractiveServer`).
 3. Register the navbar entry in your plugin's `OnLoad`: `manager.GetPageList().Pages["Name"] = "/route";`
 4. Style with Tailwind (`Styles/tailwind.css` → auto-compiled) and/or hand-written CSS in `wwwroot/`.
-5. Link your CSS via `<HeadContent>` using `/_content/<id>/<file>`.
+5. That's it for CSS — the host links every bundle stylesheet globally; no `<HeadContent>` needed.
 6. `dotnet build` → `dist/<id>.zip`.
 7. Drop the `.zip` (or an unpacked copy) into the host's `Plugins/` folder.
 
@@ -67,7 +67,6 @@ A page is a routable Razor component:
 @inject CredifyCache Cache
 
 <PageTitle>Credify</PageTitle>
-<CredifyHead/>            @* injects the stylesheet links — see §4 *@
 
 <div class="mx-auto max-w-3xl p-6 text-zinc-100">
     <h1 class="text-2xl font-bold">Credify</h1>
@@ -155,27 +154,37 @@ Tailwind-related runs.
 
 Tailwind and hand-written CSS coexist — Credify ships both (`plugin.css` + `custom.css`).
 
-### Linking your stylesheets
+### Stylesheets load automatically — do not link them yourself
 
-Inject `<link>` tags into the host `<head>` via `<HeadContent>` (works because the host renders `<HeadOutlet/>`).
-Put them in one shared component rendered by each page:
+The host links **every `.css` file in every loaded bundle** into the document `<head>` on every page.
+Because each sheet is served scoped to its plugin's own DOM (the `@scope` rewrite above), it is inert
+everywhere else — so global loading is safe, and your styles work wherever the host renders your content:
+your routed pages, render-slot widgets embedded in *host* pages, and modals you open via `IModalService`.
 
-```razor
-@* Components/Shared/CredifyHead.razor *@
-<HeadContent>
-    <link rel="stylesheet" href="/_content/credify/plugin.css"/>
-    <link rel="stylesheet" href="/_content/credify/custom.css"/>
-</HeadContent>
+Do **not** inject `<link>` tags via `<HeadContent>`:
+- it's redundant (the host already loaded the sheet), and
+- `HeadContent` is **last-render-wins, not additive** — a head-injecting component on a page that has its
+  own `<HeadContent>` (yours or the host's) silently replaces it, dropping OG meta tags or the other
+  component's links. This bites *across* components, so a "shared head component" pattern is a trap.
+
+`/_content/<id>/...` is where the host serves your `wwwroot/` (for your own JS imports, images, etc.).
+`<id>` is your bundle id (default: the assembly name; matching is case-insensitive). Use plain URLs — not
+the fingerprinted `Assets[...]` helper.
+
+### JavaScript — import on demand, never via `<HeadContent>`
+
+Ship `.js` in `wwwroot/` and load it as an ES module from the component that uses it, before the first
+interop call:
+
+```csharp
+// e.g. in OnAfterRenderAsync(firstRender: true)
+await JS.InvokeAsync<IJSObjectReference>("import", "/_content/credify/blackjack.js");
 ```
 
-`/_content/<id>/...` is where the host serves your `wwwroot/`. `<id>` is your bundle id (default: the
-assembly name; matching is case-insensitive). Use plain URLs — not the fingerprinted `Assets[...]` helper.
-
-> **One `<HeadContent>` per page.** `HeadContent` is *last-render-wins*, not additive. If a page renders a
-> shared head component (which has its own `<HeadContent>`) **and** a second `<HeadContent>`, the second
-> replaces the first and the earlier `<link>`s silently vanish. Put **all** of a page's `<link>`s in a single
-> `<HeadContent>` (or one shared component). A page that needs extra stylesheets beyond the shared set should
-> inline them all in one `<HeadContent>` rather than adding a second.
+The browser caches the module by URL — repeated imports execute the script once per page load. This loads
+the script only where it's used, works when your component renders inside a *host* page (render slots,
+modals), and has none of `HeadContent`'s last-render-wins hazards. A classic script that publishes
+`window.*` globals also works when imported this way (modules are strict mode — declare your variables).
 
 ## 5. Bundle layout & the manifest
 
@@ -263,10 +272,13 @@ utilities overriding the host's base utilities on your *own* pages (e.g. your `s
 host's `flex-col`). **Fix:** emit unlayered — `@import "tailwindcss/utilities.css";` (no `layer(...)`). The
 helper scaffolds this and warns (`IW4M1001`) if `layer(plugins)` is present.
 
-**Q: Some of my `<link>` stylesheets don't load / styles randomly missing.**
-A: `<HeadContent>` is **last-render-wins, not additive**. If your page renders a shared head component
-(which has its own `<HeadContent>`) *and* a second `<HeadContent>`, the second replaces the first and the
-earlier links vanish. **Fix:** put **all** of a page's `<link>`s in a single `<HeadContent>`.
+**Q: My styles are missing when my component renders inside a host page (render slot, modal).**
+A: They shouldn't be — the host links every bundle stylesheet globally, precisely so slot widgets and
+`IModalService` modals on host pages are styled. If styles are missing, check (a) the `<link>` for
+`/_content/<id>/…` is in the document head (if not, your bundle didn't load — check the boot log), and
+(b) your content is inside a `data-iw4m-plugin="<id>"` marker (imperative content must stamp its own).
+Do **not** "fix" it with a `<HeadContent>` link injector — `HeadContent` is last-render-wins and will
+clobber the hosting page's own head content (OG meta, etc.).
 
 **Q: I get build warning `IW4M1001`.**
 A: Your `Styles/tailwind.css` wraps utilities in `layer(plugins)`. The host scopes your CSS, so the layer is
@@ -334,7 +346,15 @@ host layout, and interactive rendering all work. Buttons/`@onclick`, live update
 **Q: How do I use custom JavaScript?**
 A: Ship a `.js` (ES module) in `wwwroot/`, then from your component
 `var m = await JS.InvokeAsync<IJSObjectReference>("import", "/_content/<id>/your.js");` and call its exports.
-Dispose the module reference in `DisposeAsync` (catch `JSDisconnectedException`).
+Dispose the module reference in `DisposeAsync` (catch `JSDisconnectedException`). Never inject `<script>`
+tags via `<HeadContent>` (last-render-wins — clobbers the hosting page's head, and head scripts don't load
+when your component renders inside a host page it didn't author).
+
+**Q: How do I size a modal I open via `IModalService.OpenCustom`?**
+A: `modalClass`/`bodyClass` land on the **host** modal shell — *outside* your scoped CSS — so they must be
+classes the host stylesheet contains. Use the host's safelisted modal sizing vocabulary
+(`max-w-md|lg|2xl|5xl|7xl`, `max-h-[80vh]|[90vh]` — see `WebfrontCore/wwwroot/css/src/app.css`), and note
+`modalClass` is the *complete* size set: include a `max-h-*` alongside your width.
 
 ### Host-maintainer notes
 
@@ -347,12 +367,17 @@ Dispose the module reference in `DisposeAsync` (catch `JSDisconnectedException`)
   token file in sync with `WebfrontCore/wwwroot/css/src/theme.css` `@theme`.
 - **Isolation (serve-side, scoping):** when a bundle's web assets are registered (`SharedLibraryCore` →
   `PluginBundleLoader.RegisterBundle` → `PluginCssScoper`), every `.css` is rewritten to
-  `@scope ([data-iw4m-plugin="<id>"]) { … }`. `@property`/`@keyframes`/`@font-face`/`@import` are hoisted out
+  `@scope ([data-iw4m-plugin="<id>"]) to ([data-iw4m-host]) { … }`. `@property`/`@keyframes`/`@font-face`/`@import` are hoisted out
   (illegal inside `@scope`; leaving `@property` in silently breaks gradients/transforms). `:root`/`:host`
   blocks are hoisted too, but **self-referential declarations (`--x: var(--x)`, emitted by the injected token
   theme) are stripped** — left in a global `:root` they'd override the host's real token values with a
   circular reference and break them everywhere. A plugin can thus ship any classes (even ones the host uses)
   with no cascade-layer cooperation — the scope confines them.
+- **The host loads every bundle's stylesheets globally** (`App.razor` iterates
+  `PluginBundleLoader.Shared.LoadedBundles` and links each `.css` web asset). Safe because the sheets are
+  scoped; necessary because bundle content also renders on *host* pages (render slots, modals) where no
+  plugin page could inject a link — and `HeadContent` injection is last-render-wins, so per-page injection
+  was both fragile and clobber-prone.
 - **The host stamps the `data-iw4m-plugin="<id>"` marker** around each place it renders bundle content:
   routed pages (`Routes.razor` cascades the page assembly's bundle id → `MainLayout` wraps `@Body`) and
   render-slot widgets (`PluginRenderSlot` wraps each `DynamicComponent`). Wrappers use `display:contents` so
@@ -360,6 +385,16 @@ Dispose the module reference in `DisposeAsync` (catch `JSDisconnectedException`)
 - **Imperatively-rendered plugin content** (a modal opened via `IModalService`, anything built from a
   `RenderFragment`/`RenderTreeBuilder`) is opaque to the host, so the *plugin* stamps the marker itself —
   `<div data-iw4m-plugin="<id>" style="display:contents">…</div>`. See `ZombieServerLiveWidget.LiveContent`.
+- **Host chrome rendered *inside* plugin content** is the inverse problem: within the marker, a plugin's
+  unlayered scoped utilities beat the host's layered ones, so shared-utility host components collapse (a
+  plugin's `.hidden` kills `SideContextMenu`'s `hidden xl:block`; a plugin's `.flex-col` kills
+  `PluginPageShell`'s `xl:flex-row`). Two mechanisms, by containment:
+  - **Leaf host chrome** (contains no plugin markup — e.g. `SideContextMenu`) stamps `data-iw4m-host` on
+    its roots. That attribute is the **scoping limit** of every plugin sheet, so plugin CSS can't reach
+    inside (donut hole; limit elements and their descendants are out of scope).
+  - **Container host chrome** (wraps plugin content — e.g. `PluginPageShell`) can't be a hole (it would
+    orphan the content inside), so its structural classes use the host-reserved **`wc-*` namespace**
+    (defined in `app.css`, never emitted by a plugin Tailwind build) instead of shared utilities.
 - **Browser support:** scoping relies on the native CSS `@scope` at-rule (Chrome/Edge 118+, Safari 17.4+,
   Firefox 128+ — all 2023–2024). On a browser without it the `@scope` block is ignored, so a plugin's
   scoped rules simply don't apply (pages render unstyled but the host chrome stays intact); the hoisted

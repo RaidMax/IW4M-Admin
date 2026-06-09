@@ -74,6 +74,10 @@ public partial class LiveRadar : IAsyncDisposable
 
         try
         {
+            // Load the bundle's script as an ES module before first interop (the browser caches the
+            // module by URL, so re-running this on server switch is a no-op). It publishes
+            // window.initLiveRadar / setMapData / setRadarData, which the calls below target.
+            await JS.InvokeAsync<IJSObjectReference>("import", "/_content/liveradar/liveradar.js");
             // (re)initialize the canvas/state, then paint immediately so the user isn't waiting a full tick
             await JS.InvokeVoidAsync("initLiveRadar");
             await PushSnapshotAsync();

@@ -21,6 +21,17 @@ namespace SharedLibraryCore.Plugins;
 /// </para>
 ///
 /// <para>
+/// The scope carries a lower boundary — <c>to ([data-iw4m-host])</c> — so host-owned chrome
+/// rendered <i>inside</i> plugin content (e.g. WebCommon's <c>SideContextMenu</c>, which stamps the
+/// attribute on its roots) is a hole the plugin's CSS cannot reach. Without it, the plugin's
+/// unlayered scoped utilities (e.g. <c>.hidden</c>) beat the host's layered responsive variants
+/// (e.g. <c>.xl:block</c>) on that chrome and silently collapse it. Scoping-limit elements and
+/// their descendants are excluded from the scope. Host components that <i>contain</i> plugin
+/// content (e.g. <c>PluginPageShell</c>) cannot use this — excluding them would orphan the plugin
+/// content inside — so they use host-namespaced <c>wc-*</c> classes instead of shared utilities.
+/// </para>
+///
+/// <para>
 /// At-rules that are illegal or pointless nested inside <c>@scope</c> are hoisted back to the top
 /// level: <c>@import</c>/<c>@charset</c>/<c>@namespace</c> (must lead the sheet), <c>@property</c>
 /// (custom-property registrations are document-global), <c>@keyframes</c> and <c>@font-face</c>
@@ -36,6 +47,12 @@ public static class PluginCssScoper
 
     /// <summary>The attribute selector the host stamps on a plugin's content wrapper.</summary>
     public static string MarkerSelectorFor(string pluginId) => $"[data-iw4m-plugin=\"{pluginId}\"]";
+
+    /// <summary>
+    /// The scoping-limit attribute: host chrome rendered inside plugin content marks itself with
+    /// this to become a donut hole plugin CSS cannot style (see class summary).
+    /// </summary>
+    public const string HostBoundaryAttribute = "data-iw4m-host";
 
     public static string ScopeCss(string css, string pluginId)
     {
@@ -77,7 +94,8 @@ public static class PluginCssScoper
             result.Append(globals).Append('\n');
         }
 
-        result.Append("@scope (").Append(MarkerSelectorFor(pluginId)).Append(") {\n")
+        result.Append("@scope (").Append(MarkerSelectorFor(pluginId))
+              .Append(") to ([").Append(HostBoundaryAttribute).Append("]) {\n")
               .Append(scoped).Append("\n}\n");
         return result.ToString();
     }

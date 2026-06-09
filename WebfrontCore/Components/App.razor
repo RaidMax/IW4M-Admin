@@ -1,3 +1,4 @@
+@using SharedLibraryCore.Plugins
 <!DOCTYPE html>
 <html lang="en" class="h-full antialiased">
 <head>
@@ -17,6 +18,19 @@
     {
         <link rel="stylesheet" href="/css/app.min.css?Version=@Program.Manager.Version"/>
         <link rel="stylesheet" href="/css/user/user.css?Version=@Program.Manager.Version"/>
+    }
+    @* Every loaded plugin bundle's stylesheets. Each sheet is served scoped to its plugin's own DOM
+       marker (PluginCssScoper), so it is inert outside that plugin's rendered content — loading them
+       globally is safe, and plugin styles then work wherever the host renders plugin content (routed
+       pages, render-slot widgets, IModalService modals) with no per-page <HeadContent> injection. *@
+    @foreach (var bundle in PluginBundleLoader.Shared.LoadedBundles.OrderBy(static b => b.Manifest.Id, StringComparer.OrdinalIgnoreCase))
+    {
+        @foreach (var stylesheet in bundle.WebAssets.Keys
+                      .Where(static path => path.EndsWith(".css", StringComparison.OrdinalIgnoreCase))
+                      .OrderBy(static path => path, StringComparer.OrdinalIgnoreCase))
+        {
+            <link rel="stylesheet" href="/_content/@(bundle.Manifest.Id)/@stylesheet?Version=@bundle.Manifest.Version"/>
+        }
     }
     <link rel="icon" type="image/png" href="images/icon.png"/>
 

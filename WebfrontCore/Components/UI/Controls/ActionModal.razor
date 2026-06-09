@@ -3,7 +3,8 @@
     <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @onclick="Close"></div>
 
     <!-- Modal Content -->
-    <div class="relative bg-surface rounded-lg shadow-xl w-full @_modalClass overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+    @* Sizing (width + max-height) comes entirely from @_modalClass — see DefaultModalClass. *@
+    <div class="relative bg-surface rounded-lg shadow-xl w-full @_modalClass overflow-hidden transform transition-all flex flex-col">
         <!-- Header -->
         <div class="bg-surface-alt px-6 py-4 flex items-center justify-between border-b border-line flex-shrink-0">
             <h5 class="text-lg font-medium text-foreground">

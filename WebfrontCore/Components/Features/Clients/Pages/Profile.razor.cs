@@ -411,7 +411,7 @@ public partial class Profile
                     StateHasChanged();
                 }));
                 builder.CloseComponent();
-            }, AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_2FA"), "max-w-md");
+            }, AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_2FA"), "max-w-md max-h-[90vh]");
             return;
         }
 
@@ -428,7 +428,7 @@ public partial class Profile
             builder.OpenComponent<Components.IPContextModal>(0);
             builder.AddAttribute(1, "IPAddress", ipAddress);
             builder.CloseComponent();
-        }, "IP Information", "max-w-md");
+        }, "IP Information", "max-w-md max-h-[90vh]");
     }
 
     /// <summary>

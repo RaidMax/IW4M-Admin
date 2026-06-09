@@ -4,11 +4,9 @@
 @using SharedLibraryCore
 @using WebCommon.Components.UI.Layout
 
+@* No <HeadContent> here: the host links every bundle's CSS globally, and liveradar.js is
+   module-imported on demand by the code-behind before first interop (see OnAfterRenderAsync). *@
 <PageTitle>Live Radar</PageTitle>
-<HeadContent>
-    <link rel="stylesheet" href="/_content/liveradar/plugin.css"/>
-    <script src="/_content/liveradar/liveradar.js"></script>
-</HeadContent>
 
 <PluginPageShell Menu="BuildNav()">
 

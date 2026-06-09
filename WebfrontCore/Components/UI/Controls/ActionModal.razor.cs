@@ -25,7 +25,12 @@ public partial class ActionModal
     [Parameter] public string ModalId { get; set; } = "action-modal";
     private RenderFragment? _childContent;
     private string? _customTitle;
-    private string _modalClass = "max-w-lg";
+    // Default modal sizing — the shell carries no sizing of its own, so a caller-supplied
+    // modalClass is the COMPLETE size set (width AND max-height), not an addition to a baked-in
+    // default it would have to !-override. Classes must exist in the host stylesheet — see the
+    // modal sizing vocabulary safelisted in wwwroot/css/src/app.css.
+    private const string DefaultModalClass = "max-w-lg max-h-[90vh]";
+    private string _modalClass = DefaultModalClass;
     // Default body styling — padded + auto scroll, suits form actions and the
     // simple custom modals. Custom callers can override via OpenCustom's
     // bodyClass param when they need edge-to-edge / fixed-height layouts.
@@ -50,7 +55,7 @@ public partial class ActionModal
     {
         _childContent = content;
         _customTitle = title;
-        _modalClass = modalClass ?? "max-w-lg";
+        _modalClass = modalClass ?? DefaultModalClass;
         _bodyClass = bodyClass ?? DefaultBodyClass;
 
         _actionInfo = null; // Clear standard action info
@@ -63,7 +68,7 @@ public partial class ActionModal
     private async void OnOpenAction(string actionName, int? targetId, string meta, string? serverId)
     {
         _childContent = null;
-        _modalClass = "max-w-lg";
+        _modalClass = DefaultModalClass;
         _bodyClass = DefaultBodyClass;
         await Open(actionName, targetId, meta, serverId);
         await InvokeAsync(StateHasChanged);

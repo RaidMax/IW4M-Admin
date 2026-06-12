@@ -68,9 +68,32 @@ namespace Data.Context
         
         #endregion
 
+        /// <summary>
+        /// Shadow-column names backing the zombie aggregate dedupe key. Shadow (not CLR)
+        /// properties so callers can't drift them out of sync with ClientId/ServerId —
+        /// they're stamped on every save instead.
+        /// </summary>
+        public const string ZombieAggregateDedupeClientIdColumn = "DedupeClientId";
+        public const string ZombieAggregateDedupeServerIdColumn = "DedupeServerId";
+        public const string ZombieAggregateDedupeIndexName = "IX_EFZombieClientStatAggregates_DedupeKey";
+
         private void SetAuditColumns()
         {
             return;
+        }
+
+        private void StampZombieAggregateDedupeKeys()
+        {
+            foreach (var entry in ChangeTracker.Entries<ZombieAggregateClientStat>())
+            {
+                if (entry.State is not (EntityState.Added or EntityState.Modified))
+                {
+                    continue;
+                }
+
+                entry.Property(ZombieAggregateDedupeClientIdColumn).CurrentValue = entry.Entity.ClientId;
+                entry.Property(ZombieAggregateDedupeServerIdColumn).CurrentValue = entry.Entity.ServerId ?? -1L;
+            }
         }
 
         public DatabaseContext()
@@ -89,12 +112,14 @@ namespace Data.Context
             CancellationToken cancellationToken = default)
         {
             SetAuditColumns();
+            StampZombieAggregateDedupeKeys();
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
         public override int SaveChanges()
         {
             SetAuditColumns();
+            StampZombieAggregateDedupeKeys();
             return base.SaveChanges();
         }
 
@@ -246,6 +271,19 @@ namespace Data.Context
             modelBuilder.Entity<ZombieAggregateClientStat>(ent =>
             {
                 ent.ToTable($"EF{nameof(ZombieClientStatAggregates)}");
+                // One aggregate row per (client, server) — server NULL meaning "lifetime".
+                // TPT puts ClientId on the base table and ServerId on this child table, so
+                // the natural UNIQUE(ClientId, ServerId) can't be expressed as a single
+                // index. Instead both halves are denormalized into shadow columns on this
+                // table, stamped automatically in SaveChanges (see
+                // StampZombieAggregateDedupeKeys). ServerId NULL maps to -1 because every
+                // supported provider treats NULLs as distinct in unique indexes, which
+                // would let duplicate lifetime rows through.
+                ent.Property<int>(ZombieAggregateDedupeClientIdColumn);
+                ent.Property<long>(ZombieAggregateDedupeServerIdColumn).HasDefaultValue(-1L);
+                ent.HasIndex(ZombieAggregateDedupeClientIdColumn, ZombieAggregateDedupeServerIdColumn)
+                    .IsUnique()
+                    .HasDatabaseName(ZombieAggregateDedupeIndexName);
             });
 
             modelBuilder.Entity<ZombieEventLog>(ent =>

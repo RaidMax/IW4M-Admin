@@ -15,7 +15,7 @@ namespace Data.Migrations.Sqlite
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
@@ -1588,6 +1588,14 @@ namespace Data.Migrations.Sqlite
                     b.Property<double>("AverageSoloFactor")
                         .HasColumnType("REAL");
 
+                    b.Property<int>("DedupeClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DedupeServerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(-1L);
+
                     b.Property<double>("HeadshotPercentage")
                         .HasColumnType("REAL");
 
@@ -1607,6 +1615,10 @@ namespace Data.Migrations.Sqlite
                         .HasColumnType("INTEGER");
 
                     b.HasIndex("ServerId");
+
+                    b.HasIndex("DedupeClientId", "DedupeServerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_EFZombieClientStatAggregates_DedupeKey");
 
                     b.ToTable("EFZombieClientStatAggregates", (string)null);
                 });

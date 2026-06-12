@@ -17,7 +17,7 @@ namespace Data.Migrations.MySql
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -1663,6 +1663,14 @@ namespace Data.Migrations.MySql
                     b.Property<double>("AverageSoloFactor")
                         .HasColumnType("double");
 
+                    b.Property<int>("DedupeClientId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("DedupeServerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(-1L);
+
                     b.Property<double>("HeadshotPercentage")
                         .HasColumnType("double");
 
@@ -1682,6 +1690,10 @@ namespace Data.Migrations.MySql
                         .HasColumnType("int");
 
                     b.HasIndex("ServerId");
+
+                    b.HasIndex("DedupeClientId", "DedupeServerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_EFZombieClientStatAggregates_DedupeKey");
 
                     b.ToTable("EFZombieClientStatAggregates", (string)null);
                 });

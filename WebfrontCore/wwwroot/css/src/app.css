@@ -29,6 +29,15 @@
     --color-level-owner: #007acc;
 }
 
+/* Toast auto-dismiss countdown bar (WebCommon Toast). The bar element animates this over its
+   per-toast duration (inline animation-duration); group-hover pauses it. Lives here because the
+   host mounts the single ToastContainer and this stylesheet loads on every page (incl. plugin
+   pages, whose toasts route through the host container). */
+@keyframes toast-progress {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
 /* ============================================
    PLUGIN PAGE SHELL (WebCommon PluginPageShell)
    ============================================

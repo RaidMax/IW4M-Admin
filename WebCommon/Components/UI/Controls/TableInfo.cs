@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Html;
 
-namespace WebfrontCore.Components.UI.Controls;
+namespace WebCommon.Components.UI.Controls;
 
 public class TableInfo
 {

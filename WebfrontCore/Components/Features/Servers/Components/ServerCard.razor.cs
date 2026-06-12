@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Services;
+using WebCommon.Services;
 
 namespace WebfrontCore.Components.Features.Servers.Components;
 
@@ -141,7 +142,10 @@ public partial class ServerCard : IAsyncDisposable
 
     private void OpenScoreboard()
     {
-        ActionService.OpenCustom(ScoreboardContent(Model.Id), Model.Name.StripColors(), "max-w-5xl max-h-[90vh]");
+        ActionService.OpenCustom(new ModalRequest(ScoreboardContent(Model.Id), Model.Name.StripColors())
+        {
+            ModalClass = "max-w-5xl max-h-[90vh]"
+        });
     }
 
     private RenderFragment ScoreboardContent(string serverId) => builder =>

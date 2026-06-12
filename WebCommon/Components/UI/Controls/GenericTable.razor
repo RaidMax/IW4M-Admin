@@ -93,7 +93,8 @@
                             {
                                 <span class="ph @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
                             }
-                            <!-- Template handling for mobile omitted for brevity, adding if needed -->
+                            @* Template (custom RenderFragment) cells render on desktop only;
+                               the mobile layout shows the typed Text/Link/Icon variants. *@
                         </div>
                     }
                 </td>
@@ -105,7 +106,8 @@
 
     @if (Model.InitialRowCount > 0 && Model.Rows.Count > 0)
     {
-        <!-- Slide Logic needs JS or Blazor state (Expanded/ collapsed) -->
+        @* Expand/collapse the rows past InitialRowCount. The host's `.table-slide` handler
+           (global.min.js) performs the row show/hide; the caret reflects IsExpanded. *@
         <button class="btn btn-block table-slide" @onclick="@ToggleExpand">
             <span class="ph @(IsExpanded ? "ph-caret-up" : "ph-caret-down")"></span>
         </button>

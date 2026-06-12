@@ -1,4 +1,4 @@
-namespace WebfrontCore.Core.Services;
+namespace WebCommon.Services;
 
 public enum ToastType
 {

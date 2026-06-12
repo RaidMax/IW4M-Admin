@@ -1,6 +1,10 @@
+namespace WebCommon.Services;
 
-namespace WebfrontCore.Core.Services;
-
+/// <summary>
+/// Fire-and-forget notification surface. The host implements this; plugins inject
+/// <see cref="IToastService"/> and call the Show* helpers without referencing host types.
+/// The host mounts a single <c>ToastContainer</c> that subscribes to <see cref="OnShow"/>.
+/// </summary>
 public interface IToastService
 {
     event Action<ToastMessage> OnShow;

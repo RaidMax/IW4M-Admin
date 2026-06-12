@@ -39,19 +39,16 @@ public class ActionService : IActionService
 
     public event Action<string, int?, string, string?> OnOpenAction = delegate { };
 
-    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?, string?> OnOpenCustomAction = delegate
-    {
-    };
+    public event Action<ModalRequest> OnOpenCustomAction = delegate { };
 
     public void OpenAction(string actionName, int? targetId, string meta, string? serverId = null)
     {
         OnOpenAction?.Invoke(actionName, targetId, meta, serverId);
     }
 
-    public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title,
-        string? modalClass = null, string? bodyClass = null)
+    public void OpenCustom(ModalRequest request)
     {
-        OnOpenCustomAction?.Invoke(content, title, modalClass, bodyClass);
+        OnOpenCustomAction?.Invoke(request);
     }
 
     // Command Names

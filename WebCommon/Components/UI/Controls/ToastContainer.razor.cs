@@ -1,6 +1,6 @@
-﻿using WebfrontCore.Core.Services;
+﻿using WebCommon.Services;
 
-namespace WebfrontCore.Components.UI.Controls;
+namespace WebCommon.Components.UI.Controls;
 
 public partial class ToastContainer
 {

@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-
 namespace WebCommon.Services;
 
 /// <summary>
@@ -11,26 +9,15 @@ namespace WebCommon.Services;
 public interface IModalService
 {
     /// <summary>
-    /// Raised when a caller opens a custom modal. The host's modal host component subscribes
-    /// and renders <paramref name="content"/>.
+    /// Raised when a caller opens a custom modal. The host's single modal host component subscribes
+    /// and renders the request in host chrome (outside any plugin's scoped DOM), so the modal is
+    /// styled by the host stylesheet rather than the plugin's scoped CSS.
     /// </summary>
-    event Action<RenderFragment, string, string?, string?> OnOpenCustomAction;
+    event Action<ModalRequest> OnOpenCustomAction;
 
     /// <summary>
-    /// Open a modal with a caller-supplied <see cref="RenderFragment"/> as the body.
+    /// Open a modal rendering <see cref="ModalRequest.Content"/> as its body. See
+    /// <see cref="ModalRequest"/> for the optional sizing and body-class overrides.
     /// </summary>
-    /// <param name="modalClass">
-    /// Optional override for the modal shell's sizing. This is the COMPLETE size set — width AND
-    /// max-height (default "max-w-lg max-h-[90vh]") — not an addition to a baked-in default, so
-    /// include a max-h-* or the modal can outgrow the viewport. These classes land on host-rendered
-    /// DOM (outside any plugin's scoped CSS), so they must exist in the HOST stylesheet — use the
-    /// modal sizing vocabulary safelisted in WebfrontCore/wwwroot/css/src/app.css.
-    /// </param>
-    /// <param name="bodyClass">
-    /// Optional override for the modal body's classes. Default ("p-6 overflow-y-auto") suits
-    /// forms and simple lists. Custom content that manages its own layout should pass a class
-    /// like "flex-1 min-h-0 overflow-hidden flex flex-col" so the body fills remaining vertical
-    /// space without adding its own scrollbar. Same host-stylesheet rule as modalClass.
-    /// </param>
-    void OpenCustom(RenderFragment content, string title, string? modalClass = null, string? bodyClass = null);
+    void OpenCustom(ModalRequest request);
 }

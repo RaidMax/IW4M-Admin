@@ -2,6 +2,7 @@ using Data.Models;
 using Data.Models.Client;
 using Microsoft.AspNetCore.Components;
 using WebfrontCore.Core.Services;
+using WebCommon.Services;
 
 namespace WebfrontCore.Components.UI.Controls;
 
@@ -25,6 +26,12 @@ public partial class ActionModal
     [Parameter] public string ModalId { get; set; } = "action-modal";
     private RenderFragment? _childContent;
     private string? _customTitle;
+
+    // Header text for the ModalShell: a loaded action's name, else a custom modal's title, else the
+    // login title, else a generic fallback.
+    private string? HeaderTitle =>
+        _actionInfo?.Name
+        ?? (_childContent != null ? _customTitle : (_isLogin ? AppState.Loc("WEBFRONT_NAV_TITLE_LOGIN") : "Action"));
     // Default modal sizing — the shell carries no sizing of its own, so a caller-supplied
     // modalClass is the COMPLETE size set (width AND max-height), not an addition to a baked-in
     // default it would have to !-override. Classes must exist in the host stylesheet — see the
@@ -51,12 +58,12 @@ public partial class ActionModal
         ActionService.OnOpenCustomAction -= OnOpenCustomAction;
     }
 
-    private async void OnOpenCustomAction(RenderFragment content, string title, string? modalClass, string? bodyClass)
+    private async void OnOpenCustomAction(ModalRequest request)
     {
-        _childContent = content;
-        _customTitle = title;
-        _modalClass = modalClass ?? DefaultModalClass;
-        _bodyClass = bodyClass ?? DefaultBodyClass;
+        _childContent = request.Content;
+        _customTitle = request.Title;
+        _modalClass = request.ModalClass ?? DefaultModalClass;
+        _bodyClass = request.BodyClass ?? DefaultBodyClass;
 
         _actionInfo = null; // Clear standard action info
         _error = null;

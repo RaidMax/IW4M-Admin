@@ -1,62 +1,44 @@
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 @(_isVisible ? "" : "hidden")" role="dialog" aria-modal="true">
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @onclick="Close"></div>
-
-    <!-- Modal Content -->
-    @* Sizing (width + max-height) comes entirely from @_modalClass — see DefaultModalClass. *@
-    <div class="relative bg-surface rounded-lg shadow-xl w-full @_modalClass overflow-hidden transform transition-all flex flex-col">
-        <!-- Header -->
-        <div class="bg-surface-alt px-6 py-4 flex items-center justify-between border-b border-line flex-shrink-0">
-            <h5 class="text-lg font-medium text-foreground">
-                @(_actionInfo?.Name ?? (_childContent != null ? _customTitle : (_isLogin ? AppState.Loc("WEBFRONT_NAV_TITLE_LOGIN") : "Action")))
-            </h5>
-            <button type="button" class="text-muted hover:text-foreground transition-colors focus:outline-none" @onclick="Close">
-                <i class="ph ph-x text-xl"></i>
-            </button>
+@* Host action modal — composes the shared WebCommon ModalShell (overlay/header/body chrome) and
+   supplies the action-specific body (loading/error spinner, custom content, action forms, login). *@
+<ModalShell Visible="_isVisible" Title="@HeaderTitle" ModalClass="@_modalClass" BodyClass="@_bodyClass" OnClose="Close">
+    @if (_isLoading)
+    {
+        <div class="flex justify-center items-center py-8">
+           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-
-        <!-- Body -->
-        <div class="@_bodyClass">
-            @if (_isLoading)
-            {
-                <div class="flex justify-center items-center py-8">
-                   <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-            }
-            else if (_error != null)
-            {
-                <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm">
-                    @_error
-                </div>
-            }
-            else if (_childContent != null)
-            {
-                @_childContent
-            }
-            else if (_actionInfo != null)
-            {
-                @if (_isLegacy)
-                {
-                    <form action="/Action/@_actionInfo.Action" method="post" class="space-y-4">
-                        @RenderInputs()
-                        @RenderSubmitButton()
-                    </form>
-                }
-                else
-                {
-                    <form @onsubmit="Submit" class="space-y-4">
-                        @RenderInputs()
-                        @RenderSubmitButton()
-                    </form>
-                }
-            }
-            else if (_isLogin)
-            {
-                <LoginForm/>
-            }
+    }
+    else if (_error != null)
+    {
+        <div class="bg-error/10 border border-error/20 text-error p-4 rounded-lg text-sm">
+            @_error
         </div>
-    </div>
-</div>
+    }
+    else if (_childContent != null)
+    {
+        @_childContent
+    }
+    else if (_actionInfo != null)
+    {
+        @if (_isLegacy)
+        {
+            <form action="/Action/@_actionInfo.Action" method="post" class="space-y-4">
+                @RenderInputs()
+                @RenderSubmitButton()
+            </form>
+        }
+        else
+        {
+            <form @onsubmit="Submit" class="space-y-4">
+                @RenderInputs()
+                @RenderSubmitButton()
+            </form>
+        }
+    }
+    else if (_isLogin)
+    {
+        <LoginForm/>
+    }
+</ModalShell>
 
 
 @code {

@@ -28,6 +28,7 @@ using WebfrontCore.Core.Middleware;
 using WebfrontCore.Core.QueryHelpers;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
+using WebCommon.Services;
 
 namespace WebfrontCore;
 

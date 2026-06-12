@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿#nullable enable
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Data.Models.Client;
 
@@ -104,18 +105,21 @@ public class ZombieEventLog : DatedRecord
     
     public EventLogType EventType { get; set; }
 
+    // Navs mirror their nullable FKs — match-level events (e.g. EasterEggStep) have
+    // no SourceClientId, world-triggered events no client at all. The previous
+    // non-nullable declarations promised navs that are legitimately null at runtime.
     public int? SourceClientId { get; set; }
     [ForeignKey(nameof(SourceClientId))]
-    public EFClient SourceClient { get; set; }
-    
+    public virtual EFClient? SourceClient { get; set; }
+
     public int? AssociatedClientId { get; set; }
     [ForeignKey(nameof(AssociatedClientId))]
-    public EFClient AssociatedClient { get; set; }
-    
+    public virtual EFClient? AssociatedClient { get; set; }
+
     public double? NumericalValue { get; set; }
-    public string TextualValue { get; set; }
-    
+    public string? TextualValue { get; set; }
+
     public int? MatchId { get; set; }
     [ForeignKey(nameof(MatchId))]
-    public ZombieMatch Match { get; set; }
+    public virtual ZombieMatch? Match { get; set; }
 }

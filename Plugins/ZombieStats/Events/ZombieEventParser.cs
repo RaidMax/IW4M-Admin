@@ -51,7 +51,22 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
             return null;
         }
 
-        var parsedEvent = parser(scriptEvent, eventArgs[2..]);
+        // Individual parsers index into the split payload and Convert.ToInt32 freely —
+        // a malformed/truncated line (GSC bug, log corruption, mid-write read) throws
+        // here rather than inside 20 separate parsers. Drop the event and log the raw
+        // payload; dropping beats coercing fields to 0, which would silently record
+        // wrong stats. The caller (Plugin.OnScriptEvent) has no catch of its own.
+        GameEventV2 parsedEvent;
+        try
+        {
+            parsedEvent = parser(scriptEvent, eventArgs[2..]);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Dropping malformed GSE type \"{Type}\": {Data}",
+                eventArgs[1], scriptEvent.ScriptData);
+            return null;
+        }
 
         logger.LogDebug("Parsed GSE type {Type}", parsedEvent.GetType().Name);
 

@@ -463,7 +463,11 @@ namespace Stats.Helpers
                     .Where(grp => grp.PerformanceMetric != null)
                     .FirstOrDefaultAsync();
 
-                if (maxPerformance is null)
+                // Guard the Key, not just the result: a client ranked on a server with no
+                // performance bucket has an overall (ServerId null) ranking-history row whose
+                // PerformanceBucket navigation is null, so the GroupBy yields a non-null result
+                // with a null Key. Dereferencing maxPerformance.Key.Code below then NREs.
+                if (maxPerformance?.Key is null)
                 {
                     currentRanking = 0;
                     totalRankedClients = 0;

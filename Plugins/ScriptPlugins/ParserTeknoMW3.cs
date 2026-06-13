@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// Tekno MW3 parser. Ported from the legacy ParserTeknoMW3.js Jint script.
 /// </summary>
-public class ParserTeknoMW3 : IPluginV2
+public class ParserTeknoMW3 : IParserDefinition
 {
     public string Name => "Tekno MW3 Parser";
-    public string Author => "RaidMax";
-    public string Version => "0.9";
 
-    public ParserTeknoMW3()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version = "IW5 MP 1.4 build 382 latest Thu Jan 19 2012 11:09:49AM win-x86";
 
@@ -57,14 +44,5 @@ public class ParserTeknoMW3 : IPluginV2
         eventParser.Version = version;
         eventParser.GameName = Server.Game.IW5;
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

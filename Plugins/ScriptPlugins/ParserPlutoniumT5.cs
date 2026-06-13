@@ -1,31 +1,18 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// Plutonium T5 (Black Ops) parser. Ported from the legacy ParserPlutoniumT5.js Jint script.
 /// </summary>
-public class ParserPlutoniumT5 : IPluginV2
+public class ParserPlutoniumT5 : IParserDefinition
 {
     public string Name => "Plutonium T5 Parser (2025)";
-    public string Author => "RaidMax, diamante0018, ineedbots";
-    public string Version => "0.3";
 
-    public ParserPlutoniumT5()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version =
             "Call of Duty Multiplayer - Ship COD_T5_S MP build 7.0.189 CL(1022875) CODPCAB-V64 CEG Wed Nov 02 18:02:23 2011 win-x86";
@@ -47,14 +34,5 @@ public class ParserPlutoniumT5 : IPluginV2
         eventParser.GameName = Server.Game.T5;
         eventParser.Configuration.GuidNumberStyle = NumberStyles.Integer;
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

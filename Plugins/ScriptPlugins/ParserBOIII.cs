@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// BOIII (Black Ops 3) parser. Ported from the legacy ParserBOIII.js Jint script.
 /// </summary>
-public class ParserBOIII : IPluginV2
+public class ParserBOIII : IParserDefinition
 {
     public string Name => "BOIII Parser";
-    public string Author => "diamante0018";
-    public string Version => "0.3";
 
-    public ParserBOIII()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version = "[local] ship win64 CODBUILD8-764 (3421987) Mon Dec 16 10:44:20 2019 10d27bef";
 
@@ -64,14 +51,5 @@ public class ParserBOIII : IPluginV2
         eventParser.Configuration.GameDirectory = "usermaps";
         eventParser.Configuration.Say.Pattern = @"^(chat|chatteam);(?:[0-9]+);([a-f0-9]+);([0-9]+);(.+);(.*)$";
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

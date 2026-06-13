@@ -1,35 +1,20 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// Plutonium T4 (Call of Duty: World at War) multiplayer parser.
 /// Registers dynamic RCon + event parsers so IW4MAdmin can monitor Plutonium-hosted T4 servers.
 /// Ported from the legacy ParserPlutoniumT4.js Jint script.
 /// </summary>
-public class ParserPlutoniumT4 : IPluginV2
+public class ParserPlutoniumT4 : IParserDefinition
 {
     public string Name => "Plutonium T4 MP Parser";
-    public string Author => "RaidMax, Chase, Future";
-    public string Version => "0.5";
 
-    public ParserPlutoniumT4()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        // The Load event fires during ApplicationManager.Init, before servers resolve their
-        // parsers in InitializeServers() - so parsers added here are present in time.
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         var rcon = rconParser.Configuration;
         rcon.CommandPrefixes.Kick = "clientkick {0} \"{1}\"";
@@ -49,14 +34,5 @@ public class ParserPlutoniumT4 : IPluginV2
         eventParser.Configuration.GameDirectory = "main";
         eventParser.Version = "Plutonium T4";
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

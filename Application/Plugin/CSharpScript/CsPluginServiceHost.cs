@@ -22,6 +22,7 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 public class CsPluginServiceHost : ICsPluginServiceHost
 {
     private readonly ConcurrentDictionary<string, CsPluginInstance> _plugins = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, List<string>> _parserFilesByPath = new(StringComparer.OrdinalIgnoreCase);
     private readonly CsPluginCompiler _compiler;
     private readonly CsPluginFileWatcher _fileWatcher;
     private readonly CsPluginCommandRegistrar _commandRegistrar;
@@ -94,7 +95,7 @@ public class CsPluginServiceHost : ICsPluginServiceHost
     private async Task OnFileChanged(string filePath)
     {
         // Check if plugin is already loaded
-        var isAlreadyLoaded = _plugins.ContainsKey(filePath);
+        var isAlreadyLoaded = _plugins.ContainsKey(filePath) || _parserFilesByPath.ContainsKey(filePath);
 
         if (isAlreadyLoaded)
         {
@@ -131,17 +132,36 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             var loadContext = new CsPluginLoadContext();
             var assembly = await _compiler.CompileFromFile(pluginPath, loadContext);
 
-            // Find the IPluginV2 implementation
-            var pluginType = assembly.GetTypes()
-                .FirstOrDefault(t =>
-                    t is { IsInterface: false, IsAbstract: false } &&
-                    t.GetInterface(nameof(IPluginV2)) != null);
+            var loadableTypes = assembly.GetTypes()
+                .Where(t => t is { IsInterface: false, IsAbstract: false })
+                .ToList();
 
-            if (pluginType is null)
+            // A .cs file may contribute a plugin (IPluginV2), one or more parser
+            // definitions (IParserDefinition), or both. Parsers are not plugins: they
+            // have no lifecycle and are materialized + registered with the manager here.
+            var pluginType = loadableTypes
+                .FirstOrDefault(t => t.GetInterface(nameof(IPluginV2)) != null);
+            var parserTypes = loadableTypes
+                .Where(t => t.GetInterface(nameof(IParserDefinition)) != null)
+                .ToList();
+
+            if (pluginType is null && parserTypes.Count == 0)
             {
                 var availableTypes = string.Join(", ", assembly.GetTypes().Select(t => t.FullName));
                 throw new InvalidOperationException(
-                    $"No IPluginV2 implementation found. Available types: {availableTypes}");
+                    $"No IPluginV2 or IParserDefinition implementation found. Available types: {availableTypes}");
+            }
+
+            if (parserTypes.Count > 0)
+            {
+                RegisterParsers(pluginPath, fileName, parserTypes);
+            }
+
+            // Parser-only file: nothing more to do. The parser configuration is copied into
+            // host-owned parser instances, so the plugin assembly does not need to stay loaded.
+            if (pluginType is null)
+            {
+                return;
             }
 
             _logger.LogDebug("Found plugin type: {TypeName}", pluginType.FullName);
@@ -173,6 +193,18 @@ public class CsPluginServiceHost : ICsPluginServiceHost
 
     private async Task UnloadPluginAsync(string pluginPath)
     {
+        if (_parserFilesByPath.TryRemove(pluginPath, out var parserNames))
+        {
+            var manager = _rootServiceProvider.GetRequiredService<IManager>();
+            foreach (var name in parserNames)
+            {
+                RemoveByName(manager.AdditionalRConParsers, p => p.Name, name);
+                RemoveByName(manager.AdditionalEventParsers, p => p.Name, name);
+                _logger.LogInformation("[{FileName}] Unregistered parser: {ParserName}",
+                    Path.GetFileName(pluginPath), name);
+            }
+        }
+
         if (!_plugins.TryRemove(pluginPath, out var instance))
         {
             return;
@@ -200,6 +232,52 @@ public class CsPluginServiceHost : ICsPluginServiceHost
         {
             _logger.LogWarning("[{FileName}] Context may not have fully unloaded - check for lingering references",
                 fileName);
+        }
+    }
+
+    /// <summary>
+    /// Materializes each parser definition into concrete RCon/event parsers via the manager and
+    /// registers them, replacing any parser already registered under the same name. Parsers are
+    /// not plugins — they have no lifecycle, so they are registered directly with the manager
+    /// rather than tracked as plugin instances.
+    /// </summary>
+    private void RegisterParsers(string pluginPath, string fileName, IEnumerable<Type> parserTypes)
+    {
+        var manager = _rootServiceProvider.GetRequiredService<IManager>();
+        var registeredNames = new List<string>();
+
+        foreach (var parserType in parserTypes)
+        {
+            var definition = (IParserDefinition)ActivatorUtilities.CreateInstance(_rootServiceProvider, parserType);
+
+            var rconParser = manager.GenerateDynamicRConParser(definition.Name);
+            var eventParser = manager.GenerateDynamicEventParser(definition.Name);
+            definition.Configure(rconParser, eventParser);
+
+            AddOrReplace(manager.AdditionalRConParsers, rconParser, p => p.Name);
+            AddOrReplace(manager.AdditionalEventParsers, eventParser, p => p.Name);
+
+            registeredNames.Add(definition.Name);
+            _logger.LogInformation("[{FileName}] Registered parser: {ParserName}", fileName, definition.Name);
+        }
+
+        _parserFilesByPath[pluginPath] = registeredNames;
+    }
+
+    private static void AddOrReplace<T>(IList<T> list, T item, Func<T, string> keySelector)
+    {
+        RemoveByName(list, keySelector, keySelector(item));
+        list.Add(item);
+    }
+
+    private static void RemoveByName<T>(IList<T> list, Func<T, string> keySelector, string name)
+    {
+        for (var i = list.Count - 1; i >= 0; i--)
+        {
+            if (string.Equals(keySelector(list[i]), name, StringComparison.Ordinal))
+            {
+                list.RemoveAt(i);
+            }
         }
     }
 

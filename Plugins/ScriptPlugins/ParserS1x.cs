@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// S1x (Advanced Warfare) parser. Ported from the legacy ParserS1x.js Jint script.
 /// </summary>
-public class ParserS1x : IPluginV2
+public class ParserS1x : IParserDefinition
 {
     public string Name => "S1x Parser";
-    public string Author => "Future, RaidMax";
-    public string Version => "0.4";
 
-    public ParserS1x()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version = "S1 MP 1.22 build 2195988 Wed Apr 18 11:26:14 2018 win64";
 
@@ -52,14 +39,5 @@ public class ParserS1x : IPluginV2
         eventParser.Version = version;
         eventParser.GameName = Server.Game.SHG1;
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

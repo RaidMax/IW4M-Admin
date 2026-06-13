@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// Plutonium IW5 parser. Ported from the legacy ParserPIW5.js Jint script.
 /// </summary>
-public class ParserPIW5 : IPluginV2
+public class ParserPIW5 : IParserDefinition
 {
     public string Name => "Plutonium IW5 Parser";
-    public string Author => "RaidMax";
-    public string Version => "1.0";
 
-    public ParserPIW5()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version = "IW5 MP 1.9 build 388110 Fri Sep 14 00:04:28 2012 win-x86";
 
@@ -66,14 +53,5 @@ public class ParserPIW5 : IPluginV2
         eventParser.Configuration.GameDirectory = "";
         eventParser.URLProtocolFormat = "plutonium://play/iw5mp/{{ip}}:{{port}}";
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

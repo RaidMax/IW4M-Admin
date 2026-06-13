@@ -40,6 +40,17 @@ namespace IW4MAdmin.Application.Factories
             }
             else
             {
+                // A read-optimised context: query results are not tracked, lazy loading is off, and
+                // automatic change detection is disabled. This is intended for read-only work.
+                //
+                // IMPORTANT for anyone WRITING through such a context: because change detection is
+                // off, the "load an entity, mutate its properties, call SaveChanges" pattern will
+                // silently persist NOTHING — there is no error, EF simply never notices the change.
+                // This is by design: NoTracking and write-back are conflicting intents. If you need
+                // to write here, state that intent explicitly and tracking-independently — use
+                // DbSet.Update()/UpdateRange() (attaches as Modified) or ExecuteUpdate()/ExecuteDelete()
+                // (set-based SQL). For genuine read-then-mutate-then-save work, use CreateContext()
+                // (tracking) instead — that is the convention across this codebase.
                 context.ChangeTracker.AutoDetectChangesEnabled = false;
                 context.ChangeTracker.LazyLoadingEnabled = false;
                 context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;

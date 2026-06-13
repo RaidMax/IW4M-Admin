@@ -108,6 +108,13 @@ namespace Data.Context
         {
         }
 
+        // NOTE on write intent: this context may be created with change detection disabled (the
+        // read-optimised path — see DatabaseContextFactory). On such an instance, mutating a loaded
+        // entity's properties and calling SaveChanges persists NOTHING — the change is never
+        // detected, and no error is raised. To write reliably regardless of how the context was
+        // built, mark the intent explicitly: DbSet.Update()/UpdateRange() or ExecuteUpdate(). Both
+        // set entity/row state directly and do not depend on automatic change detection. The stamping
+        // helpers below likewise only observe entities whose state was set explicitly or detected.
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
             CancellationToken cancellationToken = default)
         {

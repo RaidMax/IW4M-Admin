@@ -4,6 +4,11 @@
    SideContextMenu on the right (collapsing to a CSS drawer below xl). Plugins wrap their page body
    in this to get the host's native layout + navigation for free, instead of rolling their own.
 
+   PADDING CONTRACT: the shell owns the standard page gutters — wc-page-shell-main applies the
+   host-wide p-4 / md:p-6 / lg:p-8 equivalent (1rem / 1.5rem / 2rem), matching Profile,
+   leaderboard, and stats pages. Do NOT add page padding via ContentClass; that doubles the
+   gutters. ContentClass is for width/centering/spacing of the content itself.
+
    The shell's STRUCTURAL classes are host-namespaced (wc-page-shell*, defined in the host's
    app.css), NOT shared Tailwind utilities. This shell renders inside the plugin's scoped-CSS
    subtree and *contains* the plugin's content, so it can't be excluded via the data-iw4m-host
@@ -45,6 +50,10 @@
     /// <summary>Extra classes for the outer wrapper, e.g. a themed page background.</summary>
     [Parameter] public string? BackgroundClass { get; set; }
 
-    /// <summary>Classes on the inner content wrapper. Defaults to the host's centered, spaced container.</summary>
+    /// <summary>
+    /// Classes on the inner content wrapper — width cap, centering, vertical rhythm.
+    /// Defaults to the host's centered, spaced container. Do NOT include page padding
+    /// (p-4 etc.): the shell's wc-page-shell-main already applies the standard gutters.
+    /// </summary>
     [Parameter] public string ContentClass { get; set; } = "max-w-[1400px] mx-auto space-y-6";
 }

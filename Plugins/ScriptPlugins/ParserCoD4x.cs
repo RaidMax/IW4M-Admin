@@ -1,31 +1,18 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// CoD4x parser. Ported from the legacy ParserCoD4x.js Jint script.
 /// </summary>
-public class ParserCoD4x : IPluginV2
+public class ParserCoD4x : IParserDefinition
 {
     public string Name => "CoD4x Parser";
-    public string Author => "FrenchFry, RaidMax";
-    public string Version => "0.9";
 
-    public ParserCoD4x()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         var rcon = rconParser.Configuration;
         rcon.StatusHeader.Pattern =
@@ -52,14 +39,5 @@ public class ParserCoD4x : IPluginV2
         eventParser.GameName = Server.Game.IW3;
         eventParser.URLProtocolFormat = "cod4://{{ip}}:{{port}}";
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

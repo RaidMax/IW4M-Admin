@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// IW7-Mod parser. Ported from the legacy ParserIW7MOD.js Jint script.
 /// </summary>
-public class ParserIW7MOD : IPluginV2
+public class ParserIW7MOD : IParserDefinition
 {
     public string Name => "IW7-Mod Parser";
-    public string Author => "mjkzy";
-    public string Version => "0.1";
 
-    public ParserIW7MOD()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version = "IW7 6.23 build 1435251 Tue Apr 17 18:34:00 2018 win64";
 
@@ -53,14 +40,5 @@ public class ParserIW7MOD : IPluginV2
         eventParser.Version = version;
         eventParser.GameName = Server.Game.IW7;
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

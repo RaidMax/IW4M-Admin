@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// IW6x parser. Ported from the legacy ParserIW6x.js Jint script.
 /// </summary>
-public class ParserIW6x : IPluginV2
+public class ParserIW6x : IParserDefinition
 {
     public string Name => "IW6x Parser";
-    public string Author => "Xerxes, RaidMax, st0rm, Future";
-    public string Version => "0.5";
 
-    public ParserIW6x()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         var rcon = rconParser.Configuration;
         rcon.CommandPrefixes.Tell = "tell {0} {1}";
@@ -55,14 +42,5 @@ public class ParserIW6x : IPluginV2
         eventParser.Configuration.GameDirectory = "";
         eventParser.Configuration.LocalizeText = ((char)0x1f).ToString();
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

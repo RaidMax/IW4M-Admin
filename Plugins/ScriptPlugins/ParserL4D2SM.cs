@@ -1,33 +1,20 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// Left 4 Dead 2 (SourceMod) parser. Ported from the legacy ParserL4D2SM.js Jint script.
 /// </summary>
-public class ParserL4D2SM : IPluginV2
+public class ParserL4D2SM : IParserDefinition
 {
     public string Name => "L4D2 (SourceMod) Parser";
-    public string Author => "RaidMax";
-    public string Version => "0.1";
 
     private const string Engine = "Source";
 
-    public ParserL4D2SM()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
         rconParser.RConEngine = Engine;
 
         var rcon = rconParser.Configuration;
@@ -144,14 +131,5 @@ public class ParserL4D2SM : IPluginV2
         eventParser.GameName = Server.Game.L4D2;
         eventParser.URLProtocolFormat = "steam://connect/{{ip}}:{{port}}";
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

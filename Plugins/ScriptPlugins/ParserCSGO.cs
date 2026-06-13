@@ -1,33 +1,20 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// CS:GO parser (Source engine). Ported from the legacy ParserCSGO.js Jint script.
 /// </summary>
-public class ParserCSGO : IPluginV2
+public class ParserCSGO : IParserDefinition
 {
     public string Name => "CS:GO Parser";
-    public string Author => "RaidMax";
-    public string Version => "0.5";
 
     private const string Engine = "Source";
 
-    public ParserCSGO()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
         rconParser.RConEngine = Engine;
 
         var rcon = rconParser.Configuration;
@@ -143,14 +130,5 @@ public class ParserCSGO : IPluginV2
         eventParser.GameName = Server.Game.CSGO;
         eventParser.URLProtocolFormat = "steam://connect/{{ip}}:{{port}}";
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

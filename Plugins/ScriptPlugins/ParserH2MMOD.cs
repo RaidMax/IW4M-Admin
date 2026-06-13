@@ -1,30 +1,17 @@
 #:package RaidMax.IW4MAdmin.SharedLibraryCore@2026.1.6.1
 
-using System.Threading;
-using System.Threading.Tasks;
 using SharedLibraryCore;
-using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
-using SharedLibraryCore.Interfaces.Events;
 
 /// <summary>
 /// H2M-Mod parser. Ported from the legacy ParserH2MMOD.js Jint script.
 /// </summary>
-public class ParserH2MMOD : IPluginV2
+public class ParserH2MMOD : IParserDefinition
 {
     public string Name => "H2M-Mod Parser";
-    public string Author => "alice, diamante0018";
-    public string Version => "0.2";
 
-    public ParserH2MMOD()
+    public void Configure(IRConParser rconParser, IEventParser eventParser)
     {
-        IManagementEventSubscriptions.Load += OnLoad;
-    }
-
-    private Task OnLoad(IManager manager, CancellationToken token)
-    {
-        var rconParser = manager.GenerateDynamicRConParser(Name);
-        var eventParser = manager.GenerateDynamicEventParser(Name);
 
         const string version = "H1 MP 1.15 build 1251288 Tue Jul 23 13:38:30 2019 win64";
 
@@ -53,14 +40,5 @@ public class ParserH2MMOD : IPluginV2
         eventParser.Version = version;
         eventParser.GameName = Server.Game.H2M;
 
-        manager.AddOrReplaceRConParser(rconParser);
-        manager.AddOrReplaceEventParser(eventParser);
-
-        return Task.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        IManagementEventSubscriptions.Load -= OnLoad;
     }
 }

@@ -302,7 +302,9 @@ public class Plugin : IPluginV2
         {
             await _enhancer.Initialize();
             manager.CustomStatsMetrics.Add(_enhancer.GetTopStatsMetrics);
-            manager.CustomStatsMetrics.Add(_enhancer.GetAdvancedStatsMetrics);
+            // Per-player Advanced Stats metric injection retired — the dedicated career
+            // page owns those numbers now; the stats page shows the premium plugin's slim
+            // summary card (client-advanced-stats slot) instead.
             manager.CustomTopStatsTransformers.Add(_enhancer.TransformTopStats);
             // The /stats/zombies nav page is registered by the ZombieStatsPremium plugin, which now
             // owns the zombie web pages (shipped as a web bundle).

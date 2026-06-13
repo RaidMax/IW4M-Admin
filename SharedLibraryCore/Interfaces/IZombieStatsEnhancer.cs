@@ -70,14 +70,11 @@ public interface IZombieStatsEnhancer
 
     /// <summary>
     /// Provides zombie-specific metrics for the top stats leaderboard page.
+    /// (Per-player Advanced Stats metrics were retired in favor of the dedicated
+    /// career page — the stats page renders a slim summary card via the
+    /// client-advanced-stats render slot instead.)
     /// </summary>
     Task GetTopStatsMetrics(Dictionary<int, List<EFMeta>> meta,
-        long? serverId, string performanceBucketCode, bool isTopStats);
-
-    /// <summary>
-    /// Provides advanced zombie metrics for the player stats page.
-    /// </summary>
-    Task GetAdvancedStatsMetrics(Dictionary<int, List<EFMeta>> meta,
         long? serverId, string performanceBucketCode, bool isTopStats);
 
     /// <summary>

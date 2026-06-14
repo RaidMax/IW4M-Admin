@@ -18,8 +18,8 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         IEnumerable<IPlugin> Plugins { get; }
 
-        IList<IRConParser> AdditionalRConParsers { get; }
-        IList<IEventParser> AdditionalEventParsers { get; }
+        IReadOnlyList<IRConParser> AdditionalRConParsers { get; }
+        IReadOnlyList<IEventParser> AdditionalEventParsers { get; }
         IMiddlewareActionHandler MiddlewareActionHandler { get; }
         IList<Func<GameEvent, bool>> CommandInterceptors { get; }
         string Version { get; }

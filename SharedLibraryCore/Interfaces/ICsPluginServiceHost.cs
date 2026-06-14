@@ -15,4 +15,16 @@ public interface ICsPluginServiceHost : IDisposable
     /// Gets all currently loaded .cs plugin instances.
     /// </summary>
     IEnumerable<IPluginV2> LoadedPlugins { get; }
+
+    /// <summary>
+    /// Gets the RCon parsers materialized from loaded .cs parser definitions.
+    /// The manager projects these into its set of available parsers.
+    /// </summary>
+    IReadOnlyList<IRConParser> LoadedRConParsers { get; }
+
+    /// <summary>
+    /// Gets the event parsers materialized from loaded .cs parser definitions.
+    /// The manager projects these into its set of available parsers.
+    /// </summary>
+    IReadOnlyList<IEventParser> LoadedEventParsers { get; }
 }

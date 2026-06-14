@@ -53,8 +53,19 @@ namespace IW4MAdmin.Application
         public DateTime StartTime { get; private set; }
         public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
-        public IList<IRConParser> AdditionalRConParsers { get; }
-        public IList<IEventParser> AdditionalEventParsers { get; }
+        // base parsers are owned by the manager; .cs parser definitions are owned by the
+        // CsPluginServiceHost and projected here (resolved lazily to avoid a DI cycle:
+        // manager -> host -> CsPluginCommandRegistrar -> IManager).
+        private readonly IRConParser _baseRConParser;
+        private readonly IEventParser _baseEventParser;
+
+        public IReadOnlyList<IRConParser> AdditionalRConParsers =>
+            _serviceProvider.GetRequiredService<ICsPluginServiceHost>().LoadedRConParsers
+                .Prepend(_baseRConParser).ToList();
+
+        public IReadOnlyList<IEventParser> AdditionalEventParsers =>
+            _serviceProvider.GetRequiredService<ICsPluginServiceHost>().LoadedEventParsers
+                .Prepend(_baseEventParser).ToList();
         public IList<Func<GameEvent, bool>> CommandInterceptors { get; set; } =
             new List<Func<GameEvent, bool>>();
         public ITokenAuthentication TokenAuthenticator { get; }
@@ -115,8 +126,8 @@ namespace IW4MAdmin.Application
             _legacyConfigHandler = legacyConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>()) };
-            AdditionalRConParsers = new List<IRConParser> { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
+            _baseEventParser = new BaseEventParser(parserRegexFactory, logger, appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>());
+            _baseRConParser = new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory);
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
             _isRunningTokenSource = new CancellationTokenSource();

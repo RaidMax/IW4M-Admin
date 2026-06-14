@@ -22,31 +22,18 @@
     {
         @* Wrap a bundle-provided widget in its scope marker so the plugin's scoped CSS
            (PluginCssScoper) applies. display:contents keeps the wrapper layout-transparent. A widget
-           that isn't from a bundle (e.g. a loose-dll plugin with no served CSS) renders bare.
-
-           @key keys the per-provider subtree by component type so the render-tree diff stays stable
-           across re-renders (a keyless component loop is a known source of diff-builder faults).
-
-           Each widget renders inside a LoggingErrorBoundary: a plugin widget that throws while being
-           instantiated/rendered (e.g. its injected services resolved against a tearing-down circuit
-           scope) is logged WITH the slot + component identity and contained here, instead of escaping
-           as an unobserved framework exception that names no component. *@
+           that isn't from a bundle (e.g. a loose-dll plugin with no served CSS) renders bare. *@
         var scopeId = PluginBundleLoader.Shared.PluginIdForAssembly(provider.ComponentType.Assembly);
-        <LoggingErrorBoundary @key="provider.ComponentType" Context="@SlotContext(provider, scopeId)">
-            <ChildContent>
-                @if (scopeId is not null)
-                {
-                    <div data-iw4m-plugin="@scopeId" style="display:contents">
-                        <DynamicComponent Type="provider.ComponentType" Parameters="_componentParams"/>
-                    </div>
-                }
-                else
-                {
-                    <DynamicComponent Type="provider.ComponentType" Parameters="_componentParams"/>
-                }
-            </ChildContent>
-            <ErrorContent>@* A failed slot widget renders nothing — it must never surface UI or take down the host page. *@</ErrorContent>
-        </LoggingErrorBoundary>
+        if (scopeId is not null)
+        {
+            <div data-iw4m-plugin="@scopeId" style="display:contents">
+                <DynamicComponent Type="provider.ComponentType" Parameters="_componentParams"/>
+            </div>
+        }
+        else
+        {
+            <DynamicComponent Type="provider.ComponentType" Parameters="_componentParams"/>
+        }
     }
 }
 else if (ChildContent is not null)
@@ -83,9 +70,4 @@ else if (ChildContent is not null)
             ? _empty
             : new Dictionary<string, object> { ["Model"] = Params };
     }
-
-    // Identity written to the log when a slot widget's render fails: slot name, the concrete widget
-    // type, and (when bundle-served) its plugin id — enough to tell which plugin's widget is at fault.
-    private string SlotContext(IRenderSlotProvider provider, string? scopeId) =>
-        $"slot={Slot.Name} component={provider.ComponentType.FullName}{(scopeId is null ? "" : $" plugin={scopeId}")}";
 }

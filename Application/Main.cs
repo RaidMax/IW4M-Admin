@@ -202,13 +202,73 @@ namespace IW4MAdmin.Application
             Console.Error.WriteLine($"[FATAL] Unhandled exception: {exception}");
         }
 
+        // Rollup state for the benign Blazor circuit-teardown race (#62718): per-event detail is logged
+        // at Debug, and a periodic Information summary preserves a spike signal without per-event noise.
+        private static int _blazorTeardownFaultCount;
+        private static DateTime _lastTeardownSummaryUtc = DateTime.UtcNow;
+        private static readonly object TeardownSummaryLock = new();
+        private static readonly TimeSpan TeardownSummaryInterval = TimeSpan.FromMinutes(5);
+
+        /// <summary>
+        /// True when an unobserved task fault is the known-benign Blazor Server circuit-teardown race
+        /// (dotnet/aspnetcore#62718): a circuit aborted mid-render (tab refresh/close) so a disposed-scope
+        /// property injection or a null render-tree frame throws. Framework-caught, no functional impact.
+        /// Identified by every inner being ObjectDisposed/NullReference originating in the Blazor renderer.
+        /// </summary>
+        private static bool IsBlazorRenderTeardownNoise(AggregateException aggregate)
+        {
+            var inners = aggregate.Flatten().InnerExceptions;
+            return inners.Count > 0 && inners.All(ex =>
+                ex is ObjectDisposedException or NullReferenceException &&
+                (ex.StackTrace?.Contains("Microsoft.AspNetCore.Components", StringComparison.Ordinal) ?? false));
+        }
+
         /// <summary>
         /// Handler for a faulted <see cref="Task"/> that was never awaited/observed. Since .NET Core
         /// these no longer terminate the process, so without this they vanish silently — usually a
         /// plugin fire-and-forget bug. We log it and mark it observed so the behaviour stays explicit.
+        /// The benign Blazor circuit-teardown race (#62718) is split off to Warning so it does not
+        /// masquerade as an error among genuine plugin faults.
         /// </summary>
         private static void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
+            if (IsBlazorRenderTeardownNoise(e.Exception))
+            {
+                e.SetObserved();
+
+                // Per-event detail stays at Debug (silent in normal logs, full stack when Debug is on).
+                Utilities.DefaultLogger?.LogDebug(e.Exception,
+                    "Blazor circuit-teardown task fault (benign framework race #62718); marked observed");
+
+                // Periodic Information rollup so a sudden spike (a real regression thrashing circuits)
+                // is still visible without per-event noise. Flushed by the next fault past the window.
+                var count = 0;
+                var emit = false;
+                var window = TimeSpan.Zero;
+                lock (TeardownSummaryLock)
+                {
+                    _blazorTeardownFaultCount++;
+                    var now = DateTime.UtcNow;
+                    if (now - _lastTeardownSummaryUtc >= TeardownSummaryInterval)
+                    {
+                        count = _blazorTeardownFaultCount;
+                        window = now - _lastTeardownSummaryUtc;
+                        _blazorTeardownFaultCount = 0;
+                        _lastTeardownSummaryUtc = now;
+                        emit = true;
+                    }
+                }
+
+                if (emit)
+                {
+                    Utilities.DefaultLogger?.LogInformation(
+                        "Caught {Count} benign Blazor circuit-teardown faults (#62718) in the last {Minutes:F0}m; all marked observed",
+                        count, window.TotalMinutes);
+                }
+
+                return;
+            }
+
             Utilities.DefaultLogger?.LogError(e.Exception,
                 "Unobserved task exception (likely a plugin fire-and-forget that faulted); marking observed");
             e.SetObserved();

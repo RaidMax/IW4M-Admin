@@ -6,7 +6,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Data.Models;
 using Humanizer;
+using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
 using SharedLibraryCore.Events.Game;
@@ -1348,7 +1350,40 @@ namespace SharedLibraryCore
 
             return serviceCollection;
         }
-        
+
+        /// <summary>
+        /// Registers a plugin-owned SQLite database. The file lands in the plugin's own data folder
+        /// (<c>Plugins/&lt;plugin&gt;/&lt;name&gt;.db</c>, derived from <typeparamref name="TContext"/>'s
+        /// assembly); <paramref name="name"/> defaults to the context type name and may contain
+        /// forward-slash subfolders. Injects an isolated <see cref="IDbContextFactory{TContext}"/> and
+        /// records a migration that the host applies at startup (before the plugin's <c>Load</c>). A
+        /// plugin may register more than one database.
+        /// </summary>
+        public static IServiceCollection AddDatabase<TContext>(this IServiceCollection serviceCollection,
+            string name = null) where TContext : DbContext
+        {
+            var directory = PluginDirectoryResolver.ResolveDirectory(typeof(TContext).Assembly);
+            var databasePath =
+                PluginDirectoryResolver.CombineWithinRoot(directory, name ?? typeof(TContext).Name, ".db");
+            var factory = new PluginDbContextFactory<TContext>($"Data Source={databasePath}");
+
+            serviceCollection.AddSingleton<IDbContextFactory<TContext>>(factory);
+
+            serviceCollection.AddSingleton(new PluginDatabaseRegistration(
+                typeof(TContext).Name,
+                databasePath,
+                async token =>
+                {
+                    await using var context = factory.CreateDbContext();
+                    await context.Database.MigrateAsync(token);
+                    // WAL lets readers proceed during writes; it is a persistent setting, so applying it
+                    // once after migration is enough.
+                    await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", token);
+                }));
+
+            return serviceCollection;
+        }
+
         public static TimeSpan GetExponentialBackoffDelay(int retryCount, int staticDelay = 5)
         {
             var maxTimeout = TimeSpan.FromMinutes(2.1);

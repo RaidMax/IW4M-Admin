@@ -5,6 +5,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Configuration.Validation;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
@@ -341,6 +342,36 @@ namespace IW4MAdmin.Application
             await server.ProcessUpdatesAsync(CancellationToken.None);
         }
 
+        /// <summary>
+        /// Applies pending migrations for every plugin database registered via <c>AddDatabase</c>, before
+        /// plugins receive the <c>Load</c> event. Each migration runs independently and soft-fails: a bad
+        /// plugin migration disables only that database, never the host or other plugins.
+        /// </summary>
+        private async Task MigratePluginDatabasesAsync(CancellationToken token)
+        {
+            var registrations = _serviceProvider.GetServices<PluginDatabaseRegistration>().ToList();
+            if (registrations.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var registration in registrations)
+            {
+                try
+                {
+                    await registration.MigrateAsync(token);
+                    _logger.LogInformation("Migrated plugin database {Context} at {Path}",
+                        registration.ContextName, registration.DatabasePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Could not migrate plugin database {Context} at {Path}; this plugin's database will be unavailable",
+                        registration.ContextName, registration.DatabasePath);
+                }
+            }
+        }
+
         public async Task Init()
         {
             IsRunning = true;
@@ -351,6 +382,7 @@ namespace IW4MAdmin.Application
             Console.WriteLine(_translationLookup["MANAGER_MIGRATION_START"]);
             await ContextSeed.Seed(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _isRunningTokenSource.Token);
             await DatabaseHousekeeping.RemoveOldRatings(_serviceProvider.GetRequiredService<IDatabaseContextFactory>(), _isRunningTokenSource.Token);
+            await MigratePluginDatabasesAsync(_isRunningTokenSource.Token);
             _logger.LogInformation("Finished database migration sync");
             Console.WriteLine(_translationLookup["MANAGER_MIGRATION_END"]);
             #endregion

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
+using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 
 namespace IW4MAdmin.Application.IO;
@@ -56,14 +57,10 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             return defaultConfiguration;
         }
 
-        var cleanName = configurationName.Replace("\\", "").Replace("/", "");
+        Filename = ResolveConfigurationPath(configurationName);
+        WarnIfTypeNotOwnedByPlugin();
+        MigrateLegacyConfiguration(configurationName, Filename);
 
-        if (string.IsNullOrWhiteSpace(configurationName))
-        {
-            return defaultConfiguration;
-        }
-
-        Filename = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{cleanName}.json");
         TConfigurationType readConfiguration = null;
 
         try
@@ -209,6 +206,93 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
             {
                 property.SetValue(_configurationInstance, property.GetValue(newConfiguration));
             }
+        }
+    }
+
+    /// <summary>
+    /// Resolves the on-disk path for this configuration. Types defined in a host/framework assembly
+    /// keep the legacy flat <c>Configuration/</c> location; everything else (a plugin, in any load
+    /// format) routes to its own <c>Plugins/&lt;key&gt;/</c> folder. The configuration name may contain
+    /// forward-slash segments to nest the file in a subfolder; segments are sanitized and the result is
+    /// constrained to the resolved root.
+    /// </summary>
+    private static string ResolveConfigurationPath(string configurationName)
+    {
+        var assembly = typeof(TConfigurationType).Assembly;
+        var root = PluginDirectoryResolver.IsHostAssembly(assembly)
+            ? Path.Join(Utilities.OperatingDirectory, "Configuration")
+            : PluginDirectoryResolver.ResolveDirectory(assembly);
+
+        return PluginDirectoryResolver.CombineWithinRoot(root, configurationName, ".json");
+    }
+
+    // warns at most once per closed configuration type (this static is per generic instantiation)
+    private static bool _warnedNotOwnedByPlugin;
+
+    /// <summary>
+    /// Warns (but does not block) when this configuration type is defined outside any real plugin — e.g.
+    /// in a shared helper library referenced by several plugins. In that case the folder key is the shared
+    /// library, so multiple plugins would share one folder. Host/framework types and types that live in a
+    /// genuine plugin assembly never warn.
+    /// </summary>
+    private void WarnIfTypeNotOwnedByPlugin()
+    {
+        if (_warnedNotOwnedByPlugin)
+        {
+            return;
+        }
+
+        var assembly = typeof(TConfigurationType).Assembly;
+        if (PluginDirectoryResolver.IsHostAssembly(assembly) ||
+            PluginDirectoryResolver.LooksLikePluginAssembly(assembly))
+        {
+            return;
+        }
+
+        _warnedNotOwnedByPlugin = true;
+        _logger.LogWarning(
+            "Configuration type {Type} is defined in assembly {Assembly}, which does not contain a plugin. " +
+            "It will use the data folder Plugins/{Key}/, shared by any plugin that references this assembly. " +
+            "Define configuration types inside your own plugin to keep its data folder isolated.",
+            typeof(TConfigurationType).Name, assembly.GetName().Name, PluginDirectoryResolver.ResolveKey(assembly));
+    }
+
+    /// <summary>
+    /// One-time relocation of a plugin configuration from the legacy shared <c>Configuration/</c> folder
+    /// into the plugin's own folder. Runs only for plugin configs, only when the target is absent and the
+    /// legacy file is present — so it is idempotent and cannot double-apply across restarts.
+    /// </summary>
+    private void MigrateLegacyConfiguration(string configurationName, string targetPath)
+    {
+        if (PluginDirectoryResolver.IsHostAssembly(typeof(TConfigurationType).Assembly))
+        {
+            return; // host configs already live in Configuration/
+        }
+
+        if (File.Exists(targetPath))
+        {
+            return; // already in the plugin folder (or already migrated)
+        }
+
+        var flatName = configurationName.Replace("\\", string.Empty).Replace("/", string.Empty);
+        var legacyPath = Path.Join(Utilities.OperatingDirectory, "Configuration", $"{flatName}.json");
+
+        if (!File.Exists(legacyPath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Move(legacyPath, targetPath);
+            _logger.LogInformation(
+                "Migrated plugin configuration {Name} from {OldPath} to {NewPath}", flatName, legacyPath,
+                targetPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not migrate legacy configuration {Name} to {NewPath}", flatName,
+                targetPath);
         }
     }
 }

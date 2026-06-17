@@ -56,7 +56,8 @@ public interface IWebfrontDataService
     Task<ResourceQueryHelperResult<SharedLibraryCore.Dtos.Meta.Responses.MessageResponse>> SearchMessagesAsync(ChatSearchQuery request);
     Task<SystemInfo> GetSystemInfoAsync();
     Task<IEnumerable<ClientCountSnapshot>> GetClientHistoryAsync(string serverId);
-    
+    Task<ServerActivitySparklineResult> GetServerActivitySparklineAsync(Reference.Game? game = null, CancellationToken token = default);
+
     /// <summary>
     /// Gets available RCon/Event parser names for server configuration
     /// </summary>

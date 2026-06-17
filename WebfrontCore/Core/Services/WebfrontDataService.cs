@@ -1437,6 +1437,11 @@ public class WebfrontDataService : IWebfrontDataService
         return clientCountSnapshots;
     }
 
+    public async Task<ServerActivitySparklineResult> GetServerActivitySparklineAsync(Reference.Game? game = null, CancellationToken token = default)
+    {
+        return await _serverDataViewer.GetServerActivityAsync(game, 30, token);
+    }
+
     public async Task<InteractionResponse?> GetInteractionAsync(string interactionName,
         Dictionary<string, string>? query = null)
     {

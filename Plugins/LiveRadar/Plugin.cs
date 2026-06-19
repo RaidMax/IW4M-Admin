@@ -146,8 +146,8 @@ public class Plugin : IPluginV2
                 return Task.CompletedTask;
             }
 
-            (monitorEvent.Source as IManager)?.GetPageList().Pages
-                .Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/radar");
+            (monitorEvent.Source as IManager)?.GetPageList()
+                .AddPage(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/radar", "ph-wifi-high");
             _addedPage = true;
         }
 

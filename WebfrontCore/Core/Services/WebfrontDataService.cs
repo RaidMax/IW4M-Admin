@@ -294,10 +294,15 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<NavigationInfo> GetNavigationDataAsync()
     {
-        // Get pages from Manager's page list (IDictionary<string, string> where key=name, value=location)
-        var rawPages = _manager.GetPageList().Pages;
-        var pages = rawPages
-            .Select(kvp => new Page { Name = kvp.Key, Location = kvp.Value })
+        // Get pages from Manager's page list (key=name, value=location), plus any per-page navbar icon
+        var pageList = _manager.GetPageList();
+        var pages = pageList.Pages
+            .Select(kvp => new Page
+            {
+                Name = kvp.Key,
+                Location = kvp.Value,
+                IconId = pageList.PageIcons.TryGetValue(kvp.Key, out var icon) ? icon : null
+            })
             .ToList();
 
         // Get all navigation interactions (Main, Admin, Social)
@@ -331,7 +336,7 @@ public class WebfrontDataService : IWebfrontDataService
             User = user,
             Authorized = authorized,
             Pages = pages
-                .Select(page => new Page { Name = page.Name, Location = page.Location }),
+                .Select(page => new Page { Name = page.Name, Location = page.Location, IconId = page.IconId }),
             Interactions = interactions
                 .Select(i => new NavigationInteractionInfo
                 {

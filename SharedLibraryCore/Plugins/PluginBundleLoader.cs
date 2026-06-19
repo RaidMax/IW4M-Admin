@@ -107,9 +107,10 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
                 var libAssemblies = ReadFolder(archive, LibFolder(manifest));
                 var webAssets = ReadFolder(archive, manifest.WebRoot);
                 var gscFiles = ReadFolder(archive, manifest.GscRoot);
+                var resourceFiles = ReadFolder(archive, manifest.ResourceRoot);
 
                 var assembly = LoadEntryInMemory(manifest, libAssemblies);
-                var loaded = RegisterBundle(manifest, assembly, webAssets, gscFiles);
+                var loaded = RegisterBundle(manifest, assembly, webAssets, gscFiles, resourceFiles);
                 Logger?.LogDebug(
                     "Plugin bundle '{Id}' via {Source}: loaded fresh — assembly v{AssemblyVersion}, manifest version '{ManifestVersion}', {AssetCount} web asset(s)",
                     manifest.Id, sourceLabel, assembly.GetName().Version, manifest.Version, webAssets.Count);
@@ -149,10 +150,11 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
                 var libAssemblies = ReadDirectory(directory, LibFolder(manifest));
                 var webAssets = ReadDirectory(directory, manifest.WebRoot);
                 var gscFiles = ReadDirectory(directory, manifest.GscRoot);
+                var resourceFiles = ReadDirectory(directory, manifest.ResourceRoot);
 
                 // load in-memory (same path as the zip/premium channel) so local and remote behave identically
                 var assembly = LoadEntryInMemory(manifest, libAssemblies);
-                var loaded = RegisterBundle(manifest, assembly, webAssets, gscFiles);
+                var loaded = RegisterBundle(manifest, assembly, webAssets, gscFiles, resourceFiles);
                 Logger?.LogDebug(
                     "Plugin bundle '{Id}' via {Source}: loaded fresh — assembly v{AssemblyVersion}, manifest version '{ManifestVersion}', {AssetCount} web asset(s)",
                     manifest.Id, directory, assembly.GetName().Version, manifest.Version, webAssets.Count);
@@ -205,7 +207,8 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
     }
 
     private LoadedBundle RegisterBundle(BundleManifest manifest, Assembly assembly,
-        IReadOnlyDictionary<string, byte[]> webAssets, IReadOnlyDictionary<string, byte[]> gscFiles)
+        IReadOnlyDictionary<string, byte[]> webAssets, IReadOnlyDictionary<string, byte[]> gscFiles,
+        IReadOnlyDictionary<string, byte[]> resourceFiles)
     {
         // Scope every CSS asset to this plugin's marker before it is served, so the plugin's styles
         // apply only inside its own rendered subtree and can't disturb the host chrome. See
@@ -218,7 +221,8 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
             Assembly = assembly,
             Manifest = manifest,
             WebAssets = servedAssets,
-            GscFiles = gscFiles
+            GscFiles = gscFiles,
+            ResourceFiles = resourceFiles
         };
 
         _cache[manifest.Id] = bundle;

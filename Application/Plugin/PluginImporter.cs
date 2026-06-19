@@ -333,7 +333,7 @@ namespace IW4MAdmin.Application.Plugin
                             continue;
                         }
 
-                        ExtractBundleGameScripts(bundle);
+                        ExtractBundleToSandbox(bundle);
                         AddCandidate(candidates, bundle.Assembly, "remote-store-bundle",
                             $"remote store (content type: zip, {byteCount:N0} bytes, bundle id '{bundle.Id}', manifest version '{bundle.Manifest.Version}')");
                     }
@@ -380,7 +380,7 @@ namespace IW4MAdmin.Application.Plugin
                         continue;
                     }
 
-                    ExtractBundleGameScripts(bundle);
+                    ExtractBundleToSandbox(bundle);
                     AddCandidate(candidates, bundle.Assembly,
                         source.IsZip ? "disk-bundle-zip" : "disk-bundle-dir",
                         $"{source.Path} (bundle id '{bundle.Id}', manifest version '{bundle.Manifest.Version}')");
@@ -423,34 +423,53 @@ namespace IW4MAdmin.Application.Plugin
         }
 
         /// <summary>
-        /// Writes a bundle's GSC files to the configured game-files folder. GSC is the only bundle content
-        /// written to disk; when no path is configured, extraction is skipped.
+        /// Extracts a bundle's data files to the plugin's own sandbox folder (<c>Plugins/&lt;id&gt;/</c>):
+        /// generic resources to <c>Resources/</c>, and game scripts to <c>gsc/</c>. Game scripts are treated as
+        /// a sandboxed resource — the instance owner copies them onto their game server; nothing is delivered to
+        /// a shared location, and no operator config is required.
         /// </summary>
-        private void ExtractBundleGameScripts(LoadedBundle bundle)
+        private void ExtractBundleToSandbox(LoadedBundle bundle)
         {
-            if (bundle.GscFiles.Count == 0)
+            var sandbox = SharedLibraryCore.Helpers.PluginDirectoryResolver.ResolveDirectory(bundle.Assembly);
+
+            if (bundle.ResourceFiles.Count > 0)
             {
-                return;
+                var target = Path.Combine(sandbox, "Resources");
+                WriteBundleFiles(bundle.ResourceFiles, target, skipUnchanged: true);
+                _logger.LogInformation("Extracted {Count} resource file(s) from bundle {Id} to {Path}",
+                    bundle.ResourceFiles.Count, bundle.Id, target);
             }
 
-            var targetPath = appConfig.PluginGscExtractPath;
-            if (string.IsNullOrWhiteSpace(targetPath))
+            if (bundle.GscFiles.Count > 0)
             {
-                _logger.LogDebug(
-                    "Bundle {Id} ships {Count} GSC file(s) but PluginGscExtractPath is not configured; skipping extraction",
-                    bundle.Id, bundle.GscFiles.Count);
-                return;
+                var target = Path.Combine(sandbox, "gsc");
+                WriteBundleFiles(bundle.GscFiles, target, skipUnchanged: true);
+                _logger.LogInformation(
+                    "Extracted {Count} game-script file(s) from bundle {Id} to {Path} — copy these to your game server's scripts folder",
+                    bundle.GscFiles.Count, bundle.Id, target);
             }
+        }
 
-            foreach (var (relativePath, content) in bundle.GscFiles)
+        /// <summary>
+        /// Writes bundle files to disk under <paramref name="targetPath"/>, preserving sub-paths. When
+        /// <paramref name="skipUnchanged"/> is set, a file already present at the same byte length is left
+        /// alone — avoids rewriting large data files (e.g. GeoIP databases) on every load.
+        /// </summary>
+        private static void WriteBundleFiles(IReadOnlyDictionary<string, byte[]> files, string targetPath,
+            bool skipUnchanged)
+        {
+            foreach (var (relativePath, content) in files)
             {
                 var destination = Path.Combine(targetPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+
+                if (skipUnchanged && File.Exists(destination) && new FileInfo(destination).Length == content.Length)
+                {
+                    continue;
+                }
+
                 File.WriteAllBytes(destination, content);
             }
-
-            _logger.LogInformation("Extracted {Count} GSC file(s) from bundle {Id} to {Path}",
-                bundle.GscFiles.Count, bundle.Id, targetPath);
         }
     }
 

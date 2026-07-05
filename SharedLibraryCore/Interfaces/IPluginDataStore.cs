@@ -1,8 +1,8 @@
 namespace SharedLibraryCore.Interfaces;
 
 /// <summary>
-/// A plugin's own isolated data directory on disk — <c>Plugins/&lt;plugin&gt;/</c>, next to the
-/// plugin binary. Inject <c>IPluginDataDirectory&lt;YourPlugin&gt;</c> to read and write files your
+/// A handle to a plugin's own isolated data directory on disk — <c>Plugins/&lt;plugin&gt;/</c>, next to
+/// the plugin binary. Inject <c>IPluginDataStore&lt;YourPlugin&gt;</c> to read and write files your
 /// plugin owns (caches, exports, seeded assets — anything that is not a routed config or database).
 ///
 /// The folder name is derived from the plugin's own assembly and the directory is created on first
@@ -13,7 +13,7 @@ namespace SharedLibraryCore.Interfaces;
 /// The plugin's own type (any type defined in the plugin assembly). Its assembly identifies the
 /// folder, so the same instance is shared by everything in that plugin.
 /// </typeparam>
-public interface IPluginDataDirectory<TPlugin>
+public interface IPluginDataStore<TPlugin>
 {
     /// <summary>
     /// Absolute path to the plugin's data folder. Created on first access.

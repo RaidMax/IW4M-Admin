@@ -261,6 +261,11 @@ public class BaseConfigurationHandlerV2<TConfigurationType> : IConfigurationHand
     /// One-time relocation of a plugin configuration from the legacy shared <c>Configuration/</c> folder
     /// into the plugin's own folder. Runs only for plugin configs, only when the target is absent and the
     /// legacy file is present — so it is idempotent and cannot double-apply across restarts.
+    ///
+    /// This lives on the handler rather than in <c>ConfigurationMigration</c> deliberately: the migration
+    /// needs the <typeparamref name="TConfigurationType"/> → plugin-folder mapping to know which plugin a
+    /// flat <c>Configuration/*.json</c> belongs to, and that type context only exists here at
+    /// config-resolution time. The startup <c>ConfigurationMigration</c> sweep has no such per-type context.
     /// </summary>
     private void MigrateLegacyConfiguration(string configurationName, string targetPath)
     {

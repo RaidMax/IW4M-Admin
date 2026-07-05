@@ -88,7 +88,7 @@ public static class PluginDirectoryResolver
         var rootFull = Path.GetFullPath(root);
 
         var segments = (name ?? string.Empty)
-            .Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries)
+            .Split(Utilities.DirectorySeparatorChars, StringSplitOptions.RemoveEmptyEntries)
             .Select(Sanitize)
             .ToArray();
 

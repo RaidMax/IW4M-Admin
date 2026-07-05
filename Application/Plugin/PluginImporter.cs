@@ -221,6 +221,9 @@ namespace IW4MAdmin.Application.Plugin
                 return (pluginTypes, commandTypes, configurationTypes);
             }
 
+            // this short list is a build-reference filter for AppDomain discovery only — it is NOT the
+            // host-assembly set used for data-directory routing (see PluginDirectoryResolver.HostAssemblies),
+            // which is a different membership and purpose; do not fold the two together
             var eligibleAssemblyTypes = assemblies.Concat(AppDomain.CurrentDomain.GetAssemblies()
                     .Where(asm => !new[] { "IW4MAdmin", "SharedLibraryCore", "Stats" }.Contains(asm.GetName().Name)))
                 // a plugin loaded from the Plugins dir is also present in the AppDomain, so the

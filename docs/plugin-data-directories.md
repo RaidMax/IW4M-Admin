@@ -27,7 +27,7 @@ public class Plugin : IPluginV2
 - Folder name comes from your plugin automatically — no key, no path string.
 - Configs save/load/hot-reload as before, just inside your folder.
 - Databases get a connection string, an isolated factory, automatic migrations, and WAL — for free.
-- Want a raw file? Inject `IPluginDataDirectory<Plugin>` and call `GetPath(...)`.
+- Want a raw file? Inject `IPluginDataStore<Plugin>` and call `GetPath(...)`.
 
 ---
 
@@ -197,7 +197,7 @@ need under it. Inject your data directory and resolve paths inside it, using you
 the marker:
 
 ```csharp
-public Plugin(IPluginDataDirectory<Plugin> data)
+public Plugin(IPluginDataStore<Plugin> data)
 {
     var cache  = data.GetPath("cache", "tokens.bin");          // Plugins/MyPlugin/cache/tokens.bin
     var player = data.GetPath("playerdata", "42", "stats.json"); // nested dirs created for you

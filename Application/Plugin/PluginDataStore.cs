@@ -9,12 +9,12 @@ using SharedLibraryCore.Interfaces;
 namespace IW4MAdmin.Application.Plugin;
 
 /// <summary>
-/// Default <see cref="IPluginDataDirectory{TPlugin}"/> implementation. Resolves the folder from the
+/// Default <see cref="IPluginDataStore{TPlugin}"/> implementation. Resolves the folder from the
 /// plugin's own assembly (<see cref="PluginDirectoryResolver"/>) and lazily creates it. Origin of the
 /// assembly is irrelevant — disk DLL, in-memory compiled <c>.cs</c> script, local/remote <c>.zip</c>
 /// bundle, or a binary streamed from the remote store all resolve by assembly name alone.
 /// </summary>
-public sealed class PluginDataDirectory<TPlugin> : IPluginDataDirectory<TPlugin>
+public sealed class PluginDataStore<TPlugin> : IPluginDataStore<TPlugin>
 {
     private readonly Lazy<string> _root = new(() =>
     {
@@ -60,7 +60,7 @@ public sealed class PluginDataDirectory<TPlugin> : IPluginDataDirectory<TPlugin>
             throw new ArgumentException("Resource name cannot be null or empty.", nameof(embeddedResourceName));
         }
 
-        var target = GetPath(embeddedResourceName.Split('/', '\\'));
+        var target = GetPath(embeddedResourceName.Split(SharedLibraryCore.Utilities.DirectorySeparatorChars));
 
         if (File.Exists(target) && !overwrite)
         {

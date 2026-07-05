@@ -29,6 +29,7 @@ using IW4MAdmin.Application.Configuration;
 using IW4MAdmin.Application.IO;
 using IW4MAdmin.Application.Migration;
 using IW4MAdmin.Application.Plugin.Script;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
@@ -344,8 +345,10 @@ namespace IW4MAdmin.Application
 
         /// <summary>
         /// Applies pending migrations for every plugin database registered via <c>AddDatabase</c>, before
-        /// plugins receive the <c>Load</c> event. Each migration runs independently and soft-fails: a bad
-        /// plugin migration disables only that database, never the host or other plugins.
+        /// plugins receive the <c>Load</c> event. The registration is pure data (a context accessor); the
+        /// host owns the setup here — apply migrations, then set WAL. Each database is set up independently
+        /// and soft-fails: a bad plugin migration disables only that database, never the host or other
+        /// plugins.
         /// </summary>
         private async Task MigratePluginDatabasesAsync(CancellationToken token)
         {
@@ -359,7 +362,11 @@ namespace IW4MAdmin.Application
             {
                 try
                 {
-                    await registration.MigrateAsync(token);
+                    await using var context = registration.CreateContext();
+                    await context.Database.MigrateAsync(token);
+                    // WAL lets readers proceed during writes; it is a persistent setting, so applying it
+                    // once after migration is enough. Plugin databases are SQLite by design.
+                    await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", token);
                     _logger.LogInformation("Migrated plugin database {Context} at {Path}",
                         registration.ContextName, registration.DatabasePath);
                 }

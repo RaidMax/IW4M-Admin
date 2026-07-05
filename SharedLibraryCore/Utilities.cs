@@ -1356,8 +1356,9 @@ namespace SharedLibraryCore
         /// (<c>Plugins/&lt;plugin&gt;/&lt;name&gt;.db</c>, derived from <typeparamref name="TContext"/>'s
         /// assembly); <paramref name="name"/> defaults to the context type name and may contain
         /// forward-slash subfolders. Injects an isolated <see cref="IDbContextFactory{TContext}"/> and
-        /// records a migration that the host applies at startup (before the plugin's <c>Load</c>). A
-        /// plugin may register more than one database.
+        /// records a <see cref="PluginDatabaseRegistration"/> (pure data — path plus a context accessor)
+        /// that the host applies at startup (before the plugin's <c>Load</c>); the host owns the migrate
+        /// and WAL setup. A plugin may register more than one database.
         /// </summary>
         public static IServiceCollection AddDatabase<TContext>(this IServiceCollection serviceCollection,
             string name = null) where TContext : DbContext
@@ -1372,14 +1373,7 @@ namespace SharedLibraryCore
             serviceCollection.AddSingleton(new PluginDatabaseRegistration(
                 typeof(TContext).Name,
                 databasePath,
-                async token =>
-                {
-                    await using var context = factory.CreateDbContext();
-                    await context.Database.MigrateAsync(token);
-                    // WAL lets readers proceed during writes; it is a persistent setting, so applying it
-                    // once after migration is enough.
-                    await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", token);
-                }));
+                () => factory.CreateDbContext()));
 
             return serviceCollection;
         }

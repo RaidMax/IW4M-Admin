@@ -26,6 +26,16 @@ public class Plugin : IPluginV2
     private readonly IZombieStatsEnhancer? _enhancer;
     private readonly HashSet<long> _knownZombieServerIds = [];
 
+    // Servers currently being processed via the session cache despite the live
+    // IsZombieServer() gate returning false (a transient non-zombie gametype from
+    // the RCon status poll). Used to warn once per fallback episode and to detect
+    // recovery. See ShouldProcessZombieEvent / round-freeze incident 2026-06-20.
+    private readonly HashSet<long> _gametypeFallbackActive = [];
+
+    // Guards both zombie-server sets above; the event handlers run concurrently
+    // (CoreEventHandler dispatches up to MaxCurrentEvents in parallel).
+    private readonly Lock _zombieServerStateLock = new();
+
     public string Name { get; } = nameof(Plugin).Titleize();
     public string Author => "RaidMax";
     public string Version => Utilities.GetVersionAsString();
@@ -56,9 +66,74 @@ public class Plugin : IPluginV2
         serviceCollection.AddSingleton<ZombieEventParser>();
     }
 
+    /// <summary>
+    /// Decides whether zombie processing should run for <paramref name="server"/>,
+    /// tolerating a transient non-zombie gametype reported by the RCon status poll.
+    /// </summary>
+    /// <remarks>
+    /// The live <see cref="Utilities.IsZombieServer(IGameServer)"/> check reads
+    /// <c>server.Gametype</c>, refreshed from the status poll. A single poll returning a
+    /// non-zombie (but non-empty) gametype would otherwise silently sever ALL zombie
+    /// processing for the rest of the match — the round-progression freeze observed
+    /// 2026-06-20, where a T5 Moon match stopped advancing at round 10 while the game ran
+    /// to 25 and nothing was logged. Once a server has been confirmed zombie this session
+    /// (the cache is never cleared) keep processing its events even if a later poll
+    /// disagrees, and warn once with the offending gametype so the cause is visible.
+    /// </remarks>
+    private bool ShouldProcessZombieEvent(IGameServer? server)
+    {
+        if (server is null)
+        {
+            return false;
+        }
+
+        var serverId = server.LegacyDatabaseId;
+
+        if (server.IsZombieServer())
+        {
+            bool recovered;
+            lock (_zombieServerStateLock)
+            {
+                _knownZombieServerIds.Add(serverId);
+                recovered = _gametypeFallbackActive.Remove(serverId);
+            }
+
+            if (recovered)
+            {
+                _logger.LogInformation(
+                    "ZombieGametypeRecovered: live gametype is zombie again on {Server} (gametype={Gametype})",
+                    server.ServerName, server.Gametype);
+            }
+
+            return true;
+        }
+
+        bool known, firstFallback;
+        lock (_zombieServerStateLock)
+        {
+            known = _knownZombieServerIds.Contains(serverId);
+            firstFallback = known && _gametypeFallbackActive.Add(serverId);
+        }
+
+        if (!known)
+        {
+            return false;
+        }
+
+        if (firstFallback)
+        {
+            _logger.LogWarning(
+                "ZombieGametypeFallback: live IsZombieServer() returned false on known zombie server {Server} " +
+                "(game={Game}, gametype={Gametype}); continuing zombie processing from session cache",
+                server.ServerName, server.GameCode, server.Gametype);
+        }
+
+        return true;
+    }
+
     private async Task OnClientDisposed(ClientStateDisposeEvent clientEvent, CancellationToken token)
     {
-        if (!clientEvent.Client.CurrentServer.IsZombieServer())
+        if (!ShouldProcessZombieEvent(clientEvent.Client.CurrentServer))
         {
             return;
         }
@@ -72,7 +147,7 @@ public class Plugin : IPluginV2
 
     private async Task OnClientDataUpdated(ClientDataUpdateEvent updateEvent, CancellationToken token)
     {
-        if (_enhancer is null || !updateEvent.Server.IsZombieServer())
+        if (_enhancer is null || !ShouldProcessZombieEvent(updateEvent.Server))
         {
             return;
         }
@@ -83,28 +158,21 @@ public class Plugin : IPluginV2
     private async Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)
     {
         var server = clientEvent.Client.CurrentServer;
-        if (server is null || !server.IsZombieServer())
+        if (!ShouldProcessZombieEvent(server))
         {
             // DIAGNOSTIC (zombie skill-leak phase 1): the server is a CoD
             // zombie-capable game (T4/T5/T6/T7) but IsZombieServer returned false,
             // so gametype was likely stale at auth time — SkillFunction will
             // never attach for this session. One-shot per (client, server).
-            if (server is not null
-                && (server.GameCode == Reference.Game.T4
-                    || server.GameCode == Reference.Game.T5
-                    || server.GameCode == Reference.Game.T6
-                    || server.GameCode == Reference.Game.T7))
-            {
-                var raceFlag = $"ZmLog_AuthRace_{server.LegacyDatabaseId}";
-                if (!clientEvent.Client.GetAdditionalProperty<bool>(raceFlag))
-                {
-                    clientEvent.Client.SetAdditionalProperty(raceFlag, true);
-                    _logger.LogWarning(
-                        "ZombieAuthRace: client={Name}({ClientId}) server={Server} game={Game} gametype={Gametype}",
-                        clientEvent.Client.Name, clientEvent.Client.ClientId, server.ServerName,
-                        server.GameCode, server.Gametype);
-                }
-            }
+            if (server?.GameCode is not (Reference.Game.T4 or Reference.Game.T5 or Reference.Game.T6 or Reference.Game.T7)) return;
+
+            var raceFlag = $"ZmLog_AuthRace_{server.LegacyDatabaseId}";
+            if (clientEvent.Client.GetAdditionalProperty<bool>(raceFlag)) return;
+            clientEvent.Client.SetAdditionalProperty(raceFlag, true);
+            _logger.LogWarning(
+                "ZombieAuthRace: client={Name}({ClientId}) server={Server} game={Game} gametype={Gametype}",
+                clientEvent.Client.Name, clientEvent.Client.ClientId, server.ServerName,
+                server.GameCode, server.Gametype);
             return;
         }
 
@@ -132,12 +200,10 @@ public class Plugin : IPluginV2
 
     private async Task OnScriptEvent(GameScriptEvent scriptEvent, CancellationToken token)
     {
-        if (!scriptEvent.Server.IsZombieServer())
+        if (!ShouldProcessZombieEvent(scriptEvent.Server))
         {
             return;
         }
-
-        _knownZombieServerIds.Add(scriptEvent.Server.LegacyDatabaseId);
 
         var parsedScriptEvent = _zombieEventParser.ParseScriptEvent(scriptEvent);
 
@@ -149,15 +215,12 @@ public class Plugin : IPluginV2
         parsedScriptEvent.Owner = scriptEvent.Owner;
 
         // Track current round number on the server for webfront display
-        switch (parsedScriptEvent)
+        scriptEvent.Owner.ZombieRoundNumber = parsedScriptEvent switch
         {
-            case PlayerRoundDataGameEvent roundData:
-                scriptEvent.Owner.ZombieRoundNumber = roundData.CurrentRound;
-                break;
-            case RoundEndEvent roundEnd:
-                scriptEvent.Owner.ZombieRoundNumber = roundEnd.RoundNumber;
-                break;
-        }
+            PlayerRoundDataGameEvent roundData => roundData.CurrentRound,
+            RoundEndEvent roundEnd => roundEnd.RoundNumber,
+            _ => scriptEvent.Owner.ZombieRoundNumber
+        };
 
         // Bridge zombie kills/damage/deaths to the standard Stats plugin (K/D/Score/hit locations)
         ConvertToStatsEvent(scriptEvent, parsedScriptEvent);
@@ -234,7 +297,7 @@ public class Plugin : IPluginV2
 
     private async Task OnMatchEnded(MatchEndEvent matchEvent, CancellationToken token)
     {
-        if (!matchEvent.Server.IsZombieServer())
+        if (!ShouldProcessZombieEvent(matchEvent.Server))
         {
             return;
         }
@@ -268,7 +331,10 @@ public class Plugin : IPluginV2
             return;
         }
 
-        _knownZombieServerIds.Add(matchEvent.Server.LegacyDatabaseId);
+        lock (_zombieServerStateLock)
+        {
+            _knownZombieServerIds.Add(matchEvent.Server.LegacyDatabaseId);
+        }
 
         if (_enhancer is not null)
         {
@@ -318,13 +384,17 @@ public class Plugin : IPluginV2
     private async Task GetPremiumUpsellMetrics(Dictionary<int, List<EFMeta>> meta, long? serverId,
         string performanceBucketCode, bool isTopStats)
     {
-        if (isTopStats || !meta.Any() || serverId is null)
+        if (isTopStats || meta.Count == 0 || serverId is null)
         {
             return;
         }
 
         // Check in-memory first (servers we've seen zombie events from this session)
-        var isZombieServer = _knownZombieServerIds.Contains(serverId.Value);
+        bool isZombieServer;
+        lock (_zombieServerStateLock)
+        {
+            isZombieServer = _knownZombieServerIds.Contains(serverId.Value);
+        }
 
         // Fall back to DB check (zombie data may exist from a previous session with premium)
         if (!isZombieServer)

@@ -1,0 +1,141 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Prerelease" />
+    <BuildType Name="Release" />
+    <Platform Name="Any CPU" />
+    <Platform Name="Mixed Platforms" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Integrations/">
+    <Project Path="Integrations/Cod/Integrations.Cod.csproj">
+      <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />
+      <BuildType Solution="Prerelease|x64" Project="Debug" />
+      <BuildType Solution="Prerelease|x86" Project="Debug" />
+    </Project>
+    <Project Path="Integrations/Source/Integrations.Source.csproj">
+      <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />
+      <BuildType Solution="Prerelease|x64" Project="Debug" />
+      <BuildType Solution="Prerelease|x86" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/Plugins/">
+    <Project Path="Plugins/AutomessageFeed/AutomessageFeed.csproj">
+      <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />
+      <BuildType Solution="Prerelease|x64" Project="Debug" />
+      <BuildType Solution="Prerelease|x86" Project="Debug" />
+    </Project>
+    <Project Path="Plugins/LiveRadar/LiveRadar.csproj">
+      <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />
+      <BuildType Solution="Prerelease|x64" Project="Debug" />
+      <BuildType Solution="Prerelease|x86" Project="Debug" />
+    </Project>
+    <Project Path="Plugins/Login/Login.csproj" />
+    <Project Path="Plugins/Mute/Mute.csproj">
+      <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />
+      <BuildType Solution="Prerelease|x64" Project="Debug" />
+      <BuildType Solution="Prerelease|x86" Project="Debug" />
+    </Project>
+    <Project Path="Plugins/ProfanityDeterment/ProfanityDeterment.csproj" />
+    <Project Path="Plugins/Stats/Stats.csproj" />
+    <Project Path="Plugins/Welcome/Welcome.csproj" />
+    <Project Path="Plugins/ZombieStats/ZombieStats.csproj">
+      <BuildType Solution="Prerelease|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/Plugins/ScriptPlugins/">
+    <File Path="Plugins/ScriptPlugins/ActionOnReport.cs" />
+    <File Path="Plugins/ScriptPlugins/BanBroadcasting.cs" />
+    <File Path="Plugins/ScriptPlugins/GameInterface.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserBOIII.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserCoD4x.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserCSGO.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserCSGOSM.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserH1MOD.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserH2MMOD.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserIW4x.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserIW6x.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserIW7MOD.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserL4D2SM.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserPIW5.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserPlutoniumT4.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserPlutoniumT4COZM.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserPlutoniumT5.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserPlutoniumT6.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserRektT5M.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserS1x.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserT4.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserT7.cs" />
+    <File Path="Plugins/ScriptPlugins/ParserTeknoMW3.cs" />
+    <File Path="Plugins/ScriptPlugins/ServerBanner.cs" />
+    <File Path="Plugins/ScriptPlugins/SubnetBan.cs" />
+    <File Path="Plugins/ScriptPlugins/VPNDetection.cs" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
+    <File Path="DeploymentFiles/UpdateIW4MAdmin.ps1" />
+    <File Path="DeploymentFiles/UpdateIW4MAdmin.sh" />
+    <File Path="Dockerfile" />
+    <File Path="entrypoint.sh" />
+    <File Path="README.md" />
+    <File Path="version.txt" />
+  </Folder>
+  <Folder Name="/Solution Items/GameFiles/">
+    <File Path="GameFiles/deploy.bat" />
+    <File Path="GameFiles/README.MD" />
+  </Folder>
+  <Folder Name="/Solution Items/GameFiles/AntiCheat/" />
+  <Folder Name="/Solution Items/GameFiles/AntiCheat/IW4x/">
+    <File Path="GameFiles/AntiCheat/IW4x/userraw/scripts/_customcallbacks.gsc" />
+  </Folder>
+  <Folder Name="/Solution Items/GameFiles/AntiCheat/Pluto IW5/">
+    <File Path="GameFiles/AntiCheat/IW5/README.MD" />
+    <File Path="GameFiles/AntiCheat/IW5/storage/iw5/scripts/_customcallbacks.gsc" />
+  </Folder>
+  <Folder Name="/Solution Items/GameFiles/AntiCheat/Pluto T6/">
+    <File Path="GameFiles/AntiCheat/PT6/README.MD" />
+    <File Path="GameFiles/AntiCheat/PT6/storage/t6/scripts/mp/_customcallbacks.gsc" />
+    <File Path="GameFiles/AntiCheat/PT6/storage/t6/scripts/mp/_customcallbacks.gsc.src" />
+  </Folder>
+  <Folder Name="/Solution Items/GameFiles/GameInterface/">
+    <File Path="GameFiles/GameInterface/example_module.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_base.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_iw4x.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_iw5.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_shared.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t4.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t4zm.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t5.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t5zm.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t6.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t6zm_helper.gsc" />
+    <File Path="GameFiles/GameInterface/_integration_t6_file_bus.gsc" />
+  </Folder>
+  <Folder Name="/Solution Items/GameFiles/ZombieStats/">
+    <File Path="GameFiles/ZombieStats/FEATURE_MATRIX.md" />
+    <File Path="GameFiles/ZombieStats/README.md" />
+    <File Path="GameFiles/ZombieStats/_zm_stats_t4.gsc" />
+    <File Path="GameFiles/ZombieStats/_zm_stats_t5.gsc" />
+    <File Path="GameFiles/ZombieStats/_zm_stats_t6.gsc" />
+    <File Path="GameFiles/ZombieStats/_zm_stats_t7.gsc" />
+  </Folder>
+  <Folder Name="/Solution Items/GithubActions/">
+    <File Path=".github/workflows/build_application.yml" />
+    <File Path=".github/workflows/shared_library_nuget.yml" />
+  </Folder>
+  <Folder Name="/Tests/" />
+  <Project Path="Application/Application.csproj" />
+  <Project Path="Data/Data.csproj">
+    <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />
+    <BuildType Solution="Prerelease|x64" Project="Debug" />
+    <BuildType Solution="Prerelease|x86" Project="Debug" />
+  </Project>
+  <Project Path="PluginDebugReference/PluginDebugReference.csproj">
+    <BuildType Solution="Prerelease|*" Project="Debug" />
+  </Project>
+  <Project Path="SharedLibraryCore/SharedLibraryCore.csproj" />
+  <Project Path="WebCommon/WebCommon.csproj" />
+  <Project Path="WebfrontCore/WebfrontCore.csproj" />
+</Solution>

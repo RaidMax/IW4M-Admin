@@ -115,6 +115,7 @@ foreach (var kv in byClass)
 
         <IW4MAdminWebRoot Condition="'$(IW4MAdminWebRoot)' == ''">$(MSBuildProjectDirectory)\wwwroot</IW4MAdminWebRoot>
         <IW4MAdminGscRoot Condition="'$(IW4MAdminGscRoot)' == ''">$(MSBuildProjectDirectory)\gsc</IW4MAdminGscRoot>
+        <IW4MAdminResourceRoot Condition="'$(IW4MAdminResourceRoot)' == ''">$(MSBuildProjectDirectory)\Resources</IW4MAdminResourceRoot>
     </PropertyGroup>
 
     <!-- the host provides SharedLibraryCore and its dependency closure at runtime, so don't bundle them.
@@ -154,7 +155,7 @@ foreach (var kv in byClass)
         </ItemGroup>
 
         <PropertyGroup>
-            <_IW4MManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc"}</_IW4MManifest>
+            <_IW4MManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc","resourceRoot":"resources"}</_IW4MManifest>
         </PropertyGroup>
 
         <RemoveDir Directories="$(_IW4MAdminBundleStage)" />
@@ -168,6 +169,7 @@ foreach (var kv in byClass)
         <ItemGroup>
             <_IW4MWeb Include="$(IW4MAdminWebRoot)\**\*" />
             <_IW4MGsc Include="$(IW4MAdminGscRoot)\**\*" />
+            <_IW4MRes Include="$(IW4MAdminResourceRoot)\**\*" />
         </ItemGroup>
 
         <!-- IW4M1002: duplicate class names across the bundle's hand-written stylesheets (see UsingTask) -->
@@ -181,6 +183,9 @@ foreach (var kv in byClass)
         <Copy Condition="'@(_IW4MGsc)' != ''"
               SourceFiles="@(_IW4MGsc)"
               DestinationFiles="@(_IW4MGsc->'$(_IW4MAdminBundleStage)gsc\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy Condition="'@(_IW4MRes)' != ''"
+              SourceFiles="@(_IW4MRes)"
+              DestinationFiles="@(_IW4MRes->'$(_IW4MAdminBundleStage)resources\%(RecursiveDir)%(Filename)%(Extension)')" />
 
         <MakeDir Directories="$(IW4MAdminBundleOutput)" />
         <ZipDirectory SourceDirectory="$(_IW4MAdminBundleStage)"

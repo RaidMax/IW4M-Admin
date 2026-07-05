@@ -24,6 +24,13 @@ public class BundleManifest
     /// <summary>Folder within the bundle whose contents are served at /_content/{id}/. Defaults to "wwwroot".</summary>
     public string WebRoot { get; set; } = "wwwroot";
 
-    /// <summary>Folder within the bundle holding game-side scripts extracted to disk. Defaults to "gsc".</summary>
+    /// <summary>Folder within the bundle holding game-side scripts, extracted to the plugin's sandbox
+    /// (<c>Plugins/&lt;id&gt;/gsc/</c>) on load for the instance owner to copy to their game server.
+    /// Defaults to "gsc".</summary>
     public string GscRoot { get; set; } = "gsc";
+
+    /// <summary>Folder within the bundle whose contents are extracted to the plugin's own data folder
+    /// (<c>Plugins/&lt;id&gt;/Resources/</c>) on load. Lets a plugin ship arbitrary data files (databases,
+    /// assets, …) and read them from disk at runtime without any operator setup. Defaults to "resources".</summary>
+    public string ResourceRoot { get; set; } = "resources";
 }

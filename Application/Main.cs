@@ -737,6 +737,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IRemoteCommandService, RemoteCommandService>()
                 .AddSingleton(new ConfigurationWatcher())
                 .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
+                .AddSingleton(typeof(IPluginDataStore<>), typeof(PluginDataStore<>))
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
                 .AddSingleton<CsPluginCompiler>()
                 .AddSingleton<CsPluginFileWatcher>()

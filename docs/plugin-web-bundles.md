@@ -226,11 +226,13 @@ SharedLibraryCore reference is made private automatically, so its closure is nev
 > host-provided exclusion list to avoid re-bundling the host's closure. Until then, such a plugin should
 > ship those deps alongside, or they must already be provided by the host.
 
-## 7. Game scripts (GSC)
+## 7. Bundle resources & game scripts
 
-Put game-side scripts in a `gsc/` folder; they're carried in the bundle and, if the host's
-`PluginGscExtractPath` is configured, extracted there on load. GSC is the only bundle content written to
-disk (it has to reach the game server); the plugin dll and web assets stay in memory.
+Files a plugin needs on disk at runtime go in a `resources/` folder; on load the host extracts them to the
+plugin's own sandbox (`Plugins/<id>/Resources/`), so a deployed bundle is self-contained — a plugin can ship a
+database or data file and open it from there with no operator setup. Game-side scripts work the same way: put
+them in a `gsc/` folder and they're extracted to `Plugins/<id>/gsc/` for the instance owner to copy onto their
+game server. Neither is delivered to any shared location; the plugin dll and web assets stay in memory.
 
 ## 8. Installing
 

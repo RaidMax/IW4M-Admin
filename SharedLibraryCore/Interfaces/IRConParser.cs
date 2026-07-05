@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using static SharedLibraryCore.Server;
@@ -89,6 +90,20 @@ namespace SharedLibraryCore.Interfaces
         ///     <see cref="IStatusResponse" />
         /// </returns>
         Task<IStatusResponse> GetStatusAsync(IRConConnection connection, CancellationToken token = default);
+
+        /// <summary>
+        ///     retrieves a single client's userinfo key/value table (transmitted client settings such as
+        ///     rate/snaps/com_maxfps) via the parser's configured dumpuser-style command. The command format
+        ///     may reference {0} (slot number) or {1} (cleaned client name) — some titles only resolve by name.
+        /// </summary>
+        /// <param name="connection">RCon connection to use</param>
+        /// <param name="clientNumber">slot number of the client to query</param>
+        /// <param name="clientName">cleaned (color-stripped) name of the client, for name-based titles</param>
+        /// <param name="token"></param>
+        /// <returns>parsed key/value pairs, or null when the title/parser does not support the query
+        ///     or the response could not be parsed</returns>
+        Task<IReadOnlyDictionary<string, string>> GetClientUserInfoAsync(IRConConnection connection,
+            int clientNumber, string clientName = null, CancellationToken token = default);
 
         /// <summary>
         ///     retrieves the value of given dvar key if it exists in the override dict

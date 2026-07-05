@@ -51,7 +51,10 @@ namespace IW4MAdmin.Application.RConParsers
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConPing, 3);
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 4);
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConName, 5);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, 6);
             Configuration.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 7);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConQPort, 8);
+            Configuration.Status.AddMapping(ParserRegex.GroupType.RConRate, 9);
 
             Configuration.Dvar.Pattern = "^\"(.+)\" is: \"(.+)?\" default: \"(.+)?\"\n?(?:latched: \"(.+)?\"\n?)? *(.+)?$";
             Configuration.Dvar.AddMapping(ParserRegex.GroupType.RConDvarName, 1);
@@ -182,6 +185,67 @@ namespace IW4MAdmin.Application.RConParsers
                 Hostname = GetValueFromStatus<string>(response, ParserRegex.GroupType.RConStatusHostname, Configuration.HostnameStatus),
                 MaxClients = GetValueFromStatus<int?>(response, ParserRegex.GroupType.RConStatusMaxPlayers, Configuration.MaxPlayersStatus)
             };
+        }
+
+        public virtual async Task<IReadOnlyDictionary<string, string>> GetClientUserInfoAsync(IRConConnection connection,
+            int clientNumber, string clientName = null, CancellationToken token = default)
+        {
+            if (string.IsNullOrWhiteSpace(Configuration.DumpuserCommandFormat))
+            {
+                return null;
+            }
+
+            // name-based titles ({1} in the format) can't be queried without a name
+            if (Configuration.DumpuserCommandFormat.Contains("{1}") && string.IsNullOrWhiteSpace(clientName))
+            {
+                return null;
+            }
+
+            string[] response;
+            try
+            {
+                response = await ExecuteCommandAsync(connection,
+                    string.Format(Configuration.DumpuserCommandFormat, clientNumber, clientName), token);
+            }
+            catch
+            {
+                return null;
+            }
+
+            // expected shape (quake-derived "dumpuser"):
+            //   userinfo
+            //   --------
+            //   <key> <value>
+            var pairs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var responseLine in response.SelectMany(line => line.Split('\n')))
+            {
+                var line = responseLine.TrimEnd('\0').Trim();
+                if (line.Length == 0 || line.StartsWith("--") ||
+                    line.Equals("userinfo", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (line.Contains("unknown command", StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                var separatorIndex = line.IndexOfAny(new[] { ' ', '\t' });
+                if (separatorIndex <= 0)
+                {
+                    continue;
+                }
+
+                var key = line[..separatorIndex].Trim();
+                var value = line[separatorIndex..].Trim();
+                if (key.Length > 0)
+                {
+                    pairs[key] = value;
+                }
+            }
+
+            return pairs.Count > 0 ? pairs : null;
         }
 
         private T GetValueFromStatus<T>(IEnumerable<string> response, ParserRegex.GroupType groupType, ParserRegex parserRegex)
@@ -335,6 +399,12 @@ namespace IW4MAdmin.Application.RConParsers
 
                     client.SetAdditionalProperty("BotGuid", networkIdString);
 
+                    // surface the remaining status columns (transmitted client settings/state) so plugins can
+                    // consume them without re-parsing the raw response; not every title reports every column
+                    SetNumericStatusProperty(client, match.Values, ParserRegex.GroupType.RConLastMsg, "LastMsg");
+                    SetNumericStatusProperty(client, match.Values, ParserRegex.GroupType.RConQPort, "QPort");
+                    SetNumericStatusProperty(client, match.Values, ParserRegex.GroupType.RConRate, "Rate");
+
                     if (Configuration.Status.GroupMapping.ContainsKey(ParserRegex.GroupType.AdditionalGroup))
                     {
                         var additionalGroupIndex =
@@ -357,6 +427,18 @@ namespace IW4MAdmin.Application.RConParsers
             }
 
             return StatusPlayers;
+        }
+
+        private void SetNumericStatusProperty(EFClient client, string[] matchValues, ParserRegex.GroupType groupType,
+            string propertyName)
+        {
+            if (Configuration.Status.GroupMapping.TryGetValue(groupType, out var index)
+                && index > 0
+                && matchValues.Length > index
+                && int.TryParse(matchValues[index], out var value))
+            {
+                client.SetAdditionalProperty(propertyName, value);
+            }
         }
 
         public string GetOverrideDvarName(string dvarName)

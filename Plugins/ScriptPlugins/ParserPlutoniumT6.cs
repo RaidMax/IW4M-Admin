@@ -40,18 +40,24 @@ public class ParserPlutoniumT6 : IParserDefinition
         rcon.WaitForResponse = false;
         rcon.NoticeLineSeparator = ". ";
         rcon.DefaultRConPort = 4976;
+        // per-client userinfo query — name-based like the verified Plutonium T4. Note this parser runs with
+        // WaitForResponse=false, so the response may come back empty; verify in-game before trusting coverage.
+        rcon.DumpuserCommandFormat = "dumpuser {1}";
         rcon.DefaultInstallationDirectoryHint = "{LocalAppData}/Plutonium/storage/t6";
         rcon.ShouldRemoveDiacritics = true;
 
         rcon.StatusHeader.Pattern = "num +score +bot +ping +guid +name +lastmsg +address +qport +rate *";
         rcon.Status.Pattern =
-            @"^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+|0) +(.+?) +(?:[0-9]+) +(\d+\.\d+\.\d+\.\d+\:-?\d{1,5}|0+\.0+:-?\d{1,5}|loopback|unknown|bot) +(?:-?[0-9]+) +(?:[0-9]+) *$";
+            @"^ *([0-9]+) +([0-9]+) +(?:[0-1]{1}) +([0-9]+) +([A-F0-9]+|0) +(.+?) +(?:[0-9]+) +(\d+\.\d+\.\d+\.\d+\:-?\d{1,5}|0+\.0+:-?\d{1,5}|loopback|unknown|bot) +(-?[0-9]+) +([0-9]+) *$";
         rcon.Status.AddMapping(ParserRegex.GroupType.RConClientNumber, 1);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConScore, 2);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConPing, 3);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 4);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 5);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 6);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConQPort, 7);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConRate, 8);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, -1); // lastmsg column not captured
 
         // this is mostly default but just an example on how to map
         rcon.ColorCodeMapping.Clear();

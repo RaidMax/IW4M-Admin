@@ -32,6 +32,7 @@ public class ParserT7 : IParserDefinition
         rcon.ServerNotRunningResponse =
             "this is here to prevent a hibernating server from being detected as not running";
         rcon.DefaultRConPort = 27016;
+        rcon.DumpuserCommandFormat = "dumpuser {0}"; // per-client userinfo query — T7 usage is "info <userid>" (slot)
 
         rcon.OverrideDvarNameMapping.Add("sv_hostname", "live_steam_server_name");
         rcon.OverrideDvarNameMapping.Add("g_password", "live_steam_server_password");
@@ -43,6 +44,9 @@ public class ParserT7 : IParserDefinition
         rcon.DefaultDvarValues.Add("fs_game", "");
 
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 6);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConQPort, 7);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, -1); // no lastmsg/rate columns on this title
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConRate, -1);
         rcon.GametypeStatus.AddMapping(ParserRegex.GroupType.RConStatusGametype, 1);
 
         rconParser.Version = version;

@@ -24,6 +24,7 @@ public class ParserPlutoniumT4 : IParserDefinition
         rcon.CommandPrefixes.RConResponse = "ÿÿÿÿprint\n";
         rcon.GuidNumberStyle = NumberStyles.Integer;
         rcon.DefaultRConPort = 28960;
+        rcon.DumpuserCommandFormat = "dumpuser {1}"; // per-client userinfo query — T4 resolves by NAME, not slot (verified)
         rcon.OverrideDvarNameMapping.Add("fs_homepath", "fs_localAppData");
         rcon.DefaultInstallationDirectoryHint = "{LocalAppData}/Plutonium/storage/t4";
 

@@ -33,6 +33,7 @@ public class ParserPIW5 : IParserDefinition
         // not ported - the parser keeps its default CanGenerateLogPath.
         rcon.NoticeLineSeparator = ". ";
         rcon.DefaultRConPort = 27016;
+        rcon.DumpuserCommandFormat = "dumpuser {1}"; // per-client userinfo query — name-based like the verified Plutonium T4
         rcon.DefaultInstallationDirectoryHint = "{LocalAppData}/Plutonium/storage/iw5";
 
         rcon.StatusHeader.Pattern = "num +score +bot +ping +guid +name +address +qport *";

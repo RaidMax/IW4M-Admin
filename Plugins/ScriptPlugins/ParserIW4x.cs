@@ -23,6 +23,7 @@ public class ParserIW4x : IParserDefinition
         rcon.CommandPrefixes.Unmute = "unmute {0}";
 
         rcon.DefaultRConPort = 28960;
+        rcon.DumpuserCommandFormat = "dumpuser {1}"; // per-client userinfo query — unverified on IW4x, graceful no-op if absent
         rcon.DefaultInstallationDirectoryHint =
             @"HKEY_CURRENT_USER\Software\Classes\iw4x\shell\open\command";
         rcon.FloodProtectInterval = 150;

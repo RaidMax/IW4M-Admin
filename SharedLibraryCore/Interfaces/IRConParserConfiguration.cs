@@ -112,5 +112,13 @@ namespace SharedLibraryCore.Interfaces
         /// indicates if diacritics (accented characters) should be normalized
         /// </summary>
         bool ShouldRemoveDiacritics { get; set; }
+
+        /// <summary>
+        ///     command format used to request a single client's userinfo key/value table
+        ///     (eg "dumpuser {0}" where {0} is the client slot number, or "dumpuser {1}" where {1} is the
+        ///     cleaned client name — some titles only resolve by name); null when the title does not
+        ///     support a per-client userinfo query
+        /// </summary>
+        string DumpuserCommandFormat { get; set; }
     }
 }

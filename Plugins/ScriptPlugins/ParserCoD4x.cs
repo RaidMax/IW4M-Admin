@@ -20,7 +20,10 @@ public class ParserCoD4x : IParserDefinition
         rcon.Status.Pattern =
             @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]{16,32})|0) +([[0-9]+|0]) +(.{0,34}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback|bot) +(-*[0-9]+) +([0-9]+) *$";
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 6);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, 7);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 8);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConQPort, 9);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConRate, 10);
         rcon.CommandPrefixes.RConResponse = "ÿÿÿÿprint\n";
 
         rcon.Dvar.Pattern = @"^""(.+)"" is: ""(.+)?"" default: ""(.+)?"" info: ""(.+)?""$";
@@ -29,6 +32,7 @@ public class ParserCoD4x : IParserDefinition
         rcon.GuidNumberStyle = NumberStyles.Integer;
         rcon.NoticeLineSeparator = ". "; // CoD4x does not support \n in the client notice
         rcon.DefaultRConPort = 28960;
+        rcon.DumpuserCommandFormat = "dumpuser {0}"; // per-client userinfo query (stock quake-derived command; graceful no-op if absent)
 
         rconParser.Version = "CoD4 X - win_mingw-x86 build 1056 Dec 12 2020";
         rconParser.GameName = Server.Game.IW3;

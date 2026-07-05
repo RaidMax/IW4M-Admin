@@ -40,6 +40,9 @@ public class ParserBOIII : IParserDefinition
         rcon.DefaultDvarValues.Add("fs_game", "");
 
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 6);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConQPort, 7);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, -1); // no lastmsg/rate columns on this title
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConRate, -1);
         rcon.GametypeStatus.AddMapping(ParserRegex.GroupType.RConStatusGametype, 1);
 
         rconParser.Version = version;

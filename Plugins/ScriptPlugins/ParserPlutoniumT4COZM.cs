@@ -26,6 +26,7 @@ public class ParserPlutoniumT4Cozm : IParserDefinition
         rcon.CommandPrefixes.RConGetInfo = null; // disabled on T4 co-op/zombies
         rcon.GuidNumberStyle = NumberStyles.Integer;
         rcon.DefaultRConPort = 28960;
+        rcon.DumpuserCommandFormat = "dumpuser {1}"; // per-client userinfo query — T4 resolves by NAME, not slot (verified)
         rcon.OverrideDvarNameMapping.Add("fs_homepath", "fs_localAppData");
         rcon.DefaultInstallationDirectoryHint = "{LocalAppData}/Plutonium/storage/t4";
 

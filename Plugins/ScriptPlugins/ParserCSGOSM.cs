@@ -43,6 +43,9 @@ public class ParserCSGOSM : IParserDefinition
         rcon.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 4);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 3);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 10);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, -1); // base index would collide with ping
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConQPort, -1);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConRate, 9); // source-engine rate column
         rcon.Status.AddMapping(ParserRegex.GroupType.AdditionalGroup, 1);
 
         rcon.DefaultDvarValues.Add("sv_running", "1");

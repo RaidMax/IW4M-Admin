@@ -34,6 +34,7 @@ namespace IW4MAdmin.Application.RConParsers
         public string DefaultInstallationDirectoryHint { get; set; }
         public short FloodProtectInterval { get; set; } = 750;
         public bool ShouldRemoveDiacritics { get; set; }
+        public string DumpuserCommandFormat { get; set; }
 
         public ColorCodeMapping ColorCodeMapping { get; set; } = new ColorCodeMapping
         {

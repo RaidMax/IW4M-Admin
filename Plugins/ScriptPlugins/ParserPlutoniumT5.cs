@@ -27,6 +27,7 @@ public class ParserPlutoniumT5 : IParserDefinition
         rcon.CommandPrefixes.Tell = "tell {0} {1}";
         rcon.GuidNumberStyle = NumberStyles.Integer;
         rcon.DefaultRConPort = 28960;
+        rcon.DumpuserCommandFormat = "dumpuser {1}"; // per-client userinfo query — name-based like the verified Plutonium T4
 
         rconParser.Version = version;
         rconParser.GameName = Server.Game.T5;

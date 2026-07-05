@@ -40,6 +40,9 @@ namespace SharedLibraryCore.Interfaces
             RConStatusGametype = 112,
             RConStatusHostname = 113,
             RConStatusMaxPlayers = 114,
+            RConLastMsg = 115,
+            RConQPort = 116,
+            RConRate = 117,
             AdditionalGroup = 200
         }
 

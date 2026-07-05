@@ -106,7 +106,7 @@ jobs:
     needs: [ make_version ]
 
     env:
-      solution: IW4MAdmin.sln
+      solution: IW4MAdmin.slnx
       buildConfiguration: Prerelease
       isPreRelease: false
 

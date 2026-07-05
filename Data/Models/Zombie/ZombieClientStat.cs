@@ -1,0 +1,58 @@
+﻿#nullable enable
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Data.Models.Client;
+
+namespace Data.Models.Zombie;
+
+public abstract class ZombieClientStat : DatedRecord
+{
+    [Key]
+    public long ZombieClientStatId { get; set; }
+
+    [NotMapped] public override long Id => ZombieClientStatId;
+
+    public int? MatchId { get; set; }
+    
+    [ForeignKey(nameof(MatchId))]
+    public virtual ZombieMatch? Match { get; set; }
+    
+    public int ClientId { get; set; }
+    [ForeignKey(nameof(ClientId))] 
+    public virtual EFClient Client { get; set; }
+
+    public int Kills { get; set; }
+    public int Deaths { get; set; }
+    public long DamageDealt { get; set; }
+    public int DamageReceived { get; set; }
+    public int Headshots { get; set; }
+    public int HeadshotKills { get; set; }
+    public int Melees { get; set; }
+    public int Downs { get; set; }
+    public int Revives { get; set; }
+    public long PointsEarned { get; set; }
+    public long PointsSpent { get; set; }
+    public int PerksConsumed { get; set; }
+    public int PowerupsGrabbed { get; set; }
+    public int WeaponsPurchased { get; set; }
+    public int WeaponsUpgraded { get; set; }
+    public int BoxUses { get; set; }
+    public int DoorsOpened { get; set; }
+    public int TrapsActivated { get; set; }
+    public int BuildablesCompleted { get; set; }
+
+    /// <summary>PaP timeouts / disconnect-mid-press aborts. Counterpart to <see cref="WeaponsUpgraded"/>.</summary>
+    public int WeaponsAbandoned { get; set; }
+
+    /// <summary>T7 Gobble Gum activations (effect consumed from inventory).</summary>
+    public int GumsActivated { get; set; }
+
+    /// <summary>T7 Gobble Gum machine grabs (free + paid).</summary>
+    public int GumsTaken { get; set; }
+
+    /// <summary>T6 bank deposits + withdrawals combined. Tranzit/Die Rise/Buried only.</summary>
+    public int BankOperations { get; set; }
+
+    /// <summary>T6 weapon locker stores + retrievals combined. Tranzit/Die Rise/Buried only.</summary>
+    public int LockerOperations { get; set; }
+}

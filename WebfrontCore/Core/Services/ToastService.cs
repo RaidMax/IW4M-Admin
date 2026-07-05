@@ -1,3 +1,5 @@
+using WebCommon.Services;
+
 namespace WebfrontCore.Core.Services;
 
 public class ToastService : IToastService

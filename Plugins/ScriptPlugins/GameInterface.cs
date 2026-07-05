@@ -665,7 +665,7 @@ public sealed class GameInterfacePlugin : IPluginV2
     {
         var enabled = _state.GetServerState(server.Id) is { Enabled: true };
         if (!enabled)
-            origin.Tell("Game interface is not enabled on this server");
+            origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_GAMEINTERFACE_NOT_ENABLED"]);
         return enabled;
     }
 
@@ -834,7 +834,7 @@ public abstract class GameInterfaceCommand(
         ArgumentNullException.ThrowIfNull(gameEvent);
         var enabled = state.GetServerState(gameEvent.Owner.Id) is { Enabled: true };
         if (!enabled)
-            gameEvent.Origin.Tell("Game interface is not enabled on this server");
+            gameEvent.Origin.Tell(Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_GAMEINTERFACE_NOT_ENABLED"]);
         return enabled;
     }
 

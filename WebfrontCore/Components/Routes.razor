@@ -1,8 +1,14 @@
+@using SharedLibraryCore.Plugins
+
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="@typeof(NotFound)">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-            <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
+            @* When the routed page comes from a plugin bundle, cascade its id so MainLayout can wrap
+               the page body in the plugin's scope marker (PluginCssScoper). Null for host pages. *@
+            <CascadingValue Name="PluginScopeId" Value="@PluginBundleLoader.Shared.PluginIdForAssembly(routeData.PageType.Assembly)">
+                <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+                <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
+            </CascadingValue>
         </Found>
     </Router>
 </CascadingAuthenticationState>

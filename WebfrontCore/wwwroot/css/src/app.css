@@ -1,7 +1,21 @@
-﻿@import "tailwindcss";
+﻿/* Reserve a lowest-priority cascade layer for plugin-supplied styles. Declared before Tailwind so it sorts
+   below theme/base/components/utilities — plugin CSS (emitted into layer(plugins)) can never override the
+   host's own utilities/chrome (e.g. the `hidden md:flex` sidebar/topbar), while still styling plugin pages. */
+@layer plugins;
+
+@import "tailwindcss";
 @import "./palette.css";
 
 @source "../../../";
+/* sibling project: shared plugin-facing components (SideContextMenu, PluginPageShell) live in WebCommon.
+   scan it too so their utility classes are emitted into the host stylesheet (which loads on every page). */
+@source "../../../../WebCommon";
+
+/* Modal sizing vocabulary — guaranteed present for IModalService.OpenCustom callers. modalClass/
+   bodyClass land on the HOST modal shell, which plugin bundles cannot style (their CSS is scoped
+   to their own DOM), so the classes must come from this stylesheet. Safelisted explicitly so the
+   vocabulary survives even if no host component happens to use a given size. */
+@source inline("max-w-md max-w-lg max-w-2xl max-w-5xl max-w-7xl max-h-[80vh] max-h-[90vh]");
 
 @theme {
     /* Permission Level Colors */
@@ -13,6 +27,68 @@
     --color-level-administrator: #f1a8e8;
     --color-level-senioradmin: #50bcc3;
     --color-level-owner: #007acc;
+}
+
+/* Toast auto-dismiss countdown bar (WebCommon Toast). The bar element animates this over its
+   per-toast duration (inline animation-duration); group-hover pauses it. Lives here because the
+   host mounts the single ToastContainer and this stylesheet loads on every page (incl. plugin
+   pages, whose toasts route through the host container). */
+@keyframes toast-progress {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+/* ============================================
+   PLUGIN PAGE SHELL (WebCommon PluginPageShell)
+   ============================================
+   Host-namespaced structural classes. The shell renders INSIDE a plugin's scoped-CSS subtree and
+   contains the plugin's content, so it can't hide behind the data-iw4m-host scoping limit — and
+   shared Tailwind utilities on it get clobbered by the plugin's same-named unlayered ones (a
+   plugin's .flex-col beats the host's .xl:flex-row there). The wc-* namespace is host-reserved:
+   plugins never emit it, so there is no collision. Keep in sync with PluginPageShell.razor.
+   Equivalents: shell = flex flex-col xl:flex-row h-full; main = flex-1 min-w-0 p-4 md:p-6 lg:p-8
+   overflow-y-auto; aside = xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0; sticky = sticky top-6. */
+.wc-page-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.wc-page-shell-main {
+    flex: 1 1 0%;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.wc-page-shell-sticky {
+    position: sticky;
+    top: 1.5rem;
+}
+
+@media (min-width: 48rem) {
+    .wc-page-shell-main {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 64rem) {
+    .wc-page-shell-main {
+        padding: 2rem;
+    }
+}
+
+@media (min-width: 80rem) {
+    .wc-page-shell {
+        flex-direction: row;
+    }
+
+    .wc-page-shell-aside {
+        width: 20rem;
+        flex-shrink: 0;
+        padding-block: 1.5rem;
+        padding-right: 0;
+    }
 }
 
 /* ============================================
@@ -242,3 +318,11 @@ a {
 .marquee-enabled:focus-within .marquee-text {
     animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
 }
+
+/* ── Server-card connect link: icon swap on Ctrl/Meta hold ──────────── */
+/* Driven by `mod-key-down` body class, set by the global key listener in
+   blazor_lib.js. Hidden copy-icon swaps in for the play-icon while held;
+   click handler in ServerCard intercepts modifier-click for clipboard copy. */
+.server-play-link .play-copy-icon { display: none; }
+body.mod-key-down .server-play-link .play-icon { display: none; }
+body.mod-key-down .server-play-link .play-copy-icon { display: inline-block; }

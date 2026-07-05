@@ -64,8 +64,12 @@ namespace SharedLibraryCore.Interfaces
         /// <param name="dvarName">name of DVAR to set</param>
         /// <param name="dvarValue">value to set DVAR to</param>
         /// <param name="token"></param>
+        /// <param name="onPacketSent">
+        ///     optional callback invoked when the SET_DVAR packet is written to the wire.
+        ///     See <see cref="IRConConnection.SendQueryAsync"/> for semantics.
+        /// </param>
         /// <returns></returns>
-        Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default);
+        Task<bool> SetDvarAsync(IRConConnection connection, string dvarName, object dvarValue, CancellationToken token = default, Action<DateTime> onPacketSent = null);
 
         /// <summary>
         ///     executes a console command on the server

@@ -1,0 +1,45 @@
+@*
+    Presentational modal shell — fixed overlay, backdrop, header (title + close button) and a body
+    slot. Carries no host-only types: the host's ActionModal composes it for action forms, and
+    IModalService custom modals render their content as ChildContent. Sizing comes entirely from
+    ModalClass (the COMPLETE width + max-height set); BodyClass controls the body region's padding
+    and scroll. The backdrop click and the close button both raise OnClose.
+
+    Host-token driven (bg-surface / text-foreground / border-line) so it renders correctly inside
+    the host shell. Sizing/body classes land on host DOM, so they must exist in the host stylesheet
+    (see the modal sizing vocabulary in WebfrontCore/wwwroot/css/src/app.css).
+*@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 @(Visible ? "" : "hidden")" role="dialog" aria-modal="true">
+    @* Backdrop. *@
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @onclick="OnClose"></div>
+
+    @* Content. Sizing (width + max-height) comes entirely from @ModalClass. *@
+    <div class="relative bg-surface rounded-lg shadow-xl w-full @ModalClass overflow-hidden transform transition-all flex flex-col">
+        @* Header. *@
+        <div class="bg-surface-alt px-6 py-4 flex items-center justify-between border-b border-line flex-shrink-0">
+            <h5 class="text-lg font-medium text-foreground">@Title</h5>
+            <button type="button" aria-label="Close"
+                    class="text-muted hover:text-foreground transition-colors focus:outline-none"
+                    @onclick="OnClose">
+                <i class="ph ph-x text-xl"></i>
+            </button>
+        </div>
+
+        @* Body. *@
+        <div class="@BodyClass">
+            @ChildContent
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    // COMPLETE size set (width + max-height) — see ModalRequest.ModalClass. Defaults match the host's
+    // historic ActionModal defaults so a caller that omits them gets the familiar sizing.
+    [Parameter] public string ModalClass { get; set; } = "max-w-lg max-h-[90vh]";
+    [Parameter] public string BodyClass { get; set; } = "p-6 overflow-y-auto";
+}

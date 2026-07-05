@@ -7,6 +7,7 @@ using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
+using WebCommon.Services;
 
 namespace WebfrontCore.Components.Features.Clients.Pages;
 
@@ -377,7 +378,7 @@ public partial class Profile
     {
         if (item.Reference == "TwoFactorAuth")
         {
-            ActionService.OpenCustom(builder =>
+            ActionService.OpenCustom(new ModalRequest(builder =>
             {
                 builder.OpenComponent<WebfrontCore.Components.Features.Auth.Components.TwoFactorModal>(0);
                 builder.AddAttribute(1, "ClientId", Client!.ClientId);
@@ -411,7 +412,7 @@ public partial class Profile
                     StateHasChanged();
                 }));
                 builder.CloseComponent();
-            }, AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_2FA"), "max-w-md");
+            }, AppState.Loc("WEBFRONT_PROFILE_CONTEXT_MENU_2FA")) { ModalClass = "max-w-md max-h-[90vh]" });
             return;
         }
 
@@ -423,12 +424,12 @@ public partial class Profile
         if (string.IsNullOrEmpty(ipAddress))
             return;
 
-        ActionService.OpenCustom(builder =>
+        ActionService.OpenCustom(new ModalRequest(builder =>
         {
             builder.OpenComponent<Components.IPContextModal>(0);
             builder.AddAttribute(1, "IPAddress", ipAddress);
             builder.CloseComponent();
-        }, "IP Information", "max-w-md");
+        }, "IP Information") { ModalClass = "max-w-md max-h-[90vh]" });
     }
 
     /// <summary>

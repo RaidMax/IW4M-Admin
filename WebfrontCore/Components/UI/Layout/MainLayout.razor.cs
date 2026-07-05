@@ -12,6 +12,14 @@ public partial class MainLayout
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required IHttpContextAccessor HttpContextAccessor { get; set; }
     [Inject] public required NavigationManager NavManager { get; set; }
+
+    /// <summary>
+    /// Bundle id of the currently-routed page when it comes from a plugin bundle (cascaded from
+    /// Routes.razor), else null. The page body is wrapped in a <c>data-iw4m-plugin</c> marker so the
+    /// plugin's scoped CSS targets it (see SharedLibraryCore PluginCssScoper). Host pages get no marker.
+    /// </summary>
+    [CascadingParameter(Name = "PluginScopeId")] private string? PluginScopeId { get; set; }
+
     private bool _isInitialized = false;
     private bool IsEnrollmentPage => NavManager.Uri.Contains("action=enroll2fa", StringComparison.OrdinalIgnoreCase);
 

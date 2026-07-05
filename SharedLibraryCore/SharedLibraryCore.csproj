@@ -35,22 +35,46 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- ship the plugin-bundle MSBuild targets so consumers get build-is-bundle by referencing this package.
+             source lives in Packaging\ (the repo .gitignore excludes build\); packed into the nupkg's build\ -->
+        <None Include="Packaging\**" Pack="true" PackagePath="build\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- WebCommon (the plugin-facing Blazor component kit: PluginPageShell, SideContextMenu, render
+             slots) ships INSIDE this package — the separate RaidMax.IW4MAdmin.WebCommon package is
+             deprecated. WebCommon references this project, so it cannot be a ProjectReference here
+             (circular); the prebuilt assembly is packed instead. The NuGet workflow builds WebCommon
+             before packing and then verifies the dll landed in the nupkg; locally, the Exists condition
+             keeps a clean first build green (the pack just omits WebCommon until it has been built once).
+             WebCommon is pure components (no static web assets), so the flat dll is lossless, and this
+             project is Sdk.Web, so the packed nuspec already flows the Microsoft.AspNetCore.App framework
+             reference WebCommon's components need. -->
+        <None Include="..\WebCommon\bin\$(Configuration)\$(TargetFramework)\WebCommon.dll"
+              Pack="true" PackagePath="lib\$(TargetFramework)\" Visible="false"
+              Condition="Exists('..\WebCommon\bin\$(Configuration)\$(TargetFramework)\WebCommon.dll')" />
+        <None Include="..\WebCommon\bin\$(Configuration)\$(TargetFramework)\WebCommon.xml"
+              Pack="true" PackagePath="lib\$(TargetFramework)\" Visible="false"
+              Condition="Exists('..\WebCommon\bin\$(Configuration)\$(TargetFramework)\WebCommon.xml')" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="FluentValidation" Version="12.1.1"/>
-        <PackageReference Include="Humanizer.Core" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.ru" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.de" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.es" Version="3.0.1"/>
-        <PackageReference Include="Humanizer.Core.pt" Version="3.0.1"/>
+        <PackageReference Include="Humanizer.Core" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.ru" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.de" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.es" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core.pt" Version="3.0.10" />
 
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
 
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
         <PackageReference Include="SimpleCrypto.NetCore" Version="1.0.0"/>
     </ItemGroup>

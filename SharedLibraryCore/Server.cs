@@ -85,6 +85,9 @@ namespace SharedLibraryCore
             RConConnectionFactory = rconConnectionFactory;
             ServerLogger = logger;
             DefaultSettings = serviceProvider.GetRequiredService<DefaultSettings>();
+            PerformanceCode = string.IsNullOrWhiteSpace(ServerConfig.PerformanceBucketCode)
+                ? "default"
+                : ServerConfig.PerformanceBucketCode.ToLowerInvariant();
             InitializeTokens();
             InitializeAutoMessages();
         }
@@ -130,6 +133,11 @@ namespace SharedLibraryCore
         public Map CurrentMap { get; set; }
         public Map Map => CurrentMap;
 
+        /// <summary>
+        /// Current zombie round number. Null when not in a zombie match.
+        /// </summary>
+        public int? ZombieRoundNumber { get; set; }
+
         public int ClientNum
         {
             get { return IsErrorState ? 0 : Clients.Count(p => p != null && (Utilities.IsDevelopment || !p.IsBot)); }
@@ -167,6 +175,7 @@ namespace SharedLibraryCore
         public bool IsInitialized { get; set; }
         public int Port { get; protected set; }
         public int ListenPort => Port;
+        public string PerformanceCode { get; init; }
         public abstract Task Kick(string reason, EFClient target, EFClient origin, EFPenalty originalPenalty);
         public abstract Task<string[]> ExecuteCommandAsync(string command, CancellationToken token = default);
         public abstract Task SetDvarAsync(string name, object value, CancellationToken token = default);

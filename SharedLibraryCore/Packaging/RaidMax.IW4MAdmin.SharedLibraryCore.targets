@@ -1,0 +1,284 @@
+<Project>
+
+    <!--
+      IW4MAdmin plugin bundle packaging.
+
+      Opt in with <IW4MAdminBundle>true</IW4MAdminBundle> in your plugin .csproj. On build this produces
+      bin/<Configuration>/<id>.zip containing:
+        manifest.json   (generated from your project metadata — single source of truth, no hand-editing)
+        lib/            (your plugin dll + private dependencies; host-provided assemblies excluded)
+        wwwroot/        (served by the host at /_content/<id>/)
+        gsc/            (optional game-side scripts, extracted to disk by the host)
+
+      CSS COMPILATION IS YOURS. The core packaging is tool-agnostic: it bundles whatever is in wwwroot/ plus
+      any files you contribute via the @(IW4MAdminWebAsset) item. Compile your CSS (Tailwind, Sass, PostCSS,
+      plain, none) however you like, before Build completes.
+
+      Tailwind is offered as an optional, removable helper — set <IW4MAdminTailwind>true</IW4MAdminTailwind>
+      and point IW4MAdminTailwindInput at your input file. It compiles to obj (keeping your source tree clean)
+      and is added to the bundle automatically. If you don't opt in, nothing Tailwind-related runs.
+    -->
+
+    <!-- ============================ core packaging (tool-agnostic) ============================ -->
+
+    <!-- IW4M1002: warn when two of the bundle's own stylesheets define the same class. The host loads
+         ALL of a bundle's CSS on every page (in one shared @scope), so per-page loading no longer
+         separates same-named classes — the later sheet silently overrides the earlier one (this bit
+         Credify: plinko.css and poker.css both used a pk- prefix). Only hand-written wwwroot files are
+         scanned (the Tailwind helper output is generated from purged markup and excluded). Only
+         selector preludes count — class mentions in comments or declaration values are ignored. -->
+    <UsingTask TaskName="IW4MAdminCssClassCollisionCheck" TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <CssFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true"/>
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.Collections.Generic"/>
+            <Using Namespace="System.IO"/>
+            <Using Namespace="System.Text.RegularExpressions"/>
+            <Code Type="Fragment" Language="cs">
+<![CDATA[
+// class name -> files defining it. A "definition" is a class token inside a selector prelude:
+// a text run ending at '{' that starts after the previous '{', '}' or ';'. Comments are stripped
+// first, so commented mentions and dots in declaration values (url(x.png), 0.5rem) never count.
+var byClass = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+var classRe = new Regex(@"\.(-?[A-Za-z_][A-Za-z0-9_-]*)");
+foreach (var item in CssFiles)
+{
+    var path = item.GetMetadata("FullPath");
+    if (!path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) || !File.Exists(path))
+    {
+        continue;
+    }
+
+    var css = Regex.Replace(File.ReadAllText(path), @"/\*.*?\*/", "", RegexOptions.Singleline);
+    var fileName = Path.GetFileName(path);
+    var start = 0;
+    for (var i = 0; i < css.Length; i++)
+    {
+        var c = css[i];
+        if (c == '{')
+        {
+            foreach (Match m in classRe.Matches(css.Substring(start, i - start)))
+            {
+                HashSet<string> files;
+                if (!byClass.TryGetValue(m.Groups[1].Value, out files))
+                {
+                    byClass[m.Groups[1].Value] = files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+                files.Add(fileName);
+            }
+            start = i + 1;
+        }
+        else if (c == '}' || c == ';')
+        {
+            start = i + 1;
+        }
+    }
+}
+
+var reported = 0;
+foreach (var kv in byClass)
+{
+    if (kv.Value.Count < 2)
+    {
+        continue;
+    }
+
+    if (++reported > 20)
+    {
+        Log.LogWarning(null, "IW4M1002", null, null, 0, 0, 0, 0,
+            "Further duplicate-class collisions exist; only the first 20 are shown.");
+        break;
+    }
+
+    var fileList = new List<string>(kv.Value);
+    fileList.Sort(StringComparer.OrdinalIgnoreCase);
+    Log.LogWarning(null, "IW4M1002", null, null, 0, 0, 0, 0,
+        string.Format(".{0} is defined in multiple of this bundle's stylesheets ({1}). The host loads all of a bundle's CSS on every page in one shared scope, so the later sheet silently overrides the earlier one. Rename with a per-feature prefix.",
+            kv.Key, string.Join(", ", fileList)));
+}
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <PropertyGroup Condition="'$(IW4MAdminBundle)' == 'true'">
+        <IW4MAdminBundleId Condition="'$(IW4MAdminBundleId)' == ''">$(AssemblyName)</IW4MAdminBundleId>
+        <IW4MAdminBundleName Condition="'$(IW4MAdminBundleName)' == ''">$(AssemblyName)</IW4MAdminBundleName>
+        <IW4MAdminBundleVersion Condition="'$(IW4MAdminBundleVersion)' == ''">$(Version)</IW4MAdminBundleVersion>
+        <IW4MAdminBundleAuthor Condition="'$(IW4MAdminBundleAuthor)' == ''">$(Authors)</IW4MAdminBundleAuthor>
+
+        <!-- alongside the .nupkg location: bin/<Configuration>/ . absolute so it is independent of cwd -->
+        <IW4MAdminBundleOutput Condition="'$(IW4MAdminBundleOutput)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', 'bin', '$(Configuration)'))</IW4MAdminBundleOutput>
+
+        <IW4MAdminWebRoot Condition="'$(IW4MAdminWebRoot)' == ''">$(MSBuildProjectDirectory)\wwwroot</IW4MAdminWebRoot>
+        <IW4MAdminGscRoot Condition="'$(IW4MAdminGscRoot)' == ''">$(MSBuildProjectDirectory)\gsc</IW4MAdminGscRoot>
+        <IW4MAdminResourceRoot Condition="'$(IW4MAdminResourceRoot)' == ''">$(MSBuildProjectDirectory)\Resources</IW4MAdminResourceRoot>
+    </PropertyGroup>
+
+    <!-- the host provides SharedLibraryCore and its dependency closure at runtime, so don't bundle them.
+         set automatically so plugin authors don't have to remember PrivateAssets on the package reference. -->
+    <ItemGroup Condition="'$(IW4MAdminBundle)' == 'true'">
+        <PackageReference Update="RaidMax.IW4MAdmin.SharedLibraryCore" PrivateAssets="all" />
+        <!-- legacy: WebCommon (shared UI kit) now ships INSIDE the SharedLibraryCore package, so new
+             plugins don't reference this package at all. Kept so older csprojs that still do don't
+             accidentally bundle it — the host provides WebCommon at runtime either way. -->
+        <PackageReference Update="RaidMax.IW4MAdmin.WebCommon" PrivateAssets="all" />
+    </ItemGroup>
+
+    <Target Name="IW4MAdminPackBundle"
+            AfterTargets="Build"
+            DependsOnTargets="IW4MAdminCompileTailwind"
+            Condition="'$(IW4MAdminBundle)' == 'true'">
+
+        <!-- computed here (target execution) so $(IntermediateOutputPath) is set regardless of import position -->
+        <PropertyGroup>
+            <_IW4MAdminBundleStage>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'iw4m-bundle'))</_IW4MAdminBundleStage>
+        </PropertyGroup>
+
+        <!-- lib/: plugin dll + private deps, excluding host-provided and framework assemblies -->
+        <ItemGroup>
+            <_IW4MLib Include="$(TargetPath)" />
+            <_IW4MLib Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll'" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="$([System.String]::new('%(FileName)').StartsWith('Microsoft.'))" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="$([System.String]::new('%(FileName)').StartsWith('System.'))" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'SharedLibraryCore'" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'Data'" />
+            <_IW4MLib Remove="@(_IW4MLib)" Condition="'%(FileName)' == 'WebCommon'" />
+            <!-- author-specified host-provided assemblies (e.g. a sibling plugin this one references at
+                 build time but the host loads at runtime). Semicolon-separated filenames, no extension.
+                 Bundling such an assembly would give it a second identity and break type matching. -->
+            <_IW4MLib Remove="@(_IW4MLib)"
+                      Condition="'$(IW4MAdminBundleExcludeAssemblies)' != '' AND $([System.String]::new(';$(IW4MAdminBundleExcludeAssemblies);').Contains(';%(FileName);'))" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_IW4MManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc","resourceRoot":"resources"}</_IW4MManifest>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(_IW4MAdminBundleStage)" />
+        <MakeDir Directories="$(_IW4MAdminBundleStage)lib" />
+
+        <Copy SourceFiles="@(_IW4MLib)" DestinationFolder="$(_IW4MAdminBundleStage)lib" SkipUnchangedFiles="false" />
+        <WriteLinesToFile File="$(_IW4MAdminBundleStage)manifest.json" Lines="$(_IW4MManifest)" Overwrite="true" />
+
+        <!-- web assets: everything under wwwroot/, plus anything contributed via @(IW4MAdminWebAsset)
+             (e.g. the Tailwind helper's compiled output, kept out of the source tree) -->
+        <ItemGroup>
+            <_IW4MWeb Include="$(IW4MAdminWebRoot)\**\*" />
+            <_IW4MGsc Include="$(IW4MAdminGscRoot)\**\*" />
+            <_IW4MRes Include="$(IW4MAdminResourceRoot)\**\*" />
+        </ItemGroup>
+
+        <!-- IW4M1002: duplicate class names across the bundle's hand-written stylesheets (see UsingTask) -->
+        <IW4MAdminCssClassCollisionCheck CssFiles="@(_IW4MWeb)" Condition="'@(_IW4MWeb)' != ''" />
+        <Copy Condition="'@(_IW4MWeb)' != ''"
+              SourceFiles="@(_IW4MWeb)"
+              DestinationFiles="@(_IW4MWeb->'$(_IW4MAdminBundleStage)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy Condition="'@(IW4MAdminWebAsset)' != ''"
+              SourceFiles="@(IW4MAdminWebAsset)"
+              DestinationFiles="@(IW4MAdminWebAsset->'$(_IW4MAdminBundleStage)wwwroot\%(BundlePath)')" />
+        <Copy Condition="'@(_IW4MGsc)' != ''"
+              SourceFiles="@(_IW4MGsc)"
+              DestinationFiles="@(_IW4MGsc->'$(_IW4MAdminBundleStage)gsc\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy Condition="'@(_IW4MRes)' != ''"
+              SourceFiles="@(_IW4MRes)"
+              DestinationFiles="@(_IW4MRes->'$(_IW4MAdminBundleStage)resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+
+        <MakeDir Directories="$(IW4MAdminBundleOutput)" />
+        <ZipDirectory SourceDirectory="$(_IW4MAdminBundleStage)"
+                      DestinationFile="$(IW4MAdminBundleOutput)$(IW4MAdminBundleId).zip"
+                      Overwrite="true" />
+        <Message Importance="high" Text="IW4MAdmin: bundle written to $(IW4MAdminBundleOutput)$(IW4MAdminBundleId).zip" />
+    </Target>
+
+    <!-- ===================== optional Tailwind helper (opt-in, removable) ===================== -->
+
+    <PropertyGroup Condition="'$(IW4MAdminTailwind)' == 'true'">
+        <IW4MAdminTailwindInput Condition="'$(IW4MAdminTailwindInput)' == ''">$(MSBuildProjectDirectory)\Styles\tailwind.css</IW4MAdminTailwindInput>
+        <IW4MAdminTailwindBundlePath Condition="'$(IW4MAdminTailwindBundlePath)' == ''">plugin.css</IW4MAdminTailwindBundlePath>
+
+        <!-- shared cache outside the project so the ~100MB CLI isn't re-downloaded per clean/project -->
+        <IW4MAdminTailwindCacheDir Condition="'$(IW4MAdminTailwindCacheDir)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">$([MSBuild]::NormalizeDirectory('$(LOCALAPPDATA)', 'IW4MAdmin', 'tailwind'))</IW4MAdminTailwindCacheDir>
+        <IW4MAdminTailwindCacheDir Condition="'$(IW4MAdminTailwindCacheDir)' == ''">$([MSBuild]::NormalizeDirectory('$(HOME)', '.cache', 'IW4MAdmin', 'tailwind'))</IW4MAdminTailwindCacheDir>
+        <IW4MAdminTailwindExe Condition="'$(IW4MAdminTailwindExe)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">$(IW4MAdminTailwindCacheDir)tailwindcss.exe</IW4MAdminTailwindExe>
+        <IW4MAdminTailwindExe Condition="'$(IW4MAdminTailwindExe)' == ''">$(IW4MAdminTailwindCacheDir)tailwindcss</IW4MAdminTailwindExe>
+    </PropertyGroup>
+
+    <!-- create a starter input if the author hasn't written one. The host serves a plugin's CSS scoped
+         to that plugin's own rendered DOM (CSS @scope, see SharedLibraryCore PluginCssScoper), so the
+         starter emits utilities UNLAYERED — full power on the plugin's own pages, zero reach into the
+         host chrome. -->
+    <Target Name="IW4MAdminScaffoldTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND !Exists('$(IW4MAdminTailwindInput)')">
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindInput)'))" />
+        <!-- content as a property (NOT item Include) so the '*' in comments/@source isn't glob-expanded.
+             %0A = newline, %3B = semicolon (kept literal, not treated as a list separator). -->
+        <PropertyGroup>
+            <_IW4MTwScaffold>/* Tailwind input for this plugin (created by the IW4MAdmin bundle helper). */%0A/* The host serves this CSS scoped to your plugin's own DOM, so emit utilities UNLAYERED: they get%0A   full power on your pages and cannot leak into the host chrome. Do NOT wrap in layer(plugins) — a%0A   lower layer would stop your utilities overriding the host's base utilities on your own pages. */%0A/* The host design tokens (bg-surface, border-line, text-subtle, text-primary, status colours, …) are%0A   injected automatically by the helper, so you can use them directly and match the host theme. */%0A@import "tailwindcss/theme.css"%3B%0A@import "tailwindcss/utilities.css"%3B%0A%0A/* scan your components so only the classes you use are emitted */%0A@source "../Components/**/*.razor"%3B</_IW4MTwScaffold>
+        </PropertyGroup>
+        <WriteLinesToFile File="$(IW4MAdminTailwindInput)" Lines="$(_IW4MTwScaffold)" Overwrite="true" />
+        <Message Importance="high" Text="IW4MAdmin: created a starter Tailwind input at $(IW4MAdminTailwindInput) (utilities emitted unlayered; the host scopes them)." />
+    </Target>
+
+    <!-- warn if a hand-written input wraps utilities in layer(plugins). The host scopes plugin CSS to
+         the plugin's own DOM, so the layer is unnecessary for chrome safety and a lower layer stops the
+         plugin's utilities overriding the host's base utilities on its own pages — silently breaking
+         responsive/state layout. Emit unlayered instead. -->
+    <Target Name="IW4MAdminCheckTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)')">
+        <PropertyGroup>
+            <_IW4MTwInput>$([System.IO.File]::ReadAllText('$(IW4MAdminTailwindInput)'))</_IW4MTwInput>
+        </PropertyGroup>
+        <!-- match the actual import usage (...css" layer(plugins)), not the word in an explanatory
+             comment. &quot; decodes to a literal double-quote inside the Contains argument. -->
+        <Warning Condition="$(_IW4MTwInput.Contains('css&quot; layer(plugins)'))"
+                 Code="IW4M1001"
+                 Text="Tailwind input '$(IW4MAdminTailwindInput)' wraps utilities in layer(plugins). The host now scopes plugin CSS to the plugin's own DOM, so the layer is unnecessary and a lower layer prevents your utilities overriding the host's base utilities on your own pages (responsive/state classes silently fail). Emit unlayered: @import &quot;tailwindcss/utilities.css&quot;; — see docs/plugin-web-bundles.md." />
+    </Target>
+
+    <Target Name="IW4MAdminDownloadTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)') AND !Exists('$(IW4MAdminTailwindExe)')">
+        <PropertyGroup>
+            <_TwUrl Condition="$([MSBuild]::IsOSPlatform('Windows'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-windows-x64.exe</_TwUrl>
+            <_TwUrl Condition="$([MSBuild]::IsOSPlatform('Linux'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64</_TwUrl>
+            <_TwUrl Condition="$([MSBuild]::IsOSPlatform('OSX'))">https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-x64</_TwUrl>
+        </PropertyGroup>
+        <MakeDir Directories="$(IW4MAdminTailwindCacheDir)" />
+        <Message Importance="high" Text="IW4MAdmin: downloading Tailwind CLI to $(IW4MAdminTailwindCacheDir)" />
+        <Exec Command="curl -sL $(_TwUrl) -o &quot;$(IW4MAdminTailwindExe)&quot;" />
+        <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="chmod +x &quot;$(IW4MAdminTailwindExe)&quot;" />
+    </Target>
+
+    <Target Name="IW4MAdminCompileTailwind"
+            DependsOnTargets="IW4MAdminScaffoldTailwind;IW4MAdminCheckTailwind;IW4MAdminDownloadTailwind"
+            Condition="'$(IW4MAdminTailwind)' == 'true' AND Exists('$(IW4MAdminTailwindInput)')">
+        <!-- computed here (target execution) so $(IntermediateOutputPath) is set regardless of import position;
+             compiled into obj so the source tree stays clean, then contributed to the bundle as a web asset -->
+        <PropertyGroup>
+            <IW4MAdminTailwindOutput Condition="'$(IW4MAdminTailwindOutput)' == ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'iw4m-tailwind', 'plugin.css'))</IW4MAdminTailwindOutput>
+            <_IW4MTwOutDir>$([System.IO.Path]::GetDirectoryName('$(IW4MAdminTailwindOutput)'))</_IW4MTwOutDir>
+            <!-- entry that injects the host design tokens (shipped next to these targets) ahead of the
+                 author's input, so every plugin generates host-token utilities and is self-contained.
+                 forward slashes: '\' is a CSS escape character. Tailwind resolves the author input's
+                 @source paths relative to the author file, so importing it here is transparent. -->
+            <_IW4MTwEntry>$(_IW4MTwOutDir)\entry.css</_IW4MTwEntry>
+            <_IW4MThemeImport>$([System.String]::Copy('$(MSBuildThisFileDirectory)iw4madmin-theme.css').Replace('\', '/'))</_IW4MThemeImport>
+            <_IW4MAuthorImport>$([System.String]::Copy('$(IW4MAdminTailwindInput)').Replace('\', '/'))</_IW4MAuthorImport>
+        </PropertyGroup>
+        <MakeDir Directories="$(_IW4MTwOutDir)" />
+        <!-- %3B = a literal ';' in the emitted CSS; the bare ';' separates the two MSBuild list items (lines). -->
+        <WriteLinesToFile File="$(_IW4MTwEntry)" Overwrite="true"
+                          Lines="@import &quot;$(_IW4MThemeImport)&quot;%3B;@import &quot;$(_IW4MAuthorImport)&quot;%3B" />
+        <Message Importance="high" Text="IW4MAdmin: compiling Tailwind ($(IW4MAdminTailwindInput) + host tokens -> $(IW4MAdminTailwindOutput))" />
+        <Exec Command="&quot;$(IW4MAdminTailwindExe)&quot; -i &quot;$(_IW4MTwEntry)&quot; -o &quot;$(IW4MAdminTailwindOutput)&quot; --minify" />
+        <ItemGroup>
+            <IW4MAdminWebAsset Include="$(IW4MAdminTailwindOutput)">
+                <BundlePath>$(IW4MAdminTailwindBundlePath)</BundlePath>
+            </IW4MAdminWebAsset>
+        </ItemGroup>
+    </Target>
+
+</Project>

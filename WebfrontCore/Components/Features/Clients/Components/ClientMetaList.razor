@@ -80,7 +80,7 @@ else
                             break;
                         default:
                             <div class="bg-warning/10 border border-warning/20 text-warning p-2 rounded text-sm">
-                                Unknown Meta Type: @item.GetType().Name (@item.Type)
+                                @AppState.Loc("WEBFRONT_META_ERROR_UNKNOWN_TYPE").FormatExt(item.GetType().Name, item.Type)
                             </div>
                             break;
                     }
@@ -91,7 +91,10 @@ else
 
     @if (HasMore)
     {
-        <div id="loadMoreMetaTrigger" class="h-px w-full"></div>
+        <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                HasMore="@HasMore"
+                                IsLoading="@Loading"
+                                ContainerClass="h-px w-full" />
     }
 }
 

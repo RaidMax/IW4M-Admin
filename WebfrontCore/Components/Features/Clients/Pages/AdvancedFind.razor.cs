@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
-using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 
@@ -119,20 +118,7 @@ public partial class AdvancedFind
                state.SortColumn == SortColumn;
     }
 
-    [Inject] public required IJSRuntime JS { get; set; }
-    private DotNetObjectReference<AdvancedFind>? _dotNetRef;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreTrigger");
-        }
-    }
-
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (_isLoading || !_hasMore || State == null)
             return;
@@ -225,20 +211,6 @@ public partial class AdvancedFind
             _isLoading = false;
             StateHasChanged();
         }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
-        {
-            // Ignored
-        }
-
-        _dotNetRef?.Dispose();
     }
 
     public class AdvancedFindState

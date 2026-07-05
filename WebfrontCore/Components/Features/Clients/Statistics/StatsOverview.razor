@@ -33,7 +33,7 @@
                         <div class="text-muted mt-1 font-medium flex items-center gap-2 text-sm">
                             <i class="ph ph-globe text-subtle"></i>
                             <ColorCode
-                                Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
+                                Value="@(PerformanceBucket != null ? System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(PerformanceBucket.ToLower()) : SelectedServer?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
                             <span class="text-subtle">•</span>
                             <span
                                 class="text-primary font-bold">@TotalRankedClients.ToString("#,##0")</span> @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE").ToString().ToLower())
@@ -43,7 +43,35 @@
             </div>
 
             <div id="topPlayersContainer" class="flex flex-col gap-4 relative">
-                @if (_hasLoaded && TotalRankedClients == 0)
+                @if (_showBucketSelector && _availableBuckets != null)
+                {
+                    <h3 class="text-lg font-bold text-foreground">Select a Category</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach (var bucket in _availableBuckets)
+                        {
+                            <a href="/stats/top?category=@bucket.Code"
+                               class="group bg-surface rounded-xl border border-line p-6 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:transform hover:scale-[1.02] no-underline">
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
+                                        <i class="ph ph-trophy text-2xl text-primary"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-lg font-bold text-foreground group-hover:text-primary transition-colors capitalize">
+                                            @bucket.Code
+                                        </h3>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-muted text-sm">@bucket.ServerCount server@(bucket.ServerCount != 1 ? "s" : "")</span>
+                                            <span class="text-subtle">•</span>
+                                            <span class="text-muted text-sm">@string.Join(", ", bucket.Games)</span>
+                                        </div>
+                                    </div>
+                                    <i class="ph ph-caret-right text-xl text-subtle group-hover:text-primary transition-colors"></i>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else if (_hasLoaded && TotalRankedClients == 0)
                 {
                     <div
                         class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-16 text-center border border-line flex flex-col items-center">
@@ -56,10 +84,8 @@
                     </div>
                 }
 
-                <Virtualize @ref="_virtualizeComponent" Context="stat" ItemsProvider="LoadPlayerStats"
-                            OverscanCount="10" ItemSize="121">
-                    <ItemContent>
-                        @{
+                @foreach (var stat in TopPlayers ?? new())
+                {
                             var isGold = stat.Ranking == 1;
                             var isSilver = stat.Ranking == 2;
                             var isBronze = stat.Ranking == 3;
@@ -74,7 +100,6 @@
                                 isSilver ? "text-zinc-300 drop-shadow-[0_2px_10px_rgba(203,213,225,0.5)]" :
                                 isBronze ? "text-amber-500 drop-shadow-[0_2px_10px_rgba(217,119,6,0.5)]" :
                                 "text-subtle group-hover:text-primary transition-colors";
-                        }
 
                         <div
                             class="@containerClass relative rounded-xl p-5 md:p-0 flex flex-col md:flex-row md:items-center gap-6 transition-all duration-300 hover:transform hover:scale-[1.01] hover:shadow-xl group border-y border-r border-line overflow-hidden">
@@ -125,34 +150,15 @@
                                         </span>
                                     </div>
 
-                                    <!-- Secondary Stats Grid -->
-                                    <div class="grid grid-cols-2 2xl:grid-cols-4 gap-x-4 gap-y-2 lg:border-l border-line lg:pl-6 h-full">
-                                        <!-- Kills -->
-                                        <div class="flex flex-col min-w-[70px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.Kills.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KILLS")</span>
-                                        </div>
-                                        <!-- Deaths -->
-                                        <div class="flex flex-col min-w-[70px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.Deaths.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_DEATHS")</span>
-                                        </div>
-                                        <!-- KDR -->
-                                        <div class="flex flex-col min-w-[50px]">
-                                            <span
-                                                class="@(stat.KDR >= 2.0 ? "text-success" : stat.KDR >= 1.0 ? "text-foreground" : "text-error") font-mono font-bold">
-                                                @stat.KDR.ToString("F2")
-                                            </span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KDR")</span>
-                                        </div>
-                                        <!-- Time -->
-                                        <div class="flex flex-col min-w-[50px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.TimePlayedValue.TotalHours.ToString("F0")h</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_PLAYED")</span>
-                                        </div>
+                                    <!-- Secondary Stats Grid (populated by StatManager + CustomStatsMetrics) -->
+                                    <div class="flex flex-wrap gap-x-4 gap-y-2 lg:border-l border-line lg:pl-6 h-full">
+                                        @foreach (var metric in stat.Metrics)
+                                        {
+                                            <div class="flex flex-col min-w-[50px]">
+                                                <span class="text-foreground font-mono font-bold">@metric.Value</span>
+                                                <span class="text-muted text-[10px] uppercase font-bold">@metric.Key</span>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -170,23 +176,30 @@
                                     alt="Rank" loading="lazy"/>
                             </div>
                         </div>
-                    </ItemContent>
-                    <Placeholder>
-                        <div class="bg-surface-alt/70 backdrop-blur-md rounded-xl p-5 md:p-0 flex flex-col md:flex-row md:items-center gap-6 border-y border-r border-line overflow-hidden">
-                            <div class="relative flex md:flex-col items-center justify-center md:w-24 md:self-stretch md:bg-surface-alt shrink-0">
-                                <div class="w-10 h-10 bg-surface/30 rounded"></div>
+                }
+
+                @if (_hasLoaded && State?.HasMore == true)
+                {
+                    <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                            HasMore="@(State?.HasMore ?? false)"
+                                            IsLoading="@_isLoadingMore">
+                        <LoadingTemplate>
+                            <div class="bg-surface-alt/70 backdrop-blur-md rounded-xl p-5 md:p-0 flex flex-col md:flex-row md:items-center gap-6 border-y border-r border-line overflow-hidden animate-pulse">
+                                <div class="relative flex md:flex-col items-center justify-center md:w-24 md:self-stretch md:bg-surface-alt shrink-0">
+                                    <div class="w-10 h-10 bg-surface/30 rounded"></div>
+                                </div>
+                                <div class="flex-1 min-w-0 py-2 md:py-4 pr-4">
+                                    <div class="h-5 w-40 bg-surface/30 rounded mb-2"></div>
+                                    <div class="h-4 w-32 bg-surface/20 rounded"></div>
+                                </div>
+                                <div class="w-full h-24 md:flex-1 md:h-20 md:min-w-[200px] bg-surface/10 rounded"></div>
+                                <div class="hidden md:flex items-center justify-center w-24 bg-surface-alt self-stretch shrink-0 border-l border-line">
+                                    <div class="w-12 h-12 bg-surface/20 rounded"></div>
+                                </div>
                             </div>
-                            <div class="flex-1 min-w-0 py-2 md:py-4 pr-4">
-                                <div class="h-5 w-40 bg-surface/30 rounded mb-2"></div>
-                                <div class="h-4 w-32 bg-surface/20 rounded"></div>
-                            </div>
-                            <div class="w-full h-24 md:flex-1 md:h-20 md:min-w-[200px] bg-surface/10 rounded"></div>
-                            <div class="hidden md:flex items-center justify-center w-24 bg-surface-alt self-stretch shrink-0 border-l border-line">
-                                <div class="w-12 h-12 bg-surface/20 rounded"></div>
-                            </div>
-                        </div>
-                    </Placeholder>
-                </Virtualize>
+                        </LoadingTemplate>
+                    </InfiniteScrollSentinel>
+                }
             </div>
         </div>
     </div>
@@ -198,7 +211,7 @@
         @if (MenuItems != null)
         {
             <div class="sticky top-6">
-                <SideContextMenu Model="MenuItems"/>
+                <SideContextMenu Model="MenuItems" Localizer="AppState.Loc"/>
             </div>
         }
     </div>

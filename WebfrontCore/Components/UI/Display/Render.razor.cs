@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using WebfrontCore.Core.Services;
+using WebCommon.Services;
 using SharedLibraryCore.Interfaces;
 using WebfrontCore.Controllers.API.Models;
 

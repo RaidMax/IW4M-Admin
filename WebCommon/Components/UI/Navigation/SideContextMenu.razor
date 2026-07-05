@@ -1,0 +1,214 @@
+@namespace WebCommon.Components.UI.Navigation
+
+@* Right-aligned context navigation, shared by the host and by plugins.
+   Desktop: a sticky right-hand pane (xl and up).
+   Mobile: a CSS-only drawer driven by a hidden checkbox + <label> toggles, so it works on
+   statically-rendered (SSR) plugin pages too — no Blazor interactivity required.
+   Localization is injected via the optional Localizer delegate (host passes AppState.Loc;
+   plugins can omit it and group headers fall back to their raw key). *@
+
+@* data-iw4m-host on both roots: this menu is host chrome that often renders INSIDE a plugin's
+   scoped-CSS subtree (PluginPageShell, or embedded directly by a plugin page). The attribute is the
+   scoping limit of every plugin stylesheet (PluginCssScoper: @scope (marker) to ([data-iw4m-host])),
+   so plugin utilities can't reach in and collapse it (a plugin's unlayered .hidden would otherwise
+   beat the host's .xl:block here). Menu content is data-driven (no plugin markup inside), so the
+   hole loses nothing. *@
+@if (Model?.Items?.Any() == true)
+{
+    @* ---- Mobile (below xl): CSS-only drawer ------------------------------------------------ *@
+    <div class="xl:hidden" data-iw4m-host>
+        <input type="checkbox" id="scm-mobile-toggle" class="peer hidden" />
+
+        @* open FAB (hidden once the drawer is open) *@
+        <label for="scm-mobile-toggle"
+               class="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full shadow-2xl bg-primary text-white
+                      active:scale-95 transition-all duration-300 ease-out flex items-center justify-center
+                      cursor-pointer peer-checked:hidden">
+            <i class="ph ph-list text-2xl"></i>
+        </label>
+
+        @* close FAB (shown only while open) *@
+        <label for="scm-mobile-toggle"
+               class="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full shadow-2xl bg-secondary text-white
+                      active:scale-95 transition-all duration-300 ease-out hidden items-center justify-center
+                      cursor-pointer peer-checked:flex">
+            <i class="ph ph-x text-2xl"></i>
+        </label>
+
+        @* overlay *@
+        <label for="scm-mobile-toggle"
+               class="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none
+                      transition-opacity duration-300 peer-checked:opacity-100 peer-checked:pointer-events-auto"></label>
+
+        @* drawer panel *@
+        <div class="fixed right-0 top-0 z-[56] h-full w-80 max-w-[85vw] bg-surface/95 backdrop-blur-xl
+                    border-l border-line/50 shadow-2xl overflow-y-auto transform translate-x-full
+                    transition-transform duration-300 ease-out peer-checked:translate-x-0">
+            <div class="sticky top-0 z-10 bg-surface/90 backdrop-blur-lg border-b border-line/50 px-5 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <i class="ph ph-funnel text-primary"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-foreground uppercase tracking-wider">@Model.MenuTitle</h3>
+                    </div>
+                    <label for="scm-mobile-toggle"
+                           class="w-8 h-8 rounded-full bg-surface-alt hover:bg-line flex items-center justify-center text-muted hover:text-foreground transition-all duration-200 cursor-pointer">
+                        <i class="ph ph-x text-lg"></i>
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-4">
+                @RenderMobileMenuContent()
+            </div>
+        </div>
+    </div>
+
+    @* ---- Desktop (xl and up): sticky right pane ------------------------------------------- *@
+    <div class="bg-surface border-l border-y border-line w-72 flex-shrink-0 hidden xl:block p-4 rounded-l-xl max-h-[calc(100vh-3rem)] overflow-y-auto ml-auto" data-iw4m-host>
+        @RenderMenuContent()
+    </div>
+}
+
+@code {
+    private RenderFragment RenderMobileMenuContent() => __builder =>
+    {
+        <div class="space-y-1">
+            @{
+                var groupedItems = Model.Items.Where(item => item.IsCollapse)
+                    .GroupBy(item => item.Meta)
+                    .ToList();
+            }
+
+            @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
+            {
+                if (item.IsSectionHeader)
+                {
+                    <div class="text-xs font-bold text-muted uppercase tracking-wider mt-4 mb-2 px-2">@item.Title</div>
+                    continue;
+                }
+                var isLong = item.Title.Length > 30; // Threshold for marquee
+                <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
+                   target="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "_blank" : null)"
+                   rel="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "noopener noreferrer" : null)"
+                   class="@(isLong ? "marquee-enabled" : "") menu-item-container group flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 @(item.IsActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-subtle hover:bg-surface-hover hover:text-foreground")"
+                   @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
+                   @onclick:preventDefault="@(!item.IsLink)"
+                   data-title="@item.Tooltip" data-placement="left"
+                   data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 shrink-0 @(item.IsActive ? "text-white" : "text-muted group-hover:text-primary")"></i>
+                    <span class="overflow-hidden flex-1 min-w-0">
+                        <span class="menu-item-text">@item.Title</span>
+                    </span>
+                    @if (item.IsActive)
+                    {
+                        <i class="ph ph-check ml-2 shrink-0 text-white/80"></i>
+                    }
+                </a>
+            }
+
+            @foreach (var group in groupedItems)
+            {
+                <details class="group mt-4" open>
+                    <summary
+                        class="list-none flex items-center justify-between text-xs font-bold text-muted uppercase tracking-wider mb-2 cursor-pointer hover:text-foreground transition-colors px-2">
+                        <span>@GroupLabel(group.Key)</span>
+                        <i class="ph ph-caret-down ml-2 transition-transform duration-200 group-open:rotate-180"></i>
+                    </summary>
+
+                    <div class="space-y-1 pl-3 border-l-2 border-primary/20 ml-2">
+                        @foreach (var item in group)
+                        {
+                            var isLong = item.Title.Length > 25; // Lower threshold active indented items
+                            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
+                               target="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "_blank" : null)"
+                               rel="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "noopener noreferrer" : null)"
+                               class="@(isLong ? "marquee-enabled" : "") menu-item-container group flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 @(item.IsActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-subtle hover:bg-surface-hover hover:text-foreground")"
+                               @onclick='(e) => OnActionClick(item, e)'
+                               @onclick:preventDefault="@(!item.IsLink)"
+                               data-title="@item.Tooltip" data-placement="left"
+                               data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 shrink-0 @(item.IsActive ? "text-white" : "text-muted group-hover:text-primary")"></i>
+                                <span class="overflow-hidden flex-1 min-w-0">
+                                    <span class="menu-item-text">@item.Title</span>
+                                </span>
+                                @if (item.IsActive)
+                                {
+                                    <i class="ph ph-check ml-2 shrink-0 text-white/80"></i>
+                                }
+                            </a>
+                        }
+                    </div>
+                </details>
+            }
+        </div>
+    };
+
+    private RenderFragment RenderMenuContent() => __builder =>
+    {
+        <div class="space-y-1">
+            @{
+                var groupedItems = Model.Items.Where(item => item.IsCollapse)
+                    .GroupBy(item => item.Meta)
+                    .ToList();
+            }
+
+            @foreach (var item in Model.Items.Where(item => !item.IsCollapse))
+            {
+                if (item.IsSectionHeader)
+                {
+                    <div class="text-xs font-bold text-muted uppercase tracking-wider mt-4 mb-2 px-2">@item.Title</div>
+                    continue;
+                }
+                <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
+                   target="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "_blank" : null)"
+                   rel="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "noopener noreferrer" : null)"
+                   class="group flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 @(item.IsActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-subtle hover:bg-surface-hover hover:text-foreground")"
+                   @onclick="@((MouseEventArgs e) => OnActionClick(item, e))"
+                   @onclick:preventDefault="@(!item.IsLink)"
+                   data-title="@item.Tooltip" data-placement="left"
+                   data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                    <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 @(item.IsActive ? "text-white" : "text-muted group-hover:text-primary")"></i>
+                    <span class="truncate">@item.Title</span>
+                    @if (item.IsActive)
+                    {
+                        <i class="ph ph-check ml-auto text-white/80"></i>
+                    }
+                </a>
+            }
+
+            @foreach (var group in groupedItems)
+            {
+                <details class="group mt-4" open>
+                    <summary
+                        class="list-none flex items-center justify-between text-xs font-bold text-muted uppercase tracking-wider mb-2 cursor-pointer hover:text-foreground transition-colors px-2">
+                        <span>@GroupLabel(group.Key)</span>
+                        <i class="ph ph-caret-down ml-2 transition-transform duration-200 group-open:rotate-180"></i>
+                    </summary>
+
+                    <div class="space-y-1 pl-3 border-l-2 border-primary/20 ml-2">
+                        @foreach (var item in group)
+                        {
+                            <a href="@(item.IsLink ? item.Reference : "javascript:void(0)")"
+                               target="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "_blank" : null)"
+                               rel="@(item.IsLink && item.Reference?.StartsWith("http") == true ? "noopener noreferrer" : null)"
+                               class="group flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 @(item.IsActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-subtle hover:bg-surface-hover hover:text-foreground")"
+                               @onclick='(e) => OnActionClick(item, e)'
+                               @onclick:preventDefault="@(!item.IsLink)"
+                               data-title="@item.Tooltip" data-placement="left"
+                               data-toggle="@(string.IsNullOrEmpty(item.Tooltip) ? "" : "tooltip")">
+                                <i class="@(string.IsNullOrEmpty(item.Icon) ? "" : $"ph {item.Icon} text-lg") mr-3 @(item.IsActive ? "text-white" : "text-muted group-hover:text-primary")"></i>
+                                <span class="truncate">@item.Title</span>
+                                @if (item.IsActive)
+                                {
+                                    <i class="ph ph-check ml-auto text-white/80"></i>
+                                }
+                            </a>
+                        }
+                    </div>
+                </details>
+            }
+        </div>
+    };
+}

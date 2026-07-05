@@ -257,7 +257,7 @@ public class Plugin : IPluginV2
             {
                 if (!targetId.HasValue)
                 {
-                    return "No target client id specified";
+                    return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_MUTE_ACTION_NO_TARGET_ID"];
                 }
 
                 var isTempMute = meta.ContainsKey(durationInput.Name) &&
@@ -328,7 +328,7 @@ public class Plugin : IPluginV2
             {
                 if (!targetId.HasValue)
                 {
-                    return "No target client id specified";
+                    return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_MUTE_ACTION_NO_TARGET_ID"];
                 }
 
                 var args = new List<string>();

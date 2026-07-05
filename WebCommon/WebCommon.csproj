@@ -1,23 +1,31 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <!-- shared, plugin-facing Blazor component kit (right-pane nav, page shell).
+             NOT packaged on its own: the assembly ships inside the RaidMax.IW4MAdmin.SharedLibraryCore
+             nupkg (see SharedLibraryCore.csproj), so out-of-tree plugins get it from the one package
+             they already reference. The old RaidMax.IW4MAdmin.WebCommon package is deprecated. -->
+        <Authors>RaidMax</Authors>
+        <Company>Forever None</Company>
+        <Version>2025.12.24.1</Version>
+        <Configurations>Debug;Release;Prerelease</Configurations>
+        <IsPackable>false</IsPackable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Components\UI\" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
     <ItemGroup>
-      <AdditionalFiles Include="Components\UI\Display\ColorCode.razor" />
-      <AdditionalFiles Include="Components\UI\Display\Render.razor" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Data\Data.csproj" />
-      <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj" />
+        <!-- only the DTO contracts (SideContextMenuItems) and base utilities. SLC is a published package,
+             so this ProjectReference becomes a NuGet dependency in the packed WebCommon nupkg. -->
+        <ProjectReference Include="..\SharedLibraryCore\SharedLibraryCore.csproj"/>
     </ItemGroup>
 
 </Project>

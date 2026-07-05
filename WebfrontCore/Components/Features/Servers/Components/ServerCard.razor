@@ -33,6 +33,22 @@
                     }
                 </div>
 
+                @* Free baseline: a passive skull + round-number badge (uses only the generic ServerInfo
+                   fields the host already RCon-parses). The ZombieStatsPremium plugin fills the slot to
+                   replace this with an interactive badge that opens the live-match modal. Renders nothing
+                   on non-zombie servers. *@
+                <PluginRenderSlot Slot="RenderSlots.ServerCardZombie"
+                                  Params="@(new ServerCardParams { Server = Model, Variant = ServerCardVariant.Desktop })">
+                    @if (Model.ZombieRoundNumber is not null)
+                    {
+                        <span class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-surface text-xs border border-line shadow-sm"
+                              title="@($"Current round {Model.ZombieRoundNumber}")">
+                            <i class="ph-bold ph-skull text-warning text-[10px]"></i>
+                            <span class="font-mono font-bold text-foreground">@Model.ZombieRoundNumber</span>
+                        </span>
+                    }
+                </PluginRenderSlot>
+
                 <!-- 4. Player Count -->
                 <div
                     class="px-2 py-0.5 rounded-full bg-surface text-foreground font-mono text-xs border border-line shadow-sm">
@@ -69,9 +85,12 @@
                 </button>
 
                 <a href="@Model.ConnectProtocolUrl"
-                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:flex"
+                   @onclick="HandlePlayClick"
+                   @onclick:preventDefault="true"
+                   class="server-play-link flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:flex"
                    title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
-                    <i class="ph-fill ph-play text-xs"></i>
+                    <i class="ph-fill ph-play text-xs play-icon"></i>
+                    <i class="ph-fill ph-clipboard-text text-xs play-copy-icon"></i>
                 </a>
             </div>
 
@@ -95,6 +114,16 @@
                     <span class="text-foreground">@Model.GameType</span>
                 </div>
             }
+            <PluginRenderSlot Slot="RenderSlots.ServerCardZombie"
+                              Params="@(new ServerCardParams { Server = Model, Variant = ServerCardVariant.Mobile })">
+                @if (Model.ZombieRoundNumber is not null)
+                {
+                    <div class="flex items-center justify-between">
+                        <span>Round</span>
+                        <span class="text-foreground font-mono font-bold">@Model.ZombieRoundNumber</span>
+                    </div>
+                }
+            </PluginRenderSlot>
             <div class="flex items-center justify-between">
                 <span>@AppState.Loc("WEBFRONT_SERVER_PLAYERS")</span>
                 <span class="text-foreground">@Model.ClientCount / @(Model.MaxClients - Model.PrivateClientSlots)</span>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Data.Models.Zombie;
 
 namespace Data.Models.Client
 {
@@ -85,5 +86,6 @@ namespace Data.Models.Client
         public virtual ICollection<EFMeta> Meta { get; set; }
         public virtual ICollection<EFPenalty> ReceivedPenalties { get; set; }
         public virtual ICollection<EFPenalty> AdministeredPenalties { get; set; }
+        public virtual ICollection<ZombieClientStat> ZombieClientStats { get; set; }
     }
 }

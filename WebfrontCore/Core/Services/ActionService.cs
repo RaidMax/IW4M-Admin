@@ -6,18 +6,20 @@ using SharedLibraryCore.Commands;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
+using WebCommon.Services;
 using WebfrontCore.Components.Features.Clients.Models;
 using WebfrontCore.Components.UI.Controls;
 
 namespace WebfrontCore.Core.Services;
 
-public interface IActionService
+public interface IActionService : IModalService
 {
     event Action<string, int?, string, string?> OnOpenAction;
-    event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction;
 
     void OpenAction(string actionName, int? targetId, string meta, string? serverId = null);
-    void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title, string? modalClass = null);
+
+    // OpenCustom + OnOpenCustomAction are inherited from IModalService (WebCommon) so plugins can
+    // open modals without referencing the host. The host keeps consuming them via IActionService.
 
     Task<ActionInfo> GetActionInfoAsync(string actionName, int? targetId, string meta, string? serverId = null);
 
@@ -37,19 +39,16 @@ public class ActionService : IActionService
 
     public event Action<string, int?, string, string?> OnOpenAction = delegate { };
 
-    public event Action<Microsoft.AspNetCore.Components.RenderFragment, string, string?> OnOpenCustomAction = delegate
-    {
-    };
+    public event Action<ModalRequest> OnOpenCustomAction = delegate { };
 
     public void OpenAction(string actionName, int? targetId, string meta, string? serverId = null)
     {
         OnOpenAction?.Invoke(actionName, targetId, meta, serverId);
     }
 
-    public void OpenCustom(Microsoft.AspNetCore.Components.RenderFragment content, string title,
-        string? modalClass = null)
+    public void OpenCustom(ModalRequest request)
     {
-        OnOpenCustomAction?.Invoke(content, title, modalClass);
+        OnOpenCustomAction?.Invoke(request);
     }
 
     // Command Names

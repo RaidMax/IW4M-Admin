@@ -310,17 +310,17 @@
             </div>
         }
 
-        <!-- Infinite scroll trigger -->
-        <div id="loadMoreAuditTrigger" class="w-full text-center mt-8 pb-8">
-            @if (_isLoading)
-            {
-                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            }
-            else if (HasMoreResults)
-            {
-                <div class="h-10"></div>
-            }
-        </div>
+        @if (HasMoreResults)
+        {
+            <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                    HasMore="@HasMoreResults"
+                                    IsLoading="@_isLoading"
+                                    ContainerClass="w-full text-center mt-8 pb-8">
+                <LoadingTemplate>
+                    <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </LoadingTemplate>
+            </InfiniteScrollSentinel>
+        }
     }
 </div>
 

@@ -61,7 +61,7 @@ namespace Integrations.Source
             _logger.LogDebug("Disposed Source RCon connection for {Endpoint}", _ipEndPoint);
         }
 
-        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "",  CancellationToken token = default)
+        public async Task<string[]> SendQueryAsync(StaticHelpers.QueryType type, string parameters = "",  CancellationToken token = default, Action<DateTime> onPacketSent = null)
         {
             try
             {

@@ -35,6 +35,11 @@ namespace IW4MAdmin.Plugins.Stats
             var items = stats.Where(validation).ToList();
             var performancePlayTime = items.Sum(s => s.TimePlayed);
 
+            if (performancePlayTime == 0)
+            {
+                return null;
+            }
+
             var propInfo = typeof(EFClientStatistics).GetProperty(propertyName);
             var weightedValues = items.Sum(item =>
                 (double?) propInfo?.GetValue(item) * (item.TimePlayed / (double) performancePlayTime));
@@ -52,27 +57,35 @@ namespace IW4MAdmin.Plugins.Stats
                 };
             }
             
-            var ti = 0.0;
-            var ti2 = 0.0;
+            var sumLogSquared = 0.0;  // Σ(log x)²
+            var sumLog = 0.0;         // Σ log x
             var n = 0L;
 
             foreach (var val in values)
             {
                 var logVal = Math.Log(val);
-                ti += logVal * logVal;
-                ti2 += logVal;
+                sumLogSquared += logVal * logVal;
+                sumLog += logVal;
                 n++;
-                if (n % 50 == 0) // this isn't ideal, but we want to reduce the amount of CPU usage that the 
+                if (n % 50 == 0) // this isn't ideal, but we want to reduce the amount of CPU usage that the
                     // loops takes so people don't complain
                 {
                     Thread.Sleep(1);
                 }
             }
 
-            var mean = ti2 / n;
-            ti2 *= ti2;
+            // Log-normal sample mean and standard deviation
+            var mean = sumLog / n;
             var bottom = n == 1 ? 1 : n * (n - 1);
-            var sigma = Math.Sqrt(((n * ti) - ti2) / bottom);
+            // Floor sigma to keep z-scores bounded when the fitted distribution
+            // collapses (small n with near-identical values). Without this, two
+            // similar players on a low-population server produce sigma ~= 0.001,
+            // which sends downstream z-scores into the hundreds and poisons any
+            // bucket-wide max that aggregates per-server z-scores. 0.25 is well
+            // below the natural fitted sigma of healthy buckets (~0.95) so it
+            // only kicks in for genuinely degenerate fits.
+            const double minSigma = 0.25;
+            var sigma = Math.Max(Math.Sqrt((n * sumLogSquared - sumLog * sumLog) / bottom), minSigma);
 
             return new LogParams()
             {

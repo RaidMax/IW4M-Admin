@@ -19,6 +19,8 @@ namespace Stats.Config
         public int MostKillsClientLimit { get; set; } = 5;
         public bool EnableAdvancedMetrics { get; set; } = true;
 
+        public List<PerformanceBucketConfiguration> PerformanceBuckets { get; set; } = new();
+
         public WeaponNameParserConfiguration[] WeaponNameParserConfigurations { get; set; } = {
             new()
             {

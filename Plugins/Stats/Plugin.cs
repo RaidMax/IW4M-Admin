@@ -18,8 +18,11 @@ using Data.Models.Server;
 using Microsoft.Extensions.Logging;
 using IW4MAdmin.Plugins.Stats.Client.Abstractions;
 using IW4MAdmin.Plugins.Stats.Events;
+
 using Microsoft.Extensions.DependencyInjection;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript;
+
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces.Events;
 using Stats.Client.Abstractions;
@@ -46,6 +49,7 @@ public class Plugin : IPluginV2
     private readonly IServerDataViewer _serverDataViewer;
     private readonly StatsConfiguration _statsConfig;
     private readonly StatManager _statManager;
+    private IStatusResponse lastResponse;
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
@@ -115,14 +119,34 @@ public class Plugin : IPluginV2
                 await _statManager.AddMessageAsync(messageEvent.Client.ClientId,
                     messageEvent.Server.LegacyDatabaseId, true, messageEvent.Message, token);
             }
+
+           // var response = await responsePoc.GetResponse("mistralai/mixtral-8x7b-instruct", messageEvent.Message, messageEvent.Owner, lastResponse);
+           // Console.WriteLine(response);
+            //messageEvent.Owner.Broadcast("^2" + response);
         };
         IGameEventSubscriptions.MatchEnded += OnMatchEvent;
+        IGameEventSubscriptions.RoundEnded += OnRoundEnded;
         IGameEventSubscriptions.MatchStarted += OnMatchEvent;
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
         IGameEventSubscriptions.ClientKilled += OnClientKilled;
         IGameEventSubscriptions.ClientDamaged += OnClientDamaged;
+        IGameServerEventSubscriptions.ServerStatusReceived += (@event, @_) =>
+        {
+            lastResponse = @event.Response;
+            return Task.CompletedTask;
+        };
         IManagementEventSubscriptions.ClientCommandExecuted += OnClientCommandExecute;
         IManagementEventSubscriptions.Load += OnLoad;
+    }
+
+    private async Task OnRoundEnded(RoundEndEvent roundEndedEvent, CancellationToken token)
+    {
+        await _statManager.Sync(roundEndedEvent.Server, token);
+
+        foreach (var calculator in _statCalculators)
+        {
+            await calculator.CalculateForEvent(roundEndedEvent);
+        }
     }
 
     private async Task OnClientKilled(ClientKillEvent killEvent, CancellationToken token)

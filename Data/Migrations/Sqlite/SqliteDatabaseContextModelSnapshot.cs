@@ -15,7 +15,7 @@ namespace Data.Migrations.Sqlite
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
                 {
@@ -388,6 +388,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("MeansOfDeathId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("PerformanceBucketId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ReceivedHitCount")
                         .HasColumnType("INTEGER");
 
@@ -418,6 +421,8 @@ namespace Data.Migrations.Sqlite
 
                     b.HasIndex("MeansOfDeathId");
 
+                    b.HasIndex("PerformanceBucketId");
+
                     b.HasIndex("ServerId");
 
                     b.HasIndex("WeaponAttachmentComboId");
@@ -444,6 +449,9 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("Newest")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("PerformanceBucketId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<double?>("PerformanceMetric")
                         .HasColumnType("REAL");
 
@@ -464,6 +472,8 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("ClientId");
 
                     b.HasIndex("CreatedDateTime");
+
+                    b.HasIndex("PerformanceBucketId");
 
                     b.HasIndex("Ranking");
 
@@ -493,6 +503,57 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("ClientId");
 
                     b.ToTable("EFClientRatingHistory", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatTag", b =>
+                {
+                    b.Property<int>("ZombieStatTagId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TagName")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ZombieStatTagId");
+
+                    b.ToTable("EFClientStatTags", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatTagValue", b =>
+                {
+                    b.Property<long>("ZombieClientStatTagValueId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("StatTagId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("StatValue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ZombieClientStatTagValueId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("StatTagId");
+
+                    b.ToTable("EFClientStatTagValues", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatistics", b =>
@@ -589,6 +650,25 @@ namespace Data.Migrations.Sqlite
                     b.HasIndex("EFClientStatisticsClientId", "EFClientStatisticsServerId");
 
                     b.ToTable("EFHitLocationCounts", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFPerformanceBucket", b =>
+                {
+                    b.Property<int>("PerformanceBucketId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PerformanceBucketId");
+
+                    b.ToTable("EFPerformanceBuckets", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFRating", b =>
@@ -1126,10 +1206,15 @@ namespace Data.Migrations.Sqlite
                     b.Property<bool>("IsPasswordProtected")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("PerformanceBucketId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("Port")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ServerId");
+
+                    b.HasIndex("PerformanceBucketId");
 
                     b.ToTable("EFServers", (string)null);
                 });
@@ -1215,6 +1300,371 @@ namespace Data.Migrations.Sqlite
                     b.HasKey("Vector3Id");
 
                     b.ToTable("Vector3", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStat", b =>
+                {
+                    b.Property<long>("ZombieClientStatId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BankOperations")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BoxUses")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BuildablesCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DamageDealt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DamageReceived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Deaths")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DoorsOpened")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Downs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("GumsActivated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("GumsTaken")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HeadshotKills")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Headshots")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kills")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LockerOperations")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Melees")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PerksConsumed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("PointsEarned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("PointsSpent")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PowerupsGrabbed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Revives")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TrapsActivated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WeaponsAbandoned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WeaponsPurchased")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("WeaponsUpgraded")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ZombieClientStatId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("MatchId");
+
+                    b.ToTable("EFZombieClientStats", (string)null);
+
+                    b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
+                {
+                    b.Property<int>("ZombieClientStatRecordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("RoundId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ZombieClientStatRecordId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("RoundId");
+
+                    b.ToTable("EFZombieClientStatRecords", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieEventLog", b =>
+                {
+                    b.Property<long>("ZombieEventLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AssociatedClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("EventType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("NumericalValue")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("SourceClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TextualValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ZombieEventLogId");
+
+                    b.HasIndex("AssociatedClientId");
+
+                    b.HasIndex("MatchId", "EventType");
+
+                    b.HasIndex("SourceClientId", "EventType");
+
+                    b.ToTable("EFZombieEvents", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
+                {
+                    b.Property<int>("ZombieMatchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Completed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("CreatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("EasterEggOccurredAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("EasterEggRound")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GameMatchId")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HighestRound")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MapId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("MatchEndDate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("MatchStartDate")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PlayerCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("UpdatedDateTime")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ZombieMatchId");
+
+                    b.HasIndex("MapId");
+
+                    b.HasIndex("ServerId", "GameMatchId", "MatchEndDate");
+
+                    b.ToTable("EFZombieMatches", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundDurationEma", b =>
+                {
+                    b.Property<int>("MapId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayerCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("EmaSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<long>("SampleCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("MapId", "RoundNumber", "PlayerCount");
+
+                    b.ToTable("EFZombieRoundDurationEmas", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
+                {
+                    b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<double>("AlivePercentage")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageDowns")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageKillsPerDown")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageMelees")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AveragePoints")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageRelativeSpeed")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageRevives")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageRoundReached")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("AverageSoloFactor")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("DedupeClientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DedupeServerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(-1L);
+
+                    b.Property<double>("HeadshotPercentage")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("HighestRound")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ServerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalMatchesCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalMatchesPlayed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalRoundsPlayed")
+                        .HasColumnType("INTEGER");
+
+                    b.HasIndex("ServerId");
+
+                    b.HasIndex("DedupeClientId", "DedupeServerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_EFZombieClientStatAggregates_DedupeKey");
+
+                    b.ToTable("EFZombieClientStatAggregates", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatchClientStat", b =>
+                {
+                    b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<int?>("AssistedRounds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SoloFromRound")
+                        .HasColumnType("INTEGER");
+
+                    b.ToTable("EFZombieMatchClientStats", (string)null);
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
+                {
+                    b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<TimeSpan?>("Duration")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("EndTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PlayerCountAtRoundStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SpecialType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("StartTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<TimeSpan?>("TimeAlive")
+                        .HasColumnType("TEXT");
+
+                    b.ToTable("EFZombieRoundClientStats", (string)null);
                 });
 
             modelBuilder.Entity("Data.Models.Client.EFACSnapshotVector3", b =>
@@ -1403,6 +1853,10 @@ namespace Data.Migrations.Sqlite
                         .WithMany()
                         .HasForeignKey("MeansOfDeathId");
 
+                    b.HasOne("Data.Models.Client.Stats.EFPerformanceBucket", "PerformanceBucket")
+                        .WithMany()
+                        .HasForeignKey("PerformanceBucketId");
+
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
@@ -1421,6 +1875,8 @@ namespace Data.Migrations.Sqlite
 
                     b.Navigation("MeansOfDeath");
 
+                    b.Navigation("PerformanceBucket");
+
                     b.Navigation("Server");
 
                     b.Navigation("Weapon");
@@ -1436,11 +1892,17 @@ namespace Data.Migrations.Sqlite
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Data.Models.Client.Stats.EFPerformanceBucket", "PerformanceBucket")
+                        .WithMany()
+                        .HasForeignKey("PerformanceBucketId");
+
                     b.HasOne("Data.Models.Server.EFServer", "Server")
                         .WithMany()
                         .HasForeignKey("ServerId");
 
                     b.Navigation("Client");
+
+                    b.Navigation("PerformanceBucket");
 
                     b.Navigation("Server");
                 });
@@ -1454,6 +1916,25 @@ namespace Data.Migrations.Sqlite
                         .IsRequired();
 
                     b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatTagValue", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Client.Stats.EFClientStatTag", "StatTag")
+                        .WithMany()
+                        .HasForeignKey("StatTagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("StatTag");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFClientStatistics", b =>
@@ -1639,6 +2120,15 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("SourceClient");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFServer", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.EFPerformanceBucket", "PerformanceBucket")
+                        .WithMany()
+                        .HasForeignKey("PerformanceBucketId");
+
+                    b.Navigation("PerformanceBucket");
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServerSnapshot", b =>
                 {
                     b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
@@ -1669,6 +2159,118 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Server");
                 });
 
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany("ZombieClientStats")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Models.Zombie.ZombieMatch", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Match");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieClientStatRecord", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieRoundClientStat", "Round")
+                        .WithMany()
+                        .HasForeignKey("RoundId");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Round");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieEventLog", b =>
+                {
+                    b.HasOne("Data.Models.Client.EFClient", "AssociatedClient")
+                        .WithMany()
+                        .HasForeignKey("AssociatedClientId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieMatch", "Match")
+                        .WithMany()
+                        .HasForeignKey("MatchId");
+
+                    b.HasOne("Data.Models.Client.EFClient", "SourceClient")
+                        .WithMany()
+                        .HasForeignKey("SourceClientId");
+
+                    b.Navigation("AssociatedClient");
+
+                    b.Navigation("Match");
+
+                    b.Navigation("SourceClient");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatch", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
+                        .WithMany()
+                        .HasForeignKey("MapId");
+
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
+
+                    b.Navigation("Map");
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundDurationEma", b =>
+                {
+                    b.HasOne("Data.Models.Client.Stats.Reference.EFMap", "Map")
+                        .WithMany()
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Map");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieAggregateClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Server.EFServer", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId");
+
+                    b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
+                        .WithOne()
+                        .HasForeignKey("Data.Models.Zombie.ZombieAggregateClientStat", "ZombieClientStatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieMatchClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
+                        .WithOne()
+                        .HasForeignKey("Data.Models.Zombie.ZombieMatchClientStat", "ZombieClientStatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
+                {
+                    b.HasOne("Data.Models.Zombie.ZombieClientStat", null)
+                        .WithOne()
+                        .HasForeignKey("Data.Models.Zombie.ZombieRoundClientStat", "ZombieClientStatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Data.Models.Client.EFClient", b =>
                 {
                     b.Navigation("AdministeredPenalties");
@@ -1676,6 +2278,8 @@ namespace Data.Migrations.Sqlite
                     b.Navigation("Meta");
 
                     b.Navigation("ReceivedPenalties");
+
+                    b.Navigation("ZombieClientStats");
                 });
 
             modelBuilder.Entity("Data.Models.Client.Stats.EFACSnapshot", b =>

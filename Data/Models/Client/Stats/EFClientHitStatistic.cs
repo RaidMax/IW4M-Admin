@@ -42,6 +42,11 @@ namespace Data.Models.Client.Stats
 
         [ForeignKey(nameof(WeaponAttachmentComboId))]
         public virtual EFWeaponAttachmentCombo WeaponAttachmentCombo { get; set; }
+        
+        public int? PerformanceBucketId { get; set; }
+        
+        [ForeignKey(nameof(PerformanceBucketId))]
+        public virtual EFPerformanceBucket PerformanceBucket { get; set; }
 
         /// <summary>
         /// how many hits the player got

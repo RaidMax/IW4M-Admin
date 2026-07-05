@@ -20,7 +20,7 @@ public class SetLogLevelCommand : Command
 
         Name = "loglevel";
         Alias = "ll";
-        Description = "set minimum logging level";
+        Description = layout["COMMANDS_LOGLEVEL_DESC"];
         Permission = EFClient.Permission.Owner;
         Arguments = new CommandArgument[]
         {
@@ -50,7 +50,8 @@ public class SetLogLevelCommand : Command
         {
             await gameEvent.Origin.TellAsync(new[]
             {
-                $"Valid log values: {string.Join(",", Enum.GetValues<LogEventLevel>())}"
+                _translationLookup["COMMANDS_LOGLEVEL_VALID_VALUES"]
+                    .FormatExt(string.Join(",", Enum.GetValues<LogEventLevel>()))
             });
             return;
         }
@@ -75,6 +76,9 @@ public class SetLogLevelCommand : Command
         }
 
         await gameEvent.Origin.TellAsync(new[]
-            { $"Set minimum log level to {loggingSwitch.MinimumLevel.ToString()}" });
+        {
+            _translationLookup["COMMANDS_LOGLEVEL_SUCCESS"]
+                .FormatExt(loggingSwitch.MinimumLevel.ToString())
+        });
     }
 }

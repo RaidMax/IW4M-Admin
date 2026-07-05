@@ -11,6 +11,7 @@ using IW4MAdmin.Plugins.LiveRadar.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Interfaces;
@@ -29,15 +30,15 @@ public class Plugin : IPluginV2
 
     private bool _addedPage;
     private readonly Dictionary<string, long> _botGuidLookups;
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
     private readonly ILogger _logger;
     private readonly ApplicationConfiguration _appConfig;
 
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
         serviceCollection.AddConfiguration<LiveRadarConfiguration>();
-        
-        serviceCollection.AddSingleton<IGameScriptEvent, LiveRadarScriptEvent>(); // for identification 
+
+        serviceCollection.AddSingleton<IGameScriptEvent, LiveRadarScriptEvent>(); // for identification
         serviceCollection.AddTransient<LiveRadarScriptEvent>(); // for factory
     }
 
@@ -46,7 +47,7 @@ public class Plugin : IPluginV2
         _botGuidLookups = new Dictionary<string, long>();
         _logger = logger;
         _appConfig = appConfig;
-        
+
         IGameServerEventSubscriptions.MonitoringStarted += OnMonitoringStarted;
         IGameEventSubscriptions.ClientEnteredMatch += OnClientEnteredMatch;
         IGameEventSubscriptions.ScriptEventTriggered += OnScriptEvent;
@@ -58,41 +59,47 @@ public class Plugin : IPluginV2
         {
             return Task.CompletedTask;
         }
-        
+
         try
         {
             var originalBotGuid = radarEvent.ScriptData.Split(";")[1];
-            
+
             if (originalBotGuid.IsBotGuid() && _appConfig.IgnoreBots)
             {
                 return Task.CompletedTask;
             }
-                    
-            var botKey = $"BotGuid_{originalBotGuid}";
-            long generatedBotGuid;
 
+            var botKey = $"BotGuid_{originalBotGuid}";
+            long? registeredId;
             lock (_lockObject)
             {
-                var hasBotKey = _botGuidLookups.ContainsKey(botKey);
-
-                if (!hasBotKey && originalBotGuid.IsBotGuid())
-                {
-                    // edge case where the bot guid has not been registered yet
-                    return Task.CompletedTask;
-                }
-
-                generatedBotGuid = hasBotKey
-                    ? _botGuidLookups[botKey]
-                    : (originalBotGuid ?? "0").ConvertGuidToLong(NumberStyles.HexNumber);
+                registeredId = _botGuidLookups.TryGetValue(botKey, out var v) ? v : null;
             }
 
-            var radarDto = RadarDto.FromScriptEvent(radarEvent, generatedBotGuid);
-
-            var client =
-                radarEvent.Owner.ConnectedClients.FirstOrDefault(client => client.NetworkId == radarDto.Guid);
-
-            if (client != null)
+            EFClient client;
+            if (registeredId is { } rid)
             {
+                client = radarEvent.Owner.ConnectedClients.FirstOrDefault(c => c.NetworkId == rid);
+            }
+            else if (originalBotGuid.IsBotGuid())
+            {
+                // bot identifiers from the integration are "bot<clientNumber>"; resolve straight to the in-game
+                // slot. this also covers bots already in the match when monitoring (re)started — the case the
+                // ClientEnteredMatch registration misses because that event never fired for them.
+                var slotStr = originalBotGuid.Replace("bot", "", StringComparison.OrdinalIgnoreCase);
+                client = int.TryParse(slotStr, out var slot)
+                    ? radarEvent.Owner.ConnectedClients.FirstOrDefault(c => c.ClientNumber == slot)
+                    : null;
+            }
+            else
+            {
+                var nid = originalBotGuid.ConvertGuidToLong(NumberStyles.HexNumber);
+                client = radarEvent.Owner.ConnectedClients.FirstOrDefault(c => c.NetworkId == nid);
+            }
+
+            if (client is not null)
+            {
+                var radarDto = RadarDto.FromScriptEvent(radarEvent, client.NetworkId);
                 radarDto.Name = client.Name.StripColors();
                 client.SetAdditionalProperty("LiveRadar", radarDto);
             }
@@ -102,7 +109,7 @@ public class Plugin : IPluginV2
         {
             _logger.LogError(e, "Could not parse live radar output: {Data}", e.Data);
         }
-        
+
         return Task.CompletedTask;
     }
 
@@ -139,8 +146,8 @@ public class Plugin : IPluginV2
                 return Task.CompletedTask;
             }
 
-            (monitorEvent.Source as IManager)?.GetPageList().Pages
-                .Add(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/radar");
+            (monitorEvent.Source as IManager)?.GetPageList()
+                .AddPage(Utilities.CurrentLocalization.LocalizationIndex["WEBFRONT_RADAR_TITLE"], "/radar", "ph-wifi-high");
             _addedPage = true;
         }
 

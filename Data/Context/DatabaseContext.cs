@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Data.Models.Client.Stats;
 using Data.Models.Client.Stats.Reference;
 using Data.Models.Misc;
 using Data.Models.Server;
+using Data.Models.Zombie;
 
 namespace Data.Context
 {
@@ -24,6 +26,7 @@ namespace Data.Context
 
         #region STATS
 
+        public DbSet<EFPerformanceBucket> PerformanceBuckets { get; set; }
         public DbSet<Models.Vector3> Vector3s { get; set; }
         public DbSet<EFACSnapshotVector3> SnapshotVector3s { get; set; }
         public DbSet<EFACSnapshot> ACSnapshots { get; set; }
@@ -37,6 +40,9 @@ namespace Data.Context
         public DbSet<EFClientHitStatistic> HitStatistics { get; set; }
         public DbSet<EFWeapon> Weapons { get; set; }
         public DbSet<EFWeaponAttachment> WeaponAttachments { get; set; }
+        
+        public DbSet<EFClientStatTag> ClientStatTags { get; set; }
+        public DbSet<EFClientStatTagValue> ClientStatTagValues { get; set; }
         public DbSet<EFMap> Maps { get; set; }
         
         #endregion
@@ -49,10 +55,45 @@ namespace Data.Context
         public DbSet<EFClientConnectionHistory> ConnectionHistory { get; set; }
 
         #endregion
+        
+        #region Zombie
+        
+        public DbSet<ZombieMatch> ZombieMatches { get; set; }
+        public DbSet<ZombieMatchClientStat> ZombieMatchClientStats { get; set; }
+        public DbSet<ZombieRoundClientStat> ZombieRoundClientStats { get; set; }
+        public DbSet<ZombieAggregateClientStat> ZombieClientStatAggregates { get; set; }
+        public DbSet<ZombieClientStatRecord> ZombieClientStatRecords { get; set; }
+        public DbSet<ZombieEventLog> ZombieEvents { get; set; }
+        public DbSet<ZombieRoundDurationEma> ZombieRoundDurationEmas { get; set; }
+        
+        #endregion
+
+        /// <summary>
+        /// Shadow-column names backing the zombie aggregate dedupe key. Shadow (not CLR)
+        /// properties so callers can't drift them out of sync with ClientId/ServerId —
+        /// they're stamped on every save instead.
+        /// </summary>
+        public const string ZombieAggregateDedupeClientIdColumn = "DedupeClientId";
+        public const string ZombieAggregateDedupeServerIdColumn = "DedupeServerId";
+        public const string ZombieAggregateDedupeIndexName = "IX_EFZombieClientStatAggregates_DedupeKey";
 
         private void SetAuditColumns()
         {
             return;
+        }
+
+        private void StampZombieAggregateDedupeKeys()
+        {
+            foreach (var entry in ChangeTracker.Entries<ZombieAggregateClientStat>())
+            {
+                if (entry.State is not (EntityState.Added or EntityState.Modified))
+                {
+                    continue;
+                }
+
+                entry.Property(ZombieAggregateDedupeClientIdColumn).CurrentValue = entry.Entity.ClientId;
+                entry.Property(ZombieAggregateDedupeServerIdColumn).CurrentValue = entry.Entity.ServerId ?? -1L;
+            }
         }
 
         public DatabaseContext()
@@ -63,25 +104,57 @@ namespace Data.Context
             }
         }
 
-        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
-        {
-        }
-
         protected DatabaseContext(DbContextOptions options) : base(options)
         {
         }
 
+        // NOTE on write intent: this context may be created with change detection disabled (the
+        // read-optimised path — see DatabaseContextFactory). On such an instance, mutating a loaded
+        // entity's properties and calling SaveChanges persists NOTHING — the change is never
+        // detected, and no error is raised. To write reliably regardless of how the context was
+        // built, mark the intent explicitly: DbSet.Update()/UpdateRange() or ExecuteUpdate(). Both
+        // set entity/row state directly and do not depend on automatic change detection. The stamping
+        // helpers below likewise only observe entities whose state was set explicitly or detected.
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
             CancellationToken cancellationToken = default)
         {
             SetAuditColumns();
+            StampZombieAggregateDedupeKeys();
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
         public override int SaveChanges()
         {
             SetAuditColumns();
+            StampZombieAggregateDedupeKeys();
             return base.SaveChanges();
+        }
+
+        /// <summary>
+        /// SQLite has no native <see cref="DateTimeOffset"/> type and the EF Core
+        /// SQLite provider can't translate <c>ORDER BY</c> on DateTimeOffset columns
+        /// to SQL (throws <c>NotSupportedException</c> at query compile time). The
+        /// canonical fix is a value converter that stores DateTimeOffset as a long
+        /// (binary tick representation) — comparable, ORDER BY-able, and round-trips
+        /// the offset losslessly via <see cref="DateTimeOffset.ToBinary"/>.
+        ///
+        /// Postgres + MySQL handle DateTimeOffset natively, so the converter is only
+        /// applied when running on SQLite (detected via <see cref="DatabaseFacade.ProviderName"/>).
+        /// Apply via <c>ConfigureConventions</c> so it covers every DateTimeOffset
+        /// property in every entity globally — no risk of forgetting one as new
+        /// models are added.
+        /// </summary>
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            base.ConfigureConventions(configurationBuilder);
+
+            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            {
+                configurationBuilder.Properties<DateTimeOffset>()
+                    .HaveConversion<DateTimeOffsetToBinaryConverter>();
+                configurationBuilder.Properties<DateTimeOffset?>()
+                    .HaveConversion<DateTimeOffsetToBinaryConverter>();
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -175,7 +248,89 @@ namespace Data.Context
             modelBuilder.Entity<EFPenaltyIdentifier>().ToTable("EFPenaltyIdentifiers");
             modelBuilder.Entity<EFServerSnapshot>().ToTable(nameof(EFServerSnapshot));
             modelBuilder.Entity<EFClientConnectionHistory>().ToTable(nameof(EFClientConnectionHistory));
+            
+            modelBuilder.Entity<ZombieMatch>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieMatches)}");
+                // Index supports the GSC stitching lookup: TrackClient checks
+                // for an open match on this server with the same GameMatchId.
+                ent.HasIndex(m => new { m.ServerId, m.GameMatchId, m.MatchEndDate });
+            });
+            
+            modelBuilder.Entity<ZombieClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieClientStat)}s");
+                ent.HasOne(prop => prop.Client)
+                    .WithMany(prop => prop.ZombieClientStats)
+                    .HasForeignKey(prop => prop.ClientId);
+            });
 
+            modelBuilder.Entity<ZombieMatchClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieMatchClientStats)}");
+            });
+
+            modelBuilder.Entity<ZombieRoundClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieRoundClientStats)}");
+            });
+
+            modelBuilder.Entity<ZombieAggregateClientStat>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieClientStatAggregates)}");
+                // One aggregate row per (client, server) — server NULL meaning "lifetime".
+                // TPT puts ClientId on the base table and ServerId on this child table, so
+                // the natural UNIQUE(ClientId, ServerId) can't be expressed as a single
+                // index. Instead both halves are denormalized into shadow columns on this
+                // table, stamped automatically in SaveChanges (see
+                // StampZombieAggregateDedupeKeys). ServerId NULL maps to -1 because every
+                // supported provider treats NULLs as distinct in unique indexes, which
+                // would let duplicate lifetime rows through.
+                ent.Property<int>(ZombieAggregateDedupeClientIdColumn);
+                ent.Property<long>(ZombieAggregateDedupeServerIdColumn).HasDefaultValue(-1L);
+                ent.HasIndex(ZombieAggregateDedupeClientIdColumn, ZombieAggregateDedupeServerIdColumn)
+                    .IsUnique()
+                    .HasDatabaseName(ZombieAggregateDedupeIndexName);
+            });
+
+            modelBuilder.Entity<ZombieEventLog>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieEvents)}");
+                // Composite indexes for hot event-log filter paths:
+                //   • (MatchId, EventType): per-match event-type filters
+                //     (timeline rendering, "all gum events for match X" etc.).
+                //   • (SourceClientId, EventType): per-client lifetime
+                //     event-type counts (career bank ops, gum activations).
+                ent.HasIndex(e => new { e.MatchId, e.EventType });
+                ent.HasIndex(e => new { e.SourceClientId, e.EventType });
+            });
+
+            modelBuilder.Entity<ZombieClientStatRecord>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieClientStatRecords)}");
+            });
+
+            modelBuilder.Entity<ZombieRoundDurationEma>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ZombieRoundDurationEmas)}");
+                ent.HasKey(e => new { e.MapId, e.RoundNumber, e.PlayerCount });
+            });
+
+            modelBuilder.Entity<EFPerformanceBucket>(ent =>
+            {
+                ent.ToTable($"EF{nameof(PerformanceBuckets)}");
+            });
+
+            modelBuilder.Entity<EFClientStatTag>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ClientStatTags)}");
+            });
+
+            modelBuilder.Entity<EFClientStatTagValue>(ent =>
+            {
+                ent.ToTable($"EF{nameof(ClientStatTagValues)}");
+            });
+            
             Models.Configuration.StatsModelConfiguration.Configure(modelBuilder);
 
             base.OnModelCreating(modelBuilder);

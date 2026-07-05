@@ -22,8 +22,10 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     private const string DvarProbe = "sv_iw4madmin_probe";
     private const string DvarLatencyProbe = "sv_iw4madmin_latencyprobe";
     private static readonly TimeSpan StaleProbeThreshold = TimeSpan.FromSeconds(30);
+    private const double ProbeJitterFraction = 0.2;
 
     private readonly ConcurrentDictionary<string, DateTime> _pendingProbes = new();
+    private readonly Random _jitterRng = new();
 
     private Timer _probeTimer;
     private bool _gscDetected;
@@ -33,33 +35,33 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     public void Start(CancellationToken cancellationToken)
     {
         IGameServerEventSubscriptions.ServerStatusReceived += OnServerStatusReceived;
-        IGameEventSubscriptions.ScriptEventTriggered += OnScriptEventTriggered;
 
-        if (appConfig.LatencyProbeIntervalMs > 0 && server.IsLegacyGameIntegrationEnabled)
+        if (appConfig.LatencyProbeIntervalMs > 0)
         {
+            // GSC presence is determined by DetectGscCompanionAsync probing
+            // sv_iw4madmin_latencyprobe directly — no pre-gate required, and
+            // any pre-gate based on legacy flags (e.g. sv_customcallbacks)
+            // produces false negatives on games that don't use them.
+            IGameEventSubscriptions.ScriptEventTriggered += OnScriptEventTriggered;
             IGameEventSubscriptions.MatchStarted += OnMatchStarted;
 
             // Initial detection attempt after a short delay to allow GSC to initialize
             _ = new Timer(OnInitialDetection, null, appConfig.LatencyProbeIntervalMs, Timeout.Infinite);
+        }
 
-            cancellationToken.Register(() =>
+        cancellationToken.Register(() =>
+        {
+            _probeTimer?.Dispose();
+            IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
+
+            if (appConfig.LatencyProbeIntervalMs > 0)
             {
-                _probeTimer?.Dispose();
-                IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
                 IGameEventSubscriptions.ScriptEventTriggered -= OnScriptEventTriggered;
                 IGameEventSubscriptions.MatchStarted -= OnMatchStarted;
-                _pendingProbes.Clear();
-            });
-        }
-        else
-        {
-            cancellationToken.Register(() =>
-            {
-                IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
-                IGameEventSubscriptions.ScriptEventTriggered -= OnScriptEventTriggered;
-                _pendingProbes.Clear();
-            });
-        }
+            }
+
+            _pendingProbes.Clear();
+        });
     }
 
     private Task OnServerStatusReceived(ServerStatusReceiveEvent statusEvent, CancellationToken token)
@@ -86,12 +88,31 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         if (!string.IsNullOrEmpty(probe.ProbeId) && _pendingProbes.TryRemove(probe.ProbeId, out var sendTime))
         {
-            var latencyMs = (DateTime.UtcNow - sendTime).TotalMilliseconds;
-            LatencyMetrics.RecordLogProbeLatency(latencyMs);
+            var totalMs = (DateTime.UtcNow - sendTime).TotalMilliseconds;
+
+            // GameLogIngestMs is the path a natural log line takes — game-write →
+            // GLS poll → IW4MAdmin parse — and explicitly does NOT include the RCon
+            // out-leg the probe used to start the clock. Subtract one-way RCon delivery
+            // (rtt/2) from the measured total. If RCon RTT isn't established yet, skip
+            // this sample rather than record an inflated number; EMA recovers on the
+            // next probe once RTT samples accumulate.
+            var rtt = LatencyMetrics.RconRoundTripMs;
+            if (rtt is null)
+            {
+                using (LogContext.PushProperty("Server", server.Id))
+                {
+                    logger.LogDebug("Log probe {ProbeId} dropped: RCon RTT not yet stable", probe.ProbeId);
+                }
+                return Task.CompletedTask;
+            }
+
+            var pipelineMs = Math.Max(0, totalMs - rtt.Value / 2.0);
+            LatencyMetrics.RecordLogProbeLatency(pipelineMs);
 
             using (LogContext.PushProperty("Server", server.Id))
             {
-                logger.LogDebug("Log probe {ProbeId} latency: {LatencyMs:F1}ms", probe.ProbeId, latencyMs);
+                logger.LogDebug("Log probe {ProbeId} pipeline: {PipelineMs:F1}ms (total {TotalMs:F1}ms - rtt/2 {HalfRtt:F1}ms)",
+                    probe.ProbeId, pipelineMs, totalMs, rtt.Value / 2.0);
             }
         }
 
@@ -134,13 +155,14 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         if (_gscDetected && _probeTimer is null)
         {
-            _probeTimer = new Timer(OnProbeTimerElapsed, null, appConfig.LatencyProbeIntervalMs,
-                appConfig.LatencyProbeIntervalMs);
+            // One-shot timer; OnProbeTimerElapsed re-arms with a jittered delay each
+            // cycle so probes don't phase-lock to the GameLogReader poll cycle.
+            _probeTimer = new Timer(OnProbeTimerElapsed, null, NextJitteredDelayMs(), Timeout.Infinite);
 
             using (LogContext.PushProperty("Server", server.Id))
             {
-                logger.LogInformation("Latency probe started (interval: {Interval}ms)",
-                    appConfig.LatencyProbeIntervalMs);
+                logger.LogInformation("Latency probe started (interval: {Interval}ms ±{JitterPct:P0})",
+                    appConfig.LatencyProbeIntervalMs, ProbeJitterFraction);
             }
         }
     }
@@ -159,16 +181,33 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
                 logger.LogWarning(ex, "Error in latency probe timer");
             }
         }
+        finally
+        {
+            _probeTimer?.Change(NextJitteredDelayMs(), Timeout.Infinite);
+        }
+    }
+
+    private int NextJitteredDelayMs()
+    {
+        var basePeriod = appConfig.LatencyProbeIntervalMs;
+        var jitterRange = (int)(basePeriod * ProbeJitterFraction);
+        // uniform offset in [-jitterRange, +jitterRange]
+        var offset = _jitterRng.Next(-jitterRange, jitterRange + 1);
+        return Math.Max(1, basePeriod + offset);
     }
 
     private async Task SendProbeAsync()
     {
         var probeId = Guid.NewGuid().ToString("N")[..8];
-        _pendingProbes[probeId] = DateTime.UtcNow;
 
         try
         {
-            await server.SetDvarAsync(DvarProbe, probeId, server.Manager.CancellationToken);
+            // T1 anchored to the actual UDP send moment via onPacketSent callback —
+            // strips C#-side queue/flood-protect/retry pollution from the measurement.
+            // TryAdd ensures retries (which re-fire the callback) don't overwrite the
+            // first send time; GSC echoes on whichever attempt arrives first.
+            await server.SetDvarAsync(DvarProbe, probeId, server.Manager.CancellationToken,
+                onPacketSent: sentAt => _pendingProbes.TryAdd(probeId, sentAt));
 
             using (LogContext.PushProperty("Server", server.Id))
             {

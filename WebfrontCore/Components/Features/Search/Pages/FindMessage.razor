@@ -87,7 +87,7 @@
             {
                 <div class="text-center py-12 text-muted bg-surface rounded-lg border border-line border-dashed">
                     <i class="ph ph-chat-circle-text text-4xl mb-3 text-subtle mx-auto"></i>
-                    <div>No messages found</div>
+                    <div>@AppState.Loc("WEBFRONT_SEARCH_NO_MESSAGES")</div>
                 </div>
             }
             else
@@ -117,25 +117,26 @@
         </div>
     </div>
 
-    <!-- Load More / Status -->
-    <div id="loadMoreMessageTrigger" class="mt-6 flex justify-center py-4">
-        @if (_isLoading && Results.Count > 0)
-        {
-            <div class="flex items-center gap-2 text-muted animate-pulse">
-                <i class="ph ph-spinner animate-spin text-xl"></i>
-                <span>@AppState.Loc("WEBFRONT_LOADING")</span>
-            </div>
-        }
-        else if (_hasMore)
-        {
-            <div class="h-10"></div>
-            <!-- Sentinel spacer -->
-        }
-        else if (Results.Count > 0)
-        {
+    @if (_hasMore)
+    {
+        <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                HasMore="@_hasMore"
+                                IsLoading="@(_isLoading && Results.Count > 0)"
+                                ContainerClass="mt-6 flex justify-center py-4">
+            <LoadingTemplate>
+                <div class="flex items-center gap-2 text-muted animate-pulse">
+                    <i class="ph ph-spinner animate-spin text-xl"></i>
+                    <span>@AppState.Loc("WEBFRONT_LOADING")</span>
+                </div>
+            </LoadingTemplate>
+        </InfiniteScrollSentinel>
+    }
+    else if (Results.Count > 0)
+    {
+        <div class="mt-6 flex justify-center py-4">
             <div class="text-muted italic text-sm">@AppState.Loc("WEBFRONT_SEARCH_NO_MORE_RESULTS")</div>
-        }
-    </div>
+        </div>
+    }
 </div>
 
 <!-- Chat Context Modal -->
@@ -153,7 +154,7 @@
                 <div class="flex items-center gap-2">
                     <i class="ph ph-chat-circle-text text-secondary"></i>
                     <h3 class="font-semibold text-foreground">@AppState.Loc("WEBFRONT_CHAT_CONTEXT")</h3>
-                    <span class="text-xs text-muted">±5 minutes</span>
+                    <span class="text-xs text-muted">@AppState.Loc("WEBFRONT_CHAT_CONTEXT_WINDOW")</span>
                 </div>
                 <button @onclick="CloseContextModal" class="text-muted hover:text-foreground transition-colors">
                     <i class="ph ph-x text-xl"></i>

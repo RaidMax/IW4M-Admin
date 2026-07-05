@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using WebfrontCore.Components.Features.Admin.Components;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.UI.Navigation.Models;
+using WebCommon.Services;
 
 
 namespace WebfrontCore.Components.Features.Clients.Components;
@@ -78,28 +79,28 @@ public partial class ClientBadges : IDisposable
 
     private void ShowReports()
     {
-        ActionService.OpenCustom(builder =>
+        ActionService.OpenCustom(new ModalRequest(builder =>
         {
             builder.OpenComponent<DashboardReports>(0);
             builder.CloseComponent();
-        }, AppState.Loc("WEBFRONT_MODAL_REPORTS_TITLE"));
+        }, AppState.Loc("WEBFRONT_MODAL_REPORTS_TITLE")));
     }
 
     private void ShowAdmins()
     {
-        ActionService.OpenCustom(builder =>
+        ActionService.OpenCustom(new ModalRequest(builder =>
         {
             builder.OpenComponent<DashboardAdmins>(0);
             builder.CloseComponent();
-        }, AppState.Loc("WEBFRONT_MODAL_ADMINS_TITLE"));
+        }, AppState.Loc("WEBFRONT_MODAL_ADMINS_TITLE")));
     }
 
     private void ShowFlagged()
     {
-        ActionService.OpenCustom(builder =>
+        ActionService.OpenCustom(new ModalRequest(builder =>
         {
             builder.OpenComponent<DashboardFlagged>(0);
             builder.CloseComponent();
-        }, AppState.Loc("WEBFRONT_MODAL_FLAGGED_TITLE"));
+        }, AppState.Loc("WEBFRONT_MODAL_FLAGGED_TITLE")));
     }
 }

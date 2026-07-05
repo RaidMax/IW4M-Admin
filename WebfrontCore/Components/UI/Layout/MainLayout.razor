@@ -65,7 +65,17 @@ else
                     <!-- Global MOTD Announcement Banner -->
                     <AnnouncementBanner GlobalOnly="true" @rendermode="InteractiveServer"/>
 
-                    @Body
+                    @* A plugin-bundle page is wrapped in its scope marker so the plugin's scoped CSS
+                       (PluginCssScoper) applies to it. display:contents keeps the wrapper layout-
+                       transparent. Host pages (PluginScopeId == null) render @Body bare. *@
+                    @if (PluginScopeId is not null)
+                    {
+                        <div data-iw4m-plugin="@PluginScopeId" style="display:contents">@Body</div>
+                    }
+                    else
+                    {
+                        @Body
+                    }
                 </main>
             </div>
         </div>

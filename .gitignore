@@ -250,6 +250,8 @@ Application/WebfrontCore/*
 /Data/IW4MAdmin_Migration.db-wal
 bundle/
 WebfrontCore/Tools/*
+_PRIVATE/
+translation_temp.csv
 
 # LLM folders
 .claude/

@@ -1,0 +1,17 @@
+/*
+ * Tailwind input for the Live Radar plugin's web page.
+ *
+ * Emitted UNLAYERED. The host serves this CSS scoped to Live Radar's own rendered DOM (CSS @scope, via
+ * SharedLibraryCore's PluginCssScoper), so the plugin's utilities apply only inside its own page — they can't
+ * override the host chrome, and unlayered they keep full power over the host's base utilities on the plugin's
+ * own markup. Do NOT wrap in layer(plugins): a lower layer would stop those overrides and break responsive
+ * layout. Preflight is omitted — the host already ships one; we pull only the theme tokens and utilities.
+ *
+ * Compiled to plugin.css (purged to the classes actually used) and served, scoped, at /_content/liveradar/plugin.css.
+ */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+
+/* scan the component markup and the radar canvas script (it injects Tailwind-classed player cards) */
+@source "../Components/**/*.razor";
+@source "../wwwroot/liveradar.js";

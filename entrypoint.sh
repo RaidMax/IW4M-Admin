@@ -70,6 +70,14 @@ if [ ! -f "$CONFIG_DIR/LoggingConfiguration.json" ]; then
     cp -n /app_defaults/Configuration/* "$CONFIG_DIR/"
 fi
 
+# DefaultSettings.json ships system defaults (maps, game strings, quick messages,
+# etc.) — not user config. Always refresh it from the image so updates land on
+# the host-mounted Configuration volume. IW4MAdminSettings.json stays untouched.
+if [ -f "/app_defaults/Configuration/DefaultSettings.json" ]; then
+    echo "Refreshing DefaultSettings.json from image defaults..."
+    cp -f /app_defaults/Configuration/DefaultSettings.json "$CONFIG_DIR/DefaultSettings.json"
+fi
+
 # Sync core plugins — only update if the image version is newer than the mounted version
 if [ -d "/app_defaults/Plugins" ]; then
     for ref_file in /app_defaults/Plugins/*; do

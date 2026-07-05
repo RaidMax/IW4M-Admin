@@ -59,6 +59,16 @@ Set-Location "$SolutionDir/Plugins"
 Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object { dotnet publish $_.FullName -o "$SolutionDir/BUILD/Plugins" --no-restore }
 Set-Location $SolutionDir
 
+# Bundle plugins ship as a self-contained .zip (DLL + wwwroot), already emitted into BUILD/Plugins by their
+# build. Drop their loose DLL so it isn't also loaded as a plain plugin (a dual-load without the served assets).
+Get-ChildItem -Path "$SolutionDir/Plugins" -Recurse -Filter *.csproj | ForEach-Object {
+    if ((Get-Content $_.FullName -Raw) -match '<IW4MAdminBundle>\s*true\s*</IW4MAdminBundle>') {
+        # drop from the build staging dir and from any previous loose copy in the output Plugins dir
+        Remove-Item -Force -ErrorAction SilentlyContinue "$SolutionDir/BUILD/Plugins/$($_.BaseName).dll"
+        Remove-Item -Force -ErrorAction SilentlyContinue "$OutputDir/Plugins/$($_.BaseName).dll"
+    }
+}
+
 if (-not (Test-Path "$OutputDir/Localization")) {
     Write-Output "downloading translations"
     New-Item -ItemType Directory -Force -Path "$OutputDir/Localization"
@@ -73,5 +83,7 @@ if (-not (Test-Path "$OutputDir/Localization")) {
 Write-Output "copying plugins to build dir"
 New-Item -ItemType Directory -Force -Path "$OutputDir/Plugins"
 Copy-Item -Recurse -Force -Path "$SolutionDir/BUILD/Plugins/*.dll" -Destination "$OutputDir/Plugins/"
+# bundle plugins (DLL + wwwroot packaged together) are delivered as a .zip the host loads in-memory
+Copy-Item -Recurse -Force -Path "$SolutionDir/BUILD/Plugins/*.zip" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue
 Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.js" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue
 Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.cs" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue

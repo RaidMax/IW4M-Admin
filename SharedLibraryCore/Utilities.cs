@@ -1,21 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Data.Models;
 using Humanizer;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Dtos.Meta;
 using SharedLibraryCore.Events.Game;
@@ -45,7 +38,14 @@ namespace SharedLibraryCore
             $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}";
 #endif
         public static string PluginsDirectory => Path.Combine(OperatingDirectory, "Plugins");
-        
+
+        /// <summary>
+        /// Normalizes a bundle-relative path to forward slashes with no leading slash
+        /// (e.g. <c>lib\Credify.dll</c> → <c>lib/Credify.dll</c>). Shared by the plugin-bundle loader and
+        /// the in-memory asset store so this path handling is defined in one place.
+        /// </summary>
+        public static string ToNormalizedBundlePath(this string path) => path.Replace('\\', '/').TrimStart('/');
+
         public static Encoding EncodingType;
         public static Layout CurrentLocalization = new Layout(new Dictionary<string, string>());
 
@@ -222,9 +222,12 @@ namespace SharedLibraryCore
         /// </summary>
         /// <param name="server"></param>
         /// <returns></returns>
-        public static bool IsZombieServer(this Server server)
+        public static bool IsZombieServer(this Server server) => (server as IGameServer).IsZombieServer();
+
+        public static bool IsZombieServer(this IGameServer server)
         {
-            return new[] { Game.T4, Game.T5, Game.T6 }.Contains(server.GameName) &&
+            return new[] { Reference.Game.T4, Reference.Game.T5, Reference.Game.T6, Reference.Game.T7 }.Contains(server.GameCode) &&
+                   !string.IsNullOrEmpty(server.Gametype) &&
                    ZmGameTypes.Contains(server.Gametype.ToLower());
         }
 
@@ -511,7 +514,7 @@ namespace SharedLibraryCore
 
         public static TimeSpan ParseTimespan(this string input)
         {
-            var expressionMatch = Regex.Match(input, @"^([0-9]{1,5})(\p{L}+)");
+            var expressionMatch = Regex.Match(input, @"([0-9]+)(\w+)");
 
             if (!expressionMatch.Success) // fallback to default tempban length of 1 hour
             {
@@ -836,9 +839,9 @@ namespace SharedLibraryCore
         }
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue,
-            CancellationToken token)
+            CancellationToken token, Action<DateTime> onPacketSent = null)
         {
-            await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token);
+            await server.RconParser.SetDvarAsync(server.RemoteConnection, dvarName, dvarValue, token, onPacketSent);
         }
 
         public static async Task SetDvarAsync(this Server server, string dvarName, object dvarValue)
@@ -1231,6 +1234,11 @@ namespace SharedLibraryCore
             return value.ToString("#,##0", CurrentLocalization.Culture);
         }
 
+        public static string ToNumericalString(this long value)
+        {
+            return value.ToString("#,##0", CurrentLocalization.Culture);
+        }
+
         public static string ToNumericalString(this double value, int precision = 0)
         {
             return value.ToString(
@@ -1342,7 +1350,34 @@ namespace SharedLibraryCore
 
             return serviceCollection;
         }
-        
+
+        /// <summary>
+        /// Registers a plugin-owned SQLite database. The file lands in the plugin's own data folder
+        /// (<c>Plugins/&lt;plugin&gt;/&lt;name&gt;.db</c>, derived from <typeparamref name="TContext"/>'s
+        /// assembly); <paramref name="name"/> defaults to the context type name and may contain
+        /// forward-slash subfolders. Injects an isolated <see cref="IDbContextFactory{TContext}"/> and
+        /// records a <see cref="PluginDatabaseRegistration"/> (pure data — path plus a context accessor)
+        /// that the host applies at startup (before the plugin's <c>Load</c>); the host owns the migrate
+        /// and WAL setup. A plugin may register more than one database.
+        /// </summary>
+        public static IServiceCollection AddDatabase<TContext>(this IServiceCollection serviceCollection,
+            string name = null) where TContext : DbContext
+        {
+            var directory = PluginDirectoryResolver.ResolveDirectory(typeof(TContext).Assembly);
+            var databasePath =
+                PluginDirectoryResolver.CombineWithinRoot(directory, name ?? typeof(TContext).Name, ".db");
+            var factory = new PluginDbContextFactory<TContext>($"Data Source={databasePath}");
+
+            serviceCollection.AddSingleton<IDbContextFactory<TContext>>(factory);
+
+            serviceCollection.AddSingleton(new PluginDatabaseRegistration(
+                typeof(TContext).Name,
+                databasePath,
+                () => factory.CreateDbContext()));
+
+            return serviceCollection;
+        }
+
         public static TimeSpan GetExponentialBackoffDelay(int retryCount, int staticDelay = 5)
         {
             var maxTimeout = TimeSpan.FromMinutes(2.1);

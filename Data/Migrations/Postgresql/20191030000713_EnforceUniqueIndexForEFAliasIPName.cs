@@ -60,7 +60,7 @@ WHERE
                 return;
             }
 
-            else if (migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
+            else if (migrationBuilder.ActiveProvider == "Microting.EntityFrameworkCore.MySql")
             {
                 migrationBuilder.Sql(@"CREATE TABLE DUPLICATE_ALIASES
 SELECT

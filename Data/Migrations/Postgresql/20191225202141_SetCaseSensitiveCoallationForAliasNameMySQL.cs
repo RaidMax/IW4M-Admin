@@ -6,7 +6,7 @@ namespace Data.Migrations.Postgresql
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            if (migrationBuilder.ActiveProvider == "Pomelo.EntityFrameworkCore.MySql")
+            if (migrationBuilder.ActiveProvider == "Microting.EntityFrameworkCore.MySql")
             {
                 // this prevents duplicate aliases from being added by changing it to case sensitive collation
                 migrationBuilder.Sql(@"ALTER TABLE `EFAlias` MODIFY

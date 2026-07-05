@@ -15,6 +15,7 @@ using EFClient = SharedLibraryCore.Database.Models.EFClient;
 using PenaltyInfo = SharedLibraryCore.Dtos.PenaltyInfo;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats.Helpers;
+using IW4MAdmin.Plugins.Stats.Web.Dtos;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Interfaces;
@@ -187,8 +188,11 @@ public class WebfrontDataService : IWebfrontDataService
                     server.ResolvedIpEndPoint.Address.IsInternal()
                         ? _manager.ExternalIPAddress
                         : server.ListenAddress, server.ListenPort),
+                IsZombieServer = server.IsZombieServer(),
+                ZombieRoundNumber = server.ZombieRoundNumber,
                 RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
-                GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
+                GameLogIngestMs = server.LatencyMetrics?.GameLogIngestMs,
+                PerformanceBucket = server.PerformanceCode
             }).ToList();
     }
 
@@ -255,8 +259,10 @@ public class WebfrontDataService : IWebfrontDataService
             ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                 server.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : server.ListenAddress,
                 server.ListenPort),
+            IsZombieServer = server.IsZombieServer(),
+            ZombieRoundNumber = server.ZombieRoundNumber,
             RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
-            GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
+            GameLogIngestMs = server.LatencyMetrics?.GameLogIngestMs
         };
     }
 
@@ -288,10 +294,15 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<NavigationInfo> GetNavigationDataAsync()
     {
-        // Get pages from Manager's page list (IDictionary<string, string> where key=name, value=location)
-        var rawPages = _manager.GetPageList().Pages;
-        var pages = rawPages
-            .Select(kvp => new Page { Name = kvp.Key, Location = kvp.Value })
+        // Get pages from Manager's page list (key=name, value=location), plus any per-page navbar icon
+        var pageList = _manager.GetPageList();
+        var pages = pageList.Pages
+            .Select(kvp => new Page
+            {
+                Name = kvp.Key,
+                Location = kvp.Value,
+                IconId = pageList.PageIcons.TryGetValue(kvp.Key, out var icon) ? icon : null
+            })
             .ToList();
 
         // Get all navigation interactions (Main, Admin, Social)
@@ -325,7 +336,7 @@ public class WebfrontDataService : IWebfrontDataService
             User = user,
             Authorized = authorized,
             Pages = pages
-                .Select(page => new Page { Name = page.Name, Location = page.Location }),
+                .Select(page => new Page { Name = page.Name, Location = page.Location, IconId = page.IconId }),
             Interactions = interactions
                 .Select(i => new NavigationInteractionInfo
                 {
@@ -889,25 +900,37 @@ public class WebfrontDataService : IWebfrontDataService
         var server = _manager.GetServers().FirstOrDefault(s => s.Id == request.ServerId) as IGameServer;
         var legacyId = server?.LegacyDatabaseId;
 
-        var stats = _statsConfig.EnableAdvancedMetrics
-            ? await _statManager.GetNewTopStats(request.Offset, request.Count, legacyId)
-            : await _statManager.GetTopStats(request.Offset, request.Count, legacyId);
+        List<TopStatsInfo> stats;
+        int rowsConsumed;
+        if (_statsConfig.EnableAdvancedMetrics)
+        {
+            (stats, rowsConsumed) = await _statManager.GetNewTopStats(
+                request.Offset, request.Count, legacyId, request.PerformanceBucketCode);
+        }
+        else
+        {
+            // Legacy path doesn't filter past the ranking query, so consumed == returned.
+            stats = await _statManager.GetTopStats(request.Offset, request.Count, legacyId);
+            rowsConsumed = stats.Count;
+        }
 
-        var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId);
+        var totalRanked = await _serverDataViewer.RankedClientsCountAsync(legacyId, request.PerformanceBucketCode);
 
         return new TopStatsResponse
         {
             Players = stats,
-            TotalRankedClients = totalRanked
+            TotalRankedClients = totalRanked,
+            NextOffset = request.Offset + rowsConsumed
         };
     }
 
-    public async Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null)
+    public async Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null, string? performanceBucketCode = null)
     {
         var hitInfo = (await _advancedStatsHelper.QueryResource(new StatsInfoRequest
         {
             ClientId = clientId,
-            ServerEndpoint = serverId
+            ServerEndpoint = serverId,
+            PerformanceBucketCode = performanceBucketCode
         }))?.Results?.First();
 
         if (hitInfo is null)
@@ -924,6 +947,20 @@ public class WebfrontDataService : IWebfrontDataService
         var matchedServerId = server?.LegacyDatabaseId;
 
         hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId);
+
+        // Invoke custom stats metrics (e.g. zombie stats) for advanced view
+        var customMeta = new Dictionary<int, List<Data.Models.EFMeta>>
+        {
+            { clientId, new List<Data.Models.EFMeta>() }
+        };
+
+        foreach (var customMetricFunc in _manager.CustomStatsMetrics)
+        {
+            await customMetricFunc(customMeta, matchedServerId, hitInfo.PerformanceBucket, false);
+        }
+
+        hitInfo.CustomMetrics = customMeta[clientId];
+
         return hitInfo;
     }
 

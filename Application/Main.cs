@@ -12,6 +12,7 @@ using SharedLibraryCore.Dtos.Meta.Responses;
 using SharedLibraryCore.Exceptions;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Plugins;
 using SharedLibraryCore.QueryHelper;
 using SharedLibraryCore.Repositories;
 using SharedLibraryCore.Services;
@@ -201,13 +202,73 @@ namespace IW4MAdmin.Application
             Console.Error.WriteLine($"[FATAL] Unhandled exception: {exception}");
         }
 
+        // Rollup state for the benign Blazor circuit-teardown race (#62718): per-event detail is logged
+        // at Debug, and a periodic Information summary preserves a spike signal without per-event noise.
+        private static int _blazorTeardownFaultCount;
+        private static DateTime _lastTeardownSummaryUtc = DateTime.UtcNow;
+        private static readonly object TeardownSummaryLock = new();
+        private static readonly TimeSpan TeardownSummaryInterval = TimeSpan.FromMinutes(5);
+
+        /// <summary>
+        /// True when an unobserved task fault is the known-benign Blazor Server circuit-teardown race
+        /// (dotnet/aspnetcore#62718): a circuit aborted mid-render (tab refresh/close) so a disposed-scope
+        /// property injection or a null render-tree frame throws. Framework-caught, no functional impact.
+        /// Identified by every inner being ObjectDisposed/NullReference originating in the Blazor renderer.
+        /// </summary>
+        private static bool IsBlazorRenderTeardownNoise(AggregateException aggregate)
+        {
+            var inners = aggregate.Flatten().InnerExceptions;
+            return inners.Count > 0 && inners.All(ex =>
+                ex is ObjectDisposedException or NullReferenceException &&
+                (ex.StackTrace?.Contains("Microsoft.AspNetCore.Components", StringComparison.Ordinal) ?? false));
+        }
+
         /// <summary>
         /// Handler for a faulted <see cref="Task"/> that was never awaited/observed. Since .NET Core
         /// these no longer terminate the process, so without this they vanish silently — usually a
         /// plugin fire-and-forget bug. We log it and mark it observed so the behaviour stays explicit.
+        /// The benign Blazor circuit-teardown race (#62718) is split off to Warning so it does not
+        /// masquerade as an error among genuine plugin faults.
         /// </summary>
         private static void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
         {
+            if (IsBlazorRenderTeardownNoise(e.Exception))
+            {
+                e.SetObserved();
+
+                // Per-event detail stays at Debug (silent in normal logs, full stack when Debug is on).
+                Utilities.DefaultLogger?.LogDebug(e.Exception,
+                    "Blazor circuit-teardown task fault (benign framework race #62718); marked observed");
+
+                // Periodic Information rollup so a sudden spike (a real regression thrashing circuits)
+                // is still visible without per-event noise. Flushed by the next fault past the window.
+                var count = 0;
+                var emit = false;
+                var window = TimeSpan.Zero;
+                lock (TeardownSummaryLock)
+                {
+                    _blazorTeardownFaultCount++;
+                    var now = DateTime.UtcNow;
+                    if (now - _lastTeardownSummaryUtc >= TeardownSummaryInterval)
+                    {
+                        count = _blazorTeardownFaultCount;
+                        window = now - _lastTeardownSummaryUtc;
+                        _blazorTeardownFaultCount = 0;
+                        _lastTeardownSummaryUtc = now;
+                        emit = true;
+                    }
+                }
+
+                if (emit)
+                {
+                    Utilities.DefaultLogger?.LogInformation(
+                        "Caught {Count} benign Blazor circuit-teardown faults (#62718) in the last {Minutes:F0}m; all marked observed",
+                        count, window.TotalMinutes);
+                }
+
+                return;
+            }
+
             Utilities.DefaultLogger?.LogError(e.Exception,
                 "Unobserved task exception (likely a plugin fire-and-forget that faulted); marking observed");
             e.SetObserved();
@@ -235,6 +296,7 @@ namespace IW4MAdmin.Application
                 ConfigurationMigration.CheckDirectories();
                 ConfigurationMigration.RemoveObsoletePlugins20210322();
                 ConfigurationMigration.MigrateJsToCsPlugins();
+                ConfigurationMigration.MigrateDllToBundlePlugins();
 
                 logger.LogDebug("Configuring services...");
 
@@ -441,10 +503,16 @@ namespace IW4MAdmin.Application
                 .AddSingleton(appConfig)
                 .AddSingleton(masterApi)
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
+                .AddSingleton<IPluginBundleLoader>(_ => PluginBundleLoader.Shared)
                 .AddSingleton<IPluginImporter, PluginImporter>()
                 .BuildServiceProvider();
 
             var pluginImporter = pluginServiceProvider.GetRequiredService<IPluginImporter>();
+
+            // register the SAME importer instance the discovery pass runs on, so the web host — and the
+            // WebfrontCore startup that resolves it — get the importer that already holds the distilled
+            // plugin-assembly list (for registering plugin MVC parts + Blazor components) without a second pass.
+            serviceCollection.AddSingleton<IPluginImporter>(pluginImporter);
 
             // we need to register the rest client with regular collection
             serviceCollection.AddSingleton(masterApi);
@@ -578,7 +646,7 @@ namespace IW4MAdmin.Application
             var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
             {
                 BaseAddress = masterUri,
-                Timeout = TimeSpan.FromSeconds(15)
+                Timeout = Utilities.IsDevelopment ? TimeSpan.FromMilliseconds(500) : TimeSpan.FromSeconds(15)
             };
             var masterRestClient = RestService.For<IMasterApi>(httpClient);
             var translationLookup = Configure.Initialize(Utilities.DefaultLogger, masterRestClient, appConfig);
@@ -604,7 +672,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton(serviceProvider =>
                     serviceProvider.GetRequiredService<IConfigurationHandler<CommandConfiguration>>()
                         .Configuration() ?? new CommandConfiguration())
-                .AddSingleton<IPluginImporter, PluginImporter>()
+                // IPluginImporter is registered as the discovery instance in HandlePluginRegistration (so the
+                // webfront resolves the importer that already ran discovery); no type registration here.
                 .AddSingleton<IMiddlewareActionHandler, MiddlewareActionHandler>()
                 .AddSingleton<IRConConnectionFactory, RConConnectionFactory>()
                 .AddSingleton<IGameServerInstanceFactory, GameServerInstanceFactory>()
@@ -641,6 +710,8 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IResourceQueryHelper<ChatSearchQuery, MessageResponse>, ChatResourceQueryHelper>()
                 .AddTransient<IParserPatternMatcher, ParserPatternMatcher>()
                 .AddSingleton<IRemoteAssemblyHandler, RemoteAssemblyHandler>()
+                .AddSingleton<IPluginAssetStorage>(_ => InMemoryPluginAssetStorage.Shared)
+                .AddSingleton<IPluginBundleLoader>(_ => PluginBundleLoader.Shared)
                 .AddSingleton<IMasterCommunication, MasterCommunication>()
                 .AddSingleton<IManager, ApplicationManager>()
 #pragma warning disable CS0612
@@ -666,6 +737,7 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IRemoteCommandService, RemoteCommandService>()
                 .AddSingleton(new ConfigurationWatcher())
                 .AddSingleton(typeof(IConfigurationHandlerV2<>), typeof(BaseConfigurationHandlerV2<>))
+                .AddSingleton(typeof(IPluginDataStore<>), typeof(PluginDataStore<>))
                 .AddSingleton<IScriptPluginFactory, ScriptPluginFactory>()
                 .AddSingleton<CsPluginCompiler>()
                 .AddSingleton<CsPluginFileWatcher>()

@@ -1,0 +1,73 @@
+@typeparam TParams where TParams : class
+@using WebCommon.Services
+@using SharedLibraryCore.Plugins
+
+@* A typed, named extension point the host places in its own pages. Plugins fill it by registering
+   IRenderSlotProvider instances in DI. The host stays free of any plugin reference: providers are
+   resolved from DI and rendered via DynamicComponent.
+
+   The slot identity AND its parameter contract come from a strongly-typed RenderSlot<TParams>
+   (see RenderSlots), so wiring is navigable by Find Usages and checked by the compiler. The whole
+   typed Params record is handed to each widget as a single "Model" parameter — so a filling widget
+   declares exactly: [Parameter] public TParams Model { get; set; }.
+
+   When no provider fills the slot, the optional ChildContent renders as a fallback (host-owned,
+   plugin-free). This lets a page offer a baseline experience that a plugin enriches when present —
+   e.g. a passive indicator the host always shows, upgraded to an interactive one by a plugin. With
+   no ChildContent and no provider, the slot renders nothing. *@
+
+@if (_matched.Count > 0)
+{
+    @foreach (var provider in _matched)
+    {
+        @* Wrap a bundle-provided widget in its scope marker so the plugin's scoped CSS
+           (PluginCssScoper) applies. display:contents keeps the wrapper layout-transparent. A widget
+           that isn't from a bundle (e.g. a loose-dll plugin with no served CSS) renders bare. *@
+        var scopeId = PluginBundleLoader.Shared.PluginIdForAssembly(provider.ComponentType.Assembly);
+        if (scopeId is not null)
+        {
+            <div data-iw4m-plugin="@scopeId" style="display:contents">
+                <DynamicComponent Type="provider.ComponentType" Parameters="_componentParams"/>
+            </div>
+        }
+        else
+        {
+            <DynamicComponent Type="provider.ComponentType" Parameters="_componentParams"/>
+        }
+    }
+}
+else if (ChildContent is not null)
+{
+    @ChildContent
+}
+
+@code {
+    [Inject] private IEnumerable<IRenderSlotProvider> Providers { get; set; } = [];
+
+    /// <summary>The slot to fill. Both its name (matched against providers) and its parameter type come from here.</summary>
+    [Parameter, EditorRequired] public RenderSlot<TParams> Slot { get; set; } = default!;
+
+    /// <summary>The typed parameter record handed to each filling widget as its single <c>Model</c> parameter.</summary>
+    [Parameter] public TParams? Params { get; set; }
+
+    /// <summary>Fallback content rendered only when no provider fills the slot (host-owned, plugin-free baseline).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private IReadOnlyList<IRenderSlotProvider> _matched = [];
+
+    // The one framework-level convention: every slot widget receives the typed record as "Model".
+    private static readonly IDictionary<string, object> _empty = new Dictionary<string, object>(0);
+    private IDictionary<string, object> _componentParams = _empty;
+
+    protected override void OnParametersSet()
+    {
+        _matched = Providers
+            .Where(p => string.Equals(p.SlotName, Slot.Name, StringComparison.Ordinal))
+            .OrderBy(p => p.Order)
+            .ToList();
+
+        _componentParams = Params is null
+            ? _empty
+            : new Dictionary<string, object> { ["Model"] = Params };
+    }
+}

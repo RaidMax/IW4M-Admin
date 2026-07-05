@@ -34,7 +34,7 @@ public interface IWebfrontDataService
     Task SaveConfigurationFileAsync(string fileName, string content);
     Task<Dictionary<Data.Models.Client.EFClient.Permission, IList<ClientInfo>>> GetPrivilegedClientsAsync();
     Task<TopStatsResponse> GetTopStatsAsync(TopStatsRequest request);
-    Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null);
+    Task<AdvancedStatsInfo?> GetClientStatisticsAsync(int clientId, string? serverId = null, string? performanceBucketCode = null);
     Task<IList<StatsInfoResult>> GetClientStatsAsync(int clientId);
     Task<IEnumerable<SharedLibraryCore.Alerts.Alert.AlertState>> GetAlertsAsync();
     Task DismissAlertAsync(Guid alertId);

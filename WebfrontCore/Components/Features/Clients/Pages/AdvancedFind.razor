@@ -1,6 +1,5 @@
 @page "/Client/AdvancedFind"
 @page "/find-client"
-@implements IAsyncDisposable
 @rendermode InteractiveServer
 
 <PageTitle>@AppState.Loc("WEBFRONT_SEARCH_RESULTS_TITLE") | @AppState.WebfrontBranding</PageTitle>
@@ -133,7 +132,7 @@
              {
                  <div class="text-center py-12 text-muted bg-surface rounded-lg border border-line border-dashed">
                       <i class="ph ph-magnifying-glass text-4xl mb-3 text-subtle mx-auto"></i>
-                      <div>No results found</div>
+                      <div>@AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")</div>
                  </div>
              }
              else
@@ -160,7 +159,7 @@
                                  <span class="font-medium text-foreground">@client.ClientLevel</span>
                              </div>
                              <div class="text-right">
-                                  <span class="text-xs text-muted uppercase tracking-wider block mb-0.5">Last Seen</span>
+                                  <span class="text-xs text-muted uppercase tracking-wider block mb-0.5">@AppState.Loc("WEBFRONT_ADVANCED_FIND_LABEL_LAST_SEEN")</span>
                                   <span class="text-foreground">@client.LastConnection.HumanizeForCurrentCulture()</span>
                              </div>
                          </div>
@@ -187,24 +186,26 @@
         </div>
     </div>
 
-    <!-- Load More / Status -->
-    <div id="loadMoreTrigger" class="mt-6 flex justify-center py-4">
-        @if (_isLoading && Results.Count > 0)
-        {
-            <div class="flex items-center gap-2 text-muted animate-pulse">
-                <i class="ph ph-spinner animate-spin text-xl"></i>
-                <span>@AppState.Loc("WEBFRONT_LOADING")</span>
-            </div>
-        }
-        else if (_hasMore)
-        {
-             <div class="h-10"></div> <!-- Sentinel spacer -->
-        }
-        else if (Results.Count > 0)
-        {
+    @if (_hasMore)
+    {
+        <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                HasMore="@_hasMore"
+                                IsLoading="@(_isLoading && Results.Count > 0)"
+                                ContainerClass="mt-6 flex justify-center py-4">
+            <LoadingTemplate>
+                <div class="flex items-center gap-2 text-muted animate-pulse">
+                    <i class="ph ph-spinner animate-spin text-xl"></i>
+                    <span>@AppState.Loc("WEBFRONT_LOADING")</span>
+                </div>
+            </LoadingTemplate>
+        </InfiniteScrollSentinel>
+    }
+    else if (Results.Count > 0)
+    {
+        <div class="mt-6 flex justify-center py-4">
             <div class="text-muted italic text-sm">@AppState.Loc("WEBFRONT_SEARCH_NO_MORE_RESULTS")</div>
-        }
-    </div>
+        </div>
+    }
 </div>
 
 @code {}

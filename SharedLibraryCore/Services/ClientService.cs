@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -41,7 +41,8 @@ namespace SharedLibraryCore.Services
                         Password = client.Password,
                         PasswordSalt = client.PasswordSalt,
                         TwoFactorSecret = client.TwoFactorSecret,
-                        GameName = client.GameName
+                        GameName = client.GameName,
+                        CurrentAliasId = client.CurrentAliasId
                     })
                     .FirstOrDefault(client => client.NetworkId == networkId && client.GameName == game)
             );

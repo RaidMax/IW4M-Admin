@@ -2,18 +2,16 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.JSInterop;
 using SharedLibraryCore.Dtos;
 using WebfrontCore.Core.Auth;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Admin.Pages;
 
-public partial class AuditLog : IAsyncDisposable
+public partial class AuditLog
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
-    [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required NavigationManager Navigation { get; set; }
     [Inject] public required ILogger<AuditLog> Logger { get; set; }
 
@@ -67,7 +65,6 @@ public partial class AuditLog : IAsyncDisposable
 
     private bool _isLoading;
     private string? _error;
-    private DotNetObjectReference<AuditLog>? _dotNetRef;
 
     // Pagination
     private int Offset
@@ -162,15 +159,6 @@ public partial class AuditLog : IAsyncDisposable
 
         await LoadData();
         await LoadStatistics();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("window.infiniteScroll.initialize", _dotNetRef, "loadMoreAuditTrigger");
-        }
     }
 
     private void ParseQueryParameters()
@@ -358,30 +346,13 @@ public partial class AuditLog : IAsyncDisposable
         }
     }
 
-    [JSInvokable]
-    public async Task LoadMore()
+    private async Task LoadMore()
     {
         if (!HasMoreResults || _isLoading)
             return;
         Offset += PageSize;
         await LoadData();
         StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_dotNetRef is not null)
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("window.infiniteScroll.disconnect");
-                _dotNetRef.Dispose();
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or JSDisconnectedException)
-            {
-                // Ignored
-            }
-        }
     }
 
     public class AuditLogState

@@ -171,7 +171,7 @@ namespace IW4MAdmin.Application.Misc
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                _logger.LogWarning("Non success response code from master is {StatusCode}, message is {Message}", response.StatusCode, response.Error?.Content);
+                _logger.LogWarning("Non success response code from master is {StatusCode}, message is {Message}", response.StatusCode, response.Error?.Message);
             }
         }
     }

@@ -32,12 +32,15 @@ mv "$PublishDir/DefaultSettings.json" "$PublishDir/Configuration/"
 mkdir -p "$PublishDir/Lib"
 rm -f "$PublishDir/Microsoft.CodeAnalysis*.dll"
 
-# Get list of plugin DLLs from BUILD/Plugins (dynamically detected)
+# Get list of plugin DLLs by matching .csproj project names in the Plugins/ source directory.
+# This avoids treating transitive dependencies (e.g. EF Core, Serilog) that land in BUILD/Plugins
+# as plugin assemblies when plugins use ProjectReferences instead of PackageReferences.
 pluginDllNames=()
-if [ -d "$SourceDir/BUILD/Plugins" ]; then
-    for pluginDll in "$SourceDir/BUILD/Plugins"/*.dll; do
-        if [ -f "$pluginDll" ]; then
-            pluginDllNames+=("$(basename "$pluginDll")")
+if [ -d "$SourceDir/Plugins" ]; then
+    for csproj in "$SourceDir/Plugins"/*/*.csproj; do
+        if [ -f "$csproj" ]; then
+            projName=$(basename "$csproj" .csproj)
+            pluginDllNames+=("${projName}.dll")
         fi
     done
 fi

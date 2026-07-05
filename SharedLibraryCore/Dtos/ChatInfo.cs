@@ -13,6 +13,6 @@ namespace SharedLibraryCore.Dtos
         public Game ServerGame { get; set; }
         public bool IsQuickMessage { get; set; }
         public bool IsHidden { get; set; }
-        public string HiddenMessage => string.Concat(Enumerable.Repeat('●', Message.Length));
+        public string HiddenMessage => string.Concat(Enumerable.Repeat('●', Message?.Length ?? 0));
     }
 }

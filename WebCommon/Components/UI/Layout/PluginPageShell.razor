@@ -1,0 +1,59 @@
+@namespace WebCommon.Components.UI.Layout
+
+@* Standard IW4MAdmin page shell: scrollable main content on the left, a sticky right-aligned
+   SideContextMenu on the right (collapsing to a CSS drawer below xl). Plugins wrap their page body
+   in this to get the host's native layout + navigation for free, instead of rolling their own.
+
+   PADDING CONTRACT: the shell owns the standard page gutters — wc-page-shell-main applies the
+   host-wide p-4 / md:p-6 / lg:p-8 equivalent (1rem / 1.5rem / 2rem), matching Profile,
+   leaderboard, and stats pages. Do NOT add page padding via ContentClass; that doubles the
+   gutters. ContentClass is for width/centering/spacing of the content itself.
+
+   The shell's STRUCTURAL classes are host-namespaced (wc-page-shell*, defined in the host's
+   app.css), NOT shared Tailwind utilities. This shell renders inside the plugin's scoped-CSS
+   subtree and *contains* the plugin's content, so it can't be excluded via the data-iw4m-host
+   scoping limit (that would orphan the content) — and shared utilities here get clobbered by the
+   plugin's same-named unlayered ones (a plugin's .flex-col beats the host's .xl:flex-row, killing
+   the row layout). A namespace the plugin never emits sidesteps the collision entirely.
+   BackgroundClass/ContentClass remain caller-supplied and are styled by the plugin's own sheet. *@
+
+<div class="@BackgroundClass wc-page-shell">
+    <div class="wc-page-shell-main">
+        <div class="@ContentClass">
+            @ChildContent
+        </div>
+    </div>
+
+    @if (Menu?.Items?.Any() == true)
+    {
+        <div class="wc-page-shell-aside">
+            <div class="wc-page-shell-sticky">
+                <SideContextMenu Model="Menu" Localizer="Localizer" OnActionSelect="OnActionSelect"/>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The page body rendered in the main (left) column.</summary>
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+
+    /// <summary>Navigation model for the right-hand pane. When null/empty the pane is omitted.</summary>
+    [Parameter] public SideContextMenuItems? Menu { get; set; }
+
+    /// <summary>Optional localizer forwarded to the nav (collapse-group headers).</summary>
+    [Parameter] public Func<string, string>? Localizer { get; set; }
+
+    /// <summary>Optional callback for non-link nav actions.</summary>
+    [Parameter] public EventCallback<SideContextMenuItem> OnActionSelect { get; set; }
+
+    /// <summary>Extra classes for the outer wrapper, e.g. a themed page background.</summary>
+    [Parameter] public string? BackgroundClass { get; set; }
+
+    /// <summary>
+    /// Classes on the inner content wrapper — width cap, centering, vertical rhythm.
+    /// Defaults to the host's centered, spaced container. Do NOT include page padding
+    /// (p-4 etc.): the shell's wc-page-shell-main already applies the standard gutters.
+    /// </summary>
+    [Parameter] public string ContentClass { get; set; } = "max-w-[1400px] mx-auto space-y-6";
+}

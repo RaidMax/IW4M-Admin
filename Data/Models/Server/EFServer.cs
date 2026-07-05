@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Data.Abstractions;
+using Data.Models.Client.Stats;
 
 namespace Data.Models.Server
 {
@@ -15,6 +16,9 @@ namespace Data.Models.Server
         public Reference.Game? GameName { get; set; }
         public string HostName { get; set; }
         public bool IsPasswordProtected { get; set; }
+        public int? PerformanceBucketId { get; set; }
+        [ForeignKey(nameof(PerformanceBucketId))]
+        public EFPerformanceBucket PerformanceBucket { get; set; }
         public long Id => ServerId;
         public string Value => EndPoint;
     }

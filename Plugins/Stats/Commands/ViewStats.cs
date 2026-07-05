@@ -1,4 +1,4 @@
-﻿using SharedLibraryCore;
+using SharedLibraryCore;
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Abstractions;
@@ -33,7 +33,7 @@ namespace IW4MAdmin.Plugins.Stats.Commands
                     Required = false
                 }
             };
-            
+
             _contextFactory = contextFactory;
             _statManager = statManager;
         }

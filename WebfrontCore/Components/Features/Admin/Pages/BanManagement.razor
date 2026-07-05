@@ -1,6 +1,5 @@
 @page "/Admin/BanManagement"
 @page "/manage-bans"
-@implements IAsyncDisposable
 @attribute [Authorize(Policy = "Permissions.BanManagementPage.Read")]
 @rendermode InteractiveServer
 
@@ -277,16 +276,17 @@
         }
     </div>
 
-    <!-- Infinite Scroll Trigger -->
     <div class="w-full text-center mt-8 pb-8">
         @if (HasMoreResults && Results != null && Results.Any())
         {
-            <div id="loadMoreBansTrigger" class="flex items-center justify-center py-4">
-                @if (IsLoading)
-                {
+            <InfiniteScrollSentinel OnLoadMore="LoadMore"
+                                    HasMore="@HasMoreResults"
+                                    IsLoading="@IsLoading"
+                                    ContainerClass="flex items-center justify-center py-4">
+                <LoadingTemplate>
                     <i class="ph ph-spinner animate-spin text-2xl text-primary"></i>
-                }
-            </div>
+                </LoadingTemplate>
+            </InfiniteScrollSentinel>
         }
         @if (!HasMoreResults && Results != null && Results.Any())
         {

@@ -1,13 +1,11 @@
-﻿using SharedLibraryCore.Interfaces;
-using System;
+using SharedLibraryCore.Interfaces;
 using System.Collections.Generic;
-using System.Text;
 
 namespace IW4MAdmin.Application
 {
     /// <summary>
-    /// implementatin of IPageList that supports basic
-    /// pages title and page location for webfront
+    /// implementation of IPageList that supports a page title, page location,
+    /// and an optional navbar icon for the webfront
     /// </summary>
     class PageList : IPageList
     {
@@ -18,9 +16,25 @@ namespace IW4MAdmin.Application
         /// </summary>
         public IDictionary<string, string> Pages { get; set; }
 
+        /// <summary>
+        /// Optional navbar icon per page name (Phosphor icon class, e.g. "ph-detective").
+        /// </summary>
+        public IDictionary<string, string> PageIcons { get; }
+
         public PageList()
         {
             Pages = new Dictionary<string, string>();
+            PageIcons = new Dictionary<string, string>();
+        }
+
+        public void AddPage(string name, string location, string icon = null)
+        {
+            Pages[name] = location;
+
+            if (!string.IsNullOrWhiteSpace(icon))
+            {
+                PageIcons[name] = icon;
+            }
         }
     }
 }

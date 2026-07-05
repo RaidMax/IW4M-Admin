@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
+using SharedLibraryCore.Interfaces;
 using Stats.Dtos;
 using WebfrontCore.Core.Services;
 
@@ -15,9 +16,11 @@ public partial class AdvancedStats
     [Inject] public required NavigationManager NavManager { get; set; }
     [Inject] public required IJSRuntime JS { get; set; }
     [Inject] public required ILogger<AdvancedStats> Logger { get; set; }
+    [Inject] public required IServiceProvider ServiceProvider { get; set; }
 
     [Parameter] public int ClientId { get; set; }
     [SupplyParameterFromQuery] public string? serverId { get; set; }
+    [SupplyParameterFromQuery(Name = "category")] public string? performanceBucket { get; set; }
 
     [PersistentState(AllowUpdates = true)] public AdvancedStatsState? State { get; set; }
 
@@ -31,6 +34,7 @@ public partial class AdvancedStats
     private const int DefaultTableRowCount = 10;
     private int _lastLoadedId;
     private string? _lastLoadedServerId;
+    private string? _lastLoadedBucket;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -40,7 +44,8 @@ public partial class AdvancedStats
         if (State?.Stats != null &&
             _lastLoadedId == ClientId &&
             State.Stats.ClientId == ClientId &&
-            EqualityComparer<string?>.Default.Equals(_lastLoadedServerId, serverId))
+            EqualityComparer<string?>.Default.Equals(_lastLoadedServerId, serverId) &&
+            EqualityComparer<string?>.Default.Equals(_lastLoadedBucket, performanceBucket))
         {
             // Verify server endpoint match if serverId param is provided
             if (serverId == null || State.Stats.ServerEndpoint == serverId)
@@ -54,14 +59,16 @@ public partial class AdvancedStats
         {
             State ??= new AdvancedStatsState();
 
-            State.Stats = await DataService.GetClientStatisticsAsync(ClientId, serverId);
+            State.Stats = await DataService.GetClientStatisticsAsync(ClientId, serverId, performanceBucket);
             _lastLoadedId = ClientId;
             _lastLoadedServerId = serverId;
+            _lastLoadedBucket = performanceBucket;
 
             GenerateMenu();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to load advanced stats for client {ClientId}", ClientId);
             NavManager.NavigateTo("/client/" + ClientId);
         }
     }
@@ -98,24 +105,57 @@ public partial class AdvancedStats
     {
         if (Stats == null) return;
 
-        MenuItems = new SideContextMenuItems
+        var items = new List<SideContextMenuItem>
         {
-            MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
-            Items = Stats.Servers.Select(server => new SideContextMenuItem
-            {
-                IsLink = true,
-                Reference = $"/client/{ClientId}/stats?serverId={server.Endpoint}",
-                Title = server.Name.StripColors(),
-                IsActive = Stats.ServerEndpoint == server.Endpoint,
-                Meta = server.Game.ToString(),
-                IsCollapse = true
-            }).Prepend(new SideContextMenuItem
+            new()
             {
                 IsLink = true,
                 Reference = $"/client/{ClientId}/stats",
                 Title = AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"),
-                IsActive = Stats.ServerEndpoint == null
-            }).ToList()
+                IsActive = serverId == null && performanceBucket == null
+            }
+        };
+
+        // "Category" section header + bucket items (alphabetical)
+        var bucketGroups = Stats.Servers
+            .Where(s => !string.IsNullOrEmpty(s.PerformanceBucket))
+            .GroupBy(s => s.PerformanceBucket, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (bucketGroups.Count > 0)
+        {
+            items.Add(new SideContextMenuItem { IsSectionHeader = true, Title = "Category" });
+            items.AddRange(bucketGroups.Select(group => new SideContextMenuItem
+            {
+                IsLink = true,
+                Reference = $"/client/{ClientId}/stats?category={group.Key}",
+                Title = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(group.Key.ToLower()),
+                IsActive = string.Equals(performanceBucket, group.Key, StringComparison.OrdinalIgnoreCase) && serverId == null,
+                Meta = group.First().Game.ToString(),
+                IsCollapse = false
+            }));
+        }
+
+        // Individual servers filtered by selected bucket (collapsible, grouped by game)
+        var filteredServers = performanceBucket != null
+            ? Stats.Servers.Where(s => string.Equals(s.PerformanceBucket, performanceBucket, StringComparison.OrdinalIgnoreCase))
+            : Stats.Servers;
+
+        items.AddRange(filteredServers.Select(server => new SideContextMenuItem
+        {
+            IsLink = true,
+            Reference = $"/client/{ClientId}/stats?serverId={server.Endpoint}",
+            Title = server.Name.StripColors(),
+            IsActive = Stats.ServerEndpoint == server.Endpoint && performanceBucket == null,
+            Meta = server.Game.ToString(),
+            IsCollapse = true
+        }));
+
+        MenuItems = new SideContextMenuItems
+        {
+            MenuTitle = AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME"),
+            Items = items
         };
     }
 

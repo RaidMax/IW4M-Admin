@@ -56,7 +56,7 @@
             </div>
 
             <!-- Stats Bar -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-0 bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-6 divide-y md:divide-y-0 md:divide-x divide-divider">
+            <div class="grid md:grid-cols-4 gap-0 bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-6 md:divide-x divide-divider">
                 <div class="flex flex-col items-center justify-center p-3 hover:bg-surface-hover transition-colors group">
                     <span class="text-[10px] uppercase tracking-wider font-bold text-muted group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_HELP_STAT_TOTAL")</span>
                     <span class="text-lg font-bold text-primary">@CommandGroups.Sum(g => g.Commands.Count).ToString("#,##0")</span>

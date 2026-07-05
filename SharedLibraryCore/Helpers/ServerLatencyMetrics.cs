@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SharedLibraryCore.Helpers;
 
@@ -7,14 +9,16 @@ public class ServerLatencyMetrics(double alpha = 0.3)
     private readonly Lock _lock = new();
     private readonly double _alpha = Math.Clamp(alpha, 0.01, 1.0);
     private int _rconSampleCount;
-    private int _logProbeSampleCount;
     private double _rconRtt;
-    private double _logPipeline;
-    private const int MinSamplesRequired = 3;
+    private const int MinRconSamples = 3;
+
+    private const int LogIngestWindowSize = 60;
+    private const int MinLogIngestSamples = 10;
+    private readonly Queue<double> _logIngestSamples = new(LogIngestWindowSize);
 
     /// <summary>
     /// EMA-smoothed RCON round-trip time in milliseconds (two-way).
-    /// Returns null until at least <see cref="MinSamplesRequired"/> samples are collected.
+    /// Returns null until at least <see cref="MinRconSamples"/> samples are collected.
     /// </summary>
     public double? RconRoundTripMs
     {
@@ -22,42 +26,41 @@ public class ServerLatencyMetrics(double alpha = 0.3)
         {
             lock (_lock)
             {
-                return _rconSampleCount >= MinSamplesRequired ? _rconRtt : null;
+                return _rconSampleCount >= MinRconSamples ? _rconRtt : null;
             }
         }
     }
 
     /// <summary>
-    /// EMA-smoothed total log pipeline latency in milliseconds (one-way: dvar set → log line parsed).
-    /// Requires GSC companion. Returns null if not available or insufficient samples.
+    /// Sliding-window median of log ingest latency in milliseconds — the one-way path
+    /// a natural game-side log event traverses: game writes log line → GLS file poll →
+    /// GLS forward → IW4MAdmin parse. Does NOT include RCon out-leg (use
+    /// <see cref="RconRoundTripMs"/>/2 to compose a probe round-trip if needed) nor
+    /// C#-side semaphore/flood-protect/retry.
+    /// Computed per-sample by subtracting estimated one-way RCon delivery (rtt/2) from
+    /// the measured probe-to-parse window, then aggregated as a median over the most
+    /// recent <see cref="LogIngestWindowSize"/> samples. Median rejects per-sample
+    /// outliers from probe-vs-poll-cycle phase aliasing.
+    /// Requires GSC companion + established RCon RTT. Returns null until at least
+    /// <see cref="MinLogIngestSamples"/> samples are in the window.
     /// </summary>
-    public double? GameLogPipelineMs
+    public double? GameLogIngestMs
     {
         get
         {
             lock (_lock)
             {
-                return _logProbeSampleCount >= MinSamplesRequired ? _logPipeline : null;
-            }
-        }
-    }
+                if (_logIngestSamples.Count < MinLogIngestSamples)
+                {
+                    return null;
+                }
 
-    /// <summary>
-    /// Estimated log-only overhead in milliseconds (GameLogPipeline minus estimated one-way RCON delivery).
-    /// Returns null if either component is unavailable.
-    /// </summary>
-    public double? EstimatedLogOverheadMs
-    {
-        get
-        {
-            var rtt = RconRoundTripMs;
-            var log = GameLogPipelineMs;
-            if (rtt is null || log is null)
-            {
-                return null;
+                var sorted = _logIngestSamples.OrderBy(v => v).ToArray();
+                var mid = sorted.Length / 2;
+                return sorted.Length % 2 == 1
+                    ? sorted[mid]
+                    : (sorted[mid - 1] + sorted[mid]) / 2.0;
             }
-
-            return Math.Max(0, log.Value - rtt.Value / 2.0);
         }
     }
 
@@ -94,25 +97,20 @@ public class ServerLatencyMetrics(double alpha = 0.3)
         }
     }
 
-    public void RecordLogProbeLatency(double totalMs)
+    public void RecordLogProbeLatency(double pipelineMs)
     {
-        if (totalMs < 0)
+        if (pipelineMs < 0)
         {
             return;
         }
 
         lock (_lock)
         {
-            if (_logProbeSampleCount == 0)
+            _logIngestSamples.Enqueue(pipelineMs);
+            while (_logIngestSamples.Count > LogIngestWindowSize)
             {
-                _logPipeline = totalMs;
+                _logIngestSamples.Dequeue();
             }
-            else
-            {
-                _logPipeline = _alpha * totalMs + (1 - _alpha) * _logPipeline;
-            }
-
-            _logProbeSampleCount++;
             LastLogProbeSample = DateTime.UtcNow;
         }
     }

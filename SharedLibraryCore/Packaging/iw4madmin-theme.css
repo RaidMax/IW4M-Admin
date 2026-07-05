@@ -1,0 +1,93 @@
+/*
+ * IW4MAdmin host design tokens — published for plugin Tailwind builds.
+ *
+ * The IW4MAdminTailwind helper auto-injects this ahead of a plugin's own Tailwind input (see the
+ * bundle targets), so a plugin generates utilities for the host's semantic tokens (bg-surface,
+ * border-line, text-subtle, text-primary, …) and is therefore SELF-CONTAINED — it never depends on
+ * the host's purged stylesheet to supply a class.
+ *
+ * Each token maps to the host's runtime CSS variable (var(--color-…)). The real values live in the
+ * host's :root per active theme preset (minimal / balanced / high-contrast); we only register the
+ * names so Tailwind emits the matching utilities. At runtime the utilities resolve the host's value,
+ * so a plugin tracks the user's theme automatically. (Opacity modifiers on these collapse to the
+ * base colour — exactly as in the host's own build, since the values are runtime vars.)
+ *
+ * The self-referential :root block Tailwind emits from this (--color-x: var(--color-x)) is stripped
+ * by the host's PluginCssScoper, so it can never clobber the host's real token values.
+ *
+ * Keep in sync with WebfrontCore/wwwroot/css/src/theme.css @theme.
+ */
+@theme {
+    /* opacity scale */
+    --opacity-subtle: var(--opacity-subtle);
+    --opacity-light: var(--opacity-light);
+    --opacity-medium: var(--opacity-medium);
+    --opacity-heavy: var(--opacity-heavy);
+
+    /* primary / secondary (+ shades) */
+    --color-primary: var(--color-primary);
+    --color-primary-50: var(--color-primary-50);
+    --color-primary-100: var(--color-primary-100);
+    --color-primary-200: var(--color-primary-200);
+    --color-primary-300: var(--color-primary-300);
+    --color-primary-400: var(--color-primary-400);
+    --color-primary-500: var(--color-primary-500);
+    --color-primary-600: var(--color-primary-600);
+    --color-primary-700: var(--color-primary-700);
+    --color-primary-800: var(--color-primary-800);
+    --color-primary-900: var(--color-primary-900);
+    --color-secondary: var(--color-secondary);
+    --color-secondary-50: var(--color-secondary-50);
+    --color-secondary-100: var(--color-secondary-100);
+    --color-secondary-200: var(--color-secondary-200);
+    --color-secondary-300: var(--color-secondary-300);
+    --color-secondary-400: var(--color-secondary-400);
+    --color-secondary-500: var(--color-secondary-500);
+    --color-secondary-600: var(--color-secondary-600);
+    --color-secondary-700: var(--color-secondary-700);
+    --color-secondary-800: var(--color-secondary-800);
+    --color-secondary-900: var(--color-secondary-900);
+
+    /* semantic surfaces */
+    --color-background: var(--color-background);
+    --color-surface: var(--color-surface);
+    --color-surface-alt: var(--color-surface-alt);
+    --color-surface-hover: var(--color-surface-hover);
+
+    /* semantic text */
+    --color-foreground: var(--color-foreground);
+    --color-subtle: var(--color-subtle);
+    --color-muted: var(--color-muted);
+    --color-accent: var(--color-accent);
+
+    /* semantic borders */
+    --color-line: var(--color-line);
+    --color-line-hover: var(--color-line-hover);
+    --color-ring: var(--color-ring);
+    --color-divider: var(--color-divider);
+
+    /* actions */
+    --color-action-primary: var(--color-action-primary);
+    --color-action-primary-hover: var(--color-action-primary-hover);
+    --color-action-secondary: var(--color-action-secondary);
+    --color-action-secondary-hover: var(--color-action-secondary-hover);
+    --color-action-disabled: var(--color-action-disabled);
+
+    /* inputs */
+    --color-input-bg: var(--color-input-bg);
+    --color-input-border: var(--color-input-border);
+    --color-input-border-hover: var(--color-input-border-hover);
+    --color-input-border-focus: var(--color-input-border-focus);
+    --color-input-placeholder: var(--color-input-placeholder);
+
+    /* table */
+    --color-table-header: var(--color-table-header);
+    --color-table-row-alt: var(--color-table-row-alt);
+    --color-table-row-hover: var(--color-table-row-hover);
+
+    /* status */
+    --color-success: var(--color-success);
+    --color-warning: var(--color-warning);
+    --color-error: var(--color-error);
+    --color-info: var(--color-info);
+}

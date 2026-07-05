@@ -17,7 +17,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-       <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+      <ProjectReference Include="..\..\Data\Data.csproj" PrivateAssets="All">
+        <Private>false</Private>
+      </ProjectReference>
+      <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" PrivateAssets="All">
+        <Private>false</Private>
+      </ProjectReference>
     </ItemGroup>
+
 
 </Project>

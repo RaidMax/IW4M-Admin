@@ -50,7 +50,10 @@ namespace SharedLibraryCore.Dtos
             }
         }
         public Reference.Game Game { get; set; }
+        public bool IsZombieServer { get; set; }
+        public int? ZombieRoundNumber { get; set; }
         public double? RconRoundTripMs { get; set; }
-        public double? GameLogPipelineMs { get; set; }
+        public double? GameLogIngestMs { get; set; }
+        public string PerformanceBucket { get; set; }
     }
 }

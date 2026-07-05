@@ -30,6 +30,12 @@ namespace IW4MAdmin.Application.Misc
         private bool _inProgress;
         private TimeSpan _period;
 
+        // Serializes GetOrCreateMap across all servers in a single collection tick so that
+        // two servers discovering the same new map cannot both insert an EFMaps row for it.
+        // Contention is negligible — collection runs on a long interval, serving ~1 call
+        // per server per tick, and EFMaps reads/writes are cheap.
+        private readonly SemaphoreSlim _getOrCreateMapLock = new(1, 1);
+
         public ServerDataCollector(ILogger<ServerDataCollector> logger, ApplicationConfiguration appConfig,
             IManager manager, IDatabaseContextFactory contextFactory)
         {
@@ -97,25 +103,32 @@ namespace IW4MAdmin.Application.Misc
 
         private async Task<int> GetOrCreateMap(string mapName, Reference.Game game, CancellationToken token)
         {
-            await using var context = _contextFactory.CreateContext();
-            var existingMap =
-                await context.Maps.FirstOrDefaultAsync(map => map.Name == mapName && map.Game == game, token);
-
-            if (existingMap != null)
+            await _getOrCreateMapLock.WaitAsync(token);
+            try
             {
-                return existingMap.MapId;
+                await using var context = _contextFactory.CreateContext();
+                var existingMap = await context.Maps
+                    .FirstOrDefaultAsync(map => map.Name == mapName && map.Game == game, token);
+
+                if (existingMap != null)
+                {
+                    return existingMap.MapId;
+                }
+
+                var newMap = new EFMap
+                {
+                    Name = mapName,
+                    Game = game
+                };
+
+                context.Maps.Add(newMap);
+                await context.SaveChangesAsync(token);
+                return newMap.MapId;
             }
-
-            var newMap = new EFMap
+            finally
             {
-                Name = mapName,
-                Game = game
-            };
-
-            context.Maps.Add(newMap);
-            await context.SaveChangesAsync(token);
-
-            return newMap.MapId;
+                _getOrCreateMapLock.Release();
+            }
         }
 
         private async Task SaveData(IEnumerable<EFServerSnapshot> snapshots, CancellationToken token)

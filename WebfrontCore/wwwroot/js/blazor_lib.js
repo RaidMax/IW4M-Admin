@@ -1,4 +1,93 @@
 // ============================================
+// UTC -> Local Time Renderer
+// ============================================
+// Server-rendered Blazor cannot know the browser's timezone, so dates served
+// from C# always go out as UTC. This helper post-processes elements bearing
+// `data-utc-time="<ISO 8601 UTC>"` and replaces their text with the user's
+// local-formatted equivalent, moving the original UTC string into the title
+// attribute so a hover always reveals the canonical UTC value.
+//
+// Attributes:
+//   data-utc-time   ISO 8601 UTC timestamp (required)
+//   data-utc-fmt    'time' (HH:mm:ss) | 'datetime' (full) — default 'datetime'
+//
+// Helper only swaps the inner text — UTC-on-hover is the caller's
+// responsibility (use the Tooltip component, don't set title here, since the
+// app's standard hover affordance is the custom Tooltip and we shouldn't have
+// a title shadowing it).
+//
+// A MutationObserver picks up elements added by future Blazor renders, so
+// per-render hand-wiring isn't required.
+window.utcLocalTime = (function () {
+    function format(date, fmt) {
+        if (fmt === 'time') return date.toLocaleTimeString();
+        return date.toLocaleString();
+    }
+
+    function convert(el) {
+        if (!el || !el.getAttribute) return;
+        const iso = el.getAttribute('data-utc-time');
+        if (!iso) return;
+        if (el.getAttribute('data-utc-converted') === '1') return;
+        const date = new Date(iso);
+        if (isNaN(date.getTime())) return;
+        const fmt = el.getAttribute('data-utc-fmt') || 'datetime';
+        el.textContent = format(date, fmt);
+        el.setAttribute('data-utc-converted', '1');
+    }
+
+    function applyAll(root) {
+        const scope = root || document;
+        const els = scope.querySelectorAll('[data-utc-time]:not([data-utc-converted="1"])');
+        for (let i = 0; i < els.length; i++) convert(els[i]);
+    }
+
+    function start() {
+        applyAll();
+        if (typeof MutationObserver === 'undefined') return;
+        const obs = new MutationObserver(function (muts) {
+            for (let i = 0; i < muts.length; i++) {
+                const m = muts[i];
+                if (m.type === 'attributes') {
+                    if (m.target && m.target.getAttribute('data-utc-time')) {
+                        // Re-convert if the timestamp changed under us (Blazor
+                        // re-render with a new value).
+                        m.target.removeAttribute('data-utc-converted');
+                        convert(m.target);
+                    }
+                    continue;
+                }
+                if (m.addedNodes) {
+                    for (let j = 0; j < m.addedNodes.length; j++) {
+                        const n = m.addedNodes[j];
+                        if (n.nodeType !== 1) continue;
+                        if (n.matches && n.matches('[data-utc-time]')) convert(n);
+                        if (n.querySelectorAll) {
+                            const inner = n.querySelectorAll('[data-utc-time]:not([data-utc-converted="1"])');
+                            for (let k = 0; k < inner.length; k++) convert(inner[k]);
+                        }
+                    }
+                }
+            }
+        });
+        obs.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['data-utc-time']
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+
+    return { applyAll: applyAll, convert: convert };
+})();
+
+// ============================================
 // Visibility Observer for Component Virtualization
 // ============================================
 window.visibilityObserver = {
@@ -20,6 +109,188 @@ window.visibilityObserver = {
         }
         if (element._dotNetRef) {
             element._dotNetRef = null;
+        }
+    }
+};
+
+// ============================================
+// Fixed Tooltip Positioning
+// ============================================
+window.tooltipFixed = {
+    _el: null,
+    _currentTrigger: null,
+    _watchdog: null,
+    _globalsBound: false,
+    // Coordinates of the trigger's bounding rect at show time. Used by the global
+    // mousemove watchdog to detect when the cursor leaves the trigger area without
+    // a mouseleave event having fired (which happens when Blazor re-renders the
+    // trigger element out from under the cursor — the new DOM node never receives
+    // the in-flight mouseleave so without this safety net the tooltip orbits
+    // forever, snapping to whatever tooltip-wrapper the cursor next enters).
+    _triggerRect: null,
+
+    _getEl: function () {
+        if (!this._el) {
+            this._el = document.getElementById('fixed-tooltip');
+            if (!this._el) {
+                this._el = document.createElement('div');
+                this._el.id = 'fixed-tooltip';
+                this._el.className = 'fixed z-[9999] pointer-events-none opacity-0 transition-opacity duration-150';
+                document.body.appendChild(this._el);
+            }
+        }
+        return this._el;
+    },
+
+    // Lazily wire the global safety nets — only once per page load. We attach to
+    // window scroll (capture phase, so nested scroll containers also fire) plus a
+    // throttled mousemove. Both call `_evictIfStale` which hides the tooltip when:
+    //   1. the trigger element is no longer in the DOM (Blazor swap), OR
+    //   2. the cursor has left the trigger's last-known bounding box.
+    // Either condition means the tooltip is "orphaned" and should disappear.
+    _bindGlobals: function () {
+        if (this._globalsBound) return;
+        this._globalsBound = true;
+
+        // Capture-phase scroll listener catches any scrolling ancestor — nested
+        // scrollable cards, the document, modal backdrops, anything. The trigger
+        // moves on the page during scroll so its rect is stale; just hide.
+        window.addEventListener('scroll', () => {
+            if (this._currentTrigger) this.hide();
+        }, true);
+
+        // Cheap mousemove guard — only does work if a tooltip is currently shown.
+        // We check the trigger's rect against cursor position, NOT element-from-
+        // point, because the trigger may be obscured by inner content (an icon
+        // child swallowing the hit) and elementFromPoint would lie about it.
+        window.addEventListener('mousemove', (e) => {
+            if (!this._currentTrigger || !this._triggerRect) return;
+            const r = this._triggerRect;
+            // 4px slack handles sub-pixel rendering and tiny mouse tracking gaps
+            // that would otherwise flicker the tooltip on the trigger boundary.
+            if (e.clientX < r.left - 4 || e.clientX > r.right + 4 ||
+                e.clientY < r.top  - 4 || e.clientY > r.bottom + 4) {
+                this.hide();
+            }
+        }, { passive: true });
+    },
+
+    // Periodic isConnected check — catches the case where the trigger element is
+    // removed from the DOM while the cursor is stationary (no mousemove to fire
+    // the bounds check). Fires every ~200ms while a tooltip is visible.
+    _startWatchdog: function () {
+        this._stopWatchdog();
+        this._watchdog = setInterval(() => {
+            if (!this._currentTrigger) { this._stopWatchdog(); return; }
+            if (!this._currentTrigger.isConnected) this.hide();
+        }, 200);
+    },
+
+    _stopWatchdog: function () {
+        if (this._watchdog) {
+            clearInterval(this._watchdog);
+            this._watchdog = null;
+        }
+    },
+
+    show: function (triggerElement, text, direction) {
+        // Plain-text tooltip. Escape HTML so user-supplied strings can't
+        // inject markup, then convert literal \n to <br> so multi-line
+        // tooltip strings render as proper breaks (without this, newlines
+        // collapse to whitespace and the body reads as one runon line).
+        const safe = this._escapeHtml(text).replace(/\r?\n/g, '<br>');
+        this._render(triggerElement, safe, direction, 'text-center');
+    },
+
+    showRich: function (triggerElement, direction) {
+        // Rich-content tooltip — source HTML lives in a hidden div inside
+        // the trigger wrapper (rendered server-side by the Tooltip
+        // component's BodyContent fragment). Reading its innerHTML lets
+        // callers use full Blazor-rendered markup (lists, icons, structured
+        // rows) without us hand-encoding it through DotNet→JS strings.
+        const bodyEl = triggerElement.querySelector(':scope > [data-tooltip-body]');
+        if (!bodyEl) return;
+        // left-align by default — structured bodies (lists of items) read
+        // better flush-left than the plain-text center alignment.
+        this._render(triggerElement, bodyEl.innerHTML, direction, 'text-left');
+    },
+
+    _render: function (triggerElement, innerHtml, direction, alignClass) {
+        this._bindGlobals();
+        const el = this._getEl();
+        const rect = triggerElement.getBoundingClientRect();
+
+        el.innerHTML =
+            '<div class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] ' + (alignClass || 'text-center') + ' whitespace-normal break-words">' +
+            innerHtml +
+            '</div>' +
+            '<div class="' + this._arrowClass(direction) + '"></div>';
+
+        el.style.opacity = '0';
+        el.style.display = 'block';
+
+        // Measure tooltip size after rendering content
+        const tipRect = el.getBoundingClientRect();
+        let top, left;
+
+        switch (direction || 'up') {
+            case 'down':
+                top = rect.bottom + 8;
+                left = rect.left + rect.width / 2 - tipRect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + rect.height / 2 - tipRect.height / 2;
+                left = rect.left - tipRect.width - 8;
+                break;
+            case 'right':
+                top = rect.top + rect.height / 2 - tipRect.height / 2;
+                left = rect.right + 8;
+                break;
+            default: // up
+                top = rect.top - tipRect.height - 8;
+                left = rect.left + rect.width / 2 - tipRect.width / 2;
+                break;
+        }
+
+        // Clamp to viewport
+        left = Math.max(4, Math.min(left, window.innerWidth - tipRect.width - 4));
+        top = Math.max(4, top);
+
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        el.style.opacity = '1';
+
+        // Track the active trigger + its rect for the global guards.
+        this._currentTrigger = triggerElement;
+        this._triggerRect = rect;
+        this._startWatchdog();
+    },
+
+    hide: function () {
+        const el = this._getEl();
+        el.style.opacity = '0';
+        this._currentTrigger = null;
+        this._triggerRect = null;
+        this._stopWatchdog();
+    },
+
+    _escapeHtml: function (text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    _arrowClass: function (direction) {
+        const base = 'absolute w-2 h-2 bg-surface-alt border-line rotate-45 ';
+        switch (direction || 'up') {
+            case 'down':
+                return base + 'left-1/2 -translate-x-1/2 -top-1 border-l border-t';
+            case 'left':
+                return base + 'top-1/2 -translate-y-1/2 -right-1 border-t border-r';
+            case 'right':
+                return base + 'top-1/2 -translate-y-1/2 -left-1 border-b border-l';
+            default:
+                return base + 'left-1/2 -translate-x-1/2 -bottom-1 border-r border-b';
         }
     }
 };
@@ -828,4 +1099,59 @@ window.setupDynamicActionHandlers = function (dotNetRef) {
     window._dynamicActionHandler = handler;
     document.addEventListener('click', handler, true);
     console.log('[DynamicAction] Handler attached');
+};
+
+// ============================================
+// Modifier-key state tracking (Ctrl / Cmd)
+// ============================================
+// Toggles `mod-key-down` on <body> while either modifier is held. Used to
+// swap the play-icon for a copy-icon on server-card connect links so the
+// "Ctrl+click to copy connect command" affordance is discoverable.
+// Window blur clears the class so a tab-out doesn't leave it stuck.
+(function () {
+    const setModState = (down) => {
+        document.body.classList.toggle('mod-key-down', down);
+    };
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Control' || e.key === 'Meta') setModState(true);
+    });
+    document.addEventListener('keyup', e => {
+        if (e.key === 'Control' || e.key === 'Meta') setModState(false);
+    });
+    window.addEventListener('blur', () => setModState(false));
+})();
+
+window.copyToClipboard = async function (text) {
+    if (!text) return false;
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (err) {
+        console.error('[copyToClipboard] Clipboard write failed:', err);
+        return false;
+    }
+};
+
+window.openProtocolUrl = function (url) {
+    if (!url) return;
+    window.location.href = url;
+};
+
+
+// ── plugin scoped-overlay helper ────────────────────────────────────────────────────────────────
+// Plugin bundle CSS is served wrapped in @scope ([data-iw4m-plugin="<id>"]) (PluginCssScoper), and
+// inside @scope, :scope is implicitly prepended to every rule — bare selectors match only
+// DESCENDANTS of the scope root, never the root itself. So plugin JS that appends DOM outside the
+// host-stamped markers (e.g. a document.body overlay) must nest it under a marker wrapper for the
+// plugin's classes to style it. This returns such a wrapper, already attached:
+//   const scope = window.iw4m.scopedOverlay('MyPlugin');   // id is case-sensitive (bundle id)
+//   scope.appendChild(myOverlay);
+//   /* later */ scope.remove();
+window.iw4m = window.iw4m || {};
+window.iw4m.scopedOverlay = function (pluginId, parent) {
+    const host = document.createElement('div');
+    host.setAttribute('data-iw4m-plugin', pluginId);
+    host.style.display = 'contents'; // layout-inert: children lay out as if appended to the parent
+    (parent || document.body).appendChild(host);
+    return host;
 };

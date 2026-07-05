@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,6 +8,7 @@ using Data.Models;
 using Data.Models.Client;
 using Data.Models.Client.Stats;
 using IW4MAdmin.Plugins.Stats;
+using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
@@ -15,8 +16,8 @@ using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
+using Stats.Config;
 using Stats.Dtos;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Stats.Helpers
 {
@@ -24,10 +25,14 @@ namespace Stats.Helpers
         ILogger<AdvancedClientStatsResourceQueryHelper> logger,
         IDatabaseContextFactory contextFactory,
         IManager manager,
-        DefaultSettings defaultSettings)
-        : IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>
+        DefaultSettings defaultSettings,
+        IServerDataViewer serverDataViewer,
+        StatManager statManager
+    )
+        : IResourceQueryHelper<StatsInfoRequest, AdvancedStatsInfo>,
+            IResourceQueryHelper<ClientRankingInfoRequest, ClientRankingInfo>
     {
-        private readonly ILogger _logger = logger;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger = logger;
 
         public async Task<ResourceQueryHelperResult<AdvancedStatsInfo>> QueryResource(StatsInfoRequest query)
         {
@@ -56,9 +61,27 @@ namespace Stats.Helpers
                 return new ResourceQueryHelperResult<AdvancedStatsInfo>();
             }
 
-            var hitStats = await context.Set<EFClientHitStatistic>()
-                .Where(stat => stat.ClientId == query.ClientId)
-                .Where(stat => stat.ServerId == serverId)
+            var iqHitStats = context.Set<EFClientHitStatistic>()
+                .Where(stat => stat.ClientId == query.ClientId);
+
+            // Default-bucket queries must include rows whose server FK is still
+            // NULL — communities upgrading to the bucket-aware build start with
+            // every server unbacked-filled (PerformanceBucketCode null in
+            // IW4MAdminSettings means the implicit default pool), and we cannot
+            // require an O(N rows) backfill of EFClientHitStatistics on first
+            // start. Without the OR-NULL clause the per-client hit-stats page
+            // would return zero rows for the default bucket on a fresh upgrade.
+            var hitStatsBucketIsDefault = PerformanceBucketCodes.IsDefault(query.PerformanceBucketCode);
+            // DB stores Code lower-cased (the writer in IW4MServer normalises on insert)
+            // — defence-in-depth normalise here so a capitalised bucket code from the
+            // request can't silently filter to zero rows.
+            var normalizedHitStatsBucket = PerformanceBucketCodes.Normalize(query.PerformanceBucketCode);
+            iqHitStats = !string.IsNullOrEmpty(query.PerformanceBucketCode)
+                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket.Code == normalizedHitStatsBucket
+                                           || (hitStatsBucketIsDefault && stat.Server.PerformanceBucketId == null))
+                : iqHitStats.Where(stat => stat.ServerId == serverId);
+
+            var hitStats = await iqHitStats
                 .Select(stat => new HitStatProjection
                 {
                     HitLocationId = stat.HitLocationId,
@@ -90,10 +113,19 @@ namespace Stats.Helpers
                 })
                 .ToListAsync();
 
+            // Same NULL-FK tolerance as the hit-stats query above: the per-client
+            // ranking-history graph for the default bucket must surface legacy
+            // rows whose PerformanceBucketId was never written (which is every
+            // ranking-history row for any server the operator hasn't manually
+            // tagged with a PerformanceBucketCode).
+            var ratingsBucketIsDefault = PerformanceBucketCodes.IsDefault(query.PerformanceBucketCode);
+            var normalizedRatingsBucket = PerformanceBucketCodes.Normalize(query.PerformanceBucketCode);
             var ratings = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientInfo.ClientId)
                 .Where(r => r.ServerId == serverId)
                 .Where(r => r.Ranking != null)
+                .Where(r => r.PerformanceBucket.Code == normalizedRatingsBucket
+                            || (ratingsBucketIsDefault && r.PerformanceBucketId == null))
                 .OrderByDescending(r => r.CreatedDateTime)
                 .Take(100)
                 .Select(r => new { r.Newest, r.PerformanceMetric, r.ZScore, r.CreatedDateTime, r.Ranking })
@@ -105,10 +137,19 @@ namespace Stats.Helpers
                 .Select(stat => new { stat.ServerId, stat.Skill, stat.EloRating, stat.SPM, stat.TimePlayed })
                 .ToListAsync();
 
+            var rankingInfo = (await QueryResource(new ClientRankingInfoRequest
+            {
+                ClientId = query.ClientId,
+                ServerEndpoint = query.ServerEndpoint,
+                PerformanceBucketCode = query.PerformanceBucketCode
+            })).Results.First();
+
             var mostRecentRanking = ratings.FirstOrDefault(ranking => ranking.Newest);
             var ranking = mostRecentRanking?.Ranking + 1;
 
-            if (mostRecentRanking != null && mostRecentRanking.CreatedDateTime < Extensions.FifteenDaysAgo())
+            var bucketConfig = await statManager.GetBucketConfig(serverId);
+
+            if (mostRecentRanking != null && mostRecentRanking.CreatedDateTime < DateTime.UtcNow - bucketConfig.RankingExpiration)
             {
                 ranking = 0;
             }
@@ -306,6 +347,8 @@ namespace Stats.Helpers
                 ZScore = mostRecentRanking?.ZScore,
                 Rating = mostRecentRanking?.PerformanceMetric,
                 Ranking = ranking,
+                TotalRankedClients = rankingInfo.TotalRankedClients,
+                PerformanceBucket = rankingInfo.PerformanceBucket,
 
                 // Aggregate stats
                 Kills = kills,
@@ -381,14 +424,75 @@ namespace Stats.Helpers
                 : $"{proj.WeaponName}{string.Join("_", proj.Attachment1Name, proj.Attachment2Name, proj.Attachment3Name)}";
         }
 
-        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, double? zScore = null,
+        public static Expression<Func<EFClientStatistics, bool>> GetRankingFunc(int minPlayTime, TimeSpan expiration, double? zScore = null,
             long? serverId = null)
         {
+            var oldestStat = DateTime.UtcNow.Subtract(expiration);
             return stats => (serverId == null || stats.ServerId == serverId) &&
-                            stats.UpdatedAt >= Extensions.FifteenDaysAgo() &&
+                            stats.UpdatedAt >= oldestStat &&
                             stats.Client.Level != EFClient.Permission.Banned &&
                             stats.TimePlayed >= minPlayTime
                             && (zScore == null || stats.ZScore > zScore);
+        }
+
+        public async Task<ResourceQueryHelperResult<ClientRankingInfo>> QueryResource(ClientRankingInfoRequest query)
+        {
+            await using var context = contextFactory.CreateContext(enableTracking: false);
+
+            long? serverId = null;
+
+            if (!string.IsNullOrEmpty(query.ServerEndpoint))
+            {
+                serverId = manager.GetServers().FirstOrDefault(server => server.Id == query.ServerEndpoint)
+                    ?.LegacyDatabaseId;
+            }
+
+            var currentRanking = 0;
+            int totalRankedClients;
+            string performanceBucketCode;
+
+            if (string.IsNullOrEmpty(query.PerformanceBucketCode) && serverId is null)
+            {
+                var maxPerformance = await context.Set<EFClientRankingHistory>()
+                    .Where(r => r.ClientId == query.ClientId)
+                    .Where(r => r.Ranking != null)
+                    .Where(r => r.ServerId == serverId)
+                    .Where(rating => rating.Newest)
+                    .GroupBy(rating => rating.PerformanceBucket)
+                    .Select(grp => new { grp.Key, PerformanceMetric = grp.Max(rating => rating.Ranking) })
+                    .Where(grp => grp.PerformanceMetric != null)
+                    .FirstOrDefaultAsync();
+
+                // Guard the Key, not just the result: a client ranked on a server with no
+                // performance bucket has an overall (ServerId null) ranking-history row whose
+                // PerformanceBucket navigation is null, so the GroupBy yields a non-null result
+                // with a null Key. Dereferencing maxPerformance.Key.Code below then NREs.
+                if (maxPerformance?.Key is null)
+                {
+                    currentRanking = 0;
+                    totalRankedClients = 0;
+                    performanceBucketCode = null;
+                }
+                else
+                {
+                    currentRanking =
+                        await statManager.GetClientOverallRanking(query.ClientId!.Value, null, maxPerformance.Key.Code);
+                    totalRankedClients = await serverDataViewer.RankedClientsCountAsync(null, maxPerformance.Key.Code);
+                    performanceBucketCode = maxPerformance.Key.Code;
+                }
+            }
+            else
+            {
+                performanceBucketCode = query.PerformanceBucketCode;
+                currentRanking =
+                    await statManager.GetClientOverallRanking(query.ClientId!.Value, serverId, performanceBucketCode);
+                totalRankedClients = await serverDataViewer.RankedClientsCountAsync(serverId, performanceBucketCode);
+            }
+
+            return new ResourceQueryHelperResult<ClientRankingInfo>
+            {
+                Results = [new ClientRankingInfo(currentRanking, totalRankedClients, performanceBucketCode)]
+            };
         }
     }
 }

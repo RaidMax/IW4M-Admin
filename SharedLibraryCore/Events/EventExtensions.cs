@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SharedLibraryCore.Helpers;
+using Serilog;
 
 namespace SharedLibraryCore.Events;
 
@@ -25,8 +26,15 @@ public static class EventExtensions
     {
         if (token == CancellationToken.None)
         {
-            // special case to allow tasks like request after delay to run longer
-            await handler(eventArgType, token);
+            try
+            {
+                // special case to allow tasks like request after delay to run longer
+                await handler(eventArgType, token);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "InvokeAsync for event type {EventType} failed. Cancellation Token is None", typeof(TEventType).Name);
+            }
         }
 
         using var timeoutToken = new CancellationTokenSource(Utilities.DefaultCommandTimeout);
@@ -43,9 +51,10 @@ public static class EventExtensions
             // and tell the user once instead of silently doing nothing
             PluginApiCompatibility.NotifyNewerApiRequired(handler.Method.DeclaringType?.Assembly);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // ignored
+            Log.Error(ex, "InvokeAsync for event type {EventType} failed. IsCancellationRequested is {TokenStatus}",
+                typeof(TEventType).Name, tokenSource.Token.IsCancellationRequested);
         }
     }
 }

@@ -17,9 +17,13 @@ using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events;
 using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Events.Game.GameScript;
+
 using SharedLibraryCore.Events.Management;
+using SharedLibraryCore.Helpers;
 using Stats.Client.Abstractions;
 using Stats.Client.Game;
+using Stats.Config;
 
 namespace IW4MAdmin.Plugins.Stats.Client;
 
@@ -115,6 +119,40 @@ public class HitCalculator : IClientStatisticCalculator
             return;
         }
 
+        if (coreEvent is GameEventV2 { Server: not null } gameEventV2 and (RoundEndEvent or MatchEndEvent))
+        {
+            var server = gameEventV2.Server;
+            foreach (var client in server.ConnectedClients)
+            {
+                if (!_clientHitStatistics.TryGetValue(client.ClientId, out var state))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await state.OnTransaction.WaitAsync();
+                    await UpdateClientStatistics(client.ClientId, state);
+                }
+
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Could not handle round end calculations for client {Client}",
+                        client.ToString());
+                }
+
+                finally
+                {
+                    if (state.OnTransaction.CurrentCount == 0)
+                    {
+                        state.OnTransaction.Release();
+                    }
+                }
+            }
+
+            return;
+        }
+
         if (coreEvent is ClientStateDisposeEvent clientStateDisposeEvent)
         {
             // Atomically remove the state to prevent race conditions with hit processing
@@ -188,9 +226,13 @@ public class HitCalculator : IClientStatisticCalculator
 
         foreach (var hitInfo in new[] {attackerHitInfo, victimHitInfo})
         {
-            if (hitInfo.MeansOfDeath == null || hitInfo.Location == null || hitInfo.Weapon == null)
+            if (hitInfo.MeansOfDeath == null || hitInfo.Location == null || hitInfo.Weapon == null || hitInfo.EntityId == 0)
             {
-                _logger.LogDebug("Skipping hit because it does not contain the required data");
+                _logger.LogDebug("Skipping hit for EntityId={EntityId}: MoD={MeansOfDeath}, Location={Location}, Weapon={Weapon}",
+                    hitInfo.EntityId,
+                    hitInfo.MeansOfDeath ?? "NULL",
+                    hitInfo.Location ?? "NULL",
+                    hitInfo.Weapon?.Name ?? "NULL");
                 continue;
             }
 
@@ -281,26 +323,26 @@ public class HitCalculator : IClientStatisticCalculator
         var matchingLocation = await GetOrAddHitLocation(hitInfo.Location, hitInfo.Game);
         var meansOfDeath = await GetOrAddMeansOfDeath(hitInfo.MeansOfDeath, hitInfo.Game);
 
-        var baseTasks = new[]
-        {
+        List<Task<EFClientHitStatistic>> baseTasks =
+        [
             // just the client
-            GetOrAddClientHit(hitInfo.EntityId, null),
+            GetOrAddClientHit(hitInfo.EntityId),
             // client and server
             GetOrAddClientHit(hitInfo.EntityId, serverId),
             // just the location
-            GetOrAddClientHit(hitInfo.EntityId, null, matchingLocation.HitLocationId),
+            GetOrAddClientHit(hitInfo.EntityId, hitLocationId: matchingLocation.HitLocationId),
             // location and server
-            GetOrAddClientHit(hitInfo.EntityId, serverId, matchingLocation.HitLocationId),
+            GetOrAddClientHit(hitInfo.EntityId, serverId, hitLocationId: matchingLocation.HitLocationId),
             // per weapon
-            GetOrAddClientHit(hitInfo.EntityId, null, null, weapon.WeaponId),
+            GetOrAddClientHit(hitInfo.EntityId, weaponId: weapon.WeaponId),
             // per weapon and server
-            GetOrAddClientHit(hitInfo.EntityId, serverId, null, weapon.WeaponId),
+            GetOrAddClientHit(hitInfo.EntityId, serverId, weaponId: weapon.WeaponId),
             // means of death aggregate
             GetOrAddClientHit(hitInfo.EntityId, meansOfDeathId: meansOfDeath.MeansOfDeathId),
             // means of death per server aggregate
             GetOrAddClientHit(hitInfo.EntityId, serverId,
                 meansOfDeathId: meansOfDeath.MeansOfDeathId)
-        };
+        ];
 
         var allTasks = baseTasks.AsEnumerable();
 
@@ -308,10 +350,10 @@ public class HitCalculator : IClientStatisticCalculator
         {
             allTasks = allTasks
                 // per weapon per attachment combo
-                .Append(GetOrAddClientHit(hitInfo.EntityId, null, null,
-                    weapon.WeaponId, attachmentCombo.WeaponAttachmentComboId))
-                .Append(GetOrAddClientHit(hitInfo.EntityId, serverId, null,
-                    weapon.WeaponId, attachmentCombo.WeaponAttachmentComboId));
+                .Append(GetOrAddClientHit(hitInfo.EntityId,
+                    weaponId: weapon.WeaponId, attachmentComboId: attachmentCombo.WeaponAttachmentComboId))
+                .Append(GetOrAddClientHit(hitInfo.EntityId, serverId,
+                    weaponId: weapon.WeaponId, attachmentComboId: attachmentCombo.WeaponAttachmentComboId));
         }
 
         return await Task.WhenAll(allTasks);
@@ -365,8 +407,9 @@ public class HitCalculator : IClientStatisticCalculator
     {
         try
         {
-            await using var context = _contextFactory.CreateContext();
+            await using var context = _contextFactory.CreateContext(false);
             var hitLocations = await context.Set<EFClientHitStatistic>()
+                .AsNoTracking()
                 .Where(stat => stat.ClientId == clientId)
                 .ToListAsync();
 
@@ -394,7 +437,33 @@ public class HitCalculator : IClientStatisticCalculator
         try
         {
             await using var context = _contextFactory.CreateContext();
-            context.Set<EFClientHitStatistic>().UpdateRange(state.Hits);
+
+            // Clear navigation properties to prevent EF Core from trying to
+            // insert/update related entities when attaching to this new context
+            foreach (var hit in state.Hits)
+            {
+                hit.Server = null;
+                hit.HitLocation = null;
+                hit.Weapon = null;
+                hit.WeaponAttachmentCombo = null;
+                hit.MeansOfDeath = null;
+                hit.PerformanceBucket = null;
+                hit.Client = null;
+            }
+
+            var existingHits = state.Hits.Where(h => h.ClientHitStatisticId != 0).ToList();
+            var newHits = state.Hits.Where(h => h.ClientHitStatisticId == 0).ToList();
+
+            if (existingHits.Count > 0)
+            {
+                context.Set<EFClientHitStatistic>().UpdateRange(existingHits);
+            }
+
+            if (newHits.Count > 0)
+            {
+                context.Set<EFClientHitStatistic>().AddRange(newHits);
+            }
+
             await context.SaveChangesAsync();
         }
 
@@ -404,7 +473,7 @@ public class HitCalculator : IClientStatisticCalculator
         }
     }
 
-    private Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null,
+    private Task<EFClientHitStatistic> GetOrAddClientHit(int clientId, long? serverId = null, string performanceBucketCode = null,
         int? hitLocationId = null, int? weaponId = null, int? attachmentComboId = null,
         int? meansOfDeathId = null)
     {
@@ -414,19 +483,26 @@ public class HitCalculator : IClientStatisticCalculator
             throw new InvalidOperationException($"No hit state found for client {clientId}");
         }
 
+        // Defence-in-depth: PerformanceBucket.Code on persisted hits is always
+        // the lower-cased canonical form (the writer in IW4MServer normalises);
+        // a raw capitalised caller-supplied value would silently never match.
+        var normalizedBucket = performanceBucketCode is null
+            ? null
+            : PerformanceBucketCodes.Normalize(performanceBucketCode);
+
         var hitStat = state.Hits
             .FirstOrDefault(hit => hit.HitLocationId == hitLocationId
                                    && hit.WeaponId == weaponId
                                    && hit.WeaponAttachmentComboId == attachmentComboId
                                    && hit.MeansOfDeathId == meansOfDeathId
-                                   && hit.ServerId == serverId);
+                                   && (normalizedBucket is not null && normalizedBucket == hit.PerformanceBucket?.Code || (normalizedBucket is null && hit.ServerId == serverId)));
 
         if (hitStat != null)
         {
             return Task.FromResult(hitStat);
         }
 
-        hitStat = new EFClientHitStatistic()
+        hitStat = new EFClientHitStatistic
         {
             ClientId = clientId,
             ServerId = serverId,
@@ -442,7 +518,7 @@ public class HitCalculator : IClientStatisticCalculator
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not add {statsName} for {id}", nameof(EFClientHitStatistic),
+            _logger.LogError(ex, "Could not add {StatsName} for {Id}", nameof(EFClientHitStatistic),
                 clientId);
             state.Hits.Remove(hitStat);
         }
@@ -617,7 +693,7 @@ public class HitCalculator : IClientStatisticCalculator
 
             if (sessionScores.Count == 0)
             {
-                stat.Score += client.Score > 0 ? client.Score : client.GetAdditionalProperty<int?>(Helpers.StatManager.ESTIMATED_SCORE) ?? 0 * 50;
+                stat.Score += client.Score > 0 ? client.Score : (client.GetAdditionalProperty<int?>(StatManager.ESTIMATED_SCORE) ?? 0) * 50;
             }
 
             else

@@ -36,7 +36,7 @@
                     <span
                         class="px-4 py-2 rounded-lg bg-surface-alt/50 text-muted border border-line backdrop-blur-sm shadow-sm">
                         <ColorCode
-                            Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
+                            Value="@(Stats.PerformanceBucket != null ? System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Stats.PerformanceBucket.ToLower()) : Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
                     </span>
                 </div>
 
@@ -150,7 +150,52 @@
                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"), Stats.ActiveTime?.HumanizeForCurrentCulture())
                 </div>
 
+                @{
+                    var metricGroups = Stats.CustomMetrics
+                        .GroupBy(m => string.IsNullOrEmpty(m.Extra) ? "General" : m.Extra)
+                        .OrderBy(g => g.Key switch
+                        {
+                            "Zombie Combat" => 0,
+                            "Zombie Economy" => 1,
+                            "Zombie Progress" => 2,
+                            "Zombie Averages" => 3,
+                            _ => 99
+                        })
+                        .ToList();
+                }
+
+                @foreach (var group in metricGroups)
+                {
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <i class="ph @(group.Key switch {
+                                "Zombie Combat" => "ph-crosshair",
+                                "Zombie Economy" => "ph-coins",
+                                "Zombie Progress" => "ph-trophy",
+                                "Zombie Averages" => "ph-chart-line",
+                                _ => "ph-squares-four"
+                            }) text-primary text-sm"></i>
+                            <h4 class="text-xs font-bold uppercase tracking-widest text-muted">@group.Key</h4>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            @foreach (var metric in group)
+                            {
+                                @RenderStatCard(metric.Key, metric.Value)
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* Zombie match history is provided by the ZombieStatsPremium plugin via a render slot,
+                   so the host carries no zombie reference. Renders nothing without the plugin. *@
+                <PluginRenderSlot Slot="RenderSlots.ClientAdvancedStats"
+                                  Params="@(new ClientAdvancedStatsParams { ClientId = ClientId, ServerId = serverId })"/>
+
                 <!-- Bottom Section: Models & Tables -->
+                <div class="flex items-center gap-3">
+                    <i class="ph ph-chart-bar text-lg text-primary"></i>
+                    <h4 class="text-lg font-bold text-foreground">Combat Breakdown</h4>
+                </div>
                 <div class="grid grid-cols-1 2xl:grid-cols-2 gap-8">
                     <!-- Hit Locations -->
                     <div class="bg-surface rounded-xl shadow-lg border border-line overflow-hidden flex flex-col">
@@ -293,7 +338,7 @@
         @* ================================================================ *@
         <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
             <div class="sticky top-6">
-                <SideContextMenu Model="MenuItems"/>
+                <SideContextMenu Model="MenuItems" Localizer="AppState.Loc"/>
             </div>
         </div>
     }

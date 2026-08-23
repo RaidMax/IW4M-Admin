@@ -277,7 +277,14 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
 
         if (verb == "say")
         {
-            return await ExecuteTelnetCommandAsync($"say {Quote(Unquote(arguments))}", token);
+            var message = CleanConsoleText(Unquote(arguments));
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                _logger.LogDebug("Ignoring empty 7 Days to Die broadcast");
+                return string.Empty;
+            }
+
+            return await ExecuteTelnetCommandAsync($"say {Quote(message)}", token);
         }
 
         if (verb is "tell" or "kick" or "clientkick")
@@ -299,7 +306,13 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
                 return "Player not found";
             }
 
-            var message = Unquote(playerCommand.Groups["message"].Value.Trim());
+            var message = CleanConsoleText(Unquote(playerCommand.Groups["message"].Value.Trim()));
+            if (verb == "tell" && string.IsNullOrWhiteSpace(message))
+            {
+                _logger.LogDebug("Ignoring empty 7 Days to Die private message for slot {Slot}", slot);
+                return string.Empty;
+            }
+
             return verb == "tell"
                 ? await ExecuteTelnetCommandAsync($"sayplayer {player.EntityId} {Quote(message)}", token)
                 : await ExecuteTelnetCommandAsync(

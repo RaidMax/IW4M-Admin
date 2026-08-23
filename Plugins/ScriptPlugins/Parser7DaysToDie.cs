@@ -84,6 +84,14 @@ public sealed class Parser7DaysToDie : IParserDefinition
         events.Say.AddMapping(ParserRegex.GroupType.OriginName, 3);
         events.Say.AddMapping(ParserRegex.GroupType.Message, 4);
 
+        // 7DTD records PvP and world deaths as name-only GMSG entries. The game log
+        // event pipeline resolves these names against the connected client snapshot
+        // before dispatching the standard IW4MAdmin kill event.
+        events.Kill.Pattern =
+            @"^GMSG: Player '(.+)' (?:(?:killed by '(.+)')|died)\s*$";
+        events.Kill.AddMapping(ParserRegex.GroupType.TargetName, 1);
+        events.Kill.AddMapping(ParserRegex.GroupType.OriginName, 2);
+
         eventParser.Version = version;
         eventParser.GameName = Server.Game.D7D;
         eventParser.URLProtocolFormat = "steam://connect/{{ip}}:{{port}}";

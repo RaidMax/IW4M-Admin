@@ -1,5 +1,8 @@
 ﻿using SharedLibraryCore;
+using Data.Models;
 using SharedLibraryCore.Interfaces;
+using SharedLibraryCore.Events.Game;
+using SharedLibraryCore.Database.Models;
 using System;
 using System.Linq;
 using System.Threading;
@@ -97,17 +100,24 @@ namespace IW4MAdmin.Application.IO
                                          !((gameEvent.Origin?.IsBot ?? false) || (gameEvent.Target?.IsBot ?? false))))
                     {
                         if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Origin) ==
-                            GameEvent.EventRequiredEntity.Origin && gameEvent.Origin.NetworkId != Utilities.WORLD_ID)
+                            GameEvent.EventRequiredEntity.Origin)
                         {
-                            gameEvent.Origin = _server.GetClientsAsList()
-                                .First(_client => _client.NetworkId == gameEvent.Origin?.NetworkId);
+                            var originName = (gameEvent as ClientGameEvent)?.ClientName;
+                            if (gameEvent.Origin.NetworkId != Utilities.WORLD_ID ||
+                                (_server.GameCode == Reference.Game.D7D && !string.IsNullOrWhiteSpace(originName)))
+                            {
+                                gameEvent.Origin = ResolveClient(gameEvent.Origin.NetworkId, originName,
+                                    resolveNameOnlyClient: _server.GameCode == Reference.Game.D7D,
+                                    allowWorldFallback: true) ?? gameEvent.Origin;
+                            }
                         }
 
                         if ((gameEvent.RequiredEntity & GameEvent.EventRequiredEntity.Target) ==
                             GameEvent.EventRequiredEntity.Target)
                         {
-                            gameEvent.Target = _server.GetClientsAsList()
-                                .First(_client => _client.NetworkId == gameEvent.Target?.NetworkId);
+                            var targetName = (gameEvent as ClientDamageEvent)?.VictimClientName;
+                            gameEvent.Target = ResolveClient(gameEvent.Target.NetworkId, targetName,
+                                resolveNameOnlyClient: _server.GameCode == Reference.Game.D7D);
                         }
 
                         if (gameEvent.Origin != null)
@@ -140,6 +150,22 @@ namespace IW4MAdmin.Application.IO
             }
 
             _previousFileSize = fileSize;
+        }
+
+        private EFClient ResolveClient(long networkId, string clientName, bool resolveNameOnlyClient = false,
+            bool allowWorldFallback = false)
+        {
+            var clients = _server.GetClientsAsList();
+            if (networkId != Utilities.WORLD_ID || !resolveNameOnlyClient)
+            {
+                return clients.First(client => client.NetworkId == networkId);
+            }
+
+            var normalizedName = clientName?.Trim().StripColors();
+            var matches = clients.Where(client => string.Equals(client.Name?.StripColors(), normalizedName,
+                StringComparison.OrdinalIgnoreCase)).ToList();
+
+            return allowWorldFallback && matches.Count != 1 ? null : matches.Single();
         }
 
         public void Dispose()

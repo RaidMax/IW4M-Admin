@@ -956,11 +956,9 @@ namespace IW4MAdmin
             client.Ping = origin.Ping;
             client.Score = origin.Score;
 
-            if (origin.GetAdditionalProperty<bool>("RConStatsAvailable"))
+            if (origin.GetAdditionalProperty<RConStatusStats>("RConStatusStats") is { } rconStatusStats)
             {
-                client.SetAdditionalProperty("RConStatsAvailable", true);
-                client.SetAdditionalProperty("RConKills", origin.GetAdditionalProperty<int>("RConKills"));
-                client.SetAdditionalProperty("RConDeaths", origin.GetAdditionalProperty<int>("RConDeaths"));
+                client.SetAdditionalProperty("RConStatusStats", rconStatusStats);
             }
 
             // update their IP if it hasn't been set yet

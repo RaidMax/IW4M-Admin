@@ -1820,14 +1820,10 @@ public class WebfrontDataService : IWebfrontDataService
     }
 
     private static int? GetRConKills(EFClient client) =>
-        client.GetAdditionalProperty<bool>("RConStatsAvailable")
-            ? client.GetAdditionalProperty<int>("RConKills")
-            : null;
+        client.GetAdditionalProperty<RConStatusStats>("RConStatusStats")?.Kills;
 
     private static int? GetRConDeaths(EFClient client) =>
-        client.GetAdditionalProperty<bool>("RConStatsAvailable")
-            ? client.GetAdditionalProperty<int>("RConDeaths")
-            : null;
+        client.GetAdditionalProperty<RConStatusStats>("RConStatusStats")?.Deaths;
 
     private static double? GetRConKdr(EFClient client)
     {

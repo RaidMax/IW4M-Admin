@@ -1,6 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
 using System;
@@ -343,9 +344,8 @@ namespace IW4MAdmin.Application.RConParsers
                         int.TryParse(match.Values[killsGroupIndex], out var kills) &&
                         int.TryParse(match.Values[deathsGroupIndex], out var deaths))
                     {
-                        client.SetAdditionalProperty("RConStatsAvailable", true);
-                        client.SetAdditionalProperty("RConKills", Math.Max(0, kills));
-                        client.SetAdditionalProperty("RConDeaths", Math.Max(0, deaths));
+                        client.SetAdditionalProperty("RConStatusStats",
+                            new RConStatusStats(Math.Max(0, kills), Math.Max(0, deaths)));
                     }
 
                     if (Configuration.Status.GroupMapping.ContainsKey(ParserRegex.GroupType.AdditionalGroup))

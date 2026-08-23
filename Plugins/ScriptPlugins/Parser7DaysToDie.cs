@@ -24,7 +24,7 @@ public sealed class Parser7DaysToDie : IParserDefinition
         rcon.DefaultRConPort = 8081;
         rcon.GuidNumberStyle = NumberStyles.Integer;
         rcon.FloodProtectInterval = 100;
-        rcon.StatusHeader.Pattern = "slot score kills deaths ping networkid name address";
+        rcon.StatusHeader.Pattern = "slot score kills deaths ping networkid name address entityid";
 
         rcon.HostnameStatus.Pattern = "^hostname: (.+)$";
         rcon.HostnameStatus.AddMapping(ParserRegex.GroupType.RConStatusHostname, 1);
@@ -36,7 +36,7 @@ public sealed class Parser7DaysToDie : IParserDefinition
         rcon.MaxPlayersStatus.AddMapping(ParserRegex.GroupType.RConStatusMaxPlayers, 1);
 
         rcon.Status.Pattern =
-            @"^(\d+) +(-?\d+) +(\d+) +(\d+) +(\d+) +(\d+) +""([^""\r\n]*)"" +(\d{1,3}(?:\.\d{1,3}){3}):\d+$";
+            @"^(\d+) +(-?\d+) +(\d+) +(\d+) +(\d+) +(\d+) +""([^""\r\n]*)"" +(\d{1,3}(?:\.\d{1,3}){3}):\d+ +(\d+)$";
         rcon.Status.AddMapping(ParserRegex.GroupType.RConClientNumber, 1);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConScore, 2);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConKills, 3);
@@ -45,10 +45,12 @@ public sealed class Parser7DaysToDie : IParserDefinition
         rcon.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 6);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 7);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 8);
+        rcon.Status.AddMapping(ParserRegex.GroupType.AdditionalGroup, 9);
 
         rcon.DefaultDvarValues.Add("version", version);
         rcon.DefaultDvarValues.Add("sv_running", "1");
         rcon.DefaultDvarValues.Add("sv_hostname", "7 Days to Die Server");
+        rcon.DefaultDvarValues.Add("mapname", "Unknown");
         rcon.DefaultDvarValues.Add("sv_maxclients", "8");
         rcon.DefaultDvarValues.Add("g_gametype", "Survival");
         rcon.DefaultDvarValues.Add("fs_basepath", "");
@@ -70,14 +72,6 @@ public sealed class Parser7DaysToDie : IParserDefinition
         rcon.NoticeLineSeparator = " ";
 
         rcon.ColorCodeMapping.Clear();
-        foreach (var color in new[]
-                 {
-                     "Black", "Red", "Green", "Yellow", "Blue", "Cyan", "Pink", "White", "Map", "Grey",
-                     "Wildcard"
-                 })
-        {
-            rcon.ColorCodeMapping.Add(color, "");
-        }
 
         var events = eventParser.Configuration;
         events.GuidNumberStyle = NumberStyles.Integer;
@@ -92,6 +86,6 @@ public sealed class Parser7DaysToDie : IParserDefinition
 
         eventParser.Version = version;
         eventParser.GameName = Server.Game.D7D;
-        eventParser.URLProtocolFormat = "steam://connect/{{ip}}:26900";
+        eventParser.URLProtocolFormat = "steam://connect/{{ip}}:{{port}}";
     }
 }

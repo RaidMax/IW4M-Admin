@@ -7,7 +7,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,27 +24,20 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ResponseQuietPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan MetadataLifetime = TimeSpan.FromMinutes(1);
-    private static readonly TimeSpan RadarDataLifetime = TimeSpan.FromSeconds(1);
     private const int MaxResponseBytes = 4 * 1024 * 1024;
-    private static readonly JsonSerializerOptions RadarJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IPEndPoint _endpoint;
     private readonly string _password;
     private readonly ILogger<SevenDaysToDieRConConnection> _logger;
     private readonly SemaphoreSlim _queryLock = new(1, 1);
-    private readonly Dictionary<int, SevenDaysToDiePlayer> _playersBySlot = new();
 
     private TcpClient _client;
     private NetworkStream _stream;
     private DateTime _metadataExpiresAt;
-    private DateTime _radarDataExpiresAt;
-    private string _radarDataJson = "[]";
+    private IRConParser _parser;
     private string _hostname = "7 Days to Die Server";
     private string _map = "Unknown";
     private int _maxPlayers = 8;
-    private int _worldSize = 6144;
-    private string _world = "Unknown";
-    private string _saveName = "Unknown";
     private string _version = "7DTD";
     private bool _disposed;
 
@@ -96,58 +88,12 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
 
     public void SetConfiguration(IRConParser config)
     {
-    }
-
-    private async Task<string> BuildLiveRadarMapJsonAsync(CancellationToken token)
-    {
-        await RefreshMetadataAsync(token);
-        return JsonSerializer.Serialize(new
-        {
-            provider = "d7d",
-            name = _world,
-            alias = _world,
-            saveName = _saveName,
-            mapSize = new { x = _worldSize, y = 255, z = _worldSize },
-            tileSize = 128,
-            maxZoom = 4
-        }, RadarJsonOptions);
-    }
-
-    private async Task<string> BuildLiveRadarDataJsonAsync(CancellationToken token)
-    {
-        if (_radarDataExpiresAt > DateTime.UtcNow)
-        {
-            return _radarDataJson;
-        }
-
-        var players = await RefreshPlayersAsync(token);
-        var payload = players.Select(player => new
-        {
-            name = player.Name,
-            guid = player.EntityId,
-            location = new { x = player.PositionX, y = player.PositionY, z = player.PositionZ },
-            viewAngles = new { x = player.RotationX, y = player.RotationY, z = player.RotationZ },
-            radianAngles = new
-            {
-                x = player.RotationX * Math.PI / 180,
-                y = player.RotationY * Math.PI / 180,
-                z = player.RotationZ * Math.PI / 180
-            },
-            team = "survivors",
-            kills = player.ZombieKills,
-            deaths = player.Deaths,
-            score = player.Level,
-            playTime = 0,
-            weapon = "none",
-            health = player.Health,
-            isAlive = player.Health > 0,
-            id = FormattableString.Invariant(
-                $"{player.EntityId}:{player.PositionX:F1}:{player.PositionZ:F1}:{player.RotationY:F1}")
-        });
-
-        _radarDataJson = JsonSerializer.Serialize(payload, RadarJsonOptions);
-        _radarDataExpiresAt = DateTime.UtcNow + RadarDataLifetime;
-        return _radarDataJson;
+        _parser = config;
+        _hostname = GetDefault("sv_hostname", _hostname);
+        _map = GetDefault("mapname", _map);
+        _version = GetDefault("version", _version);
+        _maxPlayers = int.TryParse(GetDefault("sv_maxclients", _maxPlayers.ToString(CultureInfo.InvariantCulture)),
+            NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxPlayers) ? maxPlayers : _maxPlayers;
     }
 
     public void Dispose()
@@ -186,11 +132,11 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
             $"map: {_map}",
             "gametype: Survival",
             $"players: {players.Count}/{_maxPlayers}",
-            "slot score kills deaths ping networkid name address"
+            "slot score kills deaths ping networkid name address entityid"
         };
 
         response.AddRange(players.Select(player =>
-            $"{player.Slot} {player.Level} {player.ZombieKills} {player.Deaths} {player.Ping} {player.NetworkId} \"{SanitizeName(player.Name)}\" {player.Address}:0"));
+            $"{player.ClientNumber} {player.Score} {player.ZombieKills} {player.PlayerDeaths} {player.Ping} {player.NetworkId} \"{SanitizeName(player.CurrentAlias.Name)}\" {player.IPAddressString}:0 {player.EntityId}"));
         return response.ToArray();
     }
 
@@ -229,8 +175,6 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
             "ServerName") ?? _hostname;
         var world = ParsePreference(await ExecuteTelnetCommandAsync("getgamepref GameWorld", token), "GameWorld");
         var saveName = ParsePreference(await ExecuteTelnetCommandAsync("getgamepref GameName", token), "GameName");
-        _world = world ?? _world;
-        _saveName = saveName ?? _saveName;
         _map = string.Equals(world, "RWG", StringComparison.OrdinalIgnoreCase)
             ? saveName ?? world ?? _map
             : world ?? saveName ?? _map;
@@ -242,26 +186,12 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
             _maxPlayers = parsedMaxPlayers;
         }
 
-        var worldSize = ParsePreference(await ExecuteTelnetCommandAsync("getgamepref WorldGenSize", token),
-            "WorldGenSize");
-        if (int.TryParse(worldSize, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedWorldSize))
-        {
-            _worldSize = Math.Max(1024, parsedWorldSize);
-        }
-
         _metadataExpiresAt = DateTime.UtcNow + MetadataLifetime;
     }
 
     private async Task<IReadOnlyList<SevenDaysToDiePlayer>> RefreshPlayersAsync(CancellationToken token)
     {
-        var players = SevenDaysToDiePlayerParser.Parse(await ExecuteTelnetCommandAsync("listplayers", token));
-        _playersBySlot.Clear();
-        foreach (var player in players)
-        {
-            _playersBySlot[player.Slot] = player;
-        }
-
-        return players;
+        return SevenDaysToDiePlayerParser.Parse(await ExecuteTelnetCommandAsync("listplayers", token));
     }
 
     private async Task<string> ExecuteIw4MAdminCommandAsync(string command, CancellationToken token)
@@ -276,62 +206,46 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
         var verb = commandMatch.Groups["verb"].Value.ToLowerInvariant();
         var arguments = commandMatch.Groups["arguments"].Value.Trim();
 
-        if (verb == "livemap")
+        switch (verb)
         {
-            return await BuildLiveRadarMapJsonAsync(token);
+            case "say":
+            {
+                var message = CleanConsoleText(Unquote(arguments));
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    _logger.LogDebug("Ignoring empty 7 Days to Die broadcast");
+                    return string.Empty;
+                }
+
+                return await ExecuteTelnetCommandAsync($"say {Quote(message)}", token);
+            }
+            case "tell":
+            case "kick":
+            case "clientkick":
+            {
+                var playerCommand = PlayerCommandRegex().Match(arguments);
+                if (!playerCommand.Success ||
+                    !int.TryParse(playerCommand.Groups["slot"].Value, out var entityId))
+                {
+                    return "Player not found";
+                }
+
+                var message = CleanConsoleText(Unquote(playerCommand.Groups["message"].Value.Trim()));
+                if (verb == "tell" && string.IsNullOrWhiteSpace(message))
+                {
+                    _logger.LogDebug("Ignoring empty 7 Days to Die private message for entity {EntityId}", entityId);
+                    return string.Empty;
+                }
+
+                return verb == "tell"
+                    ? await ExecuteTelnetCommandAsync($"sayplayer {entityId} {Quote(message)}", token)
+                    : await ExecuteTelnetCommandAsync(
+                        $"kick {entityId} {Quote(string.IsNullOrWhiteSpace(message) ? "Kicked by administrator" : message)}",
+                        token);
+            }
+            default:
+                return await ExecuteTelnetCommandAsync(command, token);
         }
-
-        if (verb == "liveradar")
-        {
-            return await BuildLiveRadarDataJsonAsync(token);
-        }
-
-        if (verb == "say")
-        {
-            var message = CleanConsoleText(Unquote(arguments));
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                _logger.LogDebug("Ignoring empty 7 Days to Die broadcast");
-                return string.Empty;
-            }
-
-            return await ExecuteTelnetCommandAsync($"say {Quote(message)}", token);
-        }
-
-        if (verb is "tell" or "kick" or "clientkick")
-        {
-            var playerCommand = PlayerCommandRegex().Match(arguments);
-            if (!playerCommand.Success || !int.TryParse(playerCommand.Groups["slot"].Value, out var slot))
-            {
-                return "Player not found";
-            }
-
-            if (!_playersBySlot.TryGetValue(slot, out var player))
-            {
-                await BuildStatusAsync(token);
-                _playersBySlot.TryGetValue(slot, out player);
-            }
-
-            if (player is null)
-            {
-                return "Player not found";
-            }
-
-            var message = CleanConsoleText(Unquote(playerCommand.Groups["message"].Value.Trim()));
-            if (verb == "tell" && string.IsNullOrWhiteSpace(message))
-            {
-                _logger.LogDebug("Ignoring empty 7 Days to Die private message for slot {Slot}", slot);
-                return string.Empty;
-            }
-
-            return verb == "tell"
-                ? await ExecuteTelnetCommandAsync($"sayplayer {player.EntityId} {Quote(message)}", token)
-                : await ExecuteTelnetCommandAsync(
-                    $"kick {Quote(player.Name)} {Quote(string.IsNullOrWhiteSpace(message) ? "Kicked by administrator" : message)}",
-                    token);
-        }
-
-        return await ExecuteTelnetCommandAsync(command, token);
     }
 
     private async Task<string> ExecuteTelnetCommandAsync(string command, CancellationToken token)
@@ -500,6 +414,9 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
     private static string Unquote(string value) => value.Length >= 2 && value[0] == '"' && value[^1] == '"'
         ? value[1..^1].Replace("\\\"", "\"").Replace("\\\\", "\\")
         : value;
+
+    private string GetDefault(string name, string fallback) =>
+        _parser?.Configuration.DefaultDvarValues.TryGetValue(name, out var value) == true ? value : fallback;
 
     [GeneratedRegex(@"^(?<verb>\S+)(?:\s+(?<arguments>.*))?$")]
     private static partial Regex CommandRegex();

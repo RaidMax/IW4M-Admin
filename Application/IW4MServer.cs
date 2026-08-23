@@ -1710,7 +1710,11 @@ namespace IW4MAdmin
 
                 Manager.AddEvent(gameEvent);
 
-                var formattedKick = BuildPenaltyKickCommand(activeClient, newPenalty, previousPenalty);
+                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
+                    activeClient.TemporalClientNumber,
+                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration,
+                        newPenalty,
+                        previousPenalty));
                 ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
                 await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
@@ -1753,7 +1757,9 @@ namespace IW4MAdmin
 
             if (activeClient.IsIngame)
             {
-                var formattedKick = BuildPenaltyKickCommand(activeClient, newPenalty);
+                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
+                    activeClient.TemporalClientNumber,
+                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
                 ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
                 await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
@@ -1794,7 +1800,9 @@ namespace IW4MAdmin
             {
                 ServerLogger.LogDebug("Attempting to kicking newly banned client {ActiveClient}", activeClient.ToString());
                 
-                var formattedString = BuildPenaltyKickCommand(activeClient, newPenalty);
+                var formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
+                    activeClient.TemporalClientNumber,
+                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
                 await activeClient.CurrentServer.ExecuteCommandAsync(formattedString);
             }
             
@@ -1830,21 +1838,6 @@ namespace IW4MAdmin
                 Client = targetClient,
                 Penalty = unbanPenalty
             });
-        }
-
-        private string BuildPenaltyKickCommand(EFClient activeClient, EFPenalty currentPenalty,
-            EFPenalty previousPenalty = null)
-        {
-            var commandServer = activeClient.CurrentServer;
-            var commandConfig = commandServer.RconParser.Configuration;
-            var penalty = previousPenalty ?? currentPenalty;
-            var notice = commandServer.GameName == Game.D7D
-                ? penalty.Offense
-                : _messageFormatter.BuildFormattedMessage(commandConfig, currentPenalty, previousPenalty);
-
-            return string.Format(commandConfig.CommandPrefixes.Kick,
-                activeClient.TemporalClientNumber,
-                notice);
         }
 
         public override void InitializeTokens()

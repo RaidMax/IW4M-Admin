@@ -86,11 +86,6 @@ public class AppState(ApplicationConfiguration appConfig)
 
     public string Loc(string key)
     {
-        if (key == "GAME_D7D")
-        {
-            return "7 Days to Die";
-        }
-
         try
         {
             return Utilities.CurrentLocalization?.LocalizationIndex?[key] ?? key;

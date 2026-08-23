@@ -18,8 +18,9 @@ remote 7 Days to Die servers.
 the public Internet. For remote hosts, restrict access with firewall rules and carry the traffic over a
 private network, VPN, or authenticated encrypted tunnel.
 
-Live Radar reads player coordinates through Telnet and proxies terrain tiles from the native 7DTD Web
-Dashboard. Enable `WebDashboardEnabled` and `EnableMapRendering` on the game server, create a restricted
+Live Radar reads player coordinates through Telnet and proxies terrain tiles from the official 7DTD Web
+Dashboard operated alongside the game server. It does not send player data to a third-party map service.
+Enable `WebDashboardEnabled` and `EnableMapRendering` on the game server, create a restricted
 web token with access to `web.map`, and configure the dashboard URL, token name, and a local secret-file
 path. Mount the secret file read-only when IW4MAdmin runs in a container.
 
@@ -38,9 +39,11 @@ Example server entry:
   "EventParserVersion": "7 Days to Die Parser",
   "ManualLogPath": "/absolute/path/to/server-output.log",
   "GameLogServerUrl": "http://203.0.113.10:1625",
-  "LiveRadarUrl": "http://203.0.113.10:8080",
-  "LiveRadarTokenName": "iw4m-radar",
-  "LiveRadarTokenSecretFile": "/run/secrets/7dtd_dashboard_token"
+  "ExternalWeb": {
+    "Url": "http://203.0.113.10:8080",
+    "TokenName": "iw4m-radar",
+    "TokenFile": "/run/secrets/7dtd_dashboard_token"
+  }
 }
 ```
 

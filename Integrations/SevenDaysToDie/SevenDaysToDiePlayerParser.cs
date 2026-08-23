@@ -5,6 +5,9 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Data.Models;
+using SharedLibraryCore;
+using SharedLibraryCore.Database.Models;
 
 namespace Integrations.SevenDaysToDie;
 
@@ -43,23 +46,24 @@ public static partial class SevenDaysToDiePlayerParser
             var position = ParseVector(line, "pos");
             var rotation = ParseVector(line, "rot");
 
-            players.Add(new SevenDaysToDiePlayer(
-                ParseInteger(playerMatch.Groups["slot"].Value),
-                entityId,
-                CreateNetworkId(platformId),
-                string.IsNullOrWhiteSpace(name) ? "Unknown" : name,
-                address,
-                Math.Clamp(ParseInteger(GetValue(fields, "ping"), 999), 0, 999),
-                Math.Max(0, ParseInteger(GetValue(fields, "level"))),
-                Math.Max(0, ParseInteger(GetValue(fields, "zombies"))),
-                Math.Max(0, ParseInteger(GetValue(fields, "deaths"))),
-                position.X,
-                position.Y,
-                position.Z,
-                rotation.X,
-                rotation.Y,
-                rotation.Z,
-                Math.Clamp(ParseInteger(GetValue(fields, "health"), 100), 0, 100)));
+            players.Add(new SevenDaysToDiePlayer
+            {
+                ClientNumber = ParseInteger(playerMatch.Groups["slot"].Value),
+                EntityId = entityId,
+                NetworkId = CreateNetworkId(platformId),
+                CurrentAlias = new EFAlias
+                {
+                    Name = string.IsNullOrWhiteSpace(name) ? "Unknown" : name,
+                    IPAddress = address.ConvertToIP()
+                },
+                Ping = Math.Clamp(ParseInteger(GetValue(fields, "ping"), 999), 0, 999),
+                Score = Math.Max(0, ParseInteger(GetValue(fields, "level"))),
+                ZombieKills = Math.Max(0, ParseInteger(GetValue(fields, "zombies"))),
+                PlayerDeaths = Math.Max(0, ParseInteger(GetValue(fields, "deaths"))),
+                Position = position,
+                Rotation = rotation,
+                Health = Math.Clamp(ParseInteger(GetValue(fields, "health"), 100), 0, 100)
+            });
         }
 
         return players;
@@ -73,20 +77,20 @@ public static partial class SevenDaysToDiePlayerParser
             ? (int)parsed
             : fallback;
 
-    private static (double X, double Y, double Z) ParseVector(string line, string field)
+    private static Vector3 ParseVector(string line, string field)
     {
         var match = Regex.Match(line,
             $@"(?:^|,\s*){Regex.Escape(field)}=\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)",
             RegexOptions.IgnoreCase);
 
         return match.Success
-            ? (ParseDouble(match.Groups[1].Value), ParseDouble(match.Groups[2].Value),
-                ParseDouble(match.Groups[3].Value))
-            : (0, 0, 0);
+            ? new Vector3(ParseFloat(match.Groups[1].Value), ParseFloat(match.Groups[2].Value),
+                ParseFloat(match.Groups[3].Value))
+            : new Vector3();
     }
 
-    private static double ParseDouble(string value) =>
-        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;
+    private static float ParseFloat(string value) =>
+        float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;
 
     private static string NormalizeAddress(string value)
     {

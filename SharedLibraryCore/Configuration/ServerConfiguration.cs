@@ -49,13 +49,7 @@ namespace SharedLibraryCore.Configuration
         public string CustomHostname { get; set; }
 
         [ConfigurationOptional]
-        public Uri LiveRadarUrl { get; set; }
-
-        [ConfigurationOptional]
-        public string LiveRadarTokenName { get; set; }
-
-        [ConfigurationOptional]
-        public string LiveRadarTokenSecretFile { get; set; }
+        public ExternalWebConfiguration ExternalWeb { get; set; }
 
         public IBaseConfiguration Generate()
         {

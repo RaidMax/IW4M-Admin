@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Data.Models;
 using IW4MAdmin.Plugins.LiveRadar.Configuration;
 using IW4MAdmin.Plugins.LiveRadar.Events;
+using IW4MAdmin.Plugins.LiveRadar.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
@@ -37,6 +38,7 @@ public class Plugin : IPluginV2
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
         serviceCollection.AddConfiguration<LiveRadarConfiguration>();
+        serviceCollection.AddSingleton<SevenDaysToDieRadarService>();
         serviceCollection.AddHttpClient("LiveRadar7DTD", client =>
             client.Timeout = TimeSpan.FromSeconds(6))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
@@ -141,7 +143,7 @@ public class Plugin : IPluginV2
             // enable the live radar page
             var supportsIw4 = monitorEvent.Server.GameCode == Reference.Game.IW4 &&
                               monitorEvent.Server.IsLegacyGameIntegrationEnabled;
-            var supportsSevenDays = (int)monitorEvent.Server.GameCode == 15;
+            var supportsSevenDays = monitorEvent.Server.GameCode == Reference.Game.D7D;
             var shouldRegisterPage = (!supportsIw4 && !supportsSevenDays) || _addedPage;
             if (shouldRegisterPage)
             {

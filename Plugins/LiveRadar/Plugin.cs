@@ -36,6 +36,8 @@ public class Plugin : IPluginV2
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
         serviceCollection.AddConfiguration<LiveRadarConfiguration>();
+        serviceCollection.AddHttpClient("LiveRadar7DTD", client =>
+            client.Timeout = TimeSpan.FromSeconds(6));
         
         serviceCollection.AddSingleton<IGameScriptEvent, LiveRadarScriptEvent>(); // for identification 
         serviceCollection.AddTransient<LiveRadarScriptEvent>(); // for factory
@@ -131,9 +133,10 @@ public class Plugin : IPluginV2
         {
             // if it's an IW4 game, with custom callbacks, we want to 
             // enable the live radar page
-            var shouldRegisterPage = monitorEvent.Server.GameCode != Reference.Game.IW4 ||
-                                     !monitorEvent.Server.IsLegacyGameIntegrationEnabled ||
-                                     _addedPage;
+            var supportsIw4 = monitorEvent.Server.GameCode == Reference.Game.IW4 &&
+                              monitorEvent.Server.IsLegacyGameIntegrationEnabled;
+            var supportsSevenDays = (int)monitorEvent.Server.GameCode == 15;
+            var shouldRegisterPage = (!supportsIw4 && !supportsSevenDays) || _addedPage;
             if (shouldRegisterPage)
             {
                 return Task.CompletedTask;

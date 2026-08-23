@@ -335,6 +335,19 @@ namespace IW4MAdmin.Application.RConParsers
 
                     client.SetAdditionalProperty("BotGuid", networkIdString);
 
+                    if (Configuration.Status.GroupMapping.TryGetValue(ParserRegex.GroupType.RConKills,
+                            out var killsGroupIndex) &&
+                        Configuration.Status.GroupMapping.TryGetValue(ParserRegex.GroupType.RConDeaths,
+                            out var deathsGroupIndex) &&
+                        match.Values.Length > Math.Max(killsGroupIndex, deathsGroupIndex) &&
+                        int.TryParse(match.Values[killsGroupIndex], out var kills) &&
+                        int.TryParse(match.Values[deathsGroupIndex], out var deaths))
+                    {
+                        client.SetAdditionalProperty("RConStatsAvailable", true);
+                        client.SetAdditionalProperty("RConKills", Math.Max(0, kills));
+                        client.SetAdditionalProperty("RConDeaths", Math.Max(0, deaths));
+                    }
+
                     if (Configuration.Status.GroupMapping.ContainsKey(ParserRegex.GroupType.AdditionalGroup))
                     {
                         var additionalGroupIndex =

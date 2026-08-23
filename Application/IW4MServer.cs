@@ -879,17 +879,10 @@ namespace IW4MAdmin
 
                 lock (ChatHistory)
                 {
-                    while (ChatHistory.Count > ClientNum * 5)
+                    while (ChatHistory.Count > Math.Max(ClientNum * 5, 5))
                     {
                         ChatHistory.RemoveAt(0);
                     }
-                }
-
-                // the last client hasn't fully disconnected yet
-                // so there will still be at least 1 client left
-                if (ClientNum == 0)
-                {
-                    ChatHistory.Clear();
                 }
 
                 return true;
@@ -955,6 +948,13 @@ namespace IW4MAdmin
 
             client.Ping = origin.Ping;
             client.Score = origin.Score;
+
+            if (origin.GetAdditionalProperty<bool>("RConStatsAvailable"))
+            {
+                client.SetAdditionalProperty("RConStatsAvailable", true);
+                client.SetAdditionalProperty("RConKills", origin.GetAdditionalProperty<int>("RConKills"));
+                client.SetAdditionalProperty("RConDeaths", origin.GetAdditionalProperty<int>("RConDeaths"));
+            }
 
             // update their IP if it hasn't been set yet
             if (client.IPAddress == null &&
@@ -1703,11 +1703,7 @@ namespace IW4MAdmin
 
                 Manager.AddEvent(gameEvent);
 
-                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    activeClient.TemporalClientNumber, 
-                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, 
-                        newPenalty, 
-                        previousPenalty));
+                var formattedKick = BuildPenaltyKickCommand(activeClient, newPenalty, previousPenalty);
                 ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
                 await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
@@ -1750,9 +1746,7 @@ namespace IW4MAdmin
 
             if (activeClient.IsIngame)
             {
-                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
-                    activeClient.TemporalClientNumber,
-                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
+                var formattedKick = BuildPenaltyKickCommand(activeClient, newPenalty);
                 ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
                 await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
             }
@@ -1793,9 +1787,7 @@ namespace IW4MAdmin
             {
                 ServerLogger.LogDebug("Attempting to kicking newly banned client {ActiveClient}", activeClient.ToString());
                 
-                var formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    activeClient.TemporalClientNumber, 
-                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
+                var formattedString = BuildPenaltyKickCommand(activeClient, newPenalty);
                 await activeClient.CurrentServer.ExecuteCommandAsync(formattedString);
             }
             
@@ -1831,6 +1823,21 @@ namespace IW4MAdmin
                 Client = targetClient,
                 Penalty = unbanPenalty
             });
+        }
+
+        private string BuildPenaltyKickCommand(EFClient activeClient, EFPenalty currentPenalty,
+            EFPenalty previousPenalty = null)
+        {
+            var commandServer = activeClient.CurrentServer;
+            var commandConfig = commandServer.RconParser.Configuration;
+            var penalty = previousPenalty ?? currentPenalty;
+            var notice = commandServer.GameName == Game.D7D
+                ? penalty.Offense
+                : _messageFormatter.BuildFormattedMessage(commandConfig, currentPenalty, previousPenalty);
+
+            return string.Format(commandConfig.CommandPrefixes.Kick,
+                activeClient.TemporalClientNumber,
+                notice);
         }
 
         public override void InitializeTokens()

@@ -30,7 +30,7 @@
             <div class="hidden lg:block">
                 <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
                     <div class="px-4 py-2 border-b border-line bg-surface-alt/50">
-                        <h5 class="text-xs font-semibold text-muted uppercase tracking-wider">Team 1</h5>
+                        <h5 class="player-team-left-title text-xs font-semibold text-muted uppercase tracking-wider">Team 1</h5>
                     </div>
                     <div class="player-data-left divide-y divide-line max-h-[500px] overflow-y-auto"></div>
                 </div>
@@ -41,6 +41,9 @@
                 <div id="map_name" class="bg-surface-alt text-center py-3 px-4 rounded-t-lg border border-line text-foreground font-medium">&mdash;</div>
                 <div id="map_list" class="relative rounded-b-lg border border-t-0 border-line bg-surface bg-cover w-full" style="padding-bottom: 100% !important;">
                     <canvas id="map_canvas" class="absolute inset-0 w-full h-full"></canvas>
+                    <div id="map_controls" class="hidden absolute bottom-3 left-3 z-10 rounded-md bg-black/65 px-2 py-1 text-[11px] text-white/80 pointer-events-none">
+                        Drag to move · Scroll to zoom
+                    </div>
                 </div>
             </div>
 
@@ -48,7 +51,7 @@
             <div class="hidden lg:block">
                 <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden">
                     <div class="px-4 py-2 border-b border-line bg-surface-alt/50">
-                        <h5 class="text-xs font-semibold text-muted uppercase tracking-wider">Team 2</h5>
+                        <h5 class="player-team-right-title text-xs font-semibold text-muted uppercase tracking-wider">Team 2</h5>
                     </div>
                     <div class="player-data-right divide-y divide-line max-h-[500px] overflow-y-auto"></div>
                 </div>

@@ -17,10 +17,14 @@ public partial class LiveRadar
     private string SelectedServerName =>
         Servers.FirstOrDefault(s => s.ToString() == ServerId)?.Hostname ?? "Unknown Server";
 
+    private bool IsSevenDaysServer =>
+        Servers.FirstOrDefault(server => server.ToString() == ServerId) is { } selectedServer &&
+        (int)selectedServer.GameName == 15;
+
     protected override void OnInitialized()
     {
         Servers = Manager.GetServers()
-            .Where(server => server.GameName == Server.Game.IW4)
+            .Where(server => server.GameName == Server.Game.IW4 || (int)server.GameName == 15)
             .ToList();
 
         if (string.IsNullOrEmpty(ServerId) && Servers.Any())
@@ -30,6 +34,7 @@ public partial class LiveRadar
     }
 
     private string _initializedServerId;
+    private IJSObjectReference _radarScript;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -49,7 +54,16 @@ public partial class LiveRadar
             var mapUrl = $"/Radar/{ServerId}/Map";
             try
             {
-                await JS.InvokeVoidAsync("initLiveRadar", radarUrl, mapUrl);
+                if (IsSevenDaysServer)
+                {
+                    _radarScript ??= await JS.InvokeAsync<IJSObjectReference>(
+                        "import", "/js/liveradar-7dtd.js?v=7");
+                    await _radarScript.InvokeVoidAsync("initSevenDaysLiveRadar", radarUrl, mapUrl);
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("initLiveRadar", radarUrl, mapUrl);
+                }
             }
             catch (Exception ex)
             {

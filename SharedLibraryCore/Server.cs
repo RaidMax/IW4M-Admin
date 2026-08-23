@@ -38,7 +38,8 @@ namespace SharedLibraryCore
             H1 = 11,
             L4D2 = 12,
             H2M = 13,
-            IW7 = 14
+            IW7 = 14,
+            D7D = 15
         }
 
         // only here for performance

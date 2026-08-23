@@ -25,6 +25,8 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ResponseQuietPeriod = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan MetadataLifetime = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan RadarDataLifetime = TimeSpan.FromSeconds(1);
+    private const int MaxResponseBytes = 4 * 1024 * 1024;
     private static readonly JsonSerializerOptions RadarJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IPEndPoint _endpoint;
@@ -36,6 +38,8 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
     private TcpClient _client;
     private NetworkStream _stream;
     private DateTime _metadataExpiresAt;
+    private DateTime _radarDataExpiresAt;
+    private string _radarDataJson = "[]";
     private string _hostname = "7 Days to Die Server";
     private string _map = "Unknown";
     private int _maxPlayers = 8;
@@ -111,6 +115,11 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
 
     private async Task<string> BuildLiveRadarDataJsonAsync(CancellationToken token)
     {
+        if (_radarDataExpiresAt > DateTime.UtcNow)
+        {
+            return _radarDataJson;
+        }
+
         var players = await RefreshPlayersAsync(token);
         var payload = players.Select(player => new
         {
@@ -136,7 +145,9 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
                 $"{player.EntityId}:{player.PositionX:F1}:{player.PositionZ:F1}:{player.RotationY:F1}")
         });
 
-        return JsonSerializer.Serialize(payload, RadarJsonOptions);
+        _radarDataJson = JsonSerializer.Serialize(payload, RadarJsonOptions);
+        _radarDataExpiresAt = DateTime.UtcNow + RadarDataLifetime;
+        return _radarDataJson;
     }
 
     public void Dispose()
@@ -392,6 +403,12 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
                 if (count == 0)
                 {
                     throw new IOException("7 Days to Die Telnet connection closed");
+                }
+
+                if (response.Length + count > MaxResponseBytes)
+                {
+                    throw new InvalidDataException(
+                        $"7 Days to Die Telnet response exceeded the {MaxResponseBytes}-byte limit");
                 }
 
                 await response.WriteAsync(buffer.AsMemory(0, count), token);

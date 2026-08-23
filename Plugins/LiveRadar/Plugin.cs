@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
@@ -37,8 +38,13 @@ public class Plugin : IPluginV2
     {
         serviceCollection.AddConfiguration<LiveRadarConfiguration>();
         serviceCollection.AddHttpClient("LiveRadar7DTD", client =>
-            client.Timeout = TimeSpan.FromSeconds(6));
-        
+            client.Timeout = TimeSpan.FromSeconds(6))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            })
+            .RedactLoggedHeaders(["X-SDTD-API-TOKENNAME", "X-SDTD-API-SECRET"]);
+
         serviceCollection.AddSingleton<IGameScriptEvent, LiveRadarScriptEvent>(); // for identification 
         serviceCollection.AddTransient<LiveRadarScriptEvent>(); // for factory
     }

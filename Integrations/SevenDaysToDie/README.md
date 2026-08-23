@@ -14,10 +14,18 @@ Each entry in `IW4MAdminSettings.json` represents one game server and has its ow
 `Port`, `Password`, `ManualLogPath`, and optional `GameLogServerUrl`. This supports any mix of local and
 remote 7 Days to Die servers.
 
+7DTD Telnet and GameLogServer HTTP traffic are not encrypted. Do not expose either service directly to
+the public Internet. For remote hosts, restrict access with firewall rules and carry the traffic over a
+private network, VPN, or authenticated encrypted tunnel.
+
 Live Radar reads player coordinates through Telnet and proxies terrain tiles from the native 7DTD Web
 Dashboard. Enable `WebDashboardEnabled` and `EnableMapRendering` on the game server, create a restricted
 web token with access to `web.map`, and configure the dashboard URL, token name, and a local secret-file
 path. Mount the secret file read-only when IW4MAdmin runs in a container.
+
+For player safety, 7DTD Live Radar endpoints require an authenticated IW4MAdmin webfront session. This
+prevents anonymous visitors from retrieving exact player coordinates or explored terrain. Radar requests
+are rate limited, and Telnet responses and proxied map tiles have bounded sizes.
 
 Example server entry:
 

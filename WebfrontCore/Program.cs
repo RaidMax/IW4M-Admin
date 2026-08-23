@@ -171,6 +171,16 @@ public class Program
                 opt.QueueLimit = 10;
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             });
+            options.AddPolicy("liveRadar", context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromSeconds(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    }));
         });
 
         // Add framework services

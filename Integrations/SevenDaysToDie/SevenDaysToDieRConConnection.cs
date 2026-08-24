@@ -26,8 +26,7 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
     private static readonly TimeSpan MetadataLifetime = TimeSpan.FromMinutes(1);
     private const int MaxResponseBytes = 4 * 1024 * 1024;
 
-    private readonly IPEndPoint _initialEndpoint;
-    private readonly string _address;
+    private readonly IPEndPoint _endpoint;
     private readonly string _password;
     private readonly ILogger<SevenDaysToDieRConConnection> _logger;
     private readonly SemaphoreSlim _queryLock = new(1, 1);
@@ -42,11 +41,10 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
     private string _version = "7DTD";
     private bool _disposed;
 
-    public SevenDaysToDieRConConnection(IPEndPoint endpoint, string password, string address,
+    public SevenDaysToDieRConConnection(IPEndPoint endpoint, string password,
         ILogger<SevenDaysToDieRConConnection> logger)
     {
-        _initialEndpoint = endpoint;
-        _address = string.IsNullOrWhiteSpace(address) ? endpoint.Address.ToString() : address;
+        _endpoint = endpoint;
         _password = password ?? string.Empty;
         _logger = logger;
     }
@@ -74,14 +72,13 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
         catch (OperationCanceledException) when (!token.IsCancellationRequested)
         {
             Disconnect();
-            throw new NetworkException($"Timed out communicating with 7 Days to Die server {EndpointDescription}");
+            throw new NetworkException($"Timed out communicating with 7 Days to Die server {_endpoint}");
         }
         catch (Exception exception) when (exception is IOException or SocketException)
         {
             Disconnect();
-            _logger.LogError(exception, "Could not communicate with 7 Days to Die server {Endpoint}",
-                EndpointDescription);
-            throw new NetworkException($"Unable to communicate with 7 Days to Die server {EndpointDescription}");
+            _logger.LogError(exception, "Could not communicate with 7 Days to Die server {Endpoint}", _endpoint);
+            throw new NetworkException($"Unable to communicate with 7 Days to Die server {_endpoint}");
         }
         finally
         {
@@ -269,7 +266,7 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
             }
         }
 
-        throw new NetworkException($"Unable to communicate with 7 Days to Die server {EndpointDescription}");
+        throw new NetworkException($"Unable to communicate with 7 Days to Die server {_endpoint}");
     }
 
     private async Task EnsureConnectedAsync(CancellationToken token)
@@ -280,11 +277,10 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
         }
 
         Disconnect();
+        _client = new TcpClient(_endpoint.AddressFamily);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(ConnectionTimeout);
-        var endpoint = await ResolveEndpointAsync(timeout.Token);
-        _client = new TcpClient(endpoint.AddressFamily);
-        await _client.ConnectAsync(endpoint.Address, endpoint.Port, timeout.Token);
+        await _client.ConnectAsync(_endpoint.Address, _endpoint.Port, timeout.Token);
         _stream = _client.GetStream();
 
         var banner = await ReadResponseAsync(timeout.Token);
@@ -298,26 +294,9 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
                 loginResponse.Contains("failed", StringComparison.OrdinalIgnoreCase))
             {
                 Disconnect();
-                throw new ServerException($"Could not authenticate to 7 Days to Die server {EndpointDescription}");
+                throw new ServerException($"Could not authenticate to 7 Days to Die server {_endpoint}");
             }
         }
-    }
-
-    private async Task<IPEndPoint> ResolveEndpointAsync(CancellationToken token)
-    {
-        if (IPAddress.TryParse(_address, out var address))
-        {
-            return new IPEndPoint(address, _initialEndpoint.Port);
-        }
-
-        var addresses = await Dns.GetHostAddressesAsync(_address, token);
-        address = addresses.FirstOrDefault(candidate => candidate.AddressFamily == AddressFamily.InterNetwork);
-        if (address is null)
-        {
-            throw new SocketException((int)SocketError.HostNotFound);
-        }
-
-        return new IPEndPoint(address, _initialEndpoint.Port);
     }
 
     private async Task<string> ReadResponseAsync(CancellationToken token)
@@ -438,8 +417,6 @@ public sealed partial class SevenDaysToDieRConConnection : IRConConnection
 
     private string GetDefault(string name, string fallback) =>
         _parser?.Configuration.DefaultDvarValues.TryGetValue(name, out var value) == true ? value : fallback;
-
-    private string EndpointDescription => $"{_address}:{_initialEndpoint.Port}";
 
     [GeneratedRegex(@"^(?<verb>\S+)(?:\s+(?<arguments>.*))?$")]
     private static partial Regex CommandRegex();

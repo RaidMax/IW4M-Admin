@@ -1415,8 +1415,7 @@ namespace IW4MAdmin
             RconParser ??= Manager.AdditionalRConParsers[0];
             EventParser ??= Manager.AdditionalEventParsers[0];
 
-            RemoteConnection = RConConnectionFactory.CreateConnection(ResolvedIpEndPoint, Password,
-                RconParser.RConEngine, ListenAddress);
+            RemoteConnection = RConConnectionFactory.CreateConnection(ResolvedIpEndPoint, Password, RconParser.RConEngine);
             RemoteConnection.SetConfiguration(RconParser);
 
             var version = await this.GetMappedDvarValueOrDefaultAsync<string>("version", token: Manager.CancellationToken);

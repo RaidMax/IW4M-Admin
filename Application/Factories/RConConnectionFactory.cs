@@ -32,6 +32,13 @@ namespace IW4MAdmin.Application.Factories
         /// <inheritdoc/>
         public IRConConnection CreateConnection(IPEndPoint ipEndpoint, string password, string rconEngine)
         {
+            return CreateConnection(ipEndpoint, password, rconEngine, null);
+        }
+
+        /// <inheritdoc/>
+        public IRConConnection CreateConnection(IPEndPoint ipEndpoint, string password, string rconEngine,
+            string hostname)
+        {
             return rconEngine switch
             {
                 "COD" => new CodRConConnection(ipEndpoint, password,
@@ -41,6 +48,7 @@ namespace IW4MAdmin.Application.Factories
                     _serviceProvider.GetRequiredService<ILogger<SourceRConConnection>>(),
                     _serviceProvider.GetRequiredService<IRConClientFactory>(), ipEndpoint, password),
                 "7DTD" => new SevenDaysToDieRConConnection(ipEndpoint, password,
+                    hostname,
                     _serviceProvider.GetRequiredService<ILogger<SevenDaysToDieRConConnection>>()),
                 _ => throw new ArgumentException($"No supported RCon engine available for '{rconEngine}'")
             };

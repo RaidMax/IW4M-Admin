@@ -168,8 +168,8 @@ public class WebfrontDataService : IWebfrontDataService
                             Online = true,
                             LastConnection = p.client.LastConnection,
                             Score = p.client.Score,
-                            Kills = GetRConKills(p.client) ?? p.stats?.MatchData?.Kills ?? 0,
-                            Deaths = GetRConDeaths(p.client) ?? p.stats?.MatchData?.Deaths ?? 0,
+                            Kills = p.stats?.MatchData?.Kills ?? 0,
+                            Deaths = p.stats?.MatchData?.Deaths ?? 0,
                             Ping = p.client.Ping,
                             ZScore = p.stats?.ZScore
                         };
@@ -237,8 +237,8 @@ public class WebfrontDataService : IWebfrontDataService
                         Online = true,
                         LastConnection = p.client.LastConnection,
                         Score = p.client.Score,
-                        Kills = GetRConKills(p.client) ?? p.stats?.MatchData?.Kills ?? 0,
-                        Deaths = GetRConDeaths(p.client) ?? p.stats?.MatchData?.Deaths ?? 0,
+                        Kills = p.stats?.MatchData?.Kills ?? 0,
+                        Deaths = p.stats?.MatchData?.Deaths ?? 0,
                         Ping = p.client.Ping,
                         ZScore = p.stats?.ZScore
                     };
@@ -687,10 +687,10 @@ public class WebfrontDataService : IWebfrontDataService
                     ClientId = clientData.client.ClientId,
                     Score = Math.Max(clientData.client.Score, clientData.stats?.RoundScore ?? 0),
                     Ping = clientData.client.Ping,
-                    Kills = GetRConKills(clientData.client) ?? clientData.stats?.MatchData?.Kills,
-                    Deaths = GetRConDeaths(clientData.client) ?? clientData.stats?.MatchData?.Deaths,
+                    Kills = clientData.stats?.MatchData?.Kills,
+                    Deaths = clientData.stats?.MatchData?.Deaths,
                     ScorePerMinute = clientData.stats?.SessionSPM,
-                    Kdr = GetRConKdr(clientData.client) ?? clientData.stats?.MatchData?.Kdr,
+                    Kdr = clientData.stats?.MatchData?.Kdr,
                     ZScore = clientData.stats?.ZScore == null || clientData.stats.ZScore == 0
                         ? null
                         : clientData.stats.ZScore,
@@ -1817,21 +1817,6 @@ public class WebfrontDataService : IWebfrontDataService
         client.TwoFactorSecret = null;
         client.TwoFactorBackupCodes = null;
         await _clientService.Update(client);
-    }
-
-    private static int? GetRConKills(EFClient client) =>
-        client.GetAdditionalProperty<RConStatusStats>("RConStatusStats")?.Kills;
-
-    private static int? GetRConDeaths(EFClient client) =>
-        client.GetAdditionalProperty<RConStatusStats>("RConStatusStats")?.Deaths;
-
-    private static double? GetRConKdr(EFClient client)
-    {
-        var kills = GetRConKills(client);
-        var deaths = GetRConDeaths(client);
-        return kills.HasValue && deaths.HasValue
-            ? deaths.Value == 0 ? kills.Value : Math.Round(kills.Value / (double)deaths.Value, 2)
-            : null;
     }
 
     private static AnnouncementInfo MapToAnnouncementInfo(Data.Models.Misc.EFAnnouncement announcement)

@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using NUnit.Framework;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Interfaces;
 using System;
 using static SharedLibraryCore.GameEvent;
@@ -107,6 +108,30 @@ namespace ApplicationTests
             var e = commandData.Events[1];
             var parsedEvent = eventParser.GenerateGameEvent(e.EventLine);
             AssertMatch(parsedEvent, e);
+        }
+
+        [TestCase("2026-08-23T19:20:11 123.456 INF GMSG: Player 'Victim' killed by 'Attacker'", "Attacker")]
+        [TestCase("2026-08-23T19:20:11 123.456 INF GMSG: Player 'Victim' died", null)]
+        public void Test_SevenDaysToDieNameOnlyKillEvent_Parses(string logLine, string expectedAttacker)
+        {
+            var eventParser = serviceProvider.GetRequiredService<BaseEventParser>();
+            eventParser.GameName = Server.Game.D7D;
+            eventParser.Configuration.Time.Pattern =
+                @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?\s+\d+(?:\.\d+)?\s+(?:INF|WRN|ERR|EXC)\s+";
+            eventParser.Configuration.Kill.Pattern =
+                @"^GMSG: Player '(.+)' (?:(?:killed by '(.+)')|died)\s*$";
+            eventParser.Configuration.Kill.GroupMapping.Clear();
+            eventParser.Configuration.Kill.AddMapping(ParserRegex.GroupType.TargetName, 1);
+            eventParser.Configuration.Kill.AddMapping(ParserRegex.GroupType.OriginName, 2);
+
+            var parsedEvent = eventParser.GenerateGameEvent(logLine) as ClientKillEvent;
+
+            Assert.That(parsedEvent, Is.Not.Null);
+            Assert.That(parsedEvent.Type, Is.EqualTo(EventType.Kill));
+            Assert.That(parsedEvent.AttackerClientName, Is.EqualTo(expectedAttacker));
+            Assert.That(parsedEvent.VictimClientName, Is.EqualTo("Victim"));
+            Assert.That(parsedEvent.Attacker.NetworkId, Is.EqualTo(Utilities.WORLD_ID));
+            Assert.That(parsedEvent.Victim.NetworkId, Is.EqualTo(Utilities.WORLD_ID));
         }
 
         private static void AssertMatch(GameEvent src, LogEvent expected)

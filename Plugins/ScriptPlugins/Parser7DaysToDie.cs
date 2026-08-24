@@ -45,21 +45,21 @@ public sealed class Parser7DaysToDie : IParserDefinition
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 8);
         rcon.Status.AddMapping(ParserRegex.GroupType.AdditionalGroup, 9);
 
-        rcon.DefaultDvarValues.Add("version", version);
-        rcon.DefaultDvarValues.Add("sv_running", "1");
-        rcon.DefaultDvarValues.Add("sv_hostname", "7 Days to Die Server");
-        rcon.DefaultDvarValues.Add("mapname", "Unknown");
-        rcon.DefaultDvarValues.Add("sv_maxclients", "8");
-        rcon.DefaultDvarValues.Add("g_gametype", "Survival");
-        rcon.DefaultDvarValues.Add("fs_basepath", "");
-        rcon.DefaultDvarValues.Add("fs_basegame", "");
-        rcon.DefaultDvarValues.Add("fs_homepath", "");
-        rcon.DefaultDvarValues.Add("fs_game", "");
-        rcon.DefaultDvarValues.Add("g_log", "");
-        rcon.DefaultDvarValues.Add("g_logsync", "2");
-        rcon.DefaultDvarValues.Add("net_ip", "0.0.0.0");
-        rcon.DefaultDvarValues.Add("g_password", "");
-        rcon.DefaultDvarValues.Add("sv_privateClients", "0");
+        rcon.DefaultDvarValues["version"] = version;
+        rcon.DefaultDvarValues["sv_running"] = "1";
+        rcon.DefaultDvarValues["sv_hostname"] = "7 Days to Die Server";
+        rcon.DefaultDvarValues["mapname"] = "Unknown";
+        rcon.DefaultDvarValues["sv_maxclients"] = "8";
+        rcon.DefaultDvarValues["g_gametype"] = "Survival";
+        rcon.DefaultDvarValues["fs_basepath"] = "";
+        rcon.DefaultDvarValues["fs_basegame"] = "";
+        rcon.DefaultDvarValues["fs_homepath"] = "";
+        rcon.DefaultDvarValues["fs_game"] = "";
+        rcon.DefaultDvarValues["g_log"] = "";
+        rcon.DefaultDvarValues["g_logsync"] = "2";
+        rcon.DefaultDvarValues["net_ip"] = "0.0.0.0";
+        rcon.DefaultDvarValues["g_password"] = "";
+        rcon.DefaultDvarValues["sv_privateClients"] = "0";
 
         rcon.CommandPrefixes.RConGetInfo = null;
         rcon.CommandPrefixes.Kick = "kick {0} \"{1}\"";

@@ -23,6 +23,7 @@ Dashboard operated alongside the game server. It does not send player data to a 
 Enable `WebDashboardEnabled` and `EnableMapRendering` on the game server, create a restricted
 web token with access to `web.map`, and configure the dashboard URL, token name, and a local secret-file
 path. Mount the secret file read-only when IW4MAdmin runs in a container.
+Create token names with letters, digits, or underscores; the 7DTD `webtokens` command rejects hyphens.
 
 For player safety, 7DTD Live Radar endpoints require an authenticated IW4MAdmin webfront session. This
 prevents anonymous visitors from retrieving exact player coordinates or explored terrain. Radar requests
@@ -41,7 +42,7 @@ Example server entry:
   "GameLogServerUrl": "http://203.0.113.10:1625",
   "ExternalWeb": {
     "Url": "http://203.0.113.10:8080",
-    "TokenName": "iw4m-radar",
+    "TokenName": "iw4m_radar",
     "TokenFile": "/run/secrets/7dtd_dashboard_token"
   }
 }

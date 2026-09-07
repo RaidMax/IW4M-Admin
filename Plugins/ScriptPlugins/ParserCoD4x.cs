@@ -18,7 +18,7 @@ public class ParserCoD4x : IParserDefinition
         rcon.StatusHeader.Pattern =
             "num +score +ping +playerid +steamid +name +lastmsg +address +qport +rate *";
         rcon.Status.Pattern =
-            @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]{16,32})|0) +([[0-9]+|0]) +(.{0,34}) +([0-9]+) +(\d+\.\d+\.\d+.\d+\:-*\d{1,5}|0+.0+:-*\d{1,5}|loopback|bot) +(-*[0-9]+) +([0-9]+) *$";
+            @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]{16,32})|0) +([0-9]+) +(.+?) +([0-9]+) +((?:\[[0-9a-fA-F:]+\]|[0-9a-fA-F.:]+):-*\d{1,5}|loopback|bot) +(-*[0-9]+) +([0-9]+) *$";
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 6);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConIpAddress, 8);
         rcon.CommandPrefixes.RConResponse = "ÿÿÿÿprint\n";

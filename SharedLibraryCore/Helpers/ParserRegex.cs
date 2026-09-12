@@ -40,6 +40,8 @@ namespace SharedLibraryCore.Interfaces
             RConStatusGametype = 112,
             RConStatusHostname = 113,
             RConStatusMaxPlayers = 114,
+            RConStatusKills = 115,
+            RConStatusDeaths = 116,
             AdditionalGroup = 200
         }
 

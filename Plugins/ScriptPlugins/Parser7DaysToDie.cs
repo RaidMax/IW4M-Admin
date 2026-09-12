@@ -39,6 +39,8 @@ public sealed class Parser7DaysToDie : IParserDefinition
             @"^(\d+) +(-?\d+) +(\d+) +(\d+) +(\d+) +(\d+) +""([^""\r\n]*)"" +(\d{1,3}(?:\.\d{1,3}){3}):\d+ +(\d+)$";
         rcon.Status.AddMapping(ParserRegex.GroupType.RConClientNumber, 1);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConScore, 2);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConStatusKills, 3);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConStatusDeaths, 4);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConPing, 5);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 6);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 7);

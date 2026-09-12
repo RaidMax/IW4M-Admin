@@ -11,6 +11,11 @@ public partial class ClientActivity
     [Inject] public required IActionService ActionService { get; set; }
     [Parameter] public ServerInfo? Model { get; set; }
 
+    /// <summary>
+    /// Render the chat/event feed column alongside the scoreboard. When false only the scoreboard is shown.
+    /// </summary>
+    [Parameter] public bool ShowChat { get; set; } = true;
+
     private List<ClientGroup> GroupedClients => GetGroupedClients();
 
     public class ClientGroup

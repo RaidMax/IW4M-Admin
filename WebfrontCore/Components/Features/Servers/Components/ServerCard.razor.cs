@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+using Data.Models;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using SharedLibraryCore;
 using SharedLibraryCore.Dtos;
@@ -16,12 +17,64 @@ public partial class ServerCard : IAsyncDisposable
     [Parameter, EditorRequired] public ServerInfo Model { get; set; } = default!;
     [Parameter] public EventCallback<string> OnChat { get; set; }
 
+    /// <summary>
+    /// Games that ship a banner image under wwwroot/images/banners/{game}.jpg
+    /// </summary>
+    private static readonly HashSet<string> BannerGames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "csgo", "h1", "h2m", "iw3", "iw4", "iw5", "iw6", "iw7", "shg1", "t4", "t5", "t6", "t7"
+    };
+
+    private const string ActionButtonClass =
+        "w-8 h-8 rounded-md flex items-center justify-center bg-background/70 border border-white/10 backdrop-blur text-subtle hover:text-foreground hover:bg-surface-hover transition-colors";
+
     private ElementReference _cardElement;
     private DotNetObjectReference<ServerCard>? _dotNetRef;
     private PeriodicTimer? _timer;
     private CancellationTokenSource _cts = new();
     private bool _isVisible = true; // Default to visible for initial render
-    private bool _showMobileDetails;
+    private bool _expanded;
+
+    private bool HasBanner => BannerGames.Contains(Model.Game.ToString());
+
+    private string BannerStyle => HasBanner
+        ? $"background-image:url('/images/banners/{Model.Game.ToString().ToLowerInvariant()}.jpg')"
+        : string.Empty;
+
+    private string GameLabel => Model.Game switch
+    {
+        Reference.Game.D7D => "7DTD",
+        _ => Model.Game.ToString()
+    };
+
+    private int PublicSlots => Math.Max(0, Model.MaxClients - Model.PrivateClientSlots);
+
+    private int FillPercent => PublicSlots <= 0
+        ? 0
+        : Math.Clamp((int)Math.Round(100.0 * Model.ClientCount / PublicSlots), 0, 100);
+
+    private string SlotNote
+    {
+        get
+        {
+            if (!Model.Online)
+            {
+                return AppState.LocOr("WEBFRONT_SCRIPT_SERVER_UNREACHABLE", "Unreachable");
+            }
+
+            if (PublicSlots > 0 && Model.ClientCount >= PublicSlots)
+            {
+                return AppState.LocOr("WEBFRONT_SERVER_FULL", "Full");
+            }
+
+            if (Model.PrivateClientSlots > 0)
+            {
+                return $"{Model.PrivateClientSlots} {AppState.LocOr("WEBFRONT_SERVER_RESERVED", "reserved")}";
+            }
+
+            return string.Empty;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -95,6 +148,11 @@ public partial class ServerCard : IAsyncDisposable
         }
     }
 
+    private void ToggleExpanded()
+    {
+        _expanded = !_expanded;
+    }
+
     private void OpenScoreboard()
     {
         ActionService.OpenCustom(ScoreboardContent(Model.Id), Model.Name.StripColors(), "max-w-5xl");
@@ -116,7 +174,7 @@ public partial class ServerCard : IAsyncDisposable
         try
         {
             await JS.InvokeVoidAsync("visibilityObserver.unobserve", _cardElement);
-            
+
             // Clean up cached chart instance to prevent overlay issues on game filter change
             if (Model?.Id != null)
             {

@@ -1,4 +1,4 @@
-﻿using Data.Models;
+using Data.Models;
 using Microsoft.AspNetCore.Components;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
@@ -16,6 +16,10 @@ public partial class Home
 
     private IW4MAdminInfo? Model;
 
+    private int OccupancyPercent => Model is null || Model.TotalAvailableClientSlots <= 0
+        ? 0
+        : Math.Clamp((int)Math.Round(100.0 * Model.TotalOccupiedClientSlots / Model.TotalAvailableClientSlots), 0, 100);
+
     protected override async Task OnParametersSetAsync()
     {
         Reference.Game? gameEnum = null;
@@ -27,16 +31,11 @@ public partial class Home
         Model = await DataService.GetStatusAsync(gameEnum);
     }
 
-    private string FormatTranslation(string translationKey, params object[] values)
-    {
-        var translation = AppState.Loc(translationKey);
-        if (translation == translationKey) return translationKey;
-
-        var split = translation.Split("::");
-        return split.Length == 2
-            ? $"<span class='font-weight-bold text-primary'>{split[0].FormatExt(values)}</span><span>{split[1]}</span>"
-            : translation;
-    }
+    private static string TabClass(bool active) =>
+        "px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors " +
+        (active
+            ? "bg-surface-alt text-foreground shadow-sm"
+            : "text-subtle hover:text-foreground hover:bg-surface-hover");
 
     /// <summary>
     /// Safe localization that returns a fallback if AppState isn't ready.

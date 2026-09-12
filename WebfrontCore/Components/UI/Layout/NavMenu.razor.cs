@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
+using SharedLibraryCore;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Components.UI.Navigation.Models;
 
@@ -11,10 +12,33 @@ public partial class NavMenu : IDisposable
     [Inject] public required IActionService ActionService { get; set; }
 
     /// <summary>
+    /// When true the menu renders as an icon-only rail (labels hidden, tooltips via title).
+    /// </summary>
+    [Parameter] public bool Collapsed { get; set; }
+
+    /// <summary>
     /// Persisted navigation data that survives SSR-to-interactive handoff during enhanced navigation.
     /// </summary>
     [PersistentState(AllowUpdates = true)]
     public NavigationInfo? NavData { get; set; }
+
+    private string BrandInitial
+    {
+        get
+        {
+            var branding = AppState.WebfrontBranding.StripColors().Trim();
+            return string.IsNullOrEmpty(branding) ? "I" : branding[..1].ToUpperInvariant();
+        }
+    }
+
+    private string UserInitial
+    {
+        get
+        {
+            var name = AppState.User?.Name?.StripColors().Trim();
+            return string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpperInvariant();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

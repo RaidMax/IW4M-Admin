@@ -1,306 +1,258 @@
-<!-- left side navigation -->
-<aside class="flex flex-col h-full z-30 flex-1 md:w-full">
-    <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <!-- Search Form Placeholder -->
-        <!-- Search Form Mobile -->
-        <div class="mb-4 px-1 md:hidden">
-            <SearchResourceForm/>
-        </div>
+@using Data.Models.Client
+<aside class="flex flex-col h-full w-full min-w-0">
+    <!-- Brand -->
+    <a href="/"
+       class="h-16 shrink-0 flex items-center gap-3 border-b border-divider hover:bg-surface-hover/50 transition-colors @(Collapsed ? "justify-center px-0" : "px-4")"
+       title="@AppState.WebfrontBranding">
+        <span
+            class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-primary to-secondary text-white text-sm font-extrabold flex items-center justify-center shadow-sm select-none">
+            @BrandInitial
+        </span>
+        @if (!Collapsed)
+        {
+            <span class="min-w-0">
+                <span class="block text-[15px] font-extrabold tracking-tight text-foreground truncate">@AppState.WebfrontBranding</span>
+                <span class="block text-[11px] text-muted -mt-0.5 truncate">IW4MAdmin @Program.Manager.Version</span>
+            </span>
+        }
+    </a>
 
-        <div
-            class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_MAIN"))</div>
+    <div class="flex-1 overflow-y-auto overflow-x-hidden py-3 space-y-0.5 @(Collapsed ? "px-2" : "px-3")">
+        @if (!Collapsed)
+        {
+            <!-- Search (mobile drawer only) -->
+            <div class="mb-3 md:hidden">
+                <SearchResourceForm/>
+            </div>
+        }
 
-        <!-- servers -->
-        <NavLink href="/" Match="NavLinkMatch.All" @onclick="CloseMobileMenu"
-                 class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-            <i class="ph ph-hard-drives mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-            <span class="truncate">@(Loc("WEBFRONT_NAV_SERVERS"))</span>
-        </NavLink>
-        <!-- about -->
-        <NavLink href="about" @onclick="CloseMobileMenu"
-                 class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-            <i class="ph ph-info mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-            <span class="truncate">@(Loc("WEBFRONT_NAV_ABOUT"))</span>
-        </NavLink>
-        <!-- penalties -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
-            <NavLink href="penalties" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-lock-simple mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_PENALTIES"))</span>
-            </NavLink>
+        @SectionTitle(Loc("WEBFRONT_NAV_TITLE_MAIN"), true)
+
+        @NavItem("/", "ph-hard-drives", Loc("WEBFRONT_NAV_SERVERS"), NavLinkMatch.All)
+        @NavItem("about", "ph-info", Loc("WEBFRONT_NAV_ABOUT"))
+
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")" Context="penaltyCtx">
+            @NavItem("penalties", "ph-lock-simple", Loc("WEBFRONT_NAV_PENALTIES"))
         </AuthorizeView>
-        <!-- privileged -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")">
-            <NavLink href="privileged-clients" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-users mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_PRIVILEGED"))</span>
-            </NavLink>
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")" Context="privilegedCtx">
+            @NavItem("privileged-clients", "ph-users", Loc("WEBFRONT_NAV_PRIVILEGED"))
         </AuthorizeView>
-        <!-- help -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.HelpPage}.{WebfrontPermission.Read}")">
-            <NavLink href="commands" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-question mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_HELP"))</span>
-            </NavLink>
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.HelpPage}.{WebfrontPermission.Read}")" Context="helpCtx">
+            @NavItem("commands", "ph-question", Loc("WEBFRONT_NAV_HELP"))
         </AuthorizeView>
 
         @if (NavData?.Interactions is not null)
         {
             foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Main")))
             {
-                <AuthorizeView
-                    Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
-                    <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" @onclick="CloseMobileMenu"
-                             class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                        <i class="ph @interaction.DisplayMeta mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                        <span class="truncate">@interaction.Name</span>
-                    </NavLink>
+                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")" Context="mainInteractionCtx">
+                    @NavItem($"Interaction/Render/{interaction.InteractionId}", interaction.DisplayMeta, interaction.Name)
                 </AuthorizeView>
             }
         }
 
-        <!-- profile -->
         @if (AppState.User is not null)
         {
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ProfilePage}.{WebfrontPermission.Read}")">
-                <NavLink href="@($"client/{AppState.User.ClientId}")" Match="NavLinkMatch.All" @onclick="CloseMobileMenu"
-                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                    <i class="ph ph-user mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                    <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_PROFILE"))</span>
-                </NavLink>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ProfilePage}.{WebfrontPermission.Read}")" Context="profileCtx">
+                @NavItem($"client/{AppState.User.ClientId}", "ph-user", Loc("WEBFRONT_NAV_TITLE_PROFILE"), NavLinkMatch.All)
             </AuthorizeView>
         }
 
-        <div class="my-4 border-t border-divider"></div>
+        <!-- Live counters -->
+        @SectionTitle(AppState.LocOr("WEBFRONT_NAV_TITLE_LIVE", "Live"), false)
+        <NavCounters Collapsed="Collapsed" OnNavigate="CloseMobileMenu"/>
 
-        <!-- stats -->
-        <div
-            class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_STATS"))</div>
+        <!-- Stats -->
+        @SectionTitle(Loc("WEBFRONT_NAV_TITLE_STATS"), false)
 
-        <!-- my stats (logged in users only) -->
         @if (AppState.User is not null)
         {
-            <NavLink href="@($"client/{AppState.User.ClientId}/stats")" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-chart-line-up mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_MY_STATS"))</span>
-            </NavLink>
+            @NavItem($"client/{AppState.User.ClientId}/stats", "ph-chart-line-up", Loc("WEBFRONT_NAV_MY_STATS"))
         }
 
-        <!-- dynamically registered pages -->
-        @if (NavData?.Pages is not null && NavData.Pages.Any())
+        @if (NavData?.Pages is not null)
         {
             foreach (var pageLink in NavData.Pages)
             {
-                <NavLink href="@pageLink.Location" @onclick="CloseMobileMenu"
-                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                    <i class="ph @(pageLink.Location.EndsWith("radar") ? "ph-wifi-high" : "ph-chart-bar") mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                    <span class="truncate">@pageLink.Name</span>
-                </NavLink>
+                @NavItem(pageLink.Location, pageLink.Location.EndsWith("radar") ? "ph-wifi-high" : "ph-chart-bar", pageLink.Name)
             }
         }
 
-
-
-        <!-- socials -->
+        <!-- Socials -->
         @if (NavData?.CommunityInformation?.IsEnabled == true && NavData.CommunityInformation.SocialAccounts?.Any() == true)
         {
-            <div class="my-4 border-t border-divider"></div>
-            <div
-                class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_SOCIALS"))</div>
+            @SectionTitle(Loc("WEBFRONT_NAV_TITLE_SOCIALS"), false)
 
-            @foreach (var social in NavData.CommunityInformation.SocialAccounts)
+            foreach (var social in NavData.CommunityInformation.SocialAccounts)
             {
-                <a href="@social.Url" @onclick="CloseMobileMenu"
-                   class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover"
-                   target="_blank" title="@social.Title">
-                    <div class="flex items-center w-full">
-                        @if (!string.IsNullOrWhiteSpace(social.IconId))
-                        {
-                            <i class="ph @social.IconId mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                        }
-                        else if (!string.IsNullOrWhiteSpace(social.IconUrl))
-                        {
-                            var url = Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
-                                ? parsedUrl?.AbsoluteUri ?? $"/images/community/{social.IconUrl}"
-                                : $"/images/community/{social.IconUrl}";
-                            <img class="h-4 w-4 mr-3 object-contain" src="@url" alt="@social.Title"/>
-                        }
-                        <div class="truncate">@social.Title</div>
-                    </div>
+                var iconUrl = string.IsNullOrWhiteSpace(social.IconUrl)
+                    ? null
+                    : Uri.TryCreate(social.IconUrl, UriKind.Absolute, out var parsedUrl)
+                        ? parsedUrl?.AbsoluteUri ?? $"/images/community/{social.IconUrl}"
+                        : $"/images/community/{social.IconUrl}";
+
+                <a href="@social.Url" @onclick="CloseMobileMenu" target="_blank" rel="noopener noreferrer"
+                   class="@ItemClass" title="@social.Title">
+                    @if (!string.IsNullOrWhiteSpace(social.IconId))
+                    {
+                        <i class="ph @social.IconId @IconClass"></i>
+                    }
+                    else if (iconUrl is not null)
+                    {
+                        <img class="h-[18px] w-[18px] shrink-0 object-contain" src="@iconUrl" alt="@social.Title"/>
+                    }
+                    else
+                    {
+                        <i class="ph ph-link @IconClass"></i>
+                    }
+                    @if (!Collapsed)
+                    {
+                        <span class="truncate">@social.Title</span>
+                    }
                 </a>
             }
 
-            @if (NavData?.Interactions is not null)
+            if (NavData?.Interactions is not null)
             {
                 foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Social")))
                 {
                     if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
                     {
-                        <AuthorizeView
-                            Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
-                            <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")"
-                                     @onclick="CloseMobileMenu"
-                                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                                <i class="ph @interaction.DisplayMeta mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                                <span class="truncate">@interaction.Name</span>
-                            </NavLink>
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")" Context="socialInteractionCtx">
+                            @NavItem($"Interaction/Render/{interaction.InteractionId}", interaction.DisplayMeta, interaction.Name)
                         </AuthorizeView>
                     }
                 }
             }
         }
 
-        <!-- Admin Section -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
-            <div class="my-4 border-t border-primary/10"></div>
-            <div
-                class="text-xs font-semibold text-muted uppercase tracking-wider mb-2 px-3">@(Loc("WEBFRONT_NAV_TITLE_ADMIN"))</div>
+        <!-- Admin -->
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")" Context="adminMenuCtx">
+            @SectionTitle(Loc("WEBFRONT_NAV_TITLE_ADMIN"), false)
 
-            <!-- Console -->
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")"
-                           Context="consoleContext">
-                <NavLink href="console" @onclick="CloseMobileMenu"
-                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                    <i class="ph ph-terminal mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                    <span class="truncate">@(Loc("WEBFRONT_NAV_CONSOLE"))</span>
-                </NavLink>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ConsolePage}.{WebfrontPermission.Read}")" Context="consoleCtx">
+                @NavItem("console", "ph-terminal", Loc("WEBFRONT_NAV_CONSOLE"))
             </AuthorizeView>
-
-            <!-- Announcements -->
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AnnouncementPage}.{WebfrontPermission.Read}")"
-                           Context="announcementContext">
-                <NavLink href="announcements" @onclick="CloseMobileMenu"
-                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                    <i class="ph ph-megaphone mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                    <span class="truncate">@(Loc("WEBFRONT_NAV_ANNOUNCEMENTS"))</span>
-                </NavLink>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AnnouncementPage}.{WebfrontPermission.Read}")" Context="announcementCtx">
+                @NavItem("announcements", "ph-megaphone", Loc("WEBFRONT_NAV_ANNOUNCEMENTS"))
             </AuthorizeView>
-
-            <!-- Ban Management -->
-            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")"
-                           Context="banContext">
-                <NavLink href="manage-bans" @onclick="CloseMobileMenu"
-                         class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                    <i class="ph ph-prohibit mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                    <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))</span>
-                </NavLink>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.BanManagementPage}.{WebfrontPermission.Read}")" Context="banCtx">
+                @NavItem("manage-bans", "ph-prohibit", Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"))
             </AuthorizeView>
         </AuthorizeView>
 
-        <!-- Configuration (Owner only) -->
-        <AuthorizeView Roles="Owner">
-            <NavLink href="configuration" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-gear mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))</span>
-            </NavLink>
+        <AuthorizeView Roles="Owner" Context="ownerCtx">
+            @NavItem("configuration", "ph-gear", Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"))
         </AuthorizeView>
 
-        <!-- Audit Log -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AuditPage}.{WebfrontPermission.Read}")">
-            <NavLink href="audit" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-books mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_AUDIT_LOG"))</span>
-            </NavLink>
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AuditPage}.{WebfrontPermission.Read}")" Context="auditCtx">
+            @NavItem("audit", "ph-books", Loc("WEBFRONT_NAV_AUDIT_LOG"))
         </AuthorizeView>
 
-        <!-- Recent Clients -->
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.RecentPlayersPage}.{WebfrontPermission.Read}")">
-            <NavLink href="find-client?direction=1&sortColumn=FirstConnection" @onclick="CloseMobileMenu"
-                     class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                <i class="ph ph-clock mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))</span>
-            </NavLink>
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.RecentPlayersPage}.{WebfrontPermission.Read}")" Context="recentCtx">
+            @NavItem("find-client?direction=1&sortColumn=FirstConnection", "ph-clock", Loc("WEBFRONT_ACTION_RECENT_CLIENTS"))
         </AuthorizeView>
 
-        <!-- Admin Interactions -->
         @if (NavData?.Interactions != null)
         {
             foreach (var interaction in NavData.Interactions.Where(i => i.InteractionId.StartsWith("Webfront::Nav::Admin")))
             {
                 if (AppState.User != null && (int)AppState.User.Level >= interaction.MinimumPermission)
                 {
-                    <AuthorizeView
-                        Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")">
-                        <NavLink href="@($"Interaction/Render/{interaction.InteractionId}")" @onclick="CloseMobileMenu"
-                                 class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors [&.active]:bg-action-primary [&.active]:text-foreground [&.active]:hover:bg-action-primary-hover">
-                            <i class="ph @interaction.DisplayMeta mr-3 text-lg text-secondary group-hover:text-foreground group-[.active]:text-foreground"></i>
-                            <span class="truncate">@interaction.Name</span>
-                        </NavLink>
+                    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Interaction}.{WebfrontPermission.Read}")" Context="adminInteractionCtx">
+                        @NavItem($"Interaction/Render/{interaction.InteractionId}", interaction.DisplayMeta, interaction.Name)
                     </AuthorizeView>
                 }
             }
         }
-
     </div>
-    <div class="border-t border-divider pt-4 px-3 pb-4">
-        <!-- Login Token (for authenticated users) -->
+
+    <!-- Signed-in user / login -->
+    <div class="shrink-0 border-t border-divider @(Collapsed ? "p-2" : "p-3")">
         @if (AppState.User is not null)
         {
-            <a href="#" @onclick:preventDefault
-               @onclick='() => { ActionService.OpenAction("GenerateLoginToken", null, string.Empty); CloseMobileMenu(); }'
-               class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors mb-2">
-                <i class="ph ph-key mr-3 text-lg text-secondary group-hover:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_ACTION_TOKEN"))</span>
-            </a>
+            var levelClass = AppState.GetLevelColorClass(AppState.User.Level);
 
-            <!-- Logout -->
-            <form action="/Account/Logout" method="post" class="w-full">
-                <AntiforgeryToken/>
-                <button type="submit"
-                        class="w-full group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors text-left bg-transparent border-none cursor-pointer">
-                    <i class="ph ph-sign-out mr-3 text-lg text-secondary group-hover:text-foreground"></i>
-                    <span class="truncate">@(Loc("WEBFRONT_NAV_LOGOUT"))</span>
-                </button>
-            </form>
+            <div class="flex items-center gap-2.5 @(Collapsed ? "flex-col" : "")">
+                <a href="@($"client/{AppState.User.ClientId}")" @onclick="CloseMobileMenu"
+                   class="w-9 h-9 shrink-0 rounded-lg bg-surface-alt border border-current flex items-center justify-center font-bold text-sm @levelClass"
+                   title="@AppState.User.Name.StripColors()">
+                    @UserInitial
+                </a>
+                @if (!Collapsed)
+                {
+                    <div class="min-w-0 flex-1">
+                        <div class="text-sm font-semibold text-foreground truncate"><ColorCode Value="@AppState.User.Name"/></div>
+                        <div class="text-[11px] uppercase tracking-wide truncate @levelClass">@AppState.User.Level.ToLocalizedLevelName()</div>
+                    </div>
+                }
+                <div class="flex items-center @(Collapsed ? "flex-col gap-1" : "gap-0.5")">
+                    <button type="button"
+                            @onclick='() => { ActionService.OpenAction("GenerateLoginToken", null, string.Empty); CloseMobileMenu(); }'
+                            class="w-8 h-8 rounded-md flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+                            title="@Loc("WEBFRONT_ACTION_TOKEN")">
+                        <i class="ph ph-key text-lg"></i>
+                    </button>
+                    <form action="/Account/Logout" method="post">
+                        <AntiforgeryToken/>
+                        <button type="submit"
+                                class="w-8 h-8 rounded-md flex items-center justify-center text-muted hover:text-error hover:bg-error/10 transition-colors"
+                                title="@Loc("WEBFRONT_NAV_LOGOUT")">
+                            <i class="ph ph-sign-out text-lg"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
         }
         else
         {
-            <!-- Login (for unauthenticated users) -->
-            <a href="#" @onclick:preventDefault
-               @onclick='() => { ActionService.OpenAction("Login", null, string.Empty); CloseMobileMenu(); }'
-               class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-subtle hover:bg-surface-hover hover:text-foreground transition-colors">
-                <i class="ph ph-key mr-3 text-lg text-secondary group-hover:text-foreground"></i>
-                <span class="truncate">@(Loc("WEBFRONT_NAV_TITLE_LOGIN"))</span>
-            </a>
-        }
-
-        <!-- User Info / Login Status -->
-        <div class="mt-4 px-3 text-xs text-muted">
-            @if (AppState.User is not null)
-            {
-                var format = Loc("WEBFRONT_NAV_LOGIN_YES_FORMAT");
-                @foreach (var match in Utilities.SplitTranslationTokens(format))
+            <button type="button"
+                    @onclick='() => { ActionService.OpenAction("Login", null, string.Empty); CloseMobileMenu(); }'
+                    class="w-full flex items-center gap-3 rounded-lg text-sm font-semibold bg-primary/10 text-foreground hover:bg-primary/20 transition-colors @(Collapsed ? "justify-center h-10" : "px-3 py-2")"
+                    title="@Loc("WEBFRONT_NAV_TITLE_LOGIN")">
+                <i class="ph ph-key text-lg text-primary shrink-0"></i>
+                @if (!Collapsed)
                 {
-                    if (match.IsInterpolation && match.MatchValue == "username")
-                    {
-                        <span class="font-bold text-primary"><ColorCode Value="@AppState.User.Name"/></span>
-                    }
-                    else
-                    {
-                        <span>@match.MatchValue</span>
-                    }
-
-                    <span>&nbsp;</span>
+                    <span class="truncate">@Loc("WEBFRONT_NAV_TITLE_LOGIN")</span>
                 }
-            }
-            else
-            {
-                <span>@(Loc("WEBFRONT_NAV_LOGIN_NO_FORMAT"))</span>
-            }
-
-            <div class="mt-1">
-                <a href="https://github.com/RaidMax/IW4M-Admin/releases" class="hover:text-subtle transition-colors"
-                   target="_blank">
-                    IW4MAdmin <span class="text-primary">@Program.Manager.Version</span>
-                </a>
-            </div>
-        </div>
+            </button>
+        }
     </div>
-
 </aside>
+
+@code {
+
+    private string ItemClass =>
+        "group relative flex items-center gap-3 rounded-lg text-sm font-medium text-subtle transition-colors hover:bg-surface-hover hover:text-foreground " +
+        "[&.active]:bg-primary/10 [&.active]:text-foreground [&.active]:shadow-[inset_3px_0_0_0_var(--color-primary)] " +
+        (Collapsed ? "justify-center h-10 w-10 mx-auto" : "px-3 py-2");
+
+    private string IconClass => "text-lg shrink-0 text-muted group-hover:text-foreground group-[.active]:text-primary";
+
+    private RenderFragment NavItem(string href, string icon, string label, NavLinkMatch match = NavLinkMatch.Prefix) => __builder =>
+    {
+        <NavLink href="@href" Match="match" @onclick="CloseMobileMenu" class="@ItemClass" title="@(Collapsed ? label : null)">
+            <i class="ph @icon @IconClass"></i>
+            @if (!Collapsed)
+            {
+                <span class="truncate">@label</span>
+            }
+        </NavLink>
+    };
+
+    private RenderFragment SectionTitle(string label, bool first) => __builder =>
+    {
+        if (Collapsed)
+        {
+            if (!first)
+            {
+                <div class="my-2 mx-1 border-t border-divider"></div>
+            }
+        }
+        else
+        {
+            <div class="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted @(first ? "pt-1" : "pt-4")">@label</div>
+        }
+    };
+
+}

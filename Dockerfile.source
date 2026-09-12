@@ -1,0 +1,99 @@
+# Builds IW4MAdmin from source into the same runtime image layout that the
+# GitHub Actions workflow produces (see .github/workflows/build_application.yml),
+# so it can be built directly on a host that has Docker but no .NET SDK.
+#
+#   docker build -f Dockerfile.source -t iw4madmin:<tag> --build-arg BUILD_NUMBER=2026.9.12.1 .
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BUILD_NUMBER=2026.1.1.1
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    PATH="/root/.dotnet/tools:${PATH}"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl unzip rsync wget ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+RUN dotnet restore IW4MAdmin.sln
+
+# Tailwind CSS
+RUN curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 -o /usr/local/bin/tailwindcss \
+ && chmod +x /usr/local/bin/tailwindcss \
+ && cd WebfrontCore \
+ && tailwindcss -i wwwroot/css/src/app.css -o wwwroot/css/app.css --minify
+
+# Webfront (restores wwwroot/lib via LibraryManager, copies Phosphor fonts)
+RUN dotnet build WebfrontCore/WebfrontCore.csproj -c Prerelease /p:Configuration=Prerelease /p:Platform="x64"
+
+# Patch Phosphor CSS font paths
+RUN cd WebfrontCore/wwwroot/lib/phosphor-icons/src \
+ && sed -i 's|url("./Phosphor|url("/font/phosphor/Phosphor|g' regular/style.css bold/style.css fill/style.css
+
+# SCSS (no-op unless .scss sources exist, kept for parity with CI)
+RUN dotnet tool install Excubo.WebCompiler --global \
+ && webcompiler -r WebfrontCore/wwwroot/css/src -o WebfrontCore/wwwroot/css/ -m disable -z disable
+
+# JS/CSS bundles
+RUN curl -sL -o /tmp/dotnet-bundle.zip https://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip \
+ && unzip -q /tmp/dotnet-bundle.zip -d /tmp/bundle \
+ && cd /tmp/bundle \
+ && dotnet dotnet-bundle.dll clean /src/WebfrontCore/bundleconfig.json \
+ && dotnet dotnet-bundle.dll /src/WebfrontCore/bundleconfig.json
+
+# Plugins
+RUN cd Plugins \
+ && find . -name "*.csproj" -print0 | xargs -0 -I {} dotnet publish {} -c Prerelease -o ../BUILD/Plugins \
+      /p:Configuration=Prerelease /p:Platform="x64" /p:DeployOnBuild=false /p:PackageAsSingleFile=false \
+      /p:SkipInvalidConfigurations=true /p:Version=${BUILD_NUMBER} --no-restore
+
+# Application
+RUN dotnet publish Application/Application.csproj -c Prerelease -o /publish \
+      /p:Version=${BUILD_NUMBER} /p:Configuration=Prerelease /p:Platform="x64" --no-restore
+
+# Translations + geolocation database
+RUN mkdir -p /publish/Localization \
+ && for l in en-US ru-RU es-EC pt-BR de-DE; do curl -sf "https://master.iw4.zip/localization/$l" -o "/publish/Localization/IW4MAdmin.$l.json"; done \
+ && mkdir -p /publish/Resources \
+ && wget -q -O /publish/Resources/GeoLite2-Country.mmdb https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-Country.mmdb
+
+# Post-build layout (Lib/, Plugins/, Configuration/)
+RUN chmod +x Application/BuildScripts/PostBuild.sh \
+ && bash Application/BuildScripts/PostBuild.sh /publish /src
+
+# Extra content, mirroring the CI "Move extra content" step
+RUN printf '#!/bin/bash\nexport DOTNET_CLI_TELEMETRY_OPTOUT=1\ndotnet Lib/IW4MAdmin.dll\n' > /publish/StartIW4MAdmin.sh \
+ && (cp Plugins/ScriptPlugins/*.js /publish/Plugins/ 2>/dev/null || true) \
+ && (cp Plugins/ScriptPlugins/*.cs /publish/Plugins/ 2>/dev/null || true) \
+ && cp BUILD/Plugins/*.dll /publish/Plugins/ \
+ && mkdir -p /publish/wwwroot/css/user /publish/wwwroot/js/user /publish/wwwroot/font/phosphor /publish/wwwroot/images /publish/GameFiles \
+ && cp WebfrontCore/wwwroot/css/app.min.css /publish/wwwroot/css/app.min.css \
+ && cp WebfrontCore/wwwroot/css/user/user.css /publish/wwwroot/css/user/user.css \
+ && cp WebfrontCore/wwwroot/js/app.min.js /publish/wwwroot/js/app.min.js \
+ && cp WebfrontCore/wwwroot/js/user/user.js /publish/wwwroot/js/user/user.js \
+ && rsync -ar WebfrontCore/wwwroot/font/phosphor/ /publish/wwwroot/font/phosphor/ \
+ && rsync -ar GameFiles/ /publish/GameFiles/ \
+ && rsync -ar WebfrontCore/wwwroot/images/ /publish/wwwroot/images/ \
+ && cp DeploymentFiles/UpdateIW4MAdmin.ps1 DeploymentFiles/UpdateIW4MAdmin.sh /publish/ \
+ && cp Dockerfile entrypoint.sh /publish/
+
+# ---------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends gosu curl && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /publish/Configuration/ /app_defaults/Configuration/
+COPY --from=build /publish/Plugins/ /app_defaults/Plugins/
+COPY --from=build /publish/Localization/ /app_defaults/Localization/
+
+COPY --from=build /publish/ /app/
+
+RUN chmod +x entrypoint.sh
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:1624/api/information/stats)" = "200"
+
+ENTRYPOINT ["./entrypoint.sh"]

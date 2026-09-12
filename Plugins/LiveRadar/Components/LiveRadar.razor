@@ -34,7 +34,7 @@
                     @foreach (var server in Servers)
                     {
                         <a href="/radar/@server"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(IsSelected(server) ? "bg-surface-alt text-foreground shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(IsSelected(server) ? "bg-primary text-background font-semibold shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
                             @server.Hostname.StripColors()
                         </a>
                     }

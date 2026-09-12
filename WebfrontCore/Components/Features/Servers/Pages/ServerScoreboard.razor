@@ -31,7 +31,7 @@
                     @foreach (var item in ContextItems.Items)
                     {
                         <a href="@item.Reference"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(item.IsActive ? "bg-surface-alt text-foreground shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(item.IsActive ? "bg-primary text-background font-semibold shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
                             @(item.Title?.StripColors())
                         </a>
                     }

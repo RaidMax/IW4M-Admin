@@ -309,7 +309,7 @@ else
                                            (_selectedMetaFilter == type);
 
                             <button type="button"
-                                    class="px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors @(isActive ? "bg-surface-alt text-foreground shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")"
+                                    class="px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors @(isActive ? "bg-primary text-background font-semibold shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")"
                                     @onclick="() => SetMetaFilter(type)">
                                 @type.ToTranslatedName()
                             </button>

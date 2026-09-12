@@ -25,13 +25,13 @@
             <nav class="ml-auto max-w-full overflow-x-auto" aria-label="@AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_GAME")">
                 <div class="inline-flex gap-1 p-1 rounded-lg bg-surface border border-line">
                     <a href="/privileged-clients"
-                       class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(!SelectedGame.HasValue ? "bg-surface-alt text-foreground shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
+                       class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(!SelectedGame.HasValue ? "bg-primary text-background font-semibold shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
                         @AppState.Loc("GAME_ALL")
                     </a>
                     @foreach (var game in ActiveGames)
                     {
                         <a href="/privileged-clients?game=@game"
-                           class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(game == SelectedGame ? "bg-surface-alt text-foreground shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
+                           class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(game == SelectedGame ? "bg-primary text-background font-semibold shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
                             @AppState.Loc($"GAME_{game}")
                         </a>
                     }

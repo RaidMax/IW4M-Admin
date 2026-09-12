@@ -34,7 +34,7 @@ public partial class Home
     private static string TabClass(bool active) =>
         "px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors " +
         (active
-            ? "bg-surface-alt text-foreground shadow-sm"
+            ? "bg-primary text-background font-semibold shadow-sm"
             : "text-subtle hover:text-foreground hover:bg-surface-hover");
 
     /// <summary>

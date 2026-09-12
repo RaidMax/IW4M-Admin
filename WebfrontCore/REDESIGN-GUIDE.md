@@ -50,7 +50,7 @@ Narrow content (settings, forms, about) can use `max-w-4xl` instead of `max-w-[1
 
 ```razor
 <div class="inline-flex gap-1 p-1 rounded-lg bg-surface border border-line max-w-full overflow-x-auto">
-    <a class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors bg-surface-alt text-foreground shadow-sm">Active</a>
+    <a class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors bg-primary text-background font-semibold shadow-sm">Active</a>
     <a class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors text-subtle hover:text-foreground hover:bg-surface-hover">Other</a>
 </div>
 ```

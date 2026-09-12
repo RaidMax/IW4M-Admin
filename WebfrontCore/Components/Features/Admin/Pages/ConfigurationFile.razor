@@ -34,7 +34,7 @@
                 var isActive = ExpandedFiles.Contains(file.FileName);
                 <button type="button"
                         @onclick="@(() => ToggleFile(file))"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(isActive ? "bg-surface-alt text-foreground shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors @(isActive ? "bg-primary text-background font-semibold shadow-sm" : "text-subtle hover:text-foreground hover:bg-surface-hover")">
                     <i class="ph ph-file-code text-base"></i>
                     <span class="font-mono">@file.FileName</span>
                 </button>

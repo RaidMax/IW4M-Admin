@@ -49,7 +49,7 @@
                 </div>
 
                 <!-- Column headers (md and up) -->
-                <div class="hidden md:grid grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 border-b border-line text-[10px] font-semibold uppercase tracking-wider text-muted">
+                <div class="hidden md:grid grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] 2xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 border-b border-line text-[10px] font-semibold uppercase tracking-wider text-muted">
                     <div class="font-mono">#</div>
                     <div></div>
                     <div>@AppState.Loc("WEBFRONT_TABLE_PLAYER")</div>
@@ -57,7 +57,7 @@
                     <div>@AppState.Loc("WEBFRONT_STATS_KDR")</div>
                     <div class="whitespace-nowrap">@AppState.Loc("WEBFRONT_STATS_KILLS") / @AppState.Loc("WEBFRONT_STATS_DEATHS")</div>
                     <div>@AppState.Loc("WEBFRONT_STATS_PLAYED")</div>
-                    <div class="hidden xl:block">@AppState.LocOr("WEBFRONT_STATS_TREND", "Trend")</div>
+                    <div class="hidden 2xl:block">@AppState.LocOr("WEBFRONT_STATS_TREND", "Trend")</div>
                     <div></div>
                 </div>
 
@@ -86,7 +86,7 @@
                                 var kdrClass = stat.KDR >= 2.0 ? "text-success" : stat.KDR >= 1.0 ? "text-foreground" : "text-error";
                             }
 
-                            <div class="group grid grid-cols-[2rem_2.25rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 transition-colors hover:bg-surface-hover @(isSelf ? "bg-primary/10" : "")">
+                            <div class="group grid grid-cols-[2rem_2.25rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] 2xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 transition-colors hover:bg-surface-hover @(isSelf ? "bg-primary/10" : "")">
 
                                 <!-- Rank -->
                                 <div class="font-mono tabular-nums text-sm font-bold @(isTop3 ? "text-primary" : "text-muted")">
@@ -144,7 +144,7 @@
                                 </div>
 
                                 <!-- Performance history (xl and up) -->
-                                <div class="hidden xl:block h-20 min-w-0">
+                                <div class="hidden 2xl:block h-20 min-w-0">
                                     <PlayerPerformanceChart ClientId="@stat.ClientId" Id="@stat.Id"
                                                             History="@stat.PerformanceHistory"/>
                                 </div>
@@ -158,7 +158,7 @@
                             </div>
                         </ItemContent>
                         <Placeholder>
-                            <div class="grid grid-cols-[2rem_2.25rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 animate-pulse" aria-busy="true">
+                            <div class="grid grid-cols-[2rem_2.25rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] 2xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 animate-pulse" aria-busy="true">
                                 <div class="h-4 w-5 rounded bg-surface-alt"></div>
                                 <div class="w-9 h-9 rounded-lg bg-surface-alt"></div>
                                 <div class="min-w-0">
@@ -169,7 +169,7 @@
                                 <div class="hidden md:block h-4 w-10 rounded bg-surface-alt"></div>
                                 <div class="hidden md:block h-4 w-14 rounded bg-surface-alt"></div>
                                 <div class="hidden md:block h-4 w-10 rounded bg-surface-alt"></div>
-                                <div class="hidden xl:block h-20 rounded bg-surface-alt/50"></div>
+                                <div class="hidden 2xl:block h-20 rounded bg-surface-alt/50"></div>
                                 <div class="hidden md:block w-8 h-8 rounded bg-surface-alt ml-auto"></div>
                             </div>
                         </Placeholder>

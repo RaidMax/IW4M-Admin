@@ -5,131 +5,156 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_CONSOLE_TITLE") | @AppState.WebfrontBranding</PageTitle>
 
-<div class="h-[calc(100vh-10rem)] max-w-7xl mx-auto p-4 md:p-8 flex flex-col">
-    <div class="flex items-center gap-3 mb-6">
-        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-            <i class="ph ph-terminal text-xl text-primary"></i>
-        </div>
-        <div>
-            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_CONSOLE_TITLE")</h2>
+<div class="p-4 md:p-6 xl:p-8 max-w-[1680px] mx-auto space-y-5">
+    <!-- Heading -->
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@AppState.Loc("WEBFRONT_CONSOLE_TITLE")</h1>
+            <p class="text-sm text-muted mt-0.5">@AppState.LocOr("WEBFRONT_CONSOLE_SUBTITLE", "Run RCON commands against a server")</p>
         </div>
     </div>
-    <!-- Terminal Window -->
-    <div class="flex-1 flex flex-col bg-surface-alt rounded-lg shadow-2xl ring-1 ring-line overflow-hidden font-mono">
-        <!-- Terminal Output -->
-        <div id="console_scroll_container" class="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-thin scrollbar-thumb-line scrollbar-track-transparent">
-            @if (!CommandOutput.Any())
-            {
-                <div class="flex h-full items-center justify-center opacity-10 select-none pointer-events-none">
-                    <pre class="text-[0.6rem] leading-none text-success text-center font-bold">
-                                /(((((((*                           
-                      ./((((((((((((((((,                            
-            .*/(((((((((((((((((((((((((.                            
-    *((((((((((((((((((((((((((((((((((                              
- ./(((((((((((((((((((((((((((((((((((/ ,**,                         
-    ./(((((((((((((((((((((((((((((((/  ,******,                     
-       ,(((((((((((((((((((((((((((((* ********//**.                 
-         */(((((((((((((((((((((((((* ***************                
-      ,***  ,(((((((((((((((((((((((,  ,***************.             
-     ,****/**,*/(((((((((((((((((((.       *************,            
-    ************,,((((((((((((((((*.         ,************           
-  .***********,     *(((((((((((((            .*//*********          
- .,**********,        ,(((((((((/               ***********          
- ,**********,           *(((((((/               ,**********          
- ,/*********,             .*(((*                 **********,         
- ,/*********,                .*.                 ***********.        
- ,**********,                                   ***********          
-  .***********                                  ***********          
-  .************                               .***********           
-    ************.                           .************,           
-     ,*************                      .**************,            
-      .*****************              *****************.             
-         *******************************************,                
-           .*//***********************************.                  
-              ********************************,.                     
-                 .************************,                          
-                            ,.**,           
-                    </pre>
-                </div>
-            }
-            else
-            {
-                @foreach (var line in CommandOutput)
+
+    <div class="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] items-start">
+        <!-- Server list -->
+        <section class="rounded-xl bg-surface border border-line overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.LocOr("WEBFRONT_CONSOLE_SERVERS", "Servers")</h2>
+                <span class="text-xs text-muted font-mono tabular-nums">@Servers.Count</span>
+            </div>
+
+            <!-- Compact selector (small screens) -->
+            <div class="p-3 lg:hidden">
+                <select @bind="SelectedServerId"
+                        class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm text-foreground focus:outline-none focus:border-primary">
+                    @foreach (var server in Servers)
+                    {
+                        <option value="@server.Id">@server.Name.StripColors() (@server.Game)</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Selectable list (large screens) -->
+            <div class="hidden lg:block divide-y divide-line max-h-[60vh] overflow-y-auto">
+                @if (!Servers.Any())
                 {
-                    <div class="text-sm">
-                        @if (line.StartsWith(">"))
+                    <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+                        <i class="ph ph-hard-drives text-3xl text-secondary"></i>
+                        <span>@AppState.LocOr("WEBFRONT_CONSOLE_NO_SERVERS", "No servers available")</span>
+                    </div>
+                }
+                @foreach (var server in Servers)
+                {
+                    var isSelected = server.Id == SelectedServerId;
+                    <button type="button"
+                            @onclick="() => SelectedServerId = server.Id"
+                            class="w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors @(isSelected ? "bg-primary/10" : "hover:bg-surface-hover")">
+                        @if (server.Online)
                         {
-                            <span class="text-warning font-bold mr-2">➜</span><span class="text-foreground">@line.Substring(1).Trim()</span>
-                        }
-                        else if (line.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
-                        {
-                            <span class="text-error">@line</span>
+                            <i class="shrink-0 w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-success)_25%,transparent)]" title="@AppState.LocOr("WEBFRONT_SERVER_STATUS_ONLINE", "Live")"></i>
                         }
                         else
                         {
-                            <span class="text-success">@line</span>
+                            <i class="shrink-0 w-1.5 h-1.5 rounded-full bg-muted" title="@AppState.LocOr("WEBFRONT_SERVER_STATUS_OFFLINE", "Offline")"></i>
                         }
+                        <span class="flex-1 min-w-0">
+                            <span class="block text-sm font-semibold truncate @(isSelected ? "text-primary" : "text-foreground")">
+                                <ColorCode Value="@server.Name"/>
+                            </span>
+                            <span class="block font-mono text-[10px] tracking-[0.12em] uppercase text-muted">@server.Game</span>
+                        </span>
+                        <span class="shrink-0 font-mono text-xs tabular-nums text-subtle whitespace-nowrap">
+                            @server.ClientCount<span class="text-muted"> / @server.MaxClients</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        </section>
+
+        <!-- Console -->
+        <div class="min-w-0 space-y-3">
+            <div class="flex items-center gap-3 px-1">
+                <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.LocOr("WEBFRONT_CONSOLE_OUTPUT", "Console output")</h2>
+                @{
+                    var selectedServer = Servers.FirstOrDefault(s => s.Id == SelectedServerId);
+                }
+                @if (selectedServer != null)
+                {
+                    <span class="text-xs text-muted truncate">
+                        <i class="ph ph-hard-drives mr-1"></i><ColorCode Value="@selectedServer.Name"/>
+                    </span>
+                }
+            </div>
+
+            <div id="console_scroll_container"
+                 class="bg-black/40 font-mono text-[13px] leading-relaxed p-4 rounded-lg border border-line h-[60vh] overflow-y-auto">
+                @if (!CommandOutput.Any())
+                {
+                    <div class="flex flex-col items-center justify-center gap-2 h-full text-muted text-sm select-none">
+                        <i class="ph ph-terminal text-3xl text-secondary"></i>
+                        <span>@AppState.LocOr("WEBFRONT_CONSOLE_EMPTY", "Select a server and run a command")</span>
                     </div>
                 }
-            }
-            <div @ref="ScrollAnchor" tabindex="-1"></div>
-        </div>
+                else
+                {
+                    @foreach (var line in CommandOutput)
+                    {
+                        <div class="whitespace-pre-wrap break-words">
+                            @if (line.StartsWith(">"))
+                            {
+                                <span class="text-primary"><span class="text-muted mr-2 select-none">$</span>@line.Substring(1).Trim()</span>
+                            }
+                            else if (line.StartsWith("Error:", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="text-error">@line</span>
+                            }
+                            else
+                            {
+                                <span class="text-success">@line</span>
+                            }
+                        </div>
+                    }
+                }
+                <div @ref="ScrollAnchor" tabindex="-1"></div>
+            </div>
 
-        <!-- Input Area -->
-        <div class="p-4 bg-surface-alt border-t border-line">
-            <div class="flex flex-col md:flex-row gap-3 h-auto md:h-[46px]">
-                <!-- Server Selector -->
-                <div class="relative flex-shrink-0 group w-full md:w-auto h-[42px] md:h-full">
-                    <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-muted">
-                        <i class="ph ph-hard-drives text-lg"></i>
-                    </div>
-                    <select @bind="SelectedServerId" 
-                            class="appearance-none pl-10 pr-9 h-full w-full bg-surface border border-line rounded-lg text-sm font-medium text-foreground hover:border-primary/50 focus:border-primary focus:outline-none transition-all cursor-pointer md:min-w-[180px] md:max-w-[240px] truncate shadow-sm flex items-center">
-                        @foreach (var server in Servers)
-                        {
-                            <option value="@server.Id">@server.Name.StripColors() (@server.Game)</option>
-                        }
-                    </select>
-                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted">
-                        <i class="ph ph-caret-down text-xs"></i>
-                    </div>
-                </div>
-
-                <!-- Command Input & Form -->
-                <form @onsubmit="ExecuteCommand" 
-                      class="flex-1 w-full flex items-center bg-surface border border-line rounded-lg px-4 h-[42px] md:h-full focus-within:border-primary transition-all cursor-text shadow-sm relative">
-                    <span class="text-success font-bold font-mono mr-3 select-none text-lg flex items-center pt-0.5">➜</span>
-                    <input @bind="Command" 
+            <!-- Command input -->
+            <form @onsubmit="ExecuteCommand" class="flex items-center gap-2">
+                <div class="relative flex-1 min-w-0">
+                    <span class="absolute inset-y-0 left-3 flex items-center font-mono text-sm text-muted select-none pointer-events-none">$</span>
+                    <input @bind="Command"
                            @bind:event="oninput"
                            @ref="InputElement"
                            @onkeydown="OnKeyDown"
-                           type="text" 
-                           class="flex-1 bg-transparent border-none text-foreground placeholder-input-placeholder focus:ring-0 focus:outline-none p-0 text-sm font-mono h-full"
-                           placeholder="@AppState.Loc("WEBFRONT_CONSOLE_FORM_PLACEHOLDER_COMMAND")" 
+                           type="text"
+                           class="block w-full h-10 pl-8 pr-3 rounded-lg bg-background border border-line text-sm font-mono text-foreground placeholder-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                           placeholder="@AppState.Loc("WEBFRONT_CONSOLE_FORM_PLACEHOLDER_COMMAND")"
                            autocomplete="off" />
-                    
-                    <!-- Execute Button -->
-                    <button type="submit" 
-                            disabled="@(IsExecuting || string.IsNullOrWhiteSpace(Command))"
-                            class="ml-2 p-1.5 -mr-1 rounded-md text-muted hover:text-primary hover:bg-primary/10 disabled:opacity-30 disabled:hover:text-muted disabled:hover:bg-transparent transition-colors flex items-center justify-center">
-                        @if (IsExecuting)
-                        {
-                            <i class="ph ph-spinner animate-spin text-lg"></i>
-                        }
-                        else
-                        {
-                            <i class="ph ph-paper-plane-right text-lg"></i>
-                        }
-                    </button>
-                </form>
-            </div>
-            
-            <div class="mt-2 flex justify-between px-1">
-                <div class="text-[0.65rem] text-muted font-medium">
-                    <span class="bg-surface border border-line rounded px-1.5 py-0.5 text-xs text-foreground font-mono mr-1">Enter</span> @AppState.Loc("WEBFRONT_CONSOLE_SUBMIT_HINT")
-                    <span class="mx-2 text-border">|</span>
-                    <span class="bg-surface border border-line rounded px-1.5 py-0.5 text-xs text-foreground font-mono mr-1">↑</span> <span class="bg-surface border border-line rounded px-1.5 py-0.5 text-xs text-foreground font-mono mr-1">↓</span> @AppState.Loc("WEBFRONT_CONSOLE_HISTORY_HINT")
                 </div>
+                <button type="submit"
+                        disabled="@(IsExecuting || string.IsNullOrWhiteSpace(Command))"
+                        class="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-sm font-semibold text-white hover:brightness-110 transition disabled:opacity-40 disabled:hover:brightness-100">
+                    @if (IsExecuting)
+                    {
+                        <i class="ph ph-spinner animate-spin text-base"></i>
+                    }
+                    else
+                    {
+                        <i class="ph-bold ph-play text-base"></i>
+                    }
+                    <span>@AppState.LocOr("WEBFRONT_CONSOLE_RUN", "Run")</span>
+                </button>
+            </form>
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted">
+                <span>
+                    <kbd class="font-mono text-[11px] px-1.5 py-0.5 rounded border border-line bg-surface text-subtle">Enter</kbd>
+                    <span class="ml-1">@AppState.Loc("WEBFRONT_CONSOLE_SUBMIT_HINT")</span>
+                </span>
+                <span>
+                    <kbd class="font-mono text-[11px] px-1.5 py-0.5 rounded border border-line bg-surface text-subtle">&uarr;</kbd>
+                    <kbd class="font-mono text-[11px] px-1.5 py-0.5 rounded border border-line bg-surface text-subtle">&darr;</kbd>
+                    <span class="ml-1">@AppState.Loc("WEBFRONT_CONSOLE_HISTORY_HINT")</span>
+                </span>
             </div>
         </div>
     </div>

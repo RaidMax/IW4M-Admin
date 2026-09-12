@@ -1,3 +1,18 @@
 @page "/NotFound"
 @inject AppState AppState
-<h3>@AppState.Loc("WEBFRONT_NOT_FOUND_TITLE")</h3>
+
+<PageTitle>@AppState.Loc("WEBFRONT_NOT_FOUND_TITLE") | @AppState.WebfrontBranding</PageTitle>
+
+<div class="p-4 md:p-6 xl:p-8 max-w-4xl mx-auto">
+    <section class="rounded-xl bg-surface border border-line overflow-hidden">
+        <div class="flex flex-col items-center justify-center gap-3 px-4 py-14 text-center">
+            <i class="ph ph-compass text-4xl text-secondary"></i>
+            <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@AppState.Loc("WEBFRONT_NOT_FOUND_TITLE")</h1>
+            <p class="text-sm text-muted max-w-md">@AppState.LocOr("WEBFRONT_NOT_FOUND_DESC", "The page you were looking for does not exist or has moved.")</p>
+            <a href="/" class="mt-2 inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-sm font-semibold text-white hover:brightness-110 transition">
+                <i class="ph-bold ph-house text-base"></i>
+                @AppState.LocOr("WEBFRONT_NOT_FOUND_HOME", "Back to home")
+            </a>
+        </div>
+    </section>
+</div>

@@ -6,76 +6,78 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_PENALTY_TITLE") | @AppState.WebfrontBranding</PageTitle>
 
-<div class="max-w-7xl mx-auto p-4 md:p-8">
-    <div class="flex items-center gap-3 mb-8">
-        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-            <i class="ph ph-lock-simple text-xl text-primary"></i>
-        </div>
-        <div>
-            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_PENALTY_TITLE")</h2>
-            <div class="text-sm text-subtle font-medium mt-0.5">
+<div class="p-4 md:p-6 xl:p-8 max-w-[1680px] mx-auto space-y-5">
+    <!-- Heading + hide automated toggle -->
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@AppState.Loc("WEBFRONT_PENALTY_TITLE")</h1>
+            <p class="text-sm text-muted mt-0.5">
                 @if (State is null)
                 {
-                    <span class="inline-block w-24 h-4 bg-surface-alt/50 rounded animate-pulse"></span>
+                    <span class="inline-block w-24 h-3.5 rounded bg-surface-alt animate-pulse align-middle"></span>
                 }
                 else
                 {
                     @(AppState.Loc("WEBFRONT_PENALTY_BANS_FOUND").FormatExt(State.TotalCount.ToString("#,##0")))
                 }
-            </div>
+            </p>
+        </div>
+
+        <div class="ml-auto flex items-center gap-2">
+            <ToggleSwitch Id="hide_automated_penalties_checkbox"
+                          Label="@AppState.Loc("WEBFRONT_PENALTY_HIDE_AUTOMATED")"
+                          Value="IgnoreAutomated"
+                          ValueChanged="@(v => OnIgnoreAutomatedChanged(new ChangeEventArgs { Value = v }))"/>
         </div>
     </div>
 
-    <div class="md:bg-surface md:rounded-lg md:shadow md:ring-1 md:ring-line md:overflow-hidden">
-        <!-- Filters Header -->
-        <div
-            class="p-4 bg-surface md:bg-background border border-line md:border-0 md:border-b md:border-line rounded-lg md:rounded-none shadow-sm md:shadow-none mb-4 md:mb-0 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <!-- Hide Automated Toggle -->
-            <div class="flex items-center">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="hide_automated_penalties_checkbox" checked="@IgnoreAutomated"
-                           @onchange="@OnIgnoreAutomatedChanged" class="sr-only peer"/>
-                    <div
-                        class="w-11 h-6 bg-surface-alt peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-                <label for="hide_automated_penalties_checkbox"
-                       class="ml-3 text-sm font-medium text-foreground select-none cursor-pointer">@AppState.Loc("WEBFRONT_PENALTY_HIDE_AUTOMATED")</label>
-            </div>
+    <!-- Penalty type filter chips -->
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-muted mr-1">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_SHOWONLY")</span>
+        @foreach (var penaltyType in Enum.GetValues(typeof(EFPenalty.PenaltyType)).Cast<EFPenalty.PenaltyType>().OrderByDescending(p => p == EFPenalty.PenaltyType.Any))
+        {
+            <button type="button"
+                    @onclick="() => OnShowOnlyChanged(new ChangeEventArgs { Value = ((int)penaltyType).ToString() })"
+                    class="px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors @(penaltyType == ShowOnly ? "border-primary text-primary bg-primary/10" : "border-line bg-surface text-subtle hover:text-foreground")">
+                @AppState.Loc($"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}")
+            </button>
+        }
+    </div>
 
-            <!-- Show Only Dropdown -->
-            <div class="flex items-center w-full md:w-auto">
-                <span
-                    class="text-sm font-medium text-muted mr-3 whitespace-nowrap">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_SHOWONLY")</span>
-                <select
-                    class="bg-surface-alt border border-line text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none block w-full md:w-48 p-2.5 transition-all duration-200"
-                    @onchange="@OnShowOnlyChanged">
-                    @foreach (var penaltyType in Enum.GetValues(typeof(EFPenalty.PenaltyType)).Cast<EFPenalty.PenaltyType>().OrderByDescending(p => p == EFPenalty.PenaltyType.Any))
-                    {
-                        <option value="@((int)penaltyType)"
-                                selected="@(penaltyType == ShowOnly)">@AppState.Loc($"WEBFRONT_PENALTY_{penaltyType.ToString().ToUpper()}")</option>
-                    }
-                </select>
-            </div>
-        </div>
-
-        <!-- Desktop Table -->
-        <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-surface-alt/30 text-xs text-muted uppercase border-b border-line">
-                <tr>
-                    <th class="px-6 py-3 font-medium w-[20%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
-                    <th class="px-6 py-3 font-medium w-[10%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
-                    <th class="px-6 py-3 font-medium w-[35%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_OFFENSE")</th>
-                    <th class="px-6 py-3 font-medium w-[20%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
-                    <th class="px-6 py-3 font-medium text-right w-[15%]">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TIME")</th>
-                </tr>
+    <!-- Penalties table -->
+    <section class="rounded-xl bg-surface border border-line overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                        <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
+                        <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
+                        <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_OFFENSE")</th>
+                        <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
+                        <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TIME")</th>
+                        <th class="text-right px-4 py-2.5 border-b border-line">@AppState.LocOr("WEBFRONT_PENALTY_TEMPLATE_EXPIRES", "Expires")</th>
+                    </tr>
                 </thead>
                 <tbody id="penalty_table" class="divide-y divide-line">
                 @if (_isLoading && State?.Penalties.Count == 0)
                 {
+                    for (var i = 0; i < 6; i++)
+                    {
+                        <tr>
+                            <td colspan="6" class="px-4 py-3">
+                                <div class="h-4 rounded bg-surface-alt animate-pulse"></div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else if ((State?.Penalties.Count ?? 0) == 0)
+                {
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center">
-                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <td colspan="6">
+                            <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+                                <i class="ph ph-tray text-3xl text-secondary"></i>
+                                <span>@AppState.Loc("WEBFRONT_SEARCH_NO_RESULTS")</span>
+                            </div>
                         </td>
                     </tr>
                 }
@@ -83,36 +85,43 @@
                 {
                     foreach (var penalty in State?.Penalties ?? [])
                     {
-                        <tr class="hover:bg-surface-hover/30 transition-colors group">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                        <tr class="hover:bg-surface-hover transition-colors">
+                            <td class="px-4 py-2.5 align-middle whitespace-nowrap">
                                 <a href="/client/@penalty.OffenderId"
-                                   class="text-sm font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(penalty.OffenderLevel)">
+                                   class="font-semibold hover:underline @AppState.GetLevelColorClass(penalty.OffenderLevel)">
                                     <ColorCode Value="@penalty.OffenderName"/>
                                 </a>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
-                                        @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
-                                    </span>
+                            <td class="px-4 py-2.5 align-middle whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
+                                    @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
+                                </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-subtle break-words">
+                            <td class="px-4 py-2.5 align-middle text-subtle min-w-[16rem] max-w-xl break-words">
                                 <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")"/>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-2.5 align-middle whitespace-nowrap">
                                 <a href="/client/@penalty.PunisherId"
-                                   class="text-sm font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(penalty.PunisherLevel)">
+                                   class="font-semibold hover:underline @AppState.GetLevelColorClass(penalty.PunisherLevel)">
                                     <ColorCode Value="@penalty.PunisherName"/>
                                 </a>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-muted">
+                            <td class="px-4 py-2.5 align-middle font-mono tabular-nums text-muted whitespace-nowrap"
+                                title="@penalty.TimePunished.ToString("f")">
+                                @penalty.TimePunishedString
+                            </td>
+                            <td class="px-4 py-2.5 align-middle font-mono tabular-nums text-right whitespace-nowrap">
                                 @if (penalty.Expired)
                                 {
-                                    <span>@penalty.TimePunishedString</span>
+                                    <span class="text-muted">@AppState.LocOr("WEBFRONT_PENALTY_EXPIRED", "Expired")</span>
+                                }
+                                else if (penalty.Expires.HasValue && penalty.Expires.Value.Year < DateTime.MaxValue.Year)
+                                {
+                                    <span class="text-warning" title="@penalty.Expires.Value.ToString("f")">@penalty.TimeRemaining</span>
                                 }
                                 else
                                 {
-                                    <span>@penalty.TimeRemaining</span>
+                                    <span class="text-muted">&mdash;</span>
                                 }
                             </td>
                         </tr>
@@ -121,71 +130,16 @@
                 </tbody>
             </table>
         </div>
+    </section>
 
-        <!-- Mobile List -->
-        <div class="md:hidden space-y-4">
-            @if (_isLoading && State?.Penalties.Count == 0)
-            {
-                <div class="text-center py-8">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-            }
-            else
-            {
-                foreach (var penalty in State?.Penalties ?? [])
-                {
-                    <div class="bg-surface border border-line rounded-lg p-4 shadow-sm">
-                        <!-- Header: Name & Badge -->
-                        <div class="flex justify-between items-start mb-3">
-                            <a href="/client/@penalty.OffenderId"
-                               class="font-bold hover:text-primary transition-colors text-lg @AppState.GetLevelColorClass(penalty.OffenderLevel)">
-                                <ColorCode Value="@penalty.OffenderName"/>
-                            </a>
-                            <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border @AppState.GetPenaltyBadgeClass(penalty.PenaltyType)">
-                                 @AppState.Loc($"WEBFRONT_PENALTY_{penalty.PenaltyType.ToString().ToUpper()}")
-                             </span>
-                        </div>
-
-                        <!-- Reason Box -->
-                        <div
-                            class="mb-4 text-sm text-subtle break-words bg-surface-alt/30 p-3 rounded border border-line/50">
-                            <ColorCode Value="@($"{penalty.Offense}{penalty.AdditionalPenaltyInformation}")"/>
-                        </div>
-
-                        <!-- Footer: Admin & Time -->
-                        <div class="flex items-center justify-between text-xs text-muted border-t border-line pt-3">
-                            <div class="flex items-center gap-1.5">
-                                <span
-                                    class="uppercase tracking-wide font-semibold text-muted text-[10px]">@AppState.Loc("WEBFRONT_PENALTY_BY")</span>
-                                <a href="/client/@penalty.PunisherId"
-                                   class="hover:text-primary transition-colors font-medium @AppState.GetLevelColorClass(penalty.PunisherLevel)">
-                                    <ColorCode Value="@penalty.PunisherName"/>
-                                </a>
-                            </div>
-                            <div>
-                                @if (penalty.Expired)
-                                {
-                                    <span>@penalty.TimePunishedString</span>
-                                }
-                                else
-                                {
-                                    <span class="text-warning font-medium">@penalty.TimeRemaining</span>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-    </div>
-
-    <!-- Infinite scroll trigger element -->
-    <!-- Infinite scroll trigger element -->
-    <div id="loadMoreTrigger" class="w-full text-center py-8">
+    <!-- Infinite scroll trigger element (id is observed by wwwroot/js/infinite-scroll.js) -->
+    <div id="loadMoreTrigger" class="w-full flex justify-center py-4">
         @if (_isLoading && State is not null && State.Penalties.Count > 0)
         {
-            <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <span class="inline-flex items-center gap-2 text-sm text-muted">
+                <i class="ph ph-spinner animate-spin text-base"></i>
+                @AppState.Loc("WEBFRONT_LOADING")
+            </span>
         }
         else if (State?.HasMoreResults ?? false)
         {
@@ -197,7 +151,6 @@
             <span class="text-muted text-sm">@AppState.Loc("WEBFRONT_PENALTY_NO_MORE")</span>
         }
     </div>
-
 </div>
 
 @code {

@@ -1,38 +1,31 @@
-<div class="space-y-4">
+<div class="space-y-5">
     @if (!_adminsList.Any())
     {
-        <div
-            class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
-            <i class="ph ph-user-circle text-4xl text-success mb-3 opacity-80"></i>
-            <span class="text-muted font-medium">@AppState.Loc("WEBFRONT_DASHBOARD_NO_ADMINS")</span>
+        <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+            <i class="ph ph-user-circle text-3xl text-secondary"></i>
+            <span>@AppState.Loc("WEBFRONT_DASHBOARD_NO_ADMINS")</span>
         </div>
     }
 
     @foreach (var server in _adminsList)
     {
-        <div class="bg-surface rounded-lg shadow-sm border border-line overflow-hidden mb-4">
-            <div
-                class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
-                <i class="ph ph-hard-drives text-primary"></i>
-                <span class="truncate"><ColorCode Value="@server.Name"/></span>
-                <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 ml-auto">
-                     @(AppState.Loc($"GAME_{server.Game}"))
-                 </span>
+        <div>
+            <div class="flex items-center gap-2 px-1 pb-2">
+                <i class="ph ph-hard-drives text-muted"></i>
+                <span class="flex-1 min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider text-muted"><ColorCode Value="@server.Name"/></span>
+                <span class="font-mono text-[10px] tracking-[0.12em] uppercase px-1.5 py-0.5 rounded border border-line bg-surface-alt text-subtle shrink-0">
+                    @(AppState.Loc($"GAME_{server.Game}"))
+                </span>
             </div>
-            <div class="divide-y divide-line">
+            <div class="rounded-lg border border-line divide-y divide-line overflow-hidden">
                 @foreach (var admin in server.Admins)
                 {
-                    <div
-                        class="px-4 py-3 hover:bg-surface-hover/30 transition-colors flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <a href="/client/@admin.ClientId"
-                               class="font-bold text-foreground hover:text-primary transition-colors">
-                                <ColorCode Value="@admin.Name"/>
-                            </a>
-                        </div>
-                        <span
-                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold @GetLevelClass(admin.LevelInt) uppercase tracking-wider">
+                    var levelClass = AppState.GetLevelColorClass((EFClient.Permission)admin.LevelInt);
+                    <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-surface-hover transition-colors">
+                        <a href="/client/@admin.ClientId" class="flex-1 min-w-0 truncate font-semibold hover:underline @levelClass">
+                            <ColorCode Value="@admin.Name"/>
+                        </a>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border border-current bg-transparent shrink-0 @levelClass">
                             @admin.Level
                         </span>
                     </div>

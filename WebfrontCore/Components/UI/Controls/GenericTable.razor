@@ -1,113 +1,81 @@
-
-
 @if (Model != null)
 {
-    @if (!string.IsNullOrEmpty(Model.Header))
-    {
-        <h4 class="content-title mb-15 mt-15">
-            <ColorCode Value="@Model.Header"/>
-        </h4>
-    }
-
-    <table class="table">
-        <thead>
-        <tr class="bg-primary text-light d-none d-lg-table-row">
-            @foreach (var column in Model.Columns)
-            {
-                <th>@column.Title</th>
-            }
-        </tr>
-        </thead>
-        <tbody>
-        @{ var start = 0; }
-        @if (!Model.Rows.Any())
+    <section class="rounded-xl bg-surface border border-line overflow-hidden">
+        @if (!string.IsNullOrEmpty(Model.Header))
         {
-            <!-- desktop -->
-            <tr class="bg-dark-dm bg-light-lm d-none d-lg-table-row">
-                <td colspan="@Model.Columns.Count">@(Loc("WEBFRONT_DATATABLE_NO_DATA"))</td>
-            </tr>
-            <!-- mobile -->
-            <tr class="d-flex d-table-row d-lg-none">
-                <td class="bg-primary text-light text-right w-125">
-                    &mdash;
-                </td>
-                <td class="bg-dark-dm bg-light-lm flex-fill w-200">@(Loc("WEBFRONT_DATATABLE_NO_DATA"))</td>
-            </tr>
+            <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    <ColorCode Value="@Model.Header"/>
+                </h2>
+            </div>
         }
-        @foreach (var row in Model.Rows)
-        {
-            <!-- desktop -->
-            <tr class="bg-dark-dm bg-light-lm @(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row-lg" : "d-none d-lg-table-row")">
-                @for (var i = 0; i < Model.Columns.Count; i++)
-                {
-                    var data = row.Datum[i];
-                    <td>
-                        @if (data.Template is null)
-                        {
-                            switch (data.Type)
-                            {
-                                case ColumnType.Text:
-                                    <span>@data.Value</span>
-                                    break;
-                                case ColumnType.Link:
-                                    <a href="@data.Data" class="no-decoration">@data.Value</a>
-                                    break;
-                                case ColumnType.Icon:
-                                    <span class="ph @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
-                                    break;
-                                case ColumnType.Button:
-                                    <div class="btn profile-action" data-action="@data.Data" data-action-id="@data.Id">@data.Value</div>
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            @RenderHtmlContent(data.Template)
-                        }
-                    </td>
-                }
-            </tr>
 
-            <!-- mobile -->
-            <tr class="@(Model.InitialRowCount > 0 && start >= Model.InitialRowCount ? "d-none hidden-row" : "d-flex d-table-row d-lg-none")">
-                <td class="bg-primary text-light text-right w-125">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                <tr class="text-[10px] font-semibold uppercase tracking-wider text-muted">
                     @foreach (var column in Model.Columns)
                     {
-                        <div class="mt-5 mb-5 text-truncate">@column.Title</div>
+                        <th class="text-left px-4 py-2.5 border-b border-line whitespace-nowrap">@column.Title</th>
                     }
-                </td>
-                <td class="bg-dark-dm bg-light-lm flex-fill w-200">
-                    @for (var i = 0; i < Model.Columns.Count; i++)
-                    {
-                        var data = row.Datum[i];
-                        <div class="mt-5 mb-5 text-truncate" style="min-width:0">
-                            @if (data.Type == ColumnType.Text)
-                            {
-                                <span>@data.Value</span>
-                            }
-                            @if (data.Type == ColumnType.Link)
-                            {
-                                <a href="@data.Data">@data.Value</a>
-                            }
-                            @if (data.Type == ColumnType.Icon)
-                            {
-                                <span class="ph @data.Value profile-action" data-action="@data.Data" data-action-id="@data.Id"></span>
-                            }
-                            <!-- Template handling for mobile omitted for brevity, adding if needed -->
-                        </div>
-                    }
-                </td>
-            </tr>
-            start++;
-        }
-        </tbody>
-    </table>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                @{ var start = 0; }
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="@Model.Columns.Count" class="px-4 py-8 text-center text-muted">
+                            @(Loc("WEBFRONT_DATATABLE_NO_DATA"))
+                        </td>
+                    </tr>
+                }
+                @foreach (var row in Model.Rows)
+                {
+                    var isCollapsed = Model.InitialRowCount > 0 && start >= Model.InitialRowCount && !IsExpanded;
 
-    @if (Model.InitialRowCount > 0 && Model.Rows.Count > 0)
-    {
-        <!-- Slide Logic needs JS or Blazor state (Expanded/ collapsed) -->
-        <button class="btn btn-block table-slide" @onclick="@ToggleExpand">
-            <span class="ph @(IsExpanded ? "ph-caret-up" : "ph-caret-down")"></span>
-        </button>
-    }
+                    <tr class="hover:bg-surface-hover transition-colors @(isCollapsed ? "hidden hidden-row" : "")">
+                        @for (var i = 0; i < Model.Columns.Count; i++)
+                        {
+                            var data = row.Datum[i];
+                            <td class="px-4 py-2.5 align-middle">
+                                @if (data.Template is null)
+                                {
+                                    switch (data.Type)
+                                    {
+                                        case ColumnType.Text:
+                                            <span>@data.Value</span>
+                                            break;
+                                        case ColumnType.Link:
+                                            <a href="@data.Data" class="text-primary hover:underline">@data.Value</a>
+                                            break;
+                                        case ColumnType.Icon:
+                                            <span class="ph @data.Value profile-action cursor-pointer text-base text-muted hover:text-foreground transition-colors" data-action="@data.Data" data-action-id="@data.Id"></span>
+                                            break;
+                                        case ColumnType.Button:
+                                            <button type="button" class="profile-action inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-line bg-surface-alt text-xs font-semibold text-foreground hover:bg-surface-hover transition-colors" data-action="@data.Data" data-action-id="@data.Id">@data.Value</button>
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    @RenderHtmlContent(data.Template)
+                                }
+                            </td>
+                        }
+                    </tr>
+                    start++;
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.InitialRowCount > 0 && Model.Rows.Count > 0)
+        {
+            <button type="button" @onclick="@ToggleExpand"
+                    class="table-slide w-full flex items-center justify-center gap-1.5 h-9 border-t border-line text-xs font-semibold text-subtle hover:text-foreground hover:bg-surface-hover transition-colors">
+                <i class="ph-bold @(IsExpanded ? "ph-caret-up" : "ph-caret-down")"></i>
+            </button>
+        }
+    </section>
 }

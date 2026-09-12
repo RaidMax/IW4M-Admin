@@ -21,117 +21,108 @@
 <div class="flex flex-col xl:flex-row h-full">
     @if (Stats != null)
     {
-        @* Main Content Area - Scrollable *@
-        <div class="flex-1 min-w-0 p-4 md:p-6 lg:p-8 overflow-y-auto">
-            <div class="max-w-[1400px] mx-auto space-y-6">
+        var serverName = Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name
+                         ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS");
 
-                <!-- Header -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="px-2 py-2 rounded-lg flex justify-center bg-surface-alt border border-line">
-                            <i class="ph ph-chart-line-up text-lg text-primary"></i>
-                        </div>
-                        <h2 class="text-xl font-bold text-foreground">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h2>
+        @* Main Content Area - Scrollable *@
+        <div class="flex-1 min-w-0 overflow-y-auto">
+            <div class="p-4 md:p-6 xl:p-8 max-w-[1680px] mx-auto space-y-5">
+
+                <!-- Heading -->
+                <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+                    <div class="min-w-0">
+                        <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@(AppState.Loc("WEBFRONT_ADV_STATS_TITLE"))</h1>
+                        <p class="text-sm text-muted mt-0.5 flex flex-wrap items-center gap-x-1.5">
+                            <a href="/client/@Stats.ClientId" class="font-semibold text-subtle hover:text-primary transition-colors">
+                                <ColorCode Value="@Stats.ClientName"/>
+                            </a>
+                            <span class="text-muted/60">&middot;</span>
+                            <span><ColorCode Value="@serverName"/></span>
+                        </p>
                     </div>
-                    <span
-                        class="px-4 py-2 rounded-lg bg-surface-alt/50 text-muted border border-line backdrop-blur-sm shadow-sm">
-                        <ColorCode
-                            Value="@(Stats.Servers.FirstOrDefault(server => server.Endpoint == Stats.ServerEndpoint)?.Name ?? AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
-                    </span>
                 </div>
 
-                <!-- Hero Panel -->
-                <div
-                    class="relative rounded-2xl bg-gradient-to-br from-surface via-surface to-surface-alt border border-line shadow-xl overflow-hidden">
-                    <div
-                        class="absolute top-0 right-0 p-32 bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
-                    <div class="relative p-4 md:p-6 lg:p-8">
-                        <div class="flex flex-col items-center xl:flex-row gap-8 relative z-10">
+                <!-- Hero: rank, ranking and performance history -->
+                <section class="relative overflow-hidden rounded-xl border border-line bg-surface-alt p-5 grid gap-4 md:grid-cols-[auto_1fr] xl:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.4fr)] items-center">
+                    <div class="justify-self-center md:justify-self-start">
+                        <img class="w-20 h-20 md:w-24 md:h-24 object-contain"
+                             id="rank_icon"
+                             src="/images/stats/ranks/rank_@(GetRankIconIndex(Stats.ZScore)).png"
+                             alt="@Stats.Performance"/>
+                    </div>
 
-                            <!-- Rank & User Info -->
-                            <div class="flex flex-col md:flex-row items-center gap-8 shrink-0">
-                                <!-- Rank Icon with Glow -->
-                                <div class="relative">
-                                    <div
-                                        class="absolute inset-0 bg-gradient-to-tr from-transparent to-white/20 rounded-full blur-xl animate-pulse"></div>
-                                    <img
-                                        class="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl relative z-10 filter"
-                                        id="rank_icon"
-                                        src="/images/stats/ranks/rank_@(GetRankIconIndex(Stats.ZScore)).png"
-                                        alt="@Stats.Performance"/>
-                                </div>
+                    <div class="min-w-0 text-center md:text-left">
+                        <a href="/client/@Stats.ClientId"
+                           class="text-2xl font-extrabold tracking-tight text-foreground hover:text-primary transition-colors break-all">
+                            <ColorCode Value="@Stats.ClientName"/>
+                        </a>
 
-                                <div class="text-center md:text-left space-y-2">
-                                    <a href="/client/@Stats.ClientId"
-                                       class="text-3xl md:text-5xl font-black text-foreground hover:text-white transition-colors tracking-tight">
-                                        <ColorCode Value="@Stats.ClientName"/>
-                                    </a>
-
-                                    <div class="flex flex-col gap-1">
-                                        @if (Stats.Level == EFClient.Permission.Banned)
-                                        {
-                                            <span
-                                                class="text-error text-lg font-bold flex items-center gap-2 justify-center md:justify-start">
-                                             <i class="ph ph-prohibit"></i> @AppState.Loc("GLOBAL_PERMISSION_BANNED")
-                                         </span>
-                                        }
-                                        else if (Stats.ZScore != null)
-                                        {
-                                            if (Stats.Ranking > 0)
-                                            {
-                                                <span class="text-muted text-lg">
-                                                  @(AppState.Loc("WEBFRONT_ADV_STATS_RANKED_V2").FormatExt(Stats.Ranking?.ToString("#,##0"), Stats.TotalRankedClients.ToString("#,##0")))
-                                              </span>
-                                            }
-                                            else
-                                            {
-                                                <span
-                                                    class="text-accent/80 font-medium">@AppState.Loc("WEBFRONT_ADV_STATS_EXPIRED")</span>
-                                            }
-
-                                            <div class="flex items-center gap-2 justify-center md:justify-start mt-1">
-                                                @if (Stats.ServerId != null)
-                                                {
-                                                    <span
-                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_NO_PERFORMANCE")}</span>"))</span>
-                                                }
-                                                else
-                                                {
-                                                    <span
-                                                        class="text-subtle">@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"text-primary font-bold font-mono text-xl\">{Stats.Rating?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_UNRATED")}</span>"))</span>
-                                                }
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span
-                                                class="text-muted italic">@AppState.Loc("WEBFRONT_STATS_INDEX_UNRANKED")</span>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Performance Graph Area -->
-                            <div class="w-full flex-grow relative h-48 xl:h-40"
-                                 id="client_performance_history_container">
-                                @if (Stats.PerformanceHistory.Count > 5)
+                        <div class="mt-2 flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1.5 text-sm text-subtle">
+                            @if (Stats.Level == EFClient.Permission.Banned)
+                            {
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-error/15 text-error">
+                                    <i class="ph-bold ph-prohibit"></i>
+                                    @AppState.Loc("GLOBAL_PERMISSION_BANNED")
+                                </span>
+                            }
+                            else if (Stats.ZScore != null)
+                            {
+                                if (Stats.Ranking > 0)
                                 {
-                                    <canvas id="client_performance_history" class="w-full h-full"></canvas>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <i class="ph ph-trophy text-muted"></i>
+                                        <span>@(AppState.Loc("WEBFRONT_ADV_STATS_RANKED_V2").FormatExt(Stats.Ranking?.ToString("#,##0"), Stats.TotalRankedClients.ToString("#,##0")))</span>
+                                    </span>
                                 }
                                 else
                                 {
-                                    <div
-                                        class="absolute inset-0 flex items-center justify-center text-muted border border-dashed border-line rounded-xl">
-                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_NO_GRAPH_DATA")</span>
-                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 text-accent">
+                                        <i class="ph ph-hourglass"></i>
+                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_EXPIRED")</span>
+                                    </span>
                                 }
-                            </div>
+
+                                if (Stats.ServerId != null)
+                                {
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <i class="ph ph-lightning text-muted"></i>
+                                        <span>@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_PERFORMANCE").FormatExt($"<span class=\"font-mono font-bold tabular-nums text-foreground\">{Stats.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_NO_PERFORMANCE")}</span>"))</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <i class="ph ph-lightning text-muted"></i>
+                                        <span>@((MarkupString)AppState.Loc("WEBFRONT_ADV_STATS_RATING").FormatExt($"<span class=\"font-mono font-bold tabular-nums text-foreground\">{Stats.Rating?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_UNRATED")}</span>"))</span>
+                                    </span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted italic">@AppState.Loc("WEBFRONT_STATS_INDEX_UNRANKED")</span>
+                            }
                         </div>
                     </div>
-                </div>
 
-                <!-- Stat Cards Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- Performance history (canvas id is used by advanced_stats.js) -->
+                    <div class="relative w-full h-40 min-w-0 md:col-span-2 xl:col-span-1"
+                         id="client_performance_history_container">
+                        @if (Stats.PerformanceHistory.Count > 5)
+                        {
+                            <canvas id="client_performance_history" class="w-full h-full"></canvas>
+                        }
+                        else
+                        {
+                            <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line text-muted text-sm">
+                                <i class="ph ph-chart-line text-2xl text-secondary"></i>
+                                <span>@AppState.Loc("WEBFRONT_ADV_STATS_NO_GRAPH_DATA")</span>
+                            </div>
+                        }
+                    </div>
+                </section>
+
+                <!-- Stat tiles -->
+                <div class="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-8 gap-3">
                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KILLS").Titleize(), Stats.Kills.ToNumericalString())
                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_DEATHS").Titleize(), Stats.Deaths.ToNumericalString())
                     @RenderStatCard(AppState.Loc("PLUGINS_STATS_TEXT_KDR").Titleize(), Stats.Kdr, Stats.Kdr != null && double.TryParse(Stats.Kdr, out var k) && k >= 2.0 ? "text-success" : null)
@@ -150,24 +141,24 @@
                     @RenderStatCard(AppState.Loc("WEBFRONT_ADV_STATS_TOTAL_ACTIVE_TIME"), Stats.ActiveTime?.HumanizeForCurrentCulture())
                 </div>
 
-                <!-- Bottom Section: Models & Tables -->
-                <div class="grid grid-cols-1 2xl:grid-cols-2 gap-8">
+                <!-- Hit locations + weapons -->
+                <div class="grid grid-cols-1 2xl:grid-cols-2 gap-5 items-start">
+
                     <!-- Hit Locations -->
-                    <div class="bg-surface rounded-xl shadow-lg border border-line overflow-hidden flex flex-col">
-                        <div class="p-6 border-b border-line">
-                            <div class="flex items-center gap-3">
-                                <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h4>
-                            </div>
+                    <section class="rounded-xl bg-surface border border-line overflow-hidden flex flex-col">
+                        <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                            <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADV_STATS_HIT_LOCATIONS")</h2>
+                            <span class="font-mono text-xs text-muted tabular-nums">@Stats.TopHitLocations.Count</span>
                         </div>
 
-                        <div class="p-0 overflow-x-auto">
-                            <table class="w-full text-left text-sm text-muted">
-                                <thead class="bg-surface-alt text-xs uppercase font-medium text-muted">
-                                <tr>
-                                    <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_LOCATION")</th>
-                                    <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
-                                    <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_PERCENTAGE")</th>
-                                    <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                <tr class="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                                    <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_LOCATION")</th>
+                                    <th class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
+                                    <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_PERCENTAGE")</th>
+                                    <th class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
                                 </tr>
                                 </thead>
                                 <tbody class="divide-y divide-line">
@@ -178,67 +169,63 @@
                                 }
                                 @foreach (var hit in displayedHitLocations)
                                 {
-                                    <tr class="hover:bg-surface-hover/30 transition-colors">
-                                        <td class="px-6 py-3 font-medium text-subtle">@hit.Name</td>
-                                        <td class="px-6 py-3 font-mono">@hit.Hits</td>
-                                        <td class="px-6 py-3">
+                                    <tr class="hover:bg-surface-hover transition-colors">
+                                        <td class="px-4 py-2.5 align-middle font-medium text-foreground">@hit.Name</td>
+                                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums">@hit.Hits</td>
+                                        <td class="px-4 py-2.5 align-middle">
                                             <div class="flex items-center gap-2">
-                                                <div class="w-12 bg-surface rounded-full h-1.5 overflow-hidden">
-                                                    <div class="bg-primary h-full rounded-full"
+                                                <div class="w-16 h-1 rounded-full bg-surface-alt overflow-hidden">
+                                                    <div class="h-full rounded-full bg-primary"
                                                          style="width: @(Math.Round(hit.Percentage * 100.0))%"></div>
                                                 </div>
-                                                <span
-                                                    class="text-xs">@(Math.Round(hit.Percentage * 100.0).ToString("N0"))%</span>
+                                                <span class="font-mono text-xs tabular-nums text-muted">@(Math.Round(hit.Percentage * 100.0).ToString("N0"))%</span>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-3 text-right font-mono text-subtle">@hit.Damage.ToNumericalString()</td>
+                                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-muted">@hit.Damage.ToNumericalString()</td>
                                     </tr>
                                 }
                                 </tbody>
                             </table>
-                            @if (Stats.TopHitLocations.Count > DefaultTableRowCount)
-                            {
-                                <button @onclick="() => _showAllHitLocations = !_showAllHitLocations"
-                                        class="w-full py-3 text-sm text-muted hover:text-foreground hover:bg-surface-alt/50 transition-colors border-t border-line flex items-center justify-center gap-2">
-                                    <i class="ph @(_showAllHitLocations ? "ph-caret-up" : "ph-caret-down")"></i>
-                                    @if (_showAllHitLocations)
-                                    {
-                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_SHOW_LESS")</span>
-                                    }
-                                    else
-                                    {
-                                        <span>@(AppState.Loc("WEBFRONT_ADV_STATS_SHOW_ALL").FormatExt(Stats.TopHitLocations.Count))</span>
-                                    }
-                                </button>
-                            }
                         </div>
+                        @if (Stats.TopHitLocations.Count > DefaultTableRowCount)
+                        {
+                            <button type="button" @onclick="() => _showAllHitLocations = !_showAllHitLocations"
+                                    class="w-full py-2.5 text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-hover transition-colors border-t border-line flex items-center justify-center gap-1.5">
+                                <i class="ph-bold @(_showAllHitLocations ? "ph-caret-up" : "ph-caret-down")"></i>
+                                @if (_showAllHitLocations)
+                                {
+                                    <span>@AppState.Loc("WEBFRONT_ADV_STATS_SHOW_LESS")</span>
+                                }
+                                else
+                                {
+                                    <span>@(AppState.Loc("WEBFRONT_ADV_STATS_SHOW_ALL").FormatExt(Stats.TopHitLocations.Count))</span>
+                                }
+                            </button>
+                        }
 
-                        <!-- Hit Location Model Canvas -->
-                        <div
-                            class="relative h-64 bg-gradient-to-t from-surface-alt to-transparent flex items-center justify-center p-4"
-                            id="hitlocation_container">
+                        <!-- Hit location model canvas (ids are used by advanced_stats.js) -->
+                        <div class="relative h-64 flex items-center justify-center p-4 border-t border-line bg-surface-alt/40"
+                             id="hitlocation_container">
                             <canvas id="hitlocation_model" class="w-full h-full object-contain"></canvas>
                         </div>
-                    </div>
+                    </section>
 
                     <!-- Weapons Used -->
-                    <div
-                        class="bg-surface rounded-xl shadow-lg border border-line overflow-hidden flex flex-col h-full">
-                        <div class="p-6 border-b border-line">
-                            <div class="flex items-center gap-3">
-                                <h4 class="text-lg font-bold text-foreground">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h4>
-                            </div>
+                    <section class="rounded-xl bg-surface border border-line overflow-hidden flex flex-col">
+                        <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                            <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADV_STATS_WEAP_USAGE")</h2>
+                            <span class="font-mono text-xs text-muted tabular-nums">@Stats.TopWeapons.Count</span>
                         </div>
 
-                        <div class="overflow-x-auto flex-grow">
-                            <table class="w-full text-left text-sm text-subtle">
-                                <thead class="bg-surface-alt text-xs uppercase font-medium text-muted">
-                                <tr>
-                                    <th class="px-6 py-4">@AppState.Loc("WEBFRONT_ADV_STATS_WEAPON")</th>
-                                    <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_KILLS")</th>
-                                    <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
-                                    <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
-                                    <th class="px-6 py-4 text-right">@AppState.Loc("WEBFRONT_ADV_STATS_USAGE")</th>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                <tr class="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                                    <th class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_WEAPON")</th>
+                                    <th class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_KILLS")</th>
+                                    <th class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_HITS")</th>
+                                    <th class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_DAMAGE")</th>
+                                    <th class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADV_STATS_USAGE")</th>
                                 </tr>
                                 </thead>
                                 <tbody class="divide-y divide-line">
@@ -249,47 +236,45 @@
                                 }
                                 @foreach (var weapon in displayedWeapons)
                                 {
-                                    <tr class="hover:bg-surface-hover/30 transition-colors">
-                                        <td class="px-6 py-3">
-                                            <div class="flex flex-col">
-                                                <span
-                                                    class="font-medium text-foreground">@weapon.Name</span>
-                                                <span
-                                                    class="text-xs text-muted">@(weapon.AttachmentName ?? "--")</span>
+                                    <tr class="hover:bg-surface-hover transition-colors">
+                                        <td class="px-4 py-2.5 align-middle">
+                                            <div class="flex flex-col min-w-0">
+                                                <span class="font-medium text-foreground truncate">@weapon.Name</span>
+                                                <span class="text-xs text-muted truncate">@(weapon.AttachmentName ?? "--")</span>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-3 text-right font-mono">@weapon.Kills.ToNumericalString()</td>
-                                        <td class="px-6 py-3 text-right font-mono">@weapon.Hits.ToNumericalString()</td>
-                                        <td class="px-6 py-3 text-right font-mono text-subtle">@weapon.Damage.ToNumericalString()</td>
-                                        <td class="px-6 py-3 text-right font-mono text-subtle">@(weapon.UsageSeconds.HasValue ? TimeSpan.FromSeconds(weapon.UsageSeconds.Value).ToString(@"h\:mm\:ss") : "--")</td>
+                                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums">@weapon.Kills.ToNumericalString()</td>
+                                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums">@weapon.Hits.ToNumericalString()</td>
+                                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-muted">@weapon.Damage.ToNumericalString()</td>
+                                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-muted whitespace-nowrap">@(weapon.UsageSeconds.HasValue ? TimeSpan.FromSeconds(weapon.UsageSeconds.Value).ToString(@"h\:mm\:ss") : "--")</td>
                                     </tr>
                                 }
                                 </tbody>
                             </table>
-                            @if (Stats.TopWeapons.Count > DefaultTableRowCount)
-                            {
-                                <button @onclick="() => _showAllWeapons = !_showAllWeapons"
-                                        class="w-full py-3 text-sm text-muted hover:text-foreground hover:bg-surface-alt/50 transition-colors border-t border-line flex items-center justify-center gap-2">
-                                    <i class="ph @(_showAllWeapons ? "ph-caret-up" : "ph-caret-down")"></i>
-                                    @if (_showAllWeapons)
-                                    {
-                                        <span>@AppState.Loc("WEBFRONT_ADV_STATS_SHOW_LESS")</span>
-                                    }
-                                    else
-                                    {
-                                        <span>@(AppState.Loc("WEBFRONT_ADV_STATS_SHOW_ALL").FormatExt(Stats.TopWeapons.Count))</span>
-                                    }
-                                </button>
-                            }
                         </div>
-                    </div>
+                        @if (Stats.TopWeapons.Count > DefaultTableRowCount)
+                        {
+                            <button type="button" @onclick="() => _showAllWeapons = !_showAllWeapons"
+                                    class="w-full py-2.5 text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-hover transition-colors border-t border-line flex items-center justify-center gap-1.5">
+                                <i class="ph-bold @(_showAllWeapons ? "ph-caret-up" : "ph-caret-down")"></i>
+                                @if (_showAllWeapons)
+                                {
+                                    <span>@AppState.Loc("WEBFRONT_ADV_STATS_SHOW_LESS")</span>
+                                }
+                                else
+                                {
+                                    <span>@(AppState.Loc("WEBFRONT_ADV_STATS_SHOW_ALL").FormatExt(Stats.TopWeapons.Count))</span>
+                                }
+                            </button>
+                        }
+                    </section>
                 </div>
 
             </div>
         </div>
 
         @* ================================================================ *@
-        @* SIDEBAR - Fixed position *@
+        @* SIDEBAR - server selector *@
         @* ================================================================ *@
         <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
             <div class="sticky top-6">
@@ -303,20 +288,17 @@
 
     private RenderFragment RenderStatCard(string name, string? value, string? valueColor = null) => __builder =>
     {
-        <div
-            class="relative bg-surface rounded-xl border border-line p-3 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-            <div class="text-base font-bold text-foreground mb-0.5 overflow-hidden">
+        <div class="rounded-xl bg-surface border border-line px-4 py-3.5 min-w-0">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-muted truncate" title="@name">@name</div>
+            <div class="mt-1 text-2xl font-extrabold tracking-tight tabular-nums leading-none truncate @(valueColor ?? "text-foreground")" title="@value">
                 @if (string.IsNullOrWhiteSpace(value))
                 {
-                    <span class="text-subtle">&mdash;</span>
+                    <span class="text-muted">&mdash;</span>
                 }
                 else
                 {
-                    <span class="@(valueColor ?? "text-primary") font-mono truncate" title="@value">@value</span>
+                    @value
                 }
-            </div>
-            <div class="text-[9px] font-medium uppercase tracking-wider text-muted truncate">
-                @name
             </div>
         </div>
     };

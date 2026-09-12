@@ -3,11 +3,11 @@
 
 @if (ShowHeader)
 {
-    <div class="mb-6 flex items-center gap-3">
-        <h4 class="text-2xl font-bold text-foreground">
+    <div class="flex flex-wrap items-end gap-x-3 gap-y-1 mb-4">
+        <h2 class="text-lg font-bold tracking-tight text-foreground">
             @(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))
-        </h4>
-        <span class="text-muted text-lg">
+        </h2>
+        <span class="text-sm text-muted">
             <ColorCode Value="@Model.ServerName"/>
         </span>
     </div>
@@ -15,166 +15,171 @@
 
 @if (!Model.ClientInfo.Any())
 {
-    <div class="bg-surface rounded-lg p-12 text-center border border-line">
-        <i class="ph ph-users text-4xl text-secondary mb-4"></i>
-        <div class="text-muted text-lg">@(AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS"))</div>
-    </div>
+    <section class="rounded-xl bg-surface border border-line overflow-hidden">
+        <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+            <i class="ph ph-users text-3xl text-secondary"></i>
+            <span>@(AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS"))</span>
+        </div>
+    </section>
 }
 else
 {
-    <!-- Team-based layout -->
-    @if (HasTeamPlayers)
-    {
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
-            <!-- Allies Column (normal order) -->
-            <div class="bg-surface rounded-lg border @GetTeamBorderClass(EFClient.TeamType.Allies) shadow-sm overflow-hidden">
-                <div class="px-4 py-2 bg-sky-900/20 border-b border-sky-500/30 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="ph ph-users text-sky-400"></i>
-                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Allies)">@AppState.Loc("WEBFRONT_TEAM_ALLIES")</span>
-                        <span class="text-xs text-muted">(@AlliesPlayers.Count())</span>
+    <div class="space-y-4">
+        <!-- Team-based layout -->
+        @if (HasTeamPlayers)
+        {
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <!-- Allies -->
+                <section class="rounded-xl bg-surface border @GetTeamBorderClass(EFClient.TeamType.Allies) overflow-hidden">
+                    <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                        <i class="ph-fill ph-shield-check text-base @GetTeamColorClass(EFClient.TeamType.Allies)"></i>
+                        <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider @GetTeamColorClass(EFClient.TeamType.Allies)">
+                            @AppState.Loc("WEBFRONT_TEAM_ALLIES")
+                            <span class="font-mono tabular-nums text-muted ml-1">@AlliesPlayers.Count()</span>
+                        </h2>
+                        <span class="font-mono tabular-nums text-sm font-bold @GetTeamColorClass(EFClient.TeamType.Allies)">@AlliesTeamScore</span>
                     </div>
-                    <span class="font-mono font-bold text-sky-400">@AlliesTeamScore</span>
-                </div>
-                @if (AlliesPlayers.Any())
-                {
-                    @RenderPlayerTable(AlliesPlayers)
-                }
-                else
-                {
-                    <div class="p-4 text-center text-muted text-sm">@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</div>
-                }
-            </div>
+                    @if (AlliesPlayers.Any())
+                    {
+                        @RenderPlayerTable(AlliesPlayers)
+                    }
+                    else
+                    {
+                        <div class="px-4 py-6 text-center text-muted text-sm">@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</div>
+                    }
+                </section>
 
-            <!-- Axis Column (reversed order for symmetry on desktop) -->
-            <div class="bg-surface rounded-lg border @GetTeamBorderClass(EFClient.TeamType.Axis) shadow-sm overflow-hidden">
-                <!-- Mobile: left-aligned, Desktop: right-aligned for symmetry -->
-                <div class="px-4 py-2 bg-rose-900/20 border-b border-rose-500/30 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="ph ph-users text-rose-400"></i>
-                        <span class="font-semibold @GetTeamColorClass(EFClient.TeamType.Axis)">@AppState.Loc("WEBFRONT_TEAM_AXIS")</span>
-                        <span class="text-xs text-muted">(@AxisPlayers.Count())</span>
+                <!-- Axis -->
+                <section class="rounded-xl bg-surface border @GetTeamBorderClass(EFClient.TeamType.Axis) overflow-hidden">
+                    <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                        <i class="ph-fill ph-shield-warning text-base @GetTeamColorClass(EFClient.TeamType.Axis)"></i>
+                        <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider @GetTeamColorClass(EFClient.TeamType.Axis)">
+                            @AppState.Loc("WEBFRONT_TEAM_AXIS")
+                            <span class="font-mono tabular-nums text-muted ml-1">@AxisPlayers.Count()</span>
+                        </h2>
+                        <span class="font-mono tabular-nums text-sm font-bold @GetTeamColorClass(EFClient.TeamType.Axis)">@AxisTeamScore</span>
                     </div>
-                    <span class="font-mono font-bold text-rose-400">@AxisTeamScore</span>
+                    @if (AxisPlayers.Any())
+                    {
+                        @RenderPlayerTable(AxisPlayers)
+                    }
+                    else
+                    {
+                        <div class="px-4 py-6 text-center text-muted text-sm">@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</div>
+                    }
+                </section>
+            </div>
+        }
+        else if (UnknownPlayers.Any())
+        {
+            <!-- No team players but has Unknown players - show them without header -->
+            <section class="rounded-xl bg-surface border border-line overflow-hidden">
+                @RenderPlayerTable(UnknownPlayers)
+            </section>
+        }
+
+        <!-- Unknown players (no team assigned) -->
+        @if (HasTeamPlayers && UnknownPlayers.Any())
+        {
+            <section class="rounded-xl bg-surface border border-line overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                    <i class="ph ph-question text-base text-muted"></i>
+                    <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                        @AppState.Loc("WEBFRONT_TEAM_UNASSIGNED")
+                        <span class="font-mono tabular-nums ml-1">@UnknownPlayers.Count()</span>
+                    </h2>
                 </div>
-                @if (AxisPlayers.Any())
-                {
-                    @RenderPlayerTable(AxisPlayers)
-                }
-                else
-                {
-                    <div class="p-4 text-center text-muted text-sm">@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</div>
-                }
-            </div>
-        </div>
-    }
-    else if (UnknownPlayers.Any())
-    {
-        <!-- No team players but has Unknown players - show them without header -->
-        <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-4">
-            @RenderPlayerTable(UnknownPlayers)
-        </div>
-    }
+                @RenderPlayerTable(UnknownPlayers)
+            </section>
+        }
 
-    <!-- Unknown Players (no team assigned) -->
-    @if (HasTeamPlayers && UnknownPlayers.Any())
-    {
-        <div class="bg-surface rounded-lg border border-line shadow-sm overflow-hidden mb-4">
-            <div class="px-4 py-2 bg-surface-alt/50 border-b border-line flex items-center gap-2">
-                <i class="ph ph-question text-muted"></i>
-                <span class="font-semibold text-muted">@AppState.Loc("WEBFRONT_TEAM_UNASSIGNED")</span>
-                <span class="text-xs text-muted">(@UnknownPlayers.Count())</span>
-            </div>
-            @RenderPlayerTable(UnknownPlayers)
-        </div>
-    }
-
-    <!-- Spectators -->
-    @if (SpectatorPlayers.Any())
-    {
-        <div class="bg-surface rounded-lg border border-secondary-700/50 shadow-sm overflow-hidden">
-            <div class="px-4 py-2 bg-secondary-800/30 border-b border-secondary-700/50 flex items-center gap-2">
-                <i class="ph ph-eye text-secondary-500"></i>
-                <span class="font-semibold text-secondary-500">@AppState.Loc("WEBFRONT_TEAM_SPECTATORS")</span>
-                <span class="text-xs text-muted">(@SpectatorPlayers.Count())</span>
-            </div>
-            @RenderPlayerTable(SpectatorPlayers, isSpectator: true)
-        </div>
-    }
+        <!-- Spectators -->
+        @if (SpectatorPlayers.Any())
+        {
+            <section class="rounded-xl bg-surface border border-line overflow-hidden">
+                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                    <i class="ph ph-eye text-base @GetTeamColorClass(EFClient.TeamType.Spectator)"></i>
+                    <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider @GetTeamColorClass(EFClient.TeamType.Spectator)">
+                        @AppState.Loc("WEBFRONT_TEAM_SPECTATORS")
+                        <span class="font-mono tabular-nums text-muted ml-1">@SpectatorPlayers.Count()</span>
+                    </h2>
+                </div>
+                @RenderPlayerTable(SpectatorPlayers, isSpectator: true)
+            </section>
+        }
+    </div>
 }
 
 @code {
 
     private RenderFragment RenderPlayerTable(IEnumerable<ClientScoreboardInfo> clients, bool isSpectator = false) => __builder =>
     {
-        <div class="overflow-x-auto">
-            <!-- Desktop Table -->
-            <table class="w-full text-sm text-left hidden md:table">
-                <thead class="text-[10px] text-muted uppercase bg-surface-alt/30 border-b border-line">
-                <tr>
-                    <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground" @onclick="@(() => Sort("ClientName"))">
-                        <div class="pl-1">@AppState.Loc("WEBFRONT_TABLE_PLAYER")</div>
+        var clientScoreboardInfos = clients as ClientScoreboardInfo[] ?? clients.ToArray();
+
+        <!-- Desktop table -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                <tr class="text-[10px] font-semibold uppercase tracking-wider text-muted select-none">
+                    <th class="text-left px-4 py-2.5 border-b border-line cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("ClientName"))">
+                        <span class="inline-flex items-center">@AppState.Loc("WEBFRONT_TABLE_PLAYER") @GetSortIndicator("ClientName")</span>
                     </th>
                     @if (!isSpectator)
                     {
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16" @onclick="@(() => Sort("Score"))">
-                            <div class="flex items-center">Score @GetSortIndicator("Score")</div>
+                        <th class="text-right px-4 py-2.5 border-b border-line w-20 cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("Score"))">
+                            <span class="inline-flex items-center justify-end">@AppState.LocOr("WEBFRONT_TABLE_SCORE", "Score") @GetSortIndicator("Score")</span>
                         </th>
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("Kills"))">
-                            <div class="flex items-center">K @GetSortIndicator("Kills")</div>
+                        <th class="text-right px-4 py-2.5 border-b border-line w-16 cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("Kills"))">
+                            <span class="inline-flex items-center justify-end">@AppState.LocOr("WEBFRONT_TABLE_KILLS_SHORT", "K") @GetSortIndicator("Kills")</span>
                         </th>
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("Deaths"))">
-                            <div class="flex items-center">D @GetSortIndicator("Deaths")</div>
+                        <th class="text-right px-4 py-2.5 border-b border-line w-16 cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("Deaths"))">
+                            <span class="inline-flex items-center justify-end">@AppState.LocOr("WEBFRONT_TABLE_DEATHS_SHORT", "D") @GetSortIndicator("Deaths")</span>
                         </th>
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-16" @onclick="@(() => Sort("Kdr"))">
-                            <div class="flex items-center">K/D @GetSortIndicator("Kdr")</div>
+                        <th class="text-right px-4 py-2.5 border-b border-line w-20 cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("Kdr"))">
+                            <span class="inline-flex items-center justify-end">@AppState.LocOr("WEBFRONT_TABLE_KDR_SHORT", "K/D") @GetSortIndicator("Kdr")</span>
                         </th>
-                        <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground w-14" @onclick="@(() => Sort("ZScore"))">
-                            <div class="flex items-center">Z @GetSortIndicator("ZScore")</div>
+                        <th class="text-right px-4 py-2.5 border-b border-line w-16 cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("ZScore"))">
+                            <span class="inline-flex items-center justify-end">@AppState.LocOr("WEBFRONT_TABLE_RATING_SHORT", "Z") @GetSortIndicator("ZScore")</span>
                         </th>
                     }
-
-                    <th class="px-3 py-2 font-medium cursor-pointer hover:text-foreground text-right w-16"
-                        @onclick="@(() => Sort("Ping"))">
-                        <div class="flex items-center justify-end">Ping @GetSortIndicator("Ping")</div>
+                    <th class="text-right px-4 py-2.5 border-b border-line w-20 cursor-pointer hover:text-foreground transition-colors" @onclick="@(() => Sort("Ping"))">
+                        <span class="inline-flex items-center justify-end">@AppState.LocOr("WEBFRONT_TABLE_PING", "Ping") @GetSortIndicator("Ping")</span>
                     </th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-line/50">
-
-                @{
-                    var clientScoreboardInfos = clients as ClientScoreboardInfo[] ?? clients.ToArray();
-                }
+                <tbody class="divide-y divide-line">
                 @foreach (var client in clientScoreboardInfos)
                 {
-                    <tr class="hover:bg-surface-hover/30 transition-colors">
-                        <td class="px-3 py-2 truncate">
-                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                <Authorized>
-                                    <a href="/client/@client.ClientId"
-                                       class="font-medium hover:text-primary transition-colors @AppState.GetLevelColorClass(client.Level)">
-                                        <ColorCode Value="@client.ClientName"/>
-                                    </a>
-                                </Authorized>
-                                <NotAuthorized>
-                                    <a href="/client/@client.ClientId"
-                                       class="font-medium text-foreground hover:text-primary transition-colors">
-                                        <ColorCode Value="@client.ClientName"/>
-                                    </a>
-                                </NotAuthorized>
-                            </AuthorizeView>
-                            @if (client.ZScore is not null and not 0)
-                            {
-                                <i class="ph-fill ph-lightning text-accent ml-1 text-xs" title="Ranked"></i>
-                            }
+                    <tr class="hover:bg-surface-hover transition-colors">
+                        <td class="px-4 py-2.5 align-middle">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                    <Authorized>
+                                        <a href="/client/@client.ClientId"
+                                           class="font-semibold truncate hover:text-primary transition-colors @AppState.GetLevelColorClass(client.Level)">
+                                            <ColorCode Value="@client.ClientName"/>
+                                        </a>
+                                    </Authorized>
+                                    <NotAuthorized>
+                                        <a href="/client/@client.ClientId"
+                                           class="font-semibold truncate text-foreground hover:text-primary transition-colors">
+                                            <ColorCode Value="@client.ClientName"/>
+                                        </a>
+                                    </NotAuthorized>
+                                </AuthorizeView>
+                                @if (client.ZScore is not null and not 0)
+                                {
+                                    <i class="ph-fill ph-lightning text-accent text-xs shrink-0" title="@AppState.LocOr("WEBFRONT_SCOREBOARD_RANKED", "Ranked")"></i>
+                                }
+                            </div>
                         </td>
                         @if (!isSpectator)
                         {
-                            <td class="px-3 py-2 text-subtle font-mono text-xs">@client.Score</td>
-                            <td class="px-3 py-2 text-success font-mono text-xs">@(client.Kills ?? 0)</td>
-                            <td class="px-3 py-2 text-error font-mono text-xs">@(client.Deaths ?? 0)</td>
-                            <td class="px-3 py-2 text-subtle font-mono text-xs">@Math.Round(client.Kdr ?? 0, 2)</td>
-                            <td class="px-3 py-2 text-subtle font-mono text-xs">
+                            <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-foreground">@client.Score</td>
+                            <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-success">@(client.Kills ?? 0)</td>
+                            <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-error">@(client.Deaths ?? 0)</td>
+                            <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-subtle">@Math.Round(client.Kdr ?? 0, 2)</td>
+                            <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums">
                                 @if (client.ZScore is not null and not 0)
                                 {
                                     <span class="text-accent">@Math.Round(client.ZScore.Value, 1)</span>
@@ -185,75 +190,66 @@ else
                                 }
                             </td>
                         }
-
-                        <td class="px-3 py-2 text-right">
-                            <span
-                                class="@(client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error") font-mono text-xs">
-                                @client.Ping
-                            </span>
+                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums @(client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error")">
+                            @client.Ping
                         </td>
                     </tr>
                 }
                 </tbody>
             </table>
+        </div>
 
-            <!-- Mobile Grid (like ClientActivity) -->
-            <div class="md:hidden">
-                <!-- Mobile Header -->
-                <div
-                    class="grid @(isSpectator ? "grid-cols-[1fr_40px]" : "grid-cols-[1fr_repeat(4,minmax(30px,40px))]") gap-1 px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
-                    <div class="pl-1">Player</div>
-                    @if (!isSpectator)
-                    {
-                        <div class="text-center" title="Score">Scr</div>
-                        <div class="text-center" title="Kills">K</div>
-                        <div class="text-center" title="Deaths">D</div>
-                    }
-                    <div class="text-center">Ping</div>
-                </div>
+        <!-- Mobile grid -->
+        <div class="md:hidden">
+            <div class="grid @(isSpectator ? "grid-cols-[minmax(0,1fr)_3rem]" : "grid-cols-[minmax(0,1fr)_repeat(4,2.75rem)]") gap-1 px-4 py-2 border-b border-line text-[10px] font-semibold uppercase tracking-wider text-muted select-none">
+                <div>@AppState.Loc("WEBFRONT_TABLE_PLAYER")</div>
+                @if (!isSpectator)
+                {
+                    <div class="text-right" title="@AppState.LocOr("WEBFRONT_TABLE_SCORE", "Score")">@AppState.LocOr("WEBFRONT_TABLE_SCORE_SHORT", "Scr")</div>
+                    <div class="text-right" title="@AppState.Loc("WEBFRONT_STATS_KILLS")">@AppState.LocOr("WEBFRONT_TABLE_KILLS_SHORT", "K")</div>
+                    <div class="text-right" title="@AppState.Loc("WEBFRONT_STATS_DEATHS")">@AppState.LocOr("WEBFRONT_TABLE_DEATHS_SHORT", "D")</div>
+                }
+                <div class="text-right">@AppState.LocOr("WEBFRONT_TABLE_PING", "Ping")</div>
+            </div>
 
-                <!-- Mobile Rows -->
-                <div class="p-1 space-y-0.5">
-                    @foreach (var client in clientScoreboardInfos)
-                    {
-                        <div
-                            class="grid @(isSpectator ? "grid-cols-[1fr_40px]" : "grid-cols-[1fr_repeat(4,minmax(30px,40px))]") gap-1 items-center px-2 rounded text-[11px] font-mono hover:bg-surface-hover/80 transition-colors">
-                            <!-- Player -->
-                            <div class="flex items-center min-w-0 pr-2">
-                                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                    <Authorized>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass(client.Level)">
-                                            <ColorCode Value="@client.ClientName"/>
-                                        </a>
-                                    </Authorized>
-                                    <NotAuthorized>
-                                        <a href="/client/@client.ClientId"
-                                           class="font-bold text-muted truncate hover:text-foreground transition-colors">
-                                            <ColorCode Value="@client.ClientName"/>
-                                        </a>
-                                    </NotAuthorized>
-                                </AuthorizeView>
-                                @if (client.ZScore is not null and not 0)
-                                {
-                                    <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
-                                }
-                            </div>
-
-                            <!-- Stats -->
-                            @if (!isSpectator)
+            <div class="divide-y divide-line">
+                @foreach (var client in clientScoreboardInfos)
+                {
+                    <div class="grid @(isSpectator ? "grid-cols-[minmax(0,1fr)_3rem]" : "grid-cols-[minmax(0,1fr)_repeat(4,2.75rem)]") gap-1 items-center px-4 py-2 text-sm font-mono tabular-nums hover:bg-surface-hover transition-colors">
+                        <!-- Player -->
+                        <div class="flex items-center gap-1.5 min-w-0 pr-2">
+                            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                                <Authorized>
+                                    <a href="/client/@client.ClientId"
+                                       class="font-sans font-semibold truncate hover:text-primary transition-colors @AppState.GetLevelColorClass(client.Level)">
+                                        <ColorCode Value="@client.ClientName"/>
+                                    </a>
+                                </Authorized>
+                                <NotAuthorized>
+                                    <a href="/client/@client.ClientId"
+                                       class="font-sans font-semibold truncate text-foreground hover:text-primary transition-colors">
+                                        <ColorCode Value="@client.ClientName"/>
+                                    </a>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                            @if (client.ZScore is not null and not 0)
                             {
-                                <div class="text-center text-muted">@client.Score</div>
-                                <div class="text-center text-success/80 font-bold">@(client.Kills ?? 0)</div>
-                                <div class="text-center text-error/80 font-bold">@(client.Deaths ?? 0)</div>
+                                <i class="ph-fill ph-lightning text-accent text-xs shrink-0"></i>
                             }
-                            <div class="text-center text-muted">@client.Ping</div>
                         </div>
-                    }
-                </div>
+
+                        <!-- Stats -->
+                        @if (!isSpectator)
+                        {
+                            <div class="text-right text-foreground">@client.Score</div>
+                            <div class="text-right text-success">@(client.Kills ?? 0)</div>
+                            <div class="text-right text-error">@(client.Deaths ?? 0)</div>
+                        }
+                        <div class="text-right @(client.Ping < 100 ? "text-success" : client.Ping < 200 ? "text-warning" : "text-error")">@client.Ping</div>
+                    </div>
+                }
             </div>
         </div>
     };
-
 
 }

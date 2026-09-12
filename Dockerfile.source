@@ -36,12 +36,18 @@ RUN cd WebfrontCore/wwwroot/lib/phosphor-icons/src \
 RUN dotnet tool install Excubo.WebCompiler --global \
  && webcompiler -r WebfrontCore/wwwroot/css/src -o WebfrontCore/wwwroot/css/ -m disable -z disable
 
-# JS/CSS bundles
+# JS/CSS bundles (dotnet-bundle targets .NET 8: roll forward to the SDK runtime,
+# or install the 8.0 runtime if roll-forward is refused)
 RUN curl -sL -o /tmp/dotnet-bundle.zip https://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip \
  && unzip -q /tmp/dotnet-bundle.zip -d /tmp/bundle \
  && cd /tmp/bundle \
- && dotnet dotnet-bundle.dll clean /src/WebfrontCore/bundleconfig.json \
- && dotnet dotnet-bundle.dll /src/WebfrontCore/bundleconfig.json
+ && ( ( DOTNET_ROLL_FORWARD=Major dotnet dotnet-bundle.dll clean /src/WebfrontCore/bundleconfig.json \
+        && DOTNET_ROLL_FORWARD=Major dotnet dotnet-bundle.dll /src/WebfrontCore/bundleconfig.json ) \
+      || ( curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --runtime dotnet --channel 8.0 --install-dir /usr/share/dotnet \
+        && dotnet dotnet-bundle.dll clean /src/WebfrontCore/bundleconfig.json \
+        && dotnet dotnet-bundle.dll /src/WebfrontCore/bundleconfig.json ) ) \
+ && test -s /src/WebfrontCore/wwwroot/css/app.min.css \
+ && test -s /src/WebfrontCore/wwwroot/js/app.min.js
 
 # Plugins
 RUN cd Plugins \

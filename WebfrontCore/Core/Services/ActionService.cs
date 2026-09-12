@@ -378,7 +378,7 @@ public class ActionService : IActionService
             command = $"{_appConfig.CommandPrefix}{_tempbanCommandName} @{targetId} {durationValue} {finalReason}";
         }
 
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private async Task<ActionInfo> GetEditInfo(int? targetId)
@@ -413,7 +413,7 @@ public class ActionService : IActionService
         var level = formData["level"]?.ToString();
 
         var command = $"{_appConfig.CommandPrefix}{_setLevelCommandName} @{targetId} {level}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetKickInfo()
@@ -447,7 +447,7 @@ public class ActionService : IActionService
         var final = !string.IsNullOrEmpty(reason) ? reason : preset;
 
         var command = $"{_appConfig.CommandPrefix}{_kickCommandName} @{targetId} {final}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private async Task<ActionInfo> GetAddClientNoteInfo(int? targetId)
@@ -487,7 +487,7 @@ public class ActionService : IActionService
         var note = formData["note"]?.ToString();
 
         var command = $"{_appConfig.CommandPrefix}{_addClientNoteCommandName} @{targetId} {note}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetFlagInfo()
@@ -520,7 +520,7 @@ public class ActionService : IActionService
         var final = !string.IsNullOrEmpty(reason) ? reason : preset;
 
         var command = $"{_appConfig.CommandPrefix}{_flagCommandName} @{targetId} {final}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetUnflagInfo()
@@ -543,7 +543,7 @@ public class ActionService : IActionService
         var reason = formData.TryGetValue("Reason", out var r) ? r?.ToString() : null;
 
         var command = $"{_appConfig.CommandPrefix}{_unflagCommandName} @{targetId} {reason}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetUnbanInfo()
@@ -566,7 +566,7 @@ public class ActionService : IActionService
         var reason = formData.TryGetValue("Reason", out var r) ? r?.ToString() : null;
 
         var command = $"{_appConfig.CommandPrefix}{_unbanCommandName} @{targetId} {reason}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetLoginInfo()
@@ -640,7 +640,7 @@ public class ActionService : IActionService
         var tag = formData["clientTag"]?.ToString();
 
         var command = $"{_appConfig.CommandPrefix}{_setClientTagCommandName} @{targetId} {tag}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetOfflineMessageInfo()
@@ -670,7 +670,7 @@ public class ActionService : IActionService
         var message = formData["message"]?.ToString();
 
         var command = $"{_appConfig.CommandPrefix}{_offlineMessageCommandName} @{targetId} {message}";
-        return await ExecuteCommand(command, origin);
+        return await ExecuteCommand(command, origin, targetId);
     }
 
     private ActionInfo GetGenerateLoginTokenInfo()
@@ -796,9 +796,14 @@ public class ActionService : IActionService
         return new Dictionary<string, string> { { "", "" } }.Concat(reasons).ToDictionary(k => k.Key, k => k.Value);
     }
 
-    private async Task<(bool, string)> ExecuteCommand(string command, EFClient origin)
+    private async Task<(bool, string)> ExecuteCommand(string command, EFClient origin, int? targetId = null)
     {
-        var server = _manager.Servers.FirstOrDefault();
+        // Run the command on the server the target is currently playing on, so game-specific
+        // RCon commands (kick, tempban, ban) are built for the right game. Fall back to the first server.
+        var targetServer = targetId.HasValue
+            ? _manager.GetActiveClients().FirstOrDefault(client => client.ClientId == targetId.Value)?.CurrentServer
+            : null;
+        var server = targetServer ?? _manager.Servers.FirstOrDefault();
         if (server == null)
             throw new Exception("No servers available");
 

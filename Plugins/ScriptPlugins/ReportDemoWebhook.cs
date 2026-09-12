@@ -11,11 +11,11 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
-using Data.Models.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
+using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Interfaces;
@@ -173,7 +173,9 @@ public class ReportDemoWebhookPlugin : IPluginV2
                 IsVoteBan = isVoteBan,
                 OffenderName = client.CleanedName,
                 OffenderId = client.ClientId,
-                PunisherName = penalty.Punisher?.CleanedName ?? "Unknown",
+                PunisherName = (penalty.Punisher as EFClient)?.CleanedName
+                               ?? penalty.Punisher?.CurrentAlias?.Name?.StripColors()
+                               ?? "Unknown",
                 PunisherId = penalty.Punisher?.ClientId ?? 0,
                 Reason = string.IsNullOrWhiteSpace(penalty.Offense) ? "No reason given" : penalty.Offense.StripColors(),
                 When = DateTime.UtcNow,

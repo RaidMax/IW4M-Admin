@@ -55,6 +55,15 @@ RUN cd Plugins \
       /p:Configuration=Prerelease /p:Platform="x64" /p:DeployOnBuild=false /p:PackageAsSingleFile=false \
       /p:SkipInvalidConfigurations=true /p:Version=${BUILD_NUMBER} --no-restore
 
+# Keep only the plugin assemblies themselves in BUILD/Plugins. Project references pull
+# SharedLibraryCore/Data/EF/etc. into the publish output, and PostBuild.sh would otherwise
+# treat every DLL found there as a plugin and strip it out of Lib/.
+RUN keep=$(for p in Plugins/*/*.csproj; do n=$(grep -oP '(?<=<AssemblyName>)[^<]+' "$p" | head -1); echo "${n:-$(basename "${p%.csproj}")}.dll"; done | sort -u) \
+ && cd BUILD/Plugins \
+ && for f in *.dll; do echo "$keep" | grep -qx "$f" || rm -f "$f"; done \
+ && rm -f *.pdb *.json *.xml \
+ && echo "Plugin assemblies kept:" && ls
+
 # Application
 RUN dotnet publish Application/Application.csproj -c Prerelease -o /publish \
       /p:Version=${BUILD_NUMBER} /p:Configuration=Prerelease /p:Platform="x64" --no-restore
@@ -67,7 +76,11 @@ RUN mkdir -p /publish/Localization \
 
 # Post-build layout (Lib/, Plugins/, Configuration/)
 RUN chmod +x Application/BuildScripts/PostBuild.sh \
- && bash Application/BuildScripts/PostBuild.sh /publish /src
+ && bash Application/BuildScripts/PostBuild.sh /publish /src \
+ && test -f /publish/Lib/SharedLibraryCore.dll \
+ && test -f /publish/Lib/IW4MAdmin.dll \
+ && test -f /publish/Lib/WebfrontCore.dll \
+ && echo "Lib assemblies: $(ls /publish/Lib/*.dll | wc -l)"
 
 # Extra content, mirroring the CI "Move extra content" step
 RUN printf '#!/bin/bash\nexport DOTNET_CLI_TELEMETRY_OPTOUT=1\ndotnet Lib/IW4MAdmin.dll\n' > /publish/StartIW4MAdmin.sh \

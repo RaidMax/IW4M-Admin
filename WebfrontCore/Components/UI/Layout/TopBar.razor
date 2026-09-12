@@ -23,10 +23,10 @@
     </a>
 
     <!-- Desktop breadcrumb -->
-    <div class="hidden md:flex items-center gap-2 text-[15px] min-w-0">
-        <a href="/" class="text-muted hover:text-foreground transition-colors truncate">@AppState.WebfrontBranding</a>
-        <i class="ph ph-caret-right text-xs text-muted"></i>
-        <span class="font-semibold text-foreground truncate">@PageTitle</span>
+    <div class="hidden md:flex items-center gap-2 text-[15px] min-w-0 shrink">
+        <a href="/" class="hidden lg:inline text-muted hover:text-foreground transition-colors truncate">@AppState.WebfrontBranding</a>
+        <i class="ph ph-caret-right text-xs text-muted hidden lg:inline"></i>
+        <span class="font-semibold text-foreground truncate min-w-[6rem]">@PageTitle</span>
     </div>
 
     <div class="flex-1"></div>

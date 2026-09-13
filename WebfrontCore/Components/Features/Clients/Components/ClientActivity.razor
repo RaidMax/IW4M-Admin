@@ -74,61 +74,92 @@
             </div>
 
             <div class="max-h-[220px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5 overflow-y-auto">
-                @foreach (var client in Model!.Players!.OrderByDescending(p => p.Score))
+                @if (HasTeams)
                 {
-                    var isSelf = AppState.User?.ClientId == client.ClientId;
-                    var ping = GetPingIconAndColor(client.Ping);
-
-                    <div
-                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,44px))_30px] gap-1 items-center px-2 py-0.5 rounded text-[13px] font-mono tabular-nums group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
-                        <!-- Player -->
-                        <div class="flex items-center min-w-0 pr-2">
-                            <i class="@ping.Icon @ping.Color text-[13px] mr-1.5 shrink-0"></i>
-                            <AuthorizeView
-                                Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                <Authorized>
-                                    <a href="/client/@client.ClientId"
-                                       class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((EFClient.Permission)client.LevelInt)">
-                                        <ColorCode Value="@client.Name"/>
-                                    </a>
-                                </Authorized>
-                                <NotAuthorized>
-                                    <a href="/client/@client.ClientId"
-                                       class="font-bold text-muted truncate hover:text-foreground transition-colors">
-                                        <ColorCode Value="@client.Name"/>
-                                    </a>
-                                </NotAuthorized>
-                            </AuthorizeView>
-                            @if (client.ZScore.HasValue && client.ZScore.Value != 0)
-                            {
-                                <Tooltip Text="@($"Rating: {client.ZScore:F2}")" Direction="Tooltip.TooltipDirection.Right">
-                                    <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
-                                </Tooltip>
-                            }
+                    @foreach (var team in ScoreboardTeams)
+                    {
+                        <div class="flex items-center gap-1.5 px-2 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider select-none @TeamColour(team)">
+                            <i class="ph-fill @TeamIcon(team) text-xs"></i>
+                            <span>@TeamLabel(team)</span>
+                            <span class="ml-auto font-mono tabular-nums">@TeamScore(team)</span>
                         </div>
-
-                        <!-- Stats -->
-                        <div class="text-center text-muted">@client.Score</div>
-                        <div class="text-center text-success/80 font-bold">@client.Kills</div>
-                        <div class="text-center text-error/80 font-bold">@client.Deaths</div>
-                        <div class="text-center text-muted">@client.Ping</div>
-
-                        <!-- Action -->
-                        <div class="flex justify-center">
-                            <AuthorizeView>
-                                <button @onclick:preventDefault
-                                        @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, string.Empty, null))"
-                                        class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-muted hover:text-error hover:bg-error/10 rounded transition-all"
-                                        title="@AppState.Loc("WEBFRONT_ACTION_KICK_NAME")">
-                                    <i class="ph-bold ph-sign-out text-xs"></i>
-                                </button>
-                            </AuthorizeView>
-                        </div>
-                    </div>
+                        @foreach (var client in TeamPlayers(team))
+                        {
+                            @PlayerRow(client)
+                        }
+                    }
+                    @foreach (var client in UnassignedPlayers())
+                    {
+                        @PlayerRow(client)
+                    }
+                }
+                else
+                {
+                    @foreach (var client in Model!.Players!.OrderByDescending(p => p.Score))
+                    {
+                        @PlayerRow(client)
+                    }
                 }
             </div>
         </div>
     </div>
+}
+
+@code {
+
+    private RenderFragment PlayerRow(PlayerInfo client) => __builder =>
+    {
+        var isSelf = AppState.User?.ClientId == client.ClientId;
+        var ping = GetPingIconAndColor(client.Ping);
+
+        <div
+            class="grid grid-cols-[1fr_repeat(4,minmax(30px,44px))_30px] gap-1 items-center px-2 py-0.5 rounded text-[13px] font-mono tabular-nums group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
+            <!-- Player -->
+            <div class="flex items-center min-w-0 pr-2">
+                <i class="@ping.Icon @ping.Color text-[13px] mr-1.5 shrink-0"></i>
+                <AuthorizeView
+                    Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                    <Authorized>
+                        <a href="/client/@client.ClientId"
+                           class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((EFClient.Permission)client.LevelInt)">
+                            <ColorCode Value="@client.Name"/>
+                        </a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/client/@client.ClientId"
+                           class="font-bold text-muted truncate hover:text-foreground transition-colors">
+                            <ColorCode Value="@client.Name"/>
+                        </a>
+                    </NotAuthorized>
+                </AuthorizeView>
+                @if (client.ZScore.HasValue && client.ZScore.Value != 0)
+                {
+                    <Tooltip Text="@($"Rating: {client.ZScore:F2}")" Direction="Tooltip.TooltipDirection.Right">
+                        <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
+                    </Tooltip>
+                }
+            </div>
+
+            <!-- Stats -->
+            <div class="text-center text-muted">@client.Score</div>
+            <div class="text-center text-success/80 font-bold">@client.Kills</div>
+            <div class="text-center text-error/80 font-bold">@client.Deaths</div>
+            <div class="text-center text-muted">@client.Ping</div>
+
+            <!-- Action -->
+            <div class="flex justify-center">
+                <AuthorizeView>
+                    <button @onclick:preventDefault
+                            @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, string.Empty, null))"
+                            class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-muted hover:text-error hover:bg-error/10 rounded transition-all"
+                            title="@AppState.Loc("WEBFRONT_ACTION_KICK_NAME")">
+                        <i class="ph-bold ph-sign-out text-xs"></i>
+                    </button>
+                </AuthorizeView>
+            </div>
+        </div>
+    };
+
 }
 else
 {

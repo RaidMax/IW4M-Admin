@@ -171,6 +171,8 @@ public class WebfrontDataService : IWebfrontDataService
                             Kills = GetLiveKills(server, p.client) ?? p.stats?.MatchData?.Kills ?? 0,
                             Deaths = GetLiveDeaths(server, p.client) ?? p.stats?.MatchData?.Deaths ?? 0,
                             Ping = p.client.Ping,
+                            Team = p.client.Team,
+                            TeamName = p.client.TeamName,
                             ZScore = p.stats?.ZScore
                         };
 
@@ -240,6 +242,8 @@ public class WebfrontDataService : IWebfrontDataService
                         Kills = GetLiveKills(server, p.client) ?? p.stats?.MatchData?.Kills ?? 0,
                         Deaths = GetLiveDeaths(server, p.client) ?? p.stats?.MatchData?.Deaths ?? 0,
                         Ping = p.client.Ping,
+                        Team = p.client.Team,
+                        TeamName = p.client.TeamName,
                         ZScore = p.stats?.ZScore
                     };
 
@@ -273,7 +277,8 @@ public class WebfrontDataService : IWebfrontDataService
         return new IW4MAdminInfo
         {
             TotalAvailableClientSlots = servers.Sum(server => server.MaxClients),
-            TotalOccupiedClientSlots = servers.SelectMany(server => server.GetClientsAsList()).Count(),
+            // Same figure the navigation counter uses, so the two never disagree.
+            TotalOccupiedClientSlots = servers.Sum(server => server.ClientNum),
             TotalClientCount = count,
             RecentClientCount = recentCount,
             MaxConcurrentClients = clientCount ?? 0,

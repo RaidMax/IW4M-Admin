@@ -7,7 +7,7 @@ using WebfrontCore.Core.Services;
 
 namespace WebfrontCore.Components.Features.Home.Pages;
 
-public partial class Home
+public partial class Home : IDisposable
 {
     [Inject] public required IWebfrontDataService DataService { get; set; }
     [Inject] public required AppState AppState { get; set; }
@@ -15,6 +15,51 @@ public partial class Home
     [SupplyParameterFromQuery] public string? Game { get; set; }
 
     private IW4MAdminInfo? Model;
+    private Reference.Game? _currentGame;
+    private PeriodicTimer? _refreshTimer;
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        // Keep the stat tiles in step with the live counters in the navigation rail.
+        _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        _ = RefreshLoopAsync();
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        try
+        {
+            while (_refreshTimer is not null && await _refreshTimer.WaitForNextTickAsync(_cts.Token))
+            {
+                try
+                {
+                    Model = await DataService.GetStatusAsync(_currentGame);
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch
+                {
+                    // Ignore transient refresh errors; the next tick retries.
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on dispose
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+        _refreshTimer?.Dispose();
+    }
 
     private int OccupancyPercent => Model is null || Model.TotalAvailableClientSlots <= 0
         ? 0
@@ -28,6 +73,7 @@ public partial class Home
             gameEnum = g;
         }
 
+        _currentGame = gameEnum;
         Model = await DataService.GetStatusAsync(gameEnum);
     }
 

@@ -22,7 +22,7 @@ public partial class ServerCard : IAsyncDisposable
     /// </summary>
     private static readonly HashSet<string> BannerGames = new(StringComparer.OrdinalIgnoreCase)
     {
-        "csgo", "h1", "h2m", "iw3", "iw4", "iw5", "iw6", "iw7", "shg1", "t4", "t5", "t6", "t7"
+        "csgo", "d7d", "h1", "h2m", "iw3", "iw4", "iw5", "iw6", "iw7", "shg1", "t4", "t5", "t6", "t7"
     };
 
     private const string ActionButtonClass =

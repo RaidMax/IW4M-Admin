@@ -34,6 +34,7 @@ using IW4MAdmin.Application.Services;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Alerts;
+using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Interfaces.Events;
@@ -875,6 +876,23 @@ namespace IW4MAdmin
                 else if (E.Type == GameEvent.EventType.JoinTeam)
                 {
                     E.Origin.UpdateTeam(E.Extra as string);
+                }
+
+                // Plutonium (T6, IW5, T5) never logs JT (join team) lines, so infer teams from the
+                // team columns of kill and damage lines instead. Only touch clients that are in game.
+                if (E is ClientDamageEvent damageEvent)
+                {
+                    if (E.Origin?.IsIngame == true && E.Origin.ClientNumber >= 0 &&
+                        !string.IsNullOrWhiteSpace(damageEvent.AttackerTeamName))
+                    {
+                        E.Origin.UpdateTeam(damageEvent.AttackerTeamName);
+                    }
+
+                    if (E.Target?.IsIngame == true && E.Target.ClientNumber >= 0 &&
+                        !string.IsNullOrWhiteSpace(damageEvent.VictimTeamName))
+                    {
+                        E.Target.UpdateTeam(damageEvent.VictimTeamName);
+                    }
                 }
 
                 lock (ChatHistory)

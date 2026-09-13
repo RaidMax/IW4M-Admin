@@ -9,23 +9,20 @@
 
 <PageTitle>@Loc["WEBFRONT_NAV_ANNOUNCEMENTS"] | @AppState.WebfrontBranding</PageTitle>
 
-<div class="max-w-7xl mx-auto p-4 md:p-8">
-     <!-- Header & Title -->
-    <div class="flex items-center gap-3 mb-8">
-        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-            <i class="ph ph-megaphone text-xl text-primary"></i>
+<div class="p-4 md:p-6 xl:p-8 max-w-[1680px] mx-auto space-y-5">
+    <!-- Heading -->
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@Loc["WEBFRONT_NAV_ANNOUNCEMENTS"]</h1>
+            <p class="text-sm text-muted mt-0.5">@Loc["WEBFRONT_ANNOUNCEMENT_SUBTITLE"]</p>
         </div>
-        <div>
-            <h2 class="text-2xl font-bold text-gradient-title">@Loc["WEBFRONT_NAV_ANNOUNCEMENTS"]</h2>
-             <div class="text-sm text-subtle font-medium mt-0.5">
-                 @Loc["WEBFRONT_ANNOUNCEMENT_SUBTITLE"]
-            </div>
-        </div>
-        
-        <div class="ml-auto">
-             <AuthorizeView Policy="Permissions.Announcement.Write">
-                <button class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 shadow-md shadow-primary/20 flex items-center gap-2" @onclick="ShowCreateForm">
-                    <i class="ph ph-plus"></i> @Loc["WEBFRONT_ACTION_CREATE"]
+        <div class="ml-auto flex items-center gap-2">
+            <AuthorizeView Policy="Permissions.Announcement.Write">
+                <button type="button"
+                        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-sm font-semibold text-white hover:brightness-110 transition"
+                        @onclick="ShowCreateForm">
+                    <i class="ph-bold ph-plus text-base"></i>
+                    @Loc["WEBFRONT_ACTION_CREATE"]
                 </button>
             </AuthorizeView>
         </div>
@@ -33,191 +30,193 @@
 
     @if (_showForm)
     {
-         <div class="mb-8 p-6 bg-surface/50 rounded-xl border border-line shadow-sm backdrop-blur-sm animate-in fade-in slide-in-from-top-4 duration-300">
-            <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
-                <i class="ph @(_editingId.HasValue ? "ph-pencil-simple" : "ph-plus-circle") text-primary"></i>
-                @(_editingId.HasValue ? Loc["WEBFRONT_ACTION_EDIT"] : Loc["WEBFRONT_ACTION_CREATE"])
-            </h3>
+        <section class="rounded-xl bg-surface border border-line overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                <i class="ph @(_editingId.HasValue ? "ph-pencil-simple" : "ph-plus-circle") text-muted"></i>
+                <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    @(_editingId.HasValue ? Loc["WEBFRONT_ACTION_EDIT"] : Loc["WEBFRONT_ACTION_CREATE"])
+                </h2>
+            </div>
 
-             <EditForm Model="this" OnValidSubmit="SaveAnnouncement">
-                <div class="grid grid-cols-1 gap-6">
+            <EditForm Model="this" OnValidSubmit="SaveAnnouncement" class="p-4 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@Loc["WEBFRONT_ANNOUNCEMENT_TITLE"]</label>
+                    <input type="text" @bind="_formTitle" maxlength="256"
+                           class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm text-foreground placeholder-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@Loc["WEBFRONT_ANNOUNCEMENT_CONTENT"]</label>
+                    <textarea @bind="_formContent" rows="4" maxlength="4096"
+                              class="block w-full min-h-[8rem] p-3 rounded-lg bg-background border border-line text-sm text-foreground resize-y focus:outline-none focus:border-primary"></textarea>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label class="block mb-2 text-sm font-medium text-muted">@Loc["WEBFRONT_ANNOUNCEMENT_TITLE"]</label>
-                        <input type="text" @bind="_formTitle" maxlength="256" 
-                               class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block p-2.5 placeholder-input-placeholder" />
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@Loc["WEBFRONT_ANNOUNCEMENT_START_AT"]</label>
+                        <input type="datetime-local" @bind="_formStartAt"
+                               class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                     </div>
-
                     <div>
-                        <label class="block mb-2 text-sm font-medium text-muted">@Loc["WEBFRONT_ANNOUNCEMENT_CONTENT"]</label>
-                        <textarea @bind="_formContent" rows="4" maxlength="4096"
-                                  class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block p-2.5 placeholder-input-placeholder min-h-[100px] resize-y"></textarea>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@Loc["WEBFRONT_ANNOUNCEMENT_END_AT"]</label>
+                        <input type="datetime-local" @bind="_formEndAt"
+                               class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                     </div>
+                </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-muted">@Loc["WEBFRONT_ANNOUNCEMENT_START_AT"]</label>
-                            <input type="datetime-local" @bind="_formStartAt" 
-                                   class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block p-2.5 placeholder-input-placeholder" />
-                        </div>
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-muted">@Loc["WEBFRONT_ANNOUNCEMENT_END_AT"]</label>
-                            <input type="datetime-local" @bind="_formEndAt" 
-                                   class="w-full bg-input-bg border border-input-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all duration-200 block p-2.5 placeholder-input-placeholder" />
+                <div class="flex flex-col md:flex-row gap-4 md:gap-8 pt-4 border-t border-line">
+                    <div class="flex items-center gap-3">
+                        <ToggleSwitch @bind-Value="_formIsGlobal" Id="chkGlobal" />
+                        <div class="cursor-pointer group" @onclick="() => _formIsGlobal = !_formIsGlobal">
+                            <span class="block text-sm font-semibold text-foreground group-hover:text-primary transition-colors">@Loc["WEBFRONT_ANNOUNCEMENT_IS_GLOBAL"]</span>
+                            <span class="text-xs text-muted">@Loc["WEBFRONT_ANNOUNCEMENT_IS_GLOBAL_DESC"]</span>
                         </div>
                     </div>
-
-                    <div class="flex flex-col md:flex-row gap-4 md:gap-8 border-t border-line/50 pt-4">
-                        <div class="flex items-center gap-3">
-                            <ToggleSwitch @bind-Value="_formIsGlobal" Id="chkGlobal" />
-                            <div class="cursor-pointer group" @onclick="() => _formIsGlobal = !_formIsGlobal">
-                                <span class="block text-sm font-medium text-foreground group-hover:text-primary transition-colors">@Loc["WEBFRONT_ANNOUNCEMENT_IS_GLOBAL"]</span>
-                                <span class="text-xs text-subtle">@Loc["WEBFRONT_ANNOUNCEMENT_IS_GLOBAL_DESC"]</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <ToggleSwitch @bind-Value="_formIsActive" Id="chkActive" />
-                            <div class="cursor-pointer group" @onclick="() => _formIsActive = !_formIsActive">
-                                <span class="block text-sm font-medium text-foreground group-hover:text-primary transition-colors">@Loc["WEBFRONT_ANNOUNCEMENT_IS_ACTIVE"]</span>
-                                <span class="text-xs text-subtle">@Loc["WEBFRONT_ANNOUNCEMENT_IS_ACTIVE_DESC"]</span>
-                            </div>
+                    <div class="flex items-center gap-3">
+                        <ToggleSwitch @bind-Value="_formIsActive" Id="chkActive" />
+                        <div class="cursor-pointer group" @onclick="() => _formIsActive = !_formIsActive">
+                            <span class="block text-sm font-semibold text-foreground group-hover:text-primary transition-colors">@Loc["WEBFRONT_ANNOUNCEMENT_IS_ACTIVE"]</span>
+                            <span class="text-xs text-muted">@Loc["WEBFRONT_ANNOUNCEMENT_IS_ACTIVE_DESC"]</span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" class="flex px-4 py-2 text-sm font-medium text-muted bg-surface-alt rounded-lg hover:bg-surface-hover hover:text-foreground transition-all duration-200" @onclick="CancelForm">
-                            @Loc["WEBFRONT_ACTION_CANCEL"]
-                        </button>
-                        <button type="submit" class="flex px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-action-primary-hover focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 shadow-md shadow-primary/20">
-                            @Loc["WEBFRONT_ACTION_SAVE"]
-                        </button>
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="flex items-center gap-2 p-3 rounded-lg bg-error/10 border border-error/20 text-sm text-error" role="alert">
+                        <i class="ph ph-warning-circle text-lg"></i>
+                        <span>@_errorMessage</span>
                     </div>
+                }
 
-                    @if (!string.IsNullOrEmpty(_errorMessage))
-                    {
-                        <div class="p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg flex items-center gap-2">
-                            <i class="ph ph-warning-circle text-lg"></i>
-                            @_errorMessage
-                        </div>
-                    }
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button"
+                            class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-surface-alt text-sm font-semibold text-foreground hover:bg-surface-hover transition-colors"
+                            @onclick="CancelForm">
+                        @Loc["WEBFRONT_ACTION_CANCEL"]
+                    </button>
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-sm font-semibold text-white hover:brightness-110 transition">
+                        <i class="ph ph-floppy-disk text-base"></i>
+                        @Loc["WEBFRONT_ACTION_SAVE"]
+                    </button>
                 </div>
             </EditForm>
-        </div>
+        </section>
     }
 
-    <div class="grid grid-cols-1 gap-4">
-        @if (_announcements == null)
-        {
-             <div class="flex flex-col items-center justify-center py-20 text-muted animate-pulse">
-                <i class="ph ph-spinner animate-spin text-4xl mb-4 text-primary"></i>
-                <span class="text-sm">@Loc["WEBFRONT_STATUS_LOADING"]</span>
+    @if (_announcements == null)
+    {
+        <div class="rounded-xl bg-surface border border-line h-24 animate-pulse"></div>
+    }
+    else if (!_announcements.Any())
+    {
+        <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+            <i class="ph ph-megaphone text-3xl text-secondary"></i>
+            <span class="font-semibold text-foreground">@Loc["WEBFRONT_ANNOUNCEMENT_NONE"]</span>
+            <span class="max-w-xs text-center">@Loc["WEBFRONT_ANNOUNCEMENT_NONE_DESC"]</span>
+        </div>
+    }
+    else
+    {
+        <section class="rounded-xl bg-surface border border-line overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@Loc["WEBFRONT_NAV_ANNOUNCEMENTS"]</h2>
+                <span class="text-xs text-muted font-mono tabular-nums">@_announcements.Count()</span>
             </div>
-        }
-        else if (!_announcements.Any())
-        {
-             <div class="flex flex-col items-center justify-center py-20 text-muted border border-dashed border-line rounded-xl bg-surface/20">
-                <div class="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4">
-                    <i class="ph ph-megaphone text-3xl text-subtle"></i>
-                </div>
-                <h3 class="text-lg font-medium text-foreground">@Loc["WEBFRONT_ANNOUNCEMENT_NONE"]</h3>
-                <p class="text-sm mt-1 max-w-xs text-center">@Loc["WEBFRONT_ANNOUNCEMENT_NONE_DESC"]</p>
-            </div>
-        }
-        else
-        {
-            @foreach (var announcement in _announcements)
-            {
-                <div class="bg-surface border border-line rounded-xl p-5 shadow-sm hover:border-line-hover transition-colors relative overflow-hidden group">
-                     @if (announcement.IsActive)
-                    {
-                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-primary/60"></div>
-                    }
-                    
-                    <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                        <div class="flex-1 space-y-2">
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <h3 class="text-lg font-bold text-foreground line-clamp-1">@announcement.Title</h3>
-                                
+            <div class="divide-y divide-line">
+                @foreach (var announcement in _announcements)
+                {
+                    <div class="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center hover:bg-surface-hover transition-colors">
+                        <div class="min-w-0 space-y-1.5">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 class="text-base font-bold text-foreground truncate">@announcement.Title</h3>
+
                                 @if (announcement.IsActive)
                                 {
-                                    <span class="px-2 py-0.5 rounded text-xs font-semibold bg-success/10 text-success border border-success/20 flex items-center gap-1">
-                                        <i class="ph ph-check-circle-fill"></i> @Loc["WEBFRONT_ANNOUNCEMENT_ACTIVE"]
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-success/15 text-success">
+                                        <i class="ph-fill ph-check-circle"></i> @Loc["WEBFRONT_ANNOUNCEMENT_ACTIVE"]
                                     </span>
                                 }
-                                else 
+                                else
                                 {
-                                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-surface-alt text-muted border border-line">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-surface-alt text-subtle">
                                         @Loc["WEBFRONT_ANNOUNCEMENT_INACTIVE"]
                                     </span>
                                 }
 
                                 @if (announcement.IsGlobalNotice)
                                 {
-                                    <span class="px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20 flex items-center gap-1">
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-accent/15 text-accent">
                                         <i class="ph ph-globe"></i> @Loc["WEBFRONT_ANNOUNCEMENT_GLOBAL"]
                                     </span>
                                 }
                             </div>
 
-                            <p class="text-subtle text-sm line-clamp-2 max-w-3xl">@announcement.Content</p>
-                            
-                            <div class="flex items-center gap-4 text-xs text-muted font-mono mt-2">
-                                <span class="flex items-center gap-1.5" title="@Loc["WEBFRONT_ANNOUNCEMENT_START_AT"]">
+                            <p class="text-sm text-subtle line-clamp-2 max-w-3xl">@announcement.Content</p>
+
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono tabular-nums text-[11px] text-muted">
+                                <span class="inline-flex items-center gap-1.5" title="@Loc["WEBFRONT_ANNOUNCEMENT_START_AT"]">
                                     <i class="ph ph-clock"></i>
                                     @(announcement.StartAt?.ToString("g") ?? Loc["WEBFRONT_ANNOUNCEMENT_TIME_NOW"])
                                 </span>
-                                <span class="text-line">&rarr;</span>
-                                <span class="flex items-center gap-1.5" title="@Loc["WEBFRONT_ANNOUNCEMENT_END_AT"]">
-                                     @(announcement.EndAt?.ToString("g") ?? Loc["WEBFRONT_ANNOUNCEMENT_TIME_FOREVER"])
+                                <span>&rarr;</span>
+                                <span title="@Loc["WEBFRONT_ANNOUNCEMENT_END_AT"]">
+                                    @(announcement.EndAt?.ToString("g") ?? Loc["WEBFRONT_ANNOUNCEMENT_TIME_FOREVER"])
                                 </span>
-                                <span class="w-px h-3 bg-line hidden sm:block"></span>
-                                <span class="hidden sm:flex items-center gap-1.5">
+                                <span class="text-muted/60">&middot;</span>
+                                <span class="inline-flex items-center gap-1.5">
                                     <i class="ph ph-user"></i>
                                     @announcement.CreatedByName
                                 </span>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 self-start md:self-center">
+                        <div class="flex items-center gap-1 md:justify-end">
                             <AuthorizeView Policy="Permissions.Announcement.Write">
                                 @if (announcement.IsActive)
                                 {
                                     <Tooltip Text="@Loc["WEBFRONT_ACTION_DEACTIVATE"]">
-                                        <button class="flex p-2 text-warning hover:bg-warning/10 rounded-lg transition-colors border border-transparent hover:border-warning/20"
+                                        <button type="button"
+                                                class="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-warning hover:bg-warning/10 transition-colors"
                                                 @onclick="() => DeactivateAnnouncement(announcement.AnnouncementId)">
-                                            <i class="ph ph-prohibit text-xl"></i>
+                                            <i class="ph ph-prohibit text-base"></i>
                                         </button>
                                     </Tooltip>
                                 }
                                 else
                                 {
                                     <Tooltip Text="@Loc["WEBFRONT_ACTION_ACTIVATE"]">
-                                        <button class="flex p-2 text-success hover:bg-success/10 rounded-lg transition-colors border border-transparent hover:border-success/20"
+                                        <button type="button"
+                                                class="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-success hover:bg-success/10 transition-colors"
                                                 @onclick="() => ActivateAnnouncement(announcement.AnnouncementId)">
-                                            <i class="ph ph-play-circle text-xl"></i>
+                                            <i class="ph ph-play-circle text-base"></i>
                                         </button>
                                     </Tooltip>
                                 }
-                                
+
                                 <Tooltip Text="@Loc["WEBFRONT_ACTION_EDIT"]">
-                                    <button class="flex p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors border border-transparent hover:border-primary/20"
+                                    <button type="button"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-primary hover:bg-primary/10 transition-colors"
                                             @onclick="() => EditAnnouncement(announcement)">
-                                        <i class="ph ph-pencil-simple text-xl"></i>
+                                        <i class="ph ph-pencil-simple text-base"></i>
                                     </button>
                                 </Tooltip>
                             </AuthorizeView>
-                            
+
                             <AuthorizeView Policy="Permissions.Announcement.Delete">
                                 <Tooltip Text="@Loc["WEBFRONT_ACTION_DELETE"]">
-                                    <button class="flex p-2 text-error hover:bg-error/10 rounded-lg transition-colors border border-transparent hover:border-error/20"
+                                    <button type="button"
+                                            class="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-error hover:bg-error/10 transition-colors"
                                             @onclick="() => DeleteAnnouncement(announcement.AnnouncementId)">
-                                        <i class="ph ph-trash text-xl"></i>
+                                        <i class="ph ph-trash text-base"></i>
                                     </button>
                                 </Tooltip>
                             </AuthorizeView>
                         </div>
                     </div>
-                </div>
-            }
-        }
-    </div>
+                }
+            </div>
+        </section>
+    }
 </div>

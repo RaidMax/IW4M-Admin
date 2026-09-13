@@ -4,7 +4,7 @@
 
 @if (_servers != null)
 {
-    <div class="space-y-4">
+    <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
         @foreach (var serverInfo in _servers)
         {
             <ServerCard @key="serverInfo.Id" Model="serverInfo" OnChat="OpenChat"/>
@@ -13,5 +13,14 @@
 }
 else
 {
-    <p>Loading servers...</p>
+    <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4" aria-busy="true">
+        @for (var i = 0; i < 2; i++)
+        {
+            <div class="rounded-xl bg-surface border border-line overflow-hidden animate-pulse">
+                <div class="h-24 bg-surface-alt"></div>
+                <div class="h-9 border-t border-line"></div>
+                <div class="h-24"></div>
+            </div>
+        }
+    </div>
 }

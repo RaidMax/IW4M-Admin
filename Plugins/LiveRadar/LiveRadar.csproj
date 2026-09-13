@@ -16,7 +16,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="RaidMax.IW4MAdmin.SharedLibraryCore" Version="2026.1.6.1" PrivateAssets="All" />
+        <ProjectReference Include="..\..\SharedLibraryCore\SharedLibraryCore.csproj" />
+        <ProjectReference Include="..\..\Integrations\SevenDaysToDie\Integrations.SevenDaysToDie.csproj" />
     </ItemGroup>
 
 </Project>

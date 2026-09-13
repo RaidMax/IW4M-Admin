@@ -5,16 +5,18 @@
 {
     <!-- Backdrop -->
     <div class="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm" @onclick="Close"></div>
-    
+
     <!-- Modal -->
-    <div class="fixed left-0 right-0 top-1/2 -translate-y-1/2 mx-4 z-[101] md:left-1/2 md:-translate-x-1/2 md:mx-0 md:w-[32rem] rounded-lg shadow-xl bg-surface ring-1 ring-black/10 border border-line max-h-[85vh] overflow-y-auto">
+    <div class="fixed left-0 right-0 top-1/2 -translate-y-1/2 mx-4 z-[101] md:left-1/2 md:-translate-x-1/2 md:mx-0 md:w-[32rem] rounded-xl shadow-xl bg-surface border border-line max-h-[85vh] overflow-y-auto">
         <div class="p-4">
-            <div class="flex items-center justify-between mb-4 border-b border-line pb-2">
-                <h3 class="text-sm font-bold text-foreground uppercase tracking-wider">
+            <div class="flex items-center justify-between gap-3 mb-4 border-b border-line pb-2.5">
+                <h3 class="text-[11px] font-semibold uppercase tracking-wider text-muted">
                     @(AppState.Loc("WEBFRONT_ADVANCED_SEARCH_TITLE"))
                 </h3>
-                <button type="button" @onclick="Close" class="text-muted hover:text-foreground p-1 transition-colors">
-                    <i class="ph ph-x text-lg"></i>
+                <button type="button" @onclick="Close"
+                        class="w-9 h-9 -mr-2 rounded-lg flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+                        title="@AppState.LocOr("WEBFRONT_ACTION_CLOSE", "Close")">
+                    <i class="ph ph-x text-base"></i>
                 </button>
             </div>
 

@@ -1,17 +1,22 @@
 @if (Loading && !MetaItems.Any())
 {
-    <div class="flex justify-center items-center py-12">
-        <i class="ph ph-spinner animate-spin text-3xl text-primary"></i>
+    <div class="p-4 space-y-2">
+        <div class="rounded-xl bg-surface border border-line h-24 animate-pulse"></div>
+        <div class="rounded-xl bg-surface border border-line h-24 animate-pulse"></div>
+    </div>
+}
+else if (!MetaItems.Any())
+{
+    <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+        <i class="ph ph-tray text-3xl text-secondary"></i>
+        <span>@AppState.LocOr("WEBFRONT_PROFILE_NO_ACTIVITY", "No activity to show")</span>
     </div>
 }
 else
 {
     string? lastHeader = null;
 
-    <div class="relative">
-        @* Timeline vertical line *@
-        <div class="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-line via-line to-transparent"></div>
-
+    <div class="divide-y divide-line">
         @foreach (var item in MetaItems)
         {
             var currentHeader = item.When.HumanizeForCurrentCulture();
@@ -25,36 +30,25 @@ else
             @* Time header *@
             if (currentHeader != lastHeader)
             {
-                <div class="relative flex items-center gap-3 py-3">
-                    @* Timeline dot for header *@
-                    <div
-                        class="relative z-10 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-line">
-                        <i class="ph ph-clock text-xs text-muted"></i>
-                    </div>
-                    <span class="text-xs font-bold uppercase tracking-wider text-muted bg-surface px-2 py-1 rounded">
-                        @currentHeader
-                    </span>
+                <div class="px-4 py-1.5 bg-surface-alt/50 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    @currentHeader
                 </div>
                 lastHeader = currentHeader;
             }
 
-            @* Timeline item *@
-            <div class="flex gap-3 py-1.5 items-center justify-items-start">
-                @* Timeline dot *@
-                <div class="z-10 min-w-6">
-                    @{
-                        var (dotColor, _) = GetItemStyle(item);
-                        var utcTime = item.When.ToStandardFormat();
-                        var tooltipText = $"{item.Type.ToTranslatedName()} • {utcTime}";
-                    }
-                    <Tooltip Text="@tooltipText" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="flex items-center justify-center">
-                        <div
-                            class="w-2.5 h-2.5 rounded-full @dotColor ring-4 ring-surface transition-all group-hover:scale-125 m-auto"></div>
-                    </Tooltip>
-                </div>
+            @* Feed row *@
+            <div class="grid grid-cols-[18px_1fr_auto] gap-2 items-baseline px-4 py-1.5 text-sm hover:bg-surface-hover/50 transition-colors">
+                @{
+                    var (iconColor, icon) = GetItemStyle(item);
+                    var utcTime = item.When.ToStandardFormat();
+                    var tooltipText = $"{item.Type.ToTranslatedName()} • {utcTime}";
+                }
+                <Tooltip Text="@tooltipText" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="flex items-center justify-center">
+                    <i class="ph @icon text-sm @iconColor"></i>
+                </Tooltip>
 
                 @* Content *@
-                <div class="min-w-0 break-normal overflow-wrap-anywhere">
+                <div class="min-w-0 break-words">
                     @switch (item)
                     {
                         case AdministeredPenaltyResponse penalized:
@@ -79,12 +73,15 @@ else
                             @ClientNoteTemplate(note)
                             break;
                         default:
-                            <div class="bg-warning/10 border border-warning/20 text-warning p-2 rounded text-sm">
+                            <div class="rounded-lg border border-warning/30 bg-warning/10 text-warning px-3 py-1.5 text-xs">
                                 Unknown Meta Type: @item.GetType().Name (@item.Type)
                             </div>
                             break;
                     }
                 </div>
+
+                @* Timestamp *@
+                <span class="font-mono text-[11px] text-muted whitespace-nowrap" title="@utcTime">@item.When.ToString("HH:mm")</span>
             </div>
         }
     </div>
@@ -97,7 +94,7 @@ else
 
 @if (!string.IsNullOrEmpty(_errorMessage))
 {
-    <div class="mt-4 bg-error/10 border border-error/20 text-error p-4 rounded flex items-center gap-2">
+    <div class="m-4 rounded-xl border border-error/30 bg-error/10 text-error px-4 py-3 flex items-center gap-2 text-sm">
         <i class="ph ph-warning-circle"></i>
         <span>@_errorMessage</span>
     </div>
@@ -109,46 +106,46 @@ else
     {
         "ban" => "text-error",
         "tempban" => "text-warning",
-        "kick" => "text-warning",
-        "warning" => "text-warning",
+        "kick" => "text-orange-400",
+        "warning" => "text-yellow-300",
         "unban" => "text-success",
         _ => "text-muted"
     };
 
-    private (string DotColor, string Icon) GetItemStyle(IClientMeta item)
+    private (string IconColor, string Icon) GetItemStyle(IClientMeta item)
     {
         return item switch
         {
             AdministeredPenaltyResponse p => p.PenaltyType switch
             {
-                EFPenalty.PenaltyType.Ban => ("bg-error", "ph-prohibit"),
-                EFPenalty.PenaltyType.TempBan => ("bg-warning", "ph-clock"),
-                EFPenalty.PenaltyType.Kick => ("bg-warning", "ph-x"),
-                EFPenalty.PenaltyType.Unban => ("bg-success", "ph-check"),
-                _ => ("bg-muted", "ph-gavel")
+                EFPenalty.PenaltyType.Ban => ("text-error", "ph-prohibit"),
+                EFPenalty.PenaltyType.TempBan => ("text-warning", "ph-clock"),
+                EFPenalty.PenaltyType.Kick => ("text-orange-400", "ph-x"),
+                EFPenalty.PenaltyType.Unban => ("text-success", "ph-check"),
+                _ => ("text-muted", "ph-gavel")
             },
             ReceivedPenaltyResponse r => r.PenaltyType switch
             {
-                EFPenalty.PenaltyType.Ban => ("bg-error", "ph-prohibit"),
-                EFPenalty.PenaltyType.TempBan => ("bg-warning", "ph-clock"),
-                EFPenalty.PenaltyType.Kick => ("bg-warning", "ph-x"),
-                _ => ("bg-muted", "ph-gavel")
+                EFPenalty.PenaltyType.Ban => ("text-error", "ph-prohibit"),
+                EFPenalty.PenaltyType.TempBan => ("text-warning", "ph-clock"),
+                EFPenalty.PenaltyType.Kick => ("text-orange-400", "ph-x"),
+                _ => ("text-muted", "ph-gavel")
             },
-            MessageResponse => ("bg-primary", "ph-chat"),
-            UpdatedAliasResponse => ("bg-subtle", "ph-user"),
+            MessageResponse => ("text-primary", "ph-chat"),
+            UpdatedAliasResponse => ("text-subtle", "ph-user"),
             ConnectionHistoryResponse c => c.ConnectionType == Reference.ConnectionType.Connect
-                ? ("bg-success", "ph-sign-in")
-                : ("bg-muted", "ph-sign-out"),
-            PermissionLevelChangedResponse => ("bg-primary", "ph-shield"),
-            ClientNoteMetaResponse => ("bg-primary", "ph-note"),
-            _ => ("bg-muted", "ph-circle")
+                ? ("text-success", "ph-sign-in")
+                : ("text-muted", "ph-sign-out"),
+            PermissionLevelChangedResponse => ("text-primary", "ph-shield"),
+            ClientNoteMetaResponse => ("text-warning", "ph-note"),
+            _ => ("text-muted", "ph-circle")
         };
     }
 
     // Shared fragment for anticheat detection display with expandable details
     RenderFragment<(ReceivedPenaltyResponse Meta, MetaItemState State)> AnticheatDetailsFragment => (ctx) => @<text>
         <span class="mr-1">@AppState.Loc("WEBFRONT_PROFILE_ANTICHEAT_DETECTION").FormatExt(ctx.Meta.AutomatedOffense)</span>
-        <button class="inline-flex items-center gap-1 px-1 py-0.5 text-xs bg-surface border border-line rounded text-muted hover:text-foreground hover:border-primary/50 transition-all"
+        <button class="inline-flex items-center justify-center w-6 h-6 rounded-md border border-line bg-surface-alt text-xs text-muted hover:text-foreground hover:bg-surface-hover transition-colors align-middle"
                 type="button"
                 title="@AppState.Loc("WEBFRONT_CLIENT_META_AC_METRIC")"
                 @onclick="@(() => TogglePenaltyDetails(ctx.Meta))">
@@ -163,7 +160,7 @@ else
             }
             else if (ctx.State.SnapshotInfo != null)
             {
-                <div class="mt-3 mb-2 bg-surface-alt border border-line rounded-lg p-4 font-mono text-xs block">
+                <div class="mt-2 mb-1 rounded-lg border border-line bg-surface-alt p-3 font-mono text-xs block">
                     @foreach (var snapshot in ctx.State.SnapshotInfo)
                     {
                         <div class="space-y-1">
@@ -201,11 +198,11 @@ else
                     {
                         if (match.MatchValue == "action")
                         {
-                            <span class="@GetPenaltyColor(Meta.PenaltyType.ToString()) font-medium">@match.TranslationValue</span>
+                            <span class="@GetPenaltyColor(Meta.PenaltyType.ToString()) font-semibold">@match.TranslationValue</span>
                         }
                         else if (match.MatchValue == "offender")
                         {
-                            <a class="text-primary hover:text-primary/25 transition-colors font-medium" href="/client/@Meta.OffenderClientId">
+                            <a class="text-foreground font-medium hover:text-primary transition-colors" href="/client/@Meta.OffenderClientId">
                                 <ColorCode Value="@Meta.OffenderName"/>
                             </a>
                         }
@@ -251,11 +248,11 @@ else
                     {
                         if (match.MatchValue == "action")
                         {
-                            <span class="@GetPenaltyColor(Meta.PenaltyType.ToString()) font-medium">@match.TranslationValue</span>
+                            <span class="@GetPenaltyColor(Meta.PenaltyType.ToString()) font-semibold">@match.TranslationValue</span>
                         }
                         else if (match.MatchValue == "punisher")
                         {
-                            <a class="text-primary hover:text-primary/25 transition-colors font-medium" href="/client/@Meta.PunisherClientId">
+                            <a class="text-foreground font-medium hover:text-primary transition-colors" href="/client/@Meta.PunisherClientId">
                                 <ColorCode Value="@Meta.PunisherName"/>
                             </a>
                         }
@@ -286,7 +283,7 @@ else
 
                 @if (Meta.ClientId != Meta.OffenderClientId)
                 {
-                    <span class="text-subtle mx-1">&mdash;</span>
+                    <span class="text-muted mx-1">&mdash;</span>
                     @foreach (var helperResult in Utilities.SplitTranslationTokens("WEBFRONT_PROFILE_LINKED_ACCOUNT"))
                     {
                         if (!helperResult.IsInterpolation)
@@ -295,7 +292,7 @@ else
                         }
                         else
                         {
-                            <a class="text-primary hover:text-primary/25 transition-colors" href="/client/@Meta.OffenderClientId">
+                            <a class="text-foreground font-medium hover:text-primary transition-colors" href="/client/@Meta.OffenderClientId">
                                 <ColorCode Value="@Meta.OffenderName"/>
                             </a>
                         }
@@ -313,7 +310,7 @@ else
         <div @onclick="@(() => ToggleMessageContext(Meta))" class="cursor-pointer group/msg text-sm">
             <div class="flex items-start gap-2">
                 <div class="mt-0.5 text-muted group-hover/msg:text-primary transition-colors">
-                    <i class="ph @(state.IsOpen ? "ph-caret-down" : "ph-caret-right")"></i>
+                    <i class="ph-bold @(state.IsOpen ? "ph-caret-down" : "ph-caret-right") text-xs"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                     @if (!Meta.SentIngame)
@@ -322,7 +319,7 @@ else
                             <i class="ph ph-globe text-muted text-xs mr-1"></i>
                         </Tooltip>
                     }
-                    <span class="text-foreground break-words hover:text-white transition-colors">
+                    <span class="text-foreground break-words">
                         <ColorCode Value="@Meta.Message"/>
                     </span>
                     <span class="ml-2 text-muted text-xs">@Meta.ServerName</span>
@@ -340,36 +337,34 @@ else
             }
             else if (state.ContextMessages != null)
             {
-                <div class="mt-2 mb-2 mr-0 overflow-visible">
-                    <div class="rounded-lg border border-line shadow-lg overflow-visible">
-                        <div class="bg-primary/20 px-3 py-1.5 border-b border-primary/20 text-xs text-primary font-mono rounded-t-lg">
-                            @Meta.When.HumanizeForCurrentCulture()
-                        </div>
-                        <div class="bg-surface p-2 md:p-3 space-y-0.5 rounded-b-lg">
-                            @foreach (var message in state.ContextMessages)
-                            {
-                                var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
-                                <div class="text-xs flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 p-1.5 md:p-2 rounded @(isOriginalMessage ? "bg-primary/10 border-l-2 border-primary -ml-[1px]" : "hover:bg-surface-alt/50") relative overflow-visible">
-                                    @* Timestamp + Name row *@
-                                    <div class="flex items-baseline gap-1 shrink-0">
-                                        <span class="text-muted/60 font-mono text-[10px] tabular-nums">@message.When.ToString("HH:mm:ss")</span>
-                                        @if (!message.SentIngame)
-                                        {
-                                            <Tooltip Text="@AppState.Loc("WEBFRONT_META_MESSAGE_REMOTE_TOOLTIP")" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="inline-flex items-center relative">
-                                                <i class="ph ph-globe text-muted text-[10px] mr-0.5"></i>
-                                            </Tooltip>
-                                        }
-                                        <span class="font-semibold text-foreground text-xs whitespace-nowrap">
-                                            <ColorCode Value="@message.ClientName"/>
-                                        </span>
-                                    </div>
-                                    @* Message *@
-                                    <span class="@(message.IsQuickMessage ? "italic text-muted" : "text-subtle") break-words text-xs">
-                                        <ColorCode Value="@message.Message"/>
+                <div class="mt-2 mb-1 rounded-lg border border-line bg-surface-alt overflow-hidden">
+                    <div class="px-3 py-1.5 border-b border-line font-mono text-[11px] text-muted">
+                        @Meta.When.HumanizeForCurrentCulture()
+                    </div>
+                    <div class="divide-y divide-line/60">
+                        @foreach (var message in state.ContextMessages)
+                        {
+                            var isOriginalMessage = message.When == Meta.When && message.Message == Meta.Message && message.ClientId == Meta.ClientId;
+                            <div class="text-xs flex flex-col md:flex-row md:items-baseline gap-0.5 md:gap-2 px-3 py-1.5 @(isOriginalMessage ? "bg-primary/10 shadow-[inset_2px_0_0_0_var(--color-primary)]" : "hover:bg-surface-hover/50") transition-colors">
+                                @* Timestamp + Name row *@
+                                <div class="flex items-baseline gap-1 shrink-0">
+                                    <span class="text-muted font-mono text-[10px] tabular-nums">@message.When.ToString("HH:mm:ss")</span>
+                                    @if (!message.SentIngame)
+                                    {
+                                        <Tooltip Text="@AppState.Loc("WEBFRONT_META_MESSAGE_REMOTE_TOOLTIP")" Direction="@Tooltip.TooltipDirection.Right" WrapperClass="inline-flex items-center relative">
+                                            <i class="ph ph-globe text-muted text-[10px] mr-0.5"></i>
+                                        </Tooltip>
+                                    }
+                                    <span class="font-semibold text-foreground text-xs whitespace-nowrap">
+                                        <ColorCode Value="@message.ClientName"/>
                                     </span>
                                 </div>
-                            }
-                        </div>
+                                @* Message *@
+                                <span class="@(message.IsQuickMessage ? "italic text-muted" : "text-subtle") break-words text-xs">
+                                    <ColorCode Value="@message.Message"/>
+                                </span>
+                            </div>
+                        }
                     </div>
                 </div>
             }
@@ -388,10 +383,10 @@ else
                         <span class="text-muted">@token.TranslationValue</span>
                         break;
                     case "alias":
-                        <span class="text-subtle font-medium">
+                        <span class="text-foreground font-medium">
                             <ColorCode Value="@Meta.Name" />
                              <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ClientIPAddress}.{WebfrontPermission.Read}")">
-                                  <span class="font-mono text-xs text-muted ml-1">[@Meta.IPAddress]</span>
+                                  <span class="font-mono text-xs tabular-nums text-muted ml-1">[@Meta.IPAddress]</span>
                              </AuthorizeView>
                         </span>
                         break;
@@ -418,7 +413,7 @@ else
                     switch (token.MatchValue)
                     {
                         case "action":
-                            <span class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-success" : "text-muted") font-medium">
+                            <span class="@(Meta.ConnectionType == Reference.ConnectionType.Connect ? "text-success" : "text-muted") font-semibold">
                                 @token.TranslationValue
                             </span>
                             break;
@@ -447,12 +442,12 @@ else
                 switch (token.MatchValue)
                 {
                     case "permission":
-                        <span class="level-color-@((int)Meta.CurrentPermissionLevel) px-1.5 py-0.5 rounded text-xs border border-line bg-surface">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border border-current bg-transparent @AppState.GetLevelColorClass(Meta.CurrentPermissionLevel)">
                             @Meta.CurrentPermissionLevel.ToLocalizedLevelName()
                         </span>
                         break;
                     case "originClient":
-                        <a class="text-primary hover:text-primary/25 transition-colors" href="/client/@Meta.ChangedById">
+                        <a class="text-foreground font-medium hover:text-primary transition-colors" href="/client/@Meta.ChangedById">
                             <ColorCode Value="@Meta.ChangedByName" />
                         </a>
                         break;
@@ -471,11 +466,11 @@ else
     </text>;
 
     RenderFragment<ClientNoteMetaResponse> ClientNoteTemplate => (Meta) => @<text>
-        <div class="text-sm flex gap-2 items-center">
-            <span class="text-muted uppercase text-xs font-bold tracking-wider">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
-            <span class="text-foreground italic">@Meta.Note</span>
-            <span class="text-subtle">&mdash;</span>
-            <a class="text-primary hover:text-primary/25 transition-colors text-xs" href="/client/@Meta.OriginEntityId">
+        <div class="text-sm flex flex-wrap gap-x-2 gap-y-0.5 items-baseline">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-warning/15 text-warning">@AppState.Loc("WEBFRONT_CLIENT_META_NOTE")</span>
+            <span class="text-foreground italic break-words">@Meta.Note</span>
+            <span class="text-muted">&mdash;</span>
+            <a class="text-subtle text-xs font-medium hover:text-primary transition-colors" href="/client/@Meta.OriginEntityId">
                 <ColorCode Value="@Meta.OriginEntityName" />
             </a>
         </div>

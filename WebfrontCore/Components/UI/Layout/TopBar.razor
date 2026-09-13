@@ -1,65 +1,100 @@
 @using WebfrontCore.Components.UI.Theme
 @inject AppState AppState
-@inject ApplicationConfiguration AppConfig
+@inject NavigationManager NavManager
+@implements IDisposable
 @rendermode InteractiveServer
 
-<header
-    class="h-16 flex items-center justify-between px-4 bg-surface-alt border-b border-divider shadow-sm z-20 flex-shrink-0 gap-4">
-    <!-- Left: Toggle & Brand -->
-    <div class="flex items-center gap-3">
-        <button
-            class="md:hidden text-accent hover:text-foreground transition-colors p-2 -ml-2 rounded-lg hover:bg-surface-hover"
-            type="button" @onclick="ToggleMobile" title="Toggle Navigation">
-            <i class="ph ph-list text-2xl flex justify-center"></i>
-        </button>
-        <button
-            class="hidden md:block text-subtle hover:text-foreground transition-colors p-2 -ml-2 rounded-lg hover:bg-surface-hover"
-            type="button" @onclick="ToggleDesktop" title="Toggle Sidebar">
-            <i class="ph ph-list text-2xl flex justify-center"></i>
-        </button>
+<header class="h-16 flex items-center gap-2 md:gap-3 px-3 md:px-5 bg-surface border-b border-divider shrink-0 z-20">
+    <!-- Menu toggles -->
+    <button
+        class="md:hidden w-10 h-10 rounded-lg flex items-center justify-center text-subtle hover:text-foreground hover:bg-surface-hover transition-colors"
+        type="button" @onclick="ToggleMobile" title="Toggle navigation">
+        <i class="ph ph-list text-2xl"></i>
+    </button>
+    <button
+        class="hidden md:flex w-10 h-10 rounded-lg items-center justify-center text-subtle hover:text-foreground hover:bg-surface-hover transition-colors"
+        type="button" @onclick="ToggleDesktop" title="@(AppState.SidebarCollapsed ? "Expand sidebar" : "Collapse sidebar")">
+        <i class="ph @(AppState.SidebarCollapsed ? "ph-sidebar-simple" : "ph-sidebar") text-2xl"></i>
+    </button>
 
-        <a href="/"
-           class="text-xl font-bold tracking-wide text-foreground hover:text-subtle transition-colors truncate">
-            @if (string.IsNullOrEmpty(AppConfig.Webfront.CustomBranding))
-            {
-                <span>IW4MAdmin</span>
-            }
-            else
-            {
-                <span>@AppConfig.Webfront.CustomBranding</span>
-            }
-        </a>
+    <!-- Mobile brand -->
+    <a href="/" class="md:hidden text-base font-extrabold tracking-tight text-foreground truncate">
+        @AppState.WebfrontBranding
+    </a>
 
-        <!-- Divider -->
-        <div class="h-8 w-px bg-divider hidden md:block"></div>
-
-        <!-- Client Badges (Desktop) -->
-        <div class="hidden md:flex">
-            <ClientBadges/>
-        </div>
+    <!-- Desktop breadcrumb -->
+    <div class="hidden md:flex items-center gap-2 text-[15px] min-w-0 shrink">
+        <span class="hidden lg:flex items-center gap-2 min-w-0">
+            <a href="/" class="text-muted hover:text-foreground transition-colors truncate">@AppState.WebfrontBranding</a>
+            <i class="ph ph-caret-right text-xs text-muted"></i>
+        </span>
+        <span class="font-semibold text-foreground truncate min-w-[6rem]">@PageTitle</span>
     </div>
 
-    <!-- Right: Actions -->
-    <div class="flex items-center gap-2 md:gap-4 shrink-0">
-        <div class="relative hidden md:block">
-            <SearchResourceForm/>
-        </div>
+    <div class="flex-1"></div>
 
-        <div class="h-6 w-px bg-divider hidden md:block"></div>
+    <!-- Global search -->
+    <div class="hidden md:block w-full max-w-md">
+        <SearchResourceForm/>
+    </div>
 
-        <div class="flex items-center gap-1">
-            <div class="md:hidden flex align-center">
-                <ClientBadges IconOnly="true"/>
-            </div>
-            <NotificationCenter/>
-
-            <ThemeSelector/>
-        </div>
+    <!-- Actions -->
+    <div class="flex items-center gap-1 shrink-0">
+        <NotificationCenter/>
+        <ThemeSelector/>
     </div>
 </header>
 
-
 @code {
+
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += OnLocationChanged;
+        AppState.OnChange += StateHasChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavManager.LocationChanged -= OnLocationChanged;
+        AppState.OnChange -= StateHasChanged;
+    }
+
+    private string PageTitle
+    {
+        get
+        {
+            var path = NavManager.ToBaseRelativePath(NavManager.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+            var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var first = segments.Length > 0 ? segments[0] : string.Empty;
+
+            return first switch
+            {
+                "" or "servers" => AppState.Loc("WEBFRONT_NAV_SERVERS"),
+                "about" => AppState.Loc("WEBFRONT_NAV_ABOUT"),
+                "penalties" => AppState.Loc("WEBFRONT_NAV_PENALTIES"),
+                "privileged-clients" => AppState.Loc("WEBFRONT_NAV_PRIVILEGED"),
+                "commands" => AppState.Loc("WEBFRONT_NAV_HELP"),
+                "console" => AppState.Loc("WEBFRONT_NAV_CONSOLE"),
+                "announcements" => AppState.LocOr("WEBFRONT_NAV_ANNOUNCEMENTS", "Announcements"),
+                "manage-bans" => AppState.Loc("WEBFRONT_NAV_TITLE_BAN_MANAGEMENT"),
+                "configuration" => AppState.Loc("WEBFRONT_NAV_TITLE_CONFIGURATION"),
+                "audit" => AppState.Loc("WEBFRONT_NAV_AUDIT_LOG"),
+                "find-client" => AppState.Loc("WEBFRONT_NAV_SEARCH"),
+                "find-message" => AppState.Loc("WEBFRONT_NAV_SEARCH"),
+                "client" when segments.Length > 2 && segments[2] == "stats" => AppState.Loc("WEBFRONT_NAV_TITLE_STATS"),
+                "client" => AppState.Loc("WEBFRONT_NAV_TITLE_PROFILE"),
+                "stats" => AppState.Loc("WEBFRONT_NAV_TITLE_STATS"),
+                "radar" => AppState.LocOr("WEBFRONT_NAV_RADAR", "Live radar"),
+                "scoreboard" => AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"),
+                _ => first.Replace('-', ' ').Humanize(LetterCasing.Title)
+            };
+        }
+    }
 
     private void ToggleMobile()
     {

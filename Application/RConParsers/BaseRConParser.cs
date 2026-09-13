@@ -1,6 +1,7 @@
 ﻿using SharedLibraryCore;
 using SharedLibraryCore.Database.Models;
 using SharedLibraryCore.Exceptions;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.RCon;
 using System;
@@ -334,6 +335,18 @@ namespace IW4MAdmin.Application.RConParsers
                     };
 
                     client.SetAdditionalProperty("BotGuid", networkIdString);
+
+                    if (Configuration.Status.GroupMapping.TryGetValue(ParserRegex.GroupType.RConStatusKills,
+                            out var killsGroupIndex) &&
+                        Configuration.Status.GroupMapping.TryGetValue(ParserRegex.GroupType.RConStatusDeaths,
+                            out var deathsGroupIndex) &&
+                        match.Values.Length > Math.Max(killsGroupIndex, deathsGroupIndex) &&
+                        int.TryParse(match.Values[killsGroupIndex], out var kills) &&
+                        int.TryParse(match.Values[deathsGroupIndex], out var deaths))
+                    {
+                        client.SetAdditionalProperty("RConStatusStats",
+                            new RConStatusStats(Math.Max(0, kills), Math.Max(0, deaths)));
+                    }
 
                     if (Configuration.Status.GroupMapping.ContainsKey(ParserRegex.GroupType.AdditionalGroup))
                     {

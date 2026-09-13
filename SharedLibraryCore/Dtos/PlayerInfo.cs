@@ -45,6 +45,8 @@ namespace SharedLibraryCore.Dtos
         public int? Kills { get; set; }
         public int? Deaths { get; set; }
         public int Ping { get; set; }
+        public SharedLibraryCore.Database.Models.EFClient.TeamType Team { get; set; }
+        public string TeamName { get; set; }
         public bool HasTwoFactor { get; set; }
     }
 }

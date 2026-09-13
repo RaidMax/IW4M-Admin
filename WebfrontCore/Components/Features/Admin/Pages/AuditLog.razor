@@ -5,313 +5,211 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_NAV_AUDIT_LOG") | @AppState.WebfrontBranding</PageTitle>
 
-<div class="w-full p-4 md:p-8">
-    <!-- Header -->
-    <div class="flex items-center gap-3 mb-6">
-        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-            <i class="ph ph-books text-xl text-primary"></i>
+<div class="p-4 md:p-6 xl:p-8 max-w-[1680px] mx-auto space-y-5">
+    <!-- Heading -->
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@AppState.Loc("WEBFRONT_NAV_AUDIT_LOG")</h1>
+            <p class="text-sm text-muted mt-0.5">@AppState.Loc("WEBFRONT_AUDIT_SUBTITLE")</p>
         </div>
-        <div>
-            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_NAV_AUDIT_LOG")</h2>
-            <div class="text-sm text-subtle font-medium mt-0.5">@AppState.Loc("WEBFRONT_AUDIT_SUBTITLE")</div>
+        <div class="ml-auto flex items-center gap-2">
+            <ToggleSwitch Id="groupByActionToggle"
+                          Label="@AppState.Loc("WEBFRONT_AUDIT_GROUP_BY_ACTION")"
+                          Value="@_groupByAction"
+                          ValueChanged="OnGroupByChanged" />
         </div>
     </div>
 
     @if (!string.IsNullOrEmpty(_error))
     {
-        <div class="p-4 mb-4 text-sm text-error rounded-lg bg-error/10 border border-error/20" role="alert">
-            <div class="flex items-center gap-2">
-                <i class="ph ph-warning-circle text-lg"></i>
-                <span class="font-medium">@AppState.Loc("WEBFRONT_AUDIT_ERROR")</span>
-                <span>@_error</span>
-            </div>
+        <div class="flex items-center gap-2 p-4 rounded-xl bg-error/10 border border-error/20 text-sm text-error" role="alert">
+            <i class="ph ph-warning-circle text-lg"></i>
+            <span class="font-semibold">@AppState.Loc("WEBFRONT_AUDIT_ERROR")</span>
+            <span>@_error</span>
         </div>
     }
     else
     {
-        <!-- Statistics Dashboard -->
+        <!-- Stat tiles -->
         @if (Statistics != null)
         {
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <!-- Total Actions -->
-                <div class="bg-surface rounded-lg p-4 border border-line shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-primary/10">
-                            <i class="ph ph-list-checks text-xl text-primary flex justify-center"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-foreground">@Statistics.TotalCount.ToString("N0")</div>
-                            <div class="text-xs text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_AUDIT_STAT_TOTAL")</div>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                <div class="rounded-xl bg-surface border border-line px-4 py-3.5">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_AUDIT_STAT_TOTAL")</div>
+                    <div class="mt-1 text-2xl font-extrabold tracking-tight tabular-nums leading-none">@Statistics.TotalCount.ToString("N0")</div>
+                    <div class="mt-1.5 text-xs text-muted"><i class="ph ph-list-checks mr-1"></i>@AppState.LocOr("WEBFRONT_AUDIT_STAT_TOTAL_DESC", "matching current filters")</div>
                 </div>
-
-                <!-- Permission Changes -->
-                <div class="bg-surface rounded-lg p-4 border border-line shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-purple-500/10">
-                            <i class="ph ph-shield-check text-xl text-purple-400 flex justify-center"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-foreground">
-                                @(Statistics.CountByActionType.GetValueOrDefault(Data.Models.EFChangeHistory.ChangeType.Permission, 0).ToString("N0"))
-                            </div>
-                            <div class="text-xs text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_AUDIT_STAT_PERMISSION")</div>
-                        </div>
+                <div class="rounded-xl bg-surface border border-line px-4 py-3.5">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_AUDIT_STAT_PERMISSION")</div>
+                    <div class="mt-1 text-2xl font-extrabold tracking-tight tabular-nums leading-none">
+                        @(Statistics.CountByActionType.GetValueOrDefault(Data.Models.EFChangeHistory.ChangeType.Permission, 0).ToString("N0"))
                     </div>
+                    <div class="mt-1.5 text-xs text-muted"><i class="ph ph-shield-check mr-1"></i>@AppState.LocOr("WEBFRONT_AUDIT_STAT_PERMISSION_DESC", "level changes")</div>
                 </div>
-
-                <!-- Commands -->
-                <div class="bg-surface rounded-lg p-4 border border-line shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-blue-500/10">
-                            <i class="ph ph-terminal text-xl text-blue-400 flex justify-center"></i>
-                        </div>
-                        <div>
-                            <div class="text-2xl font-bold text-foreground">
-                                @(Statistics.CountByActionType.GetValueOrDefault(Data.Models.EFChangeHistory.ChangeType.Command, 0).ToString("N0"))
-                            </div>
-                            <div class="text-xs text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_AUDIT_STAT_COMMANDS")</div>
-                        </div>
+                <div class="rounded-xl bg-surface border border-line px-4 py-3.5">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_AUDIT_STAT_COMMANDS")</div>
+                    <div class="mt-1 text-2xl font-extrabold tracking-tight tabular-nums leading-none">
+                        @(Statistics.CountByActionType.GetValueOrDefault(Data.Models.EFChangeHistory.ChangeType.Command, 0).ToString("N0"))
                     </div>
+                    <div class="mt-1.5 text-xs text-muted"><i class="ph ph-terminal mr-1"></i>@AppState.LocOr("WEBFRONT_AUDIT_STAT_COMMANDS_DESC", "commands executed")</div>
                 </div>
-
-                <!-- Top Admin -->
-                <div class="bg-surface rounded-lg p-4 border border-line shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-amber-500/10">
-                            <i class="ph ph-crown text-xl text-amber-400 flex justify-center"></i>
-                        </div>
-                        <div class="min-w-0">
-                            @if (Statistics.MostActiveAdmins.Count > 0)
-                            {
-                                var topAdmin = Statistics.MostActiveAdmins.First();
-                                <a href="/client/@topAdmin.ClientId" class="text-lg font-bold text-foreground hover:text-primary transition-colors block truncate">
-                                    <ColorCode Value="@topAdmin.Name"/>
-                                </a>
-                                <div class="text-xs text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_AUDIT_STAT_MOST_ACTIVE")</div>
-                            }
-                            else
-                            {
-                                <div class="text-lg font-bold text-muted">&ndash;</div>
-                                <div class="text-xs text-muted uppercase tracking-wider">@AppState.Loc("WEBFRONT_AUDIT_STAT_MOST_ACTIVE")</div>
-                            }
-                        </div>
-                    </div>
+                <div class="rounded-xl bg-surface border border-line px-4 py-3.5 min-w-0">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_AUDIT_STAT_MOST_ACTIVE")</div>
+                    @if (Statistics.MostActiveAdmins.Count > 0)
+                    {
+                        var topAdmin = Statistics.MostActiveAdmins.First();
+                        <a href="/client/@topAdmin.ClientId" class="mt-1 block text-xl font-extrabold tracking-tight leading-none truncate text-foreground hover:text-primary transition-colors">
+                            <ColorCode Value="@topAdmin.Name"/>
+                        </a>
+                        <div class="mt-1.5 text-xs text-muted font-mono tabular-nums"><i class="ph ph-crown mr-1"></i>#@topAdmin.ClientId</div>
+                    }
+                    else
+                    {
+                        <div class="mt-1 text-2xl font-extrabold tracking-tight leading-none text-muted">&ndash;</div>
+                        <div class="mt-1.5 text-xs text-muted"><i class="ph ph-crown mr-1"></i>@AppState.LocOr("WEBFRONT_AUDIT_STAT_MOST_ACTIVE_NONE", "no activity yet")</div>
+                    }
                 </div>
             </div>
         }
 
-        <!-- Filter Panel -->
-        <div class="bg-surface rounded-lg border border-line shadow-sm mb-6 p-4">
-            <div class="flex flex-wrap gap-4 items-end">
-                <!-- Search -->
-                <div class="flex-1 min-w-48">
-                    <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_SEARCH")</label>
-                    <div class="relative">
-                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
-                        <input type="text"
-                               @bind="_searchQuery"
-                               @bind:event="oninput"
-                               @onkeydown="HandleSearchKeyDown"
-                               placeholder="@AppState.Loc("WEBFRONT_AUDIT_SEARCH_PLACEHOLDER")"
-                               class="w-full pl-9 pr-4 py-2 bg-surface-alt border border-line rounded-lg text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"/>
+        <!-- Filters -->
+        <section class="rounded-xl bg-surface border border-line overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.LocOr("WEBFRONT_AUDIT_FILTERS", "Filters")</h2>
+            </div>
+            <div class="p-4 space-y-4">
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                    <!-- Search -->
+                    <div class="xl:col-span-2">
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_SEARCH")</label>
+                        <div class="relative">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"></i>
+                            <input type="text"
+                                   @bind="_searchQuery"
+                                   @bind:event="oninput"
+                                   @onkeydown="HandleSearchKeyDown"
+                                   placeholder="@AppState.Loc("WEBFRONT_AUDIT_SEARCH_PLACEHOLDER")"
+                                   class="block w-full h-10 pl-9 pr-3 rounded-lg bg-background border border-line text-sm text-foreground placeholder-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"/>
+                        </div>
+                    </div>
+
+                    <!-- Admin ID -->
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_ADMIN_ID")</label>
+                        <input type="number"
+                               @bind="_originId"
+                               placeholder="ID"
+                               class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm font-mono tabular-nums text-foreground placeholder-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"/>
+                    </div>
+
+                    <!-- Target ID -->
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_TARGET_ID")</label>
+                        <input type="number"
+                               @bind="_targetId"
+                               placeholder="ID"
+                               class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm font-mono tabular-nums text-foreground placeholder-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"/>
+                    </div>
+
+                    <!-- Date From -->
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_FROM")</label>
+                        <input type="date"
+                               @bind="_dateFrom"
+                               class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"/>
+                    </div>
+
+                    <!-- Date To -->
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_TO")</label>
+                        <input type="date"
+                               @bind="_dateTo"
+                               class="block w-full h-10 px-3 rounded-lg bg-background border border-line text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"/>
                     </div>
                 </div>
 
-                <!-- Action Types -->
-                <div>
-                    <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_ACTION_TYPE")</label>
-                    <div class="flex flex-wrap items-center gap-1 p-1 bg-surface rounded-xl border border-line">
-                        @foreach (var actionType in AvailableActionTypes)
-                        {
-                            var isSelected = _selectedActionTypes.Contains(actionType);
-                            <button @onclick="() => ToggleActionType(actionType)"
-                                    class="px-2 py-1 rounded-lg text-sm font-medium transition-all duration-200 @(isSelected ? "bg-primary text-on-primary shadow-lg" : "text-muted hover:text-foreground hover:bg-surface-alt")">
-                                @actionType.ToString()
-                            </button>
-                        }
+                <div class="flex flex-wrap items-end gap-4">
+                    <!-- Action Types -->
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-muted mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_ACTION_TYPE")</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach (var actionType in AvailableActionTypes)
+                            {
+                                var isSelected = _selectedActionTypes.Contains(actionType);
+                                <button type="button"
+                                        @onclick="() => ToggleActionType(actionType)"
+                                        class="px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors @(isSelected ? "border-primary text-primary bg-primary/10" : "border-line bg-surface text-subtle hover:text-foreground")">
+                                    @actionType.ToString()
+                                    @if (Statistics != null)
+                                    {
+                                        <span class="font-mono text-muted ml-1">@Statistics.CountByActionType.GetValueOrDefault(actionType, 0).ToString("N0")</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Apply / Clear -->
+                    <div class="ml-auto flex items-center gap-2">
+                        <button type="button" @onclick="ClearFilters"
+                                class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-surface-alt text-sm font-semibold text-foreground hover:bg-surface-hover transition-colors">
+                            <i class="ph ph-x text-base"></i>
+                            @AppState.Loc("WEBFRONT_FILTER_CLEAR")
+                        </button>
+                        <button type="button" @onclick="ApplyFilters"
+                                class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-sm font-semibold text-white hover:brightness-110 transition">
+                            <i class="ph ph-funnel text-base"></i>
+                            @AppState.Loc("WEBFRONT_AUDIT_FILTER_APPLY")
+                        </button>
                     </div>
                 </div>
-
-                <!-- Admin ID -->
-                <div class="w-32">
-                    <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_ADMIN_ID")</label>
-                    <input type="number"
-                           @bind="_originId"
-                           placeholder="ID"
-                           class="w-full px-3 py-2 bg-surface-alt border border-line rounded-lg text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"/>
-                </div>
-
-                <!-- Target ID -->
-                <div class="w-32">
-                    <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_TARGET_ID")</label>
-                    <input type="number"
-                           @bind="_targetId"
-                           placeholder="ID"
-                           class="w-full px-3 py-2 bg-surface-alt border border-line rounded-lg text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"/>
-                </div>
-
-                <!-- Date From -->
-                <div class="w-40">
-                    <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_FROM")</label>
-                    <input type="date"
-                           @bind="_dateFrom"
-                           class="w-full px-3 py-2 bg-surface-alt border border-line rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"/>
-                </div>
-
-                <!-- Date To -->
-                <div class="w-40">
-                    <label class="block text-xs text-muted uppercase tracking-wider mb-1.5">@AppState.Loc("WEBFRONT_AUDIT_FILTER_TO")</label>
-                    <input type="date"
-                           @bind="_dateTo"
-                           class="w-full px-3 py-2 bg-surface-alt border border-line rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"/>
-                </div>
-
-                <!-- Apply/Clear Buttons -->
-                <div class="flex gap-2">
-                    <button @onclick="ApplyFilters"
-                            class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
-                        <i class="ph ph-funnel mr-1"></i> @AppState.Loc("WEBFRONT_AUDIT_FILTER_APPLY")
-                    </button>
-                    <button @onclick="ClearFilters"
-                            class="px-4 py-2 bg-surface-alt border border-line text-muted text-sm font-medium rounded-lg hover:text-foreground transition-colors">
-                        <i class="ph ph-x mr-1"></i> @AppState.Loc("WEBFRONT_FILTER_CLEAR")
-                    </button>
-                </div>
             </div>
-
-            <!-- View Options -->
-            <div class="flex items-center gap-4 mt-4 pt-4 border-t border-line">
-                <ToggleSwitch Id="groupByActionToggle" 
-                              Label="@AppState.Loc("WEBFRONT_AUDIT_GROUP_BY_ACTION")" 
-                              Value="@_groupByAction" 
-                              ValueChanged="OnGroupByChanged" />
-            </div>
-        </div>
+        </section>
 
         @if (Results.Count == 0 && !_isLoading)
         {
-            <!-- Empty State -->
-            <div class="flex flex-col items-center justify-center py-20 text-muted">
-                <i class="ph ph-folder-open text-4xl mb-4"></i>
-                <span class="text-sm">@AppState.Loc("WEBFRONT_AUDIT_NO_RESULTS")</span>
+            <!-- Empty state -->
+            <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+                <i class="ph ph-tray text-3xl text-secondary"></i>
+                <span>@AppState.Loc("WEBFRONT_AUDIT_NO_RESULTS")</span>
             </div>
         }
         else if (_groupByAction && Results.Count > 0)
         {
-            <!-- Grouped View -->
-            <div class="space-y-4">
+            <!-- Grouped view -->
+            <div class="space-y-3">
                 @foreach (var group in Results.GroupBy(r => r.Action))
                 {
                     var isCollapsed = IsGroupCollapsed(group.Key);
-                    <div class="bg-surface rounded-lg overflow-hidden shadow ring-1 ring-line">
-                        <button @onclick="() => ToggleGroupCollapsed(group.Key)" 
+                    <section class="rounded-xl bg-surface border border-line overflow-hidden">
+                        <button type="button"
+                                @onclick="() => ToggleGroupCollapsed(group.Key)"
                                 @onclick:stopPropagation="true"
-                                class="w-full px-6 py-4 min-h-[44px] bg-surface-alt/50 border-b border-line flex items-center gap-3 hover:bg-surface-alt/80 active:bg-surface-alt transition-colors cursor-pointer touch-manipulation">
-                            <i class="ph @(isCollapsed ? "ph-caret-right" : "ph-caret-down") text-muted"></i>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(group.Key)">
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface-hover transition-colors @(isCollapsed ? "" : "border-b border-line")">
+                            <i class="ph-bold @(isCollapsed ? "ph-caret-right" : "ph-caret-down") text-muted"></i>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border @GetBadgeClass(group.Key)">
                                 @HighlightSearchTerm(group.Key)
                             </span>
-                            <span class="text-sm text-muted">@(AppState.Loc("WEBFRONT_AUDIT_ENTRIES").FormatExt(group.Count()))</span>
+                            <span class="text-xs text-muted">@(AppState.Loc("WEBFRONT_AUDIT_ENTRIES").FormatExt(group.Count()))</span>
                         </button>
                         @if (!isCollapsed)
                         {
                             @RenderAuditTable(group.ToList())
                         }
-                    </div>
+                    </section>
                 }
             </div>
         }
         else if (Results.Count > 0)
         {
-            <!-- Standard Table View -->
-            <div class="bg-surface rounded-lg overflow-hidden shadow ring-1 ring-line">
+            <!-- Table view -->
+            <section class="rounded-xl bg-surface border border-line overflow-hidden">
                 @RenderAuditTable(Results)
-            </div>
-
-            <!-- Mobile Cards -->
-            <div class="space-y-3 md:hidden mt-4">
-                @foreach (var info in Results)
-                {
-                    <div class="bg-surface border border-line rounded-lg shadow-sm overflow-hidden">
-                        <!-- Header Row -->
-                        <div class="flex justify-between items-center px-4 py-2.5 bg-surface-alt/30 border-b border-line">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider @GetBadgeClass(info.Action)">
-                                @HighlightSearchTerm(info.Action)
-                            </span>
-                            <span class="text-[11px] text-muted">@info.When.ToLocalTime().ToString("g")</span>
-                        </div>
-                        
-                        <!-- Content -->
-                        <div class="p-4 space-y-3">
-                            <!-- Admin -->
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0">@AppState.Loc("WEBFRONT_AUDIT_ADMIN")</span>
-                                <a href="/client/@info.OriginId" class="text-sm text-foreground hover:text-primary transition-colors font-medium truncate">
-                                    <ColorCode Value="@info.OriginName"/> <span class="text-muted font-normal">(@info.OriginId)</span>
-                                </a>
-                            </div>
-                            
-                            <!-- IP -->
-                            @if (!string.IsNullOrEmpty(info.OriginIPAddress))
-                            {
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0">@AppState.Loc("WEBFRONT_AUDIT_IP")</span>
-                                    <span class="text-xs font-mono text-muted">@info.OriginIPAddress</span>
-                                </div>
-                            }
-                            
-                            <!-- Target -->
-                            @if (info.TargetId != null)
-                            {
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0">@AppState.Loc("WEBFRONT_AUDIT_TARGET")</span>
-                                    <a href="/client/@info.TargetId" class="text-sm text-foreground hover:text-primary transition-colors font-medium truncate">
-                                        <ColorCode Value="@info.TargetName"/> <span class="text-muted font-normal">(@info.TargetId)</span>
-                                    </a>
-                                </div>
-                            }
-                            
-                            <!-- Info/Data -->
-                            @if (!string.IsNullOrEmpty(info.Data))
-                            {
-                                <div class="text-xs font-mono bg-surface-alt/50 px-3 py-2 rounded border border-line break-words text-subtle">
-                                    @HighlightSearchTerm(info.Data)
-                                </div>
-                            }
-
-                            <!-- Values -->
-                            <AuthorizeView Policy="@DataDetailsPolicy">
-                                @if ((!string.IsNullOrWhiteSpace(info.NewValue) && info.NewValue != "--") ||
-                                     (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--"))
-                                {
-                                    <div class="space-y-2 pt-2 border-t border-line">
-                                        @if (!string.IsNullOrWhiteSpace(info.NewValue) && info.NewValue != "--")
-                                        {
-                                            <div class="flex gap-2">
-                                                <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0 pt-0.5">@AppState.Loc("WEBFRONT_AUDIT_CURRENT")</span>
-                                                <span class="text-xs font-mono text-green-400 break-all">@HighlightSearchTerm(info.NewValue)</span>
-                                            </div>
-                                        }
-                                        <!--@if (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--")
-                                        {
-                                            <div class="flex gap-2">
-                                                <span class="text-[10px] text-muted uppercase tracking-wider w-12 shrink-0 pt-0.5">Previous</span>
-                                                <span class="text-xs font-mono text-red-400 break-all">@info.OldValue</span>
-                                            </div>
-                                        }-->
-                                    </div>
-                                }
-                            </AuthorizeView>
-                        </div>
-                    </div>
-                }
-            </div>
+            </section>
         }
 
         <!-- Infinite scroll trigger -->
-        <div id="loadMoreAuditTrigger" class="w-full text-center mt-8 pb-8">
+        <div id="loadMoreAuditTrigger" class="w-full flex items-center justify-center py-6">
             @if (_isLoading)
             {
                 <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -328,84 +226,129 @@
     private RenderFragment RenderAuditTable(List<AuditInfo> items) => __builder =>
     {
         <div class="overflow-x-auto hidden md:block">
-            <table class="w-full text-sm text-left text-muted">
-                <thead class="text-xs text-muted uppercase bg-surface-alt/30 border-b border-line">
-                <tr>
-                    <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
-                    <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_ORIGIN_IP")</th>
-                    <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
-                    <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
-                    <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</th>
+            <table class="w-full text-sm">
+                <thead>
+                <tr class="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    <th scope="col" class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_TYPE")</th>
+                    <th scope="col" class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_ORIGIN_IP")</th>
+                    <th scope="col" class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_ADMIN")</th>
+                    <th scope="col" class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_PENALTY_TEMPLATE_NAME")</th>
+                    <th scope="col" class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_INFO")</th>
                     <AuthorizeView Policy="@DataDetailsPolicy">
-                        <th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</th>
-                        <!--<th scope="col" class="px-4 py-3 font-medium">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_PREVIOUS")</th>-->
+                        <th scope="col" class="text-left px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_CURRENT")</th>
                     </AuthorizeView>
-                    <th scope="col" class="px-4 py-3 font-medium text-right">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</th>
+                    <th scope="col" class="text-right px-4 py-2.5 border-b border-line">@AppState.Loc("WEBFRONT_ADMIN_AUDIT_LOG_TIME")</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-line">
                 @foreach (var info in items)
                 {
-                    <tr class="hover:bg-surface-hover/30 transition-colors">
-                        <td class="px-4 py-3">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium border @GetBadgeClass(info.Action)">
+                    <tr class="hover:bg-surface-hover transition-colors">
+                        <td class="px-4 py-2.5 align-middle">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border @GetBadgeClass(info.Action)">
                                 @HighlightSearchTerm(info.Action)
                             </span>
                         </td>
-                        <td class="px-4 py-3 font-mono text-xs text-muted">
+                        <td class="px-4 py-2.5 align-middle font-mono tabular-nums text-xs text-muted whitespace-nowrap">
                             @(string.IsNullOrEmpty(info.OriginIPAddress) ? "–" : info.OriginIPAddress)
                         </td>
-                        <td class="px-4 py-3">
-                            <a href="/client/@info.OriginId" class="text-foreground hover:text-primary font-medium transition-colors">
+                        <td class="px-4 py-2.5 align-middle whitespace-nowrap">
+                            <a href="/client/@info.OriginId" class="font-semibold text-foreground hover:text-primary transition-colors">
                                 <ColorCode Value="@info.OriginName"/>
                             </a>
-                            <span class="text-muted font-mono text-xs">@info.OriginId</span>
+                            <span class="ml-1 font-mono tabular-nums text-xs text-muted">#@info.OriginId</span>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-2.5 align-middle whitespace-nowrap">
                             @if (info.TargetId != null)
                             {
-                                <a href="/client/@info.TargetId" class="text-foreground hover:text-primary font-medium transition-colors">
+                                <a href="/client/@info.TargetId" class="font-semibold text-foreground hover:text-primary transition-colors">
                                     <ColorCode Value="@info.TargetName"/>
                                 </a>
-                                <span class="text-muted font-mono text-xs">@info.TargetId</span>
+                                <span class="ml-1 font-mono tabular-nums text-xs text-muted">#@info.TargetId</span>
                             }
                             else
                             {
-                                <span class="text-subtle">&ndash;</span>
+                                <span class="text-muted">&ndash;</span>
                             }
                         </td>
-                        <td class="px-4 py-3 font-mono text-xs text-subtle max-w-xs">
+                        <td class="px-4 py-2.5 align-middle font-mono text-xs text-subtle max-w-xs">
                             <div class="truncate" title="@info.Data">@HighlightSearchTerm(info.Data)</div>
                         </td>
                         <AuthorizeView Policy="@DataDetailsPolicy">
-                            <td class="px-4 py-3 font-mono text-xs max-w-32">
+                            <td class="px-4 py-2.5 align-middle font-mono text-xs max-w-32">
                                 @if (!string.IsNullOrWhiteSpace(info.NewValue) && info.NewValue != "--")
                                 {
-                                    <div class="truncate text-green-400" title="@info.NewValue">@HighlightSearchTerm(info.NewValue)</div>
+                                    <div class="truncate text-success" title="@info.NewValue">@HighlightSearchTerm(info.NewValue)</div>
                                 }
                                 else
                                 {
                                     <span class="text-muted">&ndash;</span>
                                 }
                             </td>
-                            <!--<td class="px-4 py-3 font-mono text-xs max-w-32">
-                                @if (!string.IsNullOrWhiteSpace(info.OldValue) && info.OldValue != "--")
-                                {
-                                    <div class="truncate text-red-400" title="@info.OldValue">@info.OldValue</div>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">&ndash;</span>
-                                }
-                            </td>-->
                         </AuthorizeView>
-                        <td class="px-4 py-3 text-right whitespace-nowrap text-muted text-xs">
+                        <td class="px-4 py-2.5 align-middle text-right font-mono tabular-nums text-xs text-muted whitespace-nowrap">
                             @info.When.ToLocalTime().ToString("g")
                         </td>
                     </tr>
                 }
                 </tbody>
             </table>
+        </div>
+
+        <div class="md:hidden divide-y divide-line">
+            @foreach (var info in items)
+            {
+                <div class="px-4 py-3 space-y-2 text-sm">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide border @GetBadgeClass(info.Action)">
+                            @HighlightSearchTerm(info.Action)
+                        </span>
+                        <span class="font-mono tabular-nums text-[11px] text-muted whitespace-nowrap">@info.When.ToLocalTime().ToString("g")</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-muted w-14 shrink-0">@AppState.Loc("WEBFRONT_AUDIT_ADMIN")</span>
+                        <a href="/client/@info.OriginId" class="font-semibold text-foreground hover:text-primary transition-colors truncate">
+                            <ColorCode Value="@info.OriginName"/> <span class="font-mono text-xs text-muted font-normal">#@info.OriginId</span>
+                        </a>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(info.OriginIPAddress))
+                    {
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-muted w-14 shrink-0">@AppState.Loc("WEBFRONT_AUDIT_IP")</span>
+                            <span class="font-mono tabular-nums text-xs text-muted">@info.OriginIPAddress</span>
+                        </div>
+                    }
+
+                    @if (info.TargetId != null)
+                    {
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-muted w-14 shrink-0">@AppState.Loc("WEBFRONT_AUDIT_TARGET")</span>
+                            <a href="/client/@info.TargetId" class="font-semibold text-foreground hover:text-primary transition-colors truncate">
+                                <ColorCode Value="@info.TargetName"/> <span class="font-mono text-xs text-muted font-normal">#@info.TargetId</span>
+                            </a>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(info.Data))
+                    {
+                        <div class="font-mono text-xs text-subtle break-words">
+                            @HighlightSearchTerm(info.Data)
+                        </div>
+                    }
+
+                    <AuthorizeView Policy="@DataDetailsPolicy">
+                        @if (!string.IsNullOrWhiteSpace(info.NewValue) && info.NewValue != "--")
+                        {
+                            <div class="flex gap-2 pt-2 border-t border-line">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-muted w-14 shrink-0 pt-0.5">@AppState.Loc("WEBFRONT_AUDIT_CURRENT")</span>
+                                <span class="font-mono text-xs text-success break-all">@HighlightSearchTerm(info.NewValue)</span>
+                            </div>
+                        }
+                    </AuthorizeView>
+                </div>
+            }
         </div>
     };
 }

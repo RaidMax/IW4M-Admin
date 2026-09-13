@@ -96,6 +96,15 @@ public class AppState(ApplicationConfiguration appConfig)
         }
     }
 
+    /// <summary>
+    /// Localizes <paramref name="key"/>, returning <paramref name="fallback"/> when the key has no translation.
+    /// </summary>
+    public string LocOr(string key, string fallback)
+    {
+        var value = Loc(key);
+        return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+    }
+
     public static string GetLevelColorClass(Data.Models.Client.EFClient.Permission permission) => permission switch
     {
         Data.Models.Client.EFClient.Permission.Console => "text-level-console",

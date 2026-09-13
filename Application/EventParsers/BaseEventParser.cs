@@ -535,48 +535,57 @@ namespace IW4MAdmin.Application.EventParsers
                 return null;
             }
 
-            var originIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginNetworkId]];
-            var targetIdString = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetNetworkId]];
+            var originIdString = GetMappedValue(Configuration.Kill, match,
+                ParserRegex.GroupType.OriginNetworkId);
+            var targetIdString = GetMappedValue(Configuration.Kill, match,
+                ParserRegex.GroupType.TargetNetworkId);
 
-            var originName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginName]]
+            var originName = GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.OriginName)
                 ?.TrimNewLine();
-            var targetName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetName]]
+            var targetName = GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.TargetName)
                 ?.TrimNewLine();
 
-            var originId = originIdString.IsBotGuid()
-                ? originName.GenerateGuidFromString()
-                : originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
-            var targetId = targetIdString.IsBotGuid()
-                ? targetName.GenerateGuidFromString()
-                : targetIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
+            var originId = string.IsNullOrWhiteSpace(originIdString)
+                ? Utilities.WORLD_ID
+                : originIdString.IsBotGuid()
+                    ? originName.GenerateGuidFromString()
+                    : originIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
+            var targetId = string.IsNullOrWhiteSpace(targetIdString)
+                ? Utilities.WORLD_ID
+                : targetIdString.IsBotGuid()
+                    ? targetName.GenerateGuidFromString()
+                    : targetIdString.ConvertGuidToLong(Configuration.GuidNumberStyle, Utilities.WORLD_ID);
 
-            var originClientNumber =
-                Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginClientNumber]]);
-            var targetClientNumber =
-                Parse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetClientNumber]]);
+            var originClientNumber = TryParse(
+                GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.OriginClientNumber), out var parsedOrigin)
+                ? parsedOrigin
+                : -1;
+            var targetClientNumber = TryParse(
+                GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.TargetClientNumber), out var parsedTarget)
+                ? parsedTarget
+                : -1;
 
             var originTeamName =
-                match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.OriginTeam]];
+                GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.OriginTeam);
             var targetTeamName =
-                match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.TargetTeam]];
+                GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.TargetTeam);
 
-            if (Configuration.TeamMapping.ContainsKey(originTeamName))
+            if (originTeamName is not null && Configuration.TeamMapping.ContainsKey(originTeamName))
             {
                 originTeamName = Configuration.TeamMapping[originTeamName].ToString();
             }
 
-            if (Configuration.TeamMapping.ContainsKey(targetTeamName))
+            if (targetTeamName is not null && Configuration.TeamMapping.ContainsKey(targetTeamName))
             {
                 targetTeamName = Configuration.TeamMapping[targetTeamName].ToString();
             }
 
-            var weaponName = match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.Weapon]];
-            TryParse(match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.Damage]],
-                out var damage);
+            var weaponName = GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.Weapon);
+            TryParse(GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.Damage), out var damage);
             var meansOfDeath =
-                match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.MeansOfDeath]];
+                GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.MeansOfDeath);
             var hitLocation =
-                match.Values[Configuration.Kill.GroupMapping[ParserRegex.GroupType.HitLocation]];
+                GetMappedValue(Configuration.Kill, match, ParserRegex.GroupType.HitLocation);
 
             return new ClientKillEvent
             {
@@ -602,6 +611,15 @@ namespace IW4MAdmin.Application.EventParsers
                 MeansOfDeath = meansOfDeath,
                 HitLocation = hitLocation
             };
+        }
+
+        private static string GetMappedValue(ParserRegex parserRegex, IMatchResult match,
+            ParserRegex.GroupType groupType)
+        {
+            return parserRegex.GroupMapping.TryGetValue(groupType, out var groupIndex) &&
+                   groupIndex >= 0 && groupIndex < match.Values.Length
+                ? match.Values[groupIndex]
+                : null;
         }
 
         #endregion

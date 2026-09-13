@@ -4,6 +4,10 @@
 @source "../../../";
 
 @theme {
+    /* Typography */
+    --font-sans: "Manrope", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
     /* Permission Level Colors */
     --color-level-console: #ff6060;
     --color-level-banned: #ff6060;
@@ -241,4 +245,43 @@ a {
 .marquee-enabled:active .marquee-text,
 .marquee-enabled:focus-within .marquee-text {
     animation: marquee var(--marquee-duration, 5s) linear infinite alternate;
+}
+
+/* ============================================
+   SERVER CARD BANNERS
+   Game artwork header with a readable overlay.
+   Kept in the components layer so utilities
+   (absolute, etc.) still win on children.
+   ============================================ */
+@layer components {
+    .server-banner {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: var(--color-surface-alt);
+    }
+
+    .server-banner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(180deg, color-mix(in srgb, var(--color-background) 20%, transparent) 0%, color-mix(in srgb, var(--color-surface) 92%, transparent) 100%),
+            linear-gradient(90deg, color-mix(in srgb, var(--color-surface) 55%, transparent), transparent 60%);
+    }
+
+    .server-banner-plain::before {
+        background:
+            radial-gradient(120% 90% at 85% 0%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 60%),
+            linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-surface) 60%, transparent));
+    }
+
+    .server-banner-offline {
+        filter: saturate(0.35);
+    }
+
+    .server-banner > * {
+        position: relative;
+    }
 }

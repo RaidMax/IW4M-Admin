@@ -4,127 +4,141 @@
 
 <PageTitle>@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT") | @AppState.WebfrontBranding</PageTitle>
 
-<div class="max-w-7xl mx-auto p-4 md:p-8">
-    <div class="flex items-center gap-3 mb-6">
-        <div class="flex items-center justify-center p-2.5 rounded-lg bg-surface-alt/50 border border-line shadow-sm">
-            <i class="ph ph-chat-circle-text text-xl text-primary"></i>
-        </div>
-        <div>
-            <h2 class="text-2xl font-bold text-gradient-title">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT")</h2>
-            <div class="text-sm text-subtle font-medium mt-0.5">
+<div class="p-4 md:p-6 xl:p-8 max-w-[1680px] mx-auto space-y-5">
+    <!-- Heading + edit search -->
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_SELECT_TYPE_CHAT")</h1>
+            <p class="text-sm text-muted mt-0.5">
                 @(AppState.Loc("WEBFRONT_SEARCH_MESSAGES_FOUND").FormatExt(_totalCount.ToString("#,##0")))
-            </div>
+            </p>
+        </div>
+
+        <div class="ml-auto flex items-center gap-2">
+            <button type="button"
+                    @onclick="() => AppState.IsAdvancedSearchOpen = true"
+                    class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-surface-alt text-sm font-semibold text-foreground hover:bg-surface-hover transition-colors">
+                <i class="ph ph-sliders-horizontal text-base"></i>
+                @AppState.LocOr("WEBFRONT_SEARCH_EDIT", "Edit search")
+            </button>
         </div>
     </div>
 
-    <div class="md:bg-surface md:rounded-lg md:border md:border-line md:shadow-sm md:overflow-hidden">
-        <!-- Desktop Table -->
-        <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-surface-alt/50">
-                <tr>
-                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_CONTENT_TABLE_NAME_FULL")</th>
-                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ACTION_LABEL_MESSAGE")</th>
-                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER")</th>
-                    <th class="p-4 text-xs font-semibold uppercase tracking-wider text-muted text-right">@AppState.Loc("WEBFRONT_SEARCH_TIME")</th>
-                </tr>
-                </thead>
-                <tbody class="divide-y divide-line">
-                @if (_isLoading && Results.Count == 0)
-                {
-                    <tr>
-                        <td colspan="4" class="p-12 text-center text-muted">
-                            <i class="ph ph-spinner animate-spin text-4xl text-primary mx-auto mb-4"></i>
-                            <div class="text-lg">@AppState.Loc("WEBFRONT_LOADING")</div>
-                        </td>
-                    </tr>
-                }
-                else if (Results.Count == 0)
-                {
-                    <tr>
-                        <td colspan="4" class="p-12 text-center text-muted">
-                            <i class="ph ph-chat-circle-text text-4xl mb-4 text-subtle mx-auto"></i>
-                            <div class="text-lg">@AppState.Loc("WEBFRONT_SEARCH_NO_MESSAGES")</div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var message in Results)
+    <!-- Active filter summary -->
+    @if (!string.IsNullOrEmpty(MessageContains) || ClientId.HasValue || !string.IsNullOrEmpty(ServerId)
+         || SentAfter.HasValue || SentBefore.HasValue || Direction == (int)SortDirection.Ascending)
+    {
+        <div class="flex flex-wrap items-center gap-2">
+            @if (!string.IsNullOrEmpty(MessageContains))
+            {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-alt text-subtle border border-line">
+                    <span class="text-muted">@AppState.Loc("WEBFRONT_ACTION_LABEL_MESSAGE")</span>
+                    <span class="text-foreground">@MessageContains</span>
+                    @if (IsExactMatch)
                     {
-                        <tr class="hover:bg-surface-hover/30 transition-colors group cursor-pointer"
-                            @onclick="() => OpenContextModal(message)">
-                            <td class="p-4">
-                                <a href="/client/@message.ClientId"
-                                   class="font-medium hover:text-primary transition-colors text-foreground"
-                                   @onclick:stopPropagation="true">
-                                    <ColorCode Value="@message.ClientName"/>
-                                </a>
-                            </td>
-                            <td class="p-4 text-sm text-subtle max-w-md truncate">
-                                <ColorCode Value="@message.Message"/>
-                            </td>
-                            <td class="p-4 text-sm text-muted">
-                                <ColorCode Value="@message.ServerName"/>
-                            </td>
-                            <td class="p-4 text-sm text-muted text-right">@message.When.HumanizeForCurrentCulture()</td>
-                        </tr>
+                        <span class="font-mono text-[10px] uppercase text-primary">@AppState.LocOr("WEBFRONT_SEARCH_EXACT", "Exact")</span>
                     }
-                }
-                </tbody>
-            </table>
+                </span>
+            }
+            @if (ClientId.HasValue)
+            {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-alt text-subtle border border-line">
+                    <span class="text-muted">@AppState.Loc("WEBFRONT_BAN_MGMT_FORM_ID")</span>
+                    <a href="/client/@ClientId" class="font-mono text-foreground hover:underline">@ClientId</a>
+                </span>
+            }
+            @if (!string.IsNullOrEmpty(ServerId))
+            {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-alt text-subtle border border-line">
+                    <span class="text-muted">@AppState.Loc("WEBFRONT_CONTEXT_MENU_GLOBAL_SERVER")</span>
+                    <span class="font-mono text-foreground">@ServerId</span>
+                </span>
+            }
+            @if (SentAfter.HasValue)
+            {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-alt text-subtle border border-line">
+                    <span class="text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_AFTER")</span>
+                    <span class="font-mono text-foreground">@SentAfter.Value.ToString("d") @SentAfterTime</span>
+                </span>
+            }
+            @if (SentBefore.HasValue)
+            {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-alt text-subtle border border-line">
+                    <span class="text-muted">@AppState.Loc("WEBFRONT_ADVANCED_SEARCH_LABEL_SENT_BEFORE")</span>
+                    <span class="font-mono text-foreground">@SentBefore.Value.ToString("d") @SentBeforeTime</span>
+                </span>
+            }
+            @if (Direction == (int)SortDirection.Ascending)
+            {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-alt text-subtle border border-line">
+                    <i class="ph ph-sort-ascending text-sm"></i>
+                    <span class="text-foreground">@AppState.LocOr("WEBFRONT_SEARCH_OLDEST_FIRST", "Oldest first")</span>
+                </span>
+            }
+        </div>
+    }
+
+    <!-- Results feed -->
+    <section class="rounded-xl bg-surface border border-line overflow-hidden">
+        <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+            <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">@AppState.Loc("WEBFRONT_ACTION_LABEL_MESSAGE")</h2>
+            <span class="text-xs text-muted font-mono tabular-nums">@Results.Count.ToString("#,##0")</span>
         </div>
 
-        <!-- Mobile List -->
-        <div class="md:hidden space-y-4">
-            @if (_isLoading && Results.Count == 0)
-            {
-                <div class="text-center py-8">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-            }
-            else if (Results.Count == 0)
-            {
-                <div class="text-center py-12 text-muted bg-surface rounded-lg border border-line border-dashed">
-                    <i class="ph ph-chat-circle-text text-4xl mb-3 text-subtle mx-auto"></i>
-                    <div>No messages found</div>
-                </div>
-            }
-            else
-            {
-                foreach (var message in Results)
+        @if (_isLoading && Results.Count == 0)
+        {
+            <div class="divide-y divide-line">
+                @for (var i = 0; i < 6; i++)
                 {
-                    <div
-                        class="bg-surface border border-line rounded-lg p-4 shadow-sm cursor-pointer hover:bg-surface-hover/30 transition-colors"
-                        @onclick="() => OpenContextModal(message)">
-                        <div class="flex justify-between items-start mb-2">
+                    <div class="px-4 py-3">
+                        <div class="h-4 rounded bg-surface-alt animate-pulse"></div>
+                    </div>
+                }
+            </div>
+        }
+        else if (Results.Count == 0)
+        {
+            <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+                <i class="ph ph-chat-circle-text text-3xl text-secondary"></i>
+                <span>@AppState.Loc("WEBFRONT_SEARCH_NO_MESSAGES")</span>
+            </div>
+        }
+        else
+        {
+            <div class="divide-y divide-line">
+                @foreach (var message in Results)
+                {
+                    <div class="grid grid-cols-[18px_1fr_auto] gap-2 items-baseline px-4 py-1.5 text-sm cursor-pointer hover:bg-surface-hover transition-colors"
+                         @onclick="() => OpenContextModal(message)">
+                        <i class="ph ph-chat-circle-text text-muted text-sm"></i>
+                        <div class="min-w-0 break-words">
                             <a href="/client/@message.ClientId"
-                               class="font-bold text-foreground hover:text-primary transition-colors"
+                               class="font-semibold text-foreground hover:underline"
                                @onclick:stopPropagation="true">
                                 <ColorCode Value="@message.ClientName"/>
                             </a>
-                            <span class="text-xs text-muted">@message.When.HumanizeForCurrentCulture()</span>
+                            <span class="text-subtle ml-1">
+                                <ColorCode Value="@message.Message"/>
+                            </span>
+                            <span class="text-muted text-xs ml-2">
+                                <ColorCode Value="@message.ServerName"/>
+                            </span>
                         </div>
-                        <div class="text-sm text-subtle mb-2">
-                            <ColorCode Value="@message.Message"/>
-                        </div>
-                        <div class="text-xs text-muted">
-                            <ColorCode Value="@message.ServerName"/>
-                        </div>
+                        <span class="font-mono text-[11px] text-muted whitespace-nowrap" title="@message.When.ToString("f")">@message.When.HumanizeForCurrentCulture()</span>
                     </div>
                 }
-            }
-        </div>
-    </div>
+            </div>
+        }
+    </section>
 
-    <!-- Load More / Status -->
-    <div id="loadMoreMessageTrigger" class="mt-6 flex justify-center py-4">
+    <!-- Infinite scroll trigger element (id is observed by wwwroot/js/infinite-scroll.js) -->
+    <div id="loadMoreMessageTrigger" class="w-full flex justify-center py-4">
         @if (_isLoading && Results.Count > 0)
         {
-            <div class="flex items-center gap-2 text-muted animate-pulse">
-                <i class="ph ph-spinner animate-spin text-xl"></i>
-                <span>@AppState.Loc("WEBFRONT_LOADING")</span>
-            </div>
+            <span class="inline-flex items-center gap-2 text-sm text-muted">
+                <i class="ph ph-spinner animate-spin text-base"></i>
+                @AppState.Loc("WEBFRONT_LOADING")
+            </span>
         }
         else if (_hasMore)
         {
@@ -133,7 +147,7 @@
         }
         else if (Results.Count > 0)
         {
-            <div class="text-muted italic text-sm">@AppState.Loc("WEBFRONT_SEARCH_NO_MORE_RESULTS")</div>
+            <span class="text-muted text-sm">@AppState.Loc("WEBFRONT_SEARCH_NO_MORE_RESULTS")</span>
         }
     </div>
 </div>
@@ -146,54 +160,44 @@
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @onclick="CloseContextModal"></div>
 
         <!-- Modal -->
-        <div
-            class="relative bg-surface rounded-lg shadow-xl border border-line max-w-2xl w-full max-h-[80vh] flex flex-col z-10">
+        <div class="relative bg-surface rounded-xl shadow-xl border border-line max-w-2xl w-full max-h-[80vh] flex flex-col z-10 overflow-hidden">
             <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-line">
-                <div class="flex items-center gap-2">
-                    <i class="ph ph-chat-circle-text text-secondary"></i>
-                    <h3 class="font-semibold text-foreground">@AppState.Loc("WEBFRONT_CHAT_CONTEXT")</h3>
-                    <span class="text-xs text-muted">±5 minutes</span>
-                </div>
-                <button @onclick="CloseContextModal" class="text-muted hover:text-foreground transition-colors">
-                    <i class="ph ph-x text-xl"></i>
+            <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                <i class="ph ph-chat-circle-text text-secondary"></i>
+                <h3 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    @AppState.Loc("WEBFRONT_CHAT_CONTEXT")
+                    <span class="ml-1 font-mono normal-case tracking-normal">&plusmn;5 min</span>
+                </h3>
+                <button type="button" @onclick="CloseContextModal"
+                        class="w-9 h-9 rounded-lg flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+                        title="@AppState.LocOr("WEBFRONT_ACTION_CLOSE", "Close")">
+                    <i class="ph ph-x text-base"></i>
                 </button>
             </div>
 
             <!-- Content -->
-            <div class="flex-1 overflow-y-auto p-4 bg-surface-alt/20">
+            <div class="flex-1 overflow-y-auto py-1">
                 @if (_contextLoading)
                 {
-                    <div class="flex items-center justify-center py-8">
-                        <i class="ph ph-spinner animate-spin text-3xl text-primary"></i>
+                    <div class="flex items-center justify-center py-8 text-muted">
+                        <i class="ph ph-spinner animate-spin text-2xl"></i>
                     </div>
                 }
                 else if (_contextMessages != null && _contextMessages.Count > 0)
                 {
-                    <div class="space-y-1">
+                    <div class="divide-y divide-line">
                         @foreach (var msg in _contextMessages)
                         {
                             var isSelected = msg.When == _selectedMessage.When && msg.ClientId == _selectedMessage.ClientId && msg.Message == _selectedMessage.Message;
-                            <div
-                                class="group rounded-md px-3 py-2 transition-colors @(isSelected ? "bg-primary/15 ring-1 ring-primary/30" : "hover:bg-surface-hover/50")">
-                                <div class="flex items-start gap-3">
-                                    <!-- Timestamp -->
-                                    <span class="text-[11px] font-mono text-muted/70 pt-0.5 shrink-0 w-14">
-                                        @msg.When.ToString("HH:mm:ss")
+                            <div class="grid grid-cols-[auto_1fr] gap-3 items-baseline px-4 py-1.5 text-sm transition-colors @(isSelected ? "bg-primary/10" : "hover:bg-surface-hover")">
+                                <span class="font-mono text-[11px] text-muted tabular-nums whitespace-nowrap">@msg.When.ToString("HH:mm:ss")</span>
+                                <div class="min-w-0 break-words">
+                                    <a href="/client/@msg.ClientId" class="font-semibold text-primary hover:underline">
+                                        <ColorCode Value="@msg.ClientName"/>
+                                    </a>
+                                    <span class="text-foreground ml-1">
+                                        <ColorCode Value="@msg.Message"/>
                                     </span>
-
-                                    <!-- Message Content -->
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-baseline gap-2 flex-wrap">
-                                            <a href="/client/@msg.ClientId"
-                                               class="font-semibold text-sm text-primary shrink-0">
-                                                <ColorCode Value="@msg.ClientName"/>
-                                            </a>
-                                            <span class="text-sm text-foreground/90 break-words">
-                                                <ColorCode Value="@msg.Message"/>
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         }
@@ -201,21 +205,19 @@
                 }
                 else
                 {
-                    <div class="text-center py-8 text-muted">
-                        <i class="ph ph-chat-circle-text text-3xl mb-2"></i>
-                        <div>@AppState.Loc("WEBFRONT_NO_CONTEXT_MESSAGES")</div>
+                    <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+                        <i class="ph ph-chat-circle-text text-3xl text-secondary"></i>
+                        <span>@AppState.Loc("WEBFRONT_NO_CONTEXT_MESSAGES")</span>
                     </div>
                 }
             </div>
 
             <!-- Footer -->
-            <div class="p-4 border-t border-line bg-surface-alt/30">
-                <div class="flex items-center justify-between text-xs text-muted">
-                    <span>
-                        <ColorCode Value="@_selectedMessage.ServerName"/>
-                    </span>
-                    <span>@_selectedMessage.When.ToString("g")</span>
-                </div>
+            <div class="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-line text-xs text-muted">
+                <span class="truncate">
+                    <ColorCode Value="@_selectedMessage.ServerName"/>
+                </span>
+                <span class="font-mono tabular-nums whitespace-nowrap">@_selectedMessage.When.ToString("g")</span>
             </div>
         </div>
     </div>

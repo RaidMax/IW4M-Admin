@@ -1,133 +1,116 @@
-<div @ref="_cardElement"
-     class="relative overflow-hidden rounded-lg bg-surface-alt border border-line shadow-lg transition-all duration-300 hover:border-line-hover group flex flex-col">
+<article @ref="_cardElement"
+         class="flex flex-col rounded-xl bg-surface border border-line overflow-hidden transition-colors hover:border-line-hover @(_expanded ? "2xl:col-span-2" : "")">
 
-    <!-- Compact Header -->
-    <div
-        class="relative min-h-[40px] px-4 flex flex-col md:flex-row md:items-center justify-center md:justify-between bg-surface border-b border-line cursor-pointer md:cursor-default py-2 md:py-0"
-        id="server_header_@Model.Id"
-        @onclick="() => _showMobileDetails = !_showMobileDetails">
+    <!-- Banner header (id and h3 are relied on by external DOM adapters, keep them) -->
+    <div id="server_header_@Model.Id"
+         class="server-banner relative min-h-[112px] px-4 pt-3 pb-3 flex flex-col justify-end @(HasBanner ? "" : "server-banner-plain") @(Model.Online ? "" : "server-banner-offline")"
+         style="@BannerStyle">
 
-        <!-- Main Row -->
-        <div class="flex items-center w-full min-w-0">
-
-            <!-- 1. Game Tag -->
-            <span
-                class="px-1.5 py-0.5 rounded bg-surface text-[10px] font-mono text-muted border border-line uppercase tracking-widest shrink-0 mr-3">
-                @Model.Game
-            </span>
-
-            <!-- 2. Server Name (High visual weight, expanded) -->
-            <h3 class="text-sm font-bold text-foreground truncate flex-1 min-w-0 mr-4">
-                <ColorCode Value="@Model.Name"/>
-            </h3>
-
-            <!-- Desktop: 3. Map & Mode & 4. Player Count -->
-            <div class="hidden md:flex items-center shrink-0 space-x-3 text-xs font-medium text-subtle mr-4">
-                <!-- 3. Map & Mode -->
-                <div class="flex items-center space-x-1">
-                    <span class="text-foreground">@Model.Map</span>
-                    @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
-                    {
-                        <span class="text-muted">&bull;</span>
-                        <span class="text-subtle">@Model.GameType</span>
-                    }
-                </div>
-
-                <!-- 4. Player Count -->
-                <div
-                    class="px-2 py-0.5 rounded-full bg-surface text-foreground font-mono text-xs border border-line shadow-sm">
-                    <span class="font-bold">@Model.ClientCount</span>
-                    <span class="opacity-50 mx-0.5">/</span>
-                    <span class="opacity-75">@(Model.MaxClients - Model.PrivateClientSlots)</span>
-                </div>
-
-                <!-- 5. Lobby Z-Score Badge -->
-                @if (Model.LobbyZScore != null)
-                {
-                    <div
-                        class="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20"
-                        title="Lobby Rating">
-                        <i class="ph-fill ph-lightning text-xs"></i>
-                        <span class="font-mono font-bold">@Model.LobbyZScore</span>
-                    </div>
-                }
-            </div>
-
-            <!-- 5. Actions (Always Visible, prevent propagation) -->
-            <div class="flex items-center space-x-1 shrink-0 ml-auto md:ml-0" @onclick:stopPropagation>
-                <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ChatMessage}.{WebfrontPermission.Write}")">
-                    <button @onclick:preventDefault @onclick="() => OnChat.InvokeAsync(Model.Endpoint)"
-                            class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors">
-                        <i class="ph-bold ph-chat-circle-text text-xs"></i>
-                    </button>
-                </AuthorizeView>
-
-                <button @onclick:preventDefault @onclick="OpenScoreboard"
-                        class="flex items-center justify-center w-6 h-6 rounded bg-surface text-muted hover:bg-surface-hover hover:text-foreground transition-colors"
-                        title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))">
-                    <i class="ph-bold ph-list text-xs"></i>
+        <!-- Actions -->
+        <div class="absolute top-2.5 right-2.5 flex items-center gap-1" @onclick:stopPropagation>
+            <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.ChatMessage}.{WebfrontPermission.Write}")">
+                <button type="button" @onclick:preventDefault @onclick="() => OnChat.InvokeAsync(Model.Endpoint)"
+                        class="@ActionButtonClass"
+                        title="@AppState.LocOr("WEBFRONT_ACTION_CHAT", "Send message")">
+                    <i class="ph-bold ph-chat-circle-text text-sm"></i>
                 </button>
+            </AuthorizeView>
 
+            <button type="button" @onclick:preventDefault @onclick="OpenScoreboard"
+                    class="@ActionButtonClass"
+                    title="@(AppState.Loc("WEBFRONT_TITLE_SCOREBOARD"))">
+                <i class="ph-bold ph-list-numbers text-sm"></i>
+            </button>
+
+            @if (!string.IsNullOrEmpty(Model.ConnectProtocolUrl))
+            {
                 <a href="@Model.ConnectProtocolUrl"
-                   class="flex items-center justify-center w-6 h-6 rounded bg-surface hover:bg-surface-hover text-primary transition-colors hidden md:flex"
+                   class="hidden md:flex w-8 h-8 rounded-md items-center justify-center bg-primary text-white shadow-sm hover:brightness-110 transition"
                    title="@(AppState.Loc("WEBFRONT_HOME_JOIN_DESC"))">
-                    <i class="ph-fill ph-play text-xs"></i>
+                    <i class="ph-fill ph-play text-sm"></i>
                 </a>
-            </div>
-
-            <!-- Mobile Expansion Chevron -->
-            <div class="md:hidden ml-2 text-muted">
-                <i class="ph-bold @(_showMobileDetails ? "ph-caret-up" : "ph-caret-down")"></i>
-            </div>
+            }
         </div>
 
-        <!-- Mobile Details (Map, Mode, Player Count) -->
-        <div
-            class="@(_showMobileDetails ? "flex" : "hidden") md:hidden flex-col space-y-2 pt-2 mt-2 border-t border-line text-xs font-medium text-subtle w-full animate-in fade-in slide-in-from-top-1">
-            <div class="flex items-center justify-between">
-                <span>@AppState.Loc("WEBFRONT_SERVER_MAP")</span>
-                <span class="text-foreground">@Model.Map</span>
-            </div>
+        <!-- Game tag + status -->
+        <div class="flex items-center gap-2 pr-28">
+            <span class="font-mono text-[10px] tracking-[0.12em] uppercase px-1.5 py-0.5 rounded border border-white/20 bg-black/30 text-subtle shrink-0">
+                @GameLabel
+            </span>
+            @if (Model.Online)
+            {
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-success">
+                    <i class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-success)_25%,transparent)]"></i>
+                    @AppState.LocOr("WEBFRONT_SERVER_STATUS_ONLINE", "Live")
+                </span>
+            }
+            else
+            {
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted">
+                    <i class="w-1.5 h-1.5 rounded-full bg-muted"></i>
+                    @AppState.LocOr("WEBFRONT_SERVER_STATUS_OFFLINE", "Offline")
+                </span>
+            }
+            @if (Model.IsPasswordProtected)
+            {
+                <i class="ph-fill ph-lock-key text-xs text-warning" title="@AppState.LocOr("WEBFRONT_SERVER_PASSWORD_PROTECTED", "Password protected")"></i>
+            }
+        </div>
+
+        <!-- Name -->
+        <h3 class="mt-1 text-base md:text-lg font-bold leading-tight text-foreground truncate">
+            <ColorCode Value="@Model.Name"/>
+        </h3>
+
+        <!-- Map / mode / rating -->
+        <div class="mt-0.5 flex items-center gap-1.5 flex-wrap text-[13px] text-subtle">
+            <span class="font-semibold text-foreground">@Model.Map</span>
             @if (!string.IsNullOrEmpty(Model.GameType) && Model.GameType.Length > 1)
             {
-                <div class="flex items-center justify-between">
-                    <span>@AppState.Loc("WEBFRONT_SERVER_MODE")</span>
-                    <span class="text-foreground">@Model.GameType</span>
-                </div>
+                <span class="text-muted">&middot;</span>
+                <span>@Model.GameType</span>
             }
-            <div class="flex items-center justify-between">
-                <span>@AppState.Loc("WEBFRONT_SERVER_PLAYERS")</span>
-                <span class="text-foreground">@Model.ClientCount / @(Model.MaxClients - Model.PrivateClientSlots)</span>
-            </div>
             @if (Model.LobbyZScore != null)
             {
-                <div class="flex items-center justify-between">
-                    <span>@AppState.Loc("WEBFRONT_SERVER_RATING")</span>
-                    <div class="flex items-center space-x-1">
-                        <span class="text-foreground">@(Model.LobbyZScore ?? 0)</span>
-                        <i class="ph-fill ph-lightning text-accent"></i>
-                    </div>
-                </div>
+                <span class="text-muted">&middot;</span>
+                <span class="inline-flex items-center gap-1 text-accent" title="@AppState.LocOr("WEBFRONT_SERVER_RATING", "Lobby rating")">
+                    <i class="ph-fill ph-lightning text-xs"></i>
+                    <span class="font-mono font-bold">@Model.LobbyZScore</span>
+                </span>
             }
         </div>
     </div>
 
-    <!-- Body: Player List -->
-    <div
-        class="relative flex-1 flex @(Model.ClientCount == 0 ? "min-h-[60px] items-center" : "min-h-[120px]") bg-surface-alt">
+    <!-- Slot bar -->
+    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-2 border-b border-line text-xs text-muted">
+        <span class="font-mono text-sm text-foreground tabular-nums">
+            @Model.ClientCount<span class="text-muted"> / @PublicSlots</span>
+        </span>
+        <div class="h-1.5 rounded-full bg-surface-alt overflow-hidden">
+            <div class="h-full rounded-full transition-[width] duration-500 @(FillPercent >= 90 ? "bg-warning" : "bg-primary")" style="width:@(FillPercent)%"></div>
+        </div>
+        <span class="whitespace-nowrap">@SlotNote</span>
+    </div>
+
+    <!-- Players / activity -->
+    <div class="flex-1">
         <div id="server_clientactivity_@Model.Id" class="w-full">
-            <ClientActivity Model="@Model"/>
+            <ClientActivity Model="@Model" ShowChat="_expanded"/>
         </div>
     </div>
 
-    <!-- Separator -->
-    <div class="h-px w-full bg-line"></div>
-
-    <!-- Bottom Graph (Overlaid slightly or bottom stacked) -->
-    <div class="server-history relative h-[80px] w-full mt-auto mb-0 bg-surface-alt">
-        <div class="server-history-row w-full h-full" id="server_history_@Model.Id">
-            <!-- Canvas managed by JS -->
-            <canvas id="server_history_canvas_@Model.Id" class="w-full h-full block"></canvas>
+    <!-- Footer: 12h history + expand -->
+    <div class="mt-auto flex items-center gap-3 px-4 py-2 border-t border-line text-xs text-muted">
+        <span class="shrink-0 hidden sm:inline">@AppState.LocOr("WEBFRONT_SERVER_HISTORY", "Players, last 12h")</span>
+        <div class="server-history flex-1 h-12 min-w-0">
+            <div class="server-history-row w-full h-full" id="server_history_@Model.Id">
+                <canvas id="server_history_canvas_@Model.Id" class="w-full h-full block"></canvas>
+            </div>
         </div>
+        <button type="button" @onclick="ToggleExpanded"
+                class="shrink-0 inline-flex items-center gap-1 text-subtle hover:text-foreground font-medium transition-colors">
+            @(_expanded ? AppState.LocOr("WEBFRONT_SERVER_COLLAPSE", "Collapse") : AppState.LocOr("WEBFRONT_CLIENT_RECENT_ACTIVITY", "Recent activity"))
+            <i class="ph-bold @(_expanded ? "ph-caret-up" : "ph-caret-down")"></i>
+        </button>
     </div>
-</div>
+</article>

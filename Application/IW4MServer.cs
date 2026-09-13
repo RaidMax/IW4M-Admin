@@ -34,6 +34,7 @@ using IW4MAdmin.Application.Services;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Alerts;
+using SharedLibraryCore.Events.Game;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Events.Server;
 using SharedLibraryCore.Interfaces.Events;
@@ -877,6 +878,23 @@ namespace IW4MAdmin
                     E.Origin.UpdateTeam(E.Extra as string);
                 }
 
+                // Plutonium (T6, IW5, T5) never logs JT (join team) lines, so infer teams from the
+                // team columns of kill and damage lines instead. Only touch clients that are in game.
+                if (E is ClientDamageEvent damageEvent)
+                {
+                    if (E.Origin?.IsIngame == true && E.Origin.ClientNumber >= 0 &&
+                        !string.IsNullOrWhiteSpace(damageEvent.AttackerTeamName))
+                    {
+                        E.Origin.UpdateTeam(damageEvent.AttackerTeamName);
+                    }
+
+                    if (E.Target?.IsIngame == true && E.Target.ClientNumber >= 0 &&
+                        !string.IsNullOrWhiteSpace(damageEvent.VictimTeamName))
+                    {
+                        E.Target.UpdateTeam(damageEvent.VictimTeamName);
+                    }
+                }
+
                 lock (ChatHistory)
                 {
                     while (ChatHistory.Count > ClientNum * 5)
@@ -955,6 +973,11 @@ namespace IW4MAdmin
 
             client.Ping = origin.Ping;
             client.Score = origin.Score;
+
+            if (origin.GetAdditionalProperty<RConStatusStats>("RConStatusStats") is { } rconStatusStats)
+            {
+                client.SetAdditionalProperty("RConStatusStats", rconStatusStats);
+            }
 
             // update their IP if it hasn't been set yet
             if (client.IPAddress == null &&
@@ -1694,22 +1717,27 @@ namespace IW4MAdmin
 
             if (activeClient.IsIngame)
             {
+                // The client may be on a different server (and game) than the one this command was
+                // issued from, e.g. a kick from the webfront, so build the command for *their* server.
+                var targetServer = activeClient.CurrentServer ?? this;
+                var targetParserConfig = targetServer.RconParser?.Configuration ?? RconParser.Configuration;
+
                 var gameEvent = new GameEvent
                 {
                     Type = GameEvent.EventType.PreDisconnect,
                     Origin = activeClient,
-                    Owner = this
+                    Owner = targetServer
                 };
 
                 Manager.AddEvent(gameEvent);
 
-                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    activeClient.TemporalClientNumber, 
-                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, 
-                        newPenalty, 
+                var formattedKick = string.Format(targetParserConfig.CommandPrefixes.Kick,
+                    activeClient.TemporalClientNumber,
+                    _messageFormatter.BuildFormattedMessage(targetParserConfig,
+                        newPenalty,
                         previousPenalty));
-                ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
-                await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
+                ServerLogger.LogDebug("Executing kick command for {ActiveClient} on {Server}", activeClient.ToString(), targetServer.Id);
+                await targetServer.ExecuteCommandAsync(formattedKick);
             }
 
             Manager.QueueEvent(new ClientPenaltyEvent
@@ -1750,11 +1778,14 @@ namespace IW4MAdmin
 
             if (activeClient.IsIngame)
             {
-                var formattedKick = string.Format(RconParser.Configuration.CommandPrefixes.Kick,
+                var targetServer = activeClient.CurrentServer ?? this;
+                var targetParserConfig = targetServer.RconParser?.Configuration ?? RconParser.Configuration;
+
+                var formattedKick = string.Format(targetParserConfig.CommandPrefixes.Kick,
                     activeClient.TemporalClientNumber,
-                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
-                ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient}", activeClient.ToString());
-                await activeClient.CurrentServer.ExecuteCommandAsync(formattedKick);
+                    _messageFormatter.BuildFormattedMessage(targetParserConfig, newPenalty));
+                ServerLogger.LogDebug("Executing tempban kick command for {ActiveClient} on {Server}", activeClient.ToString(), targetServer.Id);
+                await targetServer.ExecuteCommandAsync(formattedKick);
             }
             
             Manager.QueueEvent(new ClientPenaltyEvent
@@ -1792,11 +1823,14 @@ namespace IW4MAdmin
             if (activeClient.IsIngame)
             {
                 ServerLogger.LogDebug("Attempting to kicking newly banned client {ActiveClient}", activeClient.ToString());
-                
-                var formattedString = string.Format(RconParser.Configuration.CommandPrefixes.Kick, 
-                    activeClient.TemporalClientNumber, 
-                    _messageFormatter.BuildFormattedMessage(RconParser.Configuration, newPenalty));
-                await activeClient.CurrentServer.ExecuteCommandAsync(formattedString);
+
+                var targetServer = activeClient.CurrentServer ?? this;
+                var targetParserConfig = targetServer.RconParser?.Configuration ?? RconParser.Configuration;
+
+                var formattedString = string.Format(targetParserConfig.CommandPrefixes.Kick,
+                    activeClient.TemporalClientNumber,
+                    _messageFormatter.BuildFormattedMessage(targetParserConfig, newPenalty));
+                await targetServer.ExecuteCommandAsync(formattedString);
             }
             
             Manager.QueueEvent(new ClientPenaltyEvent

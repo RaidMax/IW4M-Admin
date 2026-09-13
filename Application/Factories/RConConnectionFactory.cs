@@ -3,6 +3,7 @@ using System.Net;
 using SharedLibraryCore.Interfaces;
 using System.Text;
 using Integrations.Cod;
+using Integrations.SevenDaysToDie;
 using Integrations.Source;
 using Integrations.Source.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,8 @@ namespace IW4MAdmin.Application.Factories
                 "Source" => new SourceRConConnection(
                     _serviceProvider.GetRequiredService<ILogger<SourceRConConnection>>(),
                     _serviceProvider.GetRequiredService<IRConClientFactory>(), ipEndpoint, password),
+                "7DTD" => new SevenDaysToDieRConConnection(ipEndpoint, password,
+                    _serviceProvider.GetRequiredService<ILogger<SevenDaysToDieRConConnection>>()),
                 _ => throw new ArgumentException($"No supported RCon engine available for '{rconEngine}'")
             };
         }

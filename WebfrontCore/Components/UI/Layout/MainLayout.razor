@@ -4,8 +4,8 @@
 
 @if (!_isInitialized)
 {
-    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
-        <div class="spinner-border text-primary" role="status">
+    <div class="flex items-center justify-center h-screen bg-background">
+        <div class="w-8 h-8 rounded-full border-2 border-line border-t-primary animate-spin" role="status">
             <span class="sr-only">@AppState.Loc("WEBFRONT_LOADING")</span>
         </div>
     </div>
@@ -44,25 +44,25 @@ else
     }
     else
     {
-        <div class="flex flex-col h-screen w-full bg-background text-primay-100 font-sans">
+        <div class="flex h-screen w-full bg-background text-foreground font-sans overflow-hidden">
             <AntiforgeryToken/>
 
-            <!-- Top Menu Bar (Interactive) -->
-            <TopBar/>
+            <!-- Rail / sidebar (interactive) -->
+            <SidebarContainer/>
 
-            <div class="flex flex-1 overflow-hidden relative">
-                <!-- Sidebar / NavMenu (Interactive Container) -->
-                <SidebarContainer/>
+            <div class="flex flex-1 flex-col min-w-0">
+                <!-- Top bar (interactive) -->
+                <TopBar/>
 
-                <!-- Main Content Area -->
+                <!-- Main content area -->
                 <main class="flex-1 overflow-auto relative bg-background">
                     <div id="target_id"></div>
                     <div id="mainLoadingBar" class="loading-bar hidden"></div>
 
-                    <!-- Toast Container -->
+                    <!-- Toast container -->
                     <ToastContainer/>
 
-                    <!-- Global MOTD Announcement Banner -->
+                    <!-- Global MOTD announcement banner -->
                     <AnnouncementBanner GlobalOnly="true" @rendermode="InteractiveServer"/>
 
                     @Body

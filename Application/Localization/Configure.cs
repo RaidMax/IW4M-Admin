@@ -15,6 +15,12 @@ namespace IW4MAdmin.Application.Localization
 {
     public static class Configure
     {
+        private static readonly IReadOnlyDictionary<string, string> BuiltInFallbacks =
+            new Dictionary<string, string>
+            {
+                ["GAME_D7D"] = "7 Days to Die"
+            };
+
         public static ITranslationLookup Initialize(ILogger logger, IMasterApi apiInstance, ApplicationConfiguration applicationConfiguration)
         {
             var useLocalTranslation = applicationConfiguration?.UseLocalTranslations ?? true;
@@ -29,6 +35,7 @@ namespace IW4MAdmin.Application.Localization
                 try
                 {
                     var localization = apiInstance.GetLocalization(currentLocale).Result;
+                    AddBuiltInFallbacks(localization.LocalizationIndex.Set);
                     Utilities.CurrentLocalization = localization;
                     return localization.LocalizationIndex;
                 }
@@ -78,12 +85,22 @@ namespace IW4MAdmin.Application.Localization
                 }
             }
 
+            AddBuiltInFallbacks(localizationDict);
+
             Utilities.CurrentLocalization = new SharedLibraryCore.Localization.Layout(localizationDict)
             {
                 LocalizationName = currentLocale,
             };
 
             return Utilities.CurrentLocalization.LocalizationIndex;
+        }
+
+        private static void AddBuiltInFallbacks(IDictionary<string, string> localization)
+        {
+            foreach (var (key, value) in BuiltInFallbacks)
+            {
+                localization.TryAdd(key, value);
+            }
         }
     }
 }

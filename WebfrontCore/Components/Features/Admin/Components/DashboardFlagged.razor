@@ -1,43 +1,38 @@
-<div class="space-y-4">
+<div class="space-y-5">
     @if (!FlaggedList.Any())
     {
-        <div class="flex flex-col items-center justify-center py-12 text-center bg-surface-alt/30 rounded-lg border border-line border-dashed">
-             <i class="ph ph-check-circle text-4xl text-success mb-3 opacity-80"></i>
-             <span class="text-muted font-medium">@AppState.Loc("WEBFRONT_DASHBOARD_NO_FLAGGED")</span>
+        <div class="flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm">
+            <i class="ph ph-check-circle text-3xl text-secondary"></i>
+            <span>@AppState.Loc("WEBFRONT_DASHBOARD_NO_FLAGGED")</span>
         </div>
     }
 
     @foreach (var server in FlaggedList)
     {
-        <div class="bg-surface rounded-lg shadow-sm border border-line overflow-hidden mb-4">
-            <div class="px-4 py-3 bg-surface-alt/30 border-b border-line font-bold text-foreground flex items-center gap-2">
-                 <i class="ph ph-hard-drives text-primary"></i>
-                 <span class="truncate"><ColorCode Value="@server.Name"/></span>
-                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 ml-auto">
-                     @(AppState.Loc($"GAME_{server.Game}"))
-                 </span>
+        <div>
+            <div class="flex items-center gap-2 px-1 pb-2">
+                <i class="ph ph-hard-drives text-muted"></i>
+                <span class="flex-1 min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider text-muted"><ColorCode Value="@server.Name"/></span>
+                <span class="font-mono text-[10px] tracking-[0.12em] uppercase px-1.5 py-0.5 rounded border border-line bg-surface-alt text-subtle shrink-0">
+                    @(AppState.Loc($"GAME_{server.Game}"))
+                </span>
             </div>
-            <div class="divide-y divide-line">
+            <div class="rounded-lg border border-line divide-y divide-line overflow-hidden">
                 @foreach (var client in server.FlaggedClients)
                 {
-                    <div class="p-4 hover:bg-surface-hover/30 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                             <div class="flex items-center gap-1.5 text-xs text-muted">
-                                 <i class="ph ph-clock"></i>
-                                 <span>@client.FlaggedOn.HumanizeForCurrentCulture()</span>
-                             </div>
-                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-level-flagged/10 text-level-flagged border border-level-flagged/20 uppercase tracking-wider">@AppState.Loc("WEBFRONT_STATUS_FLAGGED")</span>
-                        </div>
-                        
-                        <div class="mb-2 text-sm leading-snug">
-                             <a href="/client/@client.ClientId" class="font-bold text-foreground hover:text-primary transition-colors">
+                    <div class="px-3 py-2.5 text-sm hover:bg-surface-hover transition-colors">
+                        <div class="flex items-center gap-3">
+                            <a href="/client/@client.ClientId" class="flex-1 min-w-0 truncate font-semibold text-level-flagged hover:underline">
                                 <ColorCode Value="@client.Name"/>
                             </a>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-level-flagged/15 text-level-flagged shrink-0">
+                                @AppState.Loc("WEBFRONT_STATUS_FLAGGED")
+                            </span>
+                            <span class="font-mono text-[11px] text-muted whitespace-nowrap shrink-0" title="@client.FlaggedOn.ToLocalTime().ToString("f")">
+                                @client.FlaggedOn.HumanizeForCurrentCulture()
+                            </span>
                         </div>
-                        
-                        <div class="text-xs font-mono bg-surface-alt/50 p-2.5 rounded border border-line text-subtle break-words">
-                            @client.Reason
-                        </div>
+                        <div class="mt-1 text-xs text-subtle break-words">@client.Reason</div>
                     </div>
                 }
             </div>

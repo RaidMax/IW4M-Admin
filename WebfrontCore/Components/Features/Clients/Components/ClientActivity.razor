@@ -1,130 +1,104 @@
 @if (Model?.Players?.Any() == true)
 {
-    <!-- Main Container: 2 Columns on Desktop, Stacked on Mobile -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-line bg-surface-alt min-h-[200px]">
+    <!-- Two columns (chat + scoreboard) when chat is shown, otherwise the scoreboard alone -->
+    <div class="grid grid-cols-1 gap-0 bg-surface-alt @(ShowChat ? "lg:grid-cols-2 lg:divide-x divide-line" : "")">
 
-        <!-- Left Column: Live Feed (Chat & Events) -->
-        <div class="flex flex-col bg-surface/30">
-            <!-- Header -->
-            <div
-                class="px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
-                @AppState.Loc("WEBFRONT_CLIENT_RECENT_ACTIVITY")
-            </div>
+        @if (ShowChat)
+        {
+            <!-- Live feed (chat & events) -->
+            <div class="flex flex-col bg-surface/30 order-2 lg:order-1">
+                <div
+                    class="px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
+                    @AppState.Loc("WEBFRONT_CLIENT_RECENT_ACTIVITY")
+                </div>
 
-            <div class="px-3 py-1 font-mono text-[13px] overflow-y-auto max-h-[200px] custom-scrollbar flex-1 flex flex-col-reverse">
-                @if (Model?.ChatHistory?.Any() == true)
-                {
-                    @foreach (var chat in Model.ChatHistory.AsEnumerable().Reverse())
+                <div class="px-3 py-1 font-mono text-[13px] overflow-y-auto max-h-[220px] custom-scrollbar flex-1 flex flex-col-reverse">
+                    @if (Model?.ChatHistory?.Any() == true)
                     {
-                        var message = chat.IsHidden && (AppState.User == null /* || TODO: Check Auth */) ? chat.HiddenMessage : chat.Message;
-                        var stateIcon = GetIconForState(chat.Message);
-                        var isEvent = !string.IsNullOrEmpty(stateIcon);
+                        @foreach (var chat in Model.ChatHistory.AsEnumerable().Reverse())
+                        {
+                            var message = chat.IsHidden && (AppState.User == null /* || TODO: Check Auth */) ? chat.HiddenMessage : chat.Message;
+                            var stateIcon = GetIconForState(chat.Message);
+                            var isEvent = !string.IsNullOrEmpty(stateIcon);
 
-                        <div
-                            class="flex items-start opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-muted" : "text-subtle")">
-                            @if (isEvent)
-                            {
-                                <i class="@stateIcon text-[13px] self-center shrink-0 mr-1.5 leading-none"></i>
-                                <a href="/client/@chat.ClientId"
-                                   class="truncate flex-1 hover:text-foreground transition-colors leading-tight">
-                                    <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
-                                </a>
-                                <span
-                                    class="text-muted/75 select-none shrink-0 text-[13px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
-                            }
-                            else
-                            {
-                                @* Chat message: Name, Message, then timestamp on right *@
-                                <div class="flex-1 min-w-0 break-words leading-tight">
+                            <div
+                                class="flex items-start opacity-90 hover:opacity-100 transition-opacity @(isEvent ? "text-muted" : "text-subtle")">
+                                @if (isEvent)
+                                {
+                                    <i class="@stateIcon text-[13px] self-center shrink-0 mr-1.5 leading-none"></i>
                                     <a href="/client/@chat.ClientId"
-                                       class="font-bold text-subtle hover:text-foreground transition-colors italic">
-                                        <ColorCode Value="@chat.Name"/>
+                                       class="truncate flex-1 hover:text-foreground transition-colors leading-tight">
+                                        <span class="font-bold"><ColorCode Value="@chat.Name"/></span>
                                     </a>
-                                    <span class="text-foreground">
-                                        <ColorCode Value="@(message.CapClientName(128))"/>
-                                    </span>
-                                </div>
-                                <span
-                                    class="text-muted/75 select-none shrink-0 text-[13px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
-                            }
+                                    <span
+                                        class="text-muted/75 select-none shrink-0 text-[13px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                }
+                                else
+                                {
+                                    @* Chat message: Name, Message, then timestamp on right *@
+                                    <div class="flex-1 min-w-0 break-words leading-tight">
+                                        <a href="/client/@chat.ClientId"
+                                           class="font-bold text-subtle hover:text-foreground transition-colors italic">
+                                            <ColorCode Value="@chat.Name"/>
+                                        </a>
+                                        <span class="text-foreground">
+                                            <ColorCode Value="@(message.CapClientName(128))"/>
+                                        </span>
+                                    </div>
+                                    <span
+                                        class="text-muted/75 select-none shrink-0 text-[13px]">@((DateTime.UtcNow - chat.Time).HumanizeForCurrentCulture()) ago</span>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="flex flex-col items-center justify-center h-full py-6 text-muted italic">
+                            <span>@AppState.Loc("WEBFRONT_CLIENT_NO_ACTIVITY")</span>
                         </div>
                     }
-                }
-                else
-                {
-                    <div class="flex flex-col items-center justify-center h-full text-muted italic">
-                        <span>@AppState.Loc("WEBFRONT_CLIENT_NO_ACTIVITY")</span>
-                    </div>
-                }
+                </div>
             </div>
-        </div>
+        }
 
-        <!-- Right Column: Scoreboard -->
-        <div class="flex flex-col bg-surface/50">
-            <!-- Header -->
+        <!-- Scoreboard -->
+        <div class="flex flex-col bg-surface/50 order-1 lg:order-2">
             <div
-                class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
+                class="grid grid-cols-[1fr_repeat(4,minmax(30px,44px))_30px] gap-1 px-3 py-2 border-b border-line text-[10px] font-bold text-muted uppercase tracking-wider select-none bg-surface-alt/50">
                 <div class="pl-1">@AppState.Loc("WEBFRONT_TABLE_PLAYER")</div>
                 <div class="text-center" title="Score">Scr</div>
                 <div class="text-center" title="Kills">K</div>
                 <div class="text-center" title="Deaths">D</div>
                 <div class="text-center" title="Ping">Ping</div>
-                <div class="text-center"></div> <!-- Action Column -->
+                <div class="text-center"></div>
             </div>
 
-            <!-- Scrollable List -->
-            <div class="max-h-[200px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5 overflow-y-auto">
-                @foreach (var client in Model!.Players!.OrderByDescending(p => p.Score))
+            <div class="max-h-[220px] custom-scrollbar overflow-x-hidden p-1 space-y-0.5 overflow-y-auto">
+                @if (HasTeams)
                 {
-                    var isSelf = AppState.User?.ClientId == client.ClientId;
-                    var ping = GetPingIconAndColor(client.Ping);
-
-                    <div
-                        class="grid grid-cols-[1fr_repeat(4,minmax(30px,40px))_30px] gap-1 items-center px-2 rounded text-[13px] font-mono group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
-                        <!-- Player -->
-                        <div class="flex items-center min-w-0 pr-2">
-                            <i class="@ping.Icon @ping.Color text-[13px] mr-1.5 shrink-0"></i>
-                            <AuthorizeView
-                                Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
-                                <Authorized>
-                                    <a href="/client/@client.ClientId"
-                                       class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((EFClient.Permission)client.LevelInt)">
-                                        <ColorCode Value="@client.Name"/>
-                                    </a>
-                                </Authorized>
-                                <NotAuthorized>
-                                    <a href="/client/@client.ClientId"
-                                       class="font-bold text-muted truncate hover:text-foreground transition-colors">
-                                        <ColorCode Value="@client.Name"/>
-                                    </a>
-                                </NotAuthorized>
-                            </AuthorizeView>
-                            @if (client.ZScore.HasValue && client.ZScore.Value != 0)
-                            {
-                                <Tooltip Text="@($"Rating: {client.ZScore:F2}")" Direction="Tooltip.TooltipDirection.Right">
-                                    <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
-                                </Tooltip>
-                            }
+                    @foreach (var team in ScoreboardTeams)
+                    {
+                        <div class="flex items-center gap-1.5 px-2 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider select-none @TeamColour(team)">
+                            <i class="ph-fill @TeamIcon(team) text-xs"></i>
+                            <span>@TeamLabel(team)</span>
+                            <span class="ml-auto font-mono tabular-nums">@TeamScore(team)</span>
                         </div>
-
-                        <!-- Stats -->
-                        <div class="text-center text-muted">@client.Score</div>
-                        <div class="text-center text-success/80 font-bold">@client.Kills</div>
-                        <div class="text-center text-error/80 font-bold">@client.Deaths</div>
-                        <div class="text-center text-muted">@client.Ping</div>
-
-                        <!-- Action -->
-                        <div class="flex justify-center">
-                            <AuthorizeView>
-                                <button @onclick:preventDefault
-                                        @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, string.Empty, null))"
-                                        class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-muted hover:text-error hover:bg-error/10 rounded transition-all"
-                                        title="@AppState.Loc("WEBFRONT_ACTION_KICK_NAME")">
-                                    <i class="ph-bold ph-sign-out text-xs"></i>
-                                </button>
-                            </AuthorizeView>
-                        </div>
-                    </div>
+                        @foreach (var client in TeamPlayers(team))
+                        {
+                            @PlayerRow(client)
+                        }
+                    }
+                    @foreach (var client in UnassignedPlayers())
+                    {
+                        @PlayerRow(client)
+                    }
+                }
+                else
+                {
+                    @foreach (var client in Model!.Players!.OrderByDescending(p => p.Score))
+                    {
+                        @PlayerRow(client)
+                    }
                 }
             </div>
         </div>
@@ -132,9 +106,66 @@
 }
 else
 {
-    <!-- Empty Server State: Single header line -->
-    <div class="flex items-center justify-center gap-2 px-4 py-3 h-full bg-surface-alt/50 text-muted text-xs">
+    <!-- Empty server state -->
+    <div class="flex items-center justify-center gap-2 px-4 py-4 h-full bg-surface-alt/50 text-muted text-xs">
         <i class="ph ph-users-three text-base text-secondary"></i>
         <span>@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</span>
     </div>
+}
+
+@code {
+
+    private RenderFragment PlayerRow(PlayerInfo client) => __builder =>
+    {
+        var isSelf = AppState.User?.ClientId == client.ClientId;
+        var ping = GetPingIconAndColor(client.Ping);
+
+        <div
+            class="grid grid-cols-[1fr_repeat(4,minmax(30px,44px))_30px] gap-1 items-center px-2 py-0.5 rounded text-[13px] font-mono tabular-nums group hover:bg-surface-hover/80 transition-colors @(isSelf ? "bg-primary/10 border border-primary/20" : string.Empty)">
+            <!-- Player -->
+            <div class="flex items-center min-w-0 pr-2">
+                <i class="@ping.Icon @ping.Color text-[13px] mr-1.5 shrink-0"></i>
+                <AuthorizeView
+                    Policy="@($"Permissions.{WebfrontEntity.ClientLevel}.{WebfrontPermission.Read}")">
+                    <Authorized>
+                        <a href="/client/@client.ClientId"
+                           class="font-bold truncate hover:text-foreground transition-colors @AppState.GetLevelColorClass((EFClient.Permission)client.LevelInt)">
+                            <ColorCode Value="@client.Name"/>
+                        </a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/client/@client.ClientId"
+                           class="font-bold text-muted truncate hover:text-foreground transition-colors">
+                            <ColorCode Value="@client.Name"/>
+                        </a>
+                    </NotAuthorized>
+                </AuthorizeView>
+                @if (client.ZScore.HasValue && client.ZScore.Value != 0)
+                {
+                    <Tooltip Text="@($"Rating: {client.ZScore:F2}")" Direction="Tooltip.TooltipDirection.Right">
+                        <i class="ph-fill ph-lightning text-accent ml-1.5 text-xs"></i>
+                    </Tooltip>
+                }
+            </div>
+
+            <!-- Stats -->
+            <div class="text-center text-muted">@client.Score</div>
+            <div class="text-center text-success/80 font-bold">@client.Kills</div>
+            <div class="text-center text-error/80 font-bold">@client.Deaths</div>
+            <div class="text-center text-muted">@client.Ping</div>
+
+            <!-- Action -->
+            <div class="flex justify-center">
+                <AuthorizeView>
+                    <button @onclick:preventDefault
+                            @onclick="@(() => ActionService.OpenAction("Kick", client.ClientId, string.Empty, null))"
+                            class="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-muted hover:text-error hover:bg-error/10 rounded transition-all"
+                            title="@AppState.Loc("WEBFRONT_ACTION_KICK_NAME")">
+                        <i class="ph-bold ph-sign-out text-xs"></i>
+                    </button>
+                </AuthorizeView>
+            </div>
+        </div>
+    };
+
 }

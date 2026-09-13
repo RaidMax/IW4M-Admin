@@ -11,7 +11,45 @@ public partial class ClientActivity
     [Inject] public required IActionService ActionService { get; set; }
     [Parameter] public ServerInfo? Model { get; set; }
 
+    /// <summary>
+    /// Render the chat/event feed column alongside the scoreboard. When false only the scoreboard is shown.
+    /// </summary>
+    [Parameter] public bool ShowChat { get; set; } = true;
+
     private List<ClientGroup> GroupedClients => GetGroupedClients();
+
+    private static readonly SharedLibraryCore.Database.Models.EFClient.TeamType[] ScoreboardTeams =
+    [
+        SharedLibraryCore.Database.Models.EFClient.TeamType.Allies,
+        SharedLibraryCore.Database.Models.EFClient.TeamType.Axis
+    ];
+
+    /// <summary>
+    /// True when the lobby has players on both teams, so the board can be split like the in-game scoreboard.
+    /// </summary>
+    private bool HasTeams => Model?.Players is not null &&
+                             ScoreboardTeams.All(team => Model.Players.Any(player => player.Team == team));
+
+    private IEnumerable<PlayerInfo> TeamPlayers(SharedLibraryCore.Database.Models.EFClient.TeamType team) =>
+        Model!.Players!.Where(player => player.Team == team).OrderByDescending(player => player.Score);
+
+    private IEnumerable<PlayerInfo> UnassignedPlayers() =>
+        Model!.Players!.Where(player => !ScoreboardTeams.Contains(player.Team)).OrderByDescending(player => player.Score);
+
+    private int TeamScore(SharedLibraryCore.Database.Models.EFClient.TeamType team) =>
+        TeamPlayers(team).Sum(player => player.Score ?? 0);
+
+    private string TeamLabel(SharedLibraryCore.Database.Models.EFClient.TeamType team)
+    {
+        var name = TeamPlayers(team).Select(player => player.TeamName).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+        return string.IsNullOrWhiteSpace(name) ? team.ToString() : char.ToUpperInvariant(name[0]) + name[1..];
+    }
+
+    private static string TeamColour(SharedLibraryCore.Database.Models.EFClient.TeamType team) =>
+        team == SharedLibraryCore.Database.Models.EFClient.TeamType.Allies ? "text-sky-400" : "text-rose-400";
+
+    private static string TeamIcon(SharedLibraryCore.Database.Models.EFClient.TeamType team) =>
+        team == SharedLibraryCore.Database.Models.EFClient.TeamType.Allies ? "ph-shield-check" : "ph-shield-warning";
 
     public class ClientGroup
     {

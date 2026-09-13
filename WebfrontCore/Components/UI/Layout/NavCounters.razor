@@ -1,0 +1,72 @@
+@using WebfrontCore.Components.Features.Admin.Components
+@implements IDisposable
+
+@if (_navData is not null)
+{
+    <a href="/" @onclick="OnNavigate" class="@ButtonClass"
+       title="@(Collapsed ? $"{OnlineLabel}: {_navData.TotalClientCount}" : null)">
+        <span class="relative shrink-0">
+            <i class="ph ph-users-three text-lg text-muted group-hover:text-foreground"></i>
+            @if (Collapsed)
+            {
+                <span class="@BadgeClass text-primary bg-primary/15">@_navData.TotalClientCount</span>
+            }
+        </span>
+        @if (!Collapsed)
+        {
+            <span class="truncate flex-1 text-left">@OnlineLabel</span>
+            <span class="@CountClass text-primary bg-primary/15">@_navData.TotalClientCount</span>
+        }
+    </a>
+
+    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")" Context="adminsCtx">
+        @CounterItem("ph-shield-check", Nice(AppState.Loc("WEBFRONT_LAYOUT_ADMINS_ONLINE")), _navData.TotalAdminCount ?? 0, "text-success bg-success/15", ShowAdmins)
+    </AuthorizeView>
+    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")" Context="reportsCtx">
+        @CounterItem("ph-warning-circle", Nice(AppState.Loc("WEBFRONT_LAYOUT_REPORTS")), _navData.TotalReportCount ?? 0, "text-error bg-error/15", ShowReports)
+    </AuthorizeView>
+    <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.PrivilegedClientsPage}.{WebfrontPermission.Read}")" Context="flaggedCtx">
+        @CounterItem("ph-flag", Nice(AppState.LocOr("WEBFRONT_STATUS_FLAGGED", "Flagged")), _navData.TotalFlaggedCount ?? 0, "text-level-flagged bg-level-flagged/15", ShowFlagged)
+    </AuthorizeView>
+}
+
+@code {
+
+    private string OnlineLabel => AppState.LocOr("WEBFRONT_NAV_PLAYERS_ONLINE", "Players online");
+
+    /// <summary>
+    /// Some translation strings are stored in capitals (e.g. "FLAGGED"); render them in title case.
+    /// </summary>
+    private static string Nice(string label) =>
+        label.Any(char.IsLetter) && label == label.ToUpperInvariant()
+            ? CultureInfo.CurrentCulture.TextInfo.ToTitleCase(label.ToLowerInvariant())
+            : label;
+
+    private string ButtonClass =>
+        "group w-full flex items-center gap-3 rounded-lg text-sm font-medium text-subtle hover:bg-surface-hover hover:text-foreground transition-colors " +
+        (Collapsed ? "justify-center h-10 w-10 mx-auto" : "px-3 py-2");
+
+    private const string BadgeClass = "absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold leading-4 text-center font-mono";
+    private const string CountClass = "font-mono text-[11px] leading-none px-1.5 py-1 rounded-full tabular-nums";
+
+    private RenderFragment CounterItem(string icon, string label, int count, string activeClass, Action onClick) => __builder =>
+    {
+        var colour = count > 0 ? activeClass : "text-muted bg-surface-alt";
+
+        <button type="button" @onclick="onClick" class="@ButtonClass" title="@(Collapsed ? $"{label}: {count}" : null)">
+            <span class="relative shrink-0">
+                <i class="ph @icon text-lg text-muted group-hover:text-foreground"></i>
+                @if (Collapsed && count > 0)
+                {
+                    <span class="@BadgeClass @colour">@count</span>
+                }
+            </span>
+            @if (!Collapsed)
+            {
+                <span class="truncate flex-1 text-left">@label</span>
+                <span class="@CountClass @colour">@count</span>
+            }
+        </button>
+    };
+
+}

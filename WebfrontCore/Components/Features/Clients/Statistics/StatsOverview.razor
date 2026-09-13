@@ -16,183 +16,171 @@
 
 <div class="flex flex-col xl:flex-row h-full">
 
-    @* Main Content Area - Scrollable *@
-    <div class="flex-1 min-w-0 p-4 md:p-6 lg:p-8 overflow-y-auto">
-        <div class="max-w-[1400px] mx-auto space-y-8">
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div
-                        class="flex items-center justify-center p-3 rounded-xl bg-surface-alt/50 border border-line shadow-sm">
-                        <i class="ph ph-chart-bar text-2xl text-primary"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-2xl font-black text-gradient-title tracking-tight text-left">
-                            @(AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE"))
-                        </h2>
-                        <div class="text-muted mt-1 font-medium flex items-center gap-2 text-sm">
-                            <i class="ph ph-globe text-subtle"></i>
-                            <ColorCode
-                                Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
-                            <span class="text-subtle">•</span>
-                            <span
-                                class="text-primary font-bold">@TotalRankedClients.ToString("#,##0")</span> @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE").ToString().ToLower())
-                        </div>
-                    </div>
+    @* Main content *@
+    <div class="flex-1 min-w-0 p-4 md:p-6 xl:p-8 overflow-y-auto">
+        <div class="max-w-[1680px] mx-auto space-y-5">
+
+            <!-- Heading -->
+            <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <div class="min-w-0">
+                    <h1 class="text-2xl font-extrabold tracking-tight text-gradient-title">
+                        @(AppState.Loc("WEBFRONT_TOP_PLAYERS_TITLE"))
+                    </h1>
+                    <p class="text-sm text-muted mt-0.5 flex flex-wrap items-center gap-x-1.5">
+                        <ColorCode Value="@(SelectedServer != null ? SelectedServer.Name : AppState.Loc("WEBFRONT_STATS_INDEX_ALL_SERVERS"))"/>
+                        <span class="text-muted/60">&middot;</span>
+                        <span>
+                            <span class="font-mono tabular-nums text-foreground">@TotalRankedClients.ToString("#,##0")</span>
+                            @(AppState.Loc("WEBFRONT_TOP_PLAYERS_SUBTITLE").ToString().ToLower())
+                        </span>
+                    </p>
                 </div>
             </div>
 
-            <div id="topPlayersContainer" class="flex flex-col gap-4 relative">
+            <!-- Ranked list -->
+            <section id="topPlayersContainer" class="rounded-xl bg-surface border border-line">
+                <div class="flex items-center gap-3 px-4 py-2.5 border-b border-line">
+                    <h2 class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                        @AppState.LocOr("WEBFRONT_TOP_PLAYERS_RANKING", "Ranking")
+                    </h2>
+                    <span class="text-xs text-muted">
+                        @(SelectedServer != null ? AppState.Loc("WEBFRONT_STATS_PERFORMANCE") : AppState.Loc("WEBFRONT_STATS_RATING"))
+                    </span>
+                </div>
+
+                <!-- Column headers (md and up) -->
+                <div class="hidden md:grid grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] 2xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 border-b border-line text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    <div class="font-mono">#</div>
+                    <div></div>
+                    <div>@AppState.Loc("WEBFRONT_TABLE_PLAYER")</div>
+                    <div>@(SelectedServer != null ? AppState.Loc("WEBFRONT_STATS_PERFORMANCE") : AppState.Loc("WEBFRONT_STATS_RATING"))</div>
+                    <div>@AppState.Loc("WEBFRONT_STATS_KDR")</div>
+                    <div class="whitespace-nowrap">@AppState.Loc("WEBFRONT_STATS_KILLS") / @AppState.Loc("WEBFRONT_STATS_DEATHS")</div>
+                    <div>@AppState.Loc("WEBFRONT_STATS_PLAYED")</div>
+                    <div class="hidden 2xl:block">@AppState.LocOr("WEBFRONT_STATS_TREND", "Trend")</div>
+                    <div></div>
+                </div>
+
                 @if (_hasLoaded && TotalRankedClients == 0)
                 {
-                    <div
-                        class="bg-surface-alt/70 backdrop-blur-md rounded-2xl p-16 text-center border border-line flex flex-col items-center">
-                        <div
-                            class="w-24 h-24 bg-surface rounded-full flex items-center justify-center mb-6 shadow-inner">
-                            <i class="ph ph-timer text-5xl text-subtle"></i>
-                        </div>
-                        <h3 class="text-2xl font-bold text-foreground">@(AppState.Loc("PLUGINS_STATS_TEXT_NOQUALIFY"))</h3>
-                        <p class="text-muted mt-2 max-w-md mx-auto">@(AppState.Loc("WEBFRONT_TOP_PLAYERS_NOQUALIFY_SUBTITLE"))</p>
+                    <div class="flex flex-col items-center justify-center gap-2 py-10 px-4 text-muted text-sm text-center">
+                        <i class="ph ph-timer text-3xl text-secondary"></i>
+                        <span class="font-semibold text-foreground">@(AppState.Loc("PLUGINS_STATS_TEXT_NOQUALIFY"))</span>
+                        <span>@(AppState.Loc("WEBFRONT_TOP_PLAYERS_NOQUALIFY_SUBTITLE"))</span>
                     </div>
                 }
 
-                <Virtualize @ref="_virtualizeComponent" Context="stat" ItemsProvider="LoadPlayerStats"
-                            OverscanCount="10" ItemSize="121">
-                    <ItemContent>
-                        @{
-                            var isGold = stat.Ranking == 1;
-                            var isSilver = stat.Ranking == 2;
-                            var isBronze = stat.Ranking == 3;
-                            var isTop3 = isGold || isSilver || isBronze;
+                <div class="divide-y divide-line">
+                    <Virtualize @ref="_virtualizeComponent" Context="stat" ItemsProvider="LoadPlayerStats"
+                                OverscanCount="10" ItemSize="96">
+                        <ItemContent>
+                            @{
+                                var isTop3 = stat.Ranking <= 3;
+                                var isSelf = AppState.User?.ClientId == stat.ClientId;
+                                var strippedName = (stat.Name ?? string.Empty).StripColors();
+                                var initial = strippedName.Length > 0 ? strippedName.Substring(0, 1).ToUpperInvariant() : "?";
+                                var topPerformance = TopPlayers?.FirstOrDefault()?.Performance;
+                                var barPercent = topPerformance is > 0 && stat.Performance is > 0
+                                    ? Math.Clamp(stat.Performance.Value / topPerformance.Value * 100, 0, 100)
+                                    : 0;
+                                var kdrClass = stat.KDR >= 2.0 ? "text-success" : stat.KDR >= 1.0 ? "text-foreground" : "text-error";
+                            }
 
-                            var containerClass = isGold ? "bg-gradient-to-br from-yellow-500/15 to-surface/80 border-l-4 border-l-yellow-500 shadow-warning/10" :
-                                isSilver ? "bg-gradient-to-br from-zinc-400/15 to-surface/80 border-l-4 border-l-zinc-400 shadow-surface/10" :
-                                isBronze ? "bg-gradient-to-br from-amber-600/15 to-surface/80 border-l-4 border-l-amber-600 shadow-accent/10" :
-                                "bg-surface-alt/70 backdrop-blur-md border-l-4 border-l-transparent hover:border-l-primary hover:bg-surface-hover/80";
+                            <div class="group grid grid-cols-[2rem_2.25rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] 2xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 transition-colors hover:bg-surface-hover @(isSelf ? "bg-primary/10" : "")">
 
-                            var rankColor = isGold ? "text-yellow-400 drop-shadow-[0_2px_10px_rgba(234,179,8,0.5)]" :
-                                isSilver ? "text-zinc-300 drop-shadow-[0_2px_10px_rgba(203,213,225,0.5)]" :
-                                isBronze ? "text-amber-500 drop-shadow-[0_2px_10px_rgba(217,119,6,0.5)]" :
-                                "text-subtle group-hover:text-primary transition-colors";
-                        }
-
-                        <div
-                            class="@containerClass relative rounded-xl p-5 md:p-0 flex flex-col md:flex-row md:items-center gap-6 transition-all duration-300 hover:transform hover:scale-[1.01] hover:shadow-xl group border-y border-r border-line overflow-hidden">
-
-                            <!-- Rank Number -->
-                            <div
-                                class="relative flex md:flex-col items-center justify-center md:w-24 md:self-stretch md:bg-surface-alt shrink-0">
-                                @if (isGold)
-                                {
-                                    <i class="ph ph-crown-simple absolute text-gray-500/20 text-7xl"></i>
-                                }
-                                <span
-                                    class="font-black @(isTop3 ? "text-5xl" : "text-3xl") @rankColor tracking-tighter relative">
+                                <!-- Rank -->
+                                <div class="font-mono tabular-nums text-sm font-bold @(isTop3 ? "text-primary" : "text-muted")">
                                     @stat.Ranking
-                                </span>
-                            </div>
-
-                            <!-- Name & Info -->
-                            <div class="flex-1 min-w-0 py-2 md:py-4 pr-4">
-                                <div class="flex items-center flex-wrap gap-x-3 gap-y-1 mb-2">
-                                    <a href="/client/@stat.ClientId"
-                                       class="text-xl md:text-2xl font-bold text-foreground hover:text-foreground transition-colors truncate tracking-tight">
-                                        <ColorCode Value="@stat.Name"/>
-                                    </a>
-
-                                    <!-- Rating Change Badge -->
-                                    @if (stat.RatingChange != 0)
-                                    {
-                                        var isPos = stat.RatingChange > 0;
-                                        var changeColor = isPos ? "text-success bg-success/10 border-success/20" : "text-error bg-error/10 border-error/20";
-                                        var changeIcon = isPos ? "ph-trend-up" : "ph-trend-down";
-                                        <span
-                                            class="@changeColor border px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm">
-                                            <i class="ph @changeIcon"></i> @Math.Abs(stat.RatingChange)
-                                        </span>
-                                    }
                                 </div>
 
-                                <div class="flex flex-col md:flex-row gap-6 md:items-center">
-                                    <!-- Main Performance Stat -->
-                                    <div class="flex flex-col">
-                                         <span
-                                             class="text-3xl font-black text-foreground font-mono tracking-tighter leading-none">
-                                            @(SelectedServer != null ? (stat.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_NO_PERFORMANCE")) : (stat.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_UNRATED")))
-                                        </span>
-                                        <span class="text-primary text-[10px] font-bold uppercase tracking-widest mt-1">
-                                             @(SelectedServer != null ? AppState.Loc("WEBFRONT_STATS_PERFORMANCE") : AppState.Loc("WEBFRONT_STATS_RATING"))
-                                        </span>
-                                    </div>
+                                <!-- Avatar initial -->
+                                <div class="w-9 h-9 rounded-lg bg-surface-alt border border-line flex items-center justify-center text-sm font-extrabold @(isTop3 ? "text-primary" : "text-subtle")">
+                                    @initial
+                                </div>
 
-                                    <!-- Secondary Stats Grid -->
-                                    <div class="grid grid-cols-2 2xl:grid-cols-4 gap-x-4 gap-y-2 lg:border-l border-line lg:pl-6 h-full">
-                                        <!-- Kills -->
-                                        <div class="flex flex-col min-w-[70px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.Kills.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KILLS")</span>
-                                        </div>
-                                        <!-- Deaths -->
-                                        <div class="flex flex-col min-w-[70px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.Deaths.ToNumericalString()</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_DEATHS")</span>
-                                        </div>
-                                        <!-- KDR -->
-                                        <div class="flex flex-col min-w-[50px]">
-                                            <span
-                                                class="@(stat.KDR >= 2.0 ? "text-success" : stat.KDR >= 1.0 ? "text-foreground" : "text-error") font-mono font-bold">
-                                                @stat.KDR.ToString("F2")
+                                <!-- Name + performance bar -->
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <a href="/client/@stat.ClientId"
+                                           class="font-semibold text-foreground truncate hover:text-primary transition-colors">
+                                            <ColorCode Value="@stat.Name"/>
+                                        </a>
+                                        @if (stat.RatingChange != 0)
+                                        {
+                                            var isPos = stat.RatingChange > 0;
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold font-mono tabular-nums shrink-0 @(isPos ? "bg-success/15 text-success" : "bg-error/15 text-error")">
+                                                <i class="ph-bold @(isPos ? "ph-trend-up" : "ph-trend-down")"></i>@Math.Abs(stat.RatingChange)
                                             </span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_KDR")</span>
-                                        </div>
-                                        <!-- Time -->
-                                        <div class="flex flex-col min-w-[50px]">
-                                            <span
-                                                class="text-foreground font-mono font-bold">@stat.TimePlayedValue.TotalHours.ToString("F0")h</span>
-                                            <span class="text-muted text-[10px] uppercase font-bold">@AppState.Loc("WEBFRONT_STATS_PLAYED")</span>
-                                        </div>
+                                        }
+                                    </div>
+                                    <div class="mt-1.5 h-1.5 max-w-xs rounded-full bg-surface-alt overflow-hidden">
+                                        <div class="h-full rounded-full bg-primary" style="width:@((int)barPercent)%"></div>
+                                    </div>
+                                    <div class="md:hidden mt-1 text-[11px] text-muted font-mono tabular-nums whitespace-nowrap">
+                                        @AppState.Loc("WEBFRONT_STATS_KDR") <span class="@kdrClass">@stat.KDR.ToString("F2")</span>
+                                        <span class="text-muted/60">&middot;</span>
+                                        @stat.TimePlayedValue.TotalHours.ToString("F0")h
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Graph (Via Component) -->
-                            <PlayerPerformanceChart ClientId="@stat.ClientId" Id="@stat.Id"
-                                                    History="@stat.PerformanceHistory"/>
+                                <!-- Performance / rating -->
+                                <div class="text-right md:text-left font-mono tabular-nums text-sm font-bold text-foreground whitespace-nowrap">
+                                    @(SelectedServer != null ? (stat.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_NO_PERFORMANCE")) : (stat.Performance?.ToNumericalString() ?? AppState.Loc("WEBFRONT_ADV_STATS_UNRATED")))
+                                </div>
 
-                            <!-- Skill Rank Icon (Hidden on mobile) -->
-                            <div
-                                class="hidden md:flex items-center justify-center w-24 bg-surface-alt self-stretch shrink-0 border-l border-line">
-                                <img
-                                    class="w-14 h-14 object-contain filter drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
-                                    src="/images/stats/ranks/rank_@(GetRankIconIndex(stat.ZScore)).png"
-                                    alt="Rank" loading="lazy"/>
+                                <!-- KDR -->
+                                <div class="hidden md:block font-mono tabular-nums text-sm font-semibold @kdrClass">
+                                    @stat.KDR.ToString("F2")
+                                </div>
+
+                                <!-- Kills / deaths -->
+                                <div class="hidden md:block font-mono tabular-nums text-sm text-subtle whitespace-nowrap">
+                                    @stat.Kills.ToNumericalString()<span class="text-muted"> / </span>@stat.Deaths.ToNumericalString()
+                                </div>
+
+                                <!-- Time played -->
+                                <div class="hidden md:block font-mono tabular-nums text-sm text-subtle whitespace-nowrap">
+                                    @stat.TimePlayedValue.TotalHours.ToString("F0")h
+                                </div>
+
+                                <!-- Performance history (xl and up) -->
+                                <div class="hidden 2xl:block h-20 min-w-0">
+                                    <PlayerPerformanceChart ClientId="@stat.ClientId" Id="@stat.Id"
+                                                            History="@stat.PerformanceHistory"/>
+                                </div>
+
+                                <!-- Skill rank icon -->
+                                <div class="hidden md:flex items-center justify-end">
+                                    <img class="w-8 h-8 object-contain"
+                                         src="/images/stats/ranks/rank_@(GetRankIconIndex(stat.ZScore)).png"
+                                         alt="Rank" loading="lazy"/>
+                                </div>
                             </div>
-                        </div>
-                    </ItemContent>
-                    <Placeholder>
-                        <div class="bg-surface-alt/70 backdrop-blur-md rounded-xl p-5 md:p-0 flex flex-col md:flex-row md:items-center gap-6 border-y border-r border-line overflow-hidden">
-                            <div class="relative flex md:flex-col items-center justify-center md:w-24 md:self-stretch md:bg-surface-alt shrink-0">
-                                <div class="w-10 h-10 bg-surface/30 rounded"></div>
+                        </ItemContent>
+                        <Placeholder>
+                            <div class="grid grid-cols-[2rem_2.25rem_minmax(0,1fr)_auto] md:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_2.5rem] 2xl:grid-cols-[2.5rem_2.25rem_minmax(0,1fr)_6rem_4.5rem_5.5rem_4.5rem_13rem_2.5rem] gap-3 items-center px-4 py-2 animate-pulse" aria-busy="true">
+                                <div class="h-4 w-5 rounded bg-surface-alt"></div>
+                                <div class="w-9 h-9 rounded-lg bg-surface-alt"></div>
+                                <div class="min-w-0">
+                                    <div class="h-4 w-40 max-w-full rounded bg-surface-alt"></div>
+                                    <div class="mt-1.5 h-1.5 max-w-xs rounded-full bg-surface-alt"></div>
+                                </div>
+                                <div class="h-4 w-12 rounded bg-surface-alt"></div>
+                                <div class="hidden md:block h-4 w-10 rounded bg-surface-alt"></div>
+                                <div class="hidden md:block h-4 w-14 rounded bg-surface-alt"></div>
+                                <div class="hidden md:block h-4 w-10 rounded bg-surface-alt"></div>
+                                <div class="hidden 2xl:block h-20 rounded bg-surface-alt/50"></div>
+                                <div class="hidden md:block w-8 h-8 rounded bg-surface-alt ml-auto"></div>
                             </div>
-                            <div class="flex-1 min-w-0 py-2 md:py-4 pr-4">
-                                <div class="h-5 w-40 bg-surface/30 rounded mb-2"></div>
-                                <div class="h-4 w-32 bg-surface/20 rounded"></div>
-                            </div>
-                            <div class="w-full h-24 md:flex-1 md:h-20 md:min-w-[200px] bg-surface/10 rounded"></div>
-                            <div class="hidden md:flex items-center justify-center w-24 bg-surface-alt self-stretch shrink-0 border-l border-line">
-                                <div class="w-12 h-12 bg-surface/20 rounded"></div>
-                            </div>
-                        </div>
-                    </Placeholder>
-                </Virtualize>
-            </div>
+                        </Placeholder>
+                    </Virtualize>
+                </div>
+            </section>
         </div>
     </div>
 
     @* ================================================================ *@
-    @* SIDEBAR - Fixed position *@
+    @* SIDEBAR - server filter *@
     @* ================================================================ *@
     <div class="xl:w-80 xl:shrink-0 xl:py-6 xl:pr-0 pl-0">
         @if (MenuItems != null)

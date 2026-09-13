@@ -48,6 +48,9 @@ namespace SharedLibraryCore.Configuration
         [ConfigurationOptional]
         public string CustomHostname { get; set; }
 
+        [ConfigurationOptional]
+        public ExternalWebConfiguration ExternalWeb { get; set; }
+
         public IBaseConfiguration Generate()
         {
             ModifyParsers();

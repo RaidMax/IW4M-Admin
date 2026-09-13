@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -124,6 +124,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GithubActions", "GithubActi
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginDebugReference", "PluginDebugReference\PluginDebugReference.csproj", "{2EB30B9B-FEC4-4A30-A955-515D55D0555B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrations.SevenDaysToDie", "Integrations\SevenDaysToDie\Integrations.SevenDaysToDie.csproj", "{B006082D-0BC2-471B-828E-AB49437DA49E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -477,6 +479,30 @@ Global
 		{2EB30B9B-FEC4-4A30-A955-515D55D0555B}.Release|x64.Build.0 = Release|Any CPU
 		{2EB30B9B-FEC4-4A30-A955-515D55D0555B}.Release|x86.ActiveCfg = Release|Any CPU
 		{2EB30B9B-FEC4-4A30-A955-515D55D0555B}.Release|x86.Build.0 = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|x64.Build.0 = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Debug|x86.Build.0 = Debug|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|Any CPU.ActiveCfg = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|Any CPU.Build.0 = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|Mixed Platforms.ActiveCfg = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|Mixed Platforms.Build.0 = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|x64.ActiveCfg = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|x64.Build.0 = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|x86.ActiveCfg = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Prerelease|x86.Build.0 = Prerelease|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|x64.ActiveCfg = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|x64.Build.0 = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|x86.ActiveCfg = Release|Any CPU
+		{B006082D-0BC2-471B-828E-AB49437DA49E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -499,6 +525,7 @@ Global
 		{866F453D-BC89-457F-8B55-485494759B31} = {AB83BAC0-C539-424A-BF00-78487C10753C}
 		{603725A4-BC0B-423B-955B-762C89E1C4C2} = {AB83BAC0-C539-424A-BF00-78487C10753C}
 		{DCCEED9F-816E-4595-8B74-D76A77FBE0BE} = {8C8F3945-0AEF-4949-A1F7-B18E952E50BC}
+		{B006082D-0BC2-471B-828E-AB49437DA49E} = {A2AE33B4-0830-426A-9E11-951DAB12BE5B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84F8F8E0-1F73-41E0-BD8D-BB6676E2EE87}

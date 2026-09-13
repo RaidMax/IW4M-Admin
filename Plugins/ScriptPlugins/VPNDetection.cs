@@ -137,35 +137,49 @@ public class VpnDetectionPlugin : IPluginV2
                     };
                     var encodedMeta = Uri.EscapeDataString(JsonSerializer.Serialize(disallowInteraction));
 
-                    var table = "<table class=\"w-full text-left border-collapse\">";
+                    // Rendered inside the webfront's card container; follows WebfrontCore/REDESIGN-GUIDE.md.
+                    var table = $@"<div class=""flex items-center gap-3 px-4 py-2.5 border-b border-line"">
+                            <h2 class=""flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted"">{loc["WEBFRONT_NAV_VPN_TITLE"]}</h2>
+                            <span class=""font-mono text-[11px] px-1.5 py-1 rounded-full bg-surface-alt text-subtle tabular-nums"">{clients.Count}</span>
+                        </div>";
 
                     if (clients.Count == 0)
                     {
-                        table +=
-                            "<tr><td colspan=\"2\" class=\"px-6 py-8 text-center text-muted\">No players are whitelisted.</td></tr>";
+                        table += @"<div class=""flex flex-col items-center justify-center gap-2 py-10 text-muted text-sm"">
+                                <i class=""ph ph-shield-check text-3xl text-secondary""></i>
+                                <span>No players are whitelisted.</span>
+                            </div>";
                     }
                     else
                     {
+                        table += @"<div class=""overflow-x-auto""><table class=""w-full text-sm"">
+                            <thead><tr class=""text-[10px] font-semibold uppercase tracking-wider text-muted"">
+                                <th class=""text-left px-4 py-2.5 border-b border-line"">Player</th>
+                                <th class=""text-left px-4 py-2.5 border-b border-line"">Client ID</th>
+                                <th class=""text-right px-4 py-2.5 border-b border-line""></th>
+                            </tr></thead><tbody class=""divide-y divide-line"">";
+
                         foreach (var client in clients)
                         {
-                            table += $@"<tr class=""border-t border-line hover:bg-surface-hover/30 transition-colors"">
-                                    <td class=""px-6 py-4 whitespace-nowrap"">
-                                        <a href=""/Client/Profile/{client.ClientId}"" class=""text-sm font-medium hover:text-primary transition-colors"">{client.Name.StripColors()}</a>
+                            var cleanName = System.Net.WebUtility.HtmlEncode(client.Name.StripColors());
+                            table += $@"<tr class=""hover:bg-surface-hover transition-colors"">
+                                    <td class=""px-4 py-2.5 align-middle"">
+                                        <a href=""/client/{client.ClientId}"" class=""font-semibold text-foreground hover:text-primary transition-colors"">{cleanName}</a>
                                     </td>
-                                    <td class=""px-6 py-4 text-right"">
-                                        <button type=""button"" class=""profile-action cursor-pointer"" data-action=""DynamicAction"" data-action-id=""{client.ClientId}""
-                                           data-action-meta=""{encodedMeta}"">
-                                            <div class=""inline-flex items-center px-3 py-1.5 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 transition-colors text-sm font-medium"">
-                                                <i class=""ph ph-x-circle mr-2 text-sm""></i>
-                                                <span class=""truncate"">{loc["WEBFRONT_VPN_BUTTON_DISALLOW"]}</span>
-                                            </div>
+                                    <td class=""px-4 py-2.5 align-middle font-mono tabular-nums text-muted"">#{client.ClientId}</td>
+                                    <td class=""px-4 py-2.5 align-middle text-right"">
+                                        <button type=""button"" class=""profile-action inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-error/40 bg-surface-alt text-xs font-semibold text-error hover:bg-error/10 transition-colors""
+                                                data-action=""DynamicAction"" data-action-id=""{client.ClientId}"" data-action-meta=""{encodedMeta}"">
+                                            <i class=""ph ph-x-circle text-base""></i>
+                                            <span>{loc["WEBFRONT_VPN_BUTTON_DISALLOW"]}</span>
                                         </button>
                                     </td>
                                 </tr>";
                         }
+
+                        table += "</tbody></table></div>";
                     }
 
-                    table += "</table>";
                     return table;
                 }
             };

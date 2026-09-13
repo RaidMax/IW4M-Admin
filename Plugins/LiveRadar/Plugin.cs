@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Data.Models;
 using IW4MAdmin.Plugins.LiveRadar.Configuration;
 using IW4MAdmin.Plugins.LiveRadar.Events;
+using IW4MAdmin.Plugins.LiveRadar.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore.Configuration;
@@ -36,7 +38,15 @@ public class Plugin : IPluginV2
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
         serviceCollection.AddConfiguration<LiveRadarConfiguration>();
-        
+        serviceCollection.AddSingleton<SevenDaysToDieRadarService>();
+        serviceCollection.AddHttpClient("LiveRadar7DTD", client =>
+            client.Timeout = TimeSpan.FromSeconds(6))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            })
+            .RedactLoggedHeaders(["X-SDTD-API-TOKENNAME", "X-SDTD-API-SECRET"]);
+
         serviceCollection.AddSingleton<IGameScriptEvent, LiveRadarScriptEvent>(); // for identification 
         serviceCollection.AddTransient<LiveRadarScriptEvent>(); // for factory
     }
@@ -131,9 +141,10 @@ public class Plugin : IPluginV2
         {
             // if it's an IW4 game, with custom callbacks, we want to 
             // enable the live radar page
-            var shouldRegisterPage = monitorEvent.Server.GameCode != Reference.Game.IW4 ||
-                                     !monitorEvent.Server.IsLegacyGameIntegrationEnabled ||
-                                     _addedPage;
+            var supportsIw4 = monitorEvent.Server.GameCode == Reference.Game.IW4 &&
+                              monitorEvent.Server.IsLegacyGameIntegrationEnabled;
+            var supportsSevenDays = monitorEvent.Server.GameCode == Reference.Game.D7D;
+            var shouldRegisterPage = (!supportsIw4 && !supportsSevenDays) || _addedPage;
             if (shouldRegisterPage)
             {
                 return Task.CompletedTask;

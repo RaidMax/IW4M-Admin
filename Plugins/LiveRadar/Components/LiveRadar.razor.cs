@@ -20,7 +20,7 @@ public partial class LiveRadar
     protected override void OnInitialized()
     {
         Servers = Manager.GetServers()
-            .Where(server => server.GameName == Server.Game.IW4)
+            .Where(server => server.GameName is Server.Game.IW4 or Server.Game.D7D)
             .ToList();
 
         if (string.IsNullOrEmpty(ServerId) && Servers.Any())

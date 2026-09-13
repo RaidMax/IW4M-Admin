@@ -168,9 +168,11 @@ public class WebfrontDataService : IWebfrontDataService
                             Online = true,
                             LastConnection = p.client.LastConnection,
                             Score = p.client.Score,
-                            Kills = p.stats?.MatchData?.Kills ?? 0,
-                            Deaths = p.stats?.MatchData?.Deaths ?? 0,
+                            Kills = GetLiveKills(server, p.client) ?? p.stats?.MatchData?.Kills ?? 0,
+                            Deaths = GetLiveDeaths(server, p.client) ?? p.stats?.MatchData?.Deaths ?? 0,
                             Ping = p.client.Ping,
+                            Team = p.client.Team,
+                            TeamName = p.client.TeamName,
                             ZScore = p.stats?.ZScore
                         };
 
@@ -237,9 +239,11 @@ public class WebfrontDataService : IWebfrontDataService
                         Online = true,
                         LastConnection = p.client.LastConnection,
                         Score = p.client.Score,
-                        Kills = p.stats?.MatchData?.Kills ?? 0,
-                        Deaths = p.stats?.MatchData?.Deaths ?? 0,
+                        Kills = GetLiveKills(server, p.client) ?? p.stats?.MatchData?.Kills ?? 0,
+                        Deaths = GetLiveDeaths(server, p.client) ?? p.stats?.MatchData?.Deaths ?? 0,
                         Ping = p.client.Ping,
+                        Team = p.client.Team,
+                        TeamName = p.client.TeamName,
                         ZScore = p.stats?.ZScore
                     };
 
@@ -273,7 +277,8 @@ public class WebfrontDataService : IWebfrontDataService
         return new IW4MAdminInfo
         {
             TotalAvailableClientSlots = servers.Sum(server => server.MaxClients),
-            TotalOccupiedClientSlots = servers.SelectMany(server => server.GetClientsAsList()).Count(),
+            // Same figure the navigation counter uses, so the two never disagree.
+            TotalOccupiedClientSlots = servers.Sum(server => server.ClientNum),
             TotalClientCount = count,
             RecentClientCount = recentCount,
             MaxConcurrentClients = clientCount ?? 0,
@@ -687,8 +692,8 @@ public class WebfrontDataService : IWebfrontDataService
                     ClientId = clientData.client.ClientId,
                     Score = Math.Max(clientData.client.Score, clientData.stats?.RoundScore ?? 0),
                     Ping = clientData.client.Ping,
-                    Kills = clientData.stats?.MatchData?.Kills,
-                    Deaths = clientData.stats?.MatchData?.Deaths,
+                    Kills = GetLiveKills(server, clientData.client) ?? clientData.stats?.MatchData?.Kills,
+                    Deaths = GetLiveDeaths(server, clientData.client) ?? clientData.stats?.MatchData?.Deaths,
                     ScorePerMinute = clientData.stats?.SessionSPM,
                     Kdr = clientData.stats?.MatchData?.Kdr,
                     ZScore = clientData.stats?.ZScore == null || clientData.stats.ZScore == 0
@@ -700,6 +705,17 @@ public class WebfrontDataService : IWebfrontDataService
                 .ToList()
         });
     }
+
+    private static RConStatusStats? GetLiveRConStats(Server server, EFClient client) =>
+        server.GameName == Server.Game.D7D
+            ? client.GetAdditionalProperty<RConStatusStats>("RConStatusStats")
+            : null;
+
+    private static int? GetLiveKills(Server server, EFClient client) =>
+        GetLiveRConStats(server, client)?.Kills;
+
+    private static int? GetLiveDeaths(Server server, EFClient client) =>
+        GetLiveRConStats(server, client)?.Deaths;
 
     public async Task<ResourceQueryHelperResult<BanInfo>?> GetBansAsync(BanInfoRequest request)
     {

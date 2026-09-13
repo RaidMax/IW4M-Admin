@@ -75,6 +75,9 @@ public class ReportDemoWebhookPlugin : IPluginV2
         IGameEventSubscriptions.MatchEnded += OnMatchEnded;
         IManagementEventSubscriptions.Unload += OnUnload;
 
+        // Demos queued before a restart are restored so they still get posted.
+        LoadPending();
+
         _ = Task.Run(() => SweepLoopAsync(_cts.Token));
 
         _logger.LogInformation("ReportDemoWebhook {Version} loaded. Enabled={Enabled}, Servers with demos={Count}",
@@ -216,6 +219,8 @@ public class ReportDemoWebhookPlugin : IPluginV2
                 pending.Incidents.Add(incident);
             }
 
+            SavePending();
+
             _logger.LogInformation("ReportDemoWebhook: queued {Kind} for {Client} on {Server} (demo: {Demo})",
                 isVoteBan ? "vote ban" : "report", client.CleanedName, serverName, demoPath ?? "none");
         }
@@ -294,6 +299,11 @@ public class ReportDemoWebhookPlugin : IPluginV2
             }
         }
 
+        if (ready.Count > 0)
+        {
+            SavePending();
+        }
+
         foreach (var (_, pending) in ready)
         {
             try
@@ -361,6 +371,62 @@ public class ReportDemoWebhookPlugin : IPluginV2
         {
             _logger.LogError(ex, "ReportDemoWebhook: could not copy demo {Demo} to {Keep}", pending.DemoPath, _config.KeepDirectory);
             return null;
+        }
+    }
+
+    #endregion
+
+    #region Pending persistence
+
+    private static readonly JsonSerializerOptions PersistOptions = new() { WriteIndented = true };
+
+    private string PendingFile => Path.Combine(_config.KeepDirectory, "pending-demos.json");
+
+    private void SavePending()
+    {
+        try
+        {
+            List<PendingDemo> items;
+            lock (_lock)
+            {
+                items = _pending.Values.ToList();
+            }
+
+            Directory.CreateDirectory(_config.KeepDirectory);
+            File.WriteAllText(PendingFile, JsonSerializer.Serialize(items, PersistOptions));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ReportDemoWebhook: could not save the pending demo list to {File}", PendingFile);
+        }
+    }
+
+    private void LoadPending()
+    {
+        try
+        {
+            if (!File.Exists(PendingFile))
+            {
+                return;
+            }
+
+            var items = JsonSerializer.Deserialize<List<PendingDemo>>(File.ReadAllText(PendingFile), PersistOptions) ?? new List<PendingDemo>();
+            lock (_lock)
+            {
+                foreach (var item in items)
+                {
+                    _pending[item.DemoPath ?? $"{item.ServerKey}|nodemo"] = item;
+                }
+            }
+
+            if (items.Count > 0)
+            {
+                _logger.LogInformation("ReportDemoWebhook: restored {Count} pending demo(s) from the previous run", items.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ReportDemoWebhook: could not restore the pending demo list from {File}", PendingFile);
         }
     }
 
@@ -597,33 +663,34 @@ public class ReportDemoWebhookPlugin : IPluginV2
 
     #region Types
 
-    private sealed class Incident
+    // Public settable properties so the pending list round-trips through System.Text.Json.
+    public sealed class Incident
     {
-        public bool IsVoteBan { get; init; }
-        public string OffenderName { get; init; } = "";
-        public int OffenderId { get; init; }
-        public string PunisherName { get; init; } = "";
-        public int PunisherId { get; init; }
-        public string Reason { get; init; } = "";
-        public DateTime When { get; init; }
-        public string ServerKey { get; init; } = "";
-        public string ServerName { get; init; } = "";
-        public string Map { get; init; } = "";
-        public string Gametype { get; init; } = "";
-        public string? DemoPath { get; init; }
-        public DateTime? Expires { get; init; }
+        public bool IsVoteBan { get; set; }
+        public string OffenderName { get; set; } = "";
+        public int OffenderId { get; set; }
+        public string PunisherName { get; set; } = "";
+        public int PunisherId { get; set; }
+        public string Reason { get; set; } = "";
+        public DateTime When { get; set; }
+        public string ServerKey { get; set; } = "";
+        public string ServerName { get; set; } = "";
+        public string Map { get; set; } = "";
+        public string Gametype { get; set; } = "";
+        public string? DemoPath { get; set; }
+        public DateTime? Expires { get; set; }
     }
 
-    private sealed class PendingDemo
+    public sealed class PendingDemo
     {
-        public string ServerKey { get; init; } = "";
-        public string ServerName { get; init; } = "";
-        public string Map { get; init; } = "";
-        public string Gametype { get; init; } = "";
-        public string? DemoPath { get; init; }
-        public DateTime CreatedUtc { get; init; }
+        public string ServerKey { get; set; } = "";
+        public string ServerName { get; set; } = "";
+        public string Map { get; set; } = "";
+        public string Gametype { get; set; } = "";
+        public string? DemoPath { get; set; }
+        public DateTime CreatedUtc { get; set; }
         public bool Highlight { get; set; }
-        public List<Incident> Incidents { get; } = new();
+        public List<Incident> Incidents { get; set; } = new();
     }
 
     private sealed class WebhookPayload

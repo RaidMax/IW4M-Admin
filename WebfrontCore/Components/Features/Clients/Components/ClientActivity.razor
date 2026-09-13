@@ -104,6 +104,14 @@
         </div>
     </div>
 }
+else
+{
+    <!-- Empty server state -->
+    <div class="flex items-center justify-center gap-2 px-4 py-4 h-full bg-surface-alt/50 text-muted text-xs">
+        <i class="ph ph-users-three text-base text-secondary"></i>
+        <span>@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</span>
+    </div>
+}
 
 @code {
 
@@ -160,12 +168,4 @@
         </div>
     };
 
-}
-else
-{
-    <!-- Empty server state -->
-    <div class="flex items-center justify-center gap-2 px-4 py-4 h-full bg-surface-alt/50 text-muted text-xs">
-        <i class="ph ph-users-three text-base text-secondary"></i>
-        <span>@AppState.Loc("WEBFRONT_SCOREBOARD_NO_PLAYERS")</span>
-    </div>
 }

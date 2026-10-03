@@ -10,6 +10,8 @@ public class WebfrontConfiguration
     public string CustomBranding { get; set; }
     public bool EnableConnectionWhitelist { get; set; }
     public string[] ConnectionWhitelist { get; set; } = [];
+    /// <summary>Remote proxy IPs allowed to supply X-Forwarded-* headers. Loopback is trusted by default.</summary>
+    public string[] TrustedProxyAddresses { get; set; } = [];
     public string PrimaryColor { get; set; } = "#117ac0";
     public string SecondaryColor { get; set; } = "pink";
     public string ThemePreset { get; set; } = "minimal";

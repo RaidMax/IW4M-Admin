@@ -258,6 +258,24 @@ public class Program
 
     private const string ApiDocsPolicy = "ApiDocs.View";
 
+    private static Microsoft.AspNetCore.Builder.ForwardedHeadersOptions CreateForwardedHeadersOptions(
+        SharedLibraryCore.Configuration.WebfrontConfiguration configuration)
+    {
+        var forwardedOptions = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+        {
+            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+                               | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost
+                               | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+        };
+        // Keep the framework's loopback trust boundary. Remote peers must be explicitly
+        // configured as trusted proxies before their headers can affect client identity.
+        foreach (var proxy in configuration.TrustedProxyAddresses)
+        {
+            forwardedOptions.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+        }
+        return forwardedOptions;
+    }
+
     private static void ConfigureMiddleware(WebApplication app)
     {
         var appConfig = app.Services.GetRequiredService<ApplicationConfiguration>();
@@ -267,17 +285,7 @@ public class Program
         // and Request.Host reflect the public URL the browser used. Without this, Scalar
         // and any absolute URL generation default to the Kestrel HTTP bind address and
         // trigger mixed-content blocking when the site is fronted by TLS termination.
-        var forwardedOptions = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
-        {
-            ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
-                               | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost
-                               | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
-        };
-        // Accept headers from any upstream — the reverse proxy is expected to be the
-        // only ingress. Users who expose Kestrel directly won't send these headers.
-        forwardedOptions.KnownNetworks.Clear();
-        forwardedOptions.KnownProxies.Clear();
-        app.UseForwardedHeaders(forwardedOptions);
+        app.UseForwardedHeaders(CreateForwardedHeadersOptions(appConfig.Webfront));
 
         if (app.Environment.IsDevelopment())
         {

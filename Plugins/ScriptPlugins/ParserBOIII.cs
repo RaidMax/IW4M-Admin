@@ -54,5 +54,13 @@ public class ParserBOIII : IParserDefinition
         eventParser.Configuration.GameDirectory = "usermaps";
         eventParser.Configuration.Say.Pattern = @"^(chat|chatteam);(?:[0-9]+);([a-f0-9]+);([0-9]+);(.+);(.*)$";
 
+        // T7x writes "0" as the GUID on its J;/Q; lines (e.g. "J;0;2;mohammed") while chat lines and
+        // rcon status carry the real xuid. A "0" GUID makes the log connect build a name-hashed identity,
+        // so ~1s later status sees a different NetworkId in the slot and the player leaves and rejoins.
+        // Only accept J;/Q; lines with a real xuid (or a bot id); otherwise status polling owns
+        // connect/disconnect, so each join happens once, under the real identity.
+        eventParser.Configuration.Join.Pattern = @"^(J);([A-Fa-f0-9]{2,32}|bot[0-9]+);([0-9]+);(.*)$";
+        eventParser.Configuration.Quit.Pattern = @"^(Q);([A-Fa-f0-9]{2,32}|bot[0-9]+);([0-9]+);(.*)$";
+
     }
 }

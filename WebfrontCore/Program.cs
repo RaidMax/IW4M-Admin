@@ -348,7 +348,11 @@ public class Program
         {
             FileProvider = pluginAssetStore.FileProvider,
             RequestPath = "/_content",
-            ServeUnknownFileTypes = false
+            ServeUnknownFileTypes = false,
+            // always revalidate: plugin assets change on redeploy without the URL necessarily changing
+            // (the ?Version= query is the manifest version, which isn't always bumped). The conditional
+            // request is cheap — an unchanged asset answers 304 off its ETag / Last-Modified.
+            OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl = "no-cache"
         });
 
         app.MapControllerRoute(

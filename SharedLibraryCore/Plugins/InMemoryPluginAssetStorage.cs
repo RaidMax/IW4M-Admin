@@ -18,8 +18,15 @@ public sealed class InMemoryPluginAssetStorage : IPluginAssetStorage
     /// </summary>
     public static InMemoryPluginAssetStorage Shared { get; } = new();
 
-    private readonly ConcurrentDictionary<string, byte[]> _assets =
+    private readonly ConcurrentDictionary<string, StoredAsset> _assets =
         new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// An asset plus the moment it was registered. The timestamp is served as Last-Modified and feeds
+    /// the static-file middleware's ETag, so a redeployed plugin (whose assets are re-registered on
+    /// load) invalidates browser caches even when its manifest version wasn't bumped.
+    /// </summary>
+    internal readonly record struct StoredAsset(byte[] Content, DateTimeOffset RegisteredAt);
 
     public InMemoryPluginAssetStorage()
     {
@@ -35,12 +42,29 @@ public sealed class InMemoryPluginAssetStorage : IPluginAssetStorage
             return;
         }
 
+        // HTTP dates have one-second resolution; truncate so Last-Modified round-trips exactly through
+        // If-Modified-Since.
+        var now = DateTimeOffset.UtcNow;
+        var registeredAt = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerSecond));
+
         foreach (var (relativePath, content) in assets)
         {
-            _assets[$"{pluginId}/{relativePath}".ToNormalizedBundlePath()] = content;
+            _assets[$"{pluginId}/{relativePath}".ToNormalizedBundlePath()] = new StoredAsset(content, registeredAt);
         }
     }
 
-    public bool TryGet(string requestPath, out byte[] content) =>
-        _assets.TryGetValue(requestPath.ToNormalizedBundlePath(), out content!);
+    public bool TryGet(string requestPath, out byte[] content)
+    {
+        if (_assets.TryGetValue(requestPath.ToNormalizedBundlePath(), out var asset))
+        {
+            content = asset.Content;
+            return true;
+        }
+
+        content = null!;
+        return false;
+    }
+
+    internal bool TryGetAsset(string requestPath, out StoredAsset asset) =>
+        _assets.TryGetValue(requestPath.ToNormalizedBundlePath(), out asset);
 }

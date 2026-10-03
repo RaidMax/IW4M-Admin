@@ -12,7 +12,7 @@ internal sealed class InMemoryPluginFileProvider(InMemoryPluginAssetStorage stor
 {
     public IFileInfo GetFileInfo(string subpath)
     {
-        if (store.TryGet(subpath, out var content))
+        if (store.TryGetAsset(subpath, out var asset))
         {
             var name = subpath.Replace('\\', '/').TrimEnd('/');
             var slash = name.LastIndexOf('/');
@@ -21,7 +21,7 @@ internal sealed class InMemoryPluginFileProvider(InMemoryPluginAssetStorage stor
                 name = name[(slash + 1)..];
             }
 
-            return new InMemoryFileInfo(name, content);
+            return new InMemoryFileInfo(name, asset.Content, asset.RegisteredAt);
         }
 
         return new NotFoundFileInfo(subpath);

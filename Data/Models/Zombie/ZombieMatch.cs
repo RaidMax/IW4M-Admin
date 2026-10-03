@@ -31,7 +31,7 @@ public class ZombieMatch : DatedRecord
     public bool Completed { get; set; }
 
     /// <summary>
-    /// Number of qualifying players (>50% round participation) in this match.
+    /// Peak number of simultaneously present qualifying players in this match.
     /// Calculated at match end.
     /// </summary>
     public int? PlayerCount { get; set; }

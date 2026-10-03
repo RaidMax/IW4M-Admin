@@ -4,8 +4,8 @@ namespace Data.Models.Zombie;
 
 public class ZombieMatchClientStat : ZombieClientStat
 {
-    [NotMapped] public int? JoinedRound { get; set; }
-    [NotMapped] public int? LastRoundReached { get; set; }
+    public int? JoinedRound { get; set; }
+    public int? LastRoundReached { get; set; }
 
     /// <summary>
     /// True when the row was created by carryover (auto-enrollment of an already-Connected

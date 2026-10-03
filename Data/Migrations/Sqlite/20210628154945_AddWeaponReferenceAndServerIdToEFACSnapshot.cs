@@ -147,7 +147,7 @@ CREATE INDEX IX_EFACSnapshot_LastStrainAngleId ON EFACSnapshot (
 );
 
 CREATE INDEX IX_EFACSnapshot_ServerId ON EFACSnapshot (
-    ""_ServerId""
+    ""ServerId""
 );
 
 

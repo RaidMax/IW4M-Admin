@@ -11,6 +11,7 @@ namespace Data.Migrations.Sqlite
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            SqliteDateTimeOffsetMigration.EncodeText(migrationBuilder);
             migrationBuilder.DropIndex(
                 name: "IX_EFZombieMatches_ServerId",
                 table: "EFZombieMatches");
@@ -179,6 +180,7 @@ namespace Data.Migrations.Sqlite
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            SqliteDateTimeOffsetMigration.DecodeBinary(migrationBuilder);
             migrationBuilder.DropIndex(
                 name: "IX_EFZombieMatches_ServerId_GameMatchId_MatchEndDate",
                 table: "EFZombieMatches");

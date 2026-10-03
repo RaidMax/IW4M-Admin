@@ -1705,6 +1705,12 @@ namespace Data.Migrations.MySql
                     b.Property<int?>("AssistedRounds")
                         .HasColumnType("int");
 
+                    b.Property<int?>("JoinedRound")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LastRoundReached")
+                        .HasColumnType("int");
+
                     b.Property<int?>("SoloFromRound")
                         .HasColumnType("int");
 
@@ -1714,6 +1720,9 @@ namespace Data.Migrations.MySql
             modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<bool?>("AggregatesApplied")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("time(6)");
@@ -1726,6 +1735,9 @@ namespace Data.Migrations.MySql
 
                     b.Property<int>("Points")
                         .HasColumnType("int");
+
+                    b.Property<double?>("RelativeSpeed")
+                        .HasColumnType("double");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("int");

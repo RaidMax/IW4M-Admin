@@ -11,6 +11,10 @@ public class ZombieRoundClientStat : ZombieClientStat
     public TimeSpan? TimeAlive { get; set; }
     public int RoundNumber { get; set; }
     public int Points { get; set; }
+    /// <summary>The speed ratio used when scoring this round; null on legacy rows.</summary>
+    public double? RelativeSpeed { get; set; }
+    /// <summary>True after accepting the first end-of-round score snapshot. Null on legacy rows.</summary>
+    public bool? AggregatesApplied { get; set; }
 
     /// <summary>
     /// Number of qualifying players in the match at the moment this round began.

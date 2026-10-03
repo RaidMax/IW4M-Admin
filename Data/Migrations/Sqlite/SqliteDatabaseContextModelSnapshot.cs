@@ -1630,6 +1630,12 @@ namespace Data.Migrations.Sqlite
                     b.Property<int?>("AssistedRounds")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("JoinedRound")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("LastRoundReached")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("SoloFromRound")
                         .HasColumnType("INTEGER");
 
@@ -1639,6 +1645,9 @@ namespace Data.Migrations.Sqlite
             modelBuilder.Entity("Data.Models.Zombie.ZombieRoundClientStat", b =>
                 {
                     b.HasBaseType("Data.Models.Zombie.ZombieClientStat");
+
+                    b.Property<bool?>("AggregatesApplied")
+                        .HasColumnType("INTEGER");
 
                     b.Property<TimeSpan?>("Duration")
                         .HasColumnType("TEXT");
@@ -1651,6 +1660,9 @@ namespace Data.Migrations.Sqlite
 
                     b.Property<int>("Points")
                         .HasColumnType("INTEGER");
+
+                    b.Property<double?>("RelativeSpeed")
+                        .HasColumnType("REAL");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("INTEGER");

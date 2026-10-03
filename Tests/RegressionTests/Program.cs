@@ -21,6 +21,26 @@ if (args is ["--package", var packageDirectory])
     return;
 }
 
+var previousLocalization = SharedLibraryCore.Utilities.CurrentLocalization;
+SharedLibraryCore.Utilities.CurrentLocalization = new SharedLibraryCore.Localization.Layout(new Dictionary<string, string>
+{
+    ["GLOBAL_TIME_MINUTES"] = "minutes", ["GLOBAL_TIME_HOURS"] = "hours", ["GLOBAL_TIME_DAYS"] = "days",
+    ["GLOBAL_TIME_WEEKS"] = "weeks", ["GLOBAL_TIME_YEARS"] = "years"
+});
+try
+{
+    Check.Equal(TimeSpan.FromMinutes(30), SharedLibraryCore.Utilities.ParseTimespan("30m"), "Temp-ban length parses minutes");
+    Check.Equal(TimeSpan.FromDays(14), SharedLibraryCore.Utilities.ParseTimespan("2w"), "Temp-ban length parses weeks");
+    Check.Equal(TimeSpan.FromHours(1), SharedLibraryCore.Utilities.ParseTimespan("1234567890m"),
+        "Temp-ban length over five digits falls back to the default instead of overflowing");
+    Check.Equal(TimeSpan.FromHours(1), SharedLibraryCore.Utilities.ParseTimespan("ban 5m"),
+        "Temp-ban length must start the argument");
+}
+finally
+{
+    SharedLibraryCore.Utilities.CurrentLocalization = previousLocalization;
+}
+
 var directory = Path.Combine(Path.GetTempPath(), "iw4m-regression-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(directory);
 var factory = new Factory(new DbContextOptionsBuilder().UseSqlite($"Data Source={Path.Combine(directory, "fresh.db")}").Options);

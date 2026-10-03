@@ -33,6 +33,10 @@ public class ParserIW6x : IParserDefinition
         rcon.Status.AddMapping(ParserRegex.GroupType.RConPing, 4);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConNetworkId, 5);
         rcon.Status.AddMapping(ParserRegex.GroupType.RConName, 6);
+        // No last-msg or rate column in this status layout (num score bot ping guid name
+        // address qport): the base indexes would read the name and a missing group.
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConLastMsg, -1);
+        rcon.Status.AddMapping(ParserRegex.GroupType.RConRate, -1);
 
         rconParser.Version = "IW6 MP 3.15 build 2 Sat Sep 14 2013 03:58:30PM win64";
         rconParser.GameName = Server.Game.IW6;

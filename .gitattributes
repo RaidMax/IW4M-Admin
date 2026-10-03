@@ -3,6 +3,9 @@
 ###############################################################################
 * text=auto
 
+# Shell scripts run in Linux containers and CI; CRLF breaks the shebang.
+*.sh text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

@@ -30,7 +30,7 @@ mkdir -p "$PublishDir/Configuration"
 mv "$PublishDir/DefaultSettings.json" "$PublishDir/Configuration/"
 
 mkdir -p "$PublishDir/Lib"
-rm -f "$PublishDir/Microsoft.CodeAnalysis*.dll"
+# C# script parsers compile at runtime and require the Roslyn assemblies.
 
 # Get list of plugin DLLs by matching .csproj project names in the Plugins/ source directory.
 # This avoids treating transitive dependencies (e.g. EF Core, Serilog) that land in BUILD/Plugins

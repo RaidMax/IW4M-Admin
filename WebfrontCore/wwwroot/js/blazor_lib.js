@@ -220,7 +220,20 @@ window.tooltipFixed = {
         const el = this._getEl();
         const rect = triggerElement.getBoundingClientRect();
 
-        el.innerHTML =
+        // #fixed-tooltip lives on <body>, outside any plugin's [data-iw4m-plugin] marker, so
+        // plugin-scoped CSS (@scope) would not reach markup copied from a plugin component.
+        // Nest the content under the trigger's marker (layout-inert) so it keeps its styling.
+        el.textContent = '';
+        let container = el;
+        const scopeRoot = triggerElement.closest('[data-iw4m-plugin]');
+        if (scopeRoot) {
+            container = document.createElement('div');
+            container.setAttribute('data-iw4m-plugin', scopeRoot.getAttribute('data-iw4m-plugin'));
+            container.style.display = 'contents';
+            el.appendChild(container);
+        }
+
+        container.innerHTML =
             '<div class="bg-surface-alt text-foreground text-xs px-3 py-2 rounded-lg shadow-xl border border-line w-max max-w-[200px] md:max-w-[320px] ' + (alignClass || 'text-center') + ' whitespace-normal break-words">' +
             innerHtml +
             '</div>' +

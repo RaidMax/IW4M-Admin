@@ -148,11 +148,14 @@ await using (var context = upgradeFactory.CreateContext())
     await migrator.MigrateAsync();
     var dates = await context.ZombieMatches.OrderBy(m => m.ZombieMatchId).Select(m => m.MatchStartDate).ToListAsync();
     for (var i = 0; i < samples.Length; i++)
-        Check.Equal(DateTimeOffset.Parse(samples[i]).ToString("O"), dates[i].ToString("O"),
-            "SQLite timestamp upgrade including offset and precision");
+        // Stored instants are normalised to UTC (NormalizeZombieTimestampsToUtc) so SQL
+        // ordering follows chronology; the instant and its precision must survive.
+        Check.Equal(DateTimeOffset.Parse(samples[i]).ToUniversalTime().ToString("O"), dates[i].ToUniversalTime().ToString("O"),
+            "SQLite timestamp upgrade preserves the instant and precision");
 
     // Simulate the already-applied old migration: ISO text remains in INTEGER columns.
-    var previousMigration = (await context.Database.GetAppliedMigrationsAsync()).Last(m => !m.EndsWith("PersistZombieRoundScoring"));
+    var previousMigration = (await context.Database.GetAppliedMigrationsAsync())
+        .TakeWhile(m => !m.EndsWith("PersistZombieRoundScoring")).Last();
     await migrator.MigrateAsync(previousMigration);
     // Reproduce the old constant-expression index without relying on permissive
     // double-quoted string parsing in the patched native SQLite library.
@@ -161,8 +164,8 @@ await using (var context = upgradeFactory.CreateContext())
     await context.Database.ExecuteSqlInterpolatedAsync($"UPDATE EFZombieMatches SET MatchStartDate={samples[1]} WHERE ZombieMatchId=1");
     await migrator.MigrateAsync();
     context.ChangeTracker.Clear();
-    Check.Equal(DateTimeOffset.Parse(samples[1]).ToString("O"),
-        (await context.ZombieMatches.SingleAsync(m => m.ZombieMatchId == 1)).MatchStartDate.ToString("O"),
+    Check.Equal(DateTimeOffset.Parse(samples[1]).ToUniversalTime().ToString("O"),
+        (await context.ZombieMatches.SingleAsync(m => m.ZombieMatchId == 1)).MatchStartDate.ToUniversalTime().ToString("O"),
         "Repair previously applied timestamp migration");
     await context.Database.OpenConnectionAsync();
     using (var command = context.Database.GetDbConnection().CreateCommand())
@@ -175,8 +178,8 @@ await using (var context = upgradeFactory.CreateContext())
     await migrator.MigrateAsync("20260418155355_DedupeEFMaps");
     await migrator.MigrateAsync();
     context.ChangeTracker.Clear();
-    Check.Equal(DateTimeOffset.Parse(samples[1]).ToString("O"),
-        (await context.ZombieMatches.SingleAsync(m => m.ZombieMatchId == 1)).MatchStartDate.ToString("O"),
+    Check.Equal(DateTimeOffset.Parse(samples[1]).ToUniversalTime().ToString("O"),
+        (await context.ZombieMatches.SingleAsync(m => m.ZombieMatchId == 1)).MatchStartDate.ToUniversalTime().ToString("O"),
         "Timestamp downgrade and upgrade round trip");
 }
 

@@ -1,0 +1,62 @@
+Branch audit fixes (B01-B15)
+
+B01: Encode SQLite ISO timestamps before the original table rebuild; add a repair
+     pass for installations that already applied it. Preserve offsets and converter
+     precision, nulls, and downgrade/upgrade round trips.
+B02: Retain the framework proxy trust boundary. Configure remote upstream addresses
+     through Webfront.TrustedProxyAddresses; loopback remains trusted by default.
+B03: Keep Roslyn DLLs through publish cleanup for C# script parser compilation.
+B04: Compare bundle file content before skipping an extraction of equal byte length.
+B05: Scope leaderboard qualification and displayed totals to the resolved category.
+B06: Sum category summary, weapon and hit-location rows across member servers;
+     scope legacy metrics and ranking configuration consistently. Count summary scores once.
+B07: Resolve server-specific ranking category for history, ranking and population.
+B08: Populate canonical category metadata in advanced-statistics server navigation.
+B09: Capture match-end session scores before returning from the persistence flush.
+
+Validation: full Debug solution build, 23 branch regression assertions, provider
+snapshot consistency and SQL generation for MySQL/PostgreSQL, SQLite fresh/upgrade/
+repair/downgrade tests, and all 26 shipped C# scripts compiling both normally and
+from the publish output after the real cleanup script.
+
+Rebuild and deploy the host and the Premium project together: match-start enhancement
+is now asynchronous. Apply the newly generated provider migration through normal startup.
+Timestamp text left by the old SQLite migration is repaired; original timestamps already
+replaced by subsequent writes cannot be reconstructed from those overwritten values.
+
+No live game servers or live MySQL/PostgreSQL instances were used. Dependency findings from the later continuation are recorded below.
+See README.txt for repeatable commands and proxy configuration.
+
+B10: Route queued zombie authorization/disposal through the event's original server,
+     even if the mutable client has since moved servers. Regression coverage verifies
+     that a delayed old-server disposal cannot reach the new server's enhancer state.
+
+
+B11: Pin SQLitePCLRaw.bundle_e_sqlite3 3.0.5 instead of EF's obsolete native bundle.
+     Native SQLite 3.53.4 is verified at runtime. The obsolete 2.1.x library's
+     aggregate memory-corruption advisory is no longer present in the dependency
+     graph. Maintainer upgrade guidance: https://github.com/ericsink/SQLitePCL.raw/blob/master/v3.md
+     Advisory: https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+B12: Correct the 2021 snapshot ServerId index typo for fresh installs. The new
+     SQLite scoring migration also repairs the constant-expression index on
+     existing databases. Fresh creation and upgrade index targets are tested.
+B13: Pin Microsoft.OpenApi 2.7.5, the patched 2.x release for circular-reference
+     parser termination. HTTP smoke tests generate the real host-controller API
+     document and verify that the statistics leaderboard route is preserved.
+     Advisory: https://github.com/advisories/GHSA-v5pm-xwqc-g5wc
+B14: Build the five remaining in-repo SDK-package plugins against the checked-out
+     SharedLibraryCore/Data projects, matching the other in-repo plugins. Keep
+     those assemblies host-provided (Private=false). This removes stale SDK/native
+     dependencies and verifies compilation against this branch's actual contracts.
+
+Latest validation: 36 host checks; full solution and host publish succeed, and
+all 26 scripts compile using the cleaned publish output. The whole solution's
+17-project direct/transitive NuGet vulnerability scan reports zero affected
+packages. Non-security compiler/package-constraint warnings remain.
+The shared MatchState round clocks support Premium P25; deploy both together.
+
+B15: Preserve GameTime, source time, log provenance and owner through Zombies
+     event parsing. Untimestamped GSE lines keep a null clock; real engine time
+     zero remains valid. Shared MatchState now supports log-clock round duration
+     and match-start deduplication for Premium P29/P30. Parser regression checks
+     cover minutes-to-seconds, zero, absent time and hidden power attribution.

@@ -125,7 +125,9 @@
     <File Path=".github/workflows/build_application.yml" />
     <File Path=".github/workflows/shared_library_nuget.yml" />
   </Folder>
-  <Folder Name="/Tests/" />
+  <Folder Name="/Tests/">
+    <Project Path="Tests/RegressionTests/RegressionTests.csproj" />
+  </Folder>
   <Project Path="Application/Application.csproj" />
   <Project Path="Data/Data.csproj">
     <BuildType Solution="Prerelease|Mixed Platforms" Project="Debug" />

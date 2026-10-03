@@ -213,14 +213,46 @@ namespace IW4MAdmin.Application
         /// True when an unobserved task fault is the known-benign Blazor Server circuit-teardown race
         /// (dotnet/aspnetcore#62718): a circuit aborted mid-render (tab refresh/close) so a disposed-scope
         /// property injection or a null render-tree frame throws. Framework-caught, no functional impact.
-        /// Identified by every inner being ObjectDisposed/NullReference originating in the Blazor renderer.
+        /// Identified by every inner being ObjectDisposed/NullReference thrown by framework code (the two
+        /// known shapes: DI scope disposed during component property injection, and a null frame in
+        /// RenderTreeDiffBuilder) on a Blazor renderer stack. A fault thrown by plugin or host component
+        /// code also runs on the renderer's stack, so the throwing frame must itself be framework-owned.
         /// </summary>
         private static bool IsBlazorRenderTeardownNoise(AggregateException aggregate)
         {
             var inners = aggregate.Flatten().InnerExceptions;
             return inners.Count > 0 && inners.All(ex =>
                 ex is ObjectDisposedException or NullReferenceException &&
-                (ex.StackTrace?.Contains("Microsoft.AspNetCore.Components", StringComparison.Ordinal) ?? false));
+                (ex.StackTrace?.Contains("Microsoft.AspNetCore.Components", StringComparison.Ordinal) ?? false) &&
+                IsThrownByFrameworkCode(ex.StackTrace));
+        }
+
+        /// <summary>
+        /// True when the first stack frame outside the BCL (System.*, e.g. ObjectDisposedException.ThrowIf)
+        /// belongs to Microsoft.* framework code rather than plugin or host code.
+        /// </summary>
+        private static bool IsThrownByFrameworkCode(string stackTrace)
+        {
+            foreach (var line in stackTrace.Split('\n'))
+            {
+                var frame = line.Trim();
+
+                if (!frame.StartsWith("at ", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                frame = frame[3..];
+
+                if (frame.StartsWith("System.", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                return frame.StartsWith("Microsoft.", StringComparison.Ordinal);
+            }
+
+            return false;
         }
 
         /// <summary>

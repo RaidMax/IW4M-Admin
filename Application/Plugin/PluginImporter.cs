@@ -438,7 +438,7 @@ namespace IW4MAdmin.Application.Plugin
             if (bundle.ResourceFiles.Count > 0)
             {
                 var target = Path.Combine(sandbox, "Resources");
-                WriteBundleFiles(bundle.ResourceFiles, target, skipUnchanged: true);
+                LogSkippedBundleEntries(bundle.Id, target, WriteBundleFiles(bundle.ResourceFiles, target, skipUnchanged: true));
                 _logger.LogInformation("Extracted {Count} resource file(s) from bundle {Id} to {Path}",
                     bundle.ResourceFiles.Count, bundle.Id, target);
             }
@@ -446,7 +446,7 @@ namespace IW4MAdmin.Application.Plugin
             if (bundle.GscFiles.Count > 0)
             {
                 var target = Path.Combine(sandbox, "gsc");
-                WriteBundleFiles(bundle.GscFiles, target, skipUnchanged: true);
+                LogSkippedBundleEntries(bundle.Id, target, WriteBundleFiles(bundle.GscFiles, target, skipUnchanged: true));
                 _logger.LogInformation(
                     "Extracted {Count} game-script file(s) from bundle {Id} to {Path} — copy these to your game server's scripts folder",
                     bundle.GscFiles.Count, bundle.Id, target);
@@ -458,12 +458,35 @@ namespace IW4MAdmin.Application.Plugin
         /// <paramref name="skipUnchanged"/> is set, a file already present with identical content is left
         /// alone — avoids rewriting large data files (e.g. GeoIP databases) on every load.
         /// </summary>
-        private static void WriteBundleFiles(IReadOnlyDictionary<string, byte[]> files, string targetPath,
+        private void LogSkippedBundleEntries(string bundleId, string targetPath, List<string> skippedEntries)
+        {
+            foreach (var entry in skippedEntries)
+            {
+                _logger.LogWarning("Skipped bundle {Id} entry {Entry}: it resolves outside {Target}",
+                    bundleId, entry, targetPath);
+            }
+        }
+
+        /// <returns>Entries that were not written because they resolve outside <paramref name="targetPath"/>.</returns>
+        private static List<string> WriteBundleFiles(IReadOnlyDictionary<string, byte[]> files, string targetPath,
             bool skipUnchanged)
         {
+            // Entry names come straight from the zip; a rooted name or ".." segments would otherwise
+            // let Path.Combine resolve outside the bundle's folder (zip-slip).
+            var root = Path.GetFullPath(targetPath).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var skipped = new List<string>();
+
             foreach (var (relativePath, content) in files)
             {
-                var destination = Path.Combine(targetPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+                var destination = Path.GetFullPath(Path.Combine(targetPath,
+                    relativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+                if (!destination.StartsWith(root, StringComparison.Ordinal))
+                {
+                    skipped.Add(relativePath);
+                    continue;
+                }
+
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
 
                 if (skipUnchanged && File.Exists(destination) && new FileInfo(destination).Length == content.Length
@@ -474,6 +497,8 @@ namespace IW4MAdmin.Application.Plugin
 
                 File.WriteAllBytes(destination, content);
             }
+
+            return skipped;
         }
     }
 

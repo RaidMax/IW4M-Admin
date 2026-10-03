@@ -14,7 +14,7 @@ Legend: ✅ supported · ➖ not applicable to engine · ❌ deliberately not tr
 | | T4 (W@W / Pluto T4) | T5 (BO1 / Pluto T5) | T6 (BO2 / Pluto T6) | T7 (BO3 / T7x AlterWare) |
 |---|---|---|---|---|
 | Source file | `_zm_stats_t4.gsc` | `_zm_stats_t5.gsc` | `_zm_stats_t6.gsc` | `_zm_stats_t7.gsc` |
-| Lines | 2,087 | 2,305 | 2,514 | 2,641 |
+| Lines | 2,087 | 2,305 | 2,582 | 2,641 |
 | Compile step | ➖ (interpreted) | ➖ | ➖ | ✅ `_zm_stats_t7.compiled.gsc` via Cerberus |
 | Helper script ships | ➖ | ➖ | ➖ | ➖ (dev-only helper lives outside repo) |
 | Engine entry | `level thread Init()` | same | same | `REGISTER_SYSTEM("zombie_stats", &__init__, undefined)` |
@@ -329,7 +329,7 @@ map — used for Storm Bow's "light all beacons" ritual phase).
 | Apothicon Sword per-character | T7 (SoE) | Hashed flags, deferred (4 separate quests) |
 | Castle Wolf/Fire/Void ritual sub-steps | T7 (zm_castle) | Per-element ritual flags are hashed — only Storm has string-named `elemental_storm_*` flags. Per-entity scanner would be required for parity (~73 hashed flags); deferred |
 | Live-test 12/14 maps | T7 | Only zm_factory + zm_sumpf live-verified |
-| Live-test bank/locker | T6 | New emission paths added; need Tranzit/Die Rise/Buried verification |
+| Live-test bank/locker | T6 | Locker live-verified on Plutonium Tranzit 2026-10-03 (online path). Bank and Die Rise/Buried lockers still unverified |
 | Gobblegum C# downstream | T7 | Events emitted, no premium handlers yet |
 
 ---

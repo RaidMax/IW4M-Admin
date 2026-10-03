@@ -2447,9 +2447,10 @@ WatchBankAccountValue()
 
 /////////////////////////////////////////////////////////
 // Weapon Locker — Tranzit / Die Rise / Buried only.
-// _zm_weapon_locker.gsc stores weapondata via the wrapper
-// set_stored_weapondata(); we poll has_stored_weapondata()
-// per tick and emit on transition.
+// _zm_weapon_locker.gsc stores weapondata in the player's per-map
+// stats when level.weapon_locker_online (sessionmodeisonlinegame(),
+// true on Plutonium dedicated servers) and in self.stored_weapon_data
+// otherwise. We poll the matching store per tick and emit on transition.
 //
 // Weapon name resolution:
 //   Store:    take the player's previousweapon (one tick ago)
@@ -2462,6 +2463,47 @@ WatchBankAccountValue()
 //   ZP;{player};locker;store;{weapon}
 //   ZP;{player};locker;retrieve;{weapon}
 /////////////////////////////////////////////////////////
+// Mirrors _zm_weapon_locker::wl_has_stored_weapondata() without referencing that
+// script. _zm_stats is core, so the namespaced call resolves on every map.
+LockerHasStoredWeapon()
+{
+    if ( level.weapon_locker_online )
+    {
+        lockerMap = level.script;
+        if ( IsDefined( level.weapon_locker_map ) )
+        {
+            lockerMap = level.weapon_locker_map;
+        }
+
+        return self maps\mp\zombies\_zm_stats::has_stored_weapondata( lockerMap );
+    }
+
+    return IsDefined( self.stored_weapon_data );
+}
+
+// Name of the weapon in the locker, from the same store the locker uses. Undefined when empty.
+LockerStoredWeaponName()
+{
+    weaponData = self.stored_weapon_data;
+    if ( level.weapon_locker_online )
+    {
+        lockerMap = level.script;
+        if ( IsDefined( level.weapon_locker_map ) )
+        {
+            lockerMap = level.weapon_locker_map;
+        }
+
+        weaponData = self maps\mp\zombies\_zm_stats::get_stored_weapondata( lockerMap );
+    }
+
+    if ( !IsDefined( weaponData ) || !IsDefined( weaponData[ "name" ] ) )
+    {
+        return undefined;
+    }
+
+    return weaponData[ "name" ];
+}
+
 WatchWeaponLockerSlot()
 {
     self endon( "disconnect" );
@@ -2469,11 +2511,26 @@ WatchWeaponLockerSlot()
     // _zm_weapon_locker.gsc lives in Tranzit, Die Rise, Buried only.
     // We deliberately do NOT call wl_has_stored_weapondata() — namespacing
     // maps\mp\zombies\_zm_weapon_locker:: would fail to resolve on maps
-    // that don't load that script (Origins/Nuketown/Mob). Polling the
-    // offline-path field self.stored_weapon_data directly works on every
-    // map: it stays undefined on no-locker maps (loop never fires) and
-    // tracks 1:1 with the locker state on Tranzit/Die Rise/Buried.
-    last = IsDefined( self.stored_weapon_data );
+    // that don't load that script (Origins/Nuketown/Mob). Its main() sets
+    // level.weapon_locker_online, so a map without a locker never gets
+    // past this wait. The online store persists between games: sample the
+    // starting state only once the mode is known, or a weapon left in the
+    // locker last game would read as a store at match start.
+    while ( !IsDefined( level.weapon_locker_online ) )
+    {
+        wait ( 1 );
+    }
+
+    last = self LockerHasStoredWeapon();
+
+    // Read at store time (and at start, for a weapon left from a previous game) so the
+    // retrieve line names the stored weapon: the current weapon at the retrieve tick is
+    // still the one being switched away from.
+    storedName = undefined;
+    if ( last )
+    {
+        storedName = self LockerStoredWeaponName();
+    }
 
     previousWeapon = self getCurrentWeapon();
     for ( ;; )
@@ -2481,14 +2538,20 @@ WatchWeaponLockerSlot()
         wait ( 0.2 );
 
         currentWeapon = self getCurrentWeapon();
-        currentHas = IsDefined( self.stored_weapon_data );
+        currentHas = self LockerHasStoredWeapon();
 
         if ( currentHas != last )
         {
             if ( currentHas )
             {
-                // Store transition: weapon was taken from the player one tick ago.
-                weaponName = previousWeapon;
+                // Store transition: the locker's own record names the weapon; fall
+                // back to the one taken from the player a tick ago.
+                storedName = self LockerStoredWeaponName();
+                weaponName = storedName;
+                if ( !IsDefined( weaponName ) || weaponName == "" )
+                {
+                    weaponName = previousWeapon;
+                }
                 if ( !IsDefined( weaponName ) || weaponName == "" || weaponName == "none" )
                 {
                     weaponName = "unknown";
@@ -2497,8 +2560,13 @@ WatchWeaponLockerSlot()
             }
             else
             {
-                // Retrieve transition: player's current weapon is the retrieved one.
-                weaponName = currentWeapon;
+                // Retrieve transition: the weapon recorded at store time.
+                weaponName = storedName;
+                if ( !IsDefined( weaponName ) || weaponName == "" )
+                {
+                    weaponName = currentWeapon;
+                }
+                storedName = undefined;
                 if ( !IsDefined( weaponName ) || weaponName == "" || weaponName == "none" )
                 {
                     weaponName = "unknown";

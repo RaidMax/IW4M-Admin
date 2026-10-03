@@ -105,7 +105,7 @@ Copy-Item ".\Cerberus\ExtractedScripts\Black Ops III\scripts\$name.gscc" `
 | Pack-a-Punch | Lock-first attribution (`WatchPapTriggerForBuyer` + `WatchPapTakenFlag` + `WatchPapTimeoutFlag` + `WatchPapDisconnectFlag` + `WatchPapOutcome`) | all |
 | Mystery box | Notify-driven with 3-tier user resolution + scoped teddy-suppression | all |
 | Bank | Poll `self.account_value` deltas (deposits silent; withdrawals emit a notify but we poll for both) | T6 Tranzit/DieRise/Buried |
-| Weapon locker | Poll `self.stored_weapon_data` transitions (avoid namespace call to prevent load errors on no-locker maps) | T6 Tranzit/DieRise/Buried |
+| Weapon locker | Poll the locker's own store for transitions: per-map player stats when `level.weapon_locker_online` (Plutonium dedicated), else `self.stored_weapon_data`. Weapon name from the stored record. No `_zm_weapon_locker::` call, so no-locker maps load cleanly | T6 Tranzit/DieRise/Buried |
 | Easter Eggs | T4/T5/T6: canonical terminal-notify wait → `easter_egg;complete`. T7: per-step emission → server-side derives completion when all configured steps log. Both paths set `EasterEggOccurredAt` | all |
 | Special rounds | Per-round `level.flag["<type>_round"]` poll → `ZW;round_special;<round>;<type>` | T4: dog. T5: dog/monkey/thief. T6: dog/leaper. T7: dog/monkey/wasp/spider/robot/quad/boss/ee |
 | Gobble Gums | `bgb_activation` player notify + `user_grabbed_bgb` machine notify + `bgb_machine_accessed` (refund-filtered for ghost balls) | T7 only |

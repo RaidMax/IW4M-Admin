@@ -27,7 +27,12 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     private readonly ConcurrentDictionary<string, DateTime> _pendingProbes = new();
     private readonly Random _jitterRng = new();
 
+    // Guards _probeTimer and _probingStopped. The shutdown callback disposes the timer
+    // while a probe may still be in flight; re-arming (Change) or creating the timer must
+    // never race that dispose, or ObjectDisposedException escapes the async void callback.
+    private readonly object _probeTimerLock = new();
     private Timer _probeTimer;
+    private bool _probingStopped;
     private bool _gscDetected;
 
     public ServerLatencyMetrics LatencyMetrics { get; } = new(appConfig.LatencyEmaAlpha);
@@ -51,7 +56,13 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         cancellationToken.Register(() =>
         {
-            _probeTimer?.Dispose();
+            lock (_probeTimerLock)
+            {
+                _probingStopped = true;
+                _probeTimer?.Dispose();
+                _probeTimer = null;
+            }
+
             IGameServerEventSubscriptions.ServerStatusReceived -= OnServerStatusReceived;
 
             if (appConfig.LatencyProbeIntervalMs > 0)
@@ -153,17 +164,27 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         await DetectGscCompanionAsync();
 
-        if (_gscDetected && _probeTimer is null)
+        if (!_gscDetected)
         {
+            return;
+        }
+
+        lock (_probeTimerLock)
+        {
+            if (_probingStopped || _probeTimer is not null)
+            {
+                return;
+            }
+
             // One-shot timer; OnProbeTimerElapsed re-arms with a jittered delay each
             // cycle so probes don't phase-lock to the GameLogReader poll cycle.
             _probeTimer = new Timer(OnProbeTimerElapsed, null, NextJitteredDelayMs(), Timeout.Infinite);
+        }
 
-            using (LogContext.PushProperty("Server", server.Id))
-            {
-                logger.LogInformation("Latency probe started (interval: {Interval}ms ±{JitterPct:P0})",
-                    appConfig.LatencyProbeIntervalMs, ProbeJitterFraction);
-            }
+        using (LogContext.PushProperty("Server", server.Id))
+        {
+            logger.LogInformation("Latency probe started (interval: {Interval}ms ±{JitterPct:P0})",
+                appConfig.LatencyProbeIntervalMs, ProbeJitterFraction);
         }
     }
 
@@ -183,7 +204,15 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
         }
         finally
         {
-            _probeTimer?.Change(NextJitteredDelayMs(), Timeout.Infinite);
+            // Re-arm only while probing is live; the shutdown callback disposes and nulls
+            // the timer under the same lock, so Change can never see a disposed timer.
+            lock (_probeTimerLock)
+            {
+                if (!_probingStopped)
+                {
+                    _probeTimer?.Change(NextJitteredDelayMs(), Timeout.Infinite);
+                }
+            }
         }
     }
 

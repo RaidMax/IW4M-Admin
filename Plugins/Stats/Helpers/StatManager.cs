@@ -184,7 +184,14 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             var bucketClassification = await PerformanceBucketClassifier.ClassifyAsync(
                 Plugin.ServerManager, contextFactory, bucketConfig.Code);
             var suppressMpMetrics = bucketClassification.IsZombieBucket;
-            var zombieServerIds = bucketClassification.ZombieServerIds.ToList();
+            // MP play is excluded by dropping the bucket's LIVE non-zombie servers rather than by
+            // keeping only live zombie servers: a server removed from config keeps its EFServers
+            // row and bucket but cannot be classified live, and its players must stay listed
+            // (TotalRankedClients still counts them). In a zombie bucket it is treated as zombie.
+            var liveNonZombieServerIds = Plugin.ServerManager.GetServers()
+                .Select(server => server.LegacyDatabaseId)
+                .Where(id => !bucketClassification.ZombieServerIds.Contains(id))
+                .ToList();
 
             var clientIdsList = new List<int>(count);
             var consumed = 0;
@@ -211,7 +218,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         .Where(stat => serverId == null || stat.ServerId == serverId)
                         .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code
                                        || (isDefaultBucket && stat.Server.PerformanceBucketId == null))
-                        .Where(stat => !suppressMpMetrics || zombieServerIds.Contains(stat.ServerId))
+                        .Where(stat => !suppressMpMetrics || !liveNonZombieServerIds.Contains(stat.ServerId))
                         .Select(stat => stat.ClientId)
                         .Distinct()
                         .ToListAsync())
@@ -297,15 +304,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code
                                || (isDefaultBucket && stat.Server.PerformanceBucketId == null));
 
-            if (suppressMpMetrics && zombieServerIds.Count > 0)
+            if (suppressMpMetrics)
             {
-                // Restrict the sum to the bucket's actual zombie servers. Without
-                // this, a non-zombie server that happens to share the bucket would
-                // contribute its MP kills/deaths/playtime into the displayed
-                // zombie-bucket totals — fundamentally a different game mode and
-                // not comparable.
-                var zombieIdList = zombieServerIds.ToList();
-                statsQuery = statsQuery.Where(stat => zombieIdList.Contains(stat.ServerId));
+                // Keep the sum to the bucket's zombie play. Without this, a non-zombie
+                // server that happens to share the bucket would contribute its MP
+                // kills/deaths/playtime into the displayed zombie-bucket totals —
+                // fundamentally a different game mode and not comparable.
+                statsQuery = statsQuery.Where(stat => !liveNonZombieServerIds.Contains(stat.ServerId));
             }
 
             var statsInfo = await statsQuery

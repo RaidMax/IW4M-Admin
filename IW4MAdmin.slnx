@@ -127,6 +127,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/RegressionTests/RegressionTests.csproj" />
+    <Project Path="Tests/ZombieStats.Tests/ZombieStats.Tests.csproj" />
   </Folder>
   <Project Path="Application/Application.csproj" />
   <Project Path="Data/Data.csproj">

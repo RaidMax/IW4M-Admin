@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../ZombieStats.Testing.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../Application/Application.csproj" />
+    <ProjectReference Include="../../Plugins/ZombieStats/ZombieStats.csproj" />
+    <Compile Include="../RegressionTests/TestSupport.cs" Link="Infrastructure/TestSupport.cs" />
+    <Compile Include="../RegressionTests/ZombieLifecycleChecks.cs" Link="Infrastructure/ZombieLifecycleChecks.cs" />
+  </ItemGroup>
+</Project>

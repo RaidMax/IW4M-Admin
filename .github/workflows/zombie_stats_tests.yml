@@ -1,0 +1,47 @@
+name: Zombies Stats tests
+
+on:
+  pull_request:
+    paths:
+      - 'Application/**'
+      - 'Data/**'
+      - 'SharedLibraryCore/**'
+      - 'Plugins/Stats/**'
+      - 'Plugins/ZombieStats/**'
+      - 'Tests/**'
+      - '.github/workflows/zombie_stats_tests.yml'
+  push:
+    branches: [feature/zombie-stats]
+    paths:
+      - 'Application/**'
+      - 'Data/**'
+      - 'SharedLibraryCore/**'
+      - 'Plugins/Stats/**'
+      - 'Plugins/ZombieStats/**'
+      - 'Tests/**'
+      - '.github/workflows/zombie_stats_tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test and collect coverage
+        run: >-
+          dotnet test Tests/ZombieStats.Tests/ZombieStats.Tests.csproj -c Prerelease
+          --collect:"XPlat Code Coverage" --settings Tests/zombie-stats.runsettings
+          --results-directory Tests/TestResults/public --logger "trx;LogFileName=tests.trx"
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zombie-stats-tests
+          path: Tests/TestResults/public/
+          if-no-files-found: warn

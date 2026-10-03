@@ -1,0 +1,16 @@
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[ZombieStats]*,[ZombieStatsPremium]*,[IW4MAdmin]IW4MAdmin.Application.EventParsers.*,[Data]Data.Models.Zombie.*,[Data]Data.Extensions.UtcDateTimeOffsetToBinaryConverter</Include>
+          <ExcludeByFile>**/obj/**,**/Migrations/**</ExcludeByFile>
+          <!-- Async state machines and lambdas contain real application logic. Do not exclude CompilerGeneratedAttribute. -->
+          <ExcludeByAttribute>GeneratedCodeAttribute</ExcludeByAttribute>
+          <SingleHit>false</SingleHit>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

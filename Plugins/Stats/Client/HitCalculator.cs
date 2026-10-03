@@ -37,6 +37,13 @@ public class HitState : IDisposable
     }
 
     public List<EFClientHitStatistic> Hits { get; set; }
+
+    /// <summary>
+    /// Rows changed by hit processing since the last round-end flush. Guarded by
+    /// <see cref="OnTransaction"/> like <see cref="Hits"/>.
+    /// </summary>
+    public HashSet<EFClientHitStatistic> DirtyHits { get; } = new(ReferenceEqualityComparer.Instance);
+
     public DateTime? LastUsage { get; set; }
     public int? LastWeaponId { get; set; }
     public EFServer Server { get; set; }
@@ -140,7 +147,9 @@ public class HitCalculator : IClientStatisticCalculator
                 try
                 {
                     await state.OnTransaction.WaitAsync();
-                    await UpdateClientStatistics(client.ClientId, state);
+                    // Per-round cadence: write only what changed this round. The full cache
+                    // is written once, when the client state is disposed.
+                    await UpdateClientStatistics(client.ClientId, state, dirtyOnly: true);
                 }
 
                 catch (Exception ex)
@@ -295,6 +304,7 @@ public class HitCalculator : IClientStatisticCalculator
                 foreach (var clientHit in calculatedHits)
                 {
                     RunCalculation(clientHit, hitInfo, state);
+                    state.DirtyHits.Add(clientHit);
                 }
             }
             catch (Exception ex)
@@ -422,7 +432,7 @@ public class HitCalculator : IClientStatisticCalculator
         return new List<EFClientHitStatistic>();
     }
 
-    private async Task UpdateClientStatistics(int clientId, HitState locState = null)
+    private async Task UpdateClientStatistics(int clientId, HitState locState = null, bool dirtyOnly = false)
     {
         if (!_clientHitStatistics.ContainsKey(clientId) && locState == null)
         {
@@ -434,11 +444,18 @@ public class HitCalculator : IClientStatisticCalculator
 
         try
         {
+            var hitsToSave = dirtyOnly ? state.DirtyHits.ToList() : state.Hits;
+
+            if (hitsToSave.Count == 0)
+            {
+                return;
+            }
+
             await using var context = _contextFactory.CreateContext();
 
             // Clear navigation properties to prevent EF Core from trying to
             // insert/update related entities when attaching to this new context
-            foreach (var hit in state.Hits)
+            foreach (var hit in hitsToSave)
             {
                 hit.Server = null;
                 hit.HitLocation = null;
@@ -449,8 +466,8 @@ public class HitCalculator : IClientStatisticCalculator
                 hit.Client = null;
             }
 
-            var existingHits = state.Hits.Where(h => h.ClientHitStatisticId != 0).ToList();
-            var newHits = state.Hits.Where(h => h.ClientHitStatisticId == 0).ToList();
+            var existingHits = hitsToSave.Where(h => h.ClientHitStatisticId != 0).ToList();
+            var newHits = hitsToSave.Where(h => h.ClientHitStatisticId == 0).ToList();
 
             if (existingHits.Count > 0)
             {
@@ -463,6 +480,10 @@ public class HitCalculator : IClientStatisticCalculator
             }
 
             await context.SaveChangesAsync();
+
+            // Everything written is now persisted (a full flush covers the dirty rows too);
+            // on failure the set is kept so the next flush retries them.
+            state.DirtyHits.Clear();
         }
 
         catch (Exception ex)

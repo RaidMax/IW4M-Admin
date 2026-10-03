@@ -201,6 +201,14 @@ namespace IW4MAdmin.Application.RConParsers
                 return null;
             }
 
+            // The name is spliced into a console command unquoted. A name carrying a command
+            // separator or quote could append a second command on engines that tokenise them,
+            // so such names are not queried by name.
+            if (Configuration.DumpuserCommandFormat.Contains("{1}") && clientName.IndexOfAny([';', '"', '\n', '\r']) >= 0)
+            {
+                return null;
+            }
+
             string[] response;
             try
             {

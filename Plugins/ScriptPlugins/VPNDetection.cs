@@ -235,7 +235,7 @@ public class VpnDetectionPlugin : IPluginV2
                         {
                             table += $@"<tr class=""border-t border-line hover:bg-surface-hover/30 transition-colors"">
                                     <td class=""px-6 py-4 whitespace-nowrap"">
-                                        <a href=""/Client/Profile/{client.ClientId}"" class=""text-sm font-medium hover:text-primary transition-colors"">{client.Name.StripColors()}</a>
+                                        <a href=""/Client/Profile/{client.ClientId}"" class=""text-sm font-medium hover:text-primary transition-colors"">{System.Net.WebUtility.HtmlEncode(client.Name.StripColors())}</a>
                                     </td>
                                     <td class=""px-6 py-4 text-right"">
                                         <button type=""button"" class=""profile-action cursor-pointer"" data-action=""DynamicAction"" data-action-id=""{client.ClientId}""

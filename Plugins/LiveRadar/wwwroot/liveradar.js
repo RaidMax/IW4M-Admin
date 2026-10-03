@@ -200,6 +200,11 @@ function rotate(cx, cy, x, y, angle) {
     };
 }
 
+// Player names and weapon names come from the game server; never insert them as markup.
+function escapeRadarHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function weaponImageForWeapon(weapon) {
     let name = weapon.split('_')[0];
     if (weapons[name] === undefined) {
@@ -231,12 +236,12 @@ function updatePlayerData() {
     <div class="relative h-7 w-full bg-black/30">
         <div class="absolute inset-y-0 left-0 transition-all duration-300" style="width:${health}%; background:${accent}"></div>
         <div class="absolute inset-0 flex items-center justify-between gap-2 px-2.5 z-10">
-            <span class="text-xs font-bold text-white drop-shadow truncate">${player.name}</span>
+            <span class="text-xs font-bold text-white drop-shadow truncate">${escapeRadarHtml(player.name)}</span>
             <span class="text-[10px] font-mono shrink-0 ${dead ? 'text-rose-300' : 'text-white/80'}">${dead ? 'DEAD' : health}</span>
         </div>
     </div>
     <div class="px-2.5 py-1.5 flex items-center justify-between gap-2 text-xs text-foreground/90">
-        <div class="w-11 h-5 bg-contain bg-no-repeat bg-left shrink-0 ${dead ? 'opacity-40' : 'opacity-90'}" style="background-image:url(${weaponImageForWeapon(player.weapon)})" title="${player.weapon}"></div>
+        <div class="w-11 h-5 bg-contain bg-no-repeat bg-left shrink-0 ${dead ? 'opacity-40' : 'opacity-90'}" style="background-image:url(${weaponImageForWeapon(player.weapon)})" title="${escapeRadarHtml(player.weapon)}"></div>
         <div class="flex items-center gap-2.5 font-mono">
             <span class="flex items-center gap-1" title="Kills"><i class="ph ph-skull text-muted"></i>${player.kills}</span>
             <span class="flex items-center gap-1" title="Deaths"><i class="ph ph-skull text-muted opacity-50"></i>${player.deaths}</span>

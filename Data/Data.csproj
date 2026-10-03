@@ -24,6 +24,9 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <PackageReference Include="Microting.EntityFrameworkCore.MySql" Version="10.0.8"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8"/>
+        <!-- Override EF's obsolete native bundle (SQLitePCLRaw.lib.e_sqlite3 2.1.11).
+             The 3.x bundle keeps the same initialization contract and ships patched SQLite. -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5"/>
     </ItemGroup>
 
 </Project>

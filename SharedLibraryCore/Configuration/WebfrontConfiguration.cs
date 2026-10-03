@@ -10,7 +10,13 @@ public class WebfrontConfiguration
     public string CustomBranding { get; set; }
     public bool EnableConnectionWhitelist { get; set; }
     public string[] ConnectionWhitelist { get; set; } = [];
-    /// <summary>Remote proxy IPs allowed to supply X-Forwarded-* headers. Loopback is trusted by default.</summary>
+    /// <summary>
+    /// Remote proxies allowed to supply X-Forwarded-* headers: IP addresses or CIDR networks
+    /// (e.g. "172.18.0.0/16" for a container network). Loopback is trusted by default. When the
+    /// webfront sits behind a remote proxy that is NOT listed here, every visitor appears to come
+    /// from the proxy's IP (connection whitelist, rate limiting and audit IPs all see one address).
+    /// Invalid entries are logged and ignored.
+    /// </summary>
     public string[] TrustedProxyAddresses { get; set; } = [];
     public string PrimaryColor { get; set; } = "#117ac0";
     public string SecondaryColor { get; set; } = "pink";

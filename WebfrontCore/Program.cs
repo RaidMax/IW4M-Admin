@@ -269,9 +269,33 @@ public class Program
         };
         // Keep the framework's loopback trust boundary. Remote peers must be explicitly
         // configured as trusted proxies before their headers can affect client identity.
-        foreach (var proxy in configuration.TrustedProxyAddresses)
+        // Each entry is an IP address or a CIDR network (a container network's proxy IP is
+        // rarely stable). A bad entry is logged and skipped: it must not stop the host.
+        foreach (var entry in configuration.TrustedProxyAddresses ?? [])
         {
-            forwardedOptions.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+            var value = entry?.Trim();
+            if (string.IsNullOrEmpty(value))
+            {
+                continue;
+            }
+
+            if (value.Contains('/'))
+            {
+                if (System.Net.IPNetwork.TryParse(value, out var network))
+                {
+                    forwardedOptions.KnownIPNetworks.Add(network);
+                    continue;
+                }
+            }
+            else if (System.Net.IPAddress.TryParse(value, out var address))
+            {
+                forwardedOptions.KnownProxies.Add(address);
+                continue;
+            }
+
+            SharedLibraryCore.Utilities.DefaultLogger?.LogError(
+                "Ignoring Webfront TrustedProxyAddresses entry {Entry}: expected an IP address or a CIDR network such as 172.18.0.0/16",
+                value);
         }
         return forwardedOptions;
     }

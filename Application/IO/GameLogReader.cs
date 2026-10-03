@@ -17,7 +17,22 @@ namespace IW4MAdmin.Application.IO
         private readonly string _logFile;
         private readonly ILogger _logger;
 
-        public long Length => new FileInfo(_logFile).Length;
+        // FileInfo describes a symbolic link itself, not its target, so Length would be the size
+        // of the link and never grow (e.g. Plutainer's logs/games_*.log links). Resolve on every
+        // read in case the link is re-pointed while running.
+        public long Length
+        {
+            get
+            {
+                var logFileInfo = new FileInfo(_logFile);
+                if (logFileInfo.LinkTarget is not null && logFileInfo.ResolveLinkTarget(true) is FileInfo target)
+                {
+                    logFileInfo = target;
+                }
+
+                return logFileInfo.Length;
+            }
+        }
 
         public int UpdateInterval => 300;
 

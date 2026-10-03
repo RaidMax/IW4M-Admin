@@ -14,7 +14,7 @@ Legend: ✅ supported · ➖ not applicable to engine · ❌ deliberately not tr
 | | T4 (W@W / Pluto T4) | T5 (BO1 / Pluto T5) | T6 (BO2 / Pluto T6) | T7 (BO3 / T7x AlterWare) |
 |---|---|---|---|---|
 | Source file | `_zm_stats_t4.gsc` | `_zm_stats_t5.gsc` | `_zm_stats_t6.gsc` | `_zm_stats_t7.gsc` |
-| Lines | 1,833 | 2,117 | 2,390 | 2,405 |
+| Lines | 2,068 | 2,291 | 2,508 | 2,636 |
 | Compile step | ➖ (interpreted) | ➖ | ➖ | ✅ `_zm_stats_t7.compiled.gsc` via Cerberus |
 | Helper script ships | ➖ | ➖ | ➖ | ➖ (dev-only helper lives outside repo) |
 | Engine entry | `level thread Init()` | same | same | `REGISTER_SYSTEM("zombie_stats", &__init__, undefined)` |
@@ -39,6 +39,7 @@ Legend: ✅ supported · ➖ not applicable to engine · ❌ deliberately not tr
 
 `RD` payload byte-identical across all four:
 `<playerInfo>;<totalScore>;<currentScore>;<round>;<isGameOver>`.
+`isGameOver` is accepted as `1` or `true` (the parser does not depend on how a title stringifies the GSC boolean).
 Kills / downs / revives / damage are derived server-side from the AK/AD/K/D
 stream — never pre-aggregated in GSC.
 
@@ -52,11 +53,19 @@ stream — never pre-aggregated in GSC.
 | Round dvar (`sv_iw4m_zm_round`) | ✅ | ✅ | ✅ | ✅ |
 | Random match-ID seed (~10¹² collision space) | ✅ | ✅ | ✅ | ✅ |
 | Intermission emit (`isGameOver=1`) | ✅ | ✅ | ✅ | ✅ |
+| Game-over `RD` for players who bled out in the final round | ✅ | ✅ | ✅ | ✅ |
+| Game-over synthetic `K` skips spectating mid-game joiners | ✅ | ✅ | ✅ | ✅ |
 | Concurrent K/RD drain wait (0.1s) | ✅ | ✅ | ✅ | ✅ |
 | ExitLevel / fast-restart cleanup | implicit via endon | same | same | same |
 
 Match-ID seed uses `randomint(1000000)+"_"+randomint(1000000)` not `gettime()`
 because the engine clock returns 0 at init on T4/T5/T6.
+
+Game over: bled-out players stay in `sessionstate == "spectator"` (with
+`is_zombie` set) through intermission, so `PrintPlayerRoundData` emits their
+final `RD` when `isGameOver` and still skips never-spawned joiners. The
+synthetic game-over `K` goes only to players who are up or in last stand —
+spectating joiners never played and bled-out players already got their `K`.
 
 ---
 
@@ -102,10 +111,10 @@ Source: `level.zombie_total` + `get_enemy_count()` (T4/T5/T6) or BO3 equivalent.
 
 | Subtype | Format | T4 | T5 | T6 | T7 |
 |---|---|---|---|---|---|
-| Door buy | `door;buy;<name>;<cost>` | ✅ | ✅ | ✅ | ✅ |
+| Door / debris buy | `door;buy;<cost>` | ✅ | ✅ | ✅ | ✅ |
 | Weapon buy (wallbuy) | `weapon;buy;<weapon>;<cost>` | ✅ | ✅ | ✅ | ✅ |
-| PaP upgrade | `weapon;upgrade;<weapon>` | ✅ | ✅ | ✅ | ✅ |
-| PaP abandon (timeout/disc.) | `weapon;abandon;<weapon>` | ✅ | ✅ | ✅ | ✅ |
+| PaP upgrade | `weapon;upgrade;<old>;<new>;<cost>` | ✅ | ✅ | ✅ | ✅ |
+| PaP abandon (timeout/disc.) | `weapon;abandon;<weapon>;<cost>` | ✅ | ✅ | ✅ | ✅ |
 | Perk buy | `perk;buy;<perk>;<cost>` | ✅ (weapon-poll) | ✅ (notify) | ✅ (notify) | ✅ (notify) |
 | Perk lost (QR-auto / Tombstone / Who's Who) | — | ❌ | ❌ | ❌ | ❌ |
 | Mystery box outcome | `box;take\|pass\|teddy;...` | ✅ | ✅ | ✅ | ✅ |
@@ -124,7 +133,8 @@ Source: `level.zombie_total` + `get_enemy_count()` (T4/T5/T6) or BO3 equivalent.
 | Revive (co-op) | `revive;<reviverInfo>` | ✅ | ✅ | ✅ | ✅ |
 | Self-revive (solo QR / Who's Who / Self Revive gum) | `revive;self` | ➖ (no self-revive in W@W) | ✅ | ✅ | ✅ |
 | Down | `down` | ✅ | ✅ | ✅ | ✅ |
-| Zombified | `zombified` | ✅ | ✅ | ✅ | ✅ |
+
+Bleed-out is not a `ZP` subtype: it is emitted as a `GSE;K` death.
 
 Box detection: notify-driven with 3-tier user resolution + scoped teddy
 suppression. PaP detection: lock-first attribution (`WatchPapTakenFlag` /
@@ -143,6 +153,23 @@ Perk detection diverges per engine:
 | T6 | `perk_bought` notify | Override-safe vs Die Rise achievement hook |
 | T7 | `#"perk_bought"` notify | Standard BO3 path |
 
+Purchase detection (doors, wall buys, traps). Use triggers fire on every
+press (door/debris triggers also on touch) and the engine's own handler wakes
+on the same `trigger` notify in no guaranteed order relative to ours, so
+nothing is decided at wake time:
+
+| Purchase | T4 | T5 | T6 | T7 |
+|---|---|---|---|---|
+| Door | use press, then after `waittillframeend`: trigger deleted (classic maps) or `doors[0].door_moving` set (Der Riese), else full-cost score drop in the frame; once per door target | use press, then after `waittillframeend`: `doors[0].door_moving` set (`door_activate`), else full-cost score drop in the frame; once per door target | engine commit: trigger `door_opened` notify + `self.purchaser` (consumed after emit) | same as T6 |
+| Debris | as door (trigger deleted with the charge) | as door | use press, then trigger deleted (or full-cost score drop) after `waittillframeend`; once per target | same as T6 |
+| Wall buy | owned weapon/upgrade before the press (0.25 s inventory snapshot) vs. owned after `waittillframeend`; ammo refills and rejected presses never emit | same as T4 (upgrade name from `level.zombie_weapons[w].upgrade_name`) | engine `weapon_bought` notify | engine notify |
+| Trap | engine `in_use` flips to 1 after `waittillframeend` (Der Riese `zombie_dmg_trig.in_use`; Verrückt/Shi No Numa trigger `in_use`), credited once per activation; unknown custom traps need a full-cost score drop | `_trap_in_use` poll | `_trap_in_use` poll | `_trap_in_use` poll |
+
+Residual: where only the score-drop fallback applies (T4 classic
+`slide_apart` doors, T5 delay/kill-counter doors, unknown custom traps) a
+purchase is missed if the engine's handler happens to run first. Electric
+(power-only) doors are never credited.
+
 Power-up: proximity-poll on `script_model` entities with `powerup_name` set.
 T4 explicitly does NOT hook `level.zombie_powerup_grab_func` — hooking it
 disables the effect.
@@ -160,6 +187,9 @@ disables the effect.
 | `zombies;<round>;<remaining>;<alive>` | ✅ | ✅ | ✅ | ✅ |
 | `easter_egg;step;<key>` | ✅ | ✅ | ✅ | ✅ |
 | `easter_egg;complete;<map>` | ✅ canonical | ✅ canonical | ✅ canonical | ✅ derived |
+
+The parser accepts only the `step` and `complete` subkinds, each with its value;
+any other `easter_egg` shape is logged and dropped (`ZombieEventParser.ParseEasterEgg`).
 
 Two equally-valid signal channels for the same outcome (`EasterEggOccurredAt`
 gets set either way). Per-quest `HasCanonicalNotify` flag in
@@ -190,7 +220,7 @@ list, so derivation still picks them up.
 | Nacht der Untoten | ❌ | ❌ | Pluto T4 entity hook broken |
 | Verrückt | ❌ | ✅ song step (`level.eggs`) | |
 | Shi No Numa | ❌ | ✅ song step (`level.eggs`) | |
-| Der Riese | ✅ steps + flytrap + 3 meteors | ❌ | No canonical "complete" |
+| Der Riese | ✅ steps + flytrap; canonical `easter_egg;complete` at flytrap target 3 | ✅ 3 meteor song steps | |
 
 ### T5 (Pluto BO1)
 
@@ -308,7 +338,7 @@ map — used for Storm Bow's "light all beacons" ritual phase).
 Only T7 needs compilation:
 
 - Source: `_zm_stats_t7.gsc`
-- Compiled: `_zm_stats_t7.compiled.gsc` (~49 KB; double-extension passes T7x's `filename.endsWith(".gsc")` suffix gate and disambiguates from the source filename)
+- Compiled: `_zm_stats_t7.compiled.gsc` (~53 KB at the last compile; double-extension passes T7x's `filename.endsWith(".gsc")` suffix gate and disambiguates from the source filename)
 - Magic bytes: `80 47 53 43 0d 0a` (`ÇGSC\r\n`)
 - Toolchain: `linker_modtools.exe` + `Cerberus.CLI.exe` (PowerShell only — DLL search)
 - Known benign noise: T7x logs `[DB] Error: Could not find scriptparsetree "custom_scripts/..."` on every custom_scripts/ load — script still executes correctly (verified by event flow in `games_zm.log`). Believed to be a secondary DB asset registry lookup running after the primary runtime load succeeded. No known suppression.

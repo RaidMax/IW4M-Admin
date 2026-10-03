@@ -155,7 +155,9 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
             TotalScore = Convert.ToInt32(data[4]),
             CurrentScore = Convert.ToInt32(data[5]),
             CurrentRound = Convert.ToInt32(data[6]),
-            IsGameOver = data[7] == "1"
+            // GSC prints a boolean; accept either rendering ("1" on T4/T5/T6) so a title
+            // that stringifies it as "true" can't silently lose every game-over RD.
+            IsGameOver = data[7] == "1" || string.Equals(data[7], "true", StringComparison.OrdinalIgnoreCase)
         };
     }
 
@@ -200,22 +202,24 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
     //   complete — args[1] is the map name (matches level.script)
     // Folded into ZW from the legacy EE prefix; the discriminator-prefix ("step" /
     // "complete") removes the previous "first-arg-could-be-anything" ambiguity.
+    // Both fields are mandatory: an unknown subkind or a missing value throws into the
+    // central catch (logged + dropped) like every other unknown discriminator, instead of
+    // being recorded as a match-level completion.
     private static GameEventV2 ParseEasterEgg(string[] args)
     {
         var subKind = args.Length > 0 ? args[0] : string.Empty;
+
         if (string.Equals(subKind, "step", StringComparison.OrdinalIgnoreCase))
         {
-            return new EasterEggStepGameEvent
-            {
-                StepKey = args.Length > 1 ? args[1] : string.Empty
-            };
+            return new EasterEggStepGameEvent { StepKey = args[1] };
         }
-        // "complete" or anything else falls back to the canonical complete event
-        // (defensive — pre-rename emissions just had the map name as first arg).
-        return new EasterEggCompleteGameEvent
+
+        if (string.Equals(subKind, "complete", StringComparison.OrdinalIgnoreCase))
         {
-            MapName = args.Length > 1 ? args[1] : string.Empty
-        };
+            return new EasterEggCompleteGameEvent { MapName = args[1] };
+        }
+
+        throw new ArgumentException($"Unknown ZW easter_egg subkind: {subKind}");
     }
 
     // ZW;zombies;<round>;<remaining>;<alive> — periodic engine snapshot for live SPH.

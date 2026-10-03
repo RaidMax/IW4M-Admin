@@ -10,7 +10,7 @@ Per-engine GSC instrumentation that emits zombie-mode telemetry to IW4MAdmin via
 | `_zm_stats_t5.gsc` | Black Ops 1 (T5) | Plutonium T5 | interpreted |
 | `_zm_stats_t6.gsc` | Black Ops 2 (T6) | Plutonium T6 | interpreted |
 | `_zm_stats_t7.gsc` | Black Ops 3 (T7) | T7x AlterWare | source |
-| `_zm_stats_t7.compiled.gsc` | Black Ops 3 (T7) | T7x AlterWare | **compiled bytecode** (~37 KB; deploy this) |
+| `_zm_stats_t7.compiled.gsc` | Black Ops 3 (T7) | T7x AlterWare | **compiled bytecode** (~53 KB; deploy this) |
 | `FEATURE_MATRIX.md` | — | — | cross-engine emission inventory |
 
 ## Wire format

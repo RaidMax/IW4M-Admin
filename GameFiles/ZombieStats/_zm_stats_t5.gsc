@@ -341,6 +341,13 @@ WaitForRoundChange()
                 continue;
             }
 
+            // Mid-game joiners waiting in spectator never played this match; only players
+            // still up or in last stand get the synthetic game-over death.
+            if ( IsDefined( players[i].sessionstate ) && players[i].sessionstate == "spectator" )
+            {
+                continue;
+            }
+
             // if there are no zombies alive, then the game is not over
             if ( get_enemy_count() == 0 )
             {
@@ -550,9 +557,16 @@ PrintPlayerRoundData( isGameOver )
 	{
         // Skip players who never spawned (e.g. joined mid-game into spectator)
         // to avoid crediting them with starting points they never earned
+        // At game over keep players who bled out this round (is_zombie): the engine leaves
+        // them in spectator through intermission, and without this RD their final round and
+        // match completion are never recorded. Never-spawned joiners are still skipped.
         if ( IsDefined( players[i].sessionstate ) && players[i].sessionstate == "spectator" )
         {
-            continue;
+            bledOut = IsDefined( players[i].is_zombie ) && players[i].is_zombie;
+            if ( !isGameOver || !bledOut )
+            {
+                continue;
+            }
         }
 
         totalScore = 0;
@@ -870,10 +884,75 @@ WaitForWeaponPurchases()
 
     triggers = getEntArray( "weapon_upgrade", "targetname" );
 
+    level thread TrackPlayerWeaponSnapshots();
+
     for ( i = 0; i < triggers.size; i++ )
     {
         triggers[i] thread WatchWeaponPurchase();
     }
+}
+
+// Keeps a recent copy of every player's weapon list. WatchWeaponPurchase reads it at wake
+// time as the "before" state: when the engine's weapon_spawn_think runs first on the same
+// trigger notify the weapon has already been given, so the live inventory cannot tell a
+// purchase from an ammo refill.
+TrackPlayerWeaponSnapshots()
+{
+    level endon( "end_game" );
+
+    for ( ;; )
+    {
+        players = get_players();
+
+        for ( i = 0; i < players.size; i++ )
+        {
+            players[i].iw4m_weapons_snapshot = players[i] GetWeaponsList();
+        }
+
+        wait ( 0.25 );
+    }
+}
+
+// Upgraded variant as registered by the map (_zombiemode_weapons.gsc has_weapon_or_upgrade).
+GetUpgradedWeaponName( weaponName )
+{
+    if ( IsDefined( level.zombie_weapons ) && IsDefined( level.zombie_weapons[weaponName] ) && IsDefined( level.zombie_weapons[weaponName].upgrade_name ) )
+    {
+        return level.zombie_weapons[weaponName].upgrade_name;
+    }
+
+    return undefined;
+}
+
+PlayerHasWeaponOrUpgrade( player, weaponName )
+{
+    if ( player HasWeapon( weaponName ) )
+    {
+        return true;
+    }
+
+    upgradedName = GetUpgradedWeaponName( weaponName );
+    return IsDefined( upgradedName ) && player HasWeapon( upgradedName );
+}
+
+WeaponListHasWeaponOrUpgrade( weapons, weaponName )
+{
+    if ( !IsDefined( weapons ) )
+    {
+        return false;
+    }
+
+    upgradedName = GetUpgradedWeaponName( weaponName );
+
+    for ( i = 0; i < weapons.size; i++ )
+    {
+        if ( weapons[i] == weaponName || ( IsDefined( upgradedName ) && weapons[i] == upgradedName ) )
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 WatchWeaponPurchase()
@@ -911,13 +990,21 @@ WatchWeaponPurchase()
             cost = self.zombie_cost;
         }
 
-        // Check player can afford it — trigger fires on any interaction
-        if ( IsDefined( player.score ) )
+        // The engine charges the weapon price only when the player owns neither the weapon
+        // nor its upgrade; otherwise the press buys ammo (or is rejected). Ownership before
+        // the press comes from the snapshot; after the frame the engine has given the
+        // weapon if, and only if, this was a weapon purchase.
+        ownedBefore = WeaponListHasWeaponOrUpgrade( player.iw4m_weapons_snapshot, weaponName );
+        waittillframeend;
+
+        if ( ownedBefore || !IsDefined( player ) )
         {
-            if ( player.score < cost )
-            {
-                continue;
-            }
+            continue;
+        }
+
+        if ( !PlayerHasWeaponOrUpgrade( player, weaponName ) )
+        {
+            continue;
         }
 
         logPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";weapon;buy;" + weaponName + ";" + cost + "\n" );
@@ -942,29 +1029,97 @@ WaitForDoorPurchases()
     }
 }
 
-// Door triggers fire on ANY interaction, even if the player can't afford it.
-// Check score before logging to avoid false positives.
+// Door/debris triggers fire on every touch and every press, and the engine's door_buy /
+// debris_think (_zombiemode_blockers.gsc) wakes on the same "trigger" notify in no
+// guaranteed order relative to this thread. So nothing is decided at wake time: after
+// waittillframeend the engine has either charged the player or not, and a purchase is
+// recognised by its persistent side effect (DoorPurchaseCommitted). The watcher keeps
+// listening until a purchase is seen, and each door (shared target) is credited once.
 WatchDoorPurchase()
 {
+    // Power-opened doors are never bought ("electric_buyable_door" is, and stays watched).
+    if ( IsDefined( self.script_noteworthy ) && self.script_noteworthy == "electric_door" )
+    {
+        return;
+    }
+
     cost = 1000;
     if ( IsDefined( self.zombie_cost ) )
     {
         cost = self.zombie_cost;
     }
 
-    self waittill( "trigger", player );
+    doorKey = self.target;
+    doorParts = self.doors;
 
-    if ( !IsDefined( player ) || !IsPlayer( player ) )
+    for ( ;; )
     {
+        self waittill( "trigger", player );
+
+        // The engine ignores touches; only a use press can buy.
+        if ( !IsDefined( player ) || !IsPlayer( player ) || !player UseButtonPressed() )
+        {
+            continue;
+        }
+
+        scoreAtWake = player.score;
+        waittillframeend;
+
+        // A removed trigger with no recognisable purchase ends the watcher.
+        if ( !IsDefined( player ) )
+        {
+            if ( !IsDefined( self ) )
+            {
+                return;
+            }
+
+            continue;
+        }
+
+        if ( !DoorPurchaseCommitted( self, doorParts, player, scoreAtWake, cost ) )
+        {
+            continue;
+        }
+
+        if ( IsDefined( doorKey ) )
+        {
+            if ( !IsDefined( level.iw4m_doors_logged ) )
+            {
+                level.iw4m_doors_logged = [];
+            }
+
+            if ( IsDefined( level.iw4m_doors_logged[doorKey] ) )
+            {
+                return;
+            }
+
+            level.iw4m_doors_logged[doorKey] = true;
+        }
+
+        logPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
         return;
     }
+}
 
-    if ( !IsDefined( player.score ) || player.score < cost )
+// True when the engine charged for this door/debris during the frame that just ended.
+DoorPurchaseCommitted( trig, doorParts, player, scoreAtWake, cost )
+{
+    // debris_think deletes every trigger of the blocker in the same frame as the charge.
+    if ( !IsDefined( trig ) )
     {
-        return;
+        return true;
     }
 
-    logPrint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
+    // door_opened -> door_activate marks the first door part moving in the same frame as
+    // the charge (delay/kill-counter doors open later and fall through to the score check).
+    if ( IsDefined( doorParts ) && doorParts.size > 0 && IsDefined( doorParts[0] ) && IsDefined( doorParts[0].door_moving ) )
+    {
+        return true;
+    }
+
+    // Otherwise the charge is only visible when this thread woke before the engine's, as a
+    // drop of the full cost within this frame.
+    return IsDefined( player ) && IsDefined( scoreAtWake ) && IsDefined( player.score ) && player.score <= scoreAtWake - cost;
 }
 
 /////////////////////////////////////////////////////////

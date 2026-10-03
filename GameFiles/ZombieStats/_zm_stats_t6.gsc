@@ -706,6 +706,13 @@ WaitForRoundChange()
                 continue;
             }
 
+            // Mid-game joiners waiting in spectator never played this match; only players
+            // still up or in last stand get the synthetic game-over death.
+            if ( IsDefined( players[i].sessionstate ) && players[i].sessionstate == "spectator" )
+            {
+                continue;
+            }
+
             // if there are no zombies alive, then the game is not over
             if ( get_current_zombie_count() == 0 )
             {
@@ -927,9 +934,16 @@ PrintPlayerRoundData( isGameOver )
     {
         // Skip players who never spawned (e.g. joined mid-game into spectator)
         // to avoid crediting them with starting points they never earned
+        // At game over keep players who bled out this round (is_zombie): the engine leaves
+        // them in spectator through intermission, and without this RD their final round and
+        // match completion are never recorded. Never-spawned joiners are still skipped.
         if ( IsDefined( players[i].sessionstate ) && players[i].sessionstate == "spectator" )
         {
-            continue;
+            bledOut = IsDefined( players[i].is_zombie ) && players[i].is_zombie;
+            if ( !isGameOver || !bledOut )
+            {
+                continue;
+            }
         }
 
         totalScore = 0;
@@ -990,8 +1004,11 @@ WaitForWeaponPurchases()
 }
 
 /////////////////////////////////////////////////////////
-// Listens for "door_opened" level notify fired by
-// _zm_blockers when any door/debris is purchased
+// Door and debris purchases (_zm_blockers.gsc).
+//   Doors: door_buy() stores the paying player on the bought trigger (self.purchaser,
+//   never read by the engine) and door_opened() notifies "door_opened" on every trigger
+//   of the door, so the purchase is read from the engine's own commit.
+//   Debris: debris_think() has no such marker; see WatchDebrisPurchase.
 /////////////////////////////////////////////////////////
 WaitForDoorPurchases()
 {
@@ -1008,13 +1025,43 @@ WaitForDoorPurchases()
 
     for ( i = 0; i < debris.size; i++ )
     {
-        debris[i] thread WatchDoorPurchase();
+        debris[i] thread WatchDebrisPurchase();
     }
 }
 
-// Door triggers fire on ANY interaction, even if the player can't afford it.
-// Check score before logging to avoid false positives.
 WatchDoorPurchase()
+{
+    for ( ;; )
+    {
+        self waittill( "door_opened" );
+
+        // Other side of a bought door, a power/scripted open, or a free re-open: no purchaser.
+        if ( !IsDefined( self.purchaser ) || !IsPlayer( self.purchaser ) )
+        {
+            continue;
+        }
+
+        player = self.purchaser;
+
+        // Consume the marker so a later re-open of a closable door from the other side
+        // cannot credit this purchase again.
+        self.purchaser = undefined;
+
+        cost = 1000;
+        if ( IsDefined( self.zombie_cost ) )
+        {
+            cost = self.zombie_cost;
+        }
+
+        logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
+    }
+}
+
+// Debris triggers fire on every touch and every press, and debris_think wakes on the same
+// "trigger" notify in no guaranteed order relative to this thread. Decide after the frame:
+// on a purchase debris_think deletes every trigger of the debris in the same frame as the
+// charge. Each debris (shared target) is credited once.
+WatchDebrisPurchase()
 {
     cost = 1000;
     if ( IsDefined( self.zombie_cost ) )
@@ -1022,19 +1069,59 @@ WatchDoorPurchase()
         cost = self.zombie_cost;
     }
 
-    self waittill( "trigger", player );
+    debrisKey = self.target;
 
-    if ( !IsDefined( player ) || !IsPlayer( player ) )
+    for ( ;; )
     {
+        self waittill( "trigger", player );
+
+        // The engine ignores touches; only a use press can buy.
+        if ( !IsDefined( player ) || !IsPlayer( player ) || !player UseButtonPressed() )
+        {
+            continue;
+        }
+
+        scoreAtWake = player.score;
+        waittillframeend;
+
+        // A removed trigger with no recognisable purchase ends the watcher.
+        if ( !IsDefined( player ) )
+        {
+            if ( !IsDefined( self ) )
+            {
+                return;
+            }
+
+            continue;
+        }
+
+        if ( IsDefined( self ) )
+        {
+            // Trigger still present: only a full-cost charge seen within this frame counts.
+            if ( !IsDefined( player ) || !IsDefined( scoreAtWake ) || player.score > scoreAtWake - cost )
+            {
+                continue;
+            }
+        }
+
+        if ( IsDefined( debrisKey ) )
+        {
+            if ( !IsDefined( level.iw4m_debris_logged ) )
+            {
+                level.iw4m_debris_logged = [];
+            }
+
+            if ( IsDefined( level.iw4m_debris_logged[debrisKey] ) )
+            {
+                return;
+            }
+
+            level.iw4m_debris_logged[debrisKey] = true;
+        }
+
+        logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
         return;
     }
-
-    if ( !IsDefined( player.score ) || player.score < cost )
-    {
-        return;
-    }
-
-    logprint( "GSE;ZP;" + BuildPlayerInfoString( player ) + ";door;buy;" + cost + "\n" );
 }
 
 /////////////////////////////////////////////////////////

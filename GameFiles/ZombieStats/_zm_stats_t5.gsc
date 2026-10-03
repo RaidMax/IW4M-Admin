@@ -1639,6 +1639,14 @@ BuildPlayerInfoString( entity )
         guid = entity getGuid();
         clientNumber = entity getEntityNumber();
         team = entity.team;
+
+        // An engine field; guard it like name so a connecting-but-unspawned joiner can't
+        // throw on the concat below and kill the calling thread.
+        if ( !IsDefined( team ) )
+        {
+            team = "none";
+        }
+
         name = entity.playername;
 
         if ( !IsDefined( name ) )

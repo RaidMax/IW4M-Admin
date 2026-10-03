@@ -14,7 +14,7 @@ Legend: ✅ supported · ➖ not applicable to engine · ❌ deliberately not tr
 | | T4 (W@W / Pluto T4) | T5 (BO1 / Pluto T5) | T6 (BO2 / Pluto T6) | T7 (BO3 / T7x AlterWare) |
 |---|---|---|---|---|
 | Source file | `_zm_stats_t4.gsc` | `_zm_stats_t5.gsc` | `_zm_stats_t6.gsc` | `_zm_stats_t7.gsc` |
-| Lines | 2,068 | 2,291 | 2,508 | 2,636 |
+| Lines | 2,087 | 2,305 | 2,514 | 2,641 |
 | Compile step | ➖ (interpreted) | ➖ | ➖ | ✅ `_zm_stats_t7.compiled.gsc` via Cerberus |
 | Helper script ships | ➖ | ➖ | ➖ | ➖ (dev-only helper lives outside repo) |
 | Engine entry | `level thread Init()` | same | same | `REGISTER_SYSTEM("zombie_stats", &__init__, undefined)` |
@@ -40,6 +40,7 @@ Legend: ✅ supported · ➖ not applicable to engine · ❌ deliberately not tr
 `RD` payload byte-identical across all four:
 `<playerInfo>;<totalScore>;<currentScore>;<round>;<isGameOver>`.
 `isGameOver` is accepted as `1` or `true` (the parser does not depend on how a title stringifies the GSC boolean).
+`<playerInfo>` is `<guid>;<clientNum>;<team>;<name>`. Every title sends `null` for an undefined name; T4/T5 also send `none` for an undefined team.
 Kills / downs / revives / damage are derived server-side from the AK/AD/K/D
 stream — never pre-aggregated in GSC.
 

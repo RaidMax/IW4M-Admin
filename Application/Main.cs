@@ -18,9 +18,11 @@ using SharedLibraryCore.Repositories;
 using SharedLibraryCore.Services;
 using Stats.Dtos;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -561,11 +563,56 @@ namespace IW4MAdmin.Application
 
             // register the plugin implementations
             var (plugins, commands, configurations) = pluginImporter.DiscoverAssemblyPluginImplementations();
+            var rejectedAssemblies = RegisterPluginImplementations(serviceCollection, plugins, commands,
+                configurations, defaultLogger);
+
+            var scriptPlugins = pluginImporter.DiscoverScriptPlugins();
+
+            foreach (var scriptPlugin in scriptPlugins)
+            {
+                serviceCollection.AddSingleton(scriptPlugin.Item1, sp =>
+                    sp.GetRequiredService<IScriptPluginFactory>()
+                        .CreateScriptPlugin(scriptPlugin.Item1, scriptPlugin.Item2));
+            }
+
+            // register any eventable types
+            foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
+                         .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
+                         .Union(plugins.Select(pluginType => pluginType.Assembly).Distinct()
+                             .Where(assembly => !rejectedAssemblies.Contains(assembly))
+                             .SelectMany(PluginApiCompatibility.GetLoadableTypes)
+                             .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
+            {
+                var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
+                serviceCollection.AddSingleton(instance);
+            }
+
+            return serviceCollection;
+        }
+
+        /// <summary>
+        /// registers the discovered plugin, command and configuration types. A plugin whose registration
+        /// fails is replaced by an inert placeholder, and its commands and configurations are left out
+        /// so services it never registered can't stop the host from starting.
+        /// </summary>
+        /// <returns>the assemblies of plugins that could not be registered</returns>
+        private static HashSet<Assembly> RegisterPluginImplementations(IServiceCollection serviceCollection,
+            IEnumerable<Type> plugins, IEnumerable<Type> commands, IEnumerable<Type> configurations,
+            ILogger defaultLogger)
+        {
+            // plugin assemblies whose registration failed: their commands, configurations and event
+            // types are left out too, since they depend on services the plugin never registered and
+            // would otherwise fail when the command list is first resolved, taking the host down
+            var rejectedAssemblies = new HashSet<Assembly>();
+
             foreach (var pluginType in plugins)
             {
                 var isV2 = pluginType.GetInterface(nameof(IPluginV2), false) != null;
 
                 defaultLogger.LogDebug("Registering plugin type {Name}", pluginType.FullName);
+
+                // registrations from here on belong to this plugin, so a failed registration can be undone
+                var registrationStart = serviceCollection.Count;
 
                 // Instantiate through a guarded factory: a plugin compiled against newer
                 // API can load fine here yet throw at construction (e.g. a ctor body call
@@ -597,13 +644,45 @@ namespace IW4MAdmin.Application
                 }
                 catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
                 {
-                    PluginApiCompatibility.NotifyNewerApiRequired(pluginType.Assembly);
+                    PluginApiCompatibility.NotifyNewerApiRequired(pluginType.Assembly,
+                        pluginType.Assembly.GetName().Name);
+                    RejectPlugin(pluginType, isV2, registrationStart);
                 }
                 catch (Exception ex)
                 {
                     defaultLogger.LogError(ex, "Could not register plugin of type {Type}", pluginType.Name);
+                    RejectPlugin(pluginType, isV2, registrationStart);
                 }
             }
+
+            void RejectPlugin(Type pluginType, bool isV2, int registrationStart)
+            {
+                // drop the plugin and whatever it registered before failing, keeping an inert placeholder
+                for (var index = serviceCollection.Count - 1; index >= registrationStart; index--)
+                {
+                    serviceCollection.RemoveAt(index);
+                }
+
+                serviceCollection.AddSingleton(!isV2 ? typeof(IPlugin) : typeof(IPluginV2),
+                    new UnavailablePlugin(pluginType.Assembly.GetName().Name));
+                rejectedAssemblies.Add(pluginType.Assembly);
+            }
+
+            bool IsFromRejectedPlugin(Type type)
+            {
+                if (!rejectedAssemblies.Contains(type.Assembly))
+                {
+                    return false;
+                }
+
+                defaultLogger.LogDebug("Skipping {Type} from unavailable plugin {Plugin}", type.FullName,
+                    type.Assembly.GetName().Name);
+                return true;
+            }
+
+            commands = commands.Where(commandType => !IsFromRejectedPlugin(commandType)).ToList();
+            configurations = configurations.Where(configurationType => !IsFromRejectedPlugin(configurationType))
+                .ToList();
 
             // register the plugin commands
             foreach (var commandType in commands)
@@ -623,29 +702,8 @@ namespace IW4MAdmin.Application
                 serviceCollection.AddSingleton(genericInterfaceType, handlerInstance);
             }
 
-            var scriptPlugins = pluginImporter.DiscoverScriptPlugins();
-
-            foreach (var scriptPlugin in scriptPlugins)
-            {
-                serviceCollection.AddSingleton(scriptPlugin.Item1, sp =>
-                    sp.GetRequiredService<IScriptPluginFactory>()
-                        .CreateScriptPlugin(scriptPlugin.Item1, scriptPlugin.Item2));
-            }
-
-            // register any eventable types
-            foreach (var assemblyType in typeof(Program).Assembly.GetTypes()
-                         .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))
-                         .Union(plugins.Select(pluginType => pluginType.Assembly).Distinct()
-                             .SelectMany(PluginApiCompatibility.GetLoadableTypes)
-                             .Where(asmType => typeof(IRegisterEvent).IsAssignableFrom(asmType))))
-            {
-                var instance = Activator.CreateInstance(assemblyType) as IRegisterEvent;
-                serviceCollection.AddSingleton(instance);
-            }
-
-            return serviceCollection;
+            return rejectedAssemblies;
         }
-
 
         /// <summary>
         /// Configures the dependency injection services

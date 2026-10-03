@@ -41,6 +41,8 @@ finally
     SharedLibraryCore.Utilities.CurrentLocalization = previousLocalization;
 }
 
+PluginRegistrationChecks.Run();
+
 var directory = Path.Combine(Path.GetTempPath(), "iw4m-regression-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(directory);
 var factory = new Factory(new DbContextOptionsBuilder().UseSqlite($"Data Source={Path.Combine(directory, "fresh.db")}").Options);

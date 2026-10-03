@@ -830,6 +830,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
         {
             await using var ctx = contextFactory.CreateContext();
             ctx.Update(clientStats);
+
+            // clientStats.Server is the shared lookup-cache instance (UpdateHistoricalRanking
+            // attaches it). Update() walks the graph, so without this every stats save also
+            // rewrote the full EFServers row (and its bucket row) with unchanged values.
+            foreach (var reference in ctx.ChangeTracker.Entries()
+                         .Where(entry => entry.Entity is EFServer or EFPerformanceBucket))
+            {
+                reference.State = EntityState.Unchanged;
+            }
+
             await ctx.SaveChangesAsync();
         }
 

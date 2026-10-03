@@ -59,9 +59,13 @@ namespace Stats.Client
 
                 foreach (var (serverId, performanceBucket) in _serverIds)
                 { 
+                    // Same lookup as the bucket-level fit below: the DB code is lower-cased while
+                    // the settings may not be, so an ordinal match silently fell back to defaults.
+                    var normalizedBucket = PerformanceBucketCodes.Normalize(performanceBucket);
                     var bucketConfig =
                         config.PerformanceBuckets.FirstOrDefault(bucket =>
-                            bucket.Code == performanceBucket) ?? new PerformanceBucketConfiguration();
+                            string.Equals(bucket.Code, normalizedBucket, StringComparison.OrdinalIgnoreCase))
+                        ?? new PerformanceBucketConfiguration();
 
                     var oldestPerf = DateTime.UtcNow - bucketConfig.RankingExpiration;
                     var performances = await iqPerformances.Where(s => s.ServerId == serverId)

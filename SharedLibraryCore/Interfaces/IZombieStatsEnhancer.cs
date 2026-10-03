@@ -23,7 +23,11 @@ public interface IZombieStatsEnhancer
     /// Process a parsed zombie game event (kills, deaths, downs, revives,
     /// perks, powerups, round data, stat updates, etc.).
     /// </summary>
-    void ProcessEvent(GameEventV2 parsedEvent);
+    /// <remarks>
+    /// Asynchronous so an implementation that serialises its state can wait without
+    /// blocking a host event-dispatch thread.
+    /// </remarks>
+    Task ProcessEventAsync(GameEventV2 parsedEvent);
 
     /// <summary>
     /// Called when a client connects to a zombie server.

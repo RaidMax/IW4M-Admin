@@ -229,7 +229,7 @@ public class Plugin : IPluginV2
         // Forward to premium for full zombie-specific processing
         if (_enhancer is not null)
         {
-            _enhancer.ProcessEvent(parsedScriptEvent);
+            await _enhancer.ProcessEventAsync(parsedScriptEvent);
             await _enhancer.UpdateState(token);
         }
     }

@@ -455,7 +455,7 @@ namespace IW4MAdmin.Application.Plugin
 
         /// <summary>
         /// Writes bundle files to disk under <paramref name="targetPath"/>, preserving sub-paths. When
-        /// <paramref name="skipUnchanged"/> is set, a file already present at the same byte length is left
+        /// <paramref name="skipUnchanged"/> is set, a file already present with identical content is left
         /// alone — avoids rewriting large data files (e.g. GeoIP databases) on every load.
         /// </summary>
         private static void WriteBundleFiles(IReadOnlyDictionary<string, byte[]> files, string targetPath,
@@ -466,7 +466,8 @@ namespace IW4MAdmin.Application.Plugin
                 var destination = Path.Combine(targetPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
 
-                if (skipUnchanged && File.Exists(destination) && new FileInfo(destination).Length == content.Length)
+                if (skipUnchanged && File.Exists(destination) && new FileInfo(destination).Length == content.Length
+                    && File.ReadAllBytes(destination).AsSpan().SequenceEqual(content))
                 {
                     continue;
                 }

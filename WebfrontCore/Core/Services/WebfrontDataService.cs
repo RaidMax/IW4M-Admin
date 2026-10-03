@@ -946,7 +946,8 @@ public class WebfrontDataService : IWebfrontDataService
         var server = _manager.GetServers().FirstOrDefault(s => s.Id == serverId);
         var matchedServerId = server?.LegacyDatabaseId;
 
-        hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId);
+        hitInfo.TotalRankedClients = await _serverDataViewer.RankedClientsCountAsync(matchedServerId,
+            hitInfo.PerformanceBucket);
 
         // Invoke custom stats metrics (e.g. zombie stats) for advanced view
         var customMeta = new Dictionary<int, List<Data.Models.EFMeta>>

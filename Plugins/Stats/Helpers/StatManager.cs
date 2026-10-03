@@ -74,7 +74,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
 
             if (statsConfig.EnableAdvancedMetrics)
             {
-                var bucketConfig = await GetBucketConfig(null, performanceBucket);
+                var bucketConfig = await GetBucketConfig(serverId, performanceBucket);
 
                 var clientRanking = await context.Set<EFClientRankingHistory>()
                     .Where(GetNewRankingFunc(bucketConfig.RankingExpiration, bucketConfig.ClientMinPlayTime, serverId, bucketConfig.Code))
@@ -158,6 +158,7 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
             int start, int count, long? serverId = null, string performanceBucketCode = null)
         {
             var bucketConfig = await GetBucketConfig(serverId, performanceBucketCode);
+            var isDefaultBucket = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
 
             await using var context = contextFactory.CreateContext(false);
 
@@ -174,6 +175,16 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                     bucketConfig.Code))
                 .OrderByDescending(ranking => ranking.PerformanceMetric)
                 .Select(ranking => ranking.ClientId);
+
+            // Bucket classification by live server population — replaces the legacy
+            // hardcoded literal "zombies" check so admins can name buckets freely.
+            // Drives both the metric-row gate below AND filters the EFClientStatistics
+            // sum to zombie servers only when a bucket qualifies as zombies (so
+            // mixed-bucket MP play doesn't pollute the displayed Played/Kills/Deaths).
+            var bucketClassification = await PerformanceBucketClassifier.ClassifyAsync(
+                Plugin.ServerManager, contextFactory, bucketConfig.Code);
+            var suppressMpMetrics = bucketClassification.IsZombieBucket;
+            var zombieServerIds = bucketClassification.ZombieServerIds.ToList();
 
             var clientIdsList = new List<int>(count);
             var consumed = 0;
@@ -198,6 +209,9 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                         .Where(stat => stat.TimePlayed > 0)
                         .Where(stat => stat.Kills > 0 || stat.Deaths > 0)
                         .Where(stat => serverId == null || stat.ServerId == serverId)
+                        .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code
+                                       || (isDefaultBucket && stat.Server.PerformanceBucketId == null))
+                        .Where(stat => !suppressMpMetrics || zombieServerIds.Contains(stat.ServerId))
                         .Select(stat => stat.ClientId)
                         .Distinct()
                         .ToListAsync())
@@ -273,21 +287,13 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 }
             }
 
-            // Bucket classification by live server population — replaces the legacy
-            // hardcoded literal "zombies" check so admins can name buckets freely.
-            // Drives both the metric-row gate below AND filters the EFClientStatistics
-            // sum to zombie servers only when a bucket qualifies as zombies (so
-            // mixed-bucket MP play doesn't pollute the displayed Played/Kills/Deaths).
-            var bucketClassification = await PerformanceBucketClassifier.ClassifyAsync(
-                Plugin.ServerManager, contextFactory, bucketConfig.Code);
-            var suppressMpMetrics = bucketClassification.IsZombieBucket;
-            var zombieServerIds = bucketClassification.ZombieServerIds;
-
             var statsQuery = context.Set<EFClientStatistics>()
                 .Where(stat => clientIdsList.Contains(stat.ClientId))
                 .Where(stat => stat.TimePlayed > 0)
                 .Where(stat => stat.Kills > 0 || stat.Deaths > 0)
-                .Where(stat => serverId == null || stat.ServerId == serverId);
+                .Where(stat => serverId == null || stat.ServerId == serverId)
+                .Where(stat => stat.Server.PerformanceBucket.Code == bucketConfig.Code
+                               || (isDefaultBucket && stat.Server.PerformanceBucketId == null));
 
             if (suppressMpMetrics && zombieServerIds.Count > 0)
             {

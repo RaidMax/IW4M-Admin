@@ -122,6 +122,14 @@ public class HitCalculator : IClientStatisticCalculator
         if (coreEvent is GameEventV2 { Server: not null } gameEventV2 and (RoundEndEvent or MatchEndEvent))
         {
             var server = gameEventV2.Server;
+            if (coreEvent is MatchEndEvent)
+            {
+                foreach (var client in server.ConnectedClients)
+                {
+                    client.GetAdditionalProperty<List<(int, DateTime)>>(SessionScores)?.Add(
+                        (client.GetAdditionalProperty<int?>(StatManager.ESTIMATED_SCORE) ?? client.Score, DateTime.Now));
+                }
+            }
             foreach (var client in server.ConnectedClients)
             {
                 if (!_clientHitStatistics.TryGetValue(client.ClientId, out var state))
@@ -187,16 +195,6 @@ public class HitCalculator : IClientStatisticCalculator
             }
 
             return;
-        }
-
-        if (coreEvent is MatchEndEvent matchEndEvent)
-        {
-            foreach (var client in matchEndEvent.Server.ConnectedClients)
-            {
-                var scores = client.GetAdditionalProperty<List<(int, DateTime)>>(SessionScores);
-                scores?.Add((client.GetAdditionalProperty<int?>(StatManager.ESTIMATED_SCORE) ?? client.Score,
-                    DateTime.Now));
-            }
         }
 
         var damageEvent = coreEvent as ClientKillEvent ?? coreEvent as ClientDamageEvent;

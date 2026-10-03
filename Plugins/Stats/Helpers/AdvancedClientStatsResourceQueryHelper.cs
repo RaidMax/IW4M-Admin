@@ -48,6 +48,9 @@ namespace Stats.Helpers
                     ?.Id;
             }
 
+            var bucketConfig = await statManager.GetBucketConfig(serverId, query.PerformanceBucketCode);
+            var categoryScope = serverId == null && !string.IsNullOrEmpty(query.PerformanceBucketCode);
+
             var clientInfo = await context.Clients.Select(client => new
             {
                 client.ClientId,
@@ -71,14 +74,15 @@ namespace Stats.Helpers
             // require an O(N rows) backfill of EFClientHitStatistics on first
             // start. Without the OR-NULL clause the per-client hit-stats page
             // would return zero rows for the default bucket on a fresh upgrade.
-            var hitStatsBucketIsDefault = PerformanceBucketCodes.IsDefault(query.PerformanceBucketCode);
+            var hitStatsBucketIsDefault = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
             // DB stores Code lower-cased (the writer in IW4MServer normalises on insert)
             // — defence-in-depth normalise here so a capitalised bucket code from the
             // request can't silently filter to zero rows.
-            var normalizedHitStatsBucket = PerformanceBucketCodes.Normalize(query.PerformanceBucketCode);
-            iqHitStats = !string.IsNullOrEmpty(query.PerformanceBucketCode)
-                ? iqHitStats.Where(stat => stat.Server.PerformanceBucket.Code == normalizedHitStatsBucket
-                                           || (hitStatsBucketIsDefault && stat.Server.PerformanceBucketId == null))
+            var normalizedHitStatsBucket = bucketConfig.Code;
+            iqHitStats = categoryScope
+                ? iqHitStats.Where(stat => stat.ServerId != null &&
+                                          (stat.Server.PerformanceBucket.Code == normalizedHitStatsBucket
+                                           || (hitStatsBucketIsDefault && stat.Server.PerformanceBucketId == null)))
                 : iqHitStats.Where(stat => stat.ServerId == serverId);
 
             var hitStats = await iqHitStats
@@ -118,8 +122,8 @@ namespace Stats.Helpers
             // rows whose PerformanceBucketId was never written (which is every
             // ranking-history row for any server the operator hasn't manually
             // tagged with a PerformanceBucketCode).
-            var ratingsBucketIsDefault = PerformanceBucketCodes.IsDefault(query.PerformanceBucketCode);
-            var normalizedRatingsBucket = PerformanceBucketCodes.Normalize(query.PerformanceBucketCode);
+            var ratingsBucketIsDefault = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
+            var normalizedRatingsBucket = bucketConfig.Code;
             var ratings = await context.Set<EFClientRankingHistory>()
                 .Where(r => r.ClientId == clientInfo.ClientId)
                 .Where(r => r.ServerId == serverId)
@@ -134,6 +138,8 @@ namespace Stats.Helpers
             var legacyStats = await context.Set<EFClientStatistics>()
                 .Where(stat => stat.ClientId == query.ClientId)
                 .Where(stat => serverId == null || stat.ServerId == serverId)
+                .Where(stat => !categoryScope || stat.Server.PerformanceBucket.Code == bucketConfig.Code
+                               || (hitStatsBucketIsDefault && stat.Server.PerformanceBucketId == null))
                 .Select(stat => new { stat.ServerId, stat.Skill, stat.EloRating, stat.SPM, stat.TimePlayed })
                 .ToListAsync();
 
@@ -147,8 +153,6 @@ namespace Stats.Helpers
             var mostRecentRanking = ratings.FirstOrDefault(ranking => ranking.Newest);
             var ranking = mostRecentRanking?.Ranking + 1;
 
-            var bucketConfig = await statManager.GetBucketConfig(serverId);
-
             if (mostRecentRanking != null && mostRecentRanking.CreatedDateTime < DateTime.UtcNow - bucketConfig.RankingExpiration)
             {
                 ranking = 0;
@@ -160,7 +164,7 @@ namespace Stats.Helpers
             }
 
             // Single-pass categorization using projection results
-            HitStatProjection? aggregate = null;
+            var aggregates = new List<HitStatProjection>();
             var byHitLocation = new List<HitStatProjection>();
             var byWeapon = new List<HitStatProjection>();
 
@@ -196,13 +200,12 @@ namespace Stats.Helpers
                     suicides = (suicides ?? 0) + hit.KillCount;
                 }
 
-                score = (score ?? 0) + (hit.Score ?? 0);
-
                 // Check for aggregate record
-                if (hit.HitLocationId == null && hit.ServerId == serverId &&
+                if (hit.HitLocationId == null && (categoryScope || hit.ServerId == serverId) &&
                     hit.WeaponId == null && hit.MeansOfDeathId == null)
                 {
-                    aggregate = hit;
+                    aggregates.Add(hit);
+                    score = (score ?? 0) + (hit.Score ?? 0);
                 }
 
                 // Categorize by hit location (no weapon, no attachment combo)
@@ -217,6 +220,11 @@ namespace Stats.Helpers
                     byWeapon.Add(hit);
                 }
             }
+
+            byWeapon = byWeapon.GroupBy(hit => new { hit.WeaponId, hit.WeaponAttachmentComboId })
+                .Select(group => SumHits(group)).ToList();
+            byHitLocation = byHitLocation.GroupBy(hit => hit.HitLocationId)
+                .Select(group => SumHits(group)).ToList();
 
             // Process weapons: group by weapon, find most used attachment
             var topWeapons = byWeapon
@@ -317,8 +325,8 @@ namespace Stats.Helpers
             }
 
             // Compute KDR
-            var kills = aggregate?.KillCount ?? 0;
-            var deaths = aggregate?.DeathCount ?? 0;
+            var kills = aggregates.Sum(hit => hit.KillCount);
+            var deaths = aggregates.Sum(hit => hit.DeathCount);
             var kdr = deaths > 0
                 ? Math.Round(kills / (float)deaths, 2).ToString(Utilities.CurrentLocalization.Culture)
                 : null;
@@ -354,7 +362,7 @@ namespace Stats.Helpers
                 Kills = kills,
                 Deaths = deaths,
                 Kdr = kdr,
-                TotalDamage = aggregate?.DamageInflicted ?? 0,
+                TotalDamage = aggregates.Sum(hit => hit.DamageInflicted),
                 Score = hasPerServerData ? score : null,
                 Headshots = headshots,
                 MeleeKills = meleeKills,
@@ -374,7 +382,8 @@ namespace Stats.Helpers
                         Name = server.Hostname,
                         IPAddress = server.ListenAddress,
                         Port = server.ListenPort,
-                        Game = (Reference.Game)server.GameName
+                        Game = (Reference.Game)server.GameName,
+                        PerformanceBucket = PerformanceBucketCodes.Normalize(server.PerformanceCode)
                     })
                     .Where(server => server.Game == clientInfo.GameName)
                     .ToList(),
@@ -387,6 +396,20 @@ namespace Stats.Helpers
             {
                 Results = [hitInfo]
             };
+        }
+
+        private static HitStatProjection SumHits(IEnumerable<HitStatProjection> values)
+        {
+            var rows = values.ToList();
+            var result = rows[0];
+            // Projection instances are detached and private to this query.
+            result.KillCount = rows.Sum(hit => hit.KillCount);
+            result.DeathCount = rows.Sum(hit => hit.DeathCount);
+            result.HitCount = rows.Sum(hit => hit.HitCount);
+            result.DamageInflicted = rows.Sum(hit => hit.DamageInflicted);
+            result.Score = rows.Sum(hit => hit.Score);
+            result.UsageSeconds = rows.Sum(hit => hit.UsageSeconds);
+            return result;
         }
 
         private string? BuildAttachmentNameFromProjection(HitStatProjection? proj)
@@ -443,51 +466,14 @@ namespace Stats.Helpers
 
             if (!string.IsNullOrEmpty(query.ServerEndpoint))
             {
-                serverId = manager.GetServers().FirstOrDefault(server => server.Id == query.ServerEndpoint)
-                    ?.LegacyDatabaseId;
+                serverId = await context.Servers.Where(server => server.EndPoint == query.ServerEndpoint)
+                    .Select(server => (long?)server.ServerId).FirstOrDefaultAsync();
             }
 
-            var currentRanking = 0;
-            int totalRankedClients;
-            string performanceBucketCode;
-
-            if (string.IsNullOrEmpty(query.PerformanceBucketCode) && serverId is null)
-            {
-                var maxPerformance = await context.Set<EFClientRankingHistory>()
-                    .Where(r => r.ClientId == query.ClientId)
-                    .Where(r => r.Ranking != null)
-                    .Where(r => r.ServerId == serverId)
-                    .Where(rating => rating.Newest)
-                    .GroupBy(rating => rating.PerformanceBucket)
-                    .Select(grp => new { grp.Key, PerformanceMetric = grp.Max(rating => rating.Ranking) })
-                    .Where(grp => grp.PerformanceMetric != null)
-                    .FirstOrDefaultAsync();
-
-                // Guard the Key, not just the result: a client ranked on a server with no
-                // performance bucket has an overall (ServerId null) ranking-history row whose
-                // PerformanceBucket navigation is null, so the GroupBy yields a non-null result
-                // with a null Key. Dereferencing maxPerformance.Key.Code below then NREs.
-                if (maxPerformance?.Key is null)
-                {
-                    currentRanking = 0;
-                    totalRankedClients = 0;
-                    performanceBucketCode = null;
-                }
-                else
-                {
-                    currentRanking =
-                        await statManager.GetClientOverallRanking(query.ClientId!.Value, null, maxPerformance.Key.Code);
-                    totalRankedClients = await serverDataViewer.RankedClientsCountAsync(null, maxPerformance.Key.Code);
-                    performanceBucketCode = maxPerformance.Key.Code;
-                }
-            }
-            else
-            {
-                performanceBucketCode = query.PerformanceBucketCode;
-                currentRanking =
-                    await statManager.GetClientOverallRanking(query.ClientId!.Value, serverId, performanceBucketCode);
-                totalRankedClients = await serverDataViewer.RankedClientsCountAsync(serverId, performanceBucketCode);
-            }
+            var bucketConfig = await statManager.GetBucketConfig(serverId, query.PerformanceBucketCode);
+            var performanceBucketCode = bucketConfig.Code;
+            var currentRanking = await statManager.GetClientOverallRanking(query.ClientId!.Value, serverId, performanceBucketCode);
+            var totalRankedClients = await serverDataViewer.RankedClientsCountAsync(serverId, performanceBucketCode);
 
             return new ResourceQueryHelperResult<ClientRankingInfo>
             {

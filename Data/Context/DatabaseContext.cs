@@ -135,8 +135,10 @@ namespace Data.Context
         /// SQLite provider can't translate <c>ORDER BY</c> on DateTimeOffset columns
         /// to SQL (throws <c>NotSupportedException</c> at query compile time). The
         /// canonical fix is a value converter that stores DateTimeOffset as a long
-        /// (binary tick representation) — comparable, ORDER BY-able, and round-trips
-        /// the offset losslessly via <see cref="DateTimeOffset.ToBinary"/>.
+        /// (binary tick representation). Normalize to UTC before encoding: EF's
+        /// default binary converter orders local ticks, which misorders differing
+        /// offsets. These timestamps represent instants; the original offset is
+        /// not retained. Existing binary rows are normalized by a data migration.
         ///
         /// Postgres + MySQL handle DateTimeOffset natively, so the converter is only
         /// applied when running on SQLite (detected via <see cref="DatabaseFacade.ProviderName"/>).
@@ -151,9 +153,9 @@ namespace Data.Context
             if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
             {
                 configurationBuilder.Properties<DateTimeOffset>()
-                    .HaveConversion<DateTimeOffsetToBinaryConverter>();
+                    .HaveConversion<UtcDateTimeOffsetToBinaryConverter>();
                 configurationBuilder.Properties<DateTimeOffset?>()
-                    .HaveConversion<DateTimeOffsetToBinaryConverter>();
+                    .HaveConversion<UtcDateTimeOffsetToBinaryConverter>();
             }
         }
 

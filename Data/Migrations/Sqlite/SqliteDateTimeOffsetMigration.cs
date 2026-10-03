@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using System.Linq;
 
 namespace Data.Migrations.Sqlite;
 
@@ -52,6 +53,21 @@ internal static class SqliteDateTimeOffsetMigration
                 $"strftime('%Y-%m-%d %H:%M:%S', ({ticks} / 10000000) - 62135596800, 'unixepoch') || " +
                 $"printf('.%07d%s%02d:%02d', {ticks} % 10000000, CASE WHEN {offset} < 0 THEN '-' ELSE '+' END, abs({offset}) / 60, abs({offset}) % 60) " +
                 $"WHERE typeof({v}) = 'integer';");
+        }
+    }
+
+    internal static void NormalizeUtc(MigrationBuilder migrationBuilder)
+    {
+        // EasterEggOccurredAt was introduced after the historical text conversion.
+        foreach (var (table, columns) in DateColumns.Append(("EFZombieMatches", new[] { "EasterEggOccurredAt" })))
+        foreach (var column in columns)
+        {
+            var v = $"\"{column}\"";
+            var offset = $"(CASE WHEN ({v} & 2047) >= 1024 THEN ({v} & 2047) - 2048 ELSE ({v} & 2047) END)";
+            // High bits hold local ticks / 1000. One offset minute is 600000 units.
+            // Subtract the offset and clear the low bits to encode the same UTC instant.
+            migrationBuilder.Sql($"UPDATE \"{table}\" SET {v} = ((({v} >> 11) - {offset} * 600000) << 11) " +
+                                 $"WHERE typeof({v}) = 'integer' AND ({v} & 2047) != 0;");
         }
     }
 }

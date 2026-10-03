@@ -62,10 +62,12 @@ namespace WebfrontCore.Controllers.API
         public async Task<IActionResult> GetTopPlayers([FromQuery] int count = 25, [FromQuery] int offset = 0,
             [FromQuery] string? serverId = null, [FromQuery] string? performanceBucketCode = null)
         {
+            // Anonymous endpoint: a page holds 1..100 players and starts at a non-negative
+            // offset (a zero/negative count or negative offset otherwise faults the query).
             var response = await dataService.GetTopStatsAsync(new Models.TopStatsRequest
             {
-                Count = count,
-                Offset = offset,
+                Count = Math.Clamp(count, 1, 100),
+                Offset = Math.Max(0, offset),
                 ServerId = serverId,
                 PerformanceBucketCode = performanceBucketCode
             });

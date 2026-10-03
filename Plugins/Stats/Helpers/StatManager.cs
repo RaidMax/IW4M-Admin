@@ -256,35 +256,37 @@ namespace IW4MAdmin.Plugins.Stats.Helpers
                 if (chunk.Count < chunkSize) break;
             }
 
-            var rankingsDict = new Dictionary<int, List<RankingSnapshot>>();
-
             var includeNullBucket = PerformanceBucketCodes.IsDefault(bucketConfig.Code);
+
+            // One query for the whole page (as on develop) instead of one per player, then
+            // the 60 most recent snapshots per player in memory.
+            var pageRankings = await context.Set<EFClientRankingHistory>()
+                .Where(ranking => clientIdsList.Contains(ranking.ClientId))
+                .Where(ranking => ranking.ServerId == serverId)
+                .Where(ranking => ranking.PerformanceBucket.Code == bucketConfig.Code
+                                  || (includeNullBucket && ranking.PerformanceBucketId == null))
+                .Select(ranking => new RankingSnapshot
+                {
+                    ClientId = ranking.ClientId,
+                    Name = ranking.Client.CurrentAlias.Name,
+                    LastConnection = ranking.Client.LastConnection,
+                    PerformanceMetric = ranking.PerformanceMetric,
+                    ZScore = ranking.ZScore,
+                    Ranking = ranking.Ranking,
+                    CreatedDateTime = ranking.CreatedDateTime
+                })
+                .ToListAsync();
+
+            var rankingsDict = pageRankings
+                .GroupBy(ranking => ranking.ClientId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.OrderByDescending(ranking => ranking.CreatedDateTime).Take(60).ToList());
+
+            // Same shape as before for players without a ranking row in scope.
             foreach (var clientId in clientIdsList)
             {
-                var eachRank = await context.Set<EFClientRankingHistory>()
-                    .Where(ranking => ranking.ClientId == clientId)
-                    .Where(ranking => ranking.ServerId == serverId)
-                    .Where(ranking => ranking.PerformanceBucket.Code == bucketConfig.Code
-                                      || (includeNullBucket && ranking.PerformanceBucketId == null))
-                    .OrderByDescending(ranking => ranking.CreatedDateTime)
-                    .Select(ranking => new RankingSnapshot
-                    {
-                        ClientId = ranking.ClientId,
-                        Name = ranking.Client.CurrentAlias.Name,
-                        LastConnection = ranking.Client.LastConnection,
-                        PerformanceMetric = ranking.PerformanceMetric,
-                        ZScore = ranking.ZScore,
-                        Ranking = ranking.Ranking,
-                        CreatedDateTime = ranking.CreatedDateTime
-                    })
-                    .Take(60)
-                    .ToListAsync();
-
-                if (!rankingsDict.TryAdd(clientId, eachRank))
-                {
-                    rankingsDict[clientId] = rankingsDict[clientId].Concat(eachRank).Distinct()
-                        .OrderByDescending(ranking => ranking.CreatedDateTime).ToList();
-                }
+                rankingsDict.TryAdd(clientId, new List<RankingSnapshot>());
             }
 
             var statsQuery = context.Set<EFClientStatistics>()

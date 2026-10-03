@@ -27,9 +27,94 @@ using SharedLibraryCore.Interfaces.Events;
 /// </summary>
 public class VpnDetectionPlugin : IPluginV2
 {
+    private const string ConfigurationName = "VPNDetectionSettings";
+    private const string LegacyScriptPluginKey = "VPN Detection Plugin";
+
     public static void RegisterDependencies(IServiceCollection serviceCollection)
     {
-        serviceCollection.AddConfiguration("VPNDetectionSettings", new VpnDetectionConfiguration());
+        // Same contract as AddConfiguration, except that the very first load (no settings file yet)
+        // seeds from the legacy VPNDetection.js state instead of the defaults, so upgrading installs
+        // keep their whitelist and their enabled/disabled choice.
+        serviceCollection.AddSingleton(serviceProvider =>
+        {
+            var handler = serviceProvider.GetRequiredService<IConfigurationHandlerV2<VpnDetectionConfiguration>>();
+            var configuration = Task.Run(() => handler.Get(ConfigurationName)).GetAwaiter().GetResult();
+
+            if (configuration is not null)
+            {
+                return configuration;
+            }
+
+            var logger = serviceProvider.GetRequiredService<ILogger<VpnDetectionPlugin>>();
+            configuration = TryImportLegacyScriptConfiguration(logger) ?? new VpnDetectionConfiguration();
+            Task.Run(() => handler.Set(configuration)).GetAwaiter().GetResult();
+            return configuration;
+        });
+    }
+
+    /// <summary>
+    /// Reads the settings the legacy VPNDetection.js stored in Configuration/ScriptPluginSettings.json under
+    /// "VPN Detection Plugin" (<c>vpnExceptionIds</c>, <c>enabled</c>). The legacy entry is left in place.
+    /// </summary>
+    private static VpnDetectionConfiguration TryImportLegacyScriptConfiguration(ILogger<VpnDetectionPlugin> logger)
+    {
+        var legacyPath = System.IO.Path.Join(Utilities.OperatingDirectory, "Configuration", "ScriptPluginSettings.json");
+
+        if (!System.IO.File.Exists(legacyPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(System.IO.File.ReadAllText(legacyPath));
+
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty(LegacyScriptPluginKey, out var legacy) ||
+                legacy.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            var imported = new VpnDetectionConfiguration();
+
+            if (legacy.TryGetProperty("enabled", out var enabled) &&
+                enabled.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            {
+                imported.Enabled = enabled.GetBoolean();
+            }
+
+            if (legacy.TryGetProperty("vpnExceptionIds", out var ids) && ids.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var id in ids.EnumerateArray())
+                {
+                    // JS stored ids as numbers, but older builds also persisted them as strings (parseInt on load).
+                    int? clientId = id.ValueKind switch
+                    {
+                        JsonValueKind.Number when id.TryGetInt32(out var number) => number,
+                        JsonValueKind.String when int.TryParse(id.GetString(), out var parsed) => parsed,
+                        _ => null
+                    };
+
+                    if (clientId is { } value && !imported.VpnExceptionIds.Contains(value))
+                    {
+                        imported.VpnExceptionIds.Add(value);
+                    }
+                }
+            }
+
+            logger.LogInformation(
+                "Imported legacy VPN Detection settings from {LegacyPath}: Enabled={Enabled}, Whitelisted={Count}",
+                legacyPath, imported.Enabled, imported.VpnExceptionIds.Count);
+
+            return imported;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not import legacy VPN Detection settings from {LegacyPath}; using defaults",
+                legacyPath);
+            return null;
+        }
     }
 
     public string Name => "VPN Detection Plugin";

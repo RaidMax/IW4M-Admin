@@ -51,7 +51,7 @@ public interface IZombieStatsEnhancer
     /// <summary>
     /// Called when a new match starts on a zombie server.
     /// </summary>
-    void OnMatchStarted(IGameServer server);
+    Task OnMatchStarted(IGameServer server);
 
     /// <summary>
     /// Called when a match ends on a zombie server.

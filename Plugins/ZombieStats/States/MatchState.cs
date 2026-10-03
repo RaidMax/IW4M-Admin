@@ -36,6 +36,9 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// </summary>
     public bool BootstrapPendingFirstRound { get; set; }
 
+    /// <summary>A real match-start marker was already recorded, including before a host restart.</summary>
+    public bool MatchStartObserved { get; set; }
+
     /// <summary>
     /// First-observed disconnection timestamp per NetworkId. Populated lazily by the
     /// live-snapshot service when a tracked player no longer appears in the server's
@@ -97,6 +100,36 @@ public record MatchState(IGameServer Server, ZombieMatch PersistentMatch)
     /// co-op rounds normalize against their own cohorts.
     /// </summary>
     public Dictionary<int, int> RoundPlayerCounts { get; } = new();
+
+    /// <summary>Observed engine round boundaries; bootstrap/reconnect times are not boundaries.</summary>
+    public Dictionary<int, DateTimeOffset> RoundStartedAtUtc { get; } = new();
+
+    /// <summary>Observed log-clock boundaries in seconds; never inferred from host timestamps.</summary>
+    public Dictionary<int, long> RoundStartedAtGameTime { get; } = new();
+
+    public double GetFullRoundSeconds(int round, long? endGameTime, DateTimeOffset endUtc)
+    {
+        if (RoundStartedAtGameTime.TryGetValue(round, out var startGameTime))
+        {
+            var end = RoundStartedAtGameTime.TryGetValue(round + 1, out var nextGameTime)
+                ? nextGameTime : endGameTime;
+            // A reset, missing boundary or same-second clock cannot seed a baseline.
+            return end.HasValue && end.Value > startGameTime ? (double)end.Value - startGameTime : 0;
+        }
+
+        // On resume the persisted UTC boundary has no corresponding engine clock.
+        // Wait for a newly observed round instead of mixing two different clocks.
+        if (endGameTime.HasValue || RoundStartedAtGameTime.ContainsKey(round + 1)) return 0;
+        return RoundStartedAtUtc.TryGetValue(round, out var startUtc)
+            ? Math.Max(0, (RoundStartedAtUtc.GetValueOrDefault(round + 1, endUtc) - startUtc).TotalSeconds)
+            : 0;
+    }
+
+    /// <summary>Reference captured before sampling, shared by every player in a round.</summary>
+    public Dictionary<int, double?> RoundPaceReferences { get; } = new();
+
+    /// <summary>Rounds already submitted to the duration baseline, once per team.</summary>
+    public HashSet<int> EmaRoundsRecorded { get; } = [];
 
     /// <summary>
     /// Special-round type per round number — populated from GSC

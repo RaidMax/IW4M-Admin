@@ -68,6 +68,12 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
             return null;
         }
 
+        // Preserve the log clock through the second parsing stage. Processing time
+        // can compress minutes of buffered gameplay into milliseconds after a restart.
+        parsedEvent.GameTime = scriptEvent.GameTime;
+        parsedEvent.Time = scriptEvent.Time;
+        parsedEvent.Source = scriptEvent.Source;
+        parsedEvent.Owner = scriptEvent.Owner;
         logger.LogDebug("Parsed GSE type {Type}", parsedEvent.GetType().Name);
 
         return parsedEvent;

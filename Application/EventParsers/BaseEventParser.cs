@@ -190,7 +190,7 @@ namespace IW4MAdmin.Application.EventParsers
                 var gscEvent = new GameScriptEvent
                 {
                     ScriptData = logLine,
-                    GameTime = gameTime,
+                    GameTime = timeMatch.Success ? gameTime : null,
                     Source = GameEvent.EventSource.Log
                 };
                 return gscEvent;

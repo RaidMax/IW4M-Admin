@@ -133,14 +133,15 @@ public class Plugin : IPluginV2
 
     private async Task OnClientDisposed(ClientStateDisposeEvent clientEvent, CancellationToken token)
     {
-        if (!ShouldProcessZombieEvent(clientEvent.Client.CurrentServer))
+        var server = clientEvent.Source as IGameServer ?? clientEvent.Client.CurrentServer;
+        if (!ShouldProcessZombieEvent(server))
         {
             return;
         }
 
         if (_enhancer is not null)
         {
-            await _enhancer.OnClientDisposed(clientEvent.Client, clientEvent.Client.CurrentServer);
+            await _enhancer.OnClientDisposed(clientEvent.Client, server!);
             await _enhancer.UpdateState(token);
         }
     }
@@ -157,7 +158,7 @@ public class Plugin : IPluginV2
 
     private async Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)
     {
-        var server = clientEvent.Client.CurrentServer;
+        var server = clientEvent.Source as IGameServer ?? clientEvent.Client.CurrentServer;
         if (!ShouldProcessZombieEvent(server))
         {
             // DIAGNOSTIC (zombie skill-leak phase 1): the server is a CoD
@@ -193,7 +194,7 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            await _enhancer.OnClientAuthorized(clientEvent.Client, clientEvent.Client.CurrentServer);
+            await _enhancer.OnClientAuthorized(clientEvent.Client, server!);
             await _enhancer.UpdateState(token);
         }
     }
@@ -338,7 +339,7 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            _enhancer.OnMatchStarted(matchEvent.Server);
+            await _enhancer.OnMatchStarted(matchEvent.Server);
             await _enhancer.UpdateState(token);
         }
     }

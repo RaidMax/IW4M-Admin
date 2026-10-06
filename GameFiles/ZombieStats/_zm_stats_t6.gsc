@@ -597,45 +597,72 @@ WatchdogCallbacks()
 }
 
 /////////////////////////////////////////////////////////
-// Periodically checks active script_models to see if any
-// have a defined powerup_name. If so monitors for pickup
+// Starts a WaitForPowerupGrab watcher for every powerup.
+// Notify-driven: stock _zm_powerups fires level "powerup_dropped"
+// from powerup_drop() and specific_powerup_drop(), so normal drops
+// are picked up instantly with no entity scan.
+// WaitForPowerupSpawnedFallback() catches powerups spawned without
+// that notify (Origins dig rewards, Tranzit sidequest temptation).
+//
+// Previously this polled GetEntArray( "script_model" ) every 0.05s,
+// building an array of every script_model on the map 20 times a
+// second. On Tranzit (most script_models of any T6 map) at high
+// rounds that pushed the shared script variable pool over the limit:
+// "exceeded maximum number of child server script variables".
 /////////////////////////////////////////////////////////
 WaitForPowerupSpawned()
 {
-    powerupEntCount = 0;
+    level endon( "end_game" );
+    level thread WaitForPowerupSpawnedFallback();
 
     for ( ;; )
     {
-        // the powerup ent is not named and there are
-        // no events to tell us when one is spawned
-        // so we need to periodically check for changes
-        // and wait for a player to get in range
-        // additionally, overriding the level.zombie_powerup_grab_func
-        // prevents original powerup code from running
-        models = GetEntArray( "script_model", "classname" );
-        powerupEnts = [];
+        level waittill( "powerup_dropped", powerup );
 
+        // specific_powerup_drop notifies before checking its spawn succeeded
+        if ( !IsDefined( powerup ) || IsDefined( powerup.isWaiting ) )
+        {
+            continue;
+        }
+
+        powerup thread WaitForPowerupGrabDeferred();
+    }
+}
+
+// specific_powerup_drop sends "powerup_dropped" before powerup_setup()
+// sets powerup_name. Wait out the frame so the name is set before the
+// proximity check can fire. Separate thread so the notify loop never
+// blocks and can't miss a second drop in the same frame.
+WaitForPowerupGrabDeferred()
+{
+    waittillframeend;
+
+    if ( !IsDefined( self ) || IsDefined( self.isWaiting ) )
+    {
+        return;
+    }
+
+    self thread WaitForPowerupGrab();
+}
+
+// Once a second, not every frame. isWaiting (set at the top of
+// WaitForPowerupGrab) stops a powerup being watched twice.
+WaitForPowerupSpawnedFallback()
+{
+    level endon( "end_game" );
+
+    for ( ;; )
+    {
+        wait ( 1 );
+
+        models = GetEntArray( "script_model", "classname" );
         for ( i = 0; i < models.size; i++ )
         {
-            if( IsDefined( models[i].powerup_name ) && !IsDefined( models[i].isWaiting ) )
+            if ( IsDefined( models[i].powerup_name ) && !IsDefined( models[i].isWaiting ) )
             {
-                powerupEnts[powerupEnts.size] = models[i];
+                models[i] thread WaitForPowerupGrab();
             }
         }
-
-        if ( powerupEnts.size != 0 && powerupEnts.size != powerupEntCount )
-        {
-            // we only want to start a new thread if the size increases
-            // if it's decreased that means a powerup despawned
-            if ( powerupEnts.size >= powerupEntCount )
-            {
-                array_thread( powerupEnts, ::WaitForPowerupGrab );
-            }
-        }
-
-        powerupEntCount = powerupEnts.size;
-
-        wait ( 0.05 );
     }
 }
 

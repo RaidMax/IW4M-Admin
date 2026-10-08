@@ -80,6 +80,47 @@ public class Plugin : IPluginV2
     /// (the cache is never cleared) keep processing its events even if a later poll
     /// disagrees, and warn once with the offending gametype so the cause is visible.
     /// </remarks>
+    // Last time a premium call outlived the host's handler timeout; throttles that warning.
+    private long _lastEnhancerTimeoutWarnTicks;
+
+    /// <summary>
+    /// Awaits a premium call, but stops waiting when the host's handler timeout fires.
+    /// </summary>
+    /// <remarks>
+    /// Premium serialises its state behind one gate, and maintenance such as a rebuild holds that
+    /// gate. The host only frees an event slot when its handler returns, and the timeout token it
+    /// passes in is not seen by that gate, so a handler stuck behind maintenance kept its slot.
+    /// Twenty-five of them stalled event processing on every server. Giving up the wait frees the
+    /// slot; the call itself keeps running and finishes once the gate is free, so nothing is dropped.
+    /// Returns false when the wait was abandoned, so the caller skips its follow-up flush.
+    /// </remarks>
+    private async Task<bool> AwaitEnhancer(Task call, string operation, CancellationToken token)
+    {
+        try
+        {
+            await call.WaitAsync(token);
+            return true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested && !call.IsCompleted)
+        {
+            _ = call.ContinueWith(task => _logger.LogError(task.Exception,
+                    "[ZM] {Operation} failed after its handler stopped waiting", operation),
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+
+            var now = DateTime.UtcNow.Ticks;
+            var last = Interlocked.Read(ref _lastEnhancerTimeoutWarnTicks);
+            if (now - last >= TimeSpan.TicksPerMinute
+                && Interlocked.CompareExchange(ref _lastEnhancerTimeoutWarnTicks, now, last) == last)
+            {
+                _logger.LogWarning(
+                    "[ZM] {Operation} is still waiting on zombie state after the handler timeout (maintenance running?); " +
+                    "it will finish in the background", operation);
+            }
+
+            return false;
+        }
+    }
+
     private bool ShouldProcessZombieEvent(IGameServer? server)
     {
         if (server is null)
@@ -141,8 +182,10 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            await _enhancer.OnClientDisposed(clientEvent.Client, server!);
-            await _enhancer.UpdateState(token);
+            if (await AwaitEnhancer(_enhancer.OnClientDisposed(clientEvent.Client, server!), "Client disconnect", token))
+            {
+                await AwaitEnhancer(_enhancer.UpdateState(token), "State flush", token);
+            }
         }
     }
 
@@ -153,7 +196,7 @@ public class Plugin : IPluginV2
             return;
         }
 
-        await _enhancer.ReconcileConnectedClients(updateEvent.Server);
+        await AwaitEnhancer(_enhancer.ReconcileConnectedClients(updateEvent.Server), "Roster reconcile", token);
     }
 
     private async Task OnClientAuthorized(ClientStateAuthorizeEvent clientEvent, CancellationToken token)
@@ -194,8 +237,10 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            await _enhancer.OnClientAuthorized(clientEvent.Client, server!);
-            await _enhancer.UpdateState(token);
+            if (await AwaitEnhancer(_enhancer.OnClientAuthorized(clientEvent.Client, server!), "Client join", token))
+            {
+                await AwaitEnhancer(_enhancer.UpdateState(token), "State flush", token);
+            }
         }
     }
 
@@ -229,8 +274,10 @@ public class Plugin : IPluginV2
         // Forward to premium for full zombie-specific processing
         if (_enhancer is not null)
         {
-            await _enhancer.ProcessEventAsync(parsedScriptEvent);
-            await _enhancer.UpdateState(token);
+            if (await AwaitEnhancer(_enhancer.ProcessEventAsync(parsedScriptEvent), "Script event", token))
+            {
+                await AwaitEnhancer(_enhancer.UpdateState(token), "State flush", token);
+            }
         }
     }
 
@@ -307,8 +354,10 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            await _enhancer.OnMatchEnded(matchEvent.Server);
-            await _enhancer.UpdateState(token);
+            if (await AwaitEnhancer(_enhancer.OnMatchEnded(matchEvent.Server), "Match end", token))
+            {
+                await AwaitEnhancer(_enhancer.UpdateState(token), "State flush", token);
+            }
         }
     }
 
@@ -339,8 +388,10 @@ public class Plugin : IPluginV2
 
         if (_enhancer is not null)
         {
-            await _enhancer.OnMatchStarted(matchEvent.Server);
-            await _enhancer.UpdateState(token);
+            if (await AwaitEnhancer(_enhancer.OnMatchStarted(matchEvent.Server), "Match start", token))
+            {
+                await AwaitEnhancer(_enhancer.UpdateState(token), "State flush", token);
+            }
         }
     }
 

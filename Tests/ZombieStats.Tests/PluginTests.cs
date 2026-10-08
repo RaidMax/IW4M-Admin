@@ -42,9 +42,9 @@ public sealed class PluginTests : IDisposable
             new ZombieEventParser(NullLogger<ZombieEventParser>.Instance), null!, _services);
     }
 
-    private Task Handle(string method, object gameEvent) => (Task)typeof(ZombiePlugin)
+    private Task Handle(string method, object gameEvent, CancellationToken token = default) => (Task)typeof(ZombiePlugin)
         .GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!
-        .Invoke(_plugin, [gameEvent, CancellationToken.None])!;
+        .Invoke(_plugin, [gameEvent, token])!;
     private EFClient Connect(long id) { var client = new EFClient { NetworkId = id, CurrentServer = _server }; _server.Clients.Add(client); return client; }
     private Task Script(string wire) => Handle("OnScriptEvent", new GameScriptEvent
         { Owner = _server, ScriptData = wire, GameTime = 120, Source = GameEvent.EventSource.Log });
@@ -66,6 +66,26 @@ public sealed class PluginTests : IDisposable
         Assert.Same(_server, bridged.Owner);
         Assert.StartsWith(playerIsVictim ? "K;" : kind[1..] + ";", bridged.Data);
         Assert.Equal(new[] { "ProcessEventAsync", "UpdateState" }, Enhancer.Calls.Select(c => c.Name));
+    }
+
+    [Fact]
+    public async Task A_handler_stuck_behind_premium_maintenance_frees_its_slot_when_the_host_times_it_out()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Enhancer.PendingProcess = gate.Task;
+        using var hostTimeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+
+        var handler = Handle("OnScriptEvent", new GameScriptEvent
+            { Owner = _server, ScriptData = "GSE;RC;4", GameTime = 120, Source = GameEvent.EventSource.Log }, hostTimeout.Token);
+
+        // Returns once the host gives up, instead of holding the event slot until maintenance ends.
+        Assert.Same(handler, await Task.WhenAny(handler, Task.Delay(TimeSpan.FromSeconds(10))));
+        await handler;
+        Assert.Equal(new[] { "ProcessEventAsync" }, Enhancer.Calls.Select(c => c.Name));
+
+        // The abandoned call still completes in the background.
+        gate.SetResult();
+        await gate.Task;
     }
 
     [Fact]
@@ -212,9 +232,11 @@ public class EnhancerSpy : DispatchProxy
 {
     public List<(string Name, object?[] Args)> Calls { get; } = [];
     public bool FailFlush { get; set; }
+    public Task? PendingProcess { get; set; }
     protected override object? Invoke(MethodInfo? method, object?[]? args)
     {
         Calls.Add((method!.Name, args ?? []));
+        if (method.Name == "ProcessEventAsync" && PendingProcess is not null) return PendingProcess;
         if (method.Name == "GetSkillCalculation") return (Func<Data.Models.Client.EFClient, EFClientStatistics, double>)((_, _) => 42);
         if (method.Name == "UpdateState" && FailFlush) return Task.FromException(new InvalidOperationException("write failed"));
         return method.ReturnType == typeof(Task) ? Task.CompletedTask : null;

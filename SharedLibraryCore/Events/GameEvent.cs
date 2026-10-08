@@ -339,8 +339,9 @@ namespace SharedLibraryCore
             
             try
             {
-                await _eventFinishedWaiter.WaitAsync(timeSpan, token);
-                processed = true;
+                // WaitAsync(TimeSpan, ...) returns false on timeout rather than throwing. Treating that as
+                // processed marked slow commands complete with no output, so the web console showed nothing.
+                processed = await _eventFinishedWaiter.WaitAsync(timeSpan, token);
             }
 
             catch (OperationCanceledException)

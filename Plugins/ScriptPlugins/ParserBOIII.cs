@@ -24,7 +24,10 @@ public class ParserBOIII : IParserDefinition
         rcon.CommandPrefixes.TempBan = "clientkick_for_reason {0} \"{1}\"";
         rcon.CommandPrefixes.RConResponse = "ÿÿÿÿ(" + (char)0x01 + "|print) ?";
         rcon.GametypeStatus.Pattern = "Gametype: (.+)";
-        rcon.MapStatus.Pattern = "Map: (.+)";
+        // T7x fills the "Map:" line in status; Ezz BOIII leaves it blank and only its lowercase
+        // "map: <name>" line carries the map, so match either case or rotations go unnoticed.
+        // \S+ rather than .+: status lines aren't trimmed, so a blank "Map: " line must not match.
+        rcon.MapStatus.Pattern = @"^[Mm]ap: *(\S+)";
         rcon.CommandPrefixes.RConGetInfo = null; // disables this, because it's useless on T7/BOIII
         rcon.ServerNotRunningResponse =
             "this is here to prevent a hibernating server from being detected as not running";

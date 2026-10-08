@@ -23,6 +23,9 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     private const string DvarLatencyProbe = "sv_iw4madmin_latencyprobe";
     private static readonly TimeSpan StaleProbeThreshold = TimeSpan.FromSeconds(30);
     private const double ProbeJitterFraction = 0.2;
+    // Consecutive probes that RCon accepted but whose echo never came back through the game
+    // log before going stale. Enough of them in a row means the log isn't reaching the parser.
+    private const int UnansweredProbeWarnThreshold = 5;
 
     private readonly ConcurrentDictionary<string, DateTime> _pendingProbes = new();
     private readonly Random _jitterRng = new();
@@ -34,6 +37,8 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
     private Timer _probeTimer;
     private bool _probingStopped;
     private bool _gscDetected;
+    private int _unansweredProbes;
+    private bool _unansweredProbeWarned;
 
     public ServerLatencyMetrics LatencyMetrics { get; } = new(appConfig.LatencyEmaAlpha);
 
@@ -99,6 +104,16 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         if (!string.IsNullOrEmpty(probe.ProbeId) && _pendingProbes.TryRemove(probe.ProbeId, out var sendTime))
         {
+            Interlocked.Exchange(ref _unansweredProbes, 0);
+            if (_unansweredProbeWarned)
+            {
+                _unansweredProbeWarned = false;
+                using (LogContext.PushProperty("Server", server.Id))
+                {
+                    logger.LogInformation("Latency probe echoes are arriving through the game log again");
+                }
+            }
+
             var totalMs = (DateTime.UtcNow - sendTime).TotalMilliseconds;
 
             // GameLogIngestMs is the path a natural log line takes — game-write →
@@ -284,10 +299,26 @@ public class ServerLatencyMonitoringService(Server server, ApplicationConfigurat
 
         foreach (var kvp in snapshot)
         {
-            if (kvp.Value < cutoff)
+            if (kvp.Value < cutoff && _pendingProbes.TryRemove(kvp.Key, out _))
             {
-                _pendingProbes.TryRemove(kvp.Key, out _);
+                Interlocked.Increment(ref _unansweredProbes);
             }
+        }
+
+        if (_unansweredProbeWarned || Volatile.Read(ref _unansweredProbes) < UnansweredProbeWarnThreshold)
+        {
+            return;
+        }
+
+        _unansweredProbeWarned = true;
+        using (LogContext.PushProperty("Server", server.Id))
+        {
+            // The GSC answered the RCon detection, so the script runs; its log lines just never
+            // get parsed. Check g_log / the game log path and any log forwarder for this server.
+            logger.LogWarning(
+                "The last {Count} latency probes were sent over RCon but none came back through the game log. " +
+                "Game script events are not being read for this server; check its game log path and log forwarding",
+                _unansweredProbes);
         }
     }
 }

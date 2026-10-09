@@ -51,7 +51,8 @@ public class ServerBannerPlugin : IPluginV2
         ["h1"] = (null, ColorLeft),
         ["csgo"] = (null, ColorLeft),
         ["h2m"] = (null, ColorLeft),
-        ["iw7"] = (null, ColorLeft)
+        ["iw7"] = (null, ColorLeft),
+        ["s2"] = (null, ColorLeft)
     };
 
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };

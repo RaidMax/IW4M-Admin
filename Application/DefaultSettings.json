@@ -2961,152 +2961,152 @@
       "Game": "S2",
       "Maps": [
         {
-          "Alias": "mp_aachen_v2",
-          "Name": "Aachen"
+          "Alias": "Aachen",
+          "Name": "mp_aachen_v2"
         },
         {
-          "Alias": "mp_forest_01",
-          "Name": "Ardennes Forest"
+          "Alias": "Ardennes Forest",
+          "Name": "mp_forest_01"
         },
         {
-          "Alias": "mp_battleship_2",
-          "Name": "USS Texas"
+          "Alias": "USS Texas",
+          "Name": "mp_battleship_2"
         },
         {
-          "Alias": "mp_london",
-          "Name": "London Docks"
+          "Alias": "London Docks",
+          "Name": "mp_london"
         },
         {
-          "Alias": "mp_canon_farm",
-          "Name": "Gustav Cannon"
+          "Alias": "Gustav Cannon",
+          "Name": "mp_canon_farm"
         },
         {
-          "Alias": "mp_flak_tower",
-          "Name": "Flak Tower"
+          "Alias": "Flak Tower",
+          "Name": "mp_flak_tower"
         },
         {
-          "Alias": "mp_gibraltar_02",
-          "Name": "Gibraltar"
+          "Alias": "Gibraltar",
+          "Name": "mp_gibraltar_02"
         },
         {
-          "Alias": "mp_d_day",
-          "Name": "Pointe du Hoc"
+          "Alias": "Pointe du Hoc",
+          "Name": "mp_d_day"
         },
         {
-          "Alias": "mp_france_village",
-          "Name": "Sainte Marie du Mont"
+          "Alias": "Sainte Marie du Mont",
+          "Name": "mp_france_village"
         },
         {
-          "Alias": "mp_carentan_s2",
-          "Name": "Carentan"
+          "Alias": "Carentan",
+          "Name": "mp_carentan_s2"
         },
         {
-          "Alias": "mp_carentan_s2_winter",
-          "Name": "Winter Carentan"
+          "Alias": "Winter Carentan",
+          "Name": "mp_carentan_s2_winter"
         },
         {
-          "Alias": "mp_shipment_s2",
-          "Name": "Shipment 1944"
+          "Alias": "Shipment 1944",
+          "Name": "mp_shipment_s2"
         },
         {
-          "Alias": "mp_house",
-          "Name": "Groesten Haus"
+          "Alias": "Groesten Haus",
+          "Name": "mp_house"
         },
         {
-          "Alias": "mp_sandbox_01",
-          "Name": "Sandbox"
+          "Alias": "Sandbox",
+          "Name": "mp_sandbox_01"
         },
         {
-          "Alias": "mp_prague",
-          "Name": "Anthropoid"
+          "Alias": "Anthropoid",
+          "Name": "mp_prague"
         },
         {
-          "Alias": "mp_wolfslair",
-          "Name": "Valkyrie"
+          "Alias": "Valkyrie",
+          "Name": "mp_wolfslair"
         },
         {
-          "Alias": "mp_wolfslair_free",
-          "Name": "Valkyrie"
+          "Alias": "Valkyrie",
+          "Name": "mp_wolfslair_free"
         },
         {
-          "Alias": "mp_paris_s2",
-          "Name": "Occupation"
+          "Alias": "Occupation",
+          "Name": "mp_paris_s2"
         },
         {
-          "Alias": "mp_v2_rocket_02",
-          "Name": "V2"
+          "Alias": "V2",
+          "Name": "mp_v2_rocket_02"
         },
         {
-          "Alias": "mp_egypt_02",
-          "Name": "Egypt"
+          "Alias": "Egypt",
+          "Name": "mp_egypt_02"
         },
         {
-          "Alias": "mp_dunkirk",
-          "Name": "Dunkirk"
+          "Alias": "Dunkirk",
+          "Name": "mp_dunkirk"
         },
         {
-          "Alias": "mp_stalingrad",
-          "Name": "Stalingrad"
+          "Alias": "Stalingrad",
+          "Name": "mp_stalingrad"
         },
         {
-          "Alias": "mp_market_garden",
-          "Name": "Market Garden"
+          "Alias": "Market Garden",
+          "Name": "mp_market_garden"
         },
         {
-          "Alias": "mp_monte_cassino_v2",
-          "Name": "Monte Cassino"
+          "Alias": "Monte Cassino",
+          "Name": "mp_monte_cassino_v2"
         },
         {
-          "Alias": "mp_tank_graveyard_2",
-          "Name": "Excavation"
+          "Alias": "Excavation",
+          "Name": "mp_tank_graveyard_2"
         },
         {
-          "Alias": "mp_airship",
-          "Name": "Airship"
+          "Alias": "Airship",
+          "Name": "mp_airship"
         },
         {
-          "Alias": "mp_fuhrerbunker",
-          "Name": "Chancellery"
+          "Alias": "Chancellery",
+          "Name": "mp_fuhrerbunker"
         },
         {
-          "Alias": "mp_allieshub_combat_01",
-          "Name": "Headquarters"
+          "Alias": "Headquarters",
+          "Name": "mp_allieshub_combat_01"
         },
         {
-          "Alias": "mp_raid_cobra",
-          "Name": "Operation Breakout"
+          "Alias": "Operation Breakout",
+          "Name": "mp_raid_cobra"
         },
         {
-          "Alias": "mp_raid_d_day",
-          "Name": "Operation Neptune"
+          "Alias": "Operation Neptune",
+          "Name": "mp_raid_d_day"
         },
         {
-          "Alias": "mp_raid_bulge",
-          "Name": "Operation Griffin"
+          "Alias": "Operation Griffin",
+          "Name": "mp_raid_bulge"
         },
         {
-          "Alias": "mp_raid_aachen",
-          "Name": "Operation Intercept"
+          "Alias": "Operation Intercept",
+          "Name": "mp_raid_aachen"
         },
         {
-          "Alias": "mp_raid_dlc2",
-          "Name": "Operation Husky"
+          "Alias": "Operation Husky",
+          "Name": "mp_raid_dlc2"
         },
         {
-          "Alias": "mp_raid_dlc3",
-          "Name": "Operation Supercharge"
+          "Alias": "Operation Supercharge",
+          "Name": "mp_raid_dlc3"
         },
         {
-          "Alias": "mp_raid_dlc4",
-          "Name": "Operation Arcane"
+          "Alias": "Operation Arcane",
+          "Name": "mp_raid_dlc4"
         },
         {
-          "Alias": "mp_egypt_02_dogfight",
-          "Name": "Egyptian Sands"
+          "Alias": "Egyptian Sands",
+          "Name": "mp_egypt_02_dogfight"
         },
         {
-          "Alias": "mp_mountain_dogfight",
-          "Name": "Crimean Mountains"
+          "Alias": "Crimean Mountains",
+          "Name": "mp_mountain_dogfight"
         }
       ]
     }

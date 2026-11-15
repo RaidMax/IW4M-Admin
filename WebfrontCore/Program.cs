@@ -171,6 +171,21 @@ public class Program
                 opt.QueueLimit = 10;
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             });
+
+            // login actions: a fixed number of attempts per remote address per window. applied globally
+            // (in addition to the endpoint policy) and keyed on the resolved peer address, which only a
+            // configured trusted proxy can change
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                context.GetEndpoint()?.Metadata.GetMetadata<LoginAttemptLimitAttribute>() is null
+                    ? RateLimitPartition.GetNoLimiter(string.Empty)
+                    : RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = LoginAttemptLimitAttribute.PermitLimit,
+                            Window = LoginAttemptLimitAttribute.Window,
+                            QueueLimit = 0
+                        }));
         });
 
         // Add framework services

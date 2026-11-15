@@ -770,13 +770,8 @@ public class ActionService : IActionService
             return (false, _localization["WEBFRONT_RESPONSE_UNAUTHORIZED"]);
         }
 
-        using var httpClient = new HttpClient();
-        httpClient.BaseAddress = new Uri(_appConfig.WebfrontBindUrl ?? "http://localhost:1624");
-        
-        var client = await _manager.GetClientService().Get(targetId.Value);
-        client.TwoFactorSecret = null;
-        client.TwoFactorBackupCodes = null;
-        await _manager.GetClientService().Update(client);
+        // clears the secret and backup codes and writes the audit record
+        await _manager.GetClientService().DisableTwoFactor(targetId.Value, origin.ClientId);
 
         return (true, _localization["WEBFRONT_ACTION_DISABLE_2FA_SUCCESS"]);
     }

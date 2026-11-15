@@ -16,7 +16,14 @@ public class AccountController(
     IManager manager,
     IWebfrontDataService dataService) : BaseController(manager)
 {
+    /// <summary>
+    /// the caller's address as resolved by the forwarded-headers middleware: a forwarded header is only
+    /// honoured when it came from a configured trusted proxy, so the caller cannot choose what is recorded
+    /// </summary>
+    private string? RemoteAddress => HttpContext.Connection.RemoteIpAddress?.ToString();
+
     [HttpPost]
+    [LoginAttemptLimit]
     public async Task<IActionResult> Login([FromForm] LoginRequest request)
     {
         if (request.ClientId == 0 || string.IsNullOrEmpty(request.Password))
@@ -56,23 +63,7 @@ public class AccountController(
                     }
                 }
 
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.NameIdentifier, privilegedClient.Name),
-                    new(ClaimTypes.Role, privilegedClient.Level.ToString()),
-                    new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-                    new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
-                    new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString()),
-                    new(WebfrontClaimTypes.HasTwoFactor, (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret)).ToString().ToLower())
-                };
-
-                var appConfig = Manager.GetApplicationSettings().Configuration();
-                if (appConfig.Webfront.RequireTwoFactorForPrivilegedClients &&
-                    privilegedClient.Level >= Data.Models.Client.EFClient.Permission.Moderator &&
-                    string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
-                {
-                    claims.Add(new Claim(WebfrontClaimTypes.PendingTwoFactorEnrollment, "true"));
-                }
+                var claims = WebfrontClaims.For(privilegedClient, Manager.GetApplicationSettings().Configuration());
 
                 var claimsIdentity = new ClaimsIdentity(claims, "login");
                 var claimsPrinciple = new ClaimsPrincipal(claimsIdentity);
@@ -83,9 +74,7 @@ public class AccountController(
                     Origin = privilegedClient,
                     Type = GameEvent.EventType.Login,
                     Owner = Manager.Servers.First(),
-                    Data = HttpContext.Request.Headers.ContainsKey("X-Forwarded-For")
-                        ? HttpContext.Request.Headers["X-Forwarded-For"].ToString()
-                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    Data = RemoteAddress
                 });
 
                 Manager.QueueEvent(new LoginEvent
@@ -93,10 +82,7 @@ public class AccountController(
                     Source = this,
                     LoginSource = LoginEvent.LoginSourceType.Webfront,
                     EntityId = privilegedClient.ClientId.ToString(),
-                    Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For",
-                        out var value)
-                        ? value.ToString()
-                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    Identifier = RemoteAddress
                 });
 
                 return Ok(claims.Any(c => c.Type == WebfrontClaimTypes.PendingTwoFactorEnrollment)
@@ -174,23 +160,7 @@ public class AccountController(
         }
 
         var privilegedClient = await Manager.GetClientService().GetClientForLogin(clientId);
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, privilegedClient.Name),
-            new(ClaimTypes.Role, privilegedClient.Level.ToString()),
-            new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-            new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
-            new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString()),
-            new(WebfrontClaimTypes.HasTwoFactor, (!string.IsNullOrEmpty(privilegedClient.TwoFactorSecret)).ToString().ToLower())
-        };
-
-        var appConfig = Manager.GetApplicationSettings().Configuration();
-        if (appConfig.Webfront.RequireTwoFactorForPrivilegedClients &&
-            privilegedClient.Level >= Data.Models.Client.EFClient.Permission.Moderator &&
-            string.IsNullOrEmpty(privilegedClient.TwoFactorSecret))
-        {
-            claims.Add(new Claim(WebfrontClaimTypes.PendingTwoFactorEnrollment, "true"));
-        }
+        var claims = WebfrontClaims.For(privilegedClient, Manager.GetApplicationSettings().Configuration());
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
@@ -211,9 +181,7 @@ public class AccountController(
                 Origin = Client,
                 Type = GameEvent.EventType.Logout,
                 Owner = Manager.Servers.First(),
-                Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var value)
-                    ? value.ToString()
-                    : HttpContext.Connection.RemoteIpAddress?.ToString()
+                Data = RemoteAddress
             });
 
             Manager.QueueEvent(new LogoutEvent
@@ -221,9 +189,7 @@ public class AccountController(
                 Source = this,
                 LoginSource = LoginEvent.LoginSourceType.Webfront,
                 EntityId = Client.ClientId.ToString(),
-                Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var value1)
-                    ? value1.ToString()
-                    : HttpContext.Connection.RemoteIpAddress?.ToString()
+                Identifier = RemoteAddress
             });
         }
 

@@ -667,7 +667,25 @@ public class WebfrontDataService : IWebfrontDataService
             meta = meta?.Where(m => !m.IsSensitive);
         }
 
-        return meta?.Cast<BaseMetaResponse>().ToList() ?? [];
+        // alias history: the whole category needs MetaAliasUpdate.Read (also when every type was requested),
+        // and the address each alias was seen from needs ClientIPAddress.Read, as everywhere else
+        var canReadAliases = permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate, WebfrontPermission.Read);
+        var canViewIp = permissionSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+
+        var results = meta?
+            .Where(m => canReadAliases || m is not UpdatedAliasResponse)
+            .Cast<BaseMetaResponse>()
+            .ToList() ?? [];
+
+        if (!canViewIp)
+        {
+            foreach (var alias in results.OfType<UpdatedAliasResponse>())
+            {
+                alias.IPAddress = null;
+            }
+        }
+
+        return results;
     }
 
     public Task<ScoreboardInfo?> GetServerScoreboardAsync(string serverId)
@@ -869,6 +887,10 @@ public class WebfrontDataService : IWebfrontDataService
     {
         var executor = await GetExecutorAsync();
         if (executor == null)
+            return _translationLookup["WEBFRONT_RESPONSE_UNAUTHORIZED"];
+
+        // same level the unban command requires; the database level counts, not the cookie's role claim
+        if (executor.Level < SharedLibraryCore.Database.Models.EFClient.RequiredUnbanLevel(_manager))
             return _translationLookup["WEBFRONT_RESPONSE_UNAUTHORIZED"];
 
         var targetClient = await _clientService.Get(clientId);
@@ -1543,14 +1565,9 @@ public class WebfrontDataService : IWebfrontDataService
             }
         }
 
-        List<Claim> claims =
-        [
-            new(ClaimTypes.NameIdentifier, privilegedClient.Name),
-            new(ClaimTypes.Role, privilegedClient.Level.ToString()),
-            new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-            new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
-            new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
-        ];
+        // same claims as the form login, including the forced-2FA-enrolment constraint
+        var claims = WebfrontCore.Core.Auth.WebfrontClaims.For(privilegedClient,
+            _manager.GetApplicationSettings().Configuration());
 
         var claimsIdentity = new ClaimsIdentity(claims, "login");
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
@@ -1851,10 +1868,8 @@ public class WebfrontDataService : IWebfrontDataService
             throw new UnauthorizedAccessException();
         }
 
-        var client = await _clientService.Get(targetId);
-        client.TwoFactorSecret = null;
-        client.TwoFactorBackupCodes = null;
-        await _clientService.Update(client);
+        // clears the secret and backup codes and writes the audit record
+        await _clientService.DisableTwoFactor(targetId, executor.ClientId);
     }
 
     private static AnnouncementInfo MapToAnnouncementInfo(Data.Models.Misc.EFAnnouncement announcement)

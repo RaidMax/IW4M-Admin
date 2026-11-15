@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using SharedLibraryCore.Commands;
 using System.Threading.Tasks;
 using Data.Abstractions;
 using Data.Models;
@@ -17,6 +19,51 @@ namespace SharedLibraryCore.Services
         {
             _logger = logger;
             _contextFactory = contextFactory;
+        }
+
+        /// <summary>names and aliases of commands whose arguments are a password or a login token</summary>
+        private static readonly HashSet<string> SecretArgumentCommands =
+            new(StringComparer.OrdinalIgnoreCase) { "login", "li", "setpassword", "sp" };
+
+        /// <summary>
+        ///     masks the arguments of a command that carries a secret, including when that command is wrapped
+        ///     by another one (e.g. "!runas @5 setpassword hunter22": everything after the inner command is masked)
+        /// </summary>
+        private static string MaskSecrets(Command cmd, string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return message;
+            }
+
+            var parts = message.Split(' ');
+            var firstSecretIndex = -1;
+
+            if (SecretArgumentCommands.Contains(cmd.Name))
+            {
+                firstSecretIndex = 1;
+            }
+            else if (cmd is RunAsCommand)
+            {
+                // "{prefix}runas {target} {command} {arguments}": find the wrapped command
+                for (var index = 1; index < parts.Length; index++)
+                {
+                    var word = parts[index].TrimStart(Utilities.CommandPrefix);
+
+                    if (SecretArgumentCommands.Contains(word))
+                    {
+                        firstSecretIndex = index + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (firstSecretIndex < 0)
+            {
+                return message;
+            }
+
+            return string.Join(' ', parts.Select((arg, index) => index >= firstSecretIndex ? "*****" : arg));
         }
 
         public async Task Add(GameEvent e)
@@ -39,11 +86,7 @@ namespace SharedLibraryCore.Services
                     // this prevents passwords/tokens being logged into the database in plain text
                     if (e.Extra is Command cmd)
                     {
-                        if (cmd.Name == "login" || cmd.Name == "setpassword")
-                        {
-                            e.Message = string.Join(' ',
-                                e.Message.Split(" ").Select((arg, index) => index > 0 ? "*****" : arg));
-                        }
+                        e.Message = MaskSecrets(cmd, e.Message);
                     }
 
                     change = new EFChangeHistory

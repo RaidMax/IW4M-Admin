@@ -25,18 +25,11 @@ public class CookieForwardingHandler : DelegatingHandler
                 request.Headers.Add("Cookie", cookies);
             }
 
-            // Forward X-Forwarded-For to preserve client IP and prevent localhost auto-auth
-            // If no X-Forwarded-For exists, use the original remote IP
-            var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].ToString();
-            if (string.IsNullOrEmpty(forwardedFor))
-            {
-                var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                request.Headers.Add("X-Forwarded-For", remoteIp);
-            }
-            else
-            {
-                request.Headers.Add("X-Forwarded-For", forwardedFor);
-            }
+            // Tell the internal API who the real caller is. Only the address already resolved by the
+            // forwarded-headers middleware is sent: relaying the caller's own X-Forwarded-For would let them
+            // choose it, since this loopback self-call comes from a trusted proxy address.
+            request.Headers.Remove("X-Forwarded-For");
+            request.Headers.Add("X-Forwarded-For", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
         }
 
         return base.SendAsync(request, cancellationToken);

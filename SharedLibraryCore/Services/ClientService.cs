@@ -766,6 +766,96 @@ namespace SharedLibraryCore.Services
                 .CountAsync(_client => _client.Level == Permission.Owner);
         }
 
+        /// <summary>
+        ///     persistent meta key holding the time before which every webfront session of the client is invalid
+        /// </summary>
+        public const string WebfrontSessionsRevokedMetaKey = "WebfrontSessionsRevokedAt";
+
+        /// <summary>
+        ///     what the webfront needs to decide whether a session cookie of the client is still valid:
+        ///     the client's current level, whether it is active, and when its sessions were last revoked.
+        ///     returns null when the client does not exist
+        /// </summary>
+        public async Task<WebfrontSessionState> GetWebfrontSessionState(int clientId)
+        {
+            await using var context = _contextFactory.CreateContext(false);
+
+            var client = await context.Clients
+                .Where(client => client.ClientId == clientId)
+                .Select(client => new { client.Level, client.Active })
+                .FirstOrDefaultAsync();
+
+            if (client is null)
+            {
+                return null;
+            }
+
+            var revokedValue = await context.EFMeta
+                .Where(meta => meta.ClientId == clientId && meta.Key == WebfrontSessionsRevokedMetaKey)
+                .Select(meta => meta.Value)
+                .FirstOrDefaultAsync();
+
+            DateTime? revokedAt = DateTime.TryParse(revokedValue, CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var parsed)
+                ? parsed.ToUniversalTime()
+                : null;
+
+            return new WebfrontSessionState(client.Level, client.Active, revokedAt);
+        }
+
+        /// <summary>
+        ///     invalidates every webfront session of the client issued at or before <paramref name="revokedAtUtc" />.
+        ///     persisted so the revocation survives a restart
+        /// </summary>
+        public async Task RevokeWebfrontSessions(int clientId, DateTime revokedAtUtc)
+        {
+            await using var context = _contextFactory.CreateContext(true);
+
+            var value = revokedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+            var existing = await context.EFMeta
+                .FirstOrDefaultAsync(meta => meta.ClientId == clientId && meta.Key == WebfrontSessionsRevokedMetaKey);
+
+            if (existing is null)
+            {
+                context.EFMeta.Add(new EFMeta
+                {
+                    ClientId = clientId,
+                    Key = WebfrontSessionsRevokedMetaKey,
+                    Value = value
+                });
+            }
+            else
+            {
+                existing.Value = value;
+                existing.Updated = DateTime.UtcNow;
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        ///     removes the client's second factor and records who did it in the audit log
+        /// </summary>
+        public async Task DisableTwoFactor(int targetClientId, int originClientId)
+        {
+            await using var context = _contextFactory.CreateContext(true);
+
+            var client = await context.Clients.FirstAsync(client => client.ClientId == targetClientId);
+            client.TwoFactorSecret = null;
+            client.TwoFactorBackupCodes = null;
+
+            context.EFChangeHistory.Add(new EFChangeHistory
+            {
+                OriginEntityId = originClientId,
+                TargetEntityId = targetClientId,
+                Comment = "Disabled two-factor authentication",
+                TypeOfChange = EFChangeHistory.ChangeType.Command,
+                CurrentValue = "2FA disabled"
+            });
+
+            await context.SaveChangesAsync();
+        }
+
         public async Task<EFClient> GetClientForLogin(int clientId)
         {
             await using var context = _contextFactory.CreateContext(false);

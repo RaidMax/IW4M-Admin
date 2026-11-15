@@ -182,6 +182,7 @@ namespace WebfrontCore.Controllers.API
         /// <response code="401">Invalid credentials, or 2FA code required/invalid.</response>
         /// <response code="500">Unexpected server error.</response>
         [HttpPost("{clientId:int}/login")]
+        [WebfrontCore.Core.Auth.LoginAttemptLimit]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -193,9 +194,7 @@ namespace WebfrontCore.Controllers.API
                 return Ok();
             }
 
-            var ip = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var val)
-                ? val.ToString()
-                : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP Unavailable";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP Unavailable";
 
             try
             {
@@ -242,9 +241,7 @@ namespace WebfrontCore.Controllers.API
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.Servers.First(),
-                    Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var gameStringValues)
-                        ? gameStringValues.ToString()
-                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    Data = HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
 
                 Manager.QueueEvent(new LogoutEvent
@@ -252,9 +249,7 @@ namespace WebfrontCore.Controllers.API
                     Source = this,
                     LoginSource = LoginEvent.LoginSourceType.Webfront,
                     EntityId = Client.ClientId.ToString(),
-                    Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var logoutStringValues)
-                        ? logoutStringValues.ToString()
-                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    Identifier = HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
             }
 

@@ -522,6 +522,23 @@ function PrintPlayerRoundData( isGameOver )
     logprint( "GSE;RC;" + currentRound + "\n" );
 }
 
+// The log line format is ';'-separated and the name is the only free-text field, so a separator
+// inside a player's name would shift every field after it. Replace it.
+function SanitizeLogField( value )
+{
+    result = "";
+    for ( i = 0; i < value.size; i++ )
+    {
+        c = value[i];
+        if ( c == ";" )
+        {
+            c = "_";
+        }
+        result = result + c;
+    }
+    return result;
+}
+
 function BuildPlayerInfoString( entity )
 {
     if ( IsPlayer( entity ) )
@@ -534,6 +551,8 @@ function BuildPlayerInfoString( entity )
         team = entity.team;
         name = entity.name;
         if ( !IsDefined( name ) ) { name = "null"; }
+        name = SanitizeLogField( name );
+
         return guid + ";" + clientNumber + ";" + team + ";" + name;
     }
     // "ffffffff" not "-1" — HexNumber parser throws on signed "-1".

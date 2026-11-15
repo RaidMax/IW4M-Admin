@@ -1695,6 +1695,23 @@ ClearTrapCreditWhenIdle()
 //---- Utility/Infra ----//
 //-----------------------//
 
+// The log line format is ';'-separated and the name is the only free-text field, so a separator
+// inside a player's name would shift every field after it. Replace it.
+SanitizeLogField( value )
+{
+    result = "";
+    for ( i = 0; i < value.size; i++ )
+    {
+        c = value[i];
+        if ( c == ";" )
+        {
+            c = "_";
+        }
+        result = result + c;
+    }
+    return result;
+}
+
 BuildPlayerInfoString( entity )
 {
     if ( IsPlayer( entity ) )
@@ -1716,6 +1733,8 @@ BuildPlayerInfoString( entity )
         {
             name = "null";
         }
+
+        name = SanitizeLogField( name );
 
         return guid + ";" + clientNumber + ";" + team + ";" + name;
     }

@@ -305,6 +305,18 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
     {
         var category = data[4];
 
+        // the player name (data[3]) is the only free-text field and sits before the category. a name that
+        // contains the separator shifts every later field, so a line with more fields than its category and
+        // action ever carry is refused rather than reinterpreted. (the GSC side also strips the separator
+        // from names; this guards older scripts.)
+        var action = data.Length > 5 ? data[5] : string.Empty;
+        var maxFields = MaxZpFields(category, action);
+        if (data.Length > maxFields)
+        {
+            throw new ArgumentException(
+                $"ZP {category};{action} has {data.Length} fields, at most {maxFields} expected (separator in a player name?)");
+        }
+
         return category switch
         {
             "down" => ParseZeDown(scriptEvent, data),
@@ -322,6 +334,32 @@ public class ZombieEventParser(ILogger<ZombieEventParser> logger)
             _ => throw new ArgumentException($"Unknown ZE category: {category}")
         };
     }
+
+    /// <summary>
+    /// the most fields (after "GSE;ZP;") that the GSC scripts write for a category and action:
+    /// 4 for the player, then the category, the action and its details. must be raised when an emitter
+    /// gains a field
+    /// </summary>
+    private static int MaxZpFields(string category, string action) => (category, action) switch
+    {
+        ("down", _) => 5,
+        ("revive", "self") => 6,
+        ("revive", _) => 9,           // revive;{reviver guid;cnum;team;name}
+        ("perk", _) => 8,             // perk;buy;{perk};{cost}
+        ("powerup", _) => 7,          // powerup;grab;{powerup}
+        ("weapon", "upgrade") => 9,   // weapon;upgrade;{old};{new};{cost}
+        ("weapon", _) => 8,           // weapon;buy|abandon;{weapon};{cost}
+        ("box", "teddy") => 7,        // box;teddy;{cost}
+        ("box", _) => 8,              // box;take|pass;{weapon};{cost}
+        ("door", _) => 7,             // door;buy;{cost}
+        ("trap", _) => 8,             // trap;activate;{type};{cost}
+        ("build", _) => 7,            // build;complete;{name}
+        ("gum", "activate") => 7,     // gum;activate;{gum}
+        ("gum", _) => 8,              // gum;take|leave;{gum};{cost}
+        ("bank", _) => 7,             // bank;deposit|withdraw;{amount}
+        ("locker", _) => 7,           // locker;store|retrieve;{weapon}
+        _ => int.MaxValue
+    };
 
     // ZE;{player};bank;deposit;{amount}    — T6 Tranzit/Die Rise/Buried
     // ZE;{player};bank;withdraw;{amount}

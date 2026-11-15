@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Defensive security assurance tests. Deliberately kept out of IW4MAdmin.slnx, like the other test projects.
+       Run: dotnet test Tests/Security.Tests/Security.Tests.csproj -c Prerelease -->
+  <Import Project="../ZombieStats.Testing.props" />
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../Application/Application.csproj" />
+    <ProjectReference Include="../../Plugins/ZombieStats/ZombieStats.csproj" />
+    <Compile Include="../RegressionTests/TestSupport.cs" Link="Infrastructure/TestSupport.cs" />
+  </ItemGroup>
+</Project>

@@ -272,6 +272,28 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
         return slash > 0 ? entry[..slash] : "lib";
     }
 
+    /// <summary>
+    ///     a bundle id is used as a URL path segment (/_content/{id}/...), a cache key and a CSS scope, so it is
+    ///     limited to letters, digits, '.', '_' and '-', and may not be "." or ".."
+    /// </summary>
+    public static bool IsValidBundleId(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id) || id.Length > 128 || id is "." or "..")
+        {
+            return false;
+        }
+
+        foreach (var c in id)
+        {
+            if (!(char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static BundleManifest ReadManifest(byte[]? manifestBytes, string sourceLabel)
     {
         if (manifestBytes is null)
@@ -297,6 +319,12 @@ public sealed class PluginBundleLoader(IPluginAssetStorage assetStore) : IPlugin
         if (string.IsNullOrWhiteSpace(manifest.Id))
         {
             throw new InvalidDataException($"bundle '{sourceLabel}' manifest has no id");
+        }
+
+        if (!IsValidBundleId(manifest.Id))
+        {
+            throw new InvalidDataException(
+                $"bundle '{sourceLabel}' manifest id '{manifest.Id}' is invalid: use only letters, digits, '.', '_' and '-'");
         }
 
         if (string.IsNullOrWhiteSpace(manifest.EntryAssembly))

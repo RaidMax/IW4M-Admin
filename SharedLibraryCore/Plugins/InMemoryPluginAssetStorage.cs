@@ -37,7 +37,9 @@ public sealed class InMemoryPluginAssetStorage : IPluginAssetStorage
 
     public void RegisterPlugin(string pluginId, IReadOnlyDictionary<string, byte[]> assets)
     {
-        if (string.IsNullOrWhiteSpace(pluginId) || assets is null)
+        // the id becomes the first segment of every served path, so it must be exactly one segment;
+        // otherwise "Victim/js" + "app.js" would overwrite the "Victim" bundle's "js/app.js"
+        if (!PluginBundleLoader.IsValidBundleId(pluginId) || assets is null)
         {
             return;
         }

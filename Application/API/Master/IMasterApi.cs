@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using IW4MAdmin.Application.Plugin;
 using Refit;
@@ -63,6 +64,10 @@ public interface IMasterApi
 
     [Get("/localization/{languageTag}")]
     Task<SharedLibraryCore.Localization.Layout> GetLocalization(string languageTag);
+
+    [Get("/geolocation/{ip}")]
+    Task<SharedLibraryCore.Dtos.GeoLocationDetails> GetGeoLocation(string ip, [Query] string lang,
+        [Header("X-Instance-Id")] string instanceId, CancellationToken token = default);
 
     [Get("/plugin_subscriptions")]
     Task<IEnumerable<PluginSubscriptionContent>> GetPluginSubscription([Query] string instance_id,

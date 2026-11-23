@@ -5,8 +5,6 @@ using SharedLibraryCore.Interfaces;
 using SharedLibraryCore.Database.Models;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using Humanizer;
 using Data.Abstractions;
@@ -31,11 +29,14 @@ public class Plugin : IPluginV2
 
     private readonly WelcomeConfiguration _configuration;
     private readonly IDatabaseContextFactory _contextFactory;
+    private readonly IGeoLocationService _geoLocationService;
 
-    public Plugin(WelcomeConfiguration configuration, IDatabaseContextFactory contextFactory)
+    public Plugin(WelcomeConfiguration configuration, IDatabaseContextFactory contextFactory,
+        IGeoLocationService geoLocationService)
     {
         _configuration = configuration;
         _contextFactory = contextFactory;
+        _geoLocationService = geoLocationService;
 
         IManagementEventSubscriptions.ClientStateAuthorized += OnClientStateAuthorized;
     }
@@ -96,27 +97,20 @@ public class Plugin : IPluginV2
     }
 
     /// <summary>
-    /// makes a webrequest to determine IP origin 
+    /// looks up the IP origin using the local geolocation database
     /// </summary>
     /// <param name="ip">IP address to get location of</param>
     /// <returns></returns>
     private async Task<string> GetCountryName(string ip)
     {
-        using var wc = new HttpClient();
         try
         {
-            var response =
-                await wc.GetStringAsync(new Uri(
-                    $"http://ip-api.com/json/{ip}?lang={Utilities.CurrentLocalization.LocalizationName.Split("-").First().ToLower()}"));
+            var result = await _geoLocationService.Locate(ip);
 
-            var json = JsonDocument.Parse(response);
-            response = json.RootElement.TryGetProperty("country", out var countryElement) ? countryElement.GetString() : null;
-
-            return string.IsNullOrEmpty(response)
+            return string.IsNullOrEmpty(result?.CountryCode)
                 ? Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_COUNTRY"]
-                : response;
+                : result.Country;
         }
-
         catch
         {
             return Utilities.CurrentLocalization.LocalizationIndex["PLUGINS_WELCOME_UNKNOWN_IP"];

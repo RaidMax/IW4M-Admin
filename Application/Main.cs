@@ -656,8 +656,11 @@ namespace IW4MAdmin.Application
                 .AddSingleton<IServerDataViewer, ServerDataViewer>()
                 .AddSingleton<IServerDataCollector, ServerDataCollector>()
                 .AddTransient<IServerStateChecker, ServerStateChecker>()
-                .AddSingleton<IGeoLocationService>(
-                    new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb")))
+                .AddSingleton<IGeoLocationService>(serviceProvider =>
+                    new GeoLocationService(Path.Join(".", "Resources", "GeoLite2-Country.mmdb"),
+                        serviceProvider.GetRequiredService<IMasterApi>(),
+                        serviceProvider.GetRequiredService<ApplicationConfiguration>(),
+                        serviceProvider.GetRequiredService<ILogger<GeoLocationService>>()))
                 .AddSingleton<IAlertManager, AlertManager>()
 #pragma warning disable CS0618
                 .AddTransient<IScriptPluginTimerHelper, ScriptPluginTimerHelper>()

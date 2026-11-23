@@ -35,10 +35,10 @@
                     <span class="text-foreground">@_geoData.Isp</span>
                 }
 
-                @if (!string.IsNullOrEmpty(_geoData?.Org))
+                @if (!string.IsNullOrEmpty(_geoData?.Organization))
                 {
                     <span class="text-muted font-medium">@Localization["WEBFRONT_PROFILE_LOOKUP_ORG"]</span>
-                    <span class="text-foreground">@_geoData.Org</span>
+                    <span class="text-foreground">@_geoData.Organization</span>
                 }
 
                 @if (!string.IsNullOrEmpty(GetLocationString()))

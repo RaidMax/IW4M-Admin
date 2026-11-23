@@ -54,8 +54,6 @@ public class ServerBannerPlugin : IPluginV2
         ["iw7"] = (null, ColorLeft)
     };
 
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
-
     // listenAddress -> country code (or LocationPending while a lookup is in flight)
     private readonly ConcurrentDictionary<string, string> _serverLocationCache = new();
     // lowercase game code -> servers of that game, ordered by player count desc
@@ -66,15 +64,18 @@ public class ServerBannerPlugin : IPluginV2
     private readonly IManager _manager;
     private readonly IInteractionRegistration _interactionRegistration;
     private readonly ApplicationConfiguration _appConfig;
+    private readonly IGeoLocationService _geoLocationService;
 
     public ServerBannerPlugin(
         ILogger<ServerBannerPlugin> logger,
         IManager manager,
-        IInteractionRegistration interactionRegistration)
+        IInteractionRegistration interactionRegistration,
+        IGeoLocationService geoLocationService)
     {
         _logger = logger;
         _manager = manager;
         _interactionRegistration = interactionRegistration;
+        _geoLocationService = geoLocationService;
         _appConfig = manager.GetApplicationSettings().Configuration();
 
         IGameServerEventSubscriptions.MonitoringStarted += OnMonitoringStarted;
@@ -164,10 +165,9 @@ public class ServerBannerPlugin : IPluginV2
 
         try
         {
-            var result = (await HttpClient.GetStringAsync($"https://ipinfo.io/{lookupIp}/country", token)).Trim();
+            var result = (await _geoLocationService.Locate(lookupIp))?.CountryCode;
 
-            // a valid response is a plain country code (e.g. "US"); an error is returned as JSON
-            if (!string.IsNullOrWhiteSpace(result) && !IsJson(result))
+            if (!string.IsNullOrWhiteSpace(result))
             {
                 _serverLocationCache[server.ListenAddress] = result;
             }
@@ -282,19 +282,6 @@ public class ServerBannerPlugin : IPluginV2
     }
 
     private static string GameCode(Server server) => server.GameCode.ToString().ToLowerInvariant();
-
-    private static bool IsJson(string value)
-    {
-        try
-        {
-            using var _ = JsonDocument.Parse(value);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 
     private string BuildBannerHtml(Server server, bool isSmall)
     {

@@ -39,20 +39,13 @@ Write-Output "compiling scss files"
 
 webcompiler -r "$SolutionDir/WebfrontCore/wwwroot/css/src" -o WebfrontCore/wwwroot/css/ -m disable -z disable
 
-if (-not (Test-Path "$SolutionDir/bundle/dotnet-bundle.dll")) {
-    New-Item -ItemType Directory -Force -Path "$SolutionDir/bundle"
-    Write-Output "getting dotnet bundle"
-    Invoke-WebRequest -Uri "https://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip" -OutFile "$SolutionDir/bundle/dotnet-bundle.zip"
-    Write-Output "unzipping download"
-    Expand-Archive -Path "$SolutionDir/bundle/dotnet-bundle.zip" -DestinationPath "$SolutionDir/bundle" -Force
+# bundleconfig.json (app.min.css / app.min.js) is bundled by WebfrontCore's own BundleWebAssets target, before its
+# static web assets are resolved. Doing it here raced with WebfrontCore's build when projects built in parallel.
+
+# BUILD/Plugins is only a staging area; start clean so files from older plugin builds don't linger
+if (Test-Path "$SolutionDir/BUILD/Plugins") {
+    Remove-Item -Recurse -Force -Path "$SolutionDir/BUILD/Plugins/*"
 }
-
-Write-Output "executing dotnet-bundle"
-Set-Location "$SolutionDir/bundle"
-dotnet "dotnet-bundle.dll" clean "$SolutionDir/WebfrontCore/bundleconfig.json"
-dotnet "dotnet-bundle.dll" "$SolutionDir/WebfrontCore/bundleconfig.json"
-Set-Location $SolutionDir
-
 New-Item -ItemType Directory -Force -Path "$SolutionDir/BUILD/Plugins"
 Write-Output "building plugins"
 Set-Location "$SolutionDir/Plugins"
@@ -72,6 +65,29 @@ if (-not (Test-Path "$OutputDir/Localization")) {
 
 Write-Output "copying plugins to build dir"
 New-Item -ItemType Directory -Force -Path "$OutputDir/Plugins"
-Copy-Item -Recurse -Force -Path "$SolutionDir/BUILD/Plugins/*.dll" -Destination "$OutputDir/Plugins/"
+
+# The plugin importer loads every dll in Plugins, so stale copies of libraries can shadow the host's versions.
+# Remove dlls this script copied last time (tracked in a manifest) and any dll the host already ships,
+# but leave other files alone (e.g. third-party plugins dropped in by hand).
+$pluginManifest = "$OutputDir/Plugins/.prebuild-plugins.txt"
+$pluginDlls = Get-ChildItem -Path "$SolutionDir/BUILD/Plugins" -Filter *.dll
+$pluginDllNames = $pluginDlls | ForEach-Object { $_.Name }
+$staleDlls = @()
+if (Test-Path $pluginManifest) {
+    $staleDlls += Get-Content $pluginManifest
+}
+$staleDlls += Get-ChildItem -Path "$OutputDir/Plugins" -Filter *.dll |
+    Where-Object { Test-Path (Join-Path $OutputDir $_.Name) } |
+    ForEach-Object { $_.Name }
+$staleDlls | Sort-Object -Unique | Where-Object { $pluginDllNames -notcontains $_ } | ForEach-Object {
+    $stalePath = Join-Path "$OutputDir/Plugins" $_
+    if (Test-Path $stalePath) {
+        Write-Output "removing stale plugin file $_"
+        Remove-Item -Force -Path $stalePath
+    }
+}
+
+$pluginDlls | Copy-Item -Force -Destination "$OutputDir/Plugins/"
+$pluginDllNames | Set-Content -Path $pluginManifest
 Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.js" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue
 Copy-Item -Recurse -Force -Path "$SolutionDir/Plugins/ScriptPlugins/*.cs" -Destination "$OutputDir/Plugins/" -ErrorAction SilentlyContinue

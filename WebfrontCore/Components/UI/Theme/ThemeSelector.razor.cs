@@ -12,6 +12,7 @@ public partial class ThemeSelector
     [Inject] public NavigationManager NavigationManager { get; set; }
     [Inject] public ApplicationConfiguration AppConfig { get; set; }
     [Inject] public AppState AppState { get; set; }
+    private bool _disposed;
     private bool _isOpen;
     private string _preset;
     private string _primaryPalette;
@@ -46,25 +47,29 @@ public partial class ThemeSelector
             await LoadFromStorage();
             await ApplyTheme();
             NavigationManager.LocationChanged += OnLocationChanged;
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
     private async void OnLocationChanged(object? sender,
         Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         try
         {
             await ApplyTheme();
         }
-        catch
-        {
-            /* ignore during dispose */
-        }
+        catch (JSDisconnectedException) { }
+        catch (ObjectDisposedException) { }
     }
 
     public void Dispose()
     {
+        _disposed = true;
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 
@@ -187,29 +192,39 @@ public partial class ThemeSelector
 
     private async Task ApplyTheme()
     {
-        var settings = new
+        if (_disposed)
         {
-            preset = _preset,
-            primaryColorMode = _primaryPalette == "custom" ? 0 : 1,
-            primaryPalette = _primaryPalette,
-            primaryHue = _primaryHue,
-            primarySaturation = _primarySaturation,
-            primaryLightness = _primaryLightness,
-            secondaryColorMode = _secondaryPalette == "custom" ? 0 : 1,
-            secondaryPalette = _secondaryPalette,
-            secondaryHue = _secondaryHue,
-            secondarySaturation = _secondarySaturation,
-            secondaryLightness = _secondaryLightness
-        };
-
-        // Save BEFORE apply to prevent MutationObserver race condition
-        // (observer loads from localStorage and would revert to old settings)
-        if (!AppConfig.Webfront.PreventUserCustomization)
-        {
-            await JSRuntime.InvokeVoidAsync("themeManager.save", settings);
+            return;
         }
 
-        await JSRuntime.InvokeVoidAsync("themeManager.apply", settings);
+        try
+        {
+            var settings = new
+            {
+                preset = _preset,
+                primaryColorMode = _primaryPalette == "custom" ? 0 : 1,
+                primaryPalette = _primaryPalette,
+                primaryHue = _primaryHue,
+                primarySaturation = _primarySaturation,
+                primaryLightness = _primaryLightness,
+                secondaryColorMode = _secondaryPalette == "custom" ? 0 : 1,
+                secondaryPalette = _secondaryPalette,
+                secondaryHue = _secondaryHue,
+                secondarySaturation = _secondarySaturation,
+                secondaryLightness = _secondaryLightness
+            };
+
+            // Save BEFORE apply to prevent MutationObserver race condition
+            // (observer loads from localStorage and would revert to old settings)
+            if (!AppConfig.Webfront.PreventUserCustomization)
+            {
+                await JSRuntime.InvokeVoidAsync("themeManager.save", settings);
+            }
+
+            await JSRuntime.InvokeVoidAsync("themeManager.apply", settings);
+        }
+        catch (JSDisconnectedException) { }
+        catch (ObjectDisposedException) { }
     }
 
     private async Task ResetToDefaults()

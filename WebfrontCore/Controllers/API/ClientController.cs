@@ -9,6 +9,7 @@ using SharedLibraryCore;
 using SharedLibraryCore.Events.Management;
 using SharedLibraryCore.Dtos.Meta.Responses;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
+using WebfrontCore.Core.OpenApi;
 using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 using WebfrontCore.Controllers.API.Models;
@@ -16,10 +17,13 @@ using WebfrontCore.Controllers.API.Models;
 namespace WebfrontCore.Controllers.API
 {
     /// <summary>
-    /// api controller for client operations
+    /// Player (client) lookups, profile and meta data, plus login/logout for the web session cookie.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Tags("Clients")]
+    [Produces("application/json")]
+    [TagDescription("Player (client) lookups, profile and meta data, plus login/logout for the web session cookie.")]
     public class ClientController(
         ILogger<ClientController> logger,
         IManager manager,
@@ -28,6 +32,14 @@ namespace WebfrontCore.Controllers.API
     {
         private readonly ILogger _logger = logger;
 
+        /// <remarks>
+        /// Searches for clients matching the supplied criteria (name, IP, GUID, etc.).
+        /// At least one search field must be provided, otherwise a 400 is returned.
+        /// </remarks>
+        /// <param name="request">Search criteria and pagination.</param>
+        /// <response code="200">Matching clients returned.</response>
+        /// <response code="400">No criteria supplied, or request validation failed.</response>
+        /// <response code="500">Unexpected server error.</response>
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -64,6 +76,12 @@ namespace WebfrontCore.Controllers.API
             }
         }
 
+        /// <remarks>
+        /// Returns clients with elevated permission levels (Trusted and above), grouped by permission.
+        /// Used to render the "Privileged Clients" page.
+        /// </remarks>
+        /// <response code="200">Privileged clients returned, grouped by permission level.</response>
+        /// <response code="403">Caller lacks <c>Permissions.PrivilegedClientsPage.Read</c>.</response>
         [HttpGet("privileged")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Authorize(Policy = "Permissions.PrivilegedClientsPage.Read")]
@@ -73,6 +91,14 @@ namespace WebfrontCore.Controllers.API
             return Ok(adminsDict);
         }
 
+        /// <remarks>
+        /// Returns summary information for a single client — current name, level, aliases,
+        /// and recent connection details. For full profile data use <c>/api/client/{id}/profile</c>.
+        /// </remarks>
+        /// <param name="clientId">IW4MAdmin client identifier.</param>
+        /// <response code="200">Client info returned.</response>
+        /// <response code="400">Invalid client id.</response>
+        /// <response code="500">Unexpected server error.</response>
         [HttpGet("{clientId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -91,8 +117,16 @@ namespace WebfrontCore.Controllers.API
             }
         }
 
+        /// <remarks>
+        /// Returns the full player profile — aliases, IP history, meta entries, level, stats summary,
+        /// and connection history. Meta entries can be filtered to a single category with <c>metaFilterType</c>.
+        /// </remarks>
+        /// <param name="clientId">IW4MAdmin client identifier.</param>
+        /// <param name="metaFilterType">Optional meta category filter (e.g. <c>Information</c>, <c>QuickMessage</c>).</param>
+        /// <response code="200">Profile returned.</response>
+        /// <response code="404">Client does not exist.</response>
         [HttpGet("{clientId:int}/profile")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType<PlayerInfo>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PlayerInfo>> GetProfileAsync([FromRoute] int clientId,
             [FromQuery] MetaType? metaFilterType)
@@ -108,8 +142,19 @@ namespace WebfrontCore.Controllers.API
             }
         }
 
+        /// <remarks>
+        /// Returns a paginated feed of meta entries for a client (penalties, messages, connections,
+        /// and plugin-contributed entries). Used to render the profile timeline.
+        /// </remarks>
+        /// <param name="clientId">IW4MAdmin client identifier.</param>
+        /// <param name="count">Page size.</param>
+        /// <param name="offset">Pagination offset.</param>
+        /// <param name="startAt">Optional Unix timestamp (ms) — return entries older than this.</param>
+        /// <param name="metaType">Optional meta category filter.</param>
+        /// <param name="token">Request cancellation token.</param>
+        /// <response code="200">Meta entries returned.</response>
         [HttpGet("{clientId:int}/meta")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType<IEnumerable<BaseMetaResponse>>(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<BaseMetaResponse>>> GetMetaAsync([FromRoute] int clientId,
             [FromQuery] int count, [FromQuery] int offset, [FromQuery] long? startAt, [FromQuery] MetaType? metaType,
             CancellationToken token)
@@ -125,7 +170,19 @@ namespace WebfrontCore.Controllers.API
             return Ok(meta);
         }
 
+        /// <remarks>
+        /// Authenticates a client against their webfront password and, on success, issues a session cookie.
+        /// If the account has 2FA enabled, the first call returns 401 with <c>requires2FA=true</c>;
+        /// resubmit with <c>twoFactorCode</c> populated to complete login.
+        /// </remarks>
+        /// <param name="clientId">IW4MAdmin client identifier.</param>
+        /// <param name="request">Password and optional 2FA code.</param>
+        /// <response code="200">Login succeeded — session cookie issued.</response>
+        /// <response code="400">Request body missing or invalid.</response>
+        /// <response code="401">Invalid credentials, or 2FA code required/invalid.</response>
+        /// <response code="500">Unexpected server error.</response>
         [HttpPost("{clientId:int}/login")]
+        [WebfrontCore.Core.Auth.LoginAttemptLimit]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -137,9 +194,7 @@ namespace WebfrontCore.Controllers.API
                 return Ok();
             }
 
-            var ip = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var val)
-                ? val.ToString()
-                : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP Unavailable";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP Unavailable";
 
             try
             {
@@ -168,6 +223,12 @@ namespace WebfrontCore.Controllers.API
             }
         }
 
+        /// <remarks>
+        /// Signs the caller out of the current session and raises a <c>LogoutEvent</c>
+        /// so plugins (e.g. audit) can react. Safe to call when not authenticated — returns 200.
+        /// </remarks>
+        /// <response code="200">Session cleared.</response>
+        /// <response code="500">Unexpected server error.</response>
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -180,9 +241,7 @@ namespace WebfrontCore.Controllers.API
                     Origin = Client,
                     Type = GameEvent.EventType.Logout,
                     Owner = Manager.Servers.First(),
-                    Data = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var gameStringValues)
-                        ? gameStringValues.ToString()
-                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    Data = HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
 
                 Manager.QueueEvent(new LogoutEvent
@@ -190,9 +249,7 @@ namespace WebfrontCore.Controllers.API
                     Source = this,
                     LoginSource = LoginEvent.LoginSourceType.Webfront,
                     EntityId = Client.ClientId.ToString(),
-                    Identifier = HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var logoutStringValues)
-                        ? logoutStringValues.ToString()
-                        : HttpContext.Connection.RemoteIpAddress?.ToString()
+                    Identifier = HttpContext.Connection.RemoteIpAddress?.ToString()
                 });
             }
 

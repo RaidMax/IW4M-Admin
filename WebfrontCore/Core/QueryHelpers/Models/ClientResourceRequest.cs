@@ -6,7 +6,12 @@ namespace WebfrontCore.Core.QueryHelpers.Models;
 
 public class ClientResourceRequest : ClientPaginationRequest
 {
-    public string? ClientName { get; set; }
+    public string? ClientName
+    {
+        get;
+        set => field = value?.Trim();
+    }
+
     public bool IsExactClientName { get; set; }
     public string? ClientIp { get; set; }
     public bool IsExactClientIp { get; set; }

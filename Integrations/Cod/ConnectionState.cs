@@ -20,5 +20,6 @@ namespace Integrations.Cod
         public readonly SemaphoreSlim OnComplete = new(1, 1);
         public List<byte[]> ReceivedBytes { get; } = new();
         public DateTime LastQuery { get; set; } = DateTime.Now;
+        public TimeSpan? LastRtt { get; set; }
     }
 }

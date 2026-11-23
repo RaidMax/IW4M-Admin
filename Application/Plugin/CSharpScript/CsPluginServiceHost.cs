@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
 using SharedLibraryCore.Interfaces;
+using IW4MAdmin.Application.EventParsers;
+using IW4MAdmin.Application.RConParsers;
 
 #nullable enable
 
@@ -22,6 +24,9 @@ namespace IW4MAdmin.Application.Plugin.CSharpScript;
 public class CsPluginServiceHost : ICsPluginServiceHost
 {
     private readonly ConcurrentDictionary<string, CsPluginInstance> _plugins = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, List<string>> _parserFilesByPath = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, IRConParser> _loadedRConParsers = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, IEventParser> _loadedEventParsers = new(StringComparer.Ordinal);
     private readonly CsPluginCompiler _compiler;
     private readonly CsPluginFileWatcher _fileWatcher;
     private readonly CsPluginCommandRegistrar _commandRegistrar;
@@ -56,6 +61,12 @@ public class CsPluginServiceHost : ICsPluginServiceHost
                 .ToList();
         }
     }
+
+    /// <inheritdoc />
+    public IReadOnlyList<IRConParser> LoadedRConParsers => _loadedRConParsers.Values.ToList();
+
+    /// <inheritdoc />
+    public IReadOnlyList<IEventParser> LoadedEventParsers => _loadedEventParsers.Values.ToList();
 
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -94,7 +105,7 @@ public class CsPluginServiceHost : ICsPluginServiceHost
     private async Task OnFileChanged(string filePath)
     {
         // Check if plugin is already loaded
-        var isAlreadyLoaded = _plugins.ContainsKey(filePath);
+        var isAlreadyLoaded = _plugins.ContainsKey(filePath) || _parserFilesByPath.ContainsKey(filePath);
 
         if (isAlreadyLoaded)
         {
@@ -131,17 +142,40 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             var loadContext = new CsPluginLoadContext();
             var assembly = await _compiler.CompileFromFile(pluginPath, loadContext);
 
-            // Find the IPluginV2 implementation
-            var pluginType = assembly.GetTypes()
-                .FirstOrDefault(t =>
-                    t is { IsInterface: false, IsAbstract: false } &&
-                    t.GetInterface(nameof(IPluginV2)) != null);
+            var loadableTypes = assembly.GetTypes()
+                .Where(t => t is { IsInterface: false, IsAbstract: false })
+                .ToList();
 
+            // A .cs file may contribute a plugin (IPluginV2), one or more parser
+            // definitions (IParserDefinition), or both. The host materializes parser
+            // definitions into concrete parsers it owns; the manager projects them.
+            var pluginType = loadableTypes
+                .FirstOrDefault(t => t.GetInterface(nameof(IPluginV2)) != null);
+            var parserTypes = loadableTypes
+                .Where(t => t.GetInterface(nameof(IParserDefinition)) != null)
+                .ToList();
+
+            if (pluginType is null && parserTypes.Count == 0)
+            {
+                // Not necessarily an error: the file may be a work-in-progress that does not yet
+                // implement either contract. Skip it rather than crashing the load pass.
+                var availableTypes = string.Join(", ", assembly.GetTypes().Select(t => t.FullName));
+                _logger.LogWarning(
+                    "[{FileName}] No IPluginV2 or IParserDefinition implementation found; skipping. Available types: {AvailableTypes}",
+                    fileName, availableTypes);
+                return;
+            }
+
+            if (parserTypes.Count > 0)
+            {
+                LoadParsers(pluginPath, fileName, parserTypes);
+            }
+
+            // Parser-only file: nothing more to do. The parser configuration is copied into
+            // host-owned parser instances, so the plugin assembly does not need to stay loaded.
             if (pluginType is null)
             {
-                var availableTypes = string.Join(", ", assembly.GetTypes().Select(t => t.FullName));
-                throw new InvalidOperationException(
-                    $"No IPluginV2 implementation found. Available types: {availableTypes}");
+                return;
             }
 
             _logger.LogDebug("Found plugin type: {TypeName}", pluginType.FullName);
@@ -173,6 +207,17 @@ public class CsPluginServiceHost : ICsPluginServiceHost
 
     private async Task UnloadPluginAsync(string pluginPath)
     {
+        if (_parserFilesByPath.TryRemove(pluginPath, out var parserNames))
+        {
+            foreach (var name in parserNames)
+            {
+                _loadedRConParsers.TryRemove(name, out _);
+                _loadedEventParsers.TryRemove(name, out _);
+                _logger.LogInformation("[{FileName}] Unloaded parser: {ParserName}",
+                    Path.GetFileName(pluginPath), name);
+            }
+        }
+
         if (!_plugins.TryRemove(pluginPath, out var instance))
         {
             return;
@@ -201,6 +246,36 @@ public class CsPluginServiceHost : ICsPluginServiceHost
             _logger.LogWarning("[{FileName}] Context may not have fully unloaded - check for lingering references",
                 fileName);
         }
+    }
+
+    /// <summary>
+    /// Materializes each parser definition into a concrete RCon/event parser the host owns,
+    /// replacing any parser already loaded under the same name. The manager projects these via
+    /// <see cref="LoadedRConParsers" />/<see cref="LoadedEventParsers" />; the host never mutates
+    /// manager state directly.
+    /// </summary>
+    private void LoadParsers(string pluginPath, string fileName, IEnumerable<Type> parserTypes)
+    {
+        var loadedNames = new List<string>();
+
+        foreach (var parserType in parserTypes)
+        {
+            var definition = (IParserDefinition)ActivatorUtilities.CreateInstance(_rootServiceProvider, parserType);
+
+            var rconParser = ActivatorUtilities.CreateInstance<DynamicRConParser>(_rootServiceProvider);
+            var eventParser = ActivatorUtilities.CreateInstance<DynamicEventParser>(_rootServiceProvider);
+            rconParser.Name = definition.Name;
+            eventParser.Name = definition.Name;
+            definition.Configure(rconParser, eventParser);
+
+            _loadedRConParsers[definition.Name] = rconParser;
+            _loadedEventParsers[definition.Name] = eventParser;
+
+            loadedNames.Add(definition.Name);
+            _logger.LogInformation("[{FileName}] Loaded parser: {ParserName}", fileName, definition.Name);
+        }
+
+        _parserFilesByPath[pluginPath] = loadedNames;
     }
 
     /// <summary>

@@ -30,6 +30,7 @@ using Humanizer;
 using IW4MAdmin.Application.Alerts;
 using IW4MAdmin.Application.Commands;
 using IW4MAdmin.Application.Plugin.Script;
+using IW4MAdmin.Application.Services;
 using IW4MAdmin.Plugins.Stats.Helpers;
 using Microsoft.EntityFrameworkCore;
 using SharedLibraryCore.Alerts;
@@ -57,6 +58,7 @@ namespace IW4MAdmin
         private EFServer _cachedDatabaseServer;
         private readonly StatManager _statManager;
         private readonly ApplicationConfiguration _appConfig;
+        private ServerLatencyMonitoringService _latencyMonitoringService;
 
         public override bool IsErrorState => _stateChecker.IsInErrorState();
 
@@ -294,6 +296,16 @@ namespace IW4MAdmin
                         .Select(plugin => CreatePluginTask(plugin, E));
                     
                     await Task.WhenAll(pluginTasks);
+                }
+
+                catch (Exception e) when (PluginApiCompatibility.IsMissingApiException(e))
+                {
+                    PluginApiCompatibility.NotifyNewerApiRequired(
+                        PluginApiCompatibility.TryGetOffendingAssembly(e));
+                    if (E.Origin != null && E.Type == GameEvent.EventType.Command)
+                    {
+                        E.Origin.Tell(_translationLookup["SERVER_ERROR_COMMAND_INGAME"]);
+                    }
                 }
 
                 catch (Exception e)
@@ -1554,6 +1566,10 @@ namespace IW4MAdmin
             await _serverCache.InitializeAsync();
             _ = Task.Run(() => LogEvent.PollForChanges());
 
+            _latencyMonitoringService = new ServerLatencyMonitoringService(this, _appConfig, ServerLogger);
+            LatencyMetrics = _latencyMonitoringService.LatencyMetrics;
+            _latencyMonitoringService.Start(Manager.CancellationToken);
+
             if (!Utilities.IsDevelopment)
             {
                 Broadcast(loc["BROADCAST_ONLINE"]);
@@ -1760,7 +1776,8 @@ namespace IW4MAdmin
                 Offender = targetClient,
                 Offense = reason,
                 Punisher = originClient,
-                IsEvadedOffense = isEvade
+                IsEvadedOffense = isEvade,
+                Link = targetClient.AliasLink
             };
 
             ServerLogger.LogDebug("Creating ban penalty for {TargetClient}", targetClient.ToString());

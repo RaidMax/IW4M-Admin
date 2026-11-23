@@ -51,6 +51,8 @@ dotnet dotnet-bundle.dll clean "$SolutionDir/WebfrontCore/bundleconfig.json"
 dotnet dotnet-bundle.dll "$SolutionDir/WebfrontCore/bundleconfig.json"
 cd "$SolutionDir" || exit
 
+# BUILD/Plugins is only a staging area; start clean so files from older plugin builds don't linger
+rm -rf "$SolutionDir/BUILD/Plugins"
 mkdir -p "$SolutionDir/BUILD/Plugins"
 echo building plugins
 cd "$SolutionDir/Plugins" || exit 
@@ -71,6 +73,47 @@ fi
 
 echo copying plugins to build dir
 mkdir -p "$OutputDir/Plugins"
-cp -r "$SolutionDir/BUILD/Plugins/*.dll" "$OutputDir/Plugins/" 2>/dev/null || true
-cp -r "$SolutionDir/Plugins/ScriptPlugins/*.js" "$OutputDir/Plugins/" 2>/dev/null || true
-cp -r "$SolutionDir/Plugins/ScriptPlugins/*.cs" "$OutputDir/Plugins/" 2>/dev/null || true
+
+# The plugin importer loads every dll in Plugins, so stale copies of libraries can shadow the host's versions.
+# Remove dlls this script copied last time (tracked in a manifest) and any dll the host already ships,
+# but leave other files alone (e.g. third-party plugins dropped in by hand).
+pluginManifest="$OutputDir/Plugins/.prebuild-plugins.txt"
+pluginDllNames=()
+for dll in "$SolutionDir"/BUILD/Plugins/*.dll; do
+    [ -f "$dll" ] && pluginDllNames+=("$(basename "$dll")")
+done
+
+staleDlls=()
+if [ -f "$pluginManifest" ]; then
+    while IFS= read -r name || [ -n "$name" ]; do
+        name="${name%$'\r'}"
+        [ -n "$name" ] && staleDlls+=("$name")
+    done < "$pluginManifest"
+fi
+for dll in "$OutputDir"/Plugins/*.dll; do
+    [ -f "$dll" ] || continue
+    name="$(basename "$dll")"
+    [ -f "$OutputDir/$name" ] && staleDlls+=("$name")
+done
+
+if [ ${#staleDlls[@]} -gt 0 ]; then
+    printf '%s\n' "${staleDlls[@]}" | sort -u | while IFS= read -r name; do
+        case "$name" in */*|..|.) continue ;; esac
+        if [ ${#pluginDllNames[@]} -gt 0 ] && printf '%s\n' "${pluginDllNames[@]}" | grep -qxF -- "$name"; then
+            continue
+        fi
+        if [ -f "$OutputDir/Plugins/$name" ]; then
+            echo "removing stale plugin file $name"
+            rm -f -- "$OutputDir/Plugins/$name"
+        fi
+    done
+fi
+
+if [ ${#pluginDllNames[@]} -gt 0 ]; then
+    cp -f "$SolutionDir"/BUILD/Plugins/*.dll "$OutputDir/Plugins/"
+    printf '%s\n' "${pluginDllNames[@]}" > "$pluginManifest"
+else
+    : > "$pluginManifest"
+fi
+cp -f "$SolutionDir"/Plugins/ScriptPlugins/*.js "$OutputDir/Plugins/" 2>/dev/null || true
+cp -f "$SolutionDir"/Plugins/ScriptPlugins/*.cs "$OutputDir/Plugins/" 2>/dev/null || true

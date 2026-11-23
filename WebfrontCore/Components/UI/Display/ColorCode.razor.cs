@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 
 namespace WebfrontCore.Components.UI.Display;
@@ -23,13 +24,13 @@ public partial class ColorCode
 
         if (!_allow)
         {
-            return StripColors(cleanValue);
+            return WebUtility.HtmlEncode(StripColors(cleanValue));
         }
 
         var matches = Regex.Matches(cleanValue, @"\^([0-9]|\:)([^\^]*)");
         if (matches.Count <= 1)
         {
-            return StripColors(cleanValue);
+            return WebUtility.HtmlEncode(StripColors(cleanValue));
         }
 
         var sb = new System.Text.StringBuilder();
@@ -37,7 +38,7 @@ public partial class ColorCode
         {
             var colorCodeChar = match.Groups[1].ToString().Last();
             var code = (colorCodeChar >= 48 && colorCodeChar <= 57) ? colorCodeChar.ToString() : ((int)colorCodeChar).ToString();
-            var text = match.Groups[2].ToString();
+            var text = WebUtility.HtmlEncode(match.Groups[2].ToString());
 
             sb.Append($"<span class='text-color-code-{code}'>{text}</span>");
         }

@@ -21,6 +21,8 @@
         <Configurations>Debug;Release;Prerelease</Configurations>
         <ImplicitUsings>true</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -44,9 +46,11 @@
     <ItemGroup>
         <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
         <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="10.0.1" />
-        <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.71" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.ConcurrencyLimiter" Version="10.0.15" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
+        <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="3.0.114" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.23" />
     </ItemGroup>
 
     <ItemGroup>
@@ -100,13 +104,62 @@
         <Exec Condition="$([MSBuild]::IsOSPlatform('Linux'))" Command="chmod +x $(TailwindExe)"/>
     </Target>
 
-    <Target Name="Tailwind" BeforeTargets="Build" DependsOnTargets="DownloadTailwind" Condition="'$(Configuration)' == 'Debug' OR '$(RunTailwind)' == 'true'">
+    <!-- Runs before BeforeBuild (i.e. before static web asset discovery/compression) so the generated css exists and
+         is stable by the time the static web assets pipeline looks at wwwroot. -->
+    <Target Name="Tailwind" BeforeTargets="BeforeBuild" DependsOnTargets="DownloadTailwind" Condition="'$(Configuration)' == 'Debug' OR '$(RunTailwind)' == 'true'">
         <PropertyGroup>
             <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(ProjectDir)Tools\tailwindcss.exe</TailwindExe>
             <TailwindExe Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(ProjectDir)Tools/tailwindcss</TailwindExe>
         </PropertyGroup>
         <Exec Command="$(TailwindExe) -i wwwroot/css/src/app.css -o wwwroot/css/app.css"/>
     </Target>
+
+    <!-- Bundles/minifies bundleconfig.json outputs (wwwroot/css/app.min.css, wwwroot/js/app.min.js) as part of this
+         project's own build, before static web asset discovery. Doing it here (instead of from another project's
+         pre-build) means nothing else rewrites these files while this project resolves/compresses its static assets. -->
+    <PropertyGroup>
+        <DotnetBundleDir>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'bundle'))</DotnetBundleDir>
+        <DotnetBundleUrl>https://raidmax.org/IW4MAdmin/res/dotnet-bundle.zip</DotnetBundleUrl>
+    </PropertyGroup>
+
+    <Target Name="DownloadDotnetBundle" Condition="!Exists('$(DotnetBundleDir)dotnet-bundle.dll')">
+        <DownloadFile SourceUrl="$(DotnetBundleUrl)" DestinationFolder="$(DotnetBundleDir)" DestinationFileName="dotnet-bundle.zip"/>
+        <Unzip SourceFiles="$(DotnetBundleDir)dotnet-bundle.zip" DestinationFolder="$(DotnetBundleDir)" OverwriteReadOnlyFiles="true"/>
+    </Target>
+
+    <Target Name="BundleWebAssets"
+            BeforeTargets="BeforeBuild"
+            DependsOnTargets="LibraryManagerRestore;Tailwind;DownloadDotnetBundle"
+            Condition="'$(Configuration)' == 'Debug' OR '$(RunBundle)' == 'true'"
+            Inputs="bundleconfig.json;@(_BundleInputFiles)"
+            Outputs="wwwroot/css/app.min.css;wwwroot/js/app.min.js">
+        <Exec Command="dotnet &quot;$(DotnetBundleDir)dotnet-bundle.dll&quot; &quot;$(MSBuildProjectDirectory)$([System.IO.Path]::DirectorySeparatorChar)bundleconfig.json&quot;"
+              WorkingDirectory="$(DotnetBundleDir)"/>
+    </Target>
+
+    <!-- On a clean tree the generated files don't exist when the wwwroot/** Content glob is evaluated, so add them
+         explicitly (whether or not BundleWebAssets was up to date) before static web assets are discovered. -->
+    <Target Name="IncludeGeneratedWebAssets" AfterTargets="BundleWebAssets" BeforeTargets="BeforeBuild"
+            Condition="'$(Configuration)' == 'Debug' OR '$(RunBundle)' == 'true' OR '$(RunTailwind)' == 'true'">
+        <ItemGroup>
+            <_GeneratedWebAssets Include="wwwroot\css\app.css" Condition="Exists('wwwroot\css\app.css')"/>
+            <_GeneratedWebAssets Include="wwwroot\css\app.min.css" Condition="Exists('wwwroot\css\app.min.css')"/>
+            <_GeneratedWebAssets Include="wwwroot\js\app.min.js" Condition="Exists('wwwroot\js\app.min.js')"/>
+            <Content Remove="@(_GeneratedWebAssets)"/>
+            <Content Include="@(_GeneratedWebAssets)" ExcludeFromSingleFile="true" CopyToPublishDirectory="PreserveNewest"/>
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <_BundleInputFiles Include="wwwroot/css/app.css"/>
+        <_BundleInputFiles Include="wwwroot/lib/chart.js/dist/Chart.min.css"/>
+        <_BundleInputFiles Include="wwwroot/lib/phosphor-icons/src/*/style.css"/>
+        <_BundleInputFiles Include="wwwroot/lib/jquery/dist/jquery.js"/>
+        <_BundleInputFiles Include="wwwroot/lib/chart.js/dist/Chart.bundle.min.js"/>
+        <_BundleInputFiles Include="wwwroot/lib/vanillajs-datepicker/dist/js/datepicker.min.js"/>
+        <_BundleInputFiles Include="wwwroot/lib/moment.js/min/moment-with-locales.js"/>
+        <_BundleInputFiles Include="wwwroot/js/*.js" Exclude="wwwroot/js/app.min.js"/>
+    </ItemGroup>
 
     <Target Name="CopyPhosphorFonts" AfterTargets="Build">
         <MakeDir Directories="wwwroot/font/phosphor"/>

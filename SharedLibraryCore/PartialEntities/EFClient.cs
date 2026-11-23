@@ -506,14 +506,26 @@ namespace SharedLibraryCore.Database.Models
                 Owner = sender.CurrentServer
             };
 
-            // enforce level restrictions
-            if (Level > sender.Level)
+            // enforce level restrictions. the target of an unban is normally Banned (the lowest level), so the
+            // target comparison alone lets every sender through; the sender must also hold the level the unban
+            // command requires, since callers such as the web unban route do not pass through the command gate
+            if (Level > sender.Level || sender.Level < RequiredUnbanLevel(sender.CurrentServer?.Manager))
             {
                 e.FailReason = GameEvent.EventFailReason.Permission;
             }
 
             sender.CurrentServer.Manager.AddEvent(e);
             return e;
+        }
+
+        /// <summary>
+        ///     the configured permission level of the unban command, or its default when it is not registered
+        /// </summary>
+        public static Permission RequiredUnbanLevel(Interfaces.IManager manager)
+        {
+            var unbanCommand = manager?.Commands?.FirstOrDefault(command =>
+                command.Name.Equals("unban", StringComparison.OrdinalIgnoreCase));
+            return unbanCommand?.Permission ?? Permission.SeniorAdmin;
         }
 
         /// <summary>

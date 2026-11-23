@@ -53,8 +53,19 @@ namespace IW4MAdmin.Application
         public DateTime StartTime { get; private set; }
         public string Version => Assembly.GetEntryAssembly().GetName().Version.ToString();
 
-        public IList<IRConParser> AdditionalRConParsers { get; }
-        public IList<IEventParser> AdditionalEventParsers { get; }
+        // base parsers are owned by the manager; .cs parser definitions are owned by the
+        // CsPluginServiceHost and projected here (resolved lazily to avoid a DI cycle:
+        // manager -> host -> CsPluginCommandRegistrar -> IManager).
+        private readonly IRConParser _baseRConParser;
+        private readonly IEventParser _baseEventParser;
+
+        public IReadOnlyList<IRConParser> AdditionalRConParsers =>
+            _serviceProvider.GetRequiredService<ICsPluginServiceHost>().LoadedRConParsers
+                .Prepend(_baseRConParser).ToList();
+
+        public IReadOnlyList<IEventParser> AdditionalEventParsers =>
+            _serviceProvider.GetRequiredService<ICsPluginServiceHost>().LoadedEventParsers
+                .Prepend(_baseEventParser).ToList();
         public IList<Func<GameEvent, bool>> CommandInterceptors { get; set; } =
             new List<Func<GameEvent, bool>>();
         public ITokenAuthentication TokenAuthenticator { get; }
@@ -89,6 +100,8 @@ namespace IW4MAdmin.Application
         private readonly IServiceProvider _serviceProvider;
         private readonly ChangeHistoryService _changeHistoryService;
         private readonly ApplicationConfiguration _appConfig;
+        private readonly SemaphoreSlim _syncSemaphore = new(1, 1);
+        private volatile ApplicationConfiguration _pendingSyncConfig;
         public ConcurrentDictionary<long, GameEvent> ProcessingEvents { get; } = new();
 
         public ApplicationManager(ILogger<ApplicationManager> logger, IMiddlewareActionHandler actionHandler, IEnumerable<IManagerCommand> commands,
@@ -113,8 +126,8 @@ namespace IW4MAdmin.Application
             _legacyConfigHandler = legacyConfigHandler;
             StartTime = DateTime.UtcNow;
             PageList = new PageList();
-            AdditionalEventParsers = new List<IEventParser> { new BaseEventParser(parserRegexFactory, logger, appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>()) };
-            AdditionalRConParsers = new List<IRConParser> { new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory) };
+            _baseEventParser = new BaseEventParser(parserRegexFactory, logger, appConfig, serviceProvider.GetRequiredService<IGameScriptEventFactory>());
+            _baseRConParser = new BaseRConParser(serviceProvider.GetRequiredService<ILogger<BaseRConParser>>(), parserRegexFactory);
             TokenAuthenticator = new TokenAuthentication();
             _logger = logger;
             _isRunningTokenSource = new CancellationTokenSource();
@@ -255,12 +268,18 @@ namespace IW4MAdmin.Application
         private Task UpdateServerStates()
         {
             var index = 0;
-            return Task.WhenAll(_servers.Values.Select(server =>
+            var serverTasks = _servers.Values.Select(server =>
             {
                 var thisIndex = index;
                 Interlocked.Increment(ref index);
                 return ProcessUpdateHandler(server, thisIndex);
-            }));
+            }).ToList();
+
+            // Prevent Task.WhenAll from completing when all servers are dynamically removed,
+            // which would cause Start() to kill the event handler prematurely.
+            serverTasks.Add(Task.Delay(Timeout.Infinite, _isRunningTokenSource.Token));
+
+            return Task.WhenAll(serverTasks);
         }
 
         private async Task ProcessUpdateHandler(Server server, int index)
@@ -366,6 +385,11 @@ namespace IW4MAdmin.Application
                     {
                         await plugin.OnLoadAsync(this);
                     }
+                }
+
+                catch (Exception ex) when (PluginApiCompatibility.IsMissingApiException(ex))
+                {
+                    PluginApiCompatibility.NotifyNewerApiRequired(plugin.GetType().Assembly, plugin.Name);
                 }
 
                 catch (Exception ex)
@@ -702,23 +726,49 @@ namespace IW4MAdmin.Application
         public async Task Start()
         {
             _eventHandlerTokenSource = new CancellationTokenSource();
-            
+
             var eventHandlerThread = new Thread(() =>
             {
                 _coreEventHandler.StartProcessing(_eventHandlerTokenSource.Token);
             })
             {
-                Name = nameof(CoreEventHandler)
+                Name = nameof(CoreEventHandler),
+                IsBackground = true
             };
 
             eventHandlerThread.Start();
-            await UpdateServerStates();
-            _eventHandlerTokenSource.Cancel();
-            eventHandlerThread.Join();
+            try
+            {
+                await UpdateServerStates();
+            }
+            catch (OperationCanceledException)
+            {
+                // shutdown sentinel in UpdateServerStates faults Task.WhenAll on cancellation;
+                // swallow so the cleanup below still runs
+            }
+            finally
+            {
+                _eventHandlerTokenSource.Cancel();
+                eventHandlerThread.Join();
+            }
         }
 
         public async Task Stop()
         {
+            // Detach the config-watcher callback before cancelling the token so a
+            // concurrent file change can't re-enter SyncServersWithConfigurationAsync
+            // on a manager that's already shutting down. The watcher and handler are
+            // owned by the DI container and will be replaced on restart.
+            ConfigHandler.Updated -= SyncServersWithConfigurationAsync;
+            try
+            {
+                _watcher.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error disposing configuration watcher during shutdown");
+            }
+
             foreach (var plugin in Plugins.Where(plugin => !plugin.IsParser))
             {
                 try
@@ -740,7 +790,7 @@ namespace IW4MAdmin.Application
         {
             IsRestartRequested = true;
             await Stop();
-            
+
             using var subscriptionTimeoutToken = new CancellationTokenSource();
             subscriptionTimeoutToken.CancelAfter(Utilities.DefaultCommandTimeout);
 
@@ -749,12 +799,13 @@ namespace IW4MAdmin.Application
             IGameEventSubscriptions.ClearEventInvocations();
             IGameServerEventSubscriptions.ClearEventInvocations();
             IManagementEventSubscriptions.ClearEventInvocations();
-            
-            _isRunningTokenSource.Dispose();
-            _isRunningTokenSource = new CancellationTokenSource();
-            
-            _eventHandlerTokenSource.Dispose();
-            _eventHandlerTokenSource = new CancellationTokenSource();
+
+            // Token sources are deliberately NOT disposed/recreated here. Start() is still
+            // awaiting UpdateServerStates on _isRunningTokenSource, and the event handler
+            // thread is still reading _eventHandlerTokenSource.Token. Disposing either one
+            // races with the unwind in Start(). LaunchAsync constructs a fresh
+            // ApplicationManager via the DI container on its restart loop, so the current
+            // instance (and both CTSs) become garbage after this method returns.
         }
 
         [Obsolete]
@@ -895,8 +946,18 @@ namespace IW4MAdmin.Application
                     var serverTokenSource = new CancellationTokenSource();
                     _serverCancellationTokens[serverInstance.Id] = serverTokenSource;
                     
-                    // Add to server collection
-                    _servers[serverInstance.Id] = serverInstance;
+                    // Add to server collection (TryAdd guards against duplicate from concurrent sync)
+                    if (!_servers.TryAdd(serverInstance.Id, serverInstance))
+                    {
+                        _logger.LogWarning("Server {ServerKey} was already added by another operation, disposing duplicate", serverKey);
+                        serverTokenSource.Dispose();
+                        _serverCancellationTokens.TryRemove(serverInstance.Id, out _);
+                        if (serverInstance is IDisposable disposable)
+                        {
+                            disposable.Dispose();
+                        }
+                        return null;
+                    }
                     
                     Console.WriteLine(Utilities.CurrentLocalization.LocalizationIndex["MANAGER_MONITORING_TEXT"]
                         .FormatExt(serverInstance.Hostname.StripColors()));
@@ -1059,51 +1120,95 @@ namespace IW4MAdmin.Application
         
         private async void SyncServersWithConfigurationAsync(ApplicationConfiguration newConfig)
         {
+            // async void — any exception that escapes this method crashes the process,
+            // so every path below must swallow. The manager from a previous generation
+            // can still receive this callback after Restart() has cancelled its token
+            // (the old ConfigurationWatcher/ConfigHandler stay alive until GC), which
+            // is why the cancellation token is treated as "skip" rather than an error.
+            if (_isRunningTokenSource.IsCancellationRequested)
+            {
+                return;
+            }
+
+            _pendingSyncConfig = newConfig;
+
+            var entered = false;
             try
             {
-                _logger.LogInformation("Syncing servers with configuration file...");
-                
-                var configuredServers = newConfig?.Servers ?? [];
-                
-                // Get current running server IDs
-                var currentServerIds = _servers.Keys.ToHashSet();
-                
-                // Build configured server IDs
-                var configuredServerIds = configuredServers
-                    .Select(s => $"{s.IPAddress}:{s.Port}")
-                    .ToHashSet();
-                
-                // Find servers to remove (in current but not in config)
-                var serversToRemove = currentServerIds.Except(configuredServerIds).ToList();
-                
-                // Find servers to add (in config but not current)
-                var serversToAdd = configuredServers
-                    .Where(s => !currentServerIds.Contains($"{s.IPAddress}:{s.Port}"))
-                    .ToList();
-                
-                // Remove servers that are no longer in config
-                foreach (var serverId in serversToRemove)
+                entered = await _syncSemaphore.WaitAsync(0, CancellationToken);
+                if (!entered)
                 {
-                    _logger.LogInformation("Configuration sync: Removing server {ServerId}", serverId);
-                    _serverCancellationTokens.TryGetValue(serverId, out var serverTokenSource);
-                    await RemoveServerAsync(serverId, persistConfig: false, serverTokenSource?.Token ?? CancellationToken.None);
+                    _logger.LogDebug("Config sync already in progress, queued for re-sync");
+                    return;
                 }
-                
-                // Add new servers from config
-                foreach (var serverConfig in serversToAdd)
+
+                while (Interlocked.Exchange(ref _pendingSyncConfig, null) is { } configToSync)
                 {
-                    _logger.LogInformation("Configuration sync: Adding server {IPAddress}:{Port}", 
-                        serverConfig.IPAddress, serverConfig.Port);
-                    await AddServerAsync(serverConfig, persistConfig: false, CancellationToken.None);
+                    await ReconcileServersWithConfigAsync(configToSync);
                 }
-                
-                _logger.LogInformation("Configuration sync complete. Added: {Added}, Removed: {Removed}", 
-                    serversToAdd.Count, serversToRemove.Count);
+            }
+            catch (OperationCanceledException)
+            {
+                // manager is shutting down or being restarted — drop the sync
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error syncing servers with configuration");
             }
+            finally
+            {
+                if (entered)
+                {
+                    _syncSemaphore.Release();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Diffs running servers against the provided configuration and applies changes.
+        /// Servers present in config but not running are added; servers running but absent from config are removed.
+        /// Safe to call with an unchanged config — produces a no-op when there is no diff.
+        /// </summary>
+        private async Task ReconcileServersWithConfigAsync(ApplicationConfiguration newConfig)
+        {
+            _logger.LogInformation("Syncing servers with configuration file...");
+
+            var configuredServers = newConfig?.Servers ?? [];
+
+            // Get current running server IDs
+            var currentServerIds = _servers.Keys.ToHashSet();
+
+            // Build configured server IDs
+            var configuredServerIds = configuredServers
+                .Select(s => $"{s.IPAddress}:{s.Port}")
+                .ToHashSet();
+
+            // Find servers to remove (in current but not in config)
+            var serversToRemove = currentServerIds.Except(configuredServerIds).ToList();
+
+            // Find servers to add (in config but not current)
+            var serversToAdd = configuredServers
+                .Where(s => !currentServerIds.Contains($"{s.IPAddress}:{s.Port}"))
+                .ToList();
+
+            // Remove servers that are no longer in config
+            foreach (var serverId in serversToRemove)
+            {
+                _logger.LogInformation("Configuration sync: Removing server {ServerId}", serverId);
+                _serverCancellationTokens.TryGetValue(serverId, out var serverTokenSource);
+                await RemoveServerAsync(serverId, persistConfig: false, serverTokenSource?.Token ?? CancellationToken.None);
+            }
+
+            // Add new servers from config
+            foreach (var serverConfig in serversToAdd)
+            {
+                _logger.LogInformation("Configuration sync: Adding server {IPAddress}:{Port}",
+                    serverConfig.IPAddress, serverConfig.Port);
+                await AddServerAsync(serverConfig, persistConfig: false, CancellationToken.None);
+            }
+
+            _logger.LogInformation("Configuration sync complete. Added: {Added}, Removed: {Removed}",
+                serversToAdd.Count, serversToRemove.Count);
         }
         
         private async Task OnServerValueRequested(ServerValueRequestEvent requestEvent, CancellationToken token)

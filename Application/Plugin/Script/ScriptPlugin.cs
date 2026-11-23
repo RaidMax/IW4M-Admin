@@ -189,14 +189,16 @@ namespace IW4MAdmin.Application.Plugin.Script
                 
                 try
                 {
+                    // Probing isParser also drives dispatch: normal plugins lack the member, so the
+                    // dynamic access throws RuntimeBinderException and falls through to the config-wrapper
+                    // load path below. JavaScript parser plugins are no longer supported — parsers are
+                    // defined as .cs IParserDefinition implementations owned by the CsPluginServiceHost —
+                    // so fail loudly to prompt migration rather than silently ignoring a stale .js parser.
                     if (pluginObject.isParser)
                     {
-                        loadComplete = await OnLoadTask();
-                        IsParser = true;
-                        var eventParser = (IEventParser)_scriptEngine.Evaluate("eventParser").ToObject();
-                        var rconParser = (IRConParser)_scriptEngine.Evaluate("rconParser").ToObject();
-                        manager.AdditionalEventParsers.Add(eventParser);
-                        manager.AdditionalRConParsers.Add(rconParser);
+                        throw new PluginException(
+                            "JavaScript parser plugins are no longer supported; port the parser to a .cs IParserDefinition")
+                            { PluginFile = _fileName };
                     }
                 }
 

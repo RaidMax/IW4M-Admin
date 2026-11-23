@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -48,6 +49,8 @@ namespace Integrations.Cod
             _retryAttempts = retryAttempts;
         }
 
+        public TimeSpan? LastRtt => ActiveQueries.TryGetValue(Endpoint, out var state) ? state.LastRtt : null;
+
         public void SetConfiguration(IRConParser parser)
         {
             _parser = parser;
@@ -77,11 +80,18 @@ namespace Integrations.Cod
             }
             finally
             {
-                _log.LogDebug("Releasing OnComplete {Count}", ActiveQueries[Endpoint].OnComplete.CurrentCount);
-
-                if (ActiveQueries[Endpoint].OnComplete.CurrentCount == 0)
+                if (ActiveQueries.TryGetValue(Endpoint, out var finalState))
                 {
-                    ActiveQueries[Endpoint].OnComplete.Release();
+                    _log.LogDebug("Releasing OnComplete {Count}", finalState.OnComplete.CurrentCount);
+
+                    if (finalState.OnComplete.CurrentCount == 0)
+                    {
+                        finalState.OnComplete.Release();
+                    }
+                }
+                else
+                {
+                    _log.LogDebug("Connection state already disposed for {Endpoint}, skipping release", Endpoint);
                 }
             }
         }
@@ -241,7 +251,9 @@ namespace Integrations.Cod
                     }
 
                     waitForResponse = waitForResponse && overrideTimeout.HasValue;
+                    var rttStopwatch = Stopwatch.StartNew();
                     response = await SendPayloadAsync(socket, payload, waitForResponse, chainedTokenSource.Token);
+                    rttStopwatch.Stop();
 
                     if ((response?.Length == 0 || response[0].Length == 0) && waitForResponse)
                     {
@@ -250,6 +262,7 @@ namespace Integrations.Cod
                     }
 
                     connectionState.ConnectionAttempts = 0;
+                    connectionState.LastRtt = rttStopwatch.Elapsed;
                 }
 
                 catch (OperationCanceledException)

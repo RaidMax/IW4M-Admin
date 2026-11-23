@@ -23,5 +23,10 @@ namespace SharedLibraryCore.Interfaces
         /// </summary>
         /// <param name="config">parser</param>
         void SetConfiguration(IRConParser config);
+
+        /// <summary>
+        ///     gets the round-trip time of the last successful query
+        /// </summary>
+        TimeSpan? LastRtt { get; }
     }
 }

@@ -99,8 +99,10 @@ public class WebfrontDataService : IWebfrontDataService
         _remoteCommandService = remoteCommandService;
         _translationLookup = translationLookup;
         _appConfig = appConfig;
-        _pluginTypeNames = v1Plugins.Select(plugin => (plugin.GetType(), plugin.Name))
-            .Concat(v2Plugins.Select(plugin => (plugin.GetType(), plugin.Name)))
+        _pluginTypeNames = v1Plugins.Where(plugin => plugin is not UnavailablePlugin)
+            .Select(plugin => (plugin.GetType(), plugin.Name))
+            .Concat(v2Plugins.Where(plugin => plugin is not UnavailablePlugin)
+                .Select(plugin => (plugin.GetType(), plugin.Name)))
             .ToLookup(selector => selector.Item1, selector => selector.Name);
         _announcementService = announcementService;
         _twoFactorService = twoFactorService;
@@ -184,7 +186,9 @@ public class WebfrontDataService : IWebfrontDataService
                 ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                     server.ResolvedIpEndPoint.Address.IsInternal()
                         ? _manager.ExternalIPAddress
-                        : server.ListenAddress, server.ListenPort)
+                        : server.ListenAddress, server.ListenPort),
+                RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
+                GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
             }).ToList();
     }
 
@@ -250,7 +254,9 @@ public class WebfrontDataService : IWebfrontDataService
                 : server.ListenAddress,
             ConnectProtocolUrl = server.EventParser.URLProtocolFormat.FormatExt(
                 server.ResolvedIpEndPoint.Address.IsInternal() ? _manager.ExternalIPAddress : server.ListenAddress,
-                server.ListenPort)
+                server.ListenPort),
+            RconRoundTripMs = server.LatencyMetrics?.RconRoundTripMs,
+            GameLogPipelineMs = server.LatencyMetrics?.GameLogPipelineMs
         };
     }
 
@@ -650,7 +656,25 @@ public class WebfrontDataService : IWebfrontDataService
             meta = meta?.Where(m => !m.IsSensitive);
         }
 
-        return meta?.Cast<BaseMetaResponse>().ToList() ?? [];
+        // alias history: the whole category needs MetaAliasUpdate.Read (also when every type was requested),
+        // and the address each alias was seen from needs ClientIPAddress.Read, as everywhere else
+        var canReadAliases = permissionSet.HasPermission(WebfrontEntity.MetaAliasUpdate, WebfrontPermission.Read);
+        var canViewIp = permissionSet.HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+
+        var results = meta?
+            .Where(m => canReadAliases || m is not UpdatedAliasResponse)
+            .Cast<BaseMetaResponse>()
+            .ToList() ?? [];
+
+        if (!canViewIp)
+        {
+            foreach (var alias in results.OfType<UpdatedAliasResponse>())
+            {
+                alias.IPAddress = null;
+            }
+        }
+
+        return results;
     }
 
     public Task<ScoreboardInfo?> GetServerScoreboardAsync(string serverId)
@@ -659,6 +683,8 @@ public class WebfrontDataService : IWebfrontDataService
             .FirstOrDefault(s => s.Id == serverId);
         if (server is null)
             return Task.FromResult<ScoreboardInfo?>(null);
+
+        var canViewLevel = HasPermission(WebfrontEntity.ClientLevel, WebfrontPermission.Read);
 
         return Task.FromResult<ScoreboardInfo?>(new ScoreboardInfo
         {
@@ -687,7 +713,7 @@ public class WebfrontDataService : IWebfrontDataService
                         ? null
                         : clientData.stats.ZScore,
                     Team = clientData.client.Team,
-                    Level = clientData.client.Level
+                    Level = canViewLevel ? clientData.client.Level : Data.Models.Client.EFClient.Permission.User
                 })
                 .ToList()
         });
@@ -695,12 +721,78 @@ public class WebfrontDataService : IWebfrontDataService
 
     public async Task<ResourceQueryHelperResult<BanInfo>?> GetBansAsync(BanInfoRequest request)
     {
-        return await _banQueryHelper.QueryResource(request);
+        var results = await _banQueryHelper.QueryResource(request);
+
+        if (results is null)
+        {
+            return null;
+        }
+
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+        var canViewGuid = HasPermission(WebfrontEntity.ClientGuid, WebfrontPermission.Read);
+
+        if (canViewIp && canViewGuid)
+        {
+            return results;
+        }
+
+        foreach (var ban in results.Results)
+        {
+            if (!canViewIp)
+            {
+                ban.IPAddress = null;
+            }
+
+            if (!canViewGuid)
+            {
+                ban.NetworkId = 0;
+            }
+
+            if (ban.AttachedPenalty != null)
+            {
+                StripRelatedClientInfo(ban.AttachedPenalty.OffenderInfo, canViewIp, canViewGuid);
+                StripRelatedClientInfo(ban.AttachedPenalty.PunisherInfo, canViewIp, canViewGuid);
+            }
+
+            foreach (var associated in ban.AssociatedPenalties)
+            {
+                StripRelatedClientInfo(associated.OffenderInfo, canViewIp, canViewGuid);
+                StripRelatedClientInfo(associated.PunisherInfo, canViewIp, canViewGuid);
+            }
+        }
+
+        return results;
+    }
+
+    private static void StripRelatedClientInfo(RelatedClientInfo info, bool canViewIp, bool canViewGuid)
+    {
+        if (!canViewIp)
+        {
+            info.IPAddress = null;
+        }
+
+        if (!canViewGuid)
+        {
+            info.NetworkId = 0;
+        }
     }
 
     public async Task<IList<AuditInfo>> GetAuditLogAsync(AuditFilterRequest request)
     {
-        return await _auditRepository.ListAuditInformation(request);
+        var auditItems = await _auditRepository.ListAuditInformation(request);
+        var canViewIp = HasPermission(WebfrontEntity.ClientIPAddress, WebfrontPermission.Read);
+
+        if (canViewIp)
+        {
+            return auditItems;
+        }
+
+        foreach (var item in auditItems)
+        {
+            item.OriginIPAddress = null;
+        }
+
+        return auditItems;
     }
 
     public async Task<AuditStatistics> GetAuditStatisticsAsync(AuditFilterRequest request)
@@ -784,6 +876,10 @@ public class WebfrontDataService : IWebfrontDataService
     {
         var executor = await GetExecutorAsync();
         if (executor == null)
+            return _translationLookup["WEBFRONT_RESPONSE_UNAUTHORIZED"];
+
+        // same level the unban command requires; the database level counts, not the cookie's role claim
+        if (executor.Level < SharedLibraryCore.Database.Models.EFClient.RequiredUnbanLevel(_manager))
             return _translationLookup["WEBFRONT_RESPONSE_UNAUTHORIZED"];
 
         var targetClient = await _clientService.Get(clientId);
@@ -953,6 +1049,11 @@ public class WebfrontDataService : IWebfrontDataService
 
     public Task<IEnumerable<ServerReportsInfo>> GetReportsAsync()
     {
+        if (!HasPermission(WebfrontEntity.Penalty, WebfrontPermission.Read))
+        {
+            return Task.FromResult<IEnumerable<ServerReportsInfo>>([]);
+        }
+
         var reports = _manager.GetServers()
             .Select(server => new ServerReportsInfo
             {
@@ -1426,14 +1527,9 @@ public class WebfrontDataService : IWebfrontDataService
             }
         }
 
-        List<Claim> claims =
-        [
-            new(ClaimTypes.NameIdentifier, privilegedClient.Name),
-            new(ClaimTypes.Role, privilegedClient.Level.ToString()),
-            new(ClaimTypes.Sid, privilegedClient.ClientId.ToString()),
-            new(ClaimTypes.PrimarySid, privilegedClient.NetworkId.ToString("X")),
-            new(ClaimTypes.PrimaryGroupSid, privilegedClient.GameName.ToString())
-        ];
+        // same claims as the form login, including the forced-2FA-enrolment constraint
+        var claims = WebfrontCore.Core.Auth.WebfrontClaims.For(privilegedClient,
+            _manager.GetApplicationSettings().Configuration());
 
         var claimsIdentity = new ClaimsIdentity(claims, "login");
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
@@ -1734,10 +1830,8 @@ public class WebfrontDataService : IWebfrontDataService
             throw new UnauthorizedAccessException();
         }
 
-        var client = await _clientService.Get(targetId);
-        client.TwoFactorSecret = null;
-        client.TwoFactorBackupCodes = null;
-        await _clientService.Update(client);
+        // clears the secret and backup codes and writes the audit record
+        await _clientService.DisableTwoFactor(targetId, executor.ClientId);
     }
 
     private static AnnouncementInfo MapToAnnouncementInfo(Data.Models.Misc.EFAnnouncement announcement)

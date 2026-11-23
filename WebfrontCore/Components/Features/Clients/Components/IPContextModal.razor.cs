@@ -1,16 +1,15 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
+using SharedLibraryCore.Dtos;
 using SharedLibraryCore.Interfaces;
 
 namespace WebfrontCore.Components.Features.Clients.Components;
 
 public partial class IPContextModal
 {
-    [Inject] public required IHttpClientFactory HttpClientFactory { get; set; }
+    [Inject] public required IGeoLocationService GeoLocationService { get; set; }
     [Inject] public required ITranslationLookup Localization { get; set; }
     [Parameter, EditorRequired] public string IPAddress { get; set; } = default!;
-    private IpWhoisResponse? _geoData;
+    private GeoLocationDetails? _geoData;
     private bool _isLoading = true;
     private string? _error;
 
@@ -24,12 +23,7 @@ public partial class IPContextModal
 
         try
         {
-            using var http = HttpClientFactory.CreateClient();
-            var response = await http.GetStringAsync($"https://ipwhois.app/json/{IPAddress}");
-            _geoData = JsonSerializer.Deserialize<IpWhoisResponse>(response, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            _geoData = await GeoLocationService.LocateDetailed(IPAddress);
         }
         catch (Exception ex)
         {
@@ -48,15 +42,5 @@ public partial class IPContextModal
         if (!string.IsNullOrEmpty(_geoData?.Region)) parts.Add(_geoData.Region);
         if (!string.IsNullOrEmpty(_geoData?.Country)) parts.Add(_geoData.Country);
         return string.Join(", ", parts);
-    }
-
-    private class IpWhoisResponse
-    {
-        public string? Isp { get; set; }
-        public string? Org { get; set; }
-        public string? City { get; set; }
-        public string? Region { get; set; }
-        public string? Country { get; set; }
-        [JsonPropertyName("Timezone_Gmt")] public string? TimezoneGmt { get; set; }
     }
 }

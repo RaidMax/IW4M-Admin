@@ -2,13 +2,19 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Data.Abstractions;
 using Data.Helpers;
+using Data.Models.Client;
+using Microsoft.AspNetCore.Authorization;
+using Scalar.AspNetCore;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using SharedLibraryCore.Dtos;
@@ -27,6 +33,12 @@ using WebfrontCore.Core.QueryHelpers.Models;
 using WebfrontCore.Core.Services;
 
 namespace WebfrontCore;
+
+internal sealed class NoopHostLifetime : IHostLifetime
+{
+    public Task WaitForStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
 
 public class Program
 {
@@ -62,6 +74,14 @@ public class Program
 
         // Register dependencies first so we can access ApplicationConfiguration
         registerDependenciesAction(builder.Services);
+
+        // Suppress the default ConsoleLifetime. It registers its own CancelKeyPress
+        // and ProcessExit handlers which race with the ones in Application.Main,
+        // only cancelling the host's internal token and leaving the ApplicationManager
+        // token live. Under Docker SIGTERM that produced partial shutdowns that
+        // exceeded the 10s grace and triggered SIGKILL. Shutdown is driven from
+        // Application.Main via ApplicationManager.Stop().
+        builder.Services.Replace(ServiceDescriptor.Singleton<IHostLifetime, NoopHostLifetime>());
         
         // before the migration has run we still need to respect the old bind url
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -151,6 +171,21 @@ public class Program
                 opt.QueueLimit = 10;
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             });
+
+            // login actions: a fixed number of attempts per remote address per window. applied globally
+            // (in addition to the endpoint policy) and keyed on the resolved peer address, which only a
+            // configured trusted proxy can change
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                context.GetEndpoint()?.Metadata.GetMetadata<LoginAttemptLimitAttribute>() is null
+                    ? RateLimitPartition.GetNoLimiter(string.Empty)
+                    : RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = LoginAttemptLimitAttribute.PermitLimit,
+                            Window = LoginAttemptLimitAttribute.Window,
+                            QueueLimit = 0
+                        }));
         });
 
         // Add framework services
@@ -211,7 +246,24 @@ public class Program
 
         services.AddScoped<IActionService, ActionService>();
         services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
+
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer<Core.OpenApi.TagDescriptionsTransformer>();
+        });
+
+        services.AddAuthorizationBuilder()
+            .AddPolicy(ApiDocsPolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireAssertion(ctx =>
+                {
+                    var role = ctx.User.FindFirst(ClaimTypes.Role)?.Value;
+                    return Enum.TryParse<EFClient.Permission>(role, out var level)
+                           && level >= EFClient.Permission.SeniorAdmin;
+                }));
     }
+
+    private const string ApiDocsPolicy = "ApiDocs.View";
 
     private static void ConfigureMiddleware(WebApplication app)
     {
@@ -253,6 +305,19 @@ public class Program
 
         app.MapControllers()
             .RequireRateLimiting("concurrencyPolicy");
+
+        var openApi = app.MapOpenApi("/openapi/{documentName}.json");
+        var scalar = app.MapScalarApiReference("/api-docs", options =>
+        {
+            options.WithTitle("IW4MAdmin API")
+                .WithOpenApiRoutePattern("/openapi/{documentName}.json");
+        });
+
+        if (!app.Environment.IsDevelopment())
+        {
+            openApi.RequireAuthorization(ApiDocsPolicy);
+            scalar.RequireAuthorization(ApiDocsPolicy);
+        }
 
         app.MapStaticAssets();
 

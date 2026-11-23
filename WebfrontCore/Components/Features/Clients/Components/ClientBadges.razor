@@ -2,7 +2,7 @@
 {
     @if (_navData?.TotalReportCount > 0)
     {
-        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")">
+        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")">
             <button class="relative text-subtle hover:text-foreground transition-colors p-2 rounded-lg hover:bg-surface-hover flex justify-center"
                     type="button" @onclick="ShowReports" title="@AppState.Loc("WEBFRONT_LAYOUT_REPORTS")">
                 <i class="ph ph-warning-circle text-2xl text-error"></i>
@@ -49,7 +49,7 @@ else
                         </AuthorizeView>
                         
                         @* Reports *@
-                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.AdminMenu}.{WebfrontPermission.Read}")" Context="reportsContext">
+                        <AuthorizeView Policy="@($"Permissions.{WebfrontEntity.Penalty}.{WebfrontPermission.Read}")" Context="reportsContext">
                             <button type="button" class="flex items-center border border-line rounded-lg overflow-hidden cursor-pointer hover:border-line-hover transition-colors group" @onclick="ShowReports">
                                 <span class="px-3 py-1 text-xs font-bold text-error bg-error/10 border-r border-line group-hover:bg-error/20 transition-colors">@(_navData.TotalReportCount ?? 0)</span>
                                 <span class="px-3 py-1 text-xs font-medium text-muted bg-surface-alt/50 group-hover:text-subtle transition-colors">@AppState.Loc("WEBFRONT_LAYOUT_REPORTS").ToUpper()</span>

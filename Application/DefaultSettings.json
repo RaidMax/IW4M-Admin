@@ -804,6 +804,87 @@
           "Alias": "Zombies"
         }
       ]
+    },
+    {
+      "Game": "S2",
+      "Gametypes": [
+        {
+          "Name": "dm",
+          "Alias": "Free-for-All"
+        },
+        {
+          "Name": "war",
+          "Alias": "Team Deathmatch"
+        },
+        {
+          "Name": "dom",
+          "Alias": "Domination"
+        },
+        {
+          "Name": "conf",
+          "Alias": "Kill Confirmed"
+        },
+        {
+          "Name": "demo",
+          "Alias": "Demolition"
+        },
+        {
+          "Name": "sd",
+          "Alias": "Search and Destroy"
+        },
+        {
+          "Name": "sr",
+          "Alias": "Search and Rescue"
+        },
+        {
+          "Name": "ctf",
+          "Alias": "Capture the Flag"
+        },
+        {
+          "Name": "hp",
+          "Alias": "Hardpoint"
+        },
+        {
+          "Name": "ball",
+          "Alias": "Gridiron"
+        },
+        {
+          "Name": "twar",
+          "Alias": "Momentum"
+        },
+        {
+          "Name": "gun",
+          "Alias": "Gun Game"
+        },
+        {
+          "Name": "infect",
+          "Alias": "Infected"
+        },
+        {
+          "Name": "prop",
+          "Alias": "Prop Hunt"
+        },
+        {
+          "Name": "undead",
+          "Alias": "Hordepoint"
+        },
+        {
+          "Name": "relic",
+          "Alias": "Relic of the Undead"
+        },
+        {
+          "Name": "raid",
+          "Alias": "War"
+        },
+        {
+          "Name": "dogfight",
+          "Alias": "Dogfight"
+        },
+        {
+          "Name": "zombies",
+          "Alias": "Zombies"
+        }
+      ]
     }
   ],
   "Maps": [
@@ -2873,6 +2954,159 @@
         {
           "Alias": "Radioactive Thing",
           "Name": "cp_town"
+        }
+      ]
+    },
+    {
+      "Game": "S2",
+      "Maps": [
+        {
+          "Alias": "Aachen",
+          "Name": "mp_aachen_v2"
+        },
+        {
+          "Alias": "Ardennes Forest",
+          "Name": "mp_forest_01"
+        },
+        {
+          "Alias": "USS Texas",
+          "Name": "mp_battleship_2"
+        },
+        {
+          "Alias": "London Docks",
+          "Name": "mp_london"
+        },
+        {
+          "Alias": "Gustav Cannon",
+          "Name": "mp_canon_farm"
+        },
+        {
+          "Alias": "Flak Tower",
+          "Name": "mp_flak_tower"
+        },
+        {
+          "Alias": "Gibraltar",
+          "Name": "mp_gibraltar_02"
+        },
+        {
+          "Alias": "Pointe du Hoc",
+          "Name": "mp_d_day"
+        },
+        {
+          "Alias": "Sainte Marie du Mont",
+          "Name": "mp_france_village"
+        },
+        {
+          "Alias": "Carentan",
+          "Name": "mp_carentan_s2"
+        },
+        {
+          "Alias": "Winter Carentan",
+          "Name": "mp_carentan_s2_winter"
+        },
+        {
+          "Alias": "Shipment 1944",
+          "Name": "mp_shipment_s2"
+        },
+        {
+          "Alias": "Groesten Haus",
+          "Name": "mp_house"
+        },
+        {
+          "Alias": "Sandbox",
+          "Name": "mp_sandbox_01"
+        },
+        {
+          "Alias": "Anthropoid",
+          "Name": "mp_prague"
+        },
+        {
+          "Alias": "Valkyrie",
+          "Name": "mp_wolfslair"
+        },
+        {
+          "Alias": "Valkyrie",
+          "Name": "mp_wolfslair_free"
+        },
+        {
+          "Alias": "Occupation",
+          "Name": "mp_paris_s2"
+        },
+        {
+          "Alias": "V2",
+          "Name": "mp_v2_rocket_02"
+        },
+        {
+          "Alias": "Egypt",
+          "Name": "mp_egypt_02"
+        },
+        {
+          "Alias": "Dunkirk",
+          "Name": "mp_dunkirk"
+        },
+        {
+          "Alias": "Stalingrad",
+          "Name": "mp_stalingrad"
+        },
+        {
+          "Alias": "Market Garden",
+          "Name": "mp_market_garden"
+        },
+        {
+          "Alias": "Monte Cassino",
+          "Name": "mp_monte_cassino_v2"
+        },
+        {
+          "Alias": "Excavation",
+          "Name": "mp_tank_graveyard_2"
+        },
+        {
+          "Alias": "Airship",
+          "Name": "mp_airship"
+        },
+        {
+          "Alias": "Chancellery",
+          "Name": "mp_fuhrerbunker"
+        },
+        {
+          "Alias": "Headquarters",
+          "Name": "mp_allieshub_combat_01"
+        },
+        {
+          "Alias": "Operation Breakout",
+          "Name": "mp_raid_cobra"
+        },
+        {
+          "Alias": "Operation Neptune",
+          "Name": "mp_raid_d_day"
+        },
+        {
+          "Alias": "Operation Griffin",
+          "Name": "mp_raid_bulge"
+        },
+        {
+          "Alias": "Operation Intercept",
+          "Name": "mp_raid_aachen"
+        },
+        {
+          "Alias": "Operation Husky",
+          "Name": "mp_raid_dlc2"
+        },
+        {
+          "Alias": "Operation Supercharge",
+          "Name": "mp_raid_dlc3"
+        },
+        {
+          "Alias": "Operation Arcane",
+          "Name": "mp_raid_dlc4"
+        },
+        {
+          "Alias": "Egyptian Sands",
+          "Name": "mp_egypt_02_dogfight"
+        },
+        {
+          "Alias": "Crimean Mountains",
+          "Name": "mp_mountain_dogfight"
         }
       ]
     }

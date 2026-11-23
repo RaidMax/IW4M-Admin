@@ -58,6 +58,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 		Plugins\ScriptPlugins\ParserPlutoniumT6.cs = Plugins\ScriptPlugins\ParserPlutoniumT6.cs
 		Plugins\ScriptPlugins\ParserH2MMOD.cs = Plugins\ScriptPlugins\ParserH2MMOD.cs
 		Plugins\ScriptPlugins\ParserIW7MOD.cs = Plugins\ScriptPlugins\ParserIW7MOD.cs
+		Plugins\ScriptPlugins\ParserS2x.cs = Plugins\ScriptPlugins\ParserS2x.cs
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomessageFeed", "Plugins\AutomessageFeed\AutomessageFeed.csproj", "{F5815359-CFC7-44B4-9A3B-C04BACAD5836}"

@@ -37,7 +37,7 @@ namespace Integrations.Cod
         private readonly int _retryAttempts;
 
         private static readonly Server.Game[] RconDelayGames =
-            [Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6];
+            [Server.Game.IW3, Server.Game.T4, Server.Game.T5, Server.Game.T6, Server.Game.S2];
 
         public CodRConConnection(IPEndPoint ipEndpoint, string password, ILogger<CodRConConnection> log,
             Encoding gameEncoding, int retryAttempts)

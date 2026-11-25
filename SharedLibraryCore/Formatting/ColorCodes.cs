@@ -16,7 +16,8 @@ namespace SharedLibraryCore.Formatting
         Map,
         Grey,
         Wildcard,
-        Accent
+        Accent,
+        Orange
     }
 
     public class ColorCodeMapping : Dictionary<string, string>

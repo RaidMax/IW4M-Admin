@@ -54,6 +54,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ScriptPlugins", "ScriptPlug
 		Plugins\ScriptPlugins\ParserPlutoniumT5.cs = Plugins\ScriptPlugins\ParserPlutoniumT5.cs
 		Plugins\ScriptPlugins\ServerBanner.cs = Plugins\ScriptPlugins\ServerBanner.cs
 		Plugins\ScriptPlugins\ParserBOIII.cs = Plugins\ScriptPlugins\ParserBOIII.cs
+		Plugins\ScriptPlugins\ParserEzzBOIII.cs = Plugins\ScriptPlugins\ParserEzzBOIII.cs
 		Plugins\ScriptPlugins\ParserL4D2SM.cs = Plugins\ScriptPlugins\ParserL4D2SM.cs
 		Plugins\ScriptPlugins\ParserPlutoniumT6.cs = Plugins\ScriptPlugins\ParserPlutoniumT6.cs
 		Plugins\ScriptPlugins\ParserH2MMOD.cs = Plugins\ScriptPlugins\ParserH2MMOD.cs

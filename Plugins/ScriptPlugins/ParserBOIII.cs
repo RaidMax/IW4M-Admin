@@ -16,6 +16,14 @@ public class ParserBOIII : IParserDefinition
         const string version = "[local] ship win64 CODBUILD8-764 (3421987) Mon Dec 16 10:44:20 2019 10d27bef";
 
         var rcon = rconParser.Configuration;
+
+        // BOIII-specific color mappings
+        rcon.ColorCodeMapping["Orange"] = "^9";
+
+        // BOIII does not have a dedicated grey color.
+        // Fall back to white instead.
+        rcon.ColorCodeMapping["Grey"] = rcon.ColorCodeMapping["White"];
+
         rcon.Status.Pattern =
             @"^ *([0-9]+) +-?([0-9]+) +((?:[A-Z]+|[0-9]+)) +((?:[a-z]|[0-9]){8,32}|(?:[a-z]|[0-9]){8,32}|bot[0-9]+|(?:[0-9]+)) *(.{0,32}) +(\d{1,3}\.\d{1,3}\.\d{1,3}.\d{1,3}|loopback|unknown|0+.0+)(?:\:-?\d{1,5})? +(-*[0-9]+) *$";
         rcon.StatusHeader.Pattern = "num +score +ping +xuid +name +address +qport *";

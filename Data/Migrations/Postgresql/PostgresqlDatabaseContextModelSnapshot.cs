@@ -1161,6 +1161,37 @@ namespace Data.Migrations.Postgresql
                     b.ToTable("InboxMessages");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFGameStatistic", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ConnectionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("GameName")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("PlayTimeMinutes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("UniqueClientCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EFGameStatistics", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")

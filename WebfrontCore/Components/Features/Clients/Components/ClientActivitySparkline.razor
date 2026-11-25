@@ -1,37 +1,3 @@
-@* Activity Sparkline - Compact visual of playtime over last 30 days *@
-<div class="flex items-center gap-3 p-3 bg-surface-alt rounded-lg border border-line">
-    <div class="flex items-center gap-2 text-muted">
-        <i class="ph ph-activity text-lg text-secondary"></i>
-        <div class="flex flex-col leading-none">
-            <span class="text-xs font-bold uppercase tracking-wider">@AppState.Loc("WEBFRONT_PROFILE_PLAYTIME")</span>
-            @if (_totalPlaytime == TimeSpan.Zero)
-            {
-                <span class="text-[10px] font-medium opacity-70">@AppState.Loc("WEBFRONT_PROFILE_NO_PLAYTIME")</span>
-            }
-            else
-            {
-                <span class="text-[10px] font-medium opacity-70">@FormatPlaytime(_totalPlaytime)</span>
-            }
-        </div>
-    </div>
+@using WebfrontCore.Components.UI.Display
 
-    <div class="flex-1 flex items-end gap-px h-8">
-        @for (var i = 0; i < _activityData.Length; i++)
-        {
-            var value = _activityData[i];
-            var date = DateTime.UtcNow.Date.AddDays(-29 + i);
-            var height = value > 0 ? Math.Max(4, (int)(value / _maxValue * 32)) : 2;
-            var colorClass = value > 0 ? "bg-primary" : "bg-line";
-            var playTime = TimeSpan.FromMinutes(value);
-            var tooltipText = value > 0
-                ? $"{FormatPlaytime(playTime)} • {date:MMM d}"
-                : $"{AppState.Loc("WEBFRONT_PROFILE_NO_PLAYTIME")} • {date:MMM d}";
-
-            <Tooltip Text="@tooltipText" WrapperClass="flex-1 flex items-end">
-                <div class="w-full rounded-t transition-all hover:opacity-80 @colorClass"
-                     style="height: @(height)px;">
-                </div>
-            </Tooltip>
-        }
-    </div>
-</div>
+<ActivitySparklineGraph Data="@_activityData" TotalPlaytime="@_totalPlaytime" />

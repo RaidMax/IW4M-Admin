@@ -23,7 +23,7 @@ namespace IW4MAdmin.Plugins.Stats
         public static DateTime FifteenDaysAgo() => DateTime.UtcNow.AddDays(-15);
 
         public static double? WeightValueByPlaytime(this IEnumerable<EFClientStatistics> stats, string propertyName, 
-            int minTimePlayed, Func<EFClientStatistics, bool> validation = null)
+            int minTimePlayed, Func<EFClientStatistics, bool>? validation = null)
         {
             if (!stats.Any())
             {

@@ -14,17 +14,18 @@ using SharedLibraryCore;
 using SharedLibraryCore.Configuration;
 using ILogger = Serilog.ILogger;
 
-namespace IW4MAdmin.Application.Extensions
-{
-    public static class StartupExtensions
-    {
-        private static ILogger _defaultLogger;
-        private static readonly LoggingLevelSwitch LevelSwitch = new();
-        private static readonly LoggingLevelSwitch MicrosoftLevelSwitch = new();
-        private static readonly LoggingLevelSwitch SystemLevelSwitch = new();
+namespace IW4MAdmin.Application.Extensions;
 
-        public static IServiceCollection AddBaseLogger(this IServiceCollection services,
-            ApplicationConfiguration appConfig)
+public static class StartupExtensions
+{
+    private static ILogger _defaultLogger;
+    private static readonly LoggingLevelSwitch LevelSwitch = new();
+    private static readonly LoggingLevelSwitch MicrosoftLevelSwitch = new();
+    private static readonly LoggingLevelSwitch SystemLevelSwitch = new();
+
+    extension(IServiceCollection services)
+    {
+        public IServiceCollection AddBaseLogger(ApplicationConfiguration appConfig)
         {
             if (_defaultLogger == null)
             {
@@ -48,8 +49,8 @@ namespace IW4MAdmin.Application.Extensions
                     loggerConfig = loggerConfig.WriteTo.Console(
                             outputTemplate:
                             "[{Timestamp:HH:mm:ss} {Server} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                            .MinimumLevel.Debug();
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                        .MinimumLevel.Debug();
                 }
 
                 _defaultLogger = loggerConfig.CreateLogger();
@@ -70,8 +71,7 @@ namespace IW4MAdmin.Application.Extensions
             return services;
         }
 
-        public static IServiceCollection AddDatabaseContextOptions(this IServiceCollection services,
-            ApplicationConfiguration appConfig)
+        public IServiceCollection AddDatabaseContextOptions(ApplicationConfiguration appConfig)
         {
             var activeProvider = appConfig.DatabaseProvider?.ToLower();
 

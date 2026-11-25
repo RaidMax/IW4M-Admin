@@ -1106,6 +1106,35 @@ namespace Data.Migrations.Sqlite
                     b.ToTable("InboxMessages");
                 });
 
+            modelBuilder.Entity("Data.Models.Server.EFGameStatistic", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ConnectionCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("GameName")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("PlayTimeMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UniqueClientCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EFGameStatistics", (string)null);
+                });
+
             modelBuilder.Entity("Data.Models.Server.EFServer", b =>
                 {
                     b.Property<long>("ServerId")
